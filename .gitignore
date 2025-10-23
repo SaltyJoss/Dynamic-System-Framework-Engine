@@ -47,4 +47,4 @@
 *.VC.db
 *.VC.VC.opendb
 
-.out/
+.out/*
