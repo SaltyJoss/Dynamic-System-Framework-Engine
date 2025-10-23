@@ -1,0 +1,10 @@
+^C:\USERS\JOSS\SOURCE\REPOS\ROBOTICARM_MATHMODELLING\BUILD\CMAKEFILES\C4CD2499E19D69513869B9B940F177FA\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Joss/source/repos/RoboticArm_MathModelling -BC:/Users/Joss/source/repos/RoboticArm_MathModelling/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/Joss/source/repos/RoboticArm_MathModelling/build/RoboticArm_MathModelling.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,3 @@
+C:/Users/Joss/source/repos/RoboticArm_MathModelling/build/CMakeFiles/RoboticArm_MathModelling.dir
+C:/Users/Joss/source/repos/RoboticArm_MathModelling/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Joss/source/repos/RoboticArm_MathModelling/build/CMakeFiles/ZERO_CHECK.dir
