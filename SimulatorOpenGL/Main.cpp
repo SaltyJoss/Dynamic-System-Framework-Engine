@@ -18,13 +18,12 @@ int main() {
 	}
 
 	glfwMakeContextCurrent(window);	// Make the window's context current
+	gladLoadGL();					// Load OpenGL functions
 
-	gladLoadGL(); // Load OpenGL functions
-
-	glViewport(0, 0, 1920, 1080);	// Set the viewport size
-
+	glViewport(0, 0, 1920, 1080);			// Set the viewport size
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);	// Set clear color
-
+	glClear(GL_COLOR_BUFFER_BIT);			// Clear the color buffer
+	glfwSwapBuffers(window);				// Swap front and back buffers
 
 	// Load OpenGL functions using GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
