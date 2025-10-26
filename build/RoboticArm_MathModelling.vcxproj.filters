@@ -16,7 +16,7 @@
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Dynamics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Integratiors.cpp">
+    <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Integrators.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Kinematics.cpp">

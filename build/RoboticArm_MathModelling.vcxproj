@@ -390,7 +390,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\Control\LQRController.cpp" />
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\Control\PIDController.cpp" />
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Dynamics.cpp" />
-    <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Integratiors.cpp" />
+    <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Integrators.cpp" />
     <ClCompile Include="C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Kinematics.cpp" />
   </ItemGroup>
   <ItemGroup />

@@ -1,7 +1,0 @@
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\Simulation\Simulator.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\Simulator.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\Simulation\main.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\main.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\Control\LQRController.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\LQRController.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\Control\PIDController.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\PIDController.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Dynamics.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\Dynamics.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Integratiors.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\Integratiors.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\src\MathLib\Kinematics.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\build\RoboticArm_MathModelling.dir\Debug\Kinematics.obj

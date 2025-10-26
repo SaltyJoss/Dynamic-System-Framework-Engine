@@ -3,7 +3,7 @@
 using namespace Eigen;
 
 // Numerical integration methods
-namespace mathlib::NumericalIntegrators {
+namespace MathLib::NumericalIntegrators {
 // Ordinary Differential Equation (ODE) solvers
 namespace ODE{
 	// Euler method
