@@ -1,3 +1,0 @@
-C:/Users/Joss/source/repos/RoboticArm_MathModelling/out/build/x64-Debug/CMakeFiles/RoboticArm_MathModelling.dir
-C:/Users/Joss/source/repos/RoboticArm_MathModelling/out/build/x64-Debug/CMakeFiles/edit_cache.dir
-C:/Users/Joss/source/repos/RoboticArm_MathModelling/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
