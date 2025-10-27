@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "imgui.h"
+#include "GUIManager.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -54,31 +55,22 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
+	// Initialise GUI Manager
+	GUIManager gui;
+
 	// Main loop
 	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();	// Poll for and process events
+		glfwPollEvents();
 
-		// Start new ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Example GUI: Text box
-		ImGui::Begin("Control Panel");
-		static char text[128] = "";
-		ImGui::InputText("Enter code", text, IM_ARRAYSIZE(text));
-		ImGui::End();
-
-		// Example GUI: Placeholder canvas
-		ImGui::SetNextWindowPos(ImVec2(300, 0));
-		ImGui::SetNextWindowSize(ImVec2(980, 720));
-		ImGui::Begin("Simulation Canvas");
-		ImGui::Text("3D RENDERED GOES HERE");
-		ImGui::End();
-
-		// Render ImGui to OpenGL
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		gui.BeginFrame();
+		gui.DrawPanel();
+		gui.EndFrame();
 
 		glfwSwapBuffers(window);	// Swap front and back buffers
 	}
