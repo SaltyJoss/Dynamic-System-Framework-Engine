@@ -1,5 +1,6 @@
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\EBO.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\EBO.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\glad.c;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\glad.obj
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\GUIManager.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\GUIManager.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_demo.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_demo.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_draw.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_draw.obj
@@ -9,5 +10,6 @@ C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\li
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_widgets.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_widgets.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Main.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Main.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\shaderClass.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\shaderClass.obj
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Application.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Application.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\VAO.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VAO.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\VBO.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VBO.obj
