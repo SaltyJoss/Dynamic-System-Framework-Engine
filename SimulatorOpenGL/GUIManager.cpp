@@ -1,7 +1,6 @@
 #include <GLFW/glfw3.h>
+#include "ControlPanel.h"
 #include "GUIManager.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 
 // Begin Frame Method
 void GUIManager::BeginFrame() 
@@ -24,13 +23,7 @@ void GUIManager::DrawPanel()
     // Window flags: fixed, no collapse, no resize, no title bar
     ImGuiWindowFlags panelFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
-    // Control Panel
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(300, 1080));
-    ImGui::Begin("Control Panel", nullptr, panelFlags);
-    static char text[128] = "";
-    ImGui::InputText("Enter text", text, IM_ARRAYSIZE(text));
-    ImGui::End();
+
 
     // Simulation Canvas
     ImGui::SetNextWindowPos(ImVec2(300, 0));

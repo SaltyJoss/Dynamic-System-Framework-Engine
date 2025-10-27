@@ -28,8 +28,20 @@
     <Filter Include="Header Files\Core">
       <UniqueIdentifier>{15d991b0-b16a-41f1-8cf6-51558f06a107}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GUI">
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{50ef87b6-c54e-45c3-a24b-48b45cae0929}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{2f5bcf8f-ecaa-4092-912a-a165f15089b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{be36cec4-14de-419e-bfbb-ec4e0140494f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
       <UniqueIdentifier>{e5df68e2-eb4c-45a5-897d-8f7b82c9d6a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Renderer">
+      <UniqueIdentifier>{c348c282-27f2-4537-94bf-e8c7390bb546}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -57,25 +69,37 @@
     <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp">
       <Filter>Source Files\GUI</Filter>
     </ClCompile>
-    <ClCompile Include="shaderClass.cpp">
-      <Filter>Source Files\Simulation_Core</Filter>
-    </ClCompile>
-    <ClCompile Include="VAO.cpp">
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files\Simulation_Core</Filter>
     </ClCompile>
     <ClCompile Include="VBO.cpp">
-      <Filter>Source Files\Simulation_Core</Filter>
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="shaderClass.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="VAO.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="EBO.cpp">
-      <Filter>Source Files\Simulation_Core</Filter>
-    </ClCompile>
-    <ClCompile Include="glad.c">
-      <Filter>Source Files\Simulation_Core</Filter>
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="GUIManager.cpp">
-      <Filter>Source Files\GUI</Filter>
+      <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Application.cpp">
+    <ClCompile Include="ControlPanel.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulationPanels.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulationManager.cpp">
       <Filter>Source Files\Simulation_Core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -88,23 +112,38 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EBO.h">
-      <Filter>Header Files\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="shaderClass.h">
-      <Filter>Header Files\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="VAO.h">
-      <Filter>Header Files\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="VBO.h">
-      <Filter>Header Files\Core</Filter>
-    </ClInclude>
     <ClInclude Include="GUIManager.h">
-      <Filter>Header Files\GUI</Filter>
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="VBO.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="VAO.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="shaderClass.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EBO.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ControlPanel.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulationPanels.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulationManager.h">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreIncludes.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
