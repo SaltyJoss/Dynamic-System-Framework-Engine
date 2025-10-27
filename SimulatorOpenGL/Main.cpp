@@ -65,6 +65,8 @@ int main() {
 	VBO1.Unbind();			// Unbind the VBO
 	EBO1.Unbind();			// Unbind the EBO
 
+	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale"); 
+
 
 	glClearColor(0.075f, 0.125f, 0.15f, 1.0f);	// Set clear color
 	glClear(GL_COLOR_BUFFER_BIT);			// Clear the color buffer
@@ -83,6 +85,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);			// Clear the color buffer
 
 		shaderProgram.Activate();		// Activate the shader program
+		glUniform1f(uniID, 0.4f);		// Scale of triangles 
 		VAO1.Bind();					// Bind the VAO
 
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0); // Draw the triangle using the EBO
