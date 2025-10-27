@@ -71,19 +71,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -145,6 +145,13 @@
   <ItemGroup>
     <ClCompile Include="EBO.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="Libraries\lib\imgui\imgui.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="shaderClass.cpp" />
     <ClCompile Include="VAO.cpp" />

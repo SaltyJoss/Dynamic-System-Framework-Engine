@@ -1,30 +1,14 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
-#include "shaderClass.h"
-#include "VAO.h"
-#include "VBO.h"
-#include "EBO.h"
-
-// Vertices of a triangle
-GLfloat vertices[] = 
-{ //				COORDINATES					  /		COLOURS			//
-	-0.5f, -0.5f * float(sqrt(3)) / 3,		0.0f,	0.8f, 0.3f,  0.02f,	// Bottom left Corner {0}
-	 0.5f, -0.5f * float(sqrt(3)) / 3,		0.0f,	0.8f, 0.3f,  0.02f,	// Bottom right Corner {1}
-	 0.0f,  0.5f * float(sqrt(3)) * 2 / 3,	0.0f,	1.0f, 0.6f,  0.32f,	// Top Corner {2}
-	 -0.5f / 2, 0.5f * float(sqrt(3)) / 6,	0.0f,	0.9f, 0.45f, 0.17f,	// Inner left {3}
-	 0.5f / 2, 0.5f * float(sqrt(3)) / 6,	0.0f,	0.9f, 0.45f, 0.17f,	// Inner right {4}
-	 0.0f, -0.5f * float(sqrt(3)) / 3,		0.0f,	0.8f, 0.3f,  0.02f	// Inner bottom {5}
-
-};
-
-GLuint indices[] =
-{
-	5, 3, 0,	// Lower left triangle	{5,3,0}
-	4, 2, 3,	// Upper triangle		{4,2,3}
-	1, 4, 5		// Lower right triangle	{1,4,5}
-};
+// Resize callback
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+}
 
 int main() {
 	// Initialize GLFW
@@ -33,44 +17,24 @@ int main() {
 		return -1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);	// Set OpenGL version to 3.4
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);	// Set OpenGL version to 3.4
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);	// Use core profile
+	// Window hints
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
-	GLFWwindow* window = glfwCreateWindow(1080, 1080, "Simulator V0.1", nullptr, nullptr);	// Create window (windowed mode) and its OpenGL context
+	GLFWwindow* window = glfwCreateWindow(1920, 1080, "Simulator V0.1", nullptr, nullptr);	// Create window (windowed mode) and its OpenGL context
 
+	// Create Window
 	if (!window) {
 		std::cerr << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
 
-	glfwMakeContextCurrent(window);	// Make the window's context current
-	gladLoadGL();					// Load OpenGL functions
-
-	glViewport(0, 0, 1080, 1080);			// Set the viewport size
-
-	Shader shaderProgram("default.vert", "default.frag"); // Create shader program from shaders	
-	
-	VAO VAO1;		// Create Vertex Array Object
-	VAO1.Bind();	// Bind the VAO
-
-	VBO VBO1(vertices, sizeof(vertices));	// Create Vertex Buffer Object and link it to vertices
-	EBO EBO1(indices, sizeof(indices));		// Create Element Buffer Object and link it to indices
-
-	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);	// Links VAO to VBO and the attributes
-	VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
-	VAO1.Unbind();			// Unbind the VAO
-	VBO1.Unbind();			// Unbind the VBO
-	EBO1.Unbind();			// Unbind the EBO
-
-	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale"); 
-
-
-	glClearColor(0.075f, 0.125f, 0.15f, 1.0f);	// Set clear color
-	glClear(GL_COLOR_BUFFER_BIT);			// Clear the color buffer
-	glfwSwapBuffers(window);				// Swap front and back buffers
+	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// Load OpenGL functions using GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -78,30 +42,53 @@ int main() {
 		return -1;
 	}
 
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);	// Set clear color
+
+	// ImGui Initialisation
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	(void)io;
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
+
 	// Main loop
 	while (!glfwWindowShouldClose(window)) {
-		
-		glClearColor(0.075f, 0.125f, 0.15f, 1.0f);	// Set clear color
-		glClear(GL_COLOR_BUFFER_BIT);			// Clear the color buffer
+		glfwPollEvents();	// Poll for and process events
 
-		shaderProgram.Activate();		// Activate the shader program
-		glUniform1f(uniID, 0.4f);		// Scale of triangles 
-		VAO1.Bind();					// Bind the VAO
+		// Start new ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
 
-		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0); // Draw the triangle using the EBO
+		// Example GUI: Text box
+		ImGui::Begin("Control Panel");
+		static char text[128] = "";
+		ImGui::InputText("Enter code", text, IM_ARRAYSIZE(text));
+		ImGui::End();
+
+		// Example GUI: Placeholder canvas
+		ImGui::SetNextWindowPos(ImVec2(300, 0));
+		ImGui::SetNextWindowSize(ImVec2(980, 720));
+		ImGui::Begin("Simulation Canvas");
+		ImGui::Text("3D RENDERED GOES HERE");
+		ImGui::End();
+
+		// Render ImGui to OpenGL
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);	// Swap front and back buffers
-		glfwPollEvents();			// Poll for and process events
 	}
 
-	// Delete allocated resources
-	VAO1.Delete();
-	VBO1.Delete();
-	EBO1.Delete();
-	shaderProgram.Delete();
-
 	// Clean up and exit
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	glfwDestroyWindow(window);
 	glfwTerminate();
+	
 	return 0;
 }
