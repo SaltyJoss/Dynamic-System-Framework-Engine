@@ -26,24 +26,27 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 	const char* vShaderCode = vertexCode.c_str();	// Convert vertex shader code to C-style string
 	const char* fShaderCode = fragmentCode.c_str();	// Convert fragment shader code to C-style string
 
-	GLuint vertex, fragment; // Create shader object references
+	GLuint vertexShader, fragmentShader; // Create shader object references
 
-	vertex = glCreateShader(GL_VERTEX_SHADER);		// Create vertex shader object
-	glShaderSource(vertex, 1, &vShaderCode, NULL);	// Attach vertex shader source code
-	glCompileShader(vertex);
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);		// Create vertex shader object
+	glShaderSource(vertexShader, 1, &vShaderCode, NULL);	// Attach vertex shader source code
+	glCompileShader(vertexShader);
+	compileErrors(vertexShader, "VERTEX");	// Checks if Shader compiled succesfully
 
-	fragment = glCreateShader(GL_FRAGMENT_SHADER);		// Create fragment shader object
-	glShaderSource(fragment, 1, &fShaderCode, NULL);	// Attach fragment shader source code
-	glCompileShader(fragment);
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);		// Create fragment shader object
+	glShaderSource(fragmentShader, 1, &fShaderCode, NULL);	// Attach fragment shader source code
+	glCompileShader(fragmentShader);
+	compileErrors(fragmentShader, "FRAGMENT");	// Checks if Shader compiled succesfully
 
 	ID = glCreateProgram();	// Create shader program
 
-	glAttachShader(ID, vertex);		// Attach vertex shader	
-	glAttachShader(ID, fragment);	// Attach fragment shader
+	glAttachShader(ID, vertexShader);		// Attach vertex shader	
+	glAttachShader(ID, fragmentShader);	// Attach fragment shader
 	glLinkProgram(ID);
+	compileErrors(ID, "PROGRAM");	// Checks if Shader linked succesfully
 
-	glDeleteShader(vertex);		// Delete vertex shader
-	glDeleteShader(fragment);	// Delete fragment shader
+	glDeleteShader(vertexShader);		// Delete vertex shader
+	glDeleteShader(fragmentShader);	// Delete fragment shader
 }
 
 // Activate the shader program
@@ -56,4 +59,29 @@ void Shader::Activate()
 void Shader::Delete()
 {
 	glDeleteProgram(ID);
+}
+
+// Error Handling
+void Shader::compileErrors(unsigned int shader, const char* type) 
+{
+	GLint hasCompiled;
+	char infoLog[1024];
+	if (type != "PROGRAM")
+	{
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
+		if (hasCompiled == GL_FALSE);
+		{
+			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << "[SHADER_COMPILATION_ERROR]:\t" << type << "\n" << std::endl;
+		}
+	}
+	else
+	{
+		glGetProgramiv(shader, GL_COMPILE_STATUS, &hasCompiled);
+		if (hasCompiled == GL_FALSE);
+		{
+			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << "[SHADER_LINKING_ERROR]:\t" << type << "\n" << std::endl;
+		}
+	}
 }

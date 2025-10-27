@@ -12,12 +12,15 @@ std::string get_file_content(const char* filename);
 
 class Shader
 {
-public:
-	GLuint ID;
-	Shader(const char* vertexPath, const char* fragmentPath);
+	public:
+		GLuint ID;
+		Shader(const char* vertexPath, const char* fragmentPath);	// Constructor that builds the shader program from 2 different shaders
 
-	void Activate();
-	void Delete();
+		void Activate();	// Activates the Shader Program
+		void Delete();		// Deletes the Shader Program
+
+	private:
+		void compileErrors(unsigned int shader, const char* type);	// Checks if DIFFERENT shaders have compiled properly
 };
 
 #endif
