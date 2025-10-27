@@ -10,7 +10,7 @@ public:
 	GLuint ID;
 	VAO();	// Constructor that generates a Vertex Array Object
 
-	void LinkVBO(VBO& VBO, GLuint layout); // Links a VBO to the VAO
+	void LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset);
 	void Bind();			// Binds the VAO
 	void Unbind();			// Unbinds the VAO
 	void Delete();			// Deletes the VAO
