@@ -1,8 +1,5 @@
+#include "CoreIncludes.h"
 #include "Application.h"
-#include <glad/glad.h>
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <iostream>
 
 // Resize callback
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
