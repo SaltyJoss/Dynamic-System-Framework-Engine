@@ -1,4 +1,3 @@
-#include "CoreIncludes.h"
 #include "Application.h"
 
 // Resize callback
@@ -35,13 +34,22 @@ bool Application::Initialise()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGui::StyleColorsDark();
 
-	gui = std::make_unique<GUIManager>(window);
+	windowManager.SetupWindow(window);
+	gui = std::make_unique<GUIManager>(&windowManager);
+
+	gui->InitResources();
 
 	return true;
 }
 
 void Application::Run()
 {
+	if (gui) {
+		gui->BeginFrame();
+		gui->DrawPanel();
+		gui->EndFrame();
+	}
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
@@ -61,6 +69,7 @@ void Application::Run()
 
 void Application::Shutdown()
 {
+	ResourceManager::CleanUp();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
