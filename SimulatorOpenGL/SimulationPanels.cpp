@@ -3,39 +3,63 @@
 #include <string>
 
 void SimulationPanels::Render() {
-    ImGuiWindowFlags panelFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
-    Container(panelFlags);
-    MainPanel(panelFlags);
+    ImVec2 avail = ImGui::GetContentRegionAvail(); // safe size below title bar
+    ImGui::BeginChild("Simulation", avail, false);
+    if (ImGui::BeginTabBar("Simulation")) {
+        if (ImGui::BeginTabItem("Main Simulation")) {
+            MainPanel();
+            ImGui::EndTabItem();
+        }
 
+        if (ImGui::BeginTabItem("4-Fixed Simulation Angles")) {
+            SecondaryPanels();
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+    ImGui::EndChild();
 }
 
-void SimulationPanels::Container(ImGuiWindowFlags panelFlags) {
-    ImGui::SetNextWindowPos(ImVec2(400, 0));
-    ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
-    ImGui::Begin("Simulation Container", nullptr, panelFlags);
-    ImGui::End();
+void SimulationPanels::MainPanel() {
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+    float w = std::max(avail.x, 1.0f);
+    float h = std::max(avail.y, 1.0f);
+
+    ImVec2 pos = ImGui::GetCursorPos();
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    draw->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(100, 150, 250, 255));
+    draw->AddRect(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(255, 255, 255, 255));
+    draw->AddText(ImVec2(pos.x + 5, pos.y + 5), IM_COL32(255, 255, 255, 255), "Main Simulation");
 }
 
-void SimulationPanels::MainPanel(ImGuiWindowFlags panelFlags) {
-    ImGui::SetNextWindowPos(ImVec2(415, 15));
-    ImGui::SetNextWindowSize(ImVec2((ImGui::GetIO().DisplaySize.x)-15, (ImGui::GetIO().DisplaySize.y)-15));
-    ImGui::Begin("Simulation", nullptr, panelFlags);
-    ImGui::Text("3D render goes here");
-    ImGui::End();
-}
+void SimulationPanels::SecondaryPanels() {
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+    float spacing = 25.0f;
+    float panelW = std::max((avail.x - spacing) / 2.0f, 1.0f);
+    float panelH = std::max((avail.y - spacing) / 2.0f, 1.0f);
 
-void SimulationPanels::Panel1(ImGuiWindowFlags panelFlags) {
-    /* STUBBED */
-}
+    ImDrawList* draw = ImGui::GetWindowDrawList();
 
-void SimulationPanels::Panel2(ImGuiWindowFlags panelFlags) {
-    /* STUBBED */
-}
+    // Lambda to draw a colored mock simulator
+    auto DrawMock = [&](const char* label, ImVec2 pos) {
+        ImVec2 screenPos = ImGui::GetCursorScreenPos();
+        draw->AddRectFilled(ImVec2(screenPos.x + pos.x, screenPos.y + pos.y),
+            ImVec2(screenPos.x + pos.x + panelW, screenPos.y + pos.y + panelH),
+            IM_COL32(100, 150, 250, 255));
+        draw->AddRect(ImVec2(screenPos.x + pos.x, screenPos.y + pos.y),
+            ImVec2(screenPos.x + pos.x + panelW, screenPos.y + pos.y + panelH),
+            IM_COL32(255, 255, 255, 255));
+        draw->AddText(ImVec2(screenPos.x + pos.x + 5, screenPos.y + pos.y + 5), IM_COL32(255, 255, 255, 255), label);
+        };
 
-void SimulationPanels::Panel3(ImGuiWindowFlags panelFlags) {
-    /* STUBBED */
-}
+    // Draw all 4 panels in a 2x2 grid
+    DrawMock("Main Sim", ImVec2(0, 0));
+    DrawMock("Angle-2", ImVec2(panelW + spacing, 0));
+    DrawMock("Angle-3", ImVec2(0, panelH + spacing));
+    DrawMock("Angle-4", ImVec2(panelW + spacing, panelH + spacing));
 
-void SimulationPanels::Panel4(ImGuiWindowFlags panelFlags) {
-    /* STUBBED */
+    // Optional: leave dummy children to reserve layout space
+    ImGui::Dummy(ImVec2(avail.x, avail.y));
 }

@@ -11,13 +11,8 @@ public:
 	void Render();
 
 private:
-	void Container(ImGuiWindowFlags panelFlags);
-	void MainPanel(ImGuiWindowFlags panelFlags);
-	void Panel1(ImGuiWindowFlags panelFlags);
-	void Panel2(ImGuiWindowFlags panelFlags);
-	void Panel3(ImGuiWindowFlags panelFlags);
-	void Panel4(ImGuiWindowFlags panelFlags);
+	void MainPanel();
+	void SecondaryPanels();
 };
-
 
 #endif 
