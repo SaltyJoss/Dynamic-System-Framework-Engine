@@ -35,10 +35,9 @@ void GUIManager::DrawPanel() {
 }
 
 void GUIManager::ContainerPanel() {
-	if (!titleBar)
+	/*if (!titleBar)
 		titleBar = std::make_unique<TitleBarPanel>(windowManager);
-
-	titleBar->Render(30.0f);
+	titleBar->Render(30.0f);*/
 
 	ctrlPanel.Render();
 	ImGui::SameLine();
