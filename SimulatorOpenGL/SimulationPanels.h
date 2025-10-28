@@ -8,7 +8,7 @@
 class SimulationPanels 
 {
 public:
-	void Render();
+	void Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth);
 
 private:
 	void MainPanel();

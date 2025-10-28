@@ -2,9 +2,15 @@
 #include <iostream>
 #include <string>
 
-void SimulationPanels::Render() {
-    ImVec2 avail = ImGui::GetContentRegionAvail();
-    ImGui::BeginChild("Simulation", avail, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+void SimulationPanels::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth) {
+    ImGuiWindowFlags simPanelFlags =
+        ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoScrollbar
+        | ImGuiWindowFlags_NoScrollWithMouse;
+
+    ImGui::SetCursorPos(ImVec2(ctrlPanelWidth, 0));
+    ImGui::BeginChild("Simulation", ImVec2(winSize.x - ctrlPanelWidth, winSize.y - debugHeight), true, simPanelFlags);
     if (ImGui::BeginTabBar("Simulation")) {
         if (ImGui::BeginTabItem("Main Simulation")) {
             MainPanel();

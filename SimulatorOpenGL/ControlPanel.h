@@ -7,7 +7,7 @@
 
 class ControlPanel {
 public:
-    void Render();      // Draw the control panel UI using ImGui
+    void Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth);      // Draw the control panel UI using ImGui
 
 private:
     void HandleInput(); // Process user input

@@ -2,9 +2,8 @@
 #include <iostream>
 #include <string>
 
-void ControlPanel::Render()
-{
-    ImGui::BeginChild("ControlPanel", ImVec2(400, ImGui::GetIO().DisplaySize.y), true);
+void ControlPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth) {
+    ImGui::BeginChild("ControlPanel", ImVec2(400, ImGui::GetIO().DisplaySize.y - 300), true);
 
     static char text[128] = "";
     ImGui::InputText("Enter text", text, IM_ARRAYSIZE(text));

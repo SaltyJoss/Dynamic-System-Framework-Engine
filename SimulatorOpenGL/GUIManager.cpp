@@ -29,6 +29,12 @@ void GUIManager::DrawPanel() {
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	ImGui::Begin("Robotic-Arm Simualtor V0.0", nullptr, panelFlags);
 
+	winSize = ImGui::GetIO().DisplaySize;
+	padding = ImGui::GetStyle().WindowPadding;
+	debugHeight = 300.0f;
+	ctrlPanelWidth = 400.0f;
+
+
 	ContainerPanel();
 
 	ImGui::End();
@@ -39,10 +45,10 @@ void GUIManager::ContainerPanel() {
 		titleBar = std::make_unique<TitleBarPanel>(windowManager);
 	titleBar->Render(30.0f);*/
 
-	ctrlPanel.Render();
+	ctrlPanel.Render(winSize, padding, debugHeight, ctrlPanelWidth);
 	ImGui::SameLine();
-	simPanel.Render();
-	debug.Render();
+	simPanel.Render(winSize, padding, debugHeight, ctrlPanelWidth);
+	debug.Render(winSize, padding, debugHeight, ctrlPanelWidth);
 }
 
 void GUIManager::InitResources() {
