@@ -31,9 +31,6 @@
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{50ef87b6-c54e-45c3-a24b-48b45cae0929}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\UI">
-      <UniqueIdentifier>{2f5bcf8f-ecaa-4092-912a-a165f15089b9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{be36cec4-14de-419e-bfbb-ec4e0140494f}</UniqueIdentifier>
     </Filter>
@@ -43,31 +40,13 @@
     <Filter Include="Header Files\Renderer">
       <UniqueIdentifier>{c348c282-27f2-4537-94bf-e8c7390bb546}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GUI\ImGui">
+      <UniqueIdentifier>{8b5e1e37-bc82-4819-8af7-799153430861}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_glfw.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp">
-      <Filter>Source Files\GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp">
-      <Filter>Source Files\GUI</Filter>
     </ClCompile>
     <ClCompile Include="Application.cpp">
       <Filter>Source Files\Simulation_Core</Filter>
@@ -84,15 +63,6 @@
     <ClCompile Include="EBO.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="GUIManager.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="ControlPanel.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="SimulationPanels.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
     <ClCompile Include="glad.c">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
@@ -102,6 +72,39 @@
     <ClCompile Include="SimulationManager.cpp">
       <Filter>Source Files\Simulation_Core</Filter>
     </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp">
+      <Filter>Source Files\GUI\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ControlPanel.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugPanel.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="GUIManager.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulationPanels.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.vert">
@@ -109,6 +112,9 @@
     </None>
     <None Include="default.frag">
       <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="DebugLogEntry.h">
+      <Filter>Header Files\UI</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -144,6 +150,9 @@
     </ClInclude>
     <ClInclude Include="CoreIncludes.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugPanel.h">
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

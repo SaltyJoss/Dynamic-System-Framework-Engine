@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ControlPanel.cpp" />
+    <ClCompile Include="DebugPanel.cpp" />
     <ClCompile Include="EBO.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="GUIManager.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DebugLogEntry.h" />
     <None Include="default.frag" />
     <None Include="default.vert" />
   </ItemGroup>
@@ -171,6 +173,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="ControlPanel.h" />
     <ClInclude Include="CoreIncludes.h" />
+    <ClInclude Include="DebugPanel.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="GUIManager.h" />
     <ClInclude Include="Renderer.h" />

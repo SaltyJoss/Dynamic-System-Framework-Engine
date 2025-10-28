@@ -1,6 +1,2 @@
-﻿  ControlPanel.cpp
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\ControlPanel.cpp(65,27): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\ControlPanel.cpp(66,24): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  SimulationPanels.cpp
-  Generating Code...
+﻿  Application.cpp
   SimulatorOpenGL.vcxproj -> C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\x64\Debug\SimulatorOpenGL.exe
