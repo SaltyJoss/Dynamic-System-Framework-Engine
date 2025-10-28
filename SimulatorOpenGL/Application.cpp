@@ -13,6 +13,7 @@ bool Application::Initialise()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
@@ -30,9 +31,11 @@ bool Application::Initialise()
 	ImGuiIO& io = ImGui::GetIO();
 	(void)io;
 
-	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
+	ImGui::StyleColorsDark();
+
+	gui = std::make_unique<GUIManager>(window);
 
 	return true;
 }
@@ -48,9 +51,9 @@ void Application::Run()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		gui.BeginFrame();
-		gui.DrawPanel();
-		gui.EndFrame();
+		gui->BeginFrame();
+		gui->DrawPanel();
+		gui->EndFrame();
 
 		glfwSwapBuffers(window);	// Swap front and back buffers
 	}
