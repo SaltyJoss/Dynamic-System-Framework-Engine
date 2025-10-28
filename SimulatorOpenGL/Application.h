@@ -8,9 +8,6 @@
 class Application
 {
 public:
-	Application() = default;
-	~Application() = default;
-
 	bool Initialise();
 	void Run();
 	void Shutdown();
