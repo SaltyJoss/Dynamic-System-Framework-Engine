@@ -23,11 +23,10 @@ void GUIManager::DrawPanel() {
 		  ImGuiWindowFlags_NoTitleBar
 		| ImGuiWindowFlags_NoResize
 		| ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoScrollbar
-		| ImGuiWindowFlags_NoBringToFrontOnFocus;
+		| ImGuiWindowFlags_NoScrollbar;
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	ImGui::Begin("Robotic-Arm Simualtor V0.0", nullptr, panelFlags);
 
 	ContainerPanel();
@@ -36,9 +35,10 @@ void GUIManager::DrawPanel() {
 }
 
 void GUIManager::ContainerPanel() {
-	titleBar = std::make_unique<TitleBarPanel>(windowManager->GetWindow());
+	if (!titleBar)
+		titleBar = std::make_unique<TitleBarPanel>(windowManager);
 
-	titleBar->Render(20.0f);
+	titleBar->Render(30.0f);
 
 	ctrlPanel.Render();
 	ImGui::SameLine();

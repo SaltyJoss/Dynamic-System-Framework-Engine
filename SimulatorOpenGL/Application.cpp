@@ -44,12 +44,6 @@ bool Application::Initialise()
 
 void Application::Run()
 {
-	if (gui) {
-		gui->BeginFrame();
-		gui->DrawPanel();
-		gui->EndFrame();
-	}
-
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
