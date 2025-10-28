@@ -22,8 +22,8 @@ public:
 private:
 	ImVec2 winSize;
 	ImVec2 padding;
-	float debugHeight;
-	float ctrlPanelWidth;
+	float debugHeight = 0.0f;
+	float ctrlPanelWidth = 0.0f;
 
 	void ContainerPanel();
 	WindowManager* windowManager;

@@ -162,6 +162,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="SimulationManager.cpp" />
     <ClCompile Include="SimulationPanels.cpp" />
+    <ClCompile Include="Styles.cpp" />
     <ClCompile Include="TitleBarPanel.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="VBO.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="shaderClass.h" />
     <ClInclude Include="SimulationManager.h" />
     <ClInclude Include="SimulationPanels.h" />
+    <ClInclude Include="Styles.h" />
     <ClInclude Include="TitleBarPanel.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />

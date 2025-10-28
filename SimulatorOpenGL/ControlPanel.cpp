@@ -5,21 +5,21 @@
 void ControlPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth)
 {
     ImGui::SetCursorPos(ImVec2(padding.x, padding.y));
-    ImGui::BeginChild("ControlPanel", ImVec2(ctrlPanelWidth - padding.x * 2, winSize.y - debugHeight - padding.y * 2), true);
-
-    static char text[128] = "";
-    ImGui::InputText("Enter text", text, IM_ARRAYSIZE(text));
-
-    ImGui::Text("Controls");
-    static bool enabled = true;
-    ImGui::Checkbox("Enable Feature", &enabled);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(33, 33, 33, 200));
+    ImGui::BeginChild("ControlPanel", ImVec2(ctrlPanelWidth - padding.x * 2, winSize.y - debugHeight - padding.y * 2), false);
+    ImGui::Text("CONTROL PANEL");
+    ImGui::Separator();
 
     RenderSimulationControls();
+    RenderObjectControls();
+    RenderLinkControls();
     RenderCameraControls();
+
     RenderDisplaySettings();
     RenderStats();
 
     ImGui::EndChild();
+    ImGui::PopStyleColor(1);
 }
 
 void ControlPanel::HandleInput()
@@ -29,12 +29,23 @@ void ControlPanel::HandleInput()
 
 void ControlPanel::RenderSimulationControls()
 {
+    ImGui::SeparatorText("Simulation Controls");
+    static bool physicsEnabled = true;
+    static bool gravityEnabled = true;
 
+    ImGui::Checkbox("Enable Physcics", &physicsEnabled);
+    ImGui::Checkbox("Enable Gravity", &gravityEnabled);
 }
 
 void ControlPanel::RenderCameraControls()
 {
+    ImGui::SeparatorText("Camera Controls");
+    static char text[64] = "";
+    ImGui::InputText("Enter text", text, IM_ARRAYSIZE(text));
 
+    ImGui::Text("Controls");
+    static bool enabled = true;
+    ImGui::Checkbox("Enable Feature", &enabled);
 }
 
 void ControlPanel::RenderObjectControls()
@@ -46,25 +57,17 @@ void ControlPanel::RenderObjectControls()
 
     ImGui::InputText("Velocity", velocityBuf, IM_ARRAYSIZE(velocityBuf));
     ImGui::InputText("Torque", torqueBuf, IM_ARRAYSIZE(torqueBuf));
-
-    // Convert text to float when needed
-    velocity = std::stof(velocityBuf);
-    torque = std::stof(torqueBuf);
-
 }
 
 void ControlPanel::RenderLinkControls()
 {
-    ImGui::SeparatorText("Link Settings");
+    ImGui::SeparatorText("Link Controls");
 
     static char linkLengthBuf[64] = "";
     static char dampingBuf[64] = "";
 
     ImGui::InputText("Link Length", linkLengthBuf, IM_ARRAYSIZE(linkLengthBuf));
     ImGui::InputText("Damping", dampingBuf, IM_ARRAYSIZE(dampingBuf));
-
-    linkLength = std::atof(linkLengthBuf);
-    damping = std::atof(dampingBuf);
 }
 
 void ControlPanel::RenderDisplaySettings()

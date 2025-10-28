@@ -10,8 +10,9 @@ void SimulationPanels::Render(ImVec2 winSize, ImVec2 padding, float debugHeight,
         | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse;
 
-    ImGui::SetCursorPos(ImVec2(ctrlPanelWidth + padding.x, padding.y));
-    ImGui::BeginChild("Simulation", ImVec2(winSize.x - ctrlPanelWidth - padding.x * 2, winSize.y - debugHeight - padding.y * 2), true, simPanelFlags);
+    ImGui::SetCursorPos(ImVec2(ctrlPanelWidth, padding.y));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(33, 33, 33, 200));
+    ImGui::BeginChild("Simulation", ImVec2(winSize.x - ctrlPanelWidth - padding.x, winSize.y - debugHeight - padding.y * 2), true, simPanelFlags);
     if (ImGui::BeginTabBar("Simulation")) {
         if (ImGui::BeginTabItem("Main Simulation")) {
             MainPanel();
@@ -26,6 +27,7 @@ void SimulationPanels::Render(ImVec2 winSize, ImVec2 padding, float debugHeight,
         ImGui::EndTabBar();
     }
     ImGui::EndChild();
+    ImGui::PopStyleColor();
 }
 
 void SimulationPanels::MainPanel() {
