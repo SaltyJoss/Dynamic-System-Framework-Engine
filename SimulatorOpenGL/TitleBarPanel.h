@@ -1,3 +1,7 @@
+/*
+ NOT CURRENT USED IN THE PROJECT
+*/
+
 #ifndef TITLE_BAR_PANEL_H
 #define TITLE_BAR_PANEL_H
 

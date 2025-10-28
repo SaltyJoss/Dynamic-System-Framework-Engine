@@ -1,3 +1,6 @@
+/*
+ NOT CURRENT USED IN THE PROJECT
+*/
 
 #include "ResourceManager.h"
 #include "TitleBarPanel.h"

@@ -20,6 +20,11 @@ public:
 	void DrawPanel();
 
 private:
+	ImVec2 winSize;
+	ImVec2 padding;
+	float debugHeight;
+	float ctrlPanelWidth;
+
 	void ContainerPanel();
 	WindowManager* windowManager;
 
