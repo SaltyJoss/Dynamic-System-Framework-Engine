@@ -34,14 +34,14 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{be36cec4-14de-419e-bfbb-ec4e0140494f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\UI">
-      <UniqueIdentifier>{e5df68e2-eb4c-45a5-897d-8f7b82c9d6a8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Renderer">
       <UniqueIdentifier>{c348c282-27f2-4537-94bf-e8c7390bb546}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\GUI\ImGui">
       <UniqueIdentifier>{8b5e1e37-bc82-4819-8af7-799153430861}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GUI">
+      <UniqueIdentifier>{e5df68e2-eb4c-45a5-897d-8f7b82c9d6a8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -105,6 +105,15 @@
     <ClCompile Include="SimulationPanels.cpp">
       <Filter>Source Files\GUI</Filter>
     </ClCompile>
+    <ClCompile Include="WindowManager.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleBarPanel.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.vert">
@@ -114,12 +123,12 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="DebugLogEntry.h">
-      <Filter>Header Files\UI</Filter>
+      <Filter>Header Files\GUI</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GUIManager.h">
-      <Filter>Header Files\UI</Filter>
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Header Files\Core</Filter>
@@ -137,10 +146,10 @@
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="ControlPanel.h">
-      <Filter>Header Files\UI</Filter>
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
     <ClInclude Include="SimulationPanels.h">
-      <Filter>Header Files\UI</Filter>
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files\Renderer</Filter>
@@ -152,7 +161,16 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DebugPanel.h">
-      <Filter>Header Files\UI</Filter>
+      <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowManager.h">
+      <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleBarPanel.h">
+      <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

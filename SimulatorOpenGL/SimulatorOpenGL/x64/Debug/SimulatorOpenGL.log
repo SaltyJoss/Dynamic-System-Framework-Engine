@@ -1,2 +1,54 @@
-﻿  Application.cpp
-  SimulatorOpenGL.vcxproj -> C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\x64\Debug\SimulatorOpenGL.exe
+﻿  GUIManager.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35): error C2665: 'TitleBarPanel::TitleBarPanel': no overloaded function could convert all the argument types
+  (compiling source file 'GUIManager.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\TitleBarPanel.h(24,1):
+      could be 'TitleBarPanel::TitleBarPanel(TitleBarPanel &&)'
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35):
+          'TitleBarPanel::TitleBarPanel(TitleBarPanel &&)': cannot convert argument 1 from '_Ty' to 'TitleBarPanel &&'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+              C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,56):
+              Reason: cannot convert from '_Ty' to 'TitleBarPanel'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\TitleBarPanel.h(24,1):
+      or       'TitleBarPanel::TitleBarPanel(const TitleBarPanel &)'
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35):
+          'TitleBarPanel::TitleBarPanel(const TitleBarPanel &)': cannot convert argument 1 from '_Ty' to 'const TitleBarPanel &'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+              C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,56):
+              Reason: cannot convert from '_Ty' to 'const TitleBarPanel'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\TitleBarPanel.h(9,2):
+      or       'TitleBarPanel::TitleBarPanel(WindowManager *)'
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35):
+          'TitleBarPanel::TitleBarPanel(WindowManager *)': cannot convert argument 1 from '_Ty' to 'WindowManager *'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+              C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,56):
+              Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or parenthesized function-style cast
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35):
+      while trying to match the argument list '(_Ty)'
+          with
+          [
+              _Ty=GLFWwindow *
+          ]
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(3630,35):
+      the template instantiation context (the oldest one first) is
+          C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\GUIManager.cpp(39,18):
+          see reference to function template instantiation 'std::unique_ptr<TitleBarPanel,std::default_delete<TitleBarPanel>> std::make_unique<TitleBarPanel,GLFWwindow*,0>(GLFWwindow *&&)' being compiled
+  
+  Application.cpp
+  Generating Code...

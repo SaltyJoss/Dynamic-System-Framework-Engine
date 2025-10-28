@@ -1,9 +1,9 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <memory>
-#include <GLFW/glfw3.h>
+#include "CoreIncludes.h"
 #include "GUIManager.h"
+#include "WindowManager.h"
 
 class Application
 {
@@ -16,8 +16,9 @@ public:
 	void Shutdown();
 
 private:
+	std::unique_ptr<GUIManager> gui;
+	WindowManager windowManager;
 	GLFWwindow* window = nullptr;
-	std::unique_ptr<GUIManager> gui; // persistent
 };
 
 #endif
