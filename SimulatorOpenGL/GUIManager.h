@@ -5,8 +5,9 @@
 #include "ControlPanel.h"
 #include "SimulationPanels.h"
 #include "DebugPanel.h"
+#include "WindowManager.h"
 #include "ResourceManager.h"
-#include "TitleBarPanel.h"
+//#include "TitleBarPanel.h"
 
 class GUIManager
 {
@@ -22,7 +23,7 @@ private:
 	void ContainerPanel();
 	WindowManager* windowManager;
 
-	std::unique_ptr<TitleBarPanel> titleBar;
+	//std::unique_ptr<TitleBarPanel> titleBar;
 	ControlPanel ctrlPanel;
 	SimulationPanels simPanel;
 	DebugPanel debug;

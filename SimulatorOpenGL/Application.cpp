@@ -12,7 +12,7 @@ bool Application::Initialise()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
@@ -61,13 +61,12 @@ void Application::Run()
 	}
 }
 
-void Application::Shutdown()
-{
+void Application::Shutdown() {
 	ResourceManager::CleanUp();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	glfwDestroyWindow(window);
 	glfwTerminate();
-
+	exit(0);
 }

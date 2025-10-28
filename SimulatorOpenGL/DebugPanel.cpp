@@ -3,7 +3,7 @@
 #include <string>
 
 void DebugPanel::Render() {
-    ImGui::BeginChild("Output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("Output", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (ImGui::BeginTabBar("DEBUGGING")) {
         if (ImGui::BeginTabItem("Log")) {
             DebugLog();

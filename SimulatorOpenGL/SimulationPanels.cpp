@@ -4,7 +4,7 @@
 
 void SimulationPanels::Render() {
     ImVec2 avail = ImGui::GetContentRegionAvail();
-    ImGui::BeginChild("Simulation", avail, false);
+    ImGui::BeginChild("Simulation", avail, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (ImGui::BeginTabBar("Simulation")) {
         if (ImGui::BeginTabItem("Main Simulation")) {
             MainPanel();
@@ -54,7 +54,7 @@ void SimulationPanels::SecondaryPanels() {
         };
 
     // Draw all 4 panels in a 2x2 grid
-    DrawMock("Main Sim", ImVec2(0, 0));
+    DrawMock("Angle-1", ImVec2(0, 0));
     DrawMock("Angle-2", ImVec2(panelW + spacing, 0));
     DrawMock("Angle-3", ImVec2(0, panelH + spacing));
     DrawMock("Angle-4", ImVec2(panelW + spacing, panelH + spacing));

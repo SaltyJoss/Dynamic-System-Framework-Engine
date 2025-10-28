@@ -13,12 +13,14 @@ void TitleBarPanel::InitIcons() {
 TitleBarPanel::TitleBarPanel() : windowManager(nullptr), iconMinimiseTex(0), iconMaximiseTex(0), iconCloseTex(0) {}
 
 void TitleBarPanel::Render(float height) {
-	ImVec2 winSize = ImGui::GetWindowSize();
-	ImGui::BeginChild("Sim", ImVec2(winSize.x, height), false);
 
-	float buttonSize = height * 0.9f;
+	ImVec2 winSize = ImGui::GetWindowSize();
+	ImGui::BeginChild("Sim", ImVec2(winSize.x, height), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	float buttonSize = height * 0.5f;
     float padding = 5.0f;
-    ImGui::SetCursorPosX(winSize.x - (buttonSize + padding) * 3);
+    float totalWidth = 3 * buttonSize + 2 * padding; // 3 buttons + 2 spaces
+    ImGui::SetCursorPosX(winSize.x - totalWidth - 40);
 
     DrawMinimiseButton(buttonSize);
     ImGui::SameLine(0, padding);
@@ -47,6 +49,7 @@ void TitleBarPanel::DrawMaximiseButton(float size) {
 void TitleBarPanel::DrawCloseButton(float size) {
     if (ImGui::ImageButton("close", (ImTextureID)(intptr_t)iconCloseTex,
         ImVec2(size, size))) {
-        windowManager->Close();
+        GLFWwindow* window = windowManager->GetWindow();  // Access the main GLFW window
+        glfwSetWindowShouldClose(window, true); 
     }
 }
