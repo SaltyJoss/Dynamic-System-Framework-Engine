@@ -1,6 +1,5 @@
 #include "GUIManager.h"
 
-
 GUIManager::GUIManager(WindowManager* manager) : windowManager(manager) {}
 
 void GUIManager::BeginFrame() 
@@ -27,6 +26,7 @@ void GUIManager::DrawPanel() {
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(20, 20, 20, 255));
 	ImGui::Begin("Robotic-Arm Simualtor V0.0", nullptr, panelFlags);
 
 	winSize = ImGui::GetIO().DisplaySize;
@@ -34,10 +34,10 @@ void GUIManager::DrawPanel() {
 	debugHeight = 300.0f;
 	ctrlPanelWidth = 400.0f;
 
-
 	ContainerPanel();
 
 	ImGui::End();
+	ImGui::PopStyleColor();
 }
 
 void GUIManager::ContainerPanel() {

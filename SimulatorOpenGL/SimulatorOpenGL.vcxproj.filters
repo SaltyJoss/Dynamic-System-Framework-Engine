@@ -43,6 +43,9 @@
     <Filter Include="Header Files\GUI">
       <UniqueIdentifier>{e5df68e2-eb4c-45a5-897d-8f7b82c9d6a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GUI\Stylisitc">
+      <UniqueIdentifier>{093dfb76-ae82-401d-b5b6-6672b52bed7e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -114,6 +117,9 @@
     <ClCompile Include="ResourceManager.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Styles.cpp">
+      <Filter>Source Files\GUI\Stylisitc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.vert">
@@ -171,6 +177,9 @@
     </ClInclude>
     <ClInclude Include="ResourceManager.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Styles.h">
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

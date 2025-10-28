@@ -17,6 +17,7 @@ C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\shaderClass.
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Application.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Application.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulationManager.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\SimulationManager.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulationPanels.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\SimulationPanels.obj
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Styles.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Styles.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\TitleBarPanel.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\TitleBarPanel.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\VAO.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VAO.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\VBO.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VBO.obj
