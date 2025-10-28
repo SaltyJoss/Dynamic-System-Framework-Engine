@@ -10,16 +10,13 @@ void DebugPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float
         | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse;
 
-    ImGui::SetCursorPos(ImVec2(0, winSize.y - debugHeight));
-
-    ImGui::BeginChild("Output", ImVec2(winSize.x, debugHeight), false, debugPanelFlags);
+    ImGui::SetCursorPos(ImVec2(padding.x, winSize.y - debugHeight - padding.y));
+    ImGui::BeginChild("Output", ImVec2(winSize.x - padding.x * 2, debugHeight), false, debugPanelFlags);
     if (ImGui::BeginTabBar("DEBUGGING")) {
         if (ImGui::BeginTabItem("Log")) {
             DebugLog();
             ImGui::EndTabItem();
         }
-
-        ImGui::SameLine();
         
         if (ImGui::BeginTabItem("Error List")) {
             ErrorList();

@@ -1,5 +1,2 @@
-﻿  Application.cpp
-  GUIManager.cpp
-  Main.cpp
-  Generating Code...
+﻿  DebugPanel.cpp
   SimulatorOpenGL.vcxproj -> C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\x64\Debug\SimulatorOpenGL.exe
