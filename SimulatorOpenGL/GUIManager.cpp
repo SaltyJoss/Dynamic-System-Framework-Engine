@@ -1,5 +1,6 @@
 #include <GLFW/glfw3.h>
 #include "ControlPanel.h"
+#include "SimulationPanels.h"
 #include "GUIManager.h"
 
 // Begin Frame Method
@@ -18,17 +19,25 @@ void GUIManager::EndFrame()
 }
 
 // Draw Panel method 
-void GUIManager::DrawPanel() 
-{
-    // Window flags: fixed, no collapse, no resize, no title bar
-    ImGuiWindowFlags panelFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
+void GUIManager::DrawPanel() {
+	ImGuiWindowFlags panelFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
+	ImGui::Begin("Robotic-Arm Simualtor V0.0", nullptr, panelFlags);
 
+	ContainerPanel();
 
-
-    // Simulation Canvas
-    ImGui::SetNextWindowPos(ImVec2(300, 0));
-    ImGui::SetNextWindowSize(ImVec2(980, 720));
-    ImGui::Begin("Simulation Canvas", nullptr, panelFlags);
-    ImGui::Text("3D render goes here");
-    ImGui::End();
+	ImGui::End();
 }
+
+void GUIManager::ContainerPanel() {
+	ControlPanel ctrlPanel;
+	SimulationPanels simPanel;
+
+	ctrlPanel.Render();
+	ImGui::SameLine();
+	simPanel.Render();
+	
+
+}
+

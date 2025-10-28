@@ -9,6 +9,9 @@ public:
 	void BeginFrame();
 	void EndFrame();
 	void DrawPanel();
+
+private:
+	void ContainerPanel();
 };
 
 #endif
