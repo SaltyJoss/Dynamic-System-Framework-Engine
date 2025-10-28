@@ -1,0 +1,21 @@
+#ifndef DEBUG_PANEL_H
+#define DEBUG_PANEL_H
+
+#include "CoreIncludes.h"
+
+class DebugPanel {
+public:
+	void Render();
+	void AddLog(const std::string& msg, bool error = false);
+
+private:
+	struct LogEntry { std::string text; bool isError; };
+	std::vector<LogEntry> entries;
+	bool autoScroll = true;
+
+	ImVec4 GetColour(bool error) const;
+	void DebugLog();
+	void ErrorList();
+};
+
+#endif
