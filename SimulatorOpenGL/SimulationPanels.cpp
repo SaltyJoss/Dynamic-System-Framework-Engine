@@ -3,7 +3,7 @@
 #include <string>
 
 void SimulationPanels::Render() {
-    ImVec2 avail = ImGui::GetContentRegionAvail(); // safe size below title bar
+    ImVec2 avail = ImGui::GetContentRegionAvail();
     ImGui::BeginChild("Simulation", avail, false);
     if (ImGui::BeginTabBar("Simulation")) {
         if (ImGui::BeginTabItem("Main Simulation")) {
@@ -26,12 +26,11 @@ void SimulationPanels::MainPanel() {
     float w = std::max(avail.x, 1.0f);
     float h = std::max(avail.y, 1.0f);
 
-    ImVec2 pos = ImGui::GetCursorPos();
-
+    ImVec2 pos = ImGui::GetCursorScreenPos();
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    draw->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(100, 150, 250, 255));
-    draw->AddRect(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(255, 255, 255, 255));
-    draw->AddText(ImVec2(pos.x + 5, pos.y + 5), IM_COL32(255, 255, 255, 255), "Main Simulation");
+    draw->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(100,150,250,255));
+    draw->AddRect(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(255,255,255,255));
+    draw->AddText(ImVec2(pos.x + 5, pos.y + 5), IM_COL32(255,255,255,255), "Main Simulation");
 }
 
 void SimulationPanels::SecondaryPanels() {

@@ -4,23 +4,21 @@
 
 void ControlPanel::Render()
 {
-    // Position and size for the control panel
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(300, ImGui::GetIO().DisplaySize.y)); // dynamic height
-    ImGuiWindowFlags panelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    ImGui::Begin("Control Panel", nullptr, panelFlags);
+    ImGui::BeginChild("ControlPanel", ImVec2(400, ImGui::GetIO().DisplaySize.y), true);
 
-    // Example widget
     static char text[128] = "";
     ImGui::InputText("Enter text", text, IM_ARRAYSIZE(text));
+
+    ImGui::Text("Controls");
+    static bool enabled = true;
+    ImGui::Checkbox("Enable Feature", &enabled);
 
     RenderSimulationControls();
     RenderCameraControls();
     RenderDisplaySettings();
     RenderStats();
 
-    ImGui::End();
-
+    ImGui::EndChild();
 }
 
 void ControlPanel::HandleInput()
@@ -76,4 +74,10 @@ void ControlPanel::RenderDisplaySettings()
 void ControlPanel::RenderStats()
 {
 
+}
+
+void ControlPanel::SimulationStats(const char* label, int* idx, float* velocity, float* torque, float* damping, float* position)
+{
+    ImGui::PlotLines("Sin", [](void* velocity, int idx) { return sinf(idx * 0.2f); }, NULL, 100);
+    ImGui::PlotLines("Cos", [](void* velocity, int idx) { return cosf(idx * 0.2f); }, NULL, 100);
 }
