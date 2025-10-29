@@ -7,6 +7,7 @@
 #include "DebugPanel.h"
 #include "WindowManager.h"
 #include "ResourceManager.h"
+#include "Styles.h"
 //#include "TitleBarPanel.h"
 
 class GUIManager
@@ -32,6 +33,7 @@ private:
 	ControlPanel ctrlPanel;
 	SimulationPanels simPanel;
 	DebugPanel debug;
+	StyleModes styles;
 };
 
 #endif

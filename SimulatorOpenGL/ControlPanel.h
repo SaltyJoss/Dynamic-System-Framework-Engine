@@ -32,11 +32,11 @@ private:
     int idx;
 
     // Physics parameters
-    float velocity = 0.0f;
-    float torque = 0.0f;
-    float linkLength = 1.0f;
-    float damping = 0.1f;
-    float position = 0.0f;
+    float velocity      = 0.0f;
+    float torque        = 0.0f;
+    float linkLength    = 1.0f;
+    float damping       = 0.1f;
+    float position      = 0.0f;
 
 };
 

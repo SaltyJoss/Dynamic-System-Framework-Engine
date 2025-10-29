@@ -11,10 +11,9 @@ void DebugPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float
         | ImGuiWindowFlags_NoScrollWithMouse;
 
     ImGui::SetCursorPos(ImVec2(padding.x, winSize.y - debugHeight - padding.y));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(33,33,33,200));
     ImGui::BeginChild("Output", ImVec2(winSize.x - padding.x * 2, debugHeight), false, debugPanelFlags);
 
-    float tabWidth = (ctrlPanelWidth/2 - padding.x * 2) / 2.0f;
+   /* float tabWidth = (ctrlPanelWidth / 2 - padding.x * 2) / 2.0f;
     int currentDebugTab=0;
 
     if (ImGui::Button("Output", ImVec2(tabWidth, 25))) currentDebugTab = 0;
@@ -25,9 +24,9 @@ void DebugPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float
 
     // Draw selected content
     if (currentDebugTab == 0) DebugLog();
-    else if (currentDebugTab == 1) ErrorList();
+    else if (currentDebugTab == 1) ErrorList();*/
 
-    /*if (ImGui::BeginTabBar("DEBUGGING")) {
+    if (ImGui::BeginTabBar("DEBUGGING")) {
     if (ImGui::BeginTabItem("Log")) {
         DebugLog();
         ImGui::EndTabItem();
@@ -38,10 +37,9 @@ void DebugPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
-}*/
+}
 
     ImGui::EndChild();
-    ImGui::PopStyleColor();
 }
 
 void DebugPanel::DebugLog() {

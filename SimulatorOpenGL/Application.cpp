@@ -49,7 +49,24 @@ void Application::Run()
 
 		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
+		//glViewport(0, 0, display_w, display_h);
+		
+		float ctrlPanelWidth = 400.0f;
+		float debugHeight = 300.0f;
+		float paddingY = 10.0f;
+
+		// --- Render the simulation first ---
+		ImVec2 simPos = { ctrlPanelWidth, paddingY };
+		ImVec2 simSize = { display_w - ctrlPanelWidth, display_h - debugHeight - paddingY };
+
+		// Convert ImGui coordinates (top-left) to OpenGL (bottom-left)
+		glViewport(
+			static_cast<int>(simPos.x),
+			static_cast<int>(display_h - simSize.y - simPos.y),
+			static_cast<int>(simSize.x),
+			static_cast<int>(simSize.y)
+		);
+
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
