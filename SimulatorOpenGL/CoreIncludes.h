@@ -8,8 +8,8 @@
 #include <vector>
 #include <memory>
 
-// Math Logic Library
-// THIS IS GOING INCLUDE MY MATHEMATICAL LOGIC
+// Math Logic Libraries (GLM, Eigen, My own)
+#include "glm/gtc/type_ptr.hpp"
 
 // Graphics
 #include <glad/glad.h>
