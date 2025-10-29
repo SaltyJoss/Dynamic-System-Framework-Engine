@@ -4,6 +4,7 @@
 #include "CoreIncludes.h"
 #include "GUIManager.h"
 #include "WindowManager.h"
+#include "SimulationManager.h"
 
 class Application
 {
@@ -16,6 +17,7 @@ private:
 	std::unique_ptr<GUIManager> gui;
 	WindowManager windowManager;
 	GLFWwindow* window = nullptr;
+	std::unique_ptr<SimulationManager> simulation;
 };
 
 #endif
