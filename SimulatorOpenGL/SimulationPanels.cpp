@@ -35,8 +35,8 @@ void SimulationPanels::MainPanel() {
 
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    draw->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(100,150,250,255));
-    draw->AddRect(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32(255,255,255,255));
+    draw->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32_BLACK);
+    draw->AddRect(pos, ImVec2(pos.x + w, pos.y + h), IM_COL32_BLACK);
     draw->AddText(ImVec2(pos.x + 5, pos.y + 5), IM_COL32(255,255,255,255), "Main Simulation");
 }
 

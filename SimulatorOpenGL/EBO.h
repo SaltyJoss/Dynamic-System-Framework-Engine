@@ -3,15 +3,14 @@
 
 #include <glad/glad.h>
 
-class EBO
-{
+class EBO {
 public:
-	GLuint ID;
-	EBO(GLuint* indices, GLsizeiptr size);	// Constructor that generates an Element Buffer Object and links it to indices
-
-	void Bind();	// Binds the EBO
-	void Unbind();	// Unbinds the EBO
-	void Delete();	// Deletes the EBO
+    GLuint ID;
+    EBO() : ID(0) {} // default constructor
+    void Init(const GLuint* indices, GLsizeiptr size);
+    void Bind();	// Binds the VBO
+    void Unbind();	// Unbinds the VBO
+    void Delete();	// Deletes the VBO
 };
 
 #endif

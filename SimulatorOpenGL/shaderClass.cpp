@@ -69,19 +69,21 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 	if (type != "PROGRAM")
 	{
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
-		if (hasCompiled == GL_FALSE);
+		if (hasCompiled == GL_FALSE)
 		{
 			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-			std::cout << "[SHADER_COMPILATION_ERROR]:\t" << type << "\n" << std::endl;
+			std::cout << "[SHADER_COMPILATION_ERROR]: " << type << " ->\n\t" 
+				<< infoLog << std::endl;
 		}
 	}
 	else
 	{
 		glGetProgramiv(shader, GL_COMPILE_STATUS, &hasCompiled);
-		if (hasCompiled == GL_FALSE);
+		if (hasCompiled == GL_FALSE)
 		{
 			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-			std::cout << "[SHADER_LINKING_ERROR]:\t" << type << "\n" << std::endl;
+			std::cout << "[SHADER_LINKING_ERROR]: " << type << " ->\n\t" 
+				<< infoLog << std::endl;
 		}
 	}
 }

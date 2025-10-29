@@ -25,6 +25,8 @@ bool Application::Initialise()
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD" << std::endl; return false; }
 
+	glEnable(GL_DEPTH_TEST);
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -36,8 +38,10 @@ bool Application::Initialise()
 
 	windowManager.SetupWindow(window);
 	gui = std::make_unique<GUIManager>(&windowManager);
+	simulation = std::make_unique<SimulationManager>();
 
 	gui->InitResources();
+	simulation->Init();
 
 	return true;
 }
@@ -55,20 +59,22 @@ void Application::Run()
 		float debugHeight = 300.0f;
 		float paddingY = 10.0f;
 
-		// --- Render the simulation first ---
-		ImVec2 simPos = { ctrlPanelWidth, paddingY };
-		ImVec2 simSize = { display_w - ctrlPanelWidth, display_h - debugHeight - paddingY };
+		// --- Renders simulation first ---
+		// Top-right simulation panel
+		float simWidth = display_w - ctrlPanelWidth;
+		float simHeight = display_h - debugHeight;
+		float simX = ctrlPanelWidth;                  // start after control panel
+		float simY = display_h - simHeight;           // top-left corner in OpenGL is bottom-left, so shift down
 
-		// Convert ImGui coordinates (top-left) to OpenGL (bottom-left)
-		glViewport(
-			static_cast<int>(simPos.x),
-			static_cast<int>(display_h - simSize.y - simPos.y),
-			static_cast<int>(simSize.x),
-			static_cast<int>(simSize.y)
-		);
+		glViewport(static_cast<int>(simX),
+			static_cast<int>(simY),
+			static_cast<int>(simWidth),
+			static_cast<int>(simHeight));
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		simulation->Render();
 
 		gui->BeginFrame();
 		gui->DrawPanel();
