@@ -5,7 +5,6 @@
 void ControlPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth)
 {
     ImGui::SetCursorPos(ImVec2(padding.x, padding.y));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(33, 33, 33, 200));
     ImGui::BeginChild("ControlPanel", ImVec2(ctrlPanelWidth - padding.x * 2, winSize.y - debugHeight - padding.y * 2), false);
     ImGui::Text("CONTROL PANEL");
     ImGui::Separator();
@@ -19,7 +18,6 @@ void ControlPanel::Render(ImVec2 winSize, ImVec2 padding, float debugHeight, flo
     RenderStats();
 
     ImGui::EndChild();
-    ImGui::PopStyleColor(1);
 }
 
 void ControlPanel::HandleInput()

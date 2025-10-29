@@ -26,7 +26,7 @@ void GUIManager::DrawPanel() {
 
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(20, 20, 20, 255));
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(33, 33, 33, 255));
 	ImGui::Begin("Robotic-Arm Simualtor V0.0", nullptr, panelFlags);
 
 	winSize = ImGui::GetIO().DisplaySize;
@@ -52,8 +52,8 @@ void GUIManager::ContainerPanel() {
 }
 
 void GUIManager::InitResources() {
+	styles.DarkMode();
 	ResourceManager::LoadTexture("close", "assets/close.png");
 	ResourceManager::LoadTexture("minimise", "assets/minimise.png");
 	ResourceManager::LoadTexture("maximise", "assets/maximise.png");
 }
-
