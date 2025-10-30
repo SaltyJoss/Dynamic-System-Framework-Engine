@@ -34,7 +34,7 @@ namespace render {
 
 	protected:
 		uint32_t _FBO = 0;
-		uint32_t _textID = 0;
+		uint32_t _texID = 0;
 		uint32_t _depthID = 0;
 
 		int32_t _width = 0;
