@@ -120,7 +120,7 @@
     <ClCompile Include="Source\Elements\Mesh.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\ResourceManager.cpp">
+    <ClCompile Include="Source\Elements\Light.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
     <ClCompile Include="Source\Elements\VertexHolder.cpp">
@@ -162,6 +162,9 @@
     <ClCompile Include="Source\Elements\Camera.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Elements\Input.cpp">
+      <Filter>Source Files\Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Application.h">
@@ -188,7 +191,7 @@
     <ClInclude Include="Source\Elements\Mesh.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Elements\ResourceManager.h">
+    <ClInclude Include="Source\Elements\Light.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
     <ClInclude Include="Source\Elements\VertexHolder.h">
@@ -259,6 +262,9 @@
     </ClInclude>
     <ClInclude Include="Libraries\lib\imgui\imconfig.h">
       <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Elements\Input.h">
+      <Filter>Header Files\Elements</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

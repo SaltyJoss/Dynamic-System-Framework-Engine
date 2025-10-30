@@ -8,7 +8,6 @@
 #include "UI/SimulationPanels.h"
 #include "UI/DebugPanel.h"
 #include "UI/Styles.h"
-#include "Elements/ResourceManager.h"
 
 #include "Render/SimulationManager.h"
 
