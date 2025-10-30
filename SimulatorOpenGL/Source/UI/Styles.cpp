@@ -1,4 +1,10 @@
+#include "ch.h"
 #include "Styles.h"
+
+// ImGui
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 void StyleModes::DarkMode() {
     ImGuiStyle& style = ImGui::GetStyle();
