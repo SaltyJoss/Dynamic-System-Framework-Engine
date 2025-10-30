@@ -2,9 +2,6 @@
 #define SIMULATION_MANAGER_H
 
 #include "ch.h"
-#include "Elements/VAO.h"
-#include "Elements/VBO.h"
-#include "Elements/EBO.h"
 #include "Shader/shaderClass.h"
 
 class SimulationManager

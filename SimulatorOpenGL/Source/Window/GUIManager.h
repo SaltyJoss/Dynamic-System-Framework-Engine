@@ -1,19 +1,23 @@
 #ifndef GUI_MANAGER_H
 #define GUI_MANAGER_H
 
-#include "../ch.h"
-#include "../UI/ControlPanel.h"
-#include "../UI/SimulationPanels.h"
-#include "../UI/DebugPanel.h"
-#include "../Elements/ResourceManager.h"
-#include "../UI/Styles.h"
-#include "../Render/SimulationManager.h"
+#include "ch.h"
 #include "WindowManager.h"
+
+#include "UI/ControlPanel.h"
+#include "UI/SimulationPanels.h"
+#include "UI/DebugPanel.h"
+#include "UI/Styles.h"
+#include "Elements/ResourceManager.h"
+
+#include "Render/SimulationManager.h"
+
+using namespace window;
 
 class GUIManager
 {
 public:
-	explicit GUIManager(WindowManager* windowManager);
+	explicit GUIManager(GLWindow* _window);
 
 	void InitResources();
 	void BeginFrame();
@@ -27,7 +31,7 @@ private:
 	float ctrlPanelWidth = 0.0f;
 
 	void ContainerPanel();
-	WindowManager* windowManager;
+	window::GLWindow* _window;
 
 	ControlPanel ctrlPanel;
 	SimulationPanels simPanel;

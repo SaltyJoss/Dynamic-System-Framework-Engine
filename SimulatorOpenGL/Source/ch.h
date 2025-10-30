@@ -1,5 +1,4 @@
-#ifndef CORE_HEADER_H
-#define CORE_HEADER_H
+#pragma once
 
 // std includes
 #include <string>
@@ -25,5 +24,4 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#endif
-
+#define BIND_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
