@@ -1,0 +1,432 @@
+﻿  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_glfw.cpp
+  imgui_impl_opengl3.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  Application.cpp
+  Camera.cpp
+  Mesh.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Application.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Elements/Mesh.cpp')
+  
+  ResourceManager.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Elements/ResourceManager.cpp')
+  
+  VertexHolder.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Elements/VertexHolder.cpp')
+  
+  Element.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Elements/Element.cpp')
+  
+  Main.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Main.cpp')
+  
+  GUIContext.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,7): error C2039: 'string': is not a member of 'std'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,14): error C3646: 'header': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,7): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,27): error C2039: 'vector': is not a member of 'std'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,16): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,33): error C2143: syntax error: missing ',' before '<'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,22): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,16): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,31): error C2143: syntax error: missing ',' before '&'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,3): error C2535: 'elements::VertexHolder::VertexHolder(const int)': member function already defined or declared
+  (compiling source file 'Source/Render/GUIContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,3):
+      see declaration of 'elements::VertexHolder::VertexHolder'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,3): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,13): error C3646: '_pos': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,8): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,3): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,13): error C3646: '_normal': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,8): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(6,20): error C2614: 'elements::VertexHolder': illegal member initialization: '_pos' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(6,28): error C2614: 'elements::VertexHolder': illegal member initialization: '_normal' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,70): error C2065: 'pos': undeclared identifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,84): error C2065: 'normal': undeclared identifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,65): error C2614: 'elements::VertexHolder': illegal member initialization: '_pos' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,76): error C2614: 'elements::VertexHolder': illegal member initialization: '_normal' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,41): error C2039: 'vector': is not a member of 'std'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,47): error C2143: syntax error: missing ',' before '<'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(19,10): error C3646: '_VAO': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(19,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(20,10): error C3646: '_VBO': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(20,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(21,10): error C3646: '_EBO': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(21,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,25): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_VAO' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,36): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_VBO' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,47): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_EBO' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(29,30): error C2061: syntax error: identifier 'int32_t'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,20): error C3646: 'getTexture': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,31): error C2059: syntax error: ')'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,36): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,12): error C3646: '_FBO': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,17): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,20): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,12): error C3646: '_texID': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,19): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,22): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,12): error C3646: '_depthID': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,21): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,24): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,11): error C3646: '_width': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,18): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,21): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,11): error C3646: '_height': unknown override specifier
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,19): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,22): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(27,19): error C2614: 'render::FrameBuffer': illegal member initialization: '_FBO' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(27,30): error C2614: 'render::FrameBuffer': illegal member initialization: '_depthID' is not a base or member
+  (compiling source file 'Source/Render/GUIContext.cpp')
+  
+  OpenGLBufferManager.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Render/OpenGLBufferManager.cpp')
+  
+  OpenGLContext.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,7): error C2039: 'string': is not a member of 'std'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,14): error C3646: 'header': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Window\Window.h(14,7): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,27): error C2039: 'vector': is not a member of 'std'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,16): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,33): error C2143: syntax error: missing ',' before '<'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,22): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,16): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,31): error C2143: syntax error: missing ',' before '&'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,3): error C2535: 'elements::VertexHolder::VertexHolder(const int)': member function already defined or declared
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(8,3):
+      see declaration of 'elements::VertexHolder::VertexHolder'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,3): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,13): error C3646: '_pos': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(14,8): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,3): error C2653: 'glm': is not a class or namespace name
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,13): error C3646: '_normal': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(15,8): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(6,20): error C2614: 'elements::VertexHolder': illegal member initialization: '_pos' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(6,28): error C2614: 'elements::VertexHolder': illegal member initialization: '_normal' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,70): error C2065: 'pos': undeclared identifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,84): error C2065: 'normal': undeclared identifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,65): error C2614: 'elements::VertexHolder': illegal member initialization: '_pos' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.h(10,76): error C2614: 'elements::VertexHolder': illegal member initialization: '_normal' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,41): error C2039: 'vector': is not a member of 'std'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+      C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\predefined C++ types (compiler internal)(357,11):
+      see declaration of 'std'
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,30): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(12,47): error C2143: syntax error: missing ',' before '<'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(19,10): error C3646: '_VAO': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(19,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(20,10): error C3646: '_VBO': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(20,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(21,10): error C3646: '_EBO': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(21,3): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,25): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_VAO' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,36): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_VBO' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(10,47): error C2614: 'render::VertexIndexBuffer': illegal member initialization: '_EBO' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(29,30): error C2061: syntax error: identifier 'int32_t'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,20): error C3646: 'getTexture': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,31): error C2059: syntax error: ')'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(33,36): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,12): error C3646: '_FBO': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,17): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(36,20): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,12): error C3646: '_texID': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,19): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(37,22): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,12): error C3646: '_depthID': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,21): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(38,24): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,11): error C3646: '_width': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,18): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(40,21): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,11): error C3646: '_height': unknown override specifier
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,19): error C2059: syntax error: '='
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(41,22): error C2238: unexpected token(s) preceding ';'
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(27,19): error C2614: 'render::FrameBuffer': illegal member initialization: '_FBO' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\RenderBase.h(27,30): error C2614: 'render::FrameBuffer': illegal member initialization: '_depthID' is not a base or member
+  (compiling source file 'Source/Render/OpenGLContext.cpp')
+  
+  SimulationManager.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Render/SimulationManager.cpp')
+  
+  shaderClass.cpp
+  ShaderUtil.cpp
+  Generating Code...
+  Compiling...
+  ControlPanel.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(5,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(12,5): error C3861: 'RenderSimulationControls': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(13,5): error C3861: 'RenderObjectControls': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(14,5): error C3861: 'RenderLinkControls': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(15,5): error C3861: 'RenderCameraControls': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(17,5): error C3861: 'RenderDisplaySettings': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(18,5): error C3861: 'RenderStats': identifier not found
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(23,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(28,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(38,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(49,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(60,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(71,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(76,6): error C2653: 'ControlPanel': is not a class or namespace name
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\ControlPanel.cpp(81,6): error C2653: 'ControlPanel': is not a class or namespace name
+  DebugPanel.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/UI/DebugPanel.cpp')
+  
+  SceneView.cpp
+  SimulationPanels.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/UI/SimulationPanels.cpp')
+  
+  Styles.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/UI/Styles.cpp')
+  
+  TitleBarPanel.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\TitleBarPanel.cpp(5,10): error C1083: Cannot open include file: 'ResourceManager.h': No such file or directory
+  GUIManager.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Window/GUIManager.cpp')
+  
+  WindowManager.cpp
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL\glew.h(85,1): error C1189: #error:  gl.h included before glew.h
+  (compiling source file 'Source/Window/WindowManager.cpp')
+  
+  Generating Code...
