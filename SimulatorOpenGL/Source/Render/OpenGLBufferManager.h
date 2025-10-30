@@ -1,0 +1,23 @@
+#pragma once
+
+#include "RenderBase.h"
+
+namespace render {
+	class OpenGLVertexIndexBuffer : VertexIndexBuffer {
+		OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
+
+		void createBuffers(const std::vector<elements::VertexHolder>& verticies, const std::vector<unsigned int>& indices) override;
+		void deleteBuffers() override;
+		void bind() override;
+		void unbind() override;
+		void draw(int indxCount) override;
+	};
+
+	class OpenGLFrameBuffer : FrameBuffer {
+		void createBuffers(int32_t width, int32_t height) override;
+		void deleteBuffers() override;
+		void bind() override;
+		void unbind() override;
+		uint32_t getTexture() override;
+	};
+}
