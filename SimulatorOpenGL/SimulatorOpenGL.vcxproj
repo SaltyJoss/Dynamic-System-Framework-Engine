@@ -71,22 +71,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
