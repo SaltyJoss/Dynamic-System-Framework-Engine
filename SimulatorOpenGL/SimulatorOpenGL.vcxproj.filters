@@ -70,6 +70,9 @@
     <Filter Include="Source Files\UI\Stylisitc">
       <UniqueIdentifier>{093dfb76-ae82-401d-b5b6-6672b52bed7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\3rdParty">
+      <UniqueIdentifier>{cf14dd7d-6a4d-4ae8-8fa7-1b042539bd09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
@@ -229,6 +232,33 @@
     </ClInclude>
     <ClInclude Include="Source\Elements\Camera.h">
       <Filter>Header Files\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imstb_truetype.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imstb_textedit.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imstb_rectpack.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imgui_internal.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imgui_impl_glfw.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imgui.h">
+      <Filter>Header Files\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\lib\imgui\imconfig.h">
+      <Filter>Header Files\3rdParty</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
