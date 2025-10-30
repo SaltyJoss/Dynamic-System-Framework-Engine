@@ -6,7 +6,7 @@ namespace render {
 	class OpenGLVertexIndexBuffer : VertexIndexBuffer {
 		OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
 
-		void createBuffers(const std::vector<elements::VertexHolder>& verticies, const std::vector<unsigned int>& indices) override;
+		void createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) override;
 		void deleteBuffers() override;
 		void bind() override;
 		void unbind() override;

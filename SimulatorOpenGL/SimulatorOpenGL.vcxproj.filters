@@ -114,7 +114,7 @@
     <ClCompile Include="Source\3rdParty\glad.c">
       <Filter>Source Files\3rdParty</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\EBO.cpp">
+    <ClCompile Include="Source\Elements\Mesh.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
     <ClCompile Include="Source\Elements\ResourceManager.cpp">
@@ -123,7 +123,7 @@
     <ClCompile Include="Source\Elements\VertexHolder.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\VBO.cpp">
+    <ClCompile Include="Source\Elements\Element.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\Styles.cpp">
@@ -182,7 +182,7 @@
     <ClInclude Include="Source\Shader\ShaderUtil.h">
       <Filter>Header Files\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Elements\EBO.h">
+    <ClInclude Include="Source\Elements\Mesh.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
     <ClInclude Include="Source\Elements\ResourceManager.h">
@@ -191,7 +191,7 @@
     <ClInclude Include="Source\Elements\VertexHolder.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Elements\VBO.h">
+    <ClInclude Include="Source\Elements\Element.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\Styles.h">

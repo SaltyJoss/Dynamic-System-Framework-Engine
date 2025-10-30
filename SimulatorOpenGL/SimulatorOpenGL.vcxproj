@@ -157,10 +157,10 @@
     <ClCompile Include="Source\3rdParty\glad.c" />
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Elements\Camera.cpp" />
-    <ClCompile Include="Source\Elements\EBO.cpp" />
+    <ClCompile Include="Source\Elements\Mesh.cpp" />
     <ClCompile Include="Source\Elements\ResourceManager.cpp" />
     <ClCompile Include="Source\Elements\VertexHolder.cpp" />
-    <ClCompile Include="Source\Elements\VBO.cpp" />
+    <ClCompile Include="Source\Elements\Element.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Render\GUIContext.cpp" />
     <ClCompile Include="Source\Render\OpenGLBufferManager.cpp" />
@@ -181,10 +181,10 @@
     <ClInclude Include="Source\Application.h" />
     <ClInclude Include="Source\ch.h" />
     <ClInclude Include="Source\Elements\Camera.h" />
-    <ClInclude Include="Source\Elements\EBO.h" />
+    <ClInclude Include="Source\Elements\Mesh.h" />
     <ClInclude Include="Source\Elements\ResourceManager.h" />
     <ClInclude Include="Source\Elements\VertexHolder.h" />
-    <ClInclude Include="Source\Elements\VBO.h" />
+    <ClInclude Include="Source\Elements\Element.h" />
     <ClInclude Include="Source\Render\GUIContext.h" />
     <ClInclude Include="Source\Render\OpenGLBufferManager.h" />
     <ClInclude Include="Source\Render\OpenGLContext.h" />
