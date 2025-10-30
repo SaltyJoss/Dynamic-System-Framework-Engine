@@ -1,0 +1,16 @@
+#ifndef STYLES_H
+#define STYLES_H
+
+#include "ch.h"
+
+
+class StyleModes {
+public:
+	/// DARK MODE STYLE (VS 2022 esc)
+	void DarkMode();
+
+	/// LIGHT MODE STYLE (VS 2022 esc)
+	void LightMode();
+};
+
+#endif
