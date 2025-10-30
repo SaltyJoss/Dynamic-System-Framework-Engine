@@ -71,20 +71,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -143,11 +147,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ControlPanel.cpp" />
-    <ClCompile Include="DebugPanel.cpp" />
-    <ClCompile Include="EBO.cpp" />
-    <ClCompile Include="glad.c" />
-    <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp" />
@@ -155,41 +154,50 @@
     <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="ResourceManager.cpp" />
-    <ClCompile Include="shaderClass.cpp" />
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="SimulationManager.cpp" />
-    <ClCompile Include="SimulationPanels.cpp" />
-    <ClCompile Include="Styles.cpp" />
-    <ClCompile Include="TitleBarPanel.cpp" />
-    <ClCompile Include="VAO.cpp" />
-    <ClCompile Include="VBO.cpp" />
-    <ClCompile Include="WindowManager.cpp" />
+    <ClCompile Include="Source\3rdParty\glad.c" />
+    <ClCompile Include="Source\Application.cpp" />
+    <ClCompile Include="Source\Elements\EBO.cpp" />
+    <ClCompile Include="Source\Elements\ResourceManager.cpp" />
+    <ClCompile Include="Source\Elements\VAO.cpp" />
+    <ClCompile Include="Source\Elements\VBO.cpp" />
+    <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Render\GUIContext.cpp" />
+    <ClCompile Include="Source\Render\OpenGLBufferContext.cpp" />
+    <ClCompile Include="Source\Render\OpenGLContext.cpp" />
+    <ClCompile Include="Source\Render\SimulationManager.cpp" />
+    <ClCompile Include="Source\Shader\shaderClass.cpp" />
+    <ClCompile Include="Source\Shader\ShaderUtil.cpp" />
+    <ClCompile Include="Source\UI\ControlPanel.cpp" />
+    <ClCompile Include="Source\UI\DebugPanel.cpp" />
+    <ClCompile Include="Source\UI\SimulationPanels.cpp" />
+    <ClCompile Include="Source\UI\Styles.cpp" />
+    <ClCompile Include="Source\UI\TitleBarPanel.cpp" />
+    <ClCompile Include="Source\Window\GUIManager.cpp" />
+    <ClCompile Include="Source\Window\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DebugLogEntry.h" />
-    <None Include="default.frag" />
-    <None Include="default.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="ControlPanel.h" />
-    <ClInclude Include="CoreIncludes.h" />
-    <ClInclude Include="DebugPanel.h" />
-    <ClInclude Include="EBO.h" />
-    <ClInclude Include="GUIManager.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="ResourceManager.h" />
-    <ClInclude Include="shaderClass.h" />
-    <ClInclude Include="SimulationManager.h" />
-    <ClInclude Include="SimulationPanels.h" />
-    <ClInclude Include="Styles.h" />
-    <ClInclude Include="TitleBarPanel.h" />
-    <ClInclude Include="VAO.h" />
-    <ClInclude Include="VBO.h" />
-    <ClInclude Include="WindowManager.h" />
+    <ClInclude Include="Source\Application.h" />
+    <ClInclude Include="Source\ch.h" />
+    <ClInclude Include="Source\Elements\EBO.h" />
+    <ClInclude Include="Source\Elements\ResourceManager.h" />
+    <ClInclude Include="Source\Elements\VAO.h" />
+    <ClInclude Include="Source\Elements\VBO.h" />
+    <ClInclude Include="Source\Render\GUIContext.h" />
+    <ClInclude Include="Source\Render\OpenGLBufferContext.h" />
+    <ClInclude Include="Source\Render\OpenGLContext.h" />
+    <ClInclude Include="Source\Render\RenderBase.h" />
+    <ClInclude Include="Source\Render\SimulationManager.h" />
+    <ClInclude Include="Source\Shader\shaderClass.h" />
+    <ClInclude Include="Source\Shader\ShaderUtil.h" />
+    <ClInclude Include="Source\UI\ControlPanel.h" />
+    <ClInclude Include="Source\UI\DebugLogEntry.h" />
+    <ClInclude Include="Source\UI\DebugPanel.h" />
+    <ClInclude Include="Source\UI\SimulationPanels.h" />
+    <ClInclude Include="Source\UI\Styles.h" />
+    <ClInclude Include="Source\UI\TitleBarPanel.h" />
+    <ClInclude Include="Source\Window\GUIManager.h" />
+    <ClInclude Include="Source\Window\WindowManager.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
