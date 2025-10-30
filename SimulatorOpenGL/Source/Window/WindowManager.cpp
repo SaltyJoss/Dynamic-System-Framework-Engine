@@ -1,6 +1,8 @@
 #include "WindowManager.h"
 
-void WindowManager::Minimise() { glfwSetWindowShouldClose(_window, true); }
+
+
+/*void WindowManager::Minimise() { glfwSetWindowShouldClose(_window, true); }
 
 void WindowManager::Close(){ glfwIconifyWindow(_window); }
 
@@ -44,4 +46,4 @@ void WindowManager::ToggleMaximise() {
 
 void WindowManager::RestoreWindowed() {
     glfwSetWindowMonitor(_window, nullptr, lastX, lastY, lastW, lastH, 0);
-}
+}*/

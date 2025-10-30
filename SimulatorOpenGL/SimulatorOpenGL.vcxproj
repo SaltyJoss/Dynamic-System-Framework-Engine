@@ -156,19 +156,21 @@
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Source\3rdParty\glad.c" />
     <ClCompile Include="Source\Application.cpp" />
+    <ClCompile Include="Source\Elements\Camera.cpp" />
     <ClCompile Include="Source\Elements\EBO.cpp" />
     <ClCompile Include="Source\Elements\ResourceManager.cpp" />
-    <ClCompile Include="Source\Elements\VAO.cpp" />
+    <ClCompile Include="Source\Elements\VertexHolder.cpp" />
     <ClCompile Include="Source\Elements\VBO.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Render\GUIContext.cpp" />
-    <ClCompile Include="Source\Render\OpenGLBufferContext.cpp" />
+    <ClCompile Include="Source\Render\OpenGLBufferManager.cpp" />
     <ClCompile Include="Source\Render\OpenGLContext.cpp" />
     <ClCompile Include="Source\Render\SimulationManager.cpp" />
     <ClCompile Include="Source\Shader\shaderClass.cpp" />
     <ClCompile Include="Source\Shader\ShaderUtil.cpp" />
     <ClCompile Include="Source\UI\ControlPanel.cpp" />
     <ClCompile Include="Source\UI\DebugPanel.cpp" />
+    <ClCompile Include="Source\UI\SceneView.cpp" />
     <ClCompile Include="Source\UI\SimulationPanels.cpp" />
     <ClCompile Include="Source\UI\Styles.cpp" />
     <ClCompile Include="Source\UI\TitleBarPanel.cpp" />
@@ -178,12 +180,13 @@
   <ItemGroup>
     <ClInclude Include="Source\Application.h" />
     <ClInclude Include="Source\ch.h" />
+    <ClInclude Include="Source\Elements\Camera.h" />
     <ClInclude Include="Source\Elements\EBO.h" />
     <ClInclude Include="Source\Elements\ResourceManager.h" />
-    <ClInclude Include="Source\Elements\VAO.h" />
+    <ClInclude Include="Source\Elements\VertexHolder.h" />
     <ClInclude Include="Source\Elements\VBO.h" />
     <ClInclude Include="Source\Render\GUIContext.h" />
-    <ClInclude Include="Source\Render\OpenGLBufferContext.h" />
+    <ClInclude Include="Source\Render\OpenGLBufferManager.h" />
     <ClInclude Include="Source\Render\OpenGLContext.h" />
     <ClInclude Include="Source\Render\RenderBase.h" />
     <ClInclude Include="Source\Render\SimulationManager.h" />
@@ -192,12 +195,12 @@
     <ClInclude Include="Source\UI\ControlPanel.h" />
     <ClInclude Include="Source\UI\DebugLogEntry.h" />
     <ClInclude Include="Source\UI\DebugPanel.h" />
+    <ClInclude Include="Source\UI\SceneView.h" />
     <ClInclude Include="Source\UI\SimulationPanels.h" />
     <ClInclude Include="Source\UI\Styles.h" />
-    <ClInclude Include="Source\UI\TitleBarPanel.h" />
     <ClInclude Include="Source\Window\GUIManager.h" />
+    <ClInclude Include="Source\Window\Window.h" />
     <ClInclude Include="Source\Window\WindowManager.h" />
-    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

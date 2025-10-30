@@ -99,7 +99,7 @@
     <ClCompile Include="Source\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Render\OpenGLBufferContext.cpp">
+    <ClCompile Include="Source\Render\OpenGLBufferManager.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Source\Render\OpenGLContext.cpp">
@@ -120,7 +120,7 @@
     <ClCompile Include="Source\Elements\ResourceManager.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\VAO.cpp">
+    <ClCompile Include="Source\Elements\VertexHolder.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
     <ClCompile Include="Source\Elements\VBO.cpp">
@@ -153,6 +153,12 @@
     <ClCompile Include="Source\Render\SimulationManager.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
+    <ClCompile Include="Source\UI\SceneView.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Elements\Camera.cpp">
+      <Filter>Source Files\Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Application.h">
@@ -161,7 +167,7 @@
     <ClInclude Include="Source\ch.h">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Render\OpenGLBufferContext.h">
+    <ClInclude Include="Source\Render\OpenGLBufferManager.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
     <ClInclude Include="Source\Render\OpenGLContext.h">
@@ -182,7 +188,7 @@
     <ClInclude Include="Source\Elements\ResourceManager.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Elements\VAO.h">
+    <ClInclude Include="Source\Elements\VertexHolder.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
     <ClInclude Include="Source\Elements\VBO.h">
@@ -203,9 +209,6 @@
     <ClInclude Include="Source\UI\SimulationPanels.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\TitleBarPanel.h">
-      <Filter>Header Files\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Window\GUIManager.h">
       <Filter>Header Files\Window</Filter>
     </ClInclude>
@@ -218,8 +221,14 @@
     <ClInclude Include="Source\Render\SimulationManager.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
+    <ClInclude Include="Source\Window\Window.h">
       <Filter>Header Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\SceneView.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Elements\Camera.h">
+      <Filter>Header Files\Elements</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
