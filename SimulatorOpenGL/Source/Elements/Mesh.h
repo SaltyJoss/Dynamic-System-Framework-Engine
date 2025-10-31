@@ -8,6 +8,7 @@
 
 namespace elements {
 	class Mesh : public Element {
+	public:
 		Mesh() = default;
 		
 		virtual ~Mesh();
