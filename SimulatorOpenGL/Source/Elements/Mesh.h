@@ -26,8 +26,10 @@ namespace elements {
 
 		std::vector<unsigned int> getVertexIndicies() { return _vertexIndices; }
 
-		void update(shaders::Shader* shader) override {	// will used for specifying objects colour and texture
-
+		void update(shaders::Shader* shader) override {	// will use for specifying objects colour and texture
+			shader->setVec3(_colour, "blue");
+			shader->setFlt1(_metallic, "metallic");
+			shader->setFlt1(1.0f, "ao");
 		}
 
 		glm::vec3 _colour = { 0.0f, 0.0f, 1.0f }; // red

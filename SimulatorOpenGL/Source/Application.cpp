@@ -1,6 +1,18 @@
-#include "Application.h"
+#include "ch.h"
 
-// Resize callback
+#include "Application.h"
+#include "Window/WindowManager.h"
+
+Application::Application(const std::string& appName) {
+	_window = std::make_unique<window::GLWindow>();
+	_window->init(1920, 1080, appName);
+}
+
+void Application::run() {
+	while (_window->isRunning()) { _window->render(); }
+}
+
+/*// Resize callback
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -96,4 +108,4 @@ void Application::Shutdown() {
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(0);
-}
+}*/

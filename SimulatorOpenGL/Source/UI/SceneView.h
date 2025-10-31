@@ -24,10 +24,7 @@ namespace gui {
 
         }
 
-        ~SceneView()
-        {
-            _shader->unload();
-        }
+        ~SceneView() { _shader->unload(); }
 
         elements::Light* get_light() { return _light.get(); }
 
