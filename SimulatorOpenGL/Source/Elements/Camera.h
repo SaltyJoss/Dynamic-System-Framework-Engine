@@ -47,7 +47,7 @@ namespace elements {
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
-		void on_mouse_wheel(double delta) {
+		void onMouseWheel(double delta) {
 			setDistance(delta * 0.5f);
 			updateViewMatrix();
 		}
