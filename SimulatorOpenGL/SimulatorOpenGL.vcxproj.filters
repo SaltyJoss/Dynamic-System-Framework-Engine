@@ -120,9 +120,6 @@
     <ClCompile Include="Source\Elements\Mesh.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\Light.cpp">
-      <Filter>Source Files\Elements</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Elements\VertexHolder.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
@@ -160,9 +157,6 @@
       <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Elements\Camera.cpp">
-      <Filter>Source Files\Elements</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Elements\Input.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
   </ItemGroup>
