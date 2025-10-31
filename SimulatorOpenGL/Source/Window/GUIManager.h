@@ -1,13 +1,15 @@
-#ifndef GUI_MANAGER_H
+/*#ifndef GUI_MANAGER_H
 #define GUI_MANAGER_H
 
 #include "ch.h"
-#include "WindowManager.h"
+#include "window.h"
 
 #include "UI/ControlPanel.h"
 #include "UI/SimulationPanels.h"
 #include "UI/DebugPanel.h"
 #include "UI/Styles.h"
+
+
 
 #include "Render/SimulationManager.h"
 
@@ -39,4 +41,4 @@ private:
 	std::unique_ptr<SimulationManager> simulation;
 };
 
-#endif
+#endif*/

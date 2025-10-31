@@ -1,4 +1,4 @@
-#include "SimulationManager.h"
+/*#include "SimulationManager.h"
 
 const GLfloat SimulationManager::Buffers::vertices[] = {
 	//	 COORDINATES	 /	   COLOURS	   //
@@ -60,7 +60,7 @@ bool SimulationManager::Init() {
 }
 
 void SimulationManager::Update(float dt) {
-	/* STUBBED FOR LATER USE*/
+	/* STUBBED FOR LATER USE
 }
 
 void SimulationManager::Render(int width, int height) {
@@ -116,7 +116,7 @@ void SimulationManager::Terminate() {
 }
 
 
-/*
+
  NOTES:
  - z-axis is positive TOWARDS the object (us) and negative AWAY from the object (us) ~ does this mean its observer relative?
  - In terms of projection, if anything is closer than 0.1 units, or further away than 100 units, it will be CLIPPED (clipped coords using the projection matrix)

@@ -1,4 +1,4 @@
-#include "shaderClass.h"
+/*#include "shaderClass.h"
 
 // Function to read the contents of a file and return it as a string
 std::string get_file_content(const char* filename)
@@ -18,7 +18,7 @@ std::string get_file_content(const char* filename)
 }
 
 // Constructor that builds the shader program from 2 different shaders
-Shader::Shader(const char* vertexPath, const char* fragmentPath)
+ShaderOld::ShaderOld(const char* vertexPath, const char* fragmentPath)
 {
 	std::string vertexCode = get_file_content(vertexPath);		// Read vertex shader code from file
 	std::string fragmentCode = get_file_content(fragmentPath);	// Read fragment shader code from file
@@ -50,19 +50,19 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 }
 
 // Activate the shader program
-void Shader::Activate()
+void ShaderOld::Activate()
 {
 	glUseProgram(ID);
 }
 
 // Delete the shader program
-void Shader::Delete()
+void ShaderOld::Delete()
 {
 	glDeleteProgram(ID);
 }
 
 // Error Handling
-void Shader::compileErrors(unsigned int shader, const char* type) 
+void ShaderOld::compileErrors(unsigned int shader, const char* type) 
 {
 	GLint hasCompiled;
 	char infoLog[1024];
@@ -86,4 +86,4 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 				<< infoLog << std::endl;
 		}
 	}
-}
+}*/
