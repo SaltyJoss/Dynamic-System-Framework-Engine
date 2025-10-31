@@ -157,9 +157,7 @@
     <ClCompile Include="Source\3rdParty\glad.c" />
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Elements\Camera.cpp" />
-    <ClCompile Include="Source\Elements\Input.cpp" />
     <ClCompile Include="Source\Elements\Mesh.cpp" />
-    <ClCompile Include="Source\Elements\Light.cpp" />
     <ClCompile Include="Source\Elements\VertexHolder.cpp" />
     <ClCompile Include="Source\Elements\Element.cpp" />
     <ClCompile Include="Source\Main.cpp" />
