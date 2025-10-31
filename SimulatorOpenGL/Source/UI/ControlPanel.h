@@ -1,44 +1,52 @@
-#ifndef CONTROL_PANEL_H
-#define CONTROL_PANEL_H
+#pragma once
+
+#include "Elements/Light.h"
+#include "UI/SceneView.h"
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include <imfilebrowser.h>
 
 namespace gui {
     class ControlPanel {
     public:
-        void Render(ImVec2 winSize, ImVec2 padding, float debugHeight, float ctrlPanelWidth);      // Draw the control panel UI using ImGui
+        ControlPanel() {
+            _currentFile = "<...>";
+
+            _fileDialog.SetTitle("Open Object Mesh");
+            _fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+        }
+
+        void render(gui::SceneView* sceneView);
+        void setSimulationCallback(const std::function<void(bool)>& callback) { _simCallback = callback; }
+        void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { _meshLoadCallback = callback; }
 
     private:
-        void HandleInput(); // Process user input
+        void renderSimulationProperties();
+        void renderCameraProperties();
+        void renderObjectProperties();
+        void renderLinkProperties();
+        void renderDisplaySettings();
+        void renderStats();
+  
+        // Internal state
+        bool simulationRunning = false;
+        float simulationSpeed = 1;
+        int povMode = 0;
 
-        // Simulation controls
-        void RenderSimulationControls();    // Start/Stop simulation, reset, speed control
-        void RenderCameraControls();        // Switch POV modes
-        void RenderObjectControls();        // Adjust object properties
-        void RenderLinkControls();          // Adjust Link properties
-
-        // Display settings
-        void RenderDisplaySettings();       // Resolution, fullscreen logic
-
-        // Debug/Info
-        void RenderStats();     // FPS, errors, object count...
-        void SimulationStats(const char* label, int* idx, float* velocity, float* torque, float* damping, float* position); // Simulation Time, Variable Change (Derivatives, Differentces), Link Count...
-
-        // Internal state variables
-        bool simulationRunning;     // Boolean of Simulation Runnning
-        float simulationSpeed = 1;  // DEFAULT: 1x
-        int povMode;    // 1 -> 4 {total 5 options}
-        int idx;
-
-        // Physics parameters
+        // Physics
         float velocity = 0.0f;
         float torque = 0.0f;
         float linkLength = 1.0f;
         float damping = 0.1f;
         float position = 0.0f;
 
+        std::shared_ptr<elements::Mesh> _mesh;
+
+        ImGui::FileBrowser _fileDialog;
+        std::string _currentFile;
+
+        std::function<void(const std::string&)> _meshLoadCallback;
+        std::function<void(bool)> _simCallback;
+
     };
 }
-#endif

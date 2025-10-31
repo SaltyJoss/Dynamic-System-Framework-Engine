@@ -1,7 +1,7 @@
 #include "ch.h"
 
 #include "SceneView.h"
-#include "imgui.h"
+#include <imgui.h>
 
 namespace gui{
 	void SceneView::resize(int32_t width, int32_t height) {
