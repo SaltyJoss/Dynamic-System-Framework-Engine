@@ -4,6 +4,7 @@
 
 namespace render {
 	class OpenGLVertexIndexBuffer : VertexIndexBuffer {
+	public:
 		OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
 
 		void createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) override;
@@ -14,6 +15,7 @@ namespace render {
 	};
 
 	class OpenGLFrameBuffer : FrameBuffer {
+	public:
 		void createBuffers(int32_t width, int32_t height) override;
 		void deleteBuffers() override;
 		void bind() override;

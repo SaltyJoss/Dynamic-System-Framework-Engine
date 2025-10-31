@@ -12,8 +12,7 @@ namespace elements {
 	{
 	public:
 
-		Camera(const glm::vec3& position, float fov, float aspect, float near, float far)
-		{
+		Camera(const glm::vec3& position, float fov, float aspect, float near, float far) {
 			_position = position;
 			_aspect = aspect;
 			_near = near;
@@ -21,12 +20,10 @@ namespace elements {
 			_FOV = fov;
 
 			setAspect(_aspect);
-
 			updateViewMatrix();
 		}
 
-		void update(shaders::Shader* shader) override
-		{
+		void update(shaders::Shader* shader) override {
 			glm::mat4 model{ 1.0f };
 			shader->setMat4(model, "model");
 			shader->setMat4(_viewMatrix, "view");
@@ -42,6 +39,7 @@ namespace elements {
 		}
 
 		const glm::mat4& getProjection() const { return _projection; }
+
 		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
 		glm::vec3 getUp() const { return glm::rotate(getDirection(), _up); }
 		glm::vec3 getRight() const { return glm::rotate(getDirection(), _right); }
@@ -68,6 +66,7 @@ namespace elements {
 				glm::vec2 delta = (pos2d - _currentPos2D) * 0.004f;
 
 				float sign = getUp().y < 0 ? -1.0f : 1.0f;
+
 				_yaw += sign * delta.x * _rotationSpeed;
 				_pitch += delta.y * _rotationSpeed;
 
@@ -98,7 +97,6 @@ namespace elements {
 		glm::mat4 _viewMatrix;
 		glm::mat4 _projection  = glm::mat4{ 1.0f };
 		glm::vec3 _position = { 0.0f, 0.0f, 0.0f };
-
 		glm::vec3 _focus = { 0.0f, 0.0f, 0.0f };
 
 		float _distance = 5.0f;
@@ -106,12 +104,10 @@ namespace elements {
 		float _FOV;
 		float _near;
 		float _far;
-
 		float _pitch = 0.0f;
 		float _yaw = 0.0f;
 
 		glm::vec2 _currentPos2D = { 0.0f, 0.0f };
-
 		const glm::vec3 _right = { 1.0f, 0.0f, 0.0f };
 		const glm::vec3 _up = { 0.0f, 1.0f, 0.0f };
 		const glm::vec3 _forward = { 0.0f, 0.0f, -1.0f };
