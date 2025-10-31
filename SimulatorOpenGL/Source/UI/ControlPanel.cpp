@@ -55,8 +55,8 @@ void gui::ControlPanel::renderObjectProperties() {
     }
     else {
         ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB);
+        ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
     }
-    ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
 }
 
 void gui::ControlPanel::renderLinkProperties() {
