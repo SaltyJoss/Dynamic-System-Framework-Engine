@@ -1,4 +1,4 @@
-#include "SimulationPanels.h"
+/*#include "SimulationPanels.h"
 #include <iostream>
 #include <string>
 
@@ -65,4 +65,4 @@ void SimulationPanels::SecondaryPanels() {
 
     // Optional: leave dummy children to reserve layout space
     ImGui::Dummy(ImVec2(avail.x, avail.y));
-}
+}*/

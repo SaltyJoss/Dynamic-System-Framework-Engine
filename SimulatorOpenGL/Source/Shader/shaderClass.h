@@ -1,4 +1,4 @@
-#ifndef SHADER_CLASS_H
+/*#ifndef SHADER_CLASS_H
 #define SHADER_CLASS_H
 
 #include <glad/glad.h>
@@ -10,11 +10,11 @@
 
 std::string get_file_content(const char* filename);
 
-class Shader
+class ShaderOld
 {
 	public:
 		GLuint ID;
-		Shader(const char* vertexPath, const char* fragmentPath);	// Constructor that builds the shader program from 2 different shaders
+		ShaderOld(const char* vertexPath, const char* fragmentPath);	// Constructor that builds the shader program from 2 different shaders
 
 		void Activate();	// Activates the Shader Program
 		void Delete();		// Deletes the Shader Program
@@ -23,4 +23,4 @@ class Shader
 		void compileErrors(unsigned int shader, const char* type);	// Checks if DIFFERENT shaders have compiled properly
 };
 
-#endif
+#endif*/

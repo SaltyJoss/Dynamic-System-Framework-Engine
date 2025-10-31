@@ -1,4 +1,4 @@
-#ifndef SIMULATION_MANAGER_H
+/*#ifndef SIMULATION_MANAGER_H
 #define SIMULATION_MANAGER_H
 
 #include "ch.h"
@@ -39,4 +39,4 @@ public:
     void Terminate();       // release GPU resources
 };
 
-#endif
+#endif*/

@@ -1,4 +1,4 @@
-#ifndef SIMULATION_PANELS_H
+/*#ifndef SIMULATION_PANELS_H
 #define SIMULATION_PANELS_H
 
 #include <imgui.h>
@@ -18,4 +18,4 @@ namespace gui {
 	};
 }
 
-#endif 
+#endif */

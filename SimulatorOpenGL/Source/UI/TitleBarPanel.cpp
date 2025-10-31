@@ -1,6 +1,6 @@
 /*
  NOT CURRENT USED IN THE PROJECT
-*/
+
 
 #include "ResourceManager.h"
 #include "TitleBarPanel.h"
@@ -55,4 +55,4 @@ void TitleBarPanel::DrawCloseButton(float size) {
         GLFWwindow* window = windowManager->GetWindow();  // Access the main GLFW window
         glfwSetWindowShouldClose(window, true); 
     }
-}
+}*/

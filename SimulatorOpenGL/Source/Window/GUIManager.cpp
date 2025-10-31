@@ -1,5 +1,5 @@
 
-#include "WindowManager.h"
+/*#include "WindowManager.h"
 #include "GUIManager.h"
 
 GUIManager::GUIManager(WindowManager* manager) : windowManager(manager) {}
@@ -43,9 +43,9 @@ void GUIManager::DrawPanel() {
 }
 
 void GUIManager::ContainerPanel() {
-	/*if (!titleBar)
+	if (!titleBar)
 		titleBar = std::make_unique<TitleBarPanel>(windowManager);
-	titleBar->Render(30.0f);*/
+	titleBar->Render(30.0f);
 
 	ctrlPanel.Render(winSize, padding, debugHeight, ctrlPanelWidth);
 	ImGui::SameLine();
@@ -59,3 +59,4 @@ void GUIManager::InitResources() {
 	ResourceManager::LoadTexture("minimise", "assets/minimise.png");
 	ResourceManager::LoadTexture("maximise", "assets/maximise.png");
 }
+*/
