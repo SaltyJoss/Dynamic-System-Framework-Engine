@@ -23,14 +23,32 @@ namespace render {
 	}
 
 	bool render::OpenGLContext::init(window::IWindow* window) {
+
+
 		__super::init(window);
 
-		if (!glfwInit()) { std::cerr << "[ERROR]: " << "Failed to initialize GLFW" << std::endl; return false; }
+		window::IWindow* localWindow = window; // local copy for logging/debug
 
-		auto glWindow = glfwCreateWindow(window->width, window->height, window->header.c_str(), nullptr, nullptr);
-		window->setNativeWin(glWindow);
+		fprintf(stderr, "[INSIDE OpenGLContext::Init()]Width: %d, Height: %d, Header: %s\n", window->_width, window->_height, window->_header.c_str());
 
-		if (!glWindow) { std::cerr << "[ERROR]: " << "Failed to create GLFW window" << std::endl; return false; }
+		if (!window->_width || !window->_height) {
+			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Window dimensions not set!\n");
+			return false;
+		}
+
+		if (!glfwInit()) { 
+			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Failed to initialize GLFW\n");
+			return false; 
+		}
+
+		auto glWindow = glfwCreateWindow(window->_width, window->_height, window->_header.c_str(), nullptr, nullptr);
+		localWindow->setNativeWin(glWindow);
+
+		if (!glWindow) { 
+			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Failed to create GLFW window\n");
+			glfwTerminate();
+			return false;
+		}
 
 		glfwSetWindowUserPointer(glWindow, window);
 		glfwSetKeyCallback(glWindow, onKey_Callback);
@@ -40,7 +58,12 @@ namespace render {
 		glfwMakeContextCurrent(glWindow);
 
 		GLenum err = glewInit();
-		if (GLEW_OK != err) { std::cerr << "[ERROR]: " << stderr << "\n" << glewGetErrorString(err) << std::endl; return false; }
+		if (err != GLEW_OK) { 
+			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: GLEW failed: %s\n", glewGetErrorString(err)); 
+			return false; 
+		}
+
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD" << std::endl; return false; }
 
 		glEnable(GL_DEPTH_TEST);
 
@@ -48,7 +71,7 @@ namespace render {
 	}
 
 	void render::OpenGLContext::preRender() {
-		glViewport(0, 0, _window->width, _window->height);
+		glViewport(0, 0, _window->_width, _window->_height);
 		glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}

@@ -6,7 +6,7 @@
 int main() {
 	auto app = std::make_unique<Application>("Simulator V0.1");
 
-	app->Run();
+	app->run();
 
 	return 0;
 }
