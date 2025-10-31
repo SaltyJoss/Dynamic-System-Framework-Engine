@@ -3,7 +3,7 @@
 #include "RenderBase.h"
 
 namespace render {
-	class OpenGLVertexIndexBuffer : VertexIndexBuffer {
+	class OpenGLVertexIndexBuffer : public VertexIndexBuffer {
 	public:
 		OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
 
@@ -14,7 +14,7 @@ namespace render {
 		void draw(int indxCount) override;
 	};
 
-	class OpenGLFrameBuffer : FrameBuffer {
+	class OpenGLFrameBuffer : public FrameBuffer {
 	public:
 		void createBuffers(int32_t width, int32_t height) override;
 		void deleteBuffers() override;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ch.h"
+
 namespace shaders {
 	class Shader {
 	private:

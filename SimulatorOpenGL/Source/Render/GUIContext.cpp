@@ -1,6 +1,5 @@
 #include "ch.h"
 #include "GUIContext.h"
-#include "UI/Styles.h"
 
 // ImGui
 #include <imgui.h>
@@ -21,7 +20,8 @@ namespace render {
 					   |  ImGuiConfigFlags_DockingEnable
 					   |  ImGuiConfigFlags_ViewportsEnable;
 
-		StyleModes::DarkMode;
+		_style = std::make_unique<gui::Styles>();
+		_style->DarkMode();
 
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)_window->getNativeWin(), true);
 		ImGui_ImplOpenGL3_Init(glslVersion);

@@ -1,29 +1,30 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#pragma once
 
-#include "ch.h"
 #include "Window/GUIManager.h"
 #include "Window/WindowManager.h"
-#include "Render/SimulationManager.h"
+#include "Elements/Camera.h"
 
 class Application
 {
+
 public:
 	Application(const std::string& name);
 
 	static Application& Instance() { return *sInstance; }
 
-	bool Init();
+	void run();
+
+	/*bool Init();
 	void Run();
-	void Shutdown();
+	void Shutdown();*/
 
 private:
 	static Application* sInstance;
 
-	std::unique_ptr<GUIManager> gui;
+	std::unique_ptr<window::GLWindow> _window;
+
+	/*std::unique_ptr<GUIManager> gui;
 	WindowManager windowManager;
 	GLFWwindow* window = nullptr;
-	std::unique_ptr<SimulationManager> simulation;
+	std::unique_ptr<SimulationManager> simulation;*/
 };
-
-#endif
