@@ -19,9 +19,6 @@
     <Filter Include="Header Files\Core">
       <UniqueIdentifier>{15d991b0-b16a-41f1-8cf6-51558f06a107}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Utils">
-      <UniqueIdentifier>{50ef87b6-c54e-45c3-a24b-48b45cae0929}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Render">
       <UniqueIdentifier>{cca6ee43-72c5-45d3-b515-4ee8ea8756ce}</UniqueIdentifier>
     </Filter>
@@ -55,9 +52,6 @@
     <Filter Include="Header Files\Shader">
       <UniqueIdentifier>{be36cec4-14de-419e-bfbb-ec4e0140494f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Util">
-      <UniqueIdentifier>{cc3516ff-87df-4f6b-899f-9e5a76870a28}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\UI">
       <UniqueIdentifier>{432e3126-db15-4758-8974-085f8cf8f8db}</UniqueIdentifier>
     </Filter>
@@ -72,6 +66,12 @@
     </Filter>
     <Filter Include="Header Files\3rdParty">
       <UniqueIdentifier>{cf14dd7d-6a4d-4ae8-8fa7-1b042539bd09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OLD">
+      <UniqueIdentifier>{50ef87b6-c54e-45c3-a24b-48b45cae0929}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OLD">
+      <UniqueIdentifier>{cc3516ff-87df-4f6b-899f-9e5a76870a28}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -108,9 +108,6 @@
     <ClCompile Include="Source\Render\OpenGLContext.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Shader\shaderClass.cpp">
-      <Filter>Source Files\Shader</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Shader\ShaderUtil.cpp">
       <Filter>Source Files\Shader</Filter>
     </ClCompile>
@@ -135,22 +132,10 @@
     <ClCompile Include="Source\UI\DebugPanel.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\SimulationPanels.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\UI\TitleBarPanel.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Window\GUIManager.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Window\WindowManager.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
     <ClCompile Include="Source\Render\GUIContext.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Render\SimulationManager.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\SceneView.cpp">
@@ -158,6 +143,21 @@
     </ClCompile>
     <ClCompile Include="Source\Elements\Camera.cpp">
       <Filter>Source Files\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UI\SimulationPanels.cpp">
+      <Filter>Source Files\OLD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UI\TitleBarPanel.cpp">
+      <Filter>Source Files\OLD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Shader\shaderClass.cpp">
+      <Filter>Source Files\OLD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Render\SimulationManager.cpp">
+      <Filter>Source Files\OLD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Window\GUIManager.cpp">
+      <Filter>Source Files\OLD</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -175,9 +175,6 @@
     </ClInclude>
     <ClInclude Include="Source\Render\RenderBase.h">
       <Filter>Header Files\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Shader\shaderClass.h">
-      <Filter>Header Files\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Shader\ShaderUtil.h">
       <Filter>Header Files\Shader</Filter>
@@ -206,19 +203,10 @@
     <ClInclude Include="Source\UI\DebugPanel.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\SimulationPanels.h">
-      <Filter>Header Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Window\GUIManager.h">
-      <Filter>Header Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Window\WindowManager.h">
       <Filter>Header Files\Window</Filter>
     </ClInclude>
     <ClInclude Include="Source\Render\GUIContext.h">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Render\SimulationManager.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
     <ClInclude Include="Source\Window\Window.h">
@@ -259,6 +247,18 @@
     </ClInclude>
     <ClInclude Include="Source\Elements\Input.h">
       <Filter>Header Files\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Window\GUIManager.h">
+      <Filter>Header Files\OLD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UI\SimulationPanels.h">
+      <Filter>Header Files\OLD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Shader\shaderClass.h">
+      <Filter>Header Files\OLD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Render\SimulationManager.h">
+      <Filter>Header Files\OLD</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
