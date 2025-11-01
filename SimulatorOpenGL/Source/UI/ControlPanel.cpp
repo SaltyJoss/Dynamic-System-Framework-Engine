@@ -5,7 +5,7 @@
 #include "ControlPanel.h"
 
 void gui::ControlPanel::render(gui::SceneView* sceneView) {
-    _sceneView = std::make_unique<SceneView>();
+    _sceneView = sceneView; // store pointer for convenience
     _mesh = sceneView->getMesh();
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);

@@ -224,8 +224,8 @@
     <ClInclude Include="Source\Window\WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="fs_checkerboard.shader" />
     <None Include="Source\Shaders\fs.shader" />
+    <None Include="Source\Shaders\fs_checkerboard.shader" />
     <None Include="Source\Shaders\fs_pbr.shader" />
     <None Include="Source\Shaders\vs.shader" />
   </ItemGroup>

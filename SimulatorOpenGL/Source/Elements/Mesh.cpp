@@ -11,10 +11,8 @@
 namespace elements {
 	void Mesh::init() {
 		_rndrBffrMngr = std::make_unique<render::OpenGLVertexIndexBuffer>();
-		LOG_INFO("OpenGLVertexIndexBuffer created");
 
 		createBuffers();
-		LOG_INFO("Buffers created");
 	}
 
 	elements::Mesh::~Mesh() { deleteBuffers(); LOG_INFO("Buffers deleted in destructor");}
@@ -68,10 +66,14 @@ namespace elements {
 		return false;
 	}
 
-	void Mesh::createBuffers() { _rndrBffrMngr->createBuffers(_vertices, _vertexIndices); LOG_INFO("OpenGL buffers created"); }
-	void Mesh::deleteBuffers() { _rndrBffrMngr->deleteBuffers(); LOG_INFO("OpenGL buffers deleted"); }
-	void Mesh::bind() { _rndrBffrMngr->bind(); LOG_INFO("Mesh bound"); }
-	void Mesh::unbind() { _rndrBffrMngr->unbind(); LOG_INFO("Mesh unbound"); }
-	void Mesh::render() { _rndrBffrMngr->draw((int) _vertexIndices.size()); LOG_INFO("Mesh rendered, %zu indices", _vertexIndices.size()); }
-
+	void Mesh::createBuffers() { _rndrBffrMngr->createBuffers(_vertices, _vertexIndices); }
+	void Mesh::deleteBuffers() { _rndrBffrMngr->deleteBuffers(); }
+	void Mesh::bind() { _rndrBffrMngr->bind(); }
+	void Mesh::unbind() { _rndrBffrMngr->unbind(); }
+	void Mesh::render() { _rndrBffrMngr->draw((int) _vertexIndices.size()); }
+	void Mesh::clear() {
+		if (_rndrBffrMngr) _rndrBffrMngr->deleteBuffers();
+		_vertices.clear();
+		_vertexIndices.clear();
+	}
 }

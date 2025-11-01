@@ -22,11 +22,18 @@ namespace gui {
             _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1.3f, 0.1f, 100.0f);
-            _checkerPlane = createCheckerPlane(10.0f);
+
+            if (_checkerPlane) _checkerPlane->clear();
+            _checkerPlane = createCheckerPlane(50.0f);
 
         }
 
-        ~SceneView() { _shader->unload(); }
+        ~SceneView() {
+            _shader->unload();
+            if (_frameBuffer) _frameBuffer->deleteBuffers();
+            if (_mesh) _mesh->clear();          // VAO/VBO cleanup
+            if (_checkerPlane) _checkerPlane->clear();
+        }
 
         elements::Light* getLight() { return _light.get(); }
 
@@ -43,7 +50,7 @@ namespace gui {
 
     private:
         std::shared_ptr<elements::Mesh> _checkerPlane;
-        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 10.0f);
+        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);
 
         std::unique_ptr<elements::Camera> _camera;
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;

@@ -6,37 +6,29 @@
 namespace gui{
 	void SceneView::render() {
 		_frameBuffer->bind();
-		LOG_INFO("FrameBuffer bound");
 
 		_shader->use();
-		LOG_INFO("Shader used");
 
 		_camera->update(_shader.get());
 		_camera->setAspect(_size.x / _size.y);
-		LOG_INFO("Camera updated");
 
 		_light->update(_shader.get());
-		LOG_INFO("Light updated");
 
 		if (_checkerPlane) {
 			glm::mat4 floorModel(1.0f);
 			_shader->setMat4(floorModel, "model");
 			_checkerPlane->update(_shader.get());
 			_checkerPlane->render();
-			LOG_INFO("CheckerPlane rendered");
 		}
-
 
 		if (_mesh) {
 			glm::mat4 model(1.0f);
 			_shader->setMat4(model, "model");
 			_mesh->update(_shader.get());
 			_mesh->render();
-			LOG_INFO("Mesh rendered");
 		}
 
 		_frameBuffer->unbind();
-		LOG_INFO("FrameBuffer unbound");
 
 		ImGui::Begin("Scene");
 
@@ -52,20 +44,21 @@ namespace gui{
 		_size.x = width;
 		_size.y = height;
 
+		_frameBuffer->deleteBuffers();
 		_frameBuffer->createBuffers((int32_t)_size.x, (int32_t)_size.y);
 		LOG_INFO("Framebuffer resized", (int32_t)_size.x, (int32_t)_size.y);
 	}
 
 	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
-		LOG_INFO("createCheckerPlane() CALLED");
 
 		auto plane = std::make_shared<elements::Mesh>();
+		float planeHeight = -1.0f; // below object
 
 		std::vector<glm::vec3> pos = {
-			{-size, 0.0f, -size},
-			{ size, 0.0f, -size},
-			{ size, 0.0f,  size},
-			{-size, 0.0f,  size}
+			{-size, planeHeight, -size},
+			{ size, planeHeight, -size},
+			{ size, planeHeight,  size},
+			{-size, planeHeight,  size}
 		};
 
 		glm::vec3 normal(0.0f, 1.0f, 0.0f);
@@ -84,8 +77,9 @@ namespace gui{
 		plane->addVertexIndex(3);
 		plane->addVertexIndex(0);
 
+		plane->_colour = glm::vec3(1.0f); // <-- set color to white for procedural checker
+
 		plane->init();
-		LOG_INFO("createCheckerPlane() INITIALISED");
 		return plane;
 	}
 
@@ -93,7 +87,8 @@ namespace gui{
 	void SceneView::onMouseWheel(double delta) { _camera->onMouseWheel(delta); }
 
 	void SceneView::loadMesh(const std::string& filepath) {
-		if (!_mesh) { _mesh = std::make_shared<elements::Mesh>(); }
+		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
+		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
 		_mesh->load(filepath);
 		LOG_INFO("Mesh loaded from %s", filepath.c_str());
 	}
