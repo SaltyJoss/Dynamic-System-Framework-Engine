@@ -23,7 +23,7 @@ namespace gui{
 			_shader->setBool(true, "isFloor");
 			_shader->setVec3(glm::vec3(1.0f), "colour1");
 			_shader->setVec3(glm::vec3(0.0f), "colour2");
-			_shader->setFlt1(1.0f, "checkSize"); // tweak for size
+			_shader->setFlt1(1.0f, "checkSize");
 
 			_checkerPlane->update(_shader.get());
 			_checkerPlane->render();
@@ -31,10 +31,10 @@ namespace gui{
 
 		// Render other objects normally
 		if (_mesh) {
-			glm::mat4 model(1.0f);
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), _mesh->_position);
 			_shader->setMat4(model, "model");
 
-			_shader->setBool(false, "isFloor"); // use normal PBR albedo
+			_shader->setBool(false, "isFloor");
 			_mesh->update(_shader.get());
 			_mesh->render();
 		}
@@ -89,8 +89,17 @@ namespace gui{
 		return plane;
 	}
 
-	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) { _camera->onMouseMove(x, y, button); }
 	void SceneView::onMouseWheel(double delta) { _camera->onMouseWheel(delta); }
+
+	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) { 
+		if (_controlMode == ControlMode::Camera) { _camera->onMouseMove(x, y, button); }
+		else if (_controlMode == ControlMode::Object && _mesh) {
+			double dx = static_cast<float>(x - _lastMouseX) * 0.01f;
+			double dz = static_cast<float>(y - _lastMouseY) * 0.01f;
+			_mesh->_position.x += dx;
+			_mesh->_position.x += dz;
+		}
+	}
 
 	void SceneView::loadMesh(const std::string& filepath) {
 		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
