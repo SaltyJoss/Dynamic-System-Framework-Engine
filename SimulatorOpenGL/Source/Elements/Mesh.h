@@ -27,6 +27,7 @@ namespace elements {
 		void render();
 		void bind();
 		void unbind();
+		void clear();
 
 		std::vector<unsigned int> getVertexIndices() { return _vertexIndices; }
 

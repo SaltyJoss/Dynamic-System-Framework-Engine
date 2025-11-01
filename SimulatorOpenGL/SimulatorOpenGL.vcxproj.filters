@@ -307,7 +307,7 @@
     <None Include="Source\Shaders\vs.shader">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="fs_checkerboard.shader">
+    <None Include="Source\Shaders\fs_checkerboard.shader">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

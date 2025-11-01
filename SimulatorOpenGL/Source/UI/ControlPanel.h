@@ -50,7 +50,7 @@ namespace gui {
 
         std::function<void(const std::string&)> _meshLoadCallback;
         std::function<void(bool)> _simCallback;
-        std::unique_ptr<SceneView> _sceneView;
+        SceneView* _sceneView;
 
     };
 }
