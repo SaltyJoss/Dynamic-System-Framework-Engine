@@ -1,4 +1,3 @@
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Face.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Face.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_demo.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_demo.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_draw.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_draw.obj
@@ -9,6 +8,7 @@ C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\li
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\3rdParty\glad.c;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\glad.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Application.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Application.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Camera.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Camera.obj
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Face.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Face.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Mesh.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Mesh.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VertexHolder.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Element.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Element.obj

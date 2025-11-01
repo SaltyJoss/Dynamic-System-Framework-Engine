@@ -26,6 +26,7 @@ namespace render {
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)_window->getNativeWin(), true);
 		ImGui_ImplOpenGL3_Init(glslVersion);
 
+		LOG_INFO("ImGui context initialized (GLSL %s)", glslVersion);
 		return true;
 	}
 
@@ -54,6 +55,8 @@ namespace render {
 
 		ImGui::DockSpace(dockingSpaceID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 		ImGui::End();
+
+		LOG_INFO_ONCE("ImGui preRender frame prepared with docking space ID %u", dockingSpaceID);
 	}
 
 	void render::GUIContext::postRender() {
@@ -67,6 +70,8 @@ namespace render {
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backupCurrentContext);
+
+			LOG_INFO_ONCE("ImGui platform windows rendered (viewports enabled)");
 		}
 	}
 
@@ -74,5 +79,7 @@ namespace render {
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
+
+		LOG_INFO("ImGui context shutdown completed");
 	}
 }

@@ -151,7 +151,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Face.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp" />
@@ -162,6 +161,7 @@
     <ClCompile Include="Source\3rdParty\glad.c" />
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Elements\Camera.cpp" />
+    <ClCompile Include="Source\Elements\Face.cpp" />
     <ClCompile Include="Source\Elements\Mesh.cpp" />
     <ClCompile Include="Source\Elements\VertexHolder.cpp" />
     <ClCompile Include="Source\Elements\Element.cpp" />
@@ -183,7 +183,6 @@
     <ClCompile Include="Source\Window\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Face.h" />
     <ClInclude Include="Libraries\lib\imgui\imconfig.h" />
     <ClInclude Include="Libraries\lib\imgui\imgui.h" />
     <ClInclude Include="Libraries\lib\imgui\imgui_impl_glfw.h" />
@@ -196,6 +195,7 @@
     <ClInclude Include="Source\Application.h" />
     <ClInclude Include="Source\ch.h" />
     <ClInclude Include="Source\Elements\Camera.h" />
+    <ClInclude Include="Source\Elements\Face.h" />
     <ClInclude Include="Source\Elements\Input.h" />
     <ClInclude Include="Source\Elements\Mesh.h" />
     <ClInclude Include="Source\Elements\Light.h" />
@@ -217,12 +217,14 @@
     <ClInclude Include="Source\UI\SimulationPanels.h" />
     <ClInclude Include="Source\UI\Styles.h" />
     <ClInclude Include="Source\Utils\imguiWidgets.h" />
+    <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\str_utils.h" />
     <ClInclude Include="Source\Window\GUIManager.h" />
     <ClInclude Include="Source\Window\Window.h" />
     <ClInclude Include="Source\Window\WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="fs_checkerboard.shader" />
     <None Include="Source\Shaders\fs.shader" />
     <None Include="Source\Shaders\fs_pbr.shader" />
     <None Include="Source\Shaders\vs.shader" />

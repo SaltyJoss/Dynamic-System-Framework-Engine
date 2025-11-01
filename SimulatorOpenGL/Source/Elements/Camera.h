@@ -7,6 +7,8 @@
 #include "Shader/ShaderUtil.h"
 #include "Input.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace elements {
 	class Camera : public Element
 	{
@@ -73,8 +75,7 @@ namespace elements {
 
 				updateViewMatrix();
 			}
-			else if (button == eInputButton::Middle) {
-				// TODO: Adjust pan speed for distance
+			else if (button == eInputButton::Left) {
 				glm::vec2 delta = (pos2d - _currentPos2D) * 0.003f;
 
 				_focus += -getRight() * delta.x * _distance;

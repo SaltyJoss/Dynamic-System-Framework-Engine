@@ -23,21 +23,21 @@ namespace render {
 	}
 
 	bool render::OpenGLContext::init(window::IWindow* window) {
-
-
+		LOG_INFO("init() Called!");
 		__super::init(window);
 
 		window::IWindow* localWindow = window; // local copy for logging/debug
 
 		fprintf(stderr, "[INSIDE OpenGLContext::Init()]Width: %d, Height: %d, Header: %s\n", window->_width, window->_height, window->_header.c_str());
+		LOG_INFO("");
 
 		if (!window->_width || !window->_height) {
-			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Window dimensions not set!\n");
+			LOG_ERROR("Window dimensions not set!");
 			return false;
 		}
 
 		if (!glfwInit()) { 
-			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Failed to initialize GLFW\n");
+			LOG_ERROR("Failed to initialize GLFW -> ", glfwGetError(NULL));
 			return false; 
 		}
 
@@ -45,7 +45,8 @@ namespace render {
 		localWindow->setNativeWin(glWindow);
 
 		if (!glWindow) { 
-			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: Failed to create GLFW window\n");
+			gLog.logError("OpenGL", "Failed to create GLFW window: ", glfwGetError(NULL));
+			LOG_ERROR("Failed to create GLFW window -> ", glfwGetError(NULL));
 			glfwTerminate();
 			return false;
 		}
@@ -59,20 +60,26 @@ namespace render {
 
 		GLenum err = glewInit();
 		if (err != GLEW_OK) { 
-			fprintf(stderr, "[ERROR / OpenGL] OpenGLInit: GLEW failed: %s\n", glewGetErrorString(err)); 
+			LOG_ERROR("GLEW failed -> ", glewGetErrorString(err));
 			return false; 
 		}
 
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD" << std::endl; return false; }
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { 
+			LOG_ERROR("Failed to INITIALISE GLAD!");
+			return false; 
+		}
 
 		glEnable(GL_DEPTH_TEST);
+		LOG_INFO("GL_DEPTH_TEST enabled!");
 
 		return true;
 	}
 
 	void render::OpenGLContext::preRender() {
 		glViewport(0, 0, _window->_width, _window->_height);
+		LOG_INFO("Viewport Region set -> ", _window->_width, ", ", _window->_height);
 		glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
+		LOG_INFO("Colour Values specified!");
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
@@ -84,5 +91,6 @@ namespace render {
 	void render::OpenGLContext::end() {
 		glfwDestroyWindow((GLFWwindow*)_window->getNativeWin());
 		glfwTerminate();
+		LOG_INFO("GLFW window destroyed and context terminated successfully.");
 	}
 }

@@ -7,6 +7,8 @@
 #include "render/openglBufferManager.h"
 #include "Elements/Input.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace gui {
     class SceneView{
     public:
@@ -20,6 +22,7 @@ namespace gui {
             _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1.3f, 0.1f, 100.0f);
+            _checkerPlane = createCheckerPlane(10.0f);
 
         }
 
@@ -39,6 +42,9 @@ namespace gui {
         void resetView() { _camera->reset(); }
 
     private:
+        std::shared_ptr<elements::Mesh> _checkerPlane;
+        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 10.0f);
+
         std::unique_ptr<elements::Camera> _camera;
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
         std::unique_ptr<shaders::Shader> _shader;

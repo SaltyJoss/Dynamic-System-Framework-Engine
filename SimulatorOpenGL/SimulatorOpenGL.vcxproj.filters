@@ -82,6 +82,9 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{018bf385-7880-4606-ab61-368d92c04af6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{d72c24c4-64fe-45da-b137-0864a33b9bac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
@@ -171,7 +174,7 @@
     <ClCompile Include="Source\Imports\importObj.cpp">
       <Filter>Source Files\imports</Filter>
     </ClCompile>
-    <ClCompile Include="Face.cpp">
+    <ClCompile Include="Source\Elements\Face.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
   </ItemGroup>
@@ -284,10 +287,13 @@
     <ClInclude Include="Source\Utils\str_utils.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Face.h">
+    <ClInclude Include="Source\Utils\imguiWidgets.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Elements\Face.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Utils\imguiWidgets.h">
+    <ClInclude Include="Source\Utils\Logger.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
@@ -299,6 +305,9 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="Source\Shaders\vs.shader">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="fs_checkerboard.shader">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

@@ -19,9 +19,9 @@ namespace shaders {
 			GLchar* infoLog = new GLchar[length + 1];
 			glGetShaderInfoLog(shaderID, length, &length, infoLog);
 
-			fprintf(stderr, "[ERROR / OpenGL] ShaderCompile: %s\n", infoLog);
+			LOG_ERROR("Shader compilation failed: %s", infoLog);
 			delete[] infoLog;
-		}
+		} else { LOG_INFO("Shader compiled successfully"); }
 
 		return shaderID;
 	}
@@ -29,6 +29,11 @@ namespace shaders {
 	bool Shader::load(const std::string& vertexShaderFile, const std::string& fragmentShaderFile) {
 		std::ifstream isVS(vertexShaderFile);
 		std::ifstream isFS(fragmentShaderFile);
+
+		if (!isVS.is_open() || !isFS.is_open()) {
+			LOG_ERROR("Failed to open shader files: VS=%s FS=%s", vertexShaderFile.c_str(), fragmentShaderFile.c_str());
+			return false;
+		}
 
 		const std::string fVS((std::istreambuf_iterator<char>(isVS)), std::istreambuf_iterator<char>());
 		const std::string fFS((std::istreambuf_iterator<char>(isFS)), std::istreambuf_iterator<char>());
@@ -42,6 +47,19 @@ namespace shaders {
 		glAttachShader(_programID, fs);
 
 		glLinkProgram(_programID);
+
+		GLint linkStatus;
+		glGetProgramiv(_programID, GL_LINK_STATUS, &linkStatus);
+		if (linkStatus == GL_FALSE) {
+			int length;
+			glGetProgramiv(_programID, GL_INFO_LOG_LENGTH, &length);
+			GLchar* infoLog = new GLchar[length + 1];
+			glGetProgramInfoLog(_programID, length, &length, infoLog);
+			LOG_ERROR("Shader program linking failed: %s", infoLog);
+			delete[] infoLog;
+		}
+		else { LOG_INFO("Shader program linked successfully"); }
+
 		glValidateProgram(_programID);
 
 		glDeleteShader(vs);
@@ -50,29 +68,34 @@ namespace shaders {
 		return true;
 	}
 
-	void Shader::use() { glUseProgram(_programID); }
-	void Shader::unload() { glDeleteProgram(_programID); }
+	void Shader::use() { glUseProgram(_programID); LOG_INFO_ONCE("Shader program bound"); }
+	void Shader::unload() { glDeleteProgram(_programID); LOG_INFO_ONCE("Shader program deleted"); }
 
 	void Shader::setMat4(const glm::mat4& mat4, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glUniformMatrix4fv(matLoc, 1, GL_FALSE, glm::value_ptr(mat4));
 	}
+
 	void Shader::setInt1(int v, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glUniform1i(matLoc, v);
 	}
+
 	void Shader::setFlt1(float v, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glUniform1f(matLoc, v);
 	}
+
 	void Shader::setFlt3(float a, float b, float c, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glUniform3f(matLoc, a, b, c);
 	}
+
 	void Shader::setVec3(const glm::vec3& vec3, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glProgramUniform3fv(getProgramID(), matLoc, 1, glm::value_ptr(vec3));
 	}
+
 	void Shader::setVec4(const glm::vec4& vec4, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glProgramUniform4fv(getProgramID(), matLoc, 1, glm::value_ptr(vec4));

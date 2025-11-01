@@ -3,6 +3,8 @@
 #include "RenderBase.h"
 #include "UI/Styles.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace render {
 	class OpenGLContext : public RenderContext {
 	public:
