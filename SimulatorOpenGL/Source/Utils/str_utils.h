@@ -2,7 +2,7 @@
 
 #include "ch.h"
 
-namespace nutils
+namespace utils
 {
   std::vector<uint32_t> tokenize(const std::string& line, const char token)
   {

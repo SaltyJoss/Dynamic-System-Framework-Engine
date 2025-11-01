@@ -2,7 +2,7 @@
 
 #include "importBase.h"
 
-namespace nmesh_import {
+namespace mesh_import {
 
 	class ObjMeshImporter : public IMeshImporter
 	{

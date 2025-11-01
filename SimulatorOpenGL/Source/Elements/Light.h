@@ -5,6 +5,8 @@
 #include "Element.h"
 #include "Shader/ShaderUtil.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace elements {
     class Light : public Element
     {

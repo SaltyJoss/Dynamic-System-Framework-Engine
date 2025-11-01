@@ -6,6 +6,10 @@
 #include "VertexHolder.h"
 #include "Element.h"
 
+#include "Face.h"
+
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace elements {
 	class Mesh : public Element {
 	public:

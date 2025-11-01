@@ -4,6 +4,8 @@
 
 #include "RenderBase.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace render {
 	class OpenGLVertexIndexBuffer : public VertexIndexBuffer {
 	public:

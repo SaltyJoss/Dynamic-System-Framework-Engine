@@ -2,7 +2,7 @@
 #include "ch.h"
 #include "Elements/Mesh.h"
 
-namespace nmesh_import {
+namespace mesh_import {
 
 	struct IMeshImporter
 	{

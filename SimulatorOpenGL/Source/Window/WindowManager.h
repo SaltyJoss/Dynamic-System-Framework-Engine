@@ -37,6 +37,8 @@ public:
 
 };*/
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace window {
     class GLWindow : public IWindow {
     public:

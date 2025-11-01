@@ -2,6 +2,8 @@
 
 #include "imgui.h"
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace gui {
 	class DebugPanel {
 	public:

@@ -4,9 +4,13 @@
 namespace render {
 	// --- OpenGLVertexIndexBuffer ---
 	void render::OpenGLVertexIndexBuffer::createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
+		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
+
 		glGenVertexArrays(1, &_VAO);
 		glGenBuffers(1, &_EBO);
 		glGenBuffers(1, &_VBO);
+
+		if (!_VAO || !_EBO || !_VBO) { LOG_ERROR("Failed to generate VAO/VBO/EBO"); return; }
 
 		glBindVertexArray(_VAO);
 
@@ -24,9 +28,12 @@ namespace render {
 
 		glBindVertexArray(0);
 
+		LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
 	void render::OpenGLVertexIndexBuffer::deleteBuffers() {
+		LOG_INFO("Deleting OpenGLVertexIndexBuffer buffers");
+
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -34,6 +41,8 @@ namespace render {
 		glDeleteBuffers(1, &_EBO);
 		glDeleteBuffers(1, &_VBO);
 		glDeleteVertexArrays(1, &_VAO);
+
+		LOG_INFO("Buffers deleted");
 	}
 
 	void render::OpenGLVertexIndexBuffer::bind() { glBindVertexArray(_VAO); }
@@ -48,10 +57,14 @@ namespace render {
 
 	// --- OpenGLFrameBuffer ---
 	void render::OpenGLFrameBuffer::createBuffers(int32_t width, int32_t height) {
+		LOG_INFO("Creating framebuffer buffers with size %dx%d", width, height);
 		_width = width;
 		_height = height;
 
-		if (_FBO) { deleteBuffers(); }
+		if (_FBO) { 
+			LOG_WARN("Framebuffer already exists. Deleting old buffers."); 
+			deleteBuffers();
+		}
 
 		glGenFramebuffers(1, &_FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, _FBO);
@@ -80,19 +93,25 @@ namespace render {
 		glDrawBuffers(1, buffers);
 
 		unbind();
+
+		LOG_INFO("Framebuffer buffers created successfully");
 	}
 
 	void render::OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
+			LOG_INFO("Deleting framebuffer buffers");
 			glDeleteFramebuffers(1, &_FBO);
 			glDeleteTextures(1, &_texID);
 			glDeleteTextures(1, &_depthID);
 			_texID = 0;
 			_depthID = 0;
+			LOG_INFO("Framebuffer buffers deleted");
 		}
+		else { LOG_WARN("Attempted to delete framebuffer buffers but none exist"); }
 	}
 
 	void render::OpenGLFrameBuffer::bind() {
+		if (!_FBO) { LOG_WARN_ONCE("Attempted to bind framebuffer but FBO is 0"); return; }
 		glBindFramebuffer(GL_FRAMEBUFFER, _FBO);
 		glViewport(0, 0, _width, _height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

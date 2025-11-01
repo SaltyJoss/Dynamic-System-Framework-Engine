@@ -12,7 +12,7 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
     ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse);
 
-    if (ImGui::Button("Open")) { _fileDialog.Open(); }
+    if (ImGui::Button("Open")) { _fileDialog.Open(); LOG_INFO("File dialog opened"); }
     ImGui::SameLine(0, 5.0f);
     ImGui::Text(_currentFile.c_str());
 
@@ -27,6 +27,7 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
         auto file_path = _fileDialog.GetSelected().string();
         _currentFile = file_path.substr(file_path.find_last_of("/\\") + 1);
         _meshLoadCallback(file_path);
+        LOG_INFO("Mesh loaded from file: %s", _currentFile.c_str());
 
         _fileDialog.ClearSelected();
     }
@@ -55,6 +56,7 @@ void gui::ControlPanel::renderObjectProperties() {
     ImGui::SeparatorText("Object Appearance");
     if (!_mesh) {
         ImGui::Text("No mesh loaded!");
+        LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
     }
     else {
         ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB);
@@ -75,6 +77,7 @@ void gui::ControlPanel::renderStats() {
     static float data[100];
     for (int i = 0; i < 100; i++) data[i] = sinf(i * 0.1f);
     ImGui::PlotLines("Velocity", data, 100);
+
 }
 
 void gui::ControlPanel::renderCameraProperties() {
