@@ -44,6 +44,12 @@ void gui::ControlPanel::renderSimulationProperties() {
     ImGui::Text("Position");
     ImGui::Separator();
     gui::drawVec3Widget("Position", _sceneView->getLight()->_position, 80.0f);
+
+    ImGui::SeparatorText("Control Mode");
+    static int mode = 0;
+    ImGui::RadioButton("Camera", &mode, 0);
+    ImGui::RadioButton("Object", &mode, 1);
+    _sceneView->setControlMode(mode == 0 ? SceneView::ControlMode::Camera : SceneView::ControlMode::Object);
 }
 
 void gui::ControlPanel::renderObjectProperties() {
@@ -59,7 +65,7 @@ void gui::ControlPanel::renderObjectProperties() {
         LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
     }
     else {
-        ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB);
+        ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayRGB);
         ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
     }
 }

@@ -26,8 +26,6 @@ namespace render {
 		LOG_INFO("init() Called!");
 		__super::init(window);
 
-		window::IWindow* localWindow = window; // local copy for logging/debug
-
 		fprintf(stderr, "[INSIDE OpenGLContext::Init()]Width: %d, Height: %d, Header: %s\n", window->_width, window->_height, window->_header.c_str());
 		LOG_INFO("");
 
@@ -42,7 +40,7 @@ namespace render {
 		}
 
 		auto glWindow = glfwCreateWindow(window->_width, window->_height, window->_header.c_str(), nullptr, nullptr);
-		localWindow->setNativeWin(glWindow);
+		window->setNativeWin(glWindow);
 
 		if (!glWindow) { 
 			gLog.logError("OpenGL", "Failed to create GLFW window: ", glfwGetError(NULL));
@@ -65,21 +63,19 @@ namespace render {
 		}
 
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { 
-			LOG_ERROR("Failed to INITIALISE GLAD!");
+			LOG_ERROR("Failed to initialise GLAD");
 			return false; 
 		}
 
 		glEnable(GL_DEPTH_TEST);
-		LOG_INFO("GL_DEPTH_TEST enabled!");
+		LOG_INFO("GL_DEPTH_TEST enabled");
 
 		return true;
 	}
 
 	void render::OpenGLContext::preRender() {
 		glViewport(0, 0, _window->_width, _window->_height);
-		LOG_INFO("Viewport Region set -> ", _window->_width, ", ", _window->_height);
 		glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
-		LOG_INFO("Colour Values specified!");
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 

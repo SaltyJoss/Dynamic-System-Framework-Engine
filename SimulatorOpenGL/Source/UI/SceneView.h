@@ -25,22 +25,30 @@ namespace gui {
 
             if (_checkerPlane) _checkerPlane->clear();
             _checkerPlane = createCheckerPlane(50.0f);
-
         }
 
         ~SceneView() {
             _shader->unload();
             if (_frameBuffer) _frameBuffer->deleteBuffers();
-            if (_mesh) _mesh->clear();          // VAO/VBO cleanup
+            if (_mesh) _mesh->clear();
             if (_checkerPlane) _checkerPlane->clear();
         }
 
         elements::Light* getLight() { return _light.get(); }
 
+        enum class ControlMode {
+            Camera,
+            Object
+        };
+
+        ControlMode _controlMode = ControlMode::Camera; // Default to Camera Control
+
         void resize(int32_t width, int32_t height);
         void render();
         void loadMesh(const std::string& filepath);
         void setMesh(std::shared_ptr<elements::Mesh> mesh) { _mesh = mesh; }
+        void setControlMode(ControlMode mode) { _controlMode = mode; }
+        ControlMode getControlMode() const { return _controlMode; }
 
         std::shared_ptr<elements::Mesh> getMesh() { return _mesh; }
 
@@ -60,6 +68,8 @@ namespace gui {
 
         glm::vec2 _size;
 
-        float planeHeight = -2.5f; // below object
+        float planeHeight = -2.5f;
+        double _lastMouseX = 0.0;
+        double _lastMouseY = 0.0;
     };
 }
