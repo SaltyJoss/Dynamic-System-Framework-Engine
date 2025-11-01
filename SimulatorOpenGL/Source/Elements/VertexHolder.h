@@ -1,5 +1,7 @@
 #pragma once
 
+extern Debug gLog; // Global Variable for debugging and logs
+
 namespace elements {
 	class VertexHolder {
 	public:

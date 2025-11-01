@@ -44,9 +44,9 @@ namespace nmesh_import
         ss_line >> v1 >> v2 >> v3;
 
         uint32_t vert_idx[3];
-        vert_idx[0] = nutils::tokenize(v1, '/').at(0);
-        vert_idx[1] = nutils::tokenize(v2, '/').at(0);
-        vert_idx[2] = nutils::tokenize(v3, '/').at(0);
+        vert_idx[0] = utils::tokenize(v1, '/').at(0);
+        vert_idx[1] = utils::tokenize(v2, '/').at(0);
+        vert_idx[2] = utils::tokenize(v3, '/').at(0);
 
         pMesh->addVertexIndex(vert_idx[0] - 1);
         pMesh->addVertexIndex(vert_idx[1] - 1);
