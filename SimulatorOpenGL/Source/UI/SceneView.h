@@ -49,14 +49,17 @@ namespace gui {
         void resetView() { _camera->reset(); }
 
     private:
-        std::shared_ptr<elements::Mesh> _checkerPlane;
-        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);
-
         std::unique_ptr<elements::Camera> _camera;
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
         std::unique_ptr<shaders::Shader> _shader;
         std::unique_ptr<elements::Light> _light;
+
+        std::shared_ptr<elements::Mesh> _checkerPlane;
+        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);
         std::shared_ptr<elements::Mesh> _mesh;
+
         glm::vec2 _size;
+
+        float planeHeight = -2.5f; // below object
     };
 }

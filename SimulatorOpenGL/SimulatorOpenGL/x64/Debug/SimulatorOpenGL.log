@@ -306,16 +306,16 @@ C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Eleme
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Mesh.h(41,21): warning C4305: 'initializing': truncation from 'double' to 'float'
   (compiling source file 'Source/UI/SceneView.cpp')
   
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(44,13): warning C4244: '=': conversion from 'int32_t' to 'T', possible loss of data
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(44,13): warning C4244:         with
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(44,13): warning C4244:         [
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(44,13): warning C4244:             T=float
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(44,13): warning C4244:         ]
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(45,13): warning C4244: '=': conversion from 'int32_t' to 'T', possible loss of data
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(45,13): warning C4244:         with
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(45,13): warning C4244:         [
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(45,13): warning C4244:             T=float
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(45,13): warning C4244:         ]
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(55,13): warning C4244: '=': conversion from 'int32_t' to 'T', possible loss of data
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(55,13): warning C4244:         with
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(55,13): warning C4244:         [
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(55,13): warning C4244:             T=float
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(55,13): warning C4244:         ]
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(56,13): warning C4244: '=': conversion from 'int32_t' to 'T', possible loss of data
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(56,13): warning C4244:         with
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(56,13): warning C4244:         [
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(56,13): warning C4244:             T=float
+C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\UI\SceneView.cpp(56,13): warning C4244:         ]
   WindowManager.cpp
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\glad\glad.h(484,9): warning C4005: 'GL_SRC1_ALPHA': macro redefinition
   (compiling source file 'Source/Window/WindowManager.cpp')
