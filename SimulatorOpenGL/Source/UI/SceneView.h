@@ -8,17 +8,16 @@
 #include "Elements/Input.h"
 
 namespace gui {
-    class SceneView
-    {
+    class SceneView{
     public:
         SceneView() :
             _camera(nullptr), _frameBuffer(nullptr), _shader(nullptr),
-            _light(nullptr), _size(800, 600)
+            _light(nullptr), _size(1280, 720)
         {
             _frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
             _frameBuffer->createBuffers(1280, 720);
             _shader = std::make_unique<shaders::Shader>();
-            _shader->load("shaders/vs.shader", "shaders/fs_pbr.shader");
+            _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1.3f, 0.1f, 100.0f);
 
@@ -26,7 +25,7 @@ namespace gui {
 
         ~SceneView() { _shader->unload(); }
 
-        elements::Light* get_light() { return _light.get(); }
+        elements::Light* getLight() { return _light.get(); }
 
         void resize(int32_t width, int32_t height);
         void render();

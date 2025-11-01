@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ch.h"
+
 #include "RenderBase.h"
 
 namespace render {

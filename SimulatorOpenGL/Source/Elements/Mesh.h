@@ -24,10 +24,10 @@ namespace elements {
 		void bind();
 		void unbind();
 
-		std::vector<unsigned int> getVertexIndicies() { return _vertexIndices; }
+		std::vector<unsigned int> getVertexIndices() { return _vertexIndices; }
 
 		void update(shaders::Shader* shader) override {	// will use for specifying objects colour and texture
-			shader->setVec3(_colour, "blue");
+			shader->setVec3(_colour, "albedo");
 			shader->setFlt1(_metallic, "metallic");
 			shader->setFlt1(1.0f, "ao");
 		}

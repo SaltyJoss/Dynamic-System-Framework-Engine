@@ -11,20 +11,23 @@ namespace elements {
     public:
 
         Light() {
-            mColor = glm::vec3(1.0f, 1.0f, 1.0f);
-            mPosition = { 1.5f, 3.5f, 3.0f };
-            mStrength = 100.0f;
+            _colour = glm::vec3(1.0f, 1.0f, 1.0f);
+            _position = { 1.5f, 3.5f, 3.0f };
+            _strength = 100.0f;
         }
 
         ~Light() {}
 
+        glm::vec3 getPosition() const { return _position; }
+        glm::vec3 getColour() const { return _colour; }
+
         void update(shaders::Shader* shader) override {
-            shader->setVec3(mPosition, "lightPosition");
-            shader->setVec3(mColor * mStrength, "lightColour");
+            shader->setVec3(_position, "lightPosition");
+            shader->setVec3(_colour * _strength, "lightColour");
         }
 
-        glm::vec3 mPosition;
-        glm::vec3 mColor;
-        float mStrength;
+        glm::vec3 _position;
+        glm::vec3 _colour;
+        float _strength;
     };
 }
