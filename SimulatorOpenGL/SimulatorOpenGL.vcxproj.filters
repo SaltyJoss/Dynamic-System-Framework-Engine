@@ -73,6 +73,15 @@
     <Filter Include="Header Files\OLD">
       <UniqueIdentifier>{cc3516ff-87df-4f6b-899f-9e5a76870a28}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\imports">
+      <UniqueIdentifier>{b84da1bd-3cdf-4385-b044-c49b182b3a5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imports">
+      <UniqueIdentifier>{da5ae967-1867-470f-a5ce-81ee01b6a7fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{018bf385-7880-4606-ab61-368d92c04af6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
@@ -158,6 +167,12 @@
     </ClCompile>
     <ClCompile Include="Source\Window\GUIManager.cpp">
       <Filter>Source Files\OLD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Imports\importObj.cpp">
+      <Filter>Source Files\imports</Filter>
+    </ClCompile>
+    <ClCompile Include="Face.cpp">
+      <Filter>Source Files\Elements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -260,5 +275,31 @@
     <ClInclude Include="Source\Render\SimulationManager.h">
       <Filter>Header Files\OLD</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Imports\importBase.h">
+      <Filter>Header Files\imports</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Imports\importObj.h">
+      <Filter>Header Files\imports</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Utils\str_utils.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Face.h">
+      <Filter>Header Files\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Utils\imguiWidgets.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\Shaders\fs.shader">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="Source\Shaders\fs_pbr.shader">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="Source\Shaders\vs.shader">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

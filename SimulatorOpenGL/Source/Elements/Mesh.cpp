@@ -57,7 +57,7 @@ namespace elements {
 
 	void Mesh::createBuffers() { _rndrBffrMngr->createBuffers(_vertices, _vertexIndices); }
 	void Mesh::deleteBuffers() { _rndrBffrMngr->deleteBuffers(); }
-	void Mesh::bind() { _rndrBffrMngr->deleteBuffers(); }
+	void Mesh::bind() { _rndrBffrMngr->bind(); }
 	void Mesh::unbind() { _rndrBffrMngr->unbind(); }
 	void Mesh::render() { _rndrBffrMngr->draw((int) _vertexIndices.size()); }
 

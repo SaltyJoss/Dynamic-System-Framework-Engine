@@ -31,7 +31,7 @@ namespace elements {
 			shader->setVec3(_position, "camPos");
 		}
 
-		void setAspect(float aspect) { _projection  = glm::perspective(_FOV, aspect, _aspect, _far); }
+		void setAspect(float aspect) { _projection  = glm::perspective(_FOV, aspect, _near, _far); }
 
 		void setDistance(float offset) {
 			_distance += offset;
@@ -40,6 +40,7 @@ namespace elements {
 
 		const glm::mat4& getProjection() const { return _projection; }
 
+		glm::vec3 getPosition() const { return _position; }
 		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
 		glm::vec3 getUp() const { return glm::rotate(getDirection(), _up); }
 		glm::vec3 getRight() const { return glm::rotate(getDirection(), _right); }
@@ -55,7 +56,7 @@ namespace elements {
 		void reset()
 		{
 			_focus = { 0.0f, 0.0f, 0.0f };
-			//_Distance = 5.0f;
+			//_distance = 5.0f;
 			updateViewMatrix();
 		}
 

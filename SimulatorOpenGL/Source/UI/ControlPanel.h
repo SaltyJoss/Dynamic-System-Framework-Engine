@@ -4,6 +4,7 @@
 #include "UI/SceneView.h"
 
 #include <imgui.h>
+#include "utils/imguiWidgets.h"
 #include <imfilebrowser.h>
 
 namespace gui {
@@ -47,6 +48,7 @@ namespace gui {
 
         std::function<void(const std::string&)> _meshLoadCallback;
         std::function<void(bool)> _simCallback;
+        std::unique_ptr<SceneView> _sceneView;
 
     };
 }

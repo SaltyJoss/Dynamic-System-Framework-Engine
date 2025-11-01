@@ -5,15 +5,16 @@ namespace render {
 	// --- OpenGLVertexIndexBuffer ---
 	void render::OpenGLVertexIndexBuffer::createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
 		glGenVertexArrays(1, &_VAO);
-		glGenBuffers(1, &_VBO);
 		glGenBuffers(1, &_EBO);
+		glGenBuffers(1, &_VBO);
 
 		glBindVertexArray(_VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, _EBO);
 
+		glBindBuffer(GL_ARRAY_BUFFER, _VBO);
 		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(elements::VertexHolder), vertices.data(), GL_STATIC_DRAW);
-		glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(elements::VertexHolder), (void*)0);
@@ -76,14 +77,14 @@ namespace render {
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, _depthID, 0);
 		GLenum buffers[4] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(_texID, buffers);
+		glDrawBuffers(1, buffers);
 
 		unbind();
 	}
 
 	void render::OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
-			glDeleteFramebuffers(GL_FRAMEBUFFER, &_FBO);
+			glDeleteFramebuffers(1, &_FBO);
 			glDeleteTextures(1, &_texID);
 			glDeleteTextures(1, &_depthID);
 			_texID = 0;
@@ -94,6 +95,7 @@ namespace render {
 	void render::OpenGLFrameBuffer::bind() {
 		glBindFramebuffer(GL_FRAMEBUFFER, _FBO);
 		glViewport(0, 0, _width, _height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void render::OpenGLFrameBuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
