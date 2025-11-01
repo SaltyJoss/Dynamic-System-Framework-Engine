@@ -14,23 +14,34 @@ namespace gui{
 
 		_light->update(_shader.get());
 
+		// Render checker floor
 		if (_checkerPlane) {
 			glm::mat4 floorModel(1.0f);
 			_shader->setMat4(floorModel, "model");
+
+			// Set checkerboard uniforms
+			_shader->setBool(true, "isFloor");
+			_shader->setVec3(glm::vec3(1.0f), "colour1");
+			_shader->setVec3(glm::vec3(0.0f), "colour2");
+			_shader->setFlt1(1.0f, "checkSize"); // tweak for size
+
 			_checkerPlane->update(_shader.get());
 			_checkerPlane->render();
 		}
 
+		// Render other objects normally
 		if (_mesh) {
 			glm::mat4 model(1.0f);
 			_shader->setMat4(model, "model");
+
+			_shader->setBool(false, "isFloor"); // use normal PBR albedo
 			_mesh->update(_shader.get());
 			_mesh->render();
 		}
 
 		_frameBuffer->unbind();
 
-		ImGui::Begin("Scene");
+		ImGui::Begin("Simulation");
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		_size = { viewportPanelSize.x, viewportPanelSize.y };
@@ -52,7 +63,6 @@ namespace gui{
 	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
 
 		auto plane = std::make_shared<elements::Mesh>();
-		float planeHeight = -1.0f; // below object
 
 		std::vector<glm::vec3> pos = {
 			{-size, planeHeight, -size},
@@ -64,9 +74,7 @@ namespace gui{
 		glm::vec3 normal(0.0f, 1.0f, 0.0f);
 
 		for (auto& p : pos) {
-			elements::VertexHolder vh;
-			vh._pos = p;
-			vh._normal = normal;
+			elements::VertexHolder vh(p, normal);
 			plane->addVertex(vh);
 		}
 
@@ -76,8 +84,6 @@ namespace gui{
 		plane->addVertexIndex(2);
 		plane->addVertexIndex(3);
 		plane->addVertexIndex(0);
-
-		plane->_colour = glm::vec3(1.0f); // <-- set color to white for procedural checker
 
 		plane->init();
 		return plane;

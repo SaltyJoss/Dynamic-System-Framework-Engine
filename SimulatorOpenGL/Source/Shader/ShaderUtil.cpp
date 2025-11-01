@@ -100,4 +100,9 @@ namespace shaders {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glProgramUniform4fv(getProgramID(), matLoc, 1, glm::value_ptr(vec4));
 	}
+
+	void Shader::setBool(bool value, const std::string& name) {
+		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
+		glUniform1i(matLoc, value ? 1 : 0);  // use glUniform1i for bool
+	}
 }

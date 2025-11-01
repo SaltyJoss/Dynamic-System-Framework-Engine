@@ -23,5 +23,6 @@ namespace shaders {
 		void setFlt3(float a, float b, float c, const std::string& name);
 		void setVec3(const glm::vec3& vec3, const std::string& name);
 		void setVec4(const glm::vec4& vec4, const std::string& name);
+		void setBool(bool value, const std::string& name);
 	};
 }
