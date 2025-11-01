@@ -33,8 +33,8 @@ namespace gui{
 		if (_mesh) {
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), _mesh->_position);
 			_shader->setMat4(model, "model");
-
 			_shader->setBool(false, "isFloor");
+
 			_mesh->update(_shader.get());
 			_mesh->render();
 		}
@@ -47,6 +47,8 @@ namespace gui{
 		_size = { viewportPanelSize.x, viewportPanelSize.y };
 		uint64_t textureID = _frameBuffer->getTexture();
 		ImGui::Image(reinterpret_cast<void*>(static_cast<uintptr_t>(_frameBuffer->getTexture())), ImVec2{ _size.x, _size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 
 		ImGui::End();
 	}
@@ -89,16 +91,14 @@ namespace gui{
 		return plane;
 	}
 
-	void SceneView::onMouseWheel(double delta) { _camera->onMouseWheel(delta); }
+	void SceneView::onMouseWheel(double delta) { 
+		if (!_isHovered) return;
+		if (_camera) _camera->onMouseWheel(delta);
+	}
 
 	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) { 
-		if (_controlMode == ControlMode::Camera) { _camera->onMouseMove(x, y, button); }
-		else if (_controlMode == ControlMode::Object && _mesh) {
-			double dx = static_cast<float>(x - _lastMouseX) * 0.01f;
-			double dz = static_cast<float>(y - _lastMouseY) * 0.01f;
-			_mesh->_position.x += dx;
-			_mesh->_position.x += dz;
-		}
+		if (!_isHovered) return;
+		if (_camera) _camera->onMouseMove(x, y, button);
 	}
 
 	void SceneView::loadMesh(const std::string& filepath) {

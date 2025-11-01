@@ -71,5 +71,7 @@ namespace gui {
         float planeHeight = -2.5f;
         double _lastMouseX = 0.0;
         double _lastMouseY = 0.0;
+
+        bool _isHovered = false;
     };
 }
