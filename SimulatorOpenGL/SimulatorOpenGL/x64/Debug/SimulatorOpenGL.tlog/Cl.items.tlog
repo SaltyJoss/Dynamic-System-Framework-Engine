@@ -7,11 +7,7 @@ C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\li
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\imgui_widgets.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\imgui_widgets.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\3rdParty\glad.c;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\glad.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Application.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Application.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Camera.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Camera.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Face.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Face.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Mesh.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Mesh.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\VertexHolder.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\VertexHolder.obj
-C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Elements\Element.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Element.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Imports\importObj.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\importObj.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Main.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\Main.obj
 C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Render\GUIContext.cpp;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\SimulatorOpenGL\x64\Debug\GUIContext.obj

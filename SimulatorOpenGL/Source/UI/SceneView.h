@@ -17,7 +17,7 @@ namespace gui {
             _light(nullptr), _size(1280, 720)
         {
             _frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-            _frameBuffer->createBuffers(1920, 1080);
+            _frameBuffer->createBuffers(3840, 2160);
             _shader = std::make_unique<shaders::Shader>();
             _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
             _light = std::make_unique<elements::Light>();

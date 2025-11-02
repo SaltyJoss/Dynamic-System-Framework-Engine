@@ -16,8 +16,8 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
     ImGui::SameLine(0, 5.0f);
     ImGui::Text(_currentFile.c_str());
 
-    if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
     if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
+    if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
     if (ImGui::CollapsingHeader("Display Settings")) { renderDisplaySettings(); }
 
     ImGui::End();
@@ -52,16 +52,6 @@ void gui::ControlPanel::renderObjectProperties() {
     static char torqueBuf[64] = "";
     ImGui::InputText("Velocity", velocityBuf, IM_ARRAYSIZE(velocityBuf));
     ImGui::InputText("Torque", torqueBuf, IM_ARRAYSIZE(torqueBuf));
-
-    ImGui::SeparatorText("Object Appearance");
-    if (!_mesh) {
-        ImGui::Text("No mesh loaded!");
-        LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
-    }
-    else {
-        ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayRGB);
-        ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
-    }
 }
 
 void gui::ControlPanel::renderLinkProperties() {
@@ -87,6 +77,16 @@ void gui::ControlPanel::renderCameraProperties() {
     ImGui::SameLine();
     if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object))
         *_controlMode = SceneView::ControlMode::Object;
+
+    ImGui::SeparatorText("Object Appearance");
+    if (!_mesh) {
+        ImGui::Text("No mesh loaded!");
+        LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
+    }
+    else {
+        ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayRGB);
+        ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
+    }
 }
 
 void gui::ControlPanel::renderDisplaySettings() {
