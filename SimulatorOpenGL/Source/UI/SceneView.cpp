@@ -29,6 +29,14 @@ namespace gui{
 			_checkerPlane->render();
 		}
 
+		if (_object && _object->getMesh()) {
+			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
+			_shader->setBool(false, "isFloor");            // mark as non-floor
+			_object->getMesh()->update(_shader.get());
+			_object->getMesh()->render();     // safe now, buffers initialized
+		}
+
+/*
 		// Render other objects normally
 		if (_mesh) {
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), _mesh->_position);
@@ -38,6 +46,7 @@ namespace gui{
 			_mesh->update(_shader.get());
 			_mesh->render();
 		}
+*/
 
 		_frameBuffer->unbind();
 
@@ -102,15 +111,17 @@ namespace gui{
 		glm::vec2 delta = pos2d - _lastMousePos;
 		_lastMousePos = pos2d;
 
-		if (!_isHovered) return;
+		if (!_isHovered) {
+			_camera->setCurrentPos2D(pos2d);
+			_object->setLastMousePos(pos2d);
+			return;
+		}
 
 		if (_controlMode == ControlMode::Camera) {
 			_camera->onMouseMove(x, y, button);
 		}
-		else if (_controlMode == ControlMode::Object && _mesh) {
-			float scale = (button == elements::eInputButton::Left) ? 0.003f : 0.004f;
-			_mesh->_position += glm::vec3(delta.x * scale, -delta.y * scale, 0.0f);
-			// optionally handle rotation with right button
+		else if (_controlMode == ControlMode::Object && _object) {
+			_object->onMouseMove(x, y, button);
 		}
 	}
 

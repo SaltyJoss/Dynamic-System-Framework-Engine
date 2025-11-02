@@ -33,6 +33,17 @@ namespace elements {
 			shader->setVec3(_position, "camPos");
 		}
 
+
+		const glm::mat4& getProjection() const { return _projection; }
+		glm::vec2 getCurrentPos2D() const { return _currentPos2D; }
+		glm::vec3 getPosition() const { return _position; }
+		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
+		glm::vec3 getUp() const { return glm::rotate(getDirection(), _up); }
+		glm::vec3 getRight() const { return glm::rotate(getDirection(), _right); }
+		glm::vec3 getForward() const { return glm::rotate(getDirection(), _forward); }
+		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
+		glm::mat4 getViewMatrix() const { return _viewMatrix; }
+
 		void setAspect(float aspect) { _projection  = glm::perspective(_FOV, aspect, _near, _far); }
 		void setFocus(const glm::vec3& focus) { _focus = focus; updateViewMatrix(); }
 		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
@@ -43,16 +54,6 @@ namespace elements {
 			_distance += offset;
 			updateViewMatrix();
 		}
-
-		const glm::mat4& getProjection() const { return _projection; }
-
-		glm::vec3 getPosition() const { return _position; }
-		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
-		glm::vec3 getUp() const { return glm::rotate(getDirection(), _up); }
-		glm::vec3 getRight() const { return glm::rotate(getDirection(), _right); }
-		glm::vec3 getForward() const { return glm::rotate(getDirection(), _forward); }
-		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
-		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
 		void reset()
 		{
