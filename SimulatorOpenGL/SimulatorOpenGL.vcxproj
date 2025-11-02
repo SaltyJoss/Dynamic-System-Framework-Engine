@@ -71,22 +71,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
@@ -101,7 +101,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -117,7 +117,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,7 +147,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -160,11 +160,7 @@
     <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Source\3rdParty\glad.c" />
     <ClCompile Include="Source\Application.cpp" />
-    <ClCompile Include="Source\Elements\Camera.cpp" />
-    <ClCompile Include="Source\Elements\Face.cpp" />
     <ClCompile Include="Source\Elements\Mesh.cpp" />
-    <ClCompile Include="Source\Elements\VertexHolder.cpp" />
-    <ClCompile Include="Source\Elements\Element.cpp" />
     <ClCompile Include="Source\Imports\importObj.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Render\GUIContext.cpp" />
@@ -199,6 +195,7 @@
     <ClInclude Include="Source\Elements\Input.h" />
     <ClInclude Include="Source\Elements\Mesh.h" />
     <ClInclude Include="Source\Elements\Light.h" />
+    <ClInclude Include="Source\Elements\Object.h" />
     <ClInclude Include="Source\Elements\VertexHolder.h" />
     <ClInclude Include="Source\Elements\Element.h" />
     <ClInclude Include="Source\Imports\importBase.h" />

@@ -129,12 +129,6 @@
     <ClCompile Include="Source\Elements\Mesh.cpp">
       <Filter>Source Files\Elements</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\VertexHolder.cpp">
-      <Filter>Source Files\Elements</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Elements\Element.cpp">
-      <Filter>Source Files\Elements</Filter>
-    </ClCompile>
     <ClCompile Include="Source\UI\Styles.cpp">
       <Filter>Source Files\UI\Stylisitc</Filter>
     </ClCompile>
@@ -153,9 +147,6 @@
     <ClCompile Include="Source\UI\SceneView.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Elements\Camera.cpp">
-      <Filter>Source Files\Elements</Filter>
-    </ClCompile>
     <ClCompile Include="Source\UI\SimulationPanels.cpp">
       <Filter>Source Files\OLD</Filter>
     </ClCompile>
@@ -173,9 +164,6 @@
     </ClCompile>
     <ClCompile Include="Source\Imports\importObj.cpp">
       <Filter>Source Files\imports</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Elements\Face.cpp">
-      <Filter>Source Files\Elements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -295,6 +283,9 @@
     </ClInclude>
     <ClInclude Include="Source\Utils\Logger.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Elements\Object.h">
+      <Filter>Header Files\Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
