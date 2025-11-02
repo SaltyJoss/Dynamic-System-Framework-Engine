@@ -34,6 +34,10 @@ namespace elements {
 		}
 
 		void setAspect(float aspect) { _projection  = glm::perspective(_FOV, aspect, _near, _far); }
+		void setFocus(const glm::vec3& focus) { _focus = focus; updateViewMatrix(); }
+		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
+		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
+		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
 
 		void setDistance(float offset) {
 			_distance += offset;
@@ -50,15 +54,15 @@ namespace elements {
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
-		void onMouseWheel(double delta) {
-			setDistance(delta * 0.5f);
-			updateViewMatrix();
-		}
-
 		void reset()
 		{
 			_focus = { 0.0f, 0.0f, 0.0f };
 			//_distance = 5.0f;
+			updateViewMatrix();
+		}
+
+		void onMouseWheel(double delta) {
+			setDistance(delta * 0.5f);
 			updateViewMatrix();
 		}
 

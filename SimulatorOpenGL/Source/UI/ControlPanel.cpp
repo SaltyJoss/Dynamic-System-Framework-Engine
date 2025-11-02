@@ -44,12 +44,6 @@ void gui::ControlPanel::renderSimulationProperties() {
     ImGui::Text("Position");
     ImGui::Separator();
     gui::drawVec3Widget("Position", _sceneView->getLight()->_position, 80.0f);
-
-    ImGui::SeparatorText("Control Mode");
-    static int mode = 0;
-    ImGui::RadioButton("Camera", &mode, 0);
-    ImGui::RadioButton("Object", &mode, 1);
-    _sceneView->setControlMode(mode == 0 ? SceneView::ControlMode::Camera : SceneView::ControlMode::Object);
 }
 
 void gui::ControlPanel::renderObjectProperties() {
@@ -87,11 +81,12 @@ void gui::ControlPanel::renderStats() {
 }
 
 void gui::ControlPanel::renderCameraProperties() {
-    ImGui::SeparatorText("Camera Controls");
-    static char text[64] = "";
-    ImGui::InputText("Camera Label", text, IM_ARRAYSIZE(text));
-    static bool enabled = true;
-    ImGui::Checkbox("Enable Camera", &enabled);
+    ImGui::Text("Control Mode:");
+    if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera))
+        *_controlMode = SceneView::ControlMode::Camera;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object))
+        *_controlMode = SceneView::ControlMode::Object;
 }
 
 void gui::ControlPanel::renderDisplaySettings() {

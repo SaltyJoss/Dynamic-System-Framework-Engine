@@ -12,7 +12,7 @@ extern Debug gLog; // Global Variable for debugging and logs
 namespace gui {
     class ControlPanel {
     public:
-        ControlPanel() {
+        ControlPanel(SceneView* sceneView) : _sceneView(sceneView), _controlMode(&sceneView->_controlMode) {
             _currentFile = "<...>";
 
             _fileDialog.SetTitle("Open Object Mesh");
@@ -51,6 +51,6 @@ namespace gui {
         std::function<void(const std::string&)> _meshLoadCallback;
         std::function<void(bool)> _simCallback;
         SceneView* _sceneView = nullptr;
-
+        SceneView::ControlMode* _controlMode;
     };
 }
