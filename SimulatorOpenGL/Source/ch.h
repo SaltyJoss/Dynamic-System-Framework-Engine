@@ -1,6 +1,6 @@
 #pragma once
 
-// std includes
+// standard includes
 #include <string>
 #include <algorithm>
 #include <vector>
@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <memory>
+#include <ctime>
 
 // GL includes
 #include <GL/glew.h>
