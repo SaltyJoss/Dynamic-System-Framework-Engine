@@ -1,6 +1,8 @@
 #pragma once
 
 #include "imgui.h"
+#include "SceneView.h"
+#include "Elements/Camera.h"
 
 extern Debug gLog; // Global Variable for debugging and logs
 

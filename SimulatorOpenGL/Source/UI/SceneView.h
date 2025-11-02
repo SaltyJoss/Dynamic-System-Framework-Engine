@@ -6,6 +6,7 @@
 #include "shader/shaderUtil.h"
 #include "render/openglBufferManager.h"
 #include "Elements/Input.h"
+#include "Elements/Object.h"
 
 extern Debug gLog; // Global Variable for debugging and logs
 
@@ -22,6 +23,10 @@ namespace gui {
             _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1280.0f / 720.0f, 0.1f, 100.0f);
+            _mesh = std::make_shared<elements::Mesh>();
+            _mesh->init();
+
+            _object = std::make_shared<elements::Object>(_mesh);
 
             if (_checkerPlane) _checkerPlane->clear();
             _checkerPlane = createCheckerPlane(50.0f);
@@ -61,6 +66,7 @@ namespace gui {
         std::unique_ptr<shaders::Shader> _shader;
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Camera> _camera;
+        std::shared_ptr<elements::Object> _object;
 
         std::shared_ptr<elements::Mesh> _checkerPlane;
         std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);

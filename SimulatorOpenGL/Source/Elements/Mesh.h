@@ -38,6 +38,7 @@ namespace elements {
 		}
 
 		glm::vec3 _position = glm::vec3(0.0f);
+		glm::vec3 _rotation = glm::vec3(0.0f);
 		glm::vec3 _colour = { 0.0f, 0.0f, 1.0f };
 		float _metallic = 0.1; // When rotating could be useful for seeing rotations with respect to a fixed light source.
 
