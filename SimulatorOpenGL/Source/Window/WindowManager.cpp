@@ -21,7 +21,7 @@ namespace window {
         LOG_INFO("GUI context initialized");
 
         _sceneView = std::make_unique<SceneView>();
-        _controlPanel = std::make_unique<ControlPanel>();
+        _controlPanel = std::make_unique<ControlPanel>(_sceneView.get());
         _debugPanel = std::make_unique<DebugPanel>();
         LOG_INFO("SceneView, ControlPanel, DebugPanel created");
 

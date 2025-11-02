@@ -43,12 +43,11 @@ namespace gui{
 
 		ImGui::Begin("Simulation");
 
+		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		_size = { viewportPanelSize.x, viewportPanelSize.y };
 		uint64_t textureID = _frameBuffer->getTexture();
 		ImGui::Image(reinterpret_cast<void*>(static_cast<uintptr_t>(_frameBuffer->getTexture())), ImVec2{ _size.x, _size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
-		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 
 		ImGui::End();
 	}
@@ -93,18 +92,35 @@ namespace gui{
 
 	void SceneView::onMouseWheel(double delta) { 
 		if (!_isHovered) return;
-		if (_camera) _camera->onMouseWheel(delta);
+
+		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
+		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
 	}
 
 	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) { 
+		glm::vec2 pos2d{ x, y };
+		glm::vec2 delta = pos2d - _lastMousePos;
+		_lastMousePos = pos2d;
+
 		if (!_isHovered) return;
-		if (_camera) _camera->onMouseMove(x, y, button);
+
+		if (_controlMode == ControlMode::Camera) {
+			_camera->onMouseMove(x, y, button);
+		}
+		else if (_controlMode == ControlMode::Object && _mesh) {
+			float scale = (button == elements::eInputButton::Left) ? 0.003f : 0.004f;
+			_mesh->_position += glm::vec3(delta.x * scale, -delta.y * scale, 0.0f);
+			// optionally handle rotation with right button
+		}
 	}
 
 	void SceneView::loadMesh(const std::string& filepath) {
 		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
 		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
 		_mesh->load(filepath);
-		LOG_INFO("Mesh loaded from %s", filepath.c_str());
+
+		_mesh->_position = glm::vec3(0.0f);
+
+		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
 	}
 }
