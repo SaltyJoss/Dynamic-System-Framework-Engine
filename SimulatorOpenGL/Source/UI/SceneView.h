@@ -15,7 +15,7 @@ namespace gui {
     public:
         SceneView() :
             _camera(nullptr), _frameBuffer(nullptr), _shader(nullptr),
-            _light(nullptr), _size(1280, 720)
+            _light(nullptr), _size(3840, 2160)
         {
             _frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
             _frameBuffer->createBuffers(3840, 2160);
