@@ -7,6 +7,18 @@ namespace gui{
 	void SceneView::render() {
 		_frameBuffer->bind();
 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		_worldGridShader->use();
+
+		glm::mat4 viewProj = _camera->getViewProjection();
+
+		_worldGridShader->setMat4(viewProj, "gVP");
+		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
+
+		glBindVertexArray(_worldGridVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		_shader->use();
 
 		_camera->update(_shader.get());
@@ -15,7 +27,7 @@ namespace gui{
 		_light->update(_shader.get());
 
 		// Render checker floor
-		if (_checkerPlane) {
+		/*if (_checkerPlane) {
 			glm::mat4 floorModel(1.0f);
 			_shader->setMat4(floorModel, "model");
 
@@ -27,7 +39,7 @@ namespace gui{
 
 			_checkerPlane->update(_shader.get());
 			_checkerPlane->render();
-		}
+		}*/
 
 		if (_object && _object->getMesh()) {
 			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
@@ -35,18 +47,6 @@ namespace gui{
 			_object->getMesh()->update(_shader.get());
 			_object->getMesh()->render();     // safe now, buffers initialized
 		}
-
-/*
-		// Render other objects normally
-		if (_mesh) {
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), _mesh->_position);
-			_shader->setMat4(model, "model");
-			_shader->setBool(false, "isFloor");
-
-			_mesh->update(_shader.get());
-			_mesh->render();
-		}
-*/
 
 		_frameBuffer->unbind();
 
