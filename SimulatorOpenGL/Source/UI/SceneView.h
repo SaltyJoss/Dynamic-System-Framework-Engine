@@ -19,10 +19,18 @@ namespace gui {
         {
             _frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
             _frameBuffer->createBuffers(3840, 2160);
+            
             _shader = std::make_unique<shaders::Shader>();
-            _shader->load("Source/shaders/vs.shader", "Source/shaders/fs_pbr.shader");
+            _shader->load("Source/shaders/vs_pbr.vert.glsl", "Source/shaders/fs_pbr.frag.glsl");
+
+            _worldGridShader = std::make_unique<shaders::Shader>();
+            _worldGridShader->load("Source/shaders/world_grid.vert.glsl", "Source/shaders/world_grid.frag.glsl");
+            
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1280.0f / 720.0f, 0.1f, 100.0f);
+            
+            glGenVertexArrays(1, &_worldGridVAO);
+            
             _mesh = std::make_shared<elements::Mesh>();
             _mesh->init();
 
@@ -64,6 +72,7 @@ namespace gui {
     private:       
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
         std::unique_ptr<shaders::Shader> _shader;
+        std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Camera> _camera;
         std::shared_ptr<elements::Object> _object;
@@ -77,5 +86,6 @@ namespace gui {
 
         float planeHeight = -2.5f;
         bool _isHovered = false;
+        unsigned int _worldGridVAO = 0;
     };
 }
