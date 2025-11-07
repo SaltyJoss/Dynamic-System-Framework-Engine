@@ -221,10 +221,20 @@
     <ClInclude Include="Source\Window\WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\Shaders\fs.shader" />
-    <None Include="Source\Shaders\fs_checkerboard.shader" />
-    <None Include="Source\Shaders\fs_pbr.shader" />
-    <None Include="Source\Shaders\vs.shader" />
+    <None Include="Source\Shaders\fs_pbr.frag.glsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
+    <None Include="Source\Shaders\vs_pbr.vert.glsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
+    <None Include="Source\Shaders\world_grid.frag.glsl" />
+    <None Include="Source\Shaders\world_grid.vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

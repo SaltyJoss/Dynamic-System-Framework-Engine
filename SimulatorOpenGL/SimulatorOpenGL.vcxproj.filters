@@ -289,16 +289,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\Shaders\fs.shader">
+    <None Include="Source\Shaders\world_grid.frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="Source\Shaders\fs_pbr.shader">
+    <None Include="Source\Shaders\fs_pbr.frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="Source\Shaders\vs.shader">
+    <None Include="Source\Shaders\vs_pbr.vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="Source\Shaders\fs_checkerboard.shader">
+    <None Include="Source\Shaders\world_grid.vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>
