@@ -19,6 +19,8 @@ uniform bool isFloor; // true for the checker floor, false for objects
 // lights
 uniform vec3 lightPosition;
 uniform vec3 lightColour;
+uniform float lightSize;
+uniform vec3 lightDirection;
 
 uniform vec3 camPos;
 
@@ -85,14 +87,13 @@ void main()
     vec3 Lo = vec3(0.0);
 
     // calculate per-light radiance
-    vec3 L = normalize(lightPosition - WorldPos);
+    vec3 L = normalize(-lightDirection);
     vec3 H = normalize(V + L);
-    float distance = length(lightPosition - WorldPos);
-    float attenuation = 1.0 / (distance * distance);
-    vec3 radiance = lightColour * attenuation;
+
+    vec3 radiance = lightColour;
 
     // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, roughness);
+    float NDF = DistributionGGX(N, H, roughness * lightSize);
     float G = GeometrySmith(N, V, L, roughness);
     vec3 F = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
 
