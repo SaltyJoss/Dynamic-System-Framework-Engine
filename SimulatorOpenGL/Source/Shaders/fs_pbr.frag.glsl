@@ -22,6 +22,9 @@ uniform vec3 lightColour;
 uniform float lightSize;
 uniform vec3 lightDirection;
 
+uniform sampler2D shadowMap;
+uniform mat4 lightSpaceMatrix;
+
 uniform vec3 camPos;
 
 const float PI = 3.14159265359;
@@ -66,12 +69,33 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
   return F0 + (1.0 - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
 
+float computeShadowPCF(vec3 N, vec3 L, vec4 lightSpacePos)
+{
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if (projCoords.z > 1.0) return 0.0;
+    if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0) return 0.0;
+
+    float bias = max(0.002 * (1.0 - dot(N, L)), 0.0007);
+
+    vec2 texel = 1.0 / vec2(textureSize(shadowMap, 0));
+    float shadow = 0.0;
+
+    for (int x = -1; x <= 1; ++x)
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texel).r;
+            shadow += (projCoords.z - bias > pcfDepth) ? 1.0 : 0.0;
+        }
+    return shadow / 9.0;
+}
+
 void main()
 {
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
 
-    // --- determine albedo for floor or object ---
     vec3 finalAlbedo = albedo;
     if (isFloor)
     {
@@ -91,6 +115,10 @@ void main()
     vec3 H = normalize(V + L);
 
     vec3 radiance = lightColour;
+
+    // lightSpaceMatrix
+    vec4 lightSpacePos = lightSpaceMatrix * vec4(WorldPos, 1.0);
+    float shadow = computeShadowPCF(N, L, lightSpacePos);
 
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness * lightSize);
@@ -113,7 +141,7 @@ void main()
 
     vec3 ambient = vec3(0.03) * finalAlbedo * ao;
 
-    vec3 colour = ambient + Lo;
+    vec3 colour = ambient + (1.0 - shadow) * Lo;
 
     // HDR tonemapping
     colour = colour / (colour + vec3(1.0));

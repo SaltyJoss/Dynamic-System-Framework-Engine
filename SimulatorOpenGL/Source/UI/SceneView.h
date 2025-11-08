@@ -25,6 +25,9 @@ namespace gui {
 
             _worldGridShader = std::make_unique<shaders::Shader>();
             _worldGridShader->load("Source/shaders/world_grid.vert.glsl", "Source/shaders/world_grid.frag.glsl");
+
+            _shadowShader = std::make_unique<shaders::Shader>();
+            _shadowShader->load("Source/shaders/shadow_depth.vert.glsl", "Source/shaders/shadow_depth.frag.glsl");
             
             _light = std::make_unique<elements::Light>();
             _camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.1f, 2000.0f);
@@ -38,6 +41,8 @@ namespace gui {
 
             if (_checkerPlane) _checkerPlane->clear();
             _checkerPlane = createCheckerPlane(50.0f);
+
+            InitShadowResource();
         }
 
         ~SceneView() {
@@ -48,6 +53,11 @@ namespace gui {
         }
 
         elements::Light* getLight() { return _light.get(); }
+        void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
+        glm::vec3 getBackgroundColour() const { return _backgroundColour; }
+
+        void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
+        float getBackgroundAlpha() const { return _backgroundAlpha; }
 
         enum class ControlMode {
             Camera,
@@ -72,11 +82,16 @@ namespace gui {
         void MeshRender();
         void WorldGridRender();
         void LightSpaceMatrix();
+        void InitShadowResource();
+        void ShadowPass();
 
     private:       
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
+
         std::unique_ptr<shaders::Shader> _shader;
         std::unique_ptr<shaders::Shader> _worldGridShader;
+        std::unique_ptr<shaders::Shader> _shadowShader;
+
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Camera> _camera;
         std::shared_ptr<elements::Object> _object;
@@ -87,9 +102,17 @@ namespace gui {
 
         glm::vec2 _size;
         glm::vec2 _lastMousePos;
+        glm::mat4 _lightSpaceMatrix;
+        glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
 
+        float _backgroundAlpha = 1.0f;
         float planeHeight = -2.5f;
         bool _isHovered = false;
         unsigned int _worldGridVAO = 0;
+        unsigned int _shadowFBO;
+        unsigned int _shadowMap;
+
+        const unsigned int SHADOW_W = 2048;
+        const unsigned int SHADOW_H = 2048;
     };
 }

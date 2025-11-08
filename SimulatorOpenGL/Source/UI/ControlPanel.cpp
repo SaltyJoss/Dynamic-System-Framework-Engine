@@ -39,11 +39,6 @@ void gui::ControlPanel::renderSimulationProperties() {
     static bool gravityEnabled = true;
     ImGui::Checkbox("Enable Physcics", &physicsEnabled);
     ImGui::Checkbox("Enable Gravity", &gravityEnabled);
-
-    ImGui::SeparatorText("Light Controls");
-    ImGui::Text("Position");
-    ImGui::Separator();
-    gui::drawVec3Widget("Position", _sceneView->getLight()->_position, 80.0f);
 }
 
 void gui::ControlPanel::renderObjectProperties() {
@@ -67,16 +62,35 @@ void gui::ControlPanel::renderStats() {
     static float data[100];
     for (int i = 0; i < 100; i++) data[i] = sinf(i * 0.1f);
     ImGui::PlotLines("Velocity", data, 100);
-
 }
 
 void gui::ControlPanel::renderCameraProperties() {
+    ImGui::SeparatorText("Background");
+
+    glm::vec3 col = _sceneView->getBackgroundColour();
+    if (ImGui::ColorEdit3("Canvas Colour", &col.x)) {
+        _sceneView->setBackgroundColour(col);
+    }
+    float a = _sceneView->getBackgroundAlpha();
+    if (ImGui::SliderFloat("Alpha", &a, 0.0f, 1.0f)) {
+        _sceneView->setBackgroundAlpha(a);
+    }
+
     ImGui::Text("Control Mode:");
     if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera))
         *_controlMode = SceneView::ControlMode::Camera;
     ImGui::SameLine();
     if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object))
         *_controlMode = SceneView::ControlMode::Object;
+
+    ImGui::SeparatorText("Light Controls");
+    elements::Light* light = _sceneView->getLight();
+
+    ImGui::DragFloat3("Light Position", &light->_position.x, 0.1f);
+    ImGui::DragFloat("Strength", &light->_strength, 0.1f, 0.0f, 500.0f);
+    ImGui::DragFloat3("Light Direction", &light->_direction.x, 0.01f);
+    if (glm::length(light->_direction) > 0.001f)
+        light->_direction = glm::normalize(light->_direction);
 
     ImGui::SeparatorText("Object Appearance");
     if (!_mesh) {

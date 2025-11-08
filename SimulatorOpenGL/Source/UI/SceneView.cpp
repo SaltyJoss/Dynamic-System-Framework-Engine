@@ -5,6 +5,9 @@
 
 namespace gui{
 	void SceneView::render() {
+		LightSpaceMatrix();
+		ShadowPass();
+
 		_frameBuffer->bind();
 
 		WorldGridRender();
@@ -106,28 +109,33 @@ namespace gui{
 
 	void SceneView::WorldGridRender() {
 		glDepthMask(GL_FALSE);
-		glClearColor(1, 1, 1, 1);
+		glClearColor(_backgroundColour.r,
+					 _backgroundColour.g,
+					 _backgroundColour.b,
+					 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		_worldGridShader->use();
-
-		glm::mat4 viewProj = _camera->getViewProjection();
-
-		_worldGridShader->setMat4(viewProj, "gVP");
+		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
 
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		glDepthMask(GL_TRUE);
 	}
 
 	void SceneView::MeshRender() {
 		_shader->use();
+		_shader->setMat4(_lightSpaceMatrix, "lightSpaceMatrix");
 
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, _shadowMap);
+
+		_shader->setInt1(7, "shadowMap");
 		_camera->update(_shader.get());
-
 		_light->update(_shader.get());
 
 		// Render checker floor
@@ -146,19 +154,84 @@ namespace gui{
 		}
 
 		if (_object && _object->getMesh()) {
+			glm::mat4 model(1.0f);
+
 			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
 			_shader->setBool(false, "isFloor");            // mark as non-floor
 			_object->getMesh()->update(_shader.get());
-			_object->getMesh()->render();     // safe now, buffers initialized
+			_object->getMesh()->render();
 		}
 	}
 
 	void SceneView::LightSpaceMatrix() {
-		glm::mat4 lightView = glm::lookAt(-_light->_direction * 20.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 lightProj = glm::ortho(-20.0f, 20.0f,
-										 -20.0f, 20.0f,
-										   1.0f, 50.0f);
-		glm::mat4 lightSpaceMatrix = lightProj * lightView;
+		glm::vec3 dir = (_light->_direction == glm::vec3(0))
+			? glm::normalize(-_light->getPosition())
+			: glm::normalize(_light->_direction);
 
+		glm::mat4 lightView = glm::lookAt(
+			-dir * 20.0f,
+			glm::vec3(0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+		);
+
+		glm::mat4 lightProj = glm::ortho(
+			-10.0f, 10.0f,
+			-10.0f, 10.0f,
+			1.0f, 50.0f
+		);
+
+		_lightSpaceMatrix = lightProj * lightView;
+	}
+
+	void SceneView::InitShadowResource() {
+		glGenFramebuffers(1, &_shadowFBO);
+
+		glGenTextures(1, &_shadowMap);
+		glBindTexture(GL_TEXTURE_2D, _shadowMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+			SHADOW_W, SHADOW_H, 0,
+			GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float border[] = { 1,1,1,1 };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, _shadowFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_TEXTURE_2D, _shadowMap, 0);
+
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void SceneView::ShadowPass() {
+		glViewport(0, 0, SHADOW_W, SHADOW_H);
+		glBindFramebuffer(GL_FRAMEBUFFER, _shadowFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		_shadowShader->use();
+		_shadowShader->setMat4(_lightSpaceMatrix, "lightSpaceMatrix");
+
+		// checker plane
+		if (_checkerPlane) {
+			glm::mat4 model(1.0f);
+			_shadowShader->setMat4(model, "model");
+			_checkerPlane->render();
+		}
+
+		// main mesh
+		if (_object && _object->getMesh()) {
+			glm::mat4 model =
+				glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
+			_shadowShader->setMat4(model, "model");
+			_object->getMesh()->render();
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }
