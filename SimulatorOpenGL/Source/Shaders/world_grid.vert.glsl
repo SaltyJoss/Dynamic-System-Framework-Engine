@@ -1,9 +1,9 @@
-#version 330 core
+#version 410 core
 
 out vec3 WorldPos;
 
 uniform mat4 gVP = mat4(1.0);
-uniform float gGridSize = 100.0;
+uniform float gGridSize = 1000.0;
 uniform vec3 gCameraWorldPos;
 
 const vec3 Pos[4] = vec3[4](

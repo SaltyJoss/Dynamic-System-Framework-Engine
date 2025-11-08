@@ -1,0 +1,31 @@
+Camera is pointing along the z axis, so the lower pixels have lower z component in the world space position.
+The higher pixel have higher z component because they are further away from the camera relative to their world space position.
+
+The y-derivative of z components world space position represents the delta in the worldspace z in neighbouring pixels from bottom to top.
+The modular operation simply causes the z component to go from 0 to sell size in loops. (Floating point module is NOT exactly 0).
+Dividing the first pixel in this group by the y-derivative gives a value very close to 0.
+The next pixel we get a value close to 1. This is because the change between pixels IS THE DERIVATIVE, and we are dividing by derivative, so if there is very little change then its the same.
+Then about 2 for the 3rd pixel, etc..., etc...
+
+This value is used as the alpha component of the result.
+When the alpha is 0, we get a background colour, and when the alpha is >=1 we get a pixel colour from the fragment shader.
+
+THIS EXPLAINS WHY WE GET WHITE LINES OVER A BLACK BACKGROUND
+
+Observing the pixel of the output directly gives proof of an antialiasing issue which shows a jump in numerical values. WEIRD NUMERICAL ISSUE?
+- Believe to be because of the z-axis of the world pointing to THE SIDE, whereas the corresponding derivative is still calculated through pixel which are ONTOP of each other along the y-axis. This means the modules operation, which also goes to the side, is NOT guaranteed to be in sync with the y derivative, causing the alpha value to go IN AND OUT of sync between neighbouring pixels, resulting in the aliasing problem,
+
+Improvemented by multiplying the derivative by 4.0
+
+Same issue with x component.
+
+When the window is rotated 90 degress across the z or x axis there is a suddon cutoff, this is due to the derivative becoming negative, and subsequently the alpha becomes negative too.
+A negative alpha gets clamped to 0, and the background colour takes over.
+
+IT IS BETTER TO USE x-derivative than y-derivative, because the z axis of the world goes from left to right.
+
+We now need to find a way to stabilise our derivatives so that they are not impacted by the camera orientation.
+
+
+
+CHANGE IN LODs is TOO DRASTIC, NEED TO BLEND BETWEEN LODs and make it flow MORE NATURALLY

@@ -7,69 +7,29 @@ namespace gui{
 	void SceneView::render() {
 		_frameBuffer->bind();
 
-		glClearColor(1, 1, 1, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		_worldGridShader->use();
-
-		glm::mat4 viewProj = _camera->getViewProjection();
-
-		_worldGridShader->setMat4(viewProj, "gVP");
-		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
-
-		glBindVertexArray(_worldGridVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		_shader->use();
-
-		_camera->update(_shader.get());
-		_camera->setAspect(_size.x / _size.y);
-
-		_light->update(_shader.get());
-
-		// Render checker floor
-		/*if (_checkerPlane) {
-			glm::mat4 floorModel(1.0f);
-			_shader->setMat4(floorModel, "model");
-
-			// Set checkerboard uniforms
-			_shader->setBool(true, "isFloor");
-			_shader->setVec3(glm::vec3(1.0f), "colour1");
-			_shader->setVec3(glm::vec3(0.0f), "colour2");
-			_shader->setFlt1(1.0f, "checkSize");
-
-			_checkerPlane->update(_shader.get());
-			_checkerPlane->render();
-		}*/
-
-		if (_object && _object->getMesh()) {
-			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
-			_shader->setBool(false, "isFloor");            // mark as non-floor
-			_object->getMesh()->update(_shader.get());
-			_object->getMesh()->render();     // safe now, buffers initialized
-		}
-
+		WorldGridRender();
+		MeshRender();
+		
 		_frameBuffer->unbind();
 
 		ImGui::Begin("Simulation");
 
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		_size = { viewportPanelSize.x, viewportPanelSize.y };
 		uint64_t textureID = _frameBuffer->getTexture();
-		ImGui::Image(reinterpret_cast<void*>(static_cast<uintptr_t>(_frameBuffer->getTexture())), ImVec2{ _size.x, _size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		ImGui::Image((void*)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
 		ImGui::End();
 	}
 
 	void SceneView::resize(int32_t width, int32_t height) {
-		_size.x = width;
-		_size.y = height;
+		float aspect = (float)width / (float)height;
+		_camera->setAspect(aspect);
 
 		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers((int32_t)_size.x, (int32_t)_size.y);
+		float scale = 2.0f;
+		_frameBuffer->createBuffers(width*2.0f, height*2.0f);
+
 		LOG_INFO("Framebuffer resized", (int32_t)_size.x, (int32_t)_size.y);
 	}
 
@@ -136,5 +96,69 @@ namespace gui{
 		_mesh->_position = glm::vec3(0.0f);
 
 		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
+	}
+
+	/*
+	 * --------------------------------------------
+	 *				RENDERING METHODS
+	 * --------------------------------------------
+	 */
+
+	void SceneView::WorldGridRender() {
+		glDepthMask(GL_FALSE);
+		glClearColor(1, 1, 1, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		_worldGridShader->use();
+
+		glm::mat4 viewProj = _camera->getViewProjection();
+
+		_worldGridShader->setMat4(viewProj, "gVP");
+		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
+
+		glBindVertexArray(_worldGridVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDepthMask(GL_TRUE);
+	}
+
+	void SceneView::MeshRender() {
+		_shader->use();
+
+		_camera->update(_shader.get());
+
+		_light->update(_shader.get());
+
+		// Render checker floor
+		if (_checkerPlane) {
+			glm::mat4 floorModel(1.0f);
+			_shader->setMat4(floorModel, "model");
+
+			// Set checkerboard uniforms
+			_shader->setBool(true, "isFloor");
+			_shader->setVec3(glm::vec3(1.0f), "colour1");
+			_shader->setVec3(glm::vec3(0.0f), "colour2");
+			_shader->setFlt1(1.0f, "checkSize");
+
+			_checkerPlane->update(_shader.get());
+			_checkerPlane->render();
+		}
+
+		if (_object && _object->getMesh()) {
+			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
+			_shader->setBool(false, "isFloor");            // mark as non-floor
+			_object->getMesh()->update(_shader.get());
+			_object->getMesh()->render();     // safe now, buffers initialized
+		}
+	}
+
+	void SceneView::LightSpaceMatrix() {
+		glm::mat4 lightView = glm::lookAt(-_light->_direction * 20.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightProj = glm::ortho(-20.0f, 20.0f,
+										 -20.0f, 20.0f,
+										   1.0f, 50.0f);
+		glm::mat4 lightSpaceMatrix = lightProj * lightView;
+
 	}
 }

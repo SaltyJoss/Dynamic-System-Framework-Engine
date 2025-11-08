@@ -301,5 +301,11 @@
     <None Include="Source\Shaders\world_grid.vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="Source\Shaders\shadow_depth.vert.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="Source\Shaders\shadow_depth.frag.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

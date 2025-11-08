@@ -27,7 +27,7 @@ namespace gui {
             _worldGridShader->load("Source/shaders/world_grid.vert.glsl", "Source/shaders/world_grid.frag.glsl");
             
             _light = std::make_unique<elements::Light>();
-            _camera = std::make_unique<elements::Camera>(glm::vec3(0, 0, 3), 45.0f, 1280.0f / 720.0f, 0.1f, 100.0f);
+            _camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.1f, 2000.0f);
             
             glGenVertexArrays(1, &_worldGridVAO);
             
@@ -56,8 +56,8 @@ namespace gui {
 
         ControlMode _controlMode = ControlMode::Camera; // Default to Camera Control
 
-        void resize(int32_t width, int32_t height);
         void render();
+        void resize(int32_t width, int32_t height);
         void loadMesh(const std::string& filepath);
         void setMesh(std::shared_ptr<elements::Mesh> mesh) { _mesh = mesh; }
         void setControlMode(ControlMode mode) { _controlMode = mode; }
@@ -68,6 +68,10 @@ namespace gui {
         void onMouseMove(double x, double y, elements::eInputButton button);
         void onMouseWheel(double delta);
         void resetView() { _camera->reset(); }
+
+        void MeshRender();
+        void WorldGridRender();
+        void LightSpaceMatrix();
 
     private:       
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;

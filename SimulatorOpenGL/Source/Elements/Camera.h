@@ -49,6 +49,7 @@ namespace elements {
 		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
 		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
 		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
+		void setFOV(float FOV) { _FOV = FOV; }
 
 		void setDistance(float offset) {
 			_distance += offset;
