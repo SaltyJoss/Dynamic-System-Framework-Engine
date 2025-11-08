@@ -25,14 +25,8 @@
     <Filter Include="Header Files\Render">
       <UniqueIdentifier>{c348c282-27f2-4537-94bf-e8c7390bb546}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\3rdParty">
-      <UniqueIdentifier>{3db61c81-783a-47e8-8735-8d56013fd1a0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Elements">
       <UniqueIdentifier>{fe447df8-36c2-441f-b972-cc2f98ab18fb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\3rdParty\ImGui">
-      <UniqueIdentifier>{8b5e1e37-bc82-4819-8af7-799153430861}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Shader">
       <UniqueIdentifier>{f1aefc8e-932e-4860-833b-2a8bc471da54}</UniqueIdentifier>
@@ -64,15 +58,6 @@
     <Filter Include="Source Files\UI\Stylisitc">
       <UniqueIdentifier>{093dfb76-ae82-401d-b5b6-6672b52bed7e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\3rdParty">
-      <UniqueIdentifier>{cf14dd7d-6a4d-4ae8-8fa7-1b042539bd09}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\OLD">
-      <UniqueIdentifier>{50ef87b6-c54e-45c3-a24b-48b45cae0929}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\OLD">
-      <UniqueIdentifier>{cc3516ff-87df-4f6b-899f-9e5a76870a28}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\imports">
       <UniqueIdentifier>{b84da1bd-3cdf-4385-b044-c49b182b3a5e}</UniqueIdentifier>
     </Filter>
@@ -85,29 +70,17 @@
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{d72c24c4-64fe-45da-b137-0864a33b9bac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3rdParty">
+      <UniqueIdentifier>{cf14dd7d-6a4d-4ae8-8fa7-1b042539bd09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdParty\imgui">
+      <UniqueIdentifier>{ab886bd7-a33c-4401-aa44-ecc127069f28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdParty\glad">
+      <UniqueIdentifier>{b99914d1-43d9-4195-8936-79f137f09af1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_glfw.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp">
-      <Filter>Source Files\3rdParty\ImGui</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Application.cpp">
       <Filter>Source Files\Core</Filter>
     </ClCompile>
@@ -122,9 +95,6 @@
     </ClCompile>
     <ClCompile Include="Source\Shader\ShaderUtil.cpp">
       <Filter>Source Files\Shader</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\3rdParty\glad.c">
-      <Filter>Source Files\3rdParty</Filter>
     </ClCompile>
     <ClCompile Include="Source\Elements\Mesh.cpp">
       <Filter>Source Files\Elements</Filter>
@@ -147,30 +117,39 @@
     <ClCompile Include="Source\UI\SceneView.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\SimulationPanels.cpp">
-      <Filter>Source Files\OLD</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\UI\TitleBarPanel.cpp">
-      <Filter>Source Files\OLD</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Shader\shaderClass.cpp">
-      <Filter>Source Files\OLD</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Render\SimulationManager.cpp">
-      <Filter>Source Files\OLD</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Window\GUIManager.cpp">
-      <Filter>Source Files\OLD</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Imports\importObj.cpp">
       <Filter>Source Files\imports</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_demo.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_draw.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_impl_glfw.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_impl_opengl3.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_tables.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_widgets.cpp">
+      <Filter>3rdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\GLAD\glad.c">
+      <Filter>3rdParty\glad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Application.h">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ch.h">
+    <ClInclude Include="Source\pch.h">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Render\OpenGLBufferManager.h">
@@ -224,47 +203,8 @@
     <ClInclude Include="Source\Elements\Camera.h">
       <Filter>Header Files\Elements</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imstb_truetype.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imstb_textedit.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imstb_rectpack.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imgui_internal.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3_loader.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_glfw.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imgui.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\lib\imgui\imconfig.h">
-      <Filter>Header Files\3rdParty</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Elements\Input.h">
       <Filter>Header Files\Elements</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Window\GUIManager.h">
-      <Filter>Header Files\OLD</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\UI\SimulationPanels.h">
-      <Filter>Header Files\OLD</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Shader\shaderClass.h">
-      <Filter>Header Files\OLD</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Render\SimulationManager.h">
-      <Filter>Header Files\OLD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Imports\importBase.h">
       <Filter>Header Files\imports</Filter>
@@ -286,6 +226,36 @@
     </ClInclude>
     <ClInclude Include="Source\Elements\Object.h">
       <Filter>Header Files\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imconfig.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imgui.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imgui_impl_glfw.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imgui_impl_opengl3.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imgui_internal.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imstb_rectpack.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imstb_textedit.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\imstb_truetype.h">
+      <Filter>3rdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="External\GLAD\glad.h">
+      <Filter>3rdParty\glad</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

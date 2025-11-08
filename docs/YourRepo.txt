@@ -1,0 +1,64 @@
+YourRepo/
+│
+├─ CMakeLists.txt          ← (or .sln/.vcxproj)
+├─ README.md
+├─ LICENSE
+│
+├─ Engine/                 ← Core engine: reusable
+│   ├─ src/
+│   │   ├─ Core/           ← Logging, events, memory, core utils
+│   │   ├─ Rendering/      ← Shaders, buffers, renderer, materials
+│   │   ├─ Scene/          ← Camera, transforms, scene graph
+│   │   ├─ Assets/         ← OBJ loader, textures
+│   │   ├─ Physics/        ← evt. physics interface
+│   │   └─ Platform/       ← Window, input
+│   │
+│   ├─ include/            ← Public headers
+│   │   └─ Engine/
+│   │
+│   ├─ shaders/            ← .vert / .frag / .glsl
+│   ├─ resources/          ← Fonts, default textures
+│   └─ tests/              ← Unit tests
+│
+├─ Game/                   ← Game application; depends on Engine
+│   ├─ src/
+│   ├─ assets/
+│   └─ Game.cpp
+│
+├─ External/               ← 3rd-party libs (git submodules)
+│   ├─ glfw/
+│   ├─ imgui/
+│   ├─ glm/
+│   └─ stbi/
+│
+└─ Tools/                  ← helpers (build scripts, shaders compile)
+
+
+
+Engine/src/Core/
+- Debug/logger
+- Time / delta-time
+- Config
+- Event system
+
+Engine/src/Rendering/
+- OpenGL API wrappers
+- Shader class
+- Renderpass / Framebuffer
+- Mesh / Material
+- Shadow system
+
+Engine/src/Scene/
+- Scene
+- Entity/Component (if ECS later)
+- Camera
+- Transform hierarchy
+
+Engine/src/Assets/
+- Model loader
+- Texture loader
+- File I/O
+
+Engine/src/Platform/
+- Window (GLFW)
+- Input abstraction

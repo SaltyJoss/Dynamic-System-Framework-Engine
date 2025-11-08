@@ -71,24 +71,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\zlib;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui\plugins;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include\GL;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\include;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\imgui;C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Libraries\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source;$(SourcePath)</SourcePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,12 +97,17 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\assimp\lib;$(ProjectDir)External\GLEW\lib;$(ProjectDir)External\GLFW\lib;$(ProjectDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)External\GLEW\bin\*.dll" "$(TargetDir)" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -113,12 +118,17 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\assimp\lib;$(ProjectDir)External\GLEW\lib;$(ProjectDir)External\GLFW\lib;$(ProjectDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)External\GLEW\bin\*.dll" "$(TargetDir)" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -127,12 +137,17 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\assimp\lib;$(ProjectDir)External\GLEW\lib;$(ProjectDir)External\GLFW\lib;$(ProjectDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)External\GLEW\bin\*.dll" "$(TargetDir)" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -143,22 +158,27 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;zlib\zlibstaticd.lib;assimp\assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\assimp\lib;$(ProjectDir)External\GLEW\lib;$(ProjectDir)External\GLFW\lib;$(ProjectDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)External\GLEW\bin\*.dll" "$(TargetDir)" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Libraries\lib\imgui\imgui.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_tables.cpp" />
-    <ClCompile Include="Libraries\lib\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Source\3rdParty\glad.c" />
+    <ClCompile Include="External\GLAD\glad.c" />
+    <ClCompile Include="External\imgui\imgui.cpp" />
+    <ClCompile Include="External\imgui\imgui_demo.cpp" />
+    <ClCompile Include="External\imgui\imgui_draw.cpp" />
+    <ClCompile Include="External\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="External\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="External\imgui\imgui_tables.cpp" />
+    <ClCompile Include="External\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Elements\Mesh.cpp" />
     <ClCompile Include="Source\Imports\importObj.cpp" />
@@ -166,30 +186,26 @@
     <ClCompile Include="Source\Render\GUIContext.cpp" />
     <ClCompile Include="Source\Render\OpenGLBufferManager.cpp" />
     <ClCompile Include="Source\Render\OpenGLContext.cpp" />
-    <ClCompile Include="Source\Render\SimulationManager.cpp" />
-    <ClCompile Include="Source\Shader\shaderClass.cpp" />
     <ClCompile Include="Source\Shader\ShaderUtil.cpp" />
     <ClCompile Include="Source\UI\ControlPanel.cpp" />
     <ClCompile Include="Source\UI\DebugPanel.cpp" />
     <ClCompile Include="Source\UI\SceneView.cpp" />
-    <ClCompile Include="Source\UI\SimulationPanels.cpp" />
     <ClCompile Include="Source\UI\Styles.cpp" />
-    <ClCompile Include="Source\UI\TitleBarPanel.cpp" />
-    <ClCompile Include="Source\Window\GUIManager.cpp" />
     <ClCompile Include="Source\Window\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Libraries\lib\imgui\imconfig.h" />
-    <ClInclude Include="Libraries\lib\imgui\imgui.h" />
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3.h" />
-    <ClInclude Include="Libraries\lib\imgui\imgui_impl_opengl3_loader.h" />
-    <ClInclude Include="Libraries\lib\imgui\imgui_internal.h" />
-    <ClInclude Include="Libraries\lib\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Libraries\lib\imgui\imstb_textedit.h" />
-    <ClInclude Include="Libraries\lib\imgui\imstb_truetype.h" />
+    <ClInclude Include="External\GLAD\glad.h" />
+    <ClInclude Include="External\imgui\imconfig.h" />
+    <ClInclude Include="External\imgui\imgui.h" />
+    <ClInclude Include="External\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="External\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="External\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="External\imgui\imgui_internal.h" />
+    <ClInclude Include="External\imgui\imstb_rectpack.h" />
+    <ClInclude Include="External\imgui\imstb_textedit.h" />
+    <ClInclude Include="External\imgui\imstb_truetype.h" />
     <ClInclude Include="Source\Application.h" />
-    <ClInclude Include="Source\ch.h" />
+    <ClInclude Include="Source\pch.h" />
     <ClInclude Include="Source\Elements\Camera.h" />
     <ClInclude Include="Source\Elements\Face.h" />
     <ClInclude Include="Source\Elements\Input.h" />
@@ -204,19 +220,15 @@
     <ClInclude Include="Source\Render\OpenGLBufferManager.h" />
     <ClInclude Include="Source\Render\OpenGLContext.h" />
     <ClInclude Include="Source\Render\RenderBase.h" />
-    <ClInclude Include="Source\Render\SimulationManager.h" />
-    <ClInclude Include="Source\Shader\shaderClass.h" />
     <ClInclude Include="Source\Shader\ShaderUtil.h" />
     <ClInclude Include="Source\UI\ControlPanel.h" />
     <ClInclude Include="Source\UI\DebugLogEntry.h" />
     <ClInclude Include="Source\UI\DebugPanel.h" />
     <ClInclude Include="Source\UI\SceneView.h" />
-    <ClInclude Include="Source\UI\SimulationPanels.h" />
     <ClInclude Include="Source\UI\Styles.h" />
     <ClInclude Include="Source\Utils\imguiWidgets.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\str_utils.h" />
-    <ClInclude Include="Source\Window\GUIManager.h" />
     <ClInclude Include="Source\Window\Window.h" />
     <ClInclude Include="Source\Window\WindowManager.h" />
   </ItemGroup>
