@@ -5,14 +5,7 @@
       <FullPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\x64\Debug\SimulatorOpenGL.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
-  <ContentFiles>
-    <ContentFile>
-      <FullPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Shaders\fs_pbr.frag.glsl</FullPath>
-    </ContentFile>
-    <ContentFile>
-      <FullPath>C:\Users\Joss\source\repos\RoboticArm_MathModelling\SimulatorOpenGL\Source\Shaders\vs_pbr.vert.glsl</FullPath>
-    </ContentFile>
-  </ContentFiles>
+  <ContentFiles />
   <SatelliteDlls />
   <NonRecipeFileRefs />
 </Project>

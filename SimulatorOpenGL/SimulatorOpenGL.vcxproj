@@ -97,7 +97,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,7 +118,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,7 +137,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,7 +158,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)source;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)External\assimp;$(ProjectDir)External\GLEW\GL;$(ProjectDir)External\GLFW;$(ProjectDir)External\GLM;$(ProjectDir)External\imgui\plugins;$(ProjectDir)External\imgui;$(ProjectDir)External;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -179,19 +179,23 @@
     <ClCompile Include="External\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="External\imgui\imgui_tables.cpp" />
     <ClCompile Include="External\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Source\Application.cpp" />
-    <ClCompile Include="Source\Elements\Mesh.cpp" />
-    <ClCompile Include="Source\Imports\importObj.cpp" />
-    <ClCompile Include="Source\Main.cpp" />
-    <ClCompile Include="Source\Render\GUIContext.cpp" />
-    <ClCompile Include="Source\Render\OpenGLBufferManager.cpp" />
-    <ClCompile Include="Source\Render\OpenGLContext.cpp" />
-    <ClCompile Include="Source\Shader\ShaderUtil.cpp" />
-    <ClCompile Include="Source\UI\ControlPanel.cpp" />
-    <ClCompile Include="Source\UI\DebugPanel.cpp" />
-    <ClCompile Include="Source\UI\SceneView.cpp" />
-    <ClCompile Include="Source\UI\Styles.cpp" />
-    <ClCompile Include="Source\Window\WindowManager.cpp" />
+    <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\Imports\importObj.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Platform\GUIManager.cpp" />
+    <ClCompile Include="src\Platform\WindowManager.cpp" />
+    <ClCompile Include="src\Rendering\GUIContext.cpp" />
+    <ClCompile Include="src\Rendering\OpenGLBufferManager.cpp" />
+    <ClCompile Include="src\Rendering\OpenGLContext.cpp" />
+    <ClCompile Include="src\Rendering\SimulationManager.cpp" />
+    <ClCompile Include="src\Scene\Mesh.cpp" />
+    <ClCompile Include="src\Scene\SceneView.cpp" />
+    <ClCompile Include="src\Shader\shaderClass.cpp" />
+    <ClCompile Include="src\Shader\ShaderUtil.cpp" />
+    <ClCompile Include="src\UIx\ControlPanel.cpp" />
+    <ClCompile Include="src\UIx\DebugPanel.cpp" />
+    <ClCompile Include="src\UIx\SimulationPanels.cpp" />
+    <ClCompile Include="src\UIx\Styles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\GLAD\glad.h" />
@@ -204,51 +208,43 @@
     <ClInclude Include="External\imgui\imstb_rectpack.h" />
     <ClInclude Include="External\imgui\imstb_textedit.h" />
     <ClInclude Include="External\imgui\imstb_truetype.h" />
-    <ClInclude Include="Source\Application.h" />
-    <ClInclude Include="Source\pch.h" />
-    <ClInclude Include="Source\Elements\Camera.h" />
-    <ClInclude Include="Source\Elements\Face.h" />
-    <ClInclude Include="Source\Elements\Input.h" />
-    <ClInclude Include="Source\Elements\Mesh.h" />
-    <ClInclude Include="Source\Elements\Light.h" />
-    <ClInclude Include="Source\Elements\Object.h" />
-    <ClInclude Include="Source\Elements\VertexHolder.h" />
-    <ClInclude Include="Source\Elements\Element.h" />
-    <ClInclude Include="Source\Imports\importBase.h" />
-    <ClInclude Include="Source\Imports\importObj.h" />
-    <ClInclude Include="Source\Render\GUIContext.h" />
-    <ClInclude Include="Source\Render\OpenGLBufferManager.h" />
-    <ClInclude Include="Source\Render\OpenGLContext.h" />
-    <ClInclude Include="Source\Render\RenderBase.h" />
-    <ClInclude Include="Source\Shader\ShaderUtil.h" />
-    <ClInclude Include="Source\UI\ControlPanel.h" />
-    <ClInclude Include="Source\UI\DebugLogEntry.h" />
-    <ClInclude Include="Source\UI\DebugPanel.h" />
-    <ClInclude Include="Source\UI\SceneView.h" />
-    <ClInclude Include="Source\UI\Styles.h" />
-    <ClInclude Include="Source\Utils\imguiWidgets.h" />
-    <ClInclude Include="Source\Utils\Logger.h" />
-    <ClInclude Include="Source\Utils\str_utils.h" />
-    <ClInclude Include="Source\Window\Window.h" />
-    <ClInclude Include="Source\Window\WindowManager.h" />
+    <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\Platform\GUIManager.h" />
+    <ClInclude Include="src\Platform\Window.h" />
+    <ClInclude Include="src\Platform\WindowManager.h" />
+    <ClInclude Include="src\Rendering\GUIContext.h" />
+    <ClInclude Include="src\Rendering\OpenGLBufferManager.h" />
+    <ClInclude Include="src\Rendering\OpenGLContext.h" />
+    <ClInclude Include="src\Rendering\RenderBase.h" />
+    <ClInclude Include="src\Rendering\SimulationManager.h" />
+    <ClInclude Include="src\Scene\Camera.h" />
+    <ClInclude Include="src\Scene\Element.h" />
+    <ClInclude Include="src\Scene\Face.h" />
+    <ClInclude Include="src\Scene\Input.h" />
+    <ClInclude Include="src\Scene\Light.h" />
+    <ClInclude Include="src\Scene\Mesh.h" />
+    <ClInclude Include="src\Scene\Object.h" />
+    <ClInclude Include="src\Scene\SceneView.h" />
+    <ClInclude Include="src\Scene\VertexHolder.h" />
+    <ClInclude Include="src\Shader\shaderClass.h" />
+    <ClInclude Include="src\Shader\ShaderUtil.h" />
+    <ClInclude Include="src\UIx\ControlPanel.h" />
+    <ClInclude Include="src\UIx\DebugLogEntry.h" />
+    <ClInclude Include="src\UIx\DebugPanel.h" />
+    <ClInclude Include="src\UIx\SimulationPanels.h" />
+    <ClInclude Include="src\UIx\Styles.h" />
+    <ClInclude Include="src\Utils\imguiWidgets.h" />
+    <ClInclude Include="src\Utils\Logger.h" />
+    <ClInclude Include="src\Utils\str_utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\Shaders\fs_pbr.frag.glsl">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </None>
-    <None Include="Source\Shaders\shadow_depth.frag.glsl" />
-    <None Include="Source\Shaders\shadow_depth.vert.glsl" />
-    <None Include="Source\Shaders\vs_pbr.vert.glsl">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </None>
-    <None Include="Source\Shaders\world_grid.frag.glsl" />
-    <None Include="Source\Shaders\world_grid.vert.glsl" />
+    <None Include="assets\Shaders\fs_pbr.frag.glsl" />
+    <None Include="assets\Shaders\shadow_depth.frag.glsl" />
+    <None Include="assets\Shaders\shadow_depth.vert.glsl" />
+    <None Include="assets\Shaders\vs_pbr.vert.glsl" />
+    <None Include="assets\Shaders\world_grid.frag.glsl" />
+    <None Include="assets\Shaders\world_grid.vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

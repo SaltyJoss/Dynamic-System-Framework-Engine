@@ -1,0 +1,48 @@
+[2025-11-07 20:48:25] [INFO / WindowManager.cpp::init]: Initializing GLWindow: Width=1920, Height=1080, Header=Simulator V0.1
+[2025-11-07 20:48:25] [INFO / OpenGLContext.cpp::init]: init() Called!
+[2025-11-07 20:48:25] [INFO / OpenGLContext.cpp::init]: 
+[2025-11-07 20:48:26] [INFO / OpenGLContext.cpp::init]: GL_DEPTH_TEST enabled
+[2025-11-07 20:48:26] [INFO / GUIContext.cpp::init]: ImGui context initialized (GLSL #version 410)
+[2025-11-07 20:48:26] [INFO / WindowManager.cpp::init]: Render context initialized
+[2025-11-07 20:48:26] [INFO / WindowManager.cpp::init]: GUI context initialized
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: Creating framebuffer buffers with size 3840x2160
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: Framebuffer buffers created successfully
+[2025-11-07 20:48:26] [INFO / ShaderUtil.cpp::getCompiledShader]: Shader compiled successfully
+[2025-11-07 20:48:26] [INFO / ShaderUtil.cpp::getCompiledShader]: Shader compiled successfully
+[2025-11-07 20:48:26] [INFO / ShaderUtil.cpp::load]: Shader program linked successfully
+[2025-11-07 20:48:26] [INFO / ShaderUtil.cpp::getCompiledShader]: Shader compiled successfully
+[2025-11-07 20:48:26] [ERROR / ShaderUtil.cpp::getCompiledShader]: Shader compilation failed: 0(41) : error C0000: syntax error, unexpected ';', expecting "::" at token ";"
+0(44) : error C1503: undefined variable "Colour"
+0(48) : error C0000: syntax error, unexpected '(', expecting "::" at token "("
+0(51) : error C1503: undefined variable "Colour"
+0(55) : error C1503: undefined variable "Colour"
+0(57) : error C1503: undefined variable "Colour"
+
+[2025-11-07 20:48:26] [ERROR / ShaderUtil.cpp::load]: Shader program linking failed: Fragment info
+-------------
+0(41) : error C0000: syntax error, unexpected ';', expecting "::" at token ";"
+0(44) : error C1503: undefined variable "Colour"
+0(48) : error C0000: syntax error, unexpected '(', expecting "::" at token "("
+0(51) : error C1503: undefined variable "Colour"
+0(55) : error C1503: undefined variable "Colour"
+0(57) : error C1503: undefined variable "Colour"
+(0) : error C2003: incompatible options for link
+
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: Called createBuffers() with 0 vertices and 0 indices
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: OpenGLVertexIndexBuffer buffers created successfully
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: Called createBuffers() with 4 vertices and 6 indices
+[2025-11-07 20:48:26] [INFO / OpenGLBufferManager.cpp::createBuffers]: OpenGLVertexIndexBuffer buffers created successfully
+[2025-11-07 20:48:26] [INFO / WindowManager.cpp::init]: SceneView, ControlPanel, DebugPanel created
+[2025-11-07 20:48:26] [INFO / GUIContext.cpp::preRender]: ImGui preRender frame prepared with docking space ID 1473379842
+[2025-11-07 20:48:26] [INFO / ShaderUtil.cpp::use]: Shader program bound
+[2025-11-07 20:48:26] [INFO / GUIContext.cpp::postRender]: ImGui platform windows rendered (viewports enabled)
+[2025-11-07 20:48:41] [INFO / WindowManager.cpp::onResize]: Window resized: Width=0, Height=0
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::deleteBuffers]: Deleting framebuffer buffers
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::deleteBuffers]: Framebuffer buffers deleted
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::createBuffers]: Creating framebuffer buffers with size 0x0
+[2025-11-07 20:48:41] [WARN / OpenGLBufferManager.cpp::createBuffers]: Framebuffer already exists. Deleting old buffers.
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::deleteBuffers]: Deleting framebuffer buffers
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::deleteBuffers]: Framebuffer buffers deleted
+[2025-11-07 20:48:41] [INFO / OpenGLBufferManager.cpp::createBuffers]: Framebuffer buffers created successfully
+[2025-11-07 20:48:41] [INFO / SceneView.cpp::resize]: Framebuffer resized
+[2025-11-07 20:48:41] [INFO / WindowManager.cpp::onResize]: SceneView resized

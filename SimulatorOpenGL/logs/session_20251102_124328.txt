@@ -1,0 +1,17 @@
+[2025-11-02 12:43:28] [INFO / WindowManager.cpp::init]: Initializing GLWindow: Width=1920, Height=1080, Header=Simulator V0.1
+[2025-11-02 12:43:28] [INFO / OpenGLContext.cpp::init]: init() Called!
+[2025-11-02 12:43:28] [INFO / OpenGLContext.cpp::init]: 
+[2025-11-02 12:43:28] [INFO / OpenGLContext.cpp::init]: GL_DEPTH_TEST enabled
+[2025-11-02 12:43:28] [INFO / GUIContext.cpp::init]: ImGui context initialized (GLSL #version 410)
+[2025-11-02 12:43:28] [INFO / WindowManager.cpp::init]: Render context initialized
+[2025-11-02 12:43:28] [INFO / WindowManager.cpp::init]: GUI context initialized
+[2025-11-02 12:43:28] [INFO / OpenGLBufferManager.cpp::createBuffers]: Creating framebuffer buffers with size 3840x2160
+[2025-11-02 12:43:28] [INFO / OpenGLBufferManager.cpp::createBuffers]: Framebuffer buffers created successfully
+[2025-11-02 12:43:28] [INFO / ShaderUtil.cpp::getCompiledShader]: Shader compiled successfully
+[2025-11-02 12:43:28] [INFO / ShaderUtil.cpp::getCompiledShader]: Shader compiled successfully
+[2025-11-02 12:43:28] [INFO / ShaderUtil.cpp::load]: Shader program linked successfully
+[2025-11-02 12:43:28] [INFO / OpenGLBufferManager.cpp::createBuffers]: Called createBuffers() with 4 vertices and 6 indices
+[2025-11-02 12:43:28] [INFO / OpenGLBufferManager.cpp::createBuffers]: OpenGLVertexIndexBuffer buffers created successfully
+[2025-11-02 12:43:28] [INFO / WindowManager.cpp::init]: SceneView, ControlPanel, DebugPanel created
+[2025-11-02 12:43:28] [INFO / GUIContext.cpp::preRender]: ImGui preRender frame prepared with docking space ID 1473379842
+[2025-11-02 12:43:28] [INFO / ShaderUtil.cpp::use]: Shader program bound
