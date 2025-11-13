@@ -9,9 +9,11 @@ const float PI = 3.14159265359;
 
 void main()
 {
+	vec3 N = normalize(WorldDir);
+
 	// Convert cubemap direction to spherical coordinates
-	float theta = acos(clamp(WorldDir.y, -1.0, 1.0)); // polar angle
-	float phi = atan(WorldDir.z, WorldDir.x);         // azimuthal angle
+	float theta = acos(clamp(N.y, -1.0, 1.0)); // polar angle
+	float phi = atan(N.z, N.x);         // azimuthal angle
 	if (phi < 0.0)
 		phi += 2.0 * PI;
 	
