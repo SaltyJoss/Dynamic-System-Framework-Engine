@@ -40,12 +40,12 @@ namespace render{
     void SkyboxRenderer::render(const glm::mat4 & projection,
         const glm::mat4 & view)
     {
-        glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
 
         shader.use();
+        shader.setMat4(glm::mat4(glm::mat3(view)), "view");
         shader.setMat4(projection, "projection");
-        shader.setMat4(glm::mat4(glm::mat3(view)), "view"); // remove translation
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
