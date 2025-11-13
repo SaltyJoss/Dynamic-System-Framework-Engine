@@ -1,10 +1,26 @@
+
 #include "pch.h"
-#include "OpenGLContext.h"
+
+#ifdef __gl_h_
+#undef __gl_h_
+#endif
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+#include "Rendering/OpenGLContext.h"
+
+#include "EngineLib/LogMacros.h"
+#include <Scene/SceneView.h>
 
 namespace render {
 	static void onKey_Callback(GLFWwindow* win, int  key, int scancode, int action, int mods) {
 		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onKey(key, scancode, action, mods);
+	}
+
+	static void CursorPos_Callback(GLFWwindow* win, double xpos, double ypos) {
+		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
+		currentWindow->onCursorPos(xpos, ypos);
 	}
 
 	static void onScroll_Callback(GLFWwindow* win, double xoffset, double yoffset) {
@@ -26,10 +42,7 @@ namespace render {
 		LOG_INFO("init() Called!");
 		__super::init(window);
 
-		fprintf(stderr, "[INSIDE OpenGLContext::Init()]Width: %d, Height: %d, Header: %s\n", window->_width, window->_height, window->_header.c_str());
-		LOG_INFO("");
-
-		if (!window->_width || !window->_height) {
+		if (!window->getWidth() || !window->getHeight()) {
 			LOG_ERROR("Window dimensions not set!");
 			return false;
 		}
@@ -39,28 +52,27 @@ namespace render {
 			return false; 
 		}
 
-		auto glWindow = glfwCreateWindow(window->_width, window->_height, window->_header.c_str(), nullptr, nullptr);
-		window->setNativeWin(glWindow);
+		auto glWindow = glfwCreateWindow(window->getWidth(), window->getHeight(), window->getHeader().c_str(), nullptr, nullptr);
+		glfwSetInputMode(glWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(glWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
-		if (!glWindow) { 
-			gLog.logError("OpenGL", "Failed to create GLFW window: ", glfwGetError(NULL));
+		if (!glWindow) {
 			LOG_ERROR("Failed to create GLFW window -> ", glfwGetError(NULL));
 			glfwTerminate();
 			return false;
 		}
 
+		window->setNativeWin(glWindow);
+		_glfwWindow = glWindow;
+
+		glfwSwapInterval(1);
 		glfwSetWindowUserPointer(glWindow, window);
+		glfwSetCursorPosCallback(glWindow, CursorPos_Callback);
 		glfwSetKeyCallback(glWindow, onKey_Callback);
 		glfwSetScrollCallback(glWindow, onScroll_Callback);
 		glfwSetWindowSizeCallback(glWindow, onResize_Callback);
 		glfwSetWindowCloseCallback(glWindow, onClose_Callback);
 		glfwMakeContextCurrent(glWindow);
-
-		GLenum err = glewInit();
-		if (err != GLEW_OK) { 
-			LOG_ERROR("GLEW failed -> ", glewGetErrorString(err));
-			return false; 
-		}
 
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { 
 			LOG_ERROR("Failed to initialise GLAD");
@@ -74,13 +86,12 @@ namespace render {
 	}
 
 	void render::OpenGLContext::preRender() {
-		glViewport(0, 0, _window->_width, _window->_height);
+		glViewport(0, 0, _window->getWidth(), _window->getHeight());
 		glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void render::OpenGLContext::postRender() {
-		glfwPollEvents();
 		glfwSwapBuffers((GLFWwindow*)_window->getNativeWin());
 	}
 

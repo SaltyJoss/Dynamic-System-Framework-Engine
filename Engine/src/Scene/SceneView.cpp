@@ -1,9 +1,85 @@
+
 #include "pch.h"
 
-#include "SceneView.h"
+#ifdef __gl_h_
+#undef __gl_h_
+#endif
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <imgui.h>
 
+#include "Scene/SceneView.h"
+
+#include "Scene/Camera.h"
+#include "Scene/Mesh.h"
+#include "Scene/Light.h"
+#include "Scene/Input.h"
+#include "Scene/Object.h"
+
+#include "Rendering/Cubemap.h"
+#include "Rendering/Skybox.h"
+#include "Rendering/ShaderUtil.h"
+#include "Rendering/OpenGLBufferManager.h"
+
+#include "EngineLib/LogMacros.h"
+
 namespace gui{
+
+	SceneView::SceneView() :
+		_camera(nullptr), _frameBuffer(nullptr), _shader(nullptr), _light(nullptr),
+		_worldGridShader(nullptr), _shadowShader(nullptr), _size(1280, 720)
+	{
+		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
+		_frameBuffer->createBuffers(1280,720);
+
+		_shader = std::make_unique<shaders::Shader>();
+		_shader->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
+
+		std::array<std::string, 6> facesCubemap = {
+			"Engine/assets/cubemaps/" + folder + "/px.png",
+			"Engine/assets/cubemaps/" + folder + "/nx.png",
+			"Engine/assets/cubemaps/" + folder + "/py.png",
+			"Engine/assets/cubemaps/" + folder + "/ny.png",
+			"Engine/assets/cubemaps/" + folder + "/pz.png",
+			"Engine/assets/cubemaps/" + folder + "/nz.png"
+		};
+
+		_skyboxShader = std::make_unique<shaders::Shader>();
+		_skyboxShader->load("Engine/assets/shaders/skybox.vert.glsl", "Engine/assets/shaders/skybox.frag.glsl");
+
+		_cubemap = std::make_unique<render::Cubemap>(facesCubemap);
+		_skybox = std::make_unique<render::Skybox>(_cubemap.get(), _skyboxShader.get());
+
+		_worldGridShader = std::make_unique<shaders::Shader>();
+		_worldGridShader->load("Engine/assets/shaders/world_grid.vert.glsl", "Engine/assets/shaders/world_grid.frag.glsl");
+
+		_shadowShader = std::make_unique<shaders::Shader>();
+		_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
+
+		_light = std::make_unique<elements::Light>();
+		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.1f, 2000.0f);
+
+		glGenVertexArrays(1, &_worldGridVAO);
+
+		_mesh = std::make_shared<elements::Mesh>();
+		_mesh->init();
+
+		_object = std::make_shared<elements::Object>(_mesh);
+
+		if (_checkerPlane) _checkerPlane->clear();
+		_checkerPlane = createCheckerPlane(50.0f);
+
+		InitShadowResource();
+	}
+
+	SceneView::~SceneView()
+	{
+		_shader->unload();
+		if (_frameBuffer) _frameBuffer->deleteBuffers();
+		if (_mesh) _mesh->clear();
+		if (_checkerPlane) _checkerPlane->clear();
+	}
+
 	void SceneView::render() {
 		_fpsCounter.update();
 		LightSpaceMatrix();
@@ -13,7 +89,8 @@ namespace gui{
 
 		WorldGridRender();
 		MeshRender();
-		SkyboxRender();
+		
+		if (skyboxEnabled) { SkyboxRender(); }
 		
 		_frameBuffer->unbind();
 
@@ -103,6 +180,10 @@ namespace gui{
 		_mesh->_position = glm::vec3(0.0f);
 
 		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
+	}
+
+	void SceneView::resetView() {
+		_camera->reset();
 	}
 
 	/*
@@ -244,6 +325,61 @@ namespace gui{
 			glm::mat4 view = _camera->getViewMatrix();
 			glm::mat4 projection = _camera->getProjection();
 			_skybox->render(view, projection);
+		}
+	}
+
+/*
+ * ------------------------------------------------
+ *				KEYBOARD & MOUSE INPUT
+ * ------------------------------------------------
+ */
+
+	void gui::SceneView::handleContinuousMovement(GLFWwindow* window, float dt) {
+		float kspd = 2.5f * dt;
+
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_W)) {
+			processMovementKey(GLFW_KEY_W, kspd);
+		}
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_S)) {
+			processMovementKey(GLFW_KEY_S, kspd);
+		}
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_A)) {
+			processMovementKey(GLFW_KEY_A, kspd);
+		}
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_D)) {
+			processMovementKey(GLFW_KEY_D, kspd);
+		}
+	}
+
+	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+		static bool firstMouse = true;
+		static double lastX = 0.0, lastY = 0.0;
+
+		if (firstMouse) {
+			lastX = xpos;
+			lastY = ypos;
+			firstMouse = false;
+		}
+
+		double xoffset = xpos - lastX;
+		double yoffset = ypos - lastY; // Reversed since y-coordinates go from bottom to top
+		lastX = xpos;
+		lastY = ypos;
+
+		if (_controlMode == ControlMode::Camera) {
+			_camera->processMouseMovement(xoffset, yoffset);
+		}
+		else if (_controlMode == ControlMode::Object && _object) {
+			_object->onMouseMove(xpos, ypos, elements::eInputButton::Right);
+		}
+	}
+
+	void gui::SceneView::processMovementKey(int key, float delta) {
+		if (_controlMode == ControlMode::Camera) {
+			_camera->processKeyboard(key, delta);
+		}
+		else if (_controlMode == ControlMode::Object && _mesh) {
+			// Object movement logic can be added here!
 		}
 	}
 }
