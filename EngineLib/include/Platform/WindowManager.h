@@ -40,6 +40,8 @@ namespace window {
         int getHeight() const override;
         const std::string& getHeader() const override;
 
+        void setMouseCaptured(bool captured);
+        bool isMouseCaptured() const { return _mouseCaptured; }
         void onKey(int key, int scancode, int action, int mods) override;
         void onScroll(double delta) override;
         void onResize(int width, int height) override;
@@ -62,6 +64,7 @@ namespace window {
         std::unique_ptr<gui::DebugPanel> _debugPanel;
 
         bool _isHovered = false;
+        bool _mouseCaptured = false;
 
         int _width = 0;
         int _height = 0;

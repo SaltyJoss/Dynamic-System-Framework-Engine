@@ -9,7 +9,6 @@
 #include <imgui.h>
 
 #include "Scene/SceneView.h"
-
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/Light.h"
@@ -21,7 +20,10 @@
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
 
+#include <Platform/WindowManager.h>
+
 #include "EngineLib/LogMacros.h"
+
 
 namespace gui{
 
@@ -57,7 +59,7 @@ namespace gui{
 		_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
 		_light = std::make_unique<elements::Light>();
-		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.1f, 2000.0f);
+		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.5f, 2000.0f);
 
 		glGenVertexArrays(1, &_worldGridVAO);
 
@@ -68,6 +70,7 @@ namespace gui{
 
 		if (_checkerPlane) _checkerPlane->clear();
 		_checkerPlane = createCheckerPlane(50.0f);
+		planeY = 2.5f;
 
 		InitShadowResource();
 	}
@@ -193,12 +196,11 @@ namespace gui{
 	 */
 
 	void SceneView::WorldGridRender() {
-		glDepthMask(GL_FALSE);
-		glClearColor(_backgroundColour.r,
-					 _backgroundColour.g,
-					 _backgroundColour.b,
-					 1.0f);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE); // enable writing to depth buffer
+		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -328,6 +330,39 @@ namespace gui{
 		}
 	}
 
+	void gui::SceneView::updatePhysics(float dt)
+	{
+		// --- sanity checks ---
+		if (!_object || !_object->getMesh()) return;
+		auto mesh = _object->getMesh();
+
+		// constants
+		const float floorY = planeHeight;           // same height as checkerboard
+		const glm::vec3 gravity(0.0f, -9.81f, 0.0f);
+
+		// --- apply physics ---
+		if (!mesh->_isStatic)
+		{
+			// apply gravity
+			mesh->_acceleration = gravity;
+
+			// integrate (basic semi-implicit Euler)
+			mesh->_velocity += mesh->_acceleration * dt;
+			mesh->_position += mesh->_velocity * dt;
+
+			// --- floor collision clamp ---
+			if (mesh->_position.y < floorY)
+			{
+				mesh->_position.y = floorY;
+				mesh->_velocity.y = 0.0f;
+			}
+		}
+
+		// optional: horizontal damping for stability
+		mesh->_velocity.x *= 0.98f;
+		mesh->_velocity.z *= 0.98f;
+	}
+
 /*
  * ------------------------------------------------
  *				KEYBOARD & MOUSE INPUT
@@ -351,20 +386,34 @@ namespace gui{
 		}
 	}
 
-	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
-		static bool firstMouse = true;
-		static double lastX = 0.0, lastY = 0.0;
+	void gui::SceneView::resetMouseDelta() {
+		// force next sample to re-seed
+		// (reuse your firstMouse flag or equivalent)
+		// simplest: store a boolean
+		_firstMouse = true;  // make this a member instead of static
+	}
 
-		if (firstMouse) {
-			lastX = xpos;
-			lastY = ypos;
-			firstMouse = false;
+	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+		// If cursor is not captured, only rotate when hovering
+		bool captured = false;
+		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window)))
+			captured = win->isMouseCaptured();
+
+		if (!captured && !_isHovered) {
+			// keep positions synced so next capture doesn’t jump
+			_lastMousePos = { (float)xpos, (float)ypos };
+			_firstMouse = true;
+			return;
 		}
 
-		double xoffset = xpos - lastX;
-		double yoffset = ypos - lastY; // Reversed since y-coordinates go from bottom to top
-		lastX = xpos;
-		lastY = ypos;
+		if (_firstMouse) {
+			_lastMousePos = { (float)xpos, (float)ypos };
+			_firstMouse = false;
+		}
+
+		double xoffset = xpos - _lastMousePos.x;
+		double yoffset = ypos - _lastMousePos.y;
+		_lastMousePos = { (float)xpos, (float)ypos };
 
 		if (_controlMode == ControlMode::Camera) {
 			_camera->processMouseMovement(xoffset, yoffset);
@@ -382,4 +431,6 @@ namespace gui{
 			// Object movement logic can be added here!
 		}
 	}
+
+	elements::Camera* SceneView::getCamera() { return _camera.get(); }
 }

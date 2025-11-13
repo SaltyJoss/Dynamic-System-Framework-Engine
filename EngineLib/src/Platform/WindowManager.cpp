@@ -147,13 +147,48 @@ namespace window {
         static float smoothedDt = 0.016f;
         smoothedDt = glm::mix(smoothedDt, dt, 0.2f);
 
-        if (_sceneView) { _sceneView->handleContinuousMovement(_window, smoothedDt); }
+        if (_sceneView) {
+            _sceneView->handleContinuousMovement(_window, smoothedDt);
+            _sceneView->getCamera()->applyGravity(smoothedDt, _sceneView->getPlaneHeight());
+            _sceneView->getCamera()->clampToFloor(_sceneView->getPlaneHeight());
+        }
+    }
+
+    void window::GLWindow::setMouseCaptured(bool captured) {
+        _mouseCaptured = captured;
+
+        GLFWwindow* w = _window;
+        if (!w) return;
+
+        if (_mouseCaptured) {
+            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if (glfwRawMouseMotionSupported())
+                glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            // tell SceneView to reset its first-mouse state
+            if (_sceneView) _sceneView->resetMouseDelta();
+        }
+        else {
+            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            if (glfwRawMouseMotionSupported())
+                glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+        }
     }
 
     void window::GLWindow::onKey(int key, int scancode, int action, int mods) {
-        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-            if (_sceneView) { _sceneView->processMovementKey(key, 0.1f); }
-		}
+        // Always handle TAB yourself (even if ImGui wants keyboard)
+        if (action == GLFW_PRESS && key == GLFW_KEY_TAB) {
+            setMouseCaptured(!_mouseCaptured);
+            return;
+        }
+
+        // movement as before
+        if ((action == GLFW_PRESS || action == GLFW_REPEAT) && _sceneView) {
+            _sceneView->processMovementKey(key, 0.1f);
+        }
+
+        if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
+            _sceneView->getCamera()->jump();
+        }
     }
 
     void window::GLWindow::onScroll(double delta) {

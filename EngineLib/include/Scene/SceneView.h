@@ -46,11 +46,14 @@ namespace gui {
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
         float getBackgroundAlpha() const { return _backgroundAlpha; }
 
+        float getPlaneHeight() const { return planeHeight; }
+
         enum class ControlMode {
             Camera,
             Object
         };
 
+        elements::Camera* getCamera();
         ControlMode _controlMode = ControlMode::Camera; // Default to Camera Control
 
         void render();
@@ -65,9 +68,12 @@ namespace gui {
 
         void onMouseMove(double x, double y, elements::eInputButton button);
         void onMouseWheel(double delta);
+        void updatePhysics(float dt);
 
         void handleContinuousMovement(GLFWwindow* window, float dt);
 		void processMovementKey(int key, float delta);
+
+        void resetMouseDelta();
 		void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
 
         void resetView();
@@ -101,17 +107,20 @@ namespace gui {
         gui::FpsCounter _fpsCounter;
 
         glm::vec2 _size;
-        glm::vec2 _lastMousePos;
+        glm::vec2 _lastMousePos = { 0.f, 0.f };
         glm::mat4 _lightSpaceMatrix;
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
+        glm::vec3 planeNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
         std::string folder = "s3";
 
         float _backgroundAlpha = 1.0f;
-        float planeHeight = -2.5f;
+        static constexpr float planeHeight = -2.5f;
+        float planeY = planeHeight;
 
         bool _isHovered = false;
         bool skyboxEnabled = true;
+        bool _firstMouse = true;
 
         unsigned int _worldGridVAO = 0;
         unsigned int _shadowFBO = 0;

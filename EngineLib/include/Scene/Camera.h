@@ -107,6 +107,9 @@ namespace elements {
 			_viewMatrix = glm::inverse(_viewMatrix);
 		}
 
+		void applyGravity(float dt, float floorY);
+		void jump();
+
 		void moveForward(float delta);
 		void moveBackward(float delta);
 		void moveLeft(float delta);
@@ -114,6 +117,7 @@ namespace elements {
 
 		void processKeyboard(int key, float delta);
 		void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
+		void clampToFloor(float floorY);
 
 	private:
 		glm::mat4 _viewMatrix;
@@ -133,6 +137,7 @@ namespace elements {
 		float _currentSpeed = 0.0f;
 		float _targetSpeed = 5.0f;
 		float _accel = 10.0f;
+		float _eyeHeight = 1.8f;
 
 		glm::vec2 _currentPos2D = { 0.0f, 0.0f };
 		const glm::vec3 _right = { 1.0f, 0.0f, 0.0f };
@@ -140,6 +145,12 @@ namespace elements {
 		const glm::vec3 _forward = { 0.0f, 0.0f, -1.0f };
 
 		const float _rotationSpeed = 2.0f;
+
+		// --- PLAYER ---
+		bool _isGrounded = true;
+		float _verticalVelocity = 0.0f;
+		float _jumpStrength = 5.5f;
+		float _gravity = -9.81f;
 
 	};
 }

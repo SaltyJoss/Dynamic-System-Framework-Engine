@@ -69,6 +69,19 @@ namespace elements {
 		return false;
 	}
 
+	void elements::Mesh::integrate(float dt, float floorY) {
+		if (_isStatic) return;
+
+		_velocity += _acceleration * dt;
+		_position += _velocity * dt;
+
+		// Floor collision
+		if (_position.y < floorY) {
+			_position.y = floorY;
+			_velocity.y = 0.0f;
+		}
+	}
+
 	void Mesh::createBuffers() { _rndrBffrMngr->createBuffers(_vertices, _vertexIndices); }
 	void Mesh::deleteBuffers() { _rndrBffrMngr->deleteBuffers(); }
 	void Mesh::bind() { _rndrBffrMngr->bind(); }
