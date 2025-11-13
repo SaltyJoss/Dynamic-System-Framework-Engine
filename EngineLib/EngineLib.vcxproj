@@ -126,6 +126,7 @@
     <ClInclude Include="include\Platform\WindowManager.h" />
     <ClInclude Include="include\Rendering\Cubemap.h" />
     <ClInclude Include="include\Rendering\GUIContext.h" />
+    <ClInclude Include="include\Rendering\IBL.h" />
     <ClInclude Include="include\Rendering\OpenGLBufferManager.h" />
     <ClInclude Include="include\Rendering\OpenGLContext.h" />
     <ClInclude Include="include\Rendering\RenderBase.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="src\Platform\WindowManager.cpp" />
     <ClCompile Include="src\Rendering\Cubemap.cpp" />
     <ClCompile Include="src\Rendering\GUIContext.cpp" />
+    <ClCompile Include="src\Rendering\IBL.cpp" />
     <ClCompile Include="src\Rendering\OpenGLBufferManager.cpp" />
     <ClCompile Include="src\Rendering\OpenGLContext.cpp" />
     <ClCompile Include="src\Rendering\ShaderUtil.cpp" />

@@ -19,11 +19,11 @@
 #include "Rendering/Skybox.h"
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
+#include "Rendering/IBL.h"
 
 #include <Platform/WindowManager.h>
 
 #include "EngineLib/LogMacros.h"
-
 
 namespace gui{
 
@@ -73,6 +73,13 @@ namespace gui{
 		planeY = 2.5f;
 
 		InitShadowResource();
+
+		_ibl = std::make_unique<render::IBL>(_cubemap.get(), _shader.get());
+		_ibl->init("Engine/assets/hdr/studio.hdr");
+
+		_irradianceMap = _ibl->getIrradianceMap();
+		_prefilterMap = _ibl->getPrefilterMap();
+		_brdfLUT = _ibl->getBRDFLUT();
 	}
 
 	SceneView::~SceneView()
@@ -219,6 +226,19 @@ namespace gui{
 
 	void SceneView::MeshRender() {
 		_shader->use();
+
+		// IBL Texture Units
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _irradianceMap);
+		_shader->setInt1(0, "irradianceMap");
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _prefilterMap);
+		_shader->setInt1(1, "prefilterMap");
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, _brdfLUT);
+		_shader->setInt1(2, "brdfLUT");
 		
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			glActiveTexture(GL_TEXTURE5 + i);

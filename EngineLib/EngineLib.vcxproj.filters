@@ -192,6 +192,9 @@
     <ClInclude Include="..\External\GLAD\glad\glad.h">
       <Filter>External\glad</Filter>
     </ClInclude>
+    <ClInclude Include="include\Rendering\IBL.h">
+      <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -277,6 +280,9 @@
     </ClCompile>
     <ClCompile Include="src\Scene\Camera.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\IBL.cpp">
+      <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

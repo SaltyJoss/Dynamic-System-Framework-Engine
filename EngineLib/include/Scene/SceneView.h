@@ -83,6 +83,7 @@ namespace gui {
         void WorldGridRender();
         glm::mat4 LightSpaceMatrix(float near, float far);
         void InitShadowResource();
+        void InitIBL();
         void ShadowPass();
         void SkyboxRender();
 
@@ -95,6 +96,7 @@ namespace gui {
         std::unique_ptr<shaders::Shader> _shader;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
+        std::unique_ptr<render::IBL> _ibl;
 
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Camera> _camera;
@@ -123,10 +125,23 @@ namespace gui {
         bool _firstUpdate = true;
 
         unsigned int _worldGridVAO = 0;
+
+        static constexpr float planeHeight = -2.5f;
+        
+/*
+ * --------------------------------------------------------------------------
+ *                          Shadow Mapping Settings
+ * --------------------------------------------------------------------------
+ */        
+
         unsigned int _shadowFBO = 0;
         unsigned int _shadowMap = 0;
 
-        static constexpr float planeHeight = -2.5f;
+		uint32_t _envCubemap = 0;
+		uint32_t _irradianceMap = 0;
+		uint32_t _prefilterMap = 0;
+		uint32_t _brdfLUT = 0;
+
 		static constexpr int NUM_CASCADES = 4;
 
         GLuint _cascadeFBO[NUM_CASCADES];
