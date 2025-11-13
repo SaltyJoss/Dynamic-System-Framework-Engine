@@ -32,6 +32,11 @@ uniform mat4 lightSpaceMatrix[2];
 uniform float cascadeSplits[2];
 uniform vec3 camPos;
 
+// IBL Maps
+uniform samplerCube irradianceMap; // diffuse
+uniform samplerCube prefilterMap;  // specular
+uniform sampler2D brdfLUT;         // BRDF lookup texture
+
 // ------------------------ CONSTANTS ------------------------
 
 const float PI = 3.14159265359;
@@ -137,8 +142,9 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 void main()
 {
 	// normalise inputs
-    vec3 N = normalize(Normal);
-    vec3 V = normalize(camPos - WorldPos);
+    vec3 N = normalize(Normal);             // Normal
+    vec3 V = normalize(camPos - WorldPos);  // View
+	vec3 R = reflect(-V, N);                // Reflection
 
     // determine albedo colour
     vec3 finalAlbedo = albedo;
@@ -151,6 +157,9 @@ void main()
     // base reflection (Cook-Torrance PBR)
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, finalAlbedo, metallic);
+
+    // diffuse IBL
+    vec3 irradiance = texture(irradianceMap, N).rgb * finalAlbedo;
 
     vec3 Lo = vec3(0.0);
 
@@ -168,9 +177,21 @@ void main()
     float G = GeometrySmith(N, V, L, roughness);
     vec3 F = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
 
+    float NdotV = max(dot(N, V), 0.0);
+
+    // Sample Prefiltered Environment
+	vec3 prefilteredColour = textureLod(prefilterMap, R, roughness * 4.0).rgb;
+
+	// Sample BRDF LUT
+	vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
+
+    // Combine IBL components
+	vec3 specularIBL = prefilteredColour * (F * brdf.x + brdf.y);
+
+	// Specular term
     vec3 nominator = NDF * G * F;
     float denominator = 4 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular = nominator / max(denominator, 0.001); // prevent divide by zero for NdotV=0.0 or NdotL=0.0
+    vec3 specular = nominator / max(denominator, 0.001);
 
 	// Energy conservation
     vec3 kS = F;
@@ -179,14 +200,25 @@ void main()
      
     float NdotL = max(dot(N, L), 0.0);
 
+	// Final outgoing radiance
     Lo += (kD * finalAlbedo / PI + specular) * radiance * NdotL;
 
-    vec3 ambient = vec3(0.03) * finalAlbedo * ao;
-    vec3 colour = ambient + (1.0 - shadow) * Lo;
+    vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    // HDR tonemapping
-    colour = colour / (colour + vec3(1.0));
-    colour = pow(colour, vec3(1.0 / 2.2));
+	// IBL contribution
+    vec3 diffuse = diffuseIBL;
+	vec3 specular = specularIBL;
+
+	vec3 IBL = kD * diffuse + specular;
+
+	// Direct lighting contribution
+	vec3 direct = (1.0 - shadow) * Lo;
+
+	// Final Colour (w/ HDR Tonemapping and Gamma correction)
+	vec3 colour = IBL + direct;
+    colour = colour / (colour + vec3(1.0)); // Tone maps
+	colour = pow(colour, vec3(1.0 / 2.2));  // Gamma correction
 
     FragColour = vec4(colour, 1.0);
 }
