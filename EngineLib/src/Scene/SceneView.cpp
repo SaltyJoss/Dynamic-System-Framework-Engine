@@ -325,7 +325,7 @@ namespace gui{
 	void SceneView::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
-		_ibl->init("Engine/assets/hdr/af16k.hdr");
+		_ibl->init("Engine/assets/hdr/qm8k.hdr");
 
 		_shader->use();
 		_shader->setInt1(0, "irradianceMap");

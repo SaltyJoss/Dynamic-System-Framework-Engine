@@ -151,7 +151,7 @@ namespace render {
 		glGenBuffers(1, &cubeVBO);
 		glBindVertexArray(cubeVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), &CUBE_VERTICES, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), CUBE_VERTICES, GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		
@@ -233,7 +233,7 @@ namespace render {
 		glGenBuffers(1, &cubeVBO);
 		glBindVertexArray(cubeVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), &CUBE_VERTICES, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), CUBE_VERTICES, GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
@@ -248,9 +248,9 @@ namespace render {
 		};
 
 		shaders::Shader irrShader;
-		irrShader.load("Engine/assets/shaders/irradiance_convolution.vert.glsl", "Engine/assets/shaders/irradiance_convolution.frag.glsl");
+		irrShader.load("Engine/assets/shaders/irradiance.vert.glsl", "Engine/assets/shaders/irradiance_convolution.frag.glsl");
 		irrShader.use();
-		irrShader.setInt1(0, "environmentMap");
+		irrShader.setInt1(0, "equirectMap");
 		irrShader.setMat4(captureProj, "projection");
 
 		glActiveTexture(GL_TEXTURE0);
@@ -309,7 +309,7 @@ namespace render {
 		glGenBuffers(1, &cubeVBO);
 		glBindVertexArray(cubeVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), &CUBE_VERTICES, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VERTICES), CUBE_VERTICES, GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		
@@ -324,9 +324,9 @@ namespace render {
 		};
 
 		shaders::Shader prefilterShader;
-		prefilterShader.load("Engine/assets/shaders/prefilter_cubemap.vert.glsl", "Engine/assets/shaders/prefilter_cubemap.frag.glsl");
+		prefilterShader.load("Engine/assets/shaders/cubemap.vert.glsl", "Engine/assets/shaders/prefilter_cubemap.frag.glsl");
 		prefilterShader.use();
-		prefilterShader.setInt1(0, "environmentMap");
+		prefilterShader.setInt1(0, "equirectMap");
 		prefilterShader.setMat4(captureProj, "projection");
 
 		glActiveTexture(GL_TEXTURE0);

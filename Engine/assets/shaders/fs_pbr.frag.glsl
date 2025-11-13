@@ -192,9 +192,9 @@ void main()
 	// Specular IBL
 	vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
 	vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-	vec3 specular = prefilitered * (F * brdf.x + brdf.y);
+	vec3 specularIBL = prefiltered * (F * brdf.x + brdf.y);
 
-	vec3 IBL = kD * diffuseIBL + specular;
+	vec3 IBL = kD * diffuseIBL + specularIBL;
 
 
 
