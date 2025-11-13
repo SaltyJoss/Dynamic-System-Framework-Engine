@@ -48,6 +48,27 @@
     <None Include="Engine\assets\shaders\skybox.vert.glsl">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\cubemap.vert.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\irradiance_convolution.frag.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\irradiance.vert.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\brdf_lut.frag.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\brdf_lut.vert.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\src\Main.cpp">

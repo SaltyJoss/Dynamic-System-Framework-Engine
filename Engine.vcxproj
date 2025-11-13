@@ -101,7 +101,14 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
+    <None Include="Engine\assets\shaders\brdf_lut.vert.glsl" />
+    <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl" />
+    <None Include="Engine\assets\shaders\cubemap.vert.glsl" />
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl" />
+    <None Include="Engine\assets\shaders\irradiance_convolution.frag.glsl" />
+    <None Include="Engine\assets\shaders\irradiance.vert.glsl" />
+    <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />
     <None Include="Engine\assets\shaders\skybox.frag.glsl" />
