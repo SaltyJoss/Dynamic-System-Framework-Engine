@@ -41,6 +41,8 @@ namespace elements {
 
 
 		const glm::mat4& getProjection() const { return _projection; }
+		float getNear() const { return _near; }
+		float getFar() const { return _far; }
 		glm::vec2 getCurrentPos2D() const { return _currentPos2D; }
 		glm::vec3 getPosition() const { return _position; }
 		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
@@ -123,6 +125,8 @@ namespace elements {
 		void processKeyboard(int key, float delta);
 		void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
 		void clampToFloor(float floorY);
+
+		std::array<glm::vec4, 8> getFrustumCornersWorldSpace(float near, float far) const;
 
 		void updateProjectionMatrix() {
 			_projection = glm::perspective(_FOV, _aspect, _near, _far);

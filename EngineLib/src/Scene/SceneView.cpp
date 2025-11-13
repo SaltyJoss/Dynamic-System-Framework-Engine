@@ -85,7 +85,6 @@ namespace gui{
 
 	void SceneView::render() {
 		_fpsCounter.update();
-		LightSpaceMatrix();
 		ShadowPass();
 
 		_frameBuffer->bind();
@@ -220,12 +219,16 @@ namespace gui{
 
 	void SceneView::MeshRender() {
 		_shader->use();
-		_shader->setMat4(_lightSpaceMatrix, "lightSpaceMatrix");
+		
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			glActiveTexture(GL_TEXTURE5 + i);
+			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
+			_shader->setInt1(i, "cascadeShadowMap[" + std::to_string(i) + "]");
+			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrixCascade[" + std::to_string(i) + "]");
+		}
 
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, _shadowMap);
+		_shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
 
-		_shader->setInt1(7, "shadowMap");
 		_camera->update(_shader.get());
 		_light->update(_shader.get());
 
@@ -254,75 +257,97 @@ namespace gui{
 		}
 	}
 
-	void SceneView::LightSpaceMatrix() {
-		glm::vec3 dir = (_light->_direction == glm::vec3(0))
-			? glm::normalize(-_light->getPosition())
-			: glm::normalize(_light->_direction);
+	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
+		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
-		glm::mat4 lightView = glm::lookAt(
-			-dir * 20.0f,
-			glm::vec3(0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f)
-		);
+		glm::vec3 lightDir = glm::normalize(-_light->getPosition());
+		glm::mat4 lightView = glm::lookAt(lightDir * 50.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-		glm::mat4 lightProj = glm::ortho(
-			-30.0f, 30.0f,
-			-30.0f, 30.0f,
-			1.0f, 100.0f
-		);
+		float minX = FLT_MAX, maxX = -FLT_MAX;
+		float minY = FLT_MAX, maxY = -FLT_MAX;
+		float minZ = FLT_MAX, maxZ = -FLT_MAX;
 
-		_lightSpaceMatrix = lightProj * lightView;
+		for (auto& corner : corners) {
+			glm::vec4 trf = lightView * glm::vec4(corner);
+			minX = std::min(minX, trf.x);
+			maxX = std::max(maxX, trf.x);
+			minY = std::min(minY, trf.y);
+			maxY = std::max(maxY, trf.y);
+			minZ = std::min(minZ, trf.z);
+			maxZ = std::max(maxZ, trf.z);
+		}
+
+		glm::mat4 lightProj = glm::ortho(minX, maxX, minY, maxY, minZ - 20.0f, maxZ + 20.0f);
+
+		return lightProj * lightView;
 	}
 
 	void SceneView::InitShadowResource() {
-		glGenFramebuffers(1, &_shadowFBO);
+		int shadowRes[NUM_CASCADES] = { 4096, 2048 };
 
-		glGenTextures(1, &_shadowMap);
-		glBindTexture(GL_TEXTURE_2D, _shadowMap);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
-			SHADOW_W, SHADOW_H, 0,
-			GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
+		glGenTextures(NUM_CASCADES, _cascadeDepth);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		float border[] = { 1,1,1,1 };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
+				shadowRes[i], shadowRes[i], 0,
+				GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, _shadowFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_TEXTURE_2D, _shadowMap, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			float border[] = { 1,1,1,1 };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
+			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+				GL_TEXTURE_2D, _cascadeDepth[i], 0);
 
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void SceneView::ShadowPass() {
-		glViewport(0, 0, SHADOW_W, SHADOW_H);
-		glBindFramebuffer(GL_FRAMEBUFFER, _shadowFBO);
-		glClear(GL_DEPTH_BUFFER_BIT);
+		float nearPlane = _camera->getNear();
+		float farPlane = _camera->getFar();
 
-		_shadowShader->use();
-		_shadowShader->setMat4(_lightSpaceMatrix, "lightSpaceMatrix");
+		float cascadeNear[NUM_CASCADES];
+		float cascadeFar[NUM_CASCADES];
 
-		// checker plane
-		if (_checkerPlane) {
-			glm::mat4 model(1.0f);
-			_shadowShader->setMat4(model, "model");
-			_checkerPlane->render();
-		}
+		cascadeNear[0] = nearPlane;
+		cascadeFar[0] = nearPlane + _cascadeSplits[0] * (farPlane);
 
-		// main mesh
-		if (_object && _object->getMesh()) {
-			glm::mat4 model =
-				glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
-			_shadowShader->setMat4(model, "model");
-			_object->getMesh()->render();
+		cascadeNear[1] = cascadeFar[0];
+		cascadeFar[1] = nearPlane + _cascadeSplits[1] * (farPlane);
+
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
+
+			glViewport(0, 0, 4096 / (1<<i), 4096 / (1 << i));
+			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
+			glClear(GL_DEPTH_BUFFER_BIT);
+
+			_shadowShader->use();
+			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+
+			// checker plane
+			if (_checkerPlane) {
+				glm::mat4 model(1.0f);
+				_shadowShader->setMat4(model, "model");
+				_checkerPlane->render();
+			}
+
+			// main mesh
+			if (_object && _object->getMesh()) {
+				glm::mat4 model(1.0f);
+				model = glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
+				_shadowShader->setMat4(model, "model");
+				_object->getMesh()->render();
+			}
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

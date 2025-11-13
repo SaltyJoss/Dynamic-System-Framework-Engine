@@ -1,3 +1,3 @@
-#version 410 core
+#version 460 core
 
 void main() {}

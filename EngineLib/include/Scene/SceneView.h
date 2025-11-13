@@ -81,7 +81,7 @@ namespace gui {
     private:       
         void MeshRender();
         void WorldGridRender();
-        void LightSpaceMatrix();
+        glm::mat4 LightSpaceMatrix(float near, float far);
         void InitShadowResource();
         void ShadowPass();
         void SkyboxRender();
@@ -133,9 +133,11 @@ namespace gui {
         GLuint _cascadeDepth[NUM_CASCADES];
 
 		glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
-        flaot _cascadeSplits[NUM_CASCADES] = {0.1f, 0.3f};
+        float _cascadeSplits[NUM_CASCADES] = {0.1f, 0.3f};
 
-        const unsigned int SHADOW_W = 8192;
-        const unsigned int SHADOW_H = 8192;
+		/*
+        */
+		const unsigned int SHADOW_W = 8192; 
+		const unsigned int SHADOW_H = 8192; 
     };
 }

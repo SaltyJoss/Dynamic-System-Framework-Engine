@@ -54,6 +54,37 @@ namespace elements {
 		}
 	}
 
+	std::array<glm::vec4, 8> Camera::getFrustumCornersWorldSpace(float, float) const {
+		std::array<glm::vec4, 8> corners;
+
+		float tanHalfFov = tanf(_FOV * 0.5f);
+		float nearHeight = tanHalfFov * _near;
+		float nearWidth = nearHeight * (_aspect);
+		float farHeight = tanHalfFov * _far;
+		float farWidth = farHeight * (_aspect);
+
+		glm::vec3 forward = glm::normalize(_forward);
+		glm::vec3 right = glm::normalize(_right);
+		glm::vec3 up = glm::normalize(_up);
+
+		glm::vec3 nearCenter = _position + forward * _near;
+		glm::vec3 farCenter = _position + forward * _far;
+
+		// Near plane
+		corners[0] = glm::vec4(nearCenter - right * nearWidth + up * nearHeight, 1.0f); // Top-Left
+		corners[1] = glm::vec4(nearCenter + right * nearWidth + up * nearHeight, 1.0f); // Top-Right
+		corners[2] = glm::vec4(nearCenter - right * nearWidth - up * nearHeight, 1.0f); // Bottom-Left
+		corners[3] = glm::vec4(nearCenter + right * nearWidth - up * nearHeight, 1.0f); // Bottom-Right
+
+		// Far plane
+		corners[4] = glm::vec4(farCenter - right * farWidth + up * farHeight, 1.0f); // Top-Left
+		corners[5] = glm::vec4(farCenter + right * farWidth + up * farHeight, 1.0f); // Top-Right
+		corners[6] = glm::vec4(farCenter - right * farWidth - up * farHeight, 1.0f); // Bottom-Left
+		corners[7] = glm::vec4(farCenter + right * farWidth - up * farHeight, 1.0f); // Bottom-Right
+
+		return corners;
+	}
+
 	void Camera::applyGravity(float dt, float floorY)
 	{
 		// Only apply gravity if not grounded

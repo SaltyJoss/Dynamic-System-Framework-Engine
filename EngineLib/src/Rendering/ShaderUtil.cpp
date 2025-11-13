@@ -81,14 +81,19 @@ namespace shaders {
 		glUniformMatrix4fv(matLoc, 1, GL_FALSE, glm::value_ptr(mat4));
 	}
 
-	void Shader::setInt1(int v, const std::string& name) {
+	void Shader::setInt1(int a, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
-		glUniform1i(matLoc, v);
+		glUniform1i(matLoc, a);
 	}
 
-	void Shader::setFlt1(float v, const std::string& name) {
+	void Shader::setFlt1(float a, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
-		glUniform1f(matLoc, v);
+		glUniform1f(matLoc, a);
+	}
+
+	void Shader::setFlt2(float a, float b, const std::string& name) {
+		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
+		glUniform2f(matLoc, a, b);
 	}
 
 	void Shader::setFlt3(float a, float b, float c, const std::string& name) {
