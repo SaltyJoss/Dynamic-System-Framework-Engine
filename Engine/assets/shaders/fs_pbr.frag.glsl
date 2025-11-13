@@ -143,13 +143,30 @@ void main()
     vec3 V = normalize(camPos - WorldPos);  // View
 	vec3 R = reflect(-V, N);                // Reflection
 
-    vec3 finalAlbedo = albedo;
-    if (isFloor)
-    {
-        float pattern = mod(floor(WorldPos.x * checkSize) + floor(WorldPos.z * checkSize), 2.0);
-        finalAlbedo = mix(colour1, colour2, pattern);
-    }
+	// =====================================================
+	// FLOOR SPECIAL CASE: simple checker lit by IBL only
+	// =====================================================
+	if (isFloor)
+	{
+		// Checkerboard pattern in world-space XZ
+		float pattern = mod(floor(WorldPos.x * checkSize) +
+			floor(WorldPos.z * checkSize), 2.0);
+		vec3 base = mix(colour1, colour2, pattern);
 
+		// Simple IBL diffuse (no spec, no shadow)
+		vec3 diffuseIBL = texture(irradianceMap, N).rgb * base;
+
+		vec3 colour = diffuseIBL;
+
+		// Tone mapping + gamma
+		colour = colour / (colour + vec3(1.0));
+		colour = pow(colour, vec3(1.0 / 2.2));
+
+		FragColour = vec4(colour, 1.0);
+		return;
+	}
+
+    vec3 finalAlbedo = albedo;
 	vec3 F0 = mix(vec3(0.04), finalAlbedo, metallic);
 
 

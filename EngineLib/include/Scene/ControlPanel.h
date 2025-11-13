@@ -18,7 +18,12 @@ namespace gui {
             _currentFile = "<...>";
 
             _fileDialog.SetTitle("Open Object Mesh");
+			_fileDialog.SetDirectory("Engine/assets/objects");
             _fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+
+			_hdrLoad.SetTitle("Load HDR Environment");
+			_hdrLoad.SetDirectory("Engine/assets/hdr");
+			_hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
         }
 
         void render(gui::SceneView* sceneView);
@@ -48,6 +53,7 @@ namespace gui {
         std::shared_ptr<elements::Mesh> _mesh;
 
         ImGui::FileBrowser _fileDialog;
+        ImGui::FileBrowser _hdrLoad;
         std::string _currentFile;
 
         std::function<void(const std::string&)> _meshLoadCallback;

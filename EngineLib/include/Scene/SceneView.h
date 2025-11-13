@@ -15,7 +15,7 @@ namespace render {
     class OpenGLFrameBuffer;
 	class IBL;
     class Cubemap;
-    class Skybox;
+    class SkyboxRenderer;
 }
 namespace shaders {
     class Shader;
@@ -77,6 +77,8 @@ namespace gui {
         void resetMouseDelta();
 		void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
 
+        void loadNewHDR(const std::string& path);
+
         void resetView();
 
     private:       
@@ -91,7 +93,7 @@ namespace gui {
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
 
         std::unique_ptr<render::Cubemap> _cubemap;
-        std::unique_ptr<render::Skybox> _skybox;
+        std::unique_ptr<render::SkyboxRenderer> _skybox;
         std::unique_ptr<shaders::Shader> _skyboxShader;
 
         std::unique_ptr<shaders::Shader> _shader;

@@ -19,7 +19,7 @@ void main()
 	
 	// Map spherical coordinates to equirectangular UVs
 	float u = phi / (2.0 * PI);
-	float v = theta / PI;
+	float v = 1.0 - (theta / PI);
 
 	vec3 colour = texture(equirectMap, vec2(u, v)).rgb;
 	FragColour = vec4(colour, 1.0);

@@ -15,6 +15,8 @@ namespace render {
 		
 		void init(const std::string& hdrPath);
 
+		GLuint getEnvCubemap() const { return _envCubemap; }
+
 		GLuint getIrradianceMap() const;
 		GLuint getPrefilterMap() const;
 		GLuint getBRDFLUT() const;

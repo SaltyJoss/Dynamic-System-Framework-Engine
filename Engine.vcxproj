@@ -111,8 +111,8 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
     <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />
-    <None Include="Engine\assets\shaders\skybox.frag.glsl" />
-    <None Include="Engine\assets\shaders\skybox.vert.glsl" />
+    <None Include="Engine\assets\shaders\skybox_render.frag.glsl" />
+    <None Include="Engine\assets\shaders\skybox_render.vert.glsl" />
     <None Include="Engine\assets\shaders\vs_pbr.vert.glsl" />
     <None Include="Engine\assets\shaders\world_grid.frag.glsl" />
     <None Include="Engine\assets\shaders\world_grid.vert.glsl" />

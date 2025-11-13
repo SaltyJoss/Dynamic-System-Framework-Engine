@@ -22,6 +22,10 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
     ImGui::SameLine(0, 5.0f);
     ImGui::Text(_currentFile.c_str());
 
+	if (ImGui::Button("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+	ImGui::SameLine(0, 5.0f);
+	ImGui::Text(_currentFile.c_str());
+
     if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
     if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
     if (ImGui::CollapsingHeader("Display Settings")) { renderDisplaySettings(); }
@@ -38,6 +42,15 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
         
         _fileDialog.ClearSelected();
     }
+
+	_hdrLoad.Display();
+    if (_hdrLoad.HasSelected()) {
+        auto file_path = _hdrLoad.GetSelected().string();
+        _currentFile = file_path.substr(file_path.find_last_of("/\\") + 1);
+        _sceneView->loadNewHDR(file_path);
+        LOG_INFO("HDR loaded from file: %s", _currentFile.c_str());
+        _hdrLoad.ClearSelected();
+	}
 }
 
 void gui::ControlPanel::renderSimulationProperties() {

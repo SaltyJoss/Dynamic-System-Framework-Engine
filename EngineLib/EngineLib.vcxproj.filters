@@ -99,7 +99,7 @@
     <ClInclude Include="include\Rendering\ShaderUtil.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="include\Rendering\Skybox.h">
+    <ClInclude Include="include\Rendering\SkyboxRenderer.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\Camera.h">
@@ -195,6 +195,9 @@
     <ClInclude Include="include\Rendering\IBL.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="include\Rendering\CubeVertices.h">
+      <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -236,7 +239,7 @@
     <ClCompile Include="src\Rendering\ShaderUtil.cpp">
       <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Skybox.cpp">
+    <ClCompile Include="src\Rendering\SkyboxRenderer.cpp">
       <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\WindowManager.cpp">
@@ -282,6 +285,9 @@
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\IBL.cpp">
+      <Filter>Source Files\src\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\CubeVertices.cpp">
       <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
   </ItemGroup>

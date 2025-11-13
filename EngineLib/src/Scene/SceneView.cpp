@@ -16,7 +16,7 @@
 #include "Scene/Object.h"
 
 #include "Rendering/Cubemap.h"
-#include "Rendering/Skybox.h"
+#include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
 #include "Rendering/IBL.h"
@@ -37,21 +37,8 @@ namespace gui{
 		_shader = std::make_unique<shaders::Shader>();
 		_shader->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
 
-		std::array<std::string, 6> facesCubemap = {
-			"Engine/assets/cubemaps/" + folder + "/px.png",
-			"Engine/assets/cubemaps/" + folder + "/nx.png",
-			"Engine/assets/cubemaps/" + folder + "/py.png",
-			"Engine/assets/cubemaps/" + folder + "/ny.png",
-			"Engine/assets/cubemaps/" + folder + "/pz.png",
-			"Engine/assets/cubemaps/" + folder + "/nz.png"
-		};
-
-		_skyboxShader = std::make_unique<shaders::Shader>();
-		_skyboxShader->load("Engine/assets/shaders/skybox.vert.glsl", "Engine/assets/shaders/skybox.frag.glsl");
-
-		_cubemap = std::make_unique<render::Cubemap>(facesCubemap);
-		_skybox = std::make_unique<render::Skybox>(_cubemap.get(), _skyboxShader.get());
-
+		_skybox = std::make_unique<render::SkyboxRenderer>();
+		
 		_worldGridShader = std::make_unique<shaders::Shader>();
 		_worldGridShader->load("Engine/assets/shaders/world_grid.vert.glsl", "Engine/assets/shaders/world_grid.frag.glsl");
 
@@ -90,16 +77,30 @@ namespace gui{
 
 		_frameBuffer->bind();
 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+
 		WorldGridRender();
 		MeshRender();
 		
-		if (skyboxEnabled) { SkyboxRender(); }
+
+		if (skyboxEnabled)
+		{
+			glDepthMask(GL_FALSE);   // don't write
+			glDepthFunc(GL_LEQUAL);  // allow skybox if depth == far plane
+
+			SkyboxRender();
+
+			glDepthMask(GL_TRUE);    // restore
+			glDepthFunc(GL_LESS);    // restore
+		}
 		
 		_frameBuffer->unbind();
 
 		ImGui::Begin("Game Engine");
 
 		ImGui::Text("FPS: %.1f", _fpsCounter.getFPS());
+
 
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -119,7 +120,7 @@ namespace gui{
 
 		// rebuild framebuffer
 		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers(width * 2.0f, height * 2.0f);
+		_frameBuffer->createBuffers(width, height);
 
 		LOG_INFO("Framebuffer resized: %d x %d", width, height);
 	}
@@ -198,6 +199,35 @@ namespace gui{
 	 *				RENDERING METHODS
 	 * --------------------------------------------
 	 */
+
+	void SceneView::loadNewHDR(const std::string& path)
+	{
+		LOG_INFO("Loading new HDR: %s", path.c_str());
+
+		if (!_ibl) return;
+
+		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
+
+		// Rebind PBR textures
+		_shader->use();
+		_shader->setInt1(0, "irradianceMap");
+		_shader->setInt1(1, "prefilterMap");
+		_shader->setInt1(2, "brdfLUT");
+
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
+
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
+
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+
+		// Update skybox
+		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
+
+		LOG_INFO("HDR updated successfully.");
+	}
 
 	void SceneView::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
@@ -325,7 +355,7 @@ namespace gui{
 	void SceneView::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
-		_ibl->init("Engine/assets/hdr/qm8k.hdr");
+		_ibl->init("Engine/assets/hdr/mr8k.hdr");
 
 		_shader->use();
 		_shader->setInt1(0, "irradianceMap");
@@ -386,12 +416,13 @@ namespace gui{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void SceneView::SkyboxRender() {
-		if (_skybox) {
-			glm::mat4 view = _camera->getViewMatrix();
-			glm::mat4 projection = _camera->getProjection();
-			_skybox->render(view, projection);
-		}
+	void SceneView::SkyboxRender()
+	{
+		glm::mat4 view = _camera->getViewMatrix();
+		glm::mat4 projection = _camera->getProjection();
+
+		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
+		_skybox->render(projection, view);
 	}
 
 	void gui::SceneView::updatePhysics(float dt)

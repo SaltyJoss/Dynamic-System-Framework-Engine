@@ -42,10 +42,10 @@
     <None Include="Engine\assets\shaders\world_grid.vert.glsl">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="Engine\assets\shaders\skybox.frag.glsl">
+    <None Include="Engine\assets\shaders\skybox_render.frag.glsl">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="Engine\assets\shaders\skybox.vert.glsl">
+    <None Include="Engine\assets\shaders\skybox_render.vert.glsl">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl">

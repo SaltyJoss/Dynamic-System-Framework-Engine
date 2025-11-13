@@ -11,64 +11,11 @@
 
 #include "Rendering/IBL.h"
 #include "Rendering/ShaderUtil.h"
+#include "Rendering/CubeVertices.h"
 
 #include "EngineLib/LogMacros.h"
 
 namespace render {
-	namespace {
-		float CUBE_VERTICES[] = {
-			// back face
-			-1.0f, -1.0f, -1.0f,
-			 1.0f, -1.0f, -1.0f,
-			 1.0f,  1.0f, -1.0f,
-			 1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			// front face
-			-1.0f, -1.0f,  1.0f,
-			 1.0f, -1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
-			// left face
-			-1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			// right face
-			 1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f, -1.0f,
-			 1.0f, -1.0f, -1.0f,
-			 1.0f, -1.0f, -1.0f,
-			 1.0f, -1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 // bottom face
-			-1.0f, -1.0f, -1.0f,
-			 1.0f, -1.0f, -1.0f,
-			 1.0f, -1.0f,  1.0f,
-			 1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f, -1.0f,
-			// top face
-			-1.0f,  1.0f, -1.0f,
-			 1.0f,  1.0f, -1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f, -1.0f
-		};
-
-		float QUAD_VERTICES[] = {
-			// positions   // texCoords
-			-1.0f, -1.0f,  0.0f,  0.0f,
-			 1.0f, -1.0f,  1.0f,  0.0f,
-			-1.0f,  1.0f,  0.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,  1.0f,
-		};
-}
 	IBL::IBL() = default;
 
 	IBL::~IBL() {
