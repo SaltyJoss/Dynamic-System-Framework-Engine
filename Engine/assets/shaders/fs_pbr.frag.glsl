@@ -94,7 +94,6 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
     float currentDepth = length(worldPos - camPos);
 
 	// 2. Determine which cascade the fragment is in
-
 	// Choose cascade
 	int cascadeIndex = (currentDepth > cascadeSplits[0]) ? 1 : 0;
 
@@ -137,16 +136,13 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
     return shadowAmount;
 }
 
-// ------------------------ MAIN FUNCTION ------------------------
-
 void main()
 {
-	// normalise inputs
+	// --- SETUP ---
     vec3 N = normalize(Normal);             // Normal
     vec3 V = normalize(camPos - WorldPos);  // View
 	vec3 R = reflect(-V, N);                // Reflection
 
-    // determine albedo colour
     vec3 finalAlbedo = albedo;
     if (isFloor)
     {
@@ -154,71 +150,65 @@ void main()
         finalAlbedo = mix(colour1, colour2, pattern);
     }
 
-    // base reflection (Cook-Torrance PBR)
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, finalAlbedo, metallic);
+	vec3 F0 = mix(vec3(0.04), finalAlbedo, metallic);
 
-    // diffuse IBL
-    vec3 irradiance = texture(irradianceMap, N).rgb * finalAlbedo;
 
-    vec3 Lo = vec3(0.0);
 
-	// Single directional light
-    vec3 L = normalize(-lightDirection);
-    vec3 H = normalize(V + L);
+// -----------------------------------------
+//            DIRECT LIGHTING (PBR)
+// ------------------------------------------
 
-    vec3 radiance = lightColour;
+	vec3 L = normalize(-lightPosition);
+	vec3 H = normalize(V + L);
+	vec3 radiance = lightColour;
 
-	// Compute shadow using CSM
-    float shadow = computeShadowCSM(WorldPos, N, L);
+	float shadow = computeShadowCSM(WorldPos, N, L);
 
-    // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, roughness * lightSize);
-    float G = GeometrySmith(N, V, L, roughness);
-    vec3 F = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+	float NDF = DistributionGGX(N, H, roughness * lightSize);
+	float G = GeometrySmith(N, V, L, roughness * lightSize);
+	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    float NdotV = max(dot(N, V), 0.0);
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
 
-    // Sample Prefiltered Environment
-	vec3 prefilteredColour = textureLod(prefilterMap, R, roughness * 4.0).rgb;
-
-	// Sample BRDF LUT
-	vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-
-    // Combine IBL components
-	vec3 specularIBL = prefilteredColour * (F * brdf.x + brdf.y);
-
-	// Specular term
-    vec3 nominator = NDF * G * F;
-    float denominator = 4 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular = nominator / max(denominator, 0.001);
-
-	// Energy conservation
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
-     
-    float NdotL = max(dot(N, L), 0.0);
-
-	// Final outgoing radiance
-    Lo += (kD * finalAlbedo / PI + specular) * radiance * NdotL;
-
-    vec3 kS = F;
+	vec3 kS = F;
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-	// IBL contribution
-    vec3 diffuse = diffuseIBL;
-	vec3 specular = specularIBL;
+	vec3 nominator = NDF * G * F;
+	float denominator = 4.0 * NdotV * NdotL;
+	vec3 specular = nominator / max(denominator, 0.001);
 
-	vec3 IBL = kD * diffuse + specular;
+	vec3 Lo = (kD * finalAlbedo / PI + specular) * radiance * NdotL;
+
+
+
+// -----------------------------------------
+//          INDIRECT LIGHTING (IBL)
+// ------------------------------------------
+
+	// IBL contribution
+	vec3 diffuseIBL = texture(irradianceMap, N).rgb * finalAlbedo;
+
+	// Specular IBL
+	vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
+	vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
+	vec3 specular = prefilitered * (F * brdf.x + brdf.y);
+
+	vec3 IBL = kD * diffuseIBL + specular;
+
+
+
+// -----------------------------------------
+//          FINAL LIGHT COMBINATION
+// ------------------------------------------
 
 	// Direct lighting contribution
 	vec3 direct = (1.0 - shadow) * Lo;
-
-	// Final Colour (w/ HDR Tonemapping and Gamma correction)
 	vec3 colour = IBL + direct;
-    colour = colour / (colour + vec3(1.0)); // Tone maps
-	colour = pow(colour, vec3(1.0 / 2.2));  // Gamma correction
+
+	// Ambient occlusion
+    colour = colour / (colour + vec3(1.0));
+	colour = pow(colour, vec3(1.0 / 2.2));
 
     FragColour = vec4(colour, 1.0);
 }

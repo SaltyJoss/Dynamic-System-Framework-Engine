@@ -10,14 +10,14 @@ using GLuint = std::uint32_t;
 namespace render {
 	class ENGINE_API IBL {
 	public:
-		IBL() = default;
-		~IBL() = default;
+		IBL();
+		~IBL();
 		
 		void init(const std::string& hdrPath);
 
-		virtual GLuint getIrradianceMap() const = 0;
-		virtual GLuint getPrefilterMap() const = 0;
-		virtual GLuint getBRDFLUT() const = 0;
+		GLuint getIrradianceMap() const;
+		GLuint getPrefilterMap() const;
+		GLuint getBRDFLUT() const;
 		
 	private:
 		GLuint _hdrTexture = 0;

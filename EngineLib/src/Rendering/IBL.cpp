@@ -7,7 +7,6 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include "Rendering/IBL.h"
@@ -70,7 +69,8 @@ namespace render {
 			 1.0f,  1.0f,  1.0f,  1.0f,
 		};
 }
-	IBL::IBL() {}
+	IBL::IBL() = default;
+
 	IBL::~IBL() {
 		if (_envCubemap)		glDeleteTextures(1, &_envCubemap);
 		if (_irradianceMap)	glDeleteTextures(1, &_irradianceMap);
@@ -123,7 +123,7 @@ namespace render {
  */
 
 	void IBL::generateCubemap() {
-		glGenBuffers(1, &_envCubemap);
+		glGenTextures(1, &_envCubemap);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
 
 		const unsigned int CUBE_RES = 2048;
@@ -206,7 +206,7 @@ namespace render {
 	void IBL::generateIrradianceMap() {
 		const unsigned int IRR_RES = 32;
 
-		glGenBuffers(1, &_irradianceMap);
+		glGenTextures(1, &_irradianceMap);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _irradianceMap);
 
 		for (unsigned int i = 0; i < 6; ++i) {
@@ -284,7 +284,7 @@ namespace render {
 	void IBL::generatePrefilterMap() {
 		const unsigned int PREFILTER_RES = 128;
 
-		glGenBuffers(1, &_prefilterMap);
+		glGenTextures(1, &_prefilterMap);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _prefilterMap);
 		for (unsigned int i = 0; i < 6; ++i) {
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, PREFILTER_RES, PREFILTER_RES, 0, GL_RGB, GL_FLOAT, nullptr);
@@ -370,26 +370,26 @@ namespace render {
 
 	void IBL::generateBRDFLUT() {
 		const unsigned int BRDF_LUT_RES = 512;
-		
+
 		glGenTextures(1, &_brdfLUT);
 		glBindTexture(GL_TEXTURE_2D, _brdfLUT);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, BRDF_LUT_RES, BRDF_LUT_RES, 0, GL_RG, GL_FLOAT, 0);
-		
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		
+
 		GLuint captureFBO, captureRBO;
 		glGenFramebuffers(1, &captureFBO);
 		glGenRenderbuffers(1, &captureRBO);
-		
+
 		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, BRDF_LUT_RES, BRDF_LUT_RES);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _brdfLUT, 0);
-		
+
 		GLuint quadVAO, quadVBO;
 		glGenVertexArrays(1, &quadVAO);
 		glGenBuffers(1, &quadVBO);
@@ -400,7 +400,7 @@ namespace render {
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-		
+
 		shaders::Shader brdfShader;
 		brdfShader.load("Engine/assets/shaders/brdf_lut.vert.glsl", "Engine/assets/shaders/brdf_lut.frag.glsl");
 		brdfShader.use();
@@ -419,4 +419,15 @@ namespace render {
 		glDeleteRenderbuffers(1, &captureRBO);
 
 		LOG_INFO("Generating BRDF LUT");
+	}
+
+/*
+ * ----------------------------------------------
+ *					GETTERS
+ * ----------------------------------------------
+ */
+
+	GLuint IBL::getIrradianceMap() const { return _irradianceMap; }
+	GLuint IBL::getPrefilterMap() const { return _prefilterMap; }
+	GLuint IBL::getBRDFLUT() const { return _brdfLUT; }
 }

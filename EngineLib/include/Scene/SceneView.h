@@ -13,6 +13,7 @@ extern ENGINE_API Debug gLog;
 
 namespace render {
     class OpenGLFrameBuffer;
+	class IBL;
     class Cubemap;
     class Skybox;
 }
