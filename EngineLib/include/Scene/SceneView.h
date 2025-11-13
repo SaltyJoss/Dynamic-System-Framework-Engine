@@ -115,7 +115,6 @@ namespace gui {
         std::string folder = "s3";
 
         float _backgroundAlpha = 1.0f;
-        static constexpr float planeHeight = -2.5f;
         float planeY = planeHeight;
 
         bool _isHovered = false;
@@ -127,7 +126,16 @@ namespace gui {
         unsigned int _shadowFBO = 0;
         unsigned int _shadowMap = 0;
 
-        const unsigned int SHADOW_W = 2048;
-        const unsigned int SHADOW_H = 2048;
+        static constexpr float planeHeight = -2.5f;
+		static constexpr int NUM_CASCADES = 4;
+
+        GLuint _cascadeFBO[NUM_CASCADES];
+        GLuint _cascadeDepth[NUM_CASCADES];
+
+		glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
+        flaot _cascadeSplits[NUM_CASCADES] = {0.1f, 0.3f};
+
+        const unsigned int SHADOW_W = 8192;
+        const unsigned int SHADOW_H = 8192;
     };
 }
