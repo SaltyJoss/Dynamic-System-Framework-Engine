@@ -465,3 +465,4 @@ vcpkg_downloads/
 !**/*.vcxproj.filters
 !**/*.sln
 !CMakeLists.txt
+/Engine/assets/hdr
