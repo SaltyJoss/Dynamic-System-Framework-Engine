@@ -201,7 +201,7 @@ namespace gui{
 
 	void SceneView::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE); // enable writing to depth buffer
+		glDepthMask(GL_FALSE);
 		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

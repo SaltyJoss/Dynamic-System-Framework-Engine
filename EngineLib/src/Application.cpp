@@ -29,6 +29,7 @@ Application::~Application() = default;
 
 void Application::run() {
     while (_window->isRunning() && !_window->shouldClose()) {
+
         // --- Frame steps ---
         _window->update();                             // Scene updates, movement
         _window->render();                             // Draw everything

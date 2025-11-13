@@ -137,7 +137,7 @@ namespace window {
  */
 
     void GLWindow::update() {
-        glfwPollEvents();
+		pollEvents();
 
         static double lastFrame = glfwGetTime();
         double currentFrame = glfwGetTime();
@@ -175,15 +175,9 @@ namespace window {
     }
 
     void window::GLWindow::onKey(int key, int scancode, int action, int mods) {
-        // Always handle TAB yourself (even if ImGui wants keyboard)
         if (action == GLFW_PRESS && key == GLFW_KEY_TAB) {
             setMouseCaptured(!_mouseCaptured);
             return;
-        }
-
-        // movement as before
-        if ((action == GLFW_PRESS || action == GLFW_REPEAT) && _sceneView) {
-            _sceneView->processMovementKey(key, 0.1f);
         }
 
         if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
