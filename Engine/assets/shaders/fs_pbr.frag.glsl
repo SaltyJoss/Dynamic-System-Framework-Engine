@@ -28,7 +28,7 @@ uniform vec3 lightDirection;
 
 // Shadow map (Cascaded)
 uniform sampler2DShadow cascadeShadowMap[2];
-uniform mat4 lightSpaceMatrixCascade[2];
+uniform mat4 lightSpaceMatrix[2];
 uniform float cascadeSplits[2];
 uniform vec3 camPos;
 
@@ -97,7 +97,7 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 	if (currentDepth > cascadeSplits[1]) { return 0.0; }
 
 	// 3. Transforming Cascade into light space
-	vec4 lightSpacePos = lightSpaceMatrixCascade[cascadeIndex] * vec4(worldPos, 1.0);
+	vec4 lightSpacePos = lightSpaceMatrix[cascadeIndex] * vec4(worldPos, 1.0);
 	vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
 	projCoords = projCoords * 0.5 + 0.5;
 

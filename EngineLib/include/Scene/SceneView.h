@@ -135,8 +135,12 @@ namespace gui {
 		glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
         float _cascadeSplits[NUM_CASCADES] = {0.1f, 0.3f};
 
-		/*
-        */
+/*
+ * --------------------------------------------------------------------------
+ *                          Grapical Settings
+ * --------------------------------------------------------------------------
+ */
+        // Shadow map dimensions
 		const unsigned int SHADOW_W = 8192; 
 		const unsigned int SHADOW_H = 8192; 
     };

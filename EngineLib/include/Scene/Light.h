@@ -16,13 +16,16 @@ namespace elements {
             _direction = glm::vec3(-1.0f, -1.0f, -0.3f);
             _position = glm::vec3{ 1.5f, 3.5f, 3.0f };
             _colour = glm::vec3(1.0f, 1.0f, 1.0f);
-            _strength = 250.0f;
+            _strength = 50.0f;
             _size = 10.0f;
         }
 
         ~Light() {}
 
+		void setDirection(const glm::vec3& dir) { _direction = glm::normalize(dir); }
+
         glm::vec3 getPosition() const { return _position; }
+		glm::vec3 getDirection() const { return _direction; }
         glm::vec3 getColour() const { return _colour; }
 
         void update(shaders::Shader* shader) override {

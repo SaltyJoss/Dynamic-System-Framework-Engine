@@ -223,8 +223,8 @@ namespace gui{
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			glActiveTexture(GL_TEXTURE5 + i);
 			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
-			_shader->setInt1(i, "cascadeShadowMap[" + std::to_string(i) + "]");
-			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrixCascade[" + std::to_string(i) + "]");
+			_shader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
+			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
 		}
 
 		_shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
@@ -260,8 +260,16 @@ namespace gui{
 	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
-		glm::vec3 lightDir = glm::normalize(-_light->getPosition());
-		glm::mat4 lightView = glm::lookAt(lightDir * 50.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 lightDir = glm::normalize(_light->getDirection());
+
+		// Fake camera position far along direction
+		glm::vec3 lightPos = -lightDir * 50.0f;
+
+		glm::mat4 lightView = glm::lookAt(
+			lightPos,
+			glm::vec3(0.0f),
+			glm::vec3(0, 1, 0)
+		);
 
 		float minX = FLT_MAX, maxX = -FLT_MAX;
 		float minY = FLT_MAX, maxY = -FLT_MAX;
@@ -296,6 +304,8 @@ namespace gui{
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			float border[] = { 1,1,1,1 };
@@ -327,12 +337,15 @@ namespace gui{
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
-			glViewport(0, 0, 4096 / (1<<i), 4096 / (1 << i));
+			int baseRes = 4096;
+			int res = baseRes >> i;   // 4096, 2048
+			glViewport(0, 0, res, res);
+
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			_shadowShader->use();
-			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
 
 			// checker plane
 			if (_checkerPlane) {
@@ -349,7 +362,6 @@ namespace gui{
 				_object->getMesh()->render();
 			}
 		}
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
