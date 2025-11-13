@@ -84,19 +84,23 @@ namespace elements {
 		}
 	}
 
-	void Camera::moveForward(float delta) {
-		_focus += getForward() * delta;
+	void Camera::moveForward(float velocity) {
+		glm::vec3 dir = glm::vec3(_forward.x, 0.0f, _forward.z);
+		_position += glm::normalize(dir) * velocity;
 	}
 
-	void Camera::moveBackward(float delta) {
-		_focus -= getForward() * delta;
+	void Camera::moveBackward(float velocity) {
+		glm::vec3 dir = glm::vec3(_forward.x, 0.0f, _forward.z);
+		_position -= glm::normalize(dir) * velocity;
 	}
 
-	void Camera::moveLeft(float delta) {
-		_focus -= getRight() * delta;
+	void Camera::moveLeft(float velocity) {
+		glm::vec3 dir = glm::vec3(_right.x, 0.0f, _right.z);
+		_position -= glm::normalize(dir) * velocity;
 	}
 
-	void Camera::moveRight(float delta) {
-		_focus += getRight() * delta;
+	void Camera::moveRight(float velocity) {
+		glm::vec3 dir = glm::vec3(_right.x, 0.0f, _right.z);
+		_position += glm::normalize(dir) * velocity;
 	}
 }

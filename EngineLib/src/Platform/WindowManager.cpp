@@ -150,7 +150,6 @@ namespace window {
         if (_sceneView) {
             _sceneView->handleContinuousMovement(_window, smoothedDt);
             _sceneView->getCamera()->applyGravity(smoothedDt, _sceneView->getPlaneHeight());
-            _sceneView->getCamera()->clampToFloor(_sceneView->getPlaneHeight());
         }
     }
 

@@ -100,11 +100,17 @@ namespace elements {
 		}
 
 		void updateViewMatrix() {
-			_position = _focus - getForward() * _distance;
+			// derive direction from yaw/pitch
+			_forward.x = cosf(_yaw) * cosf(_pitch);
+			_forward.y = sinf(_pitch);
+			_forward.z = sinf(_yaw) * cosf(_pitch);
+			_forward = glm::normalize(_forward);
 
-			glm::quat orientation = getDirection();
-			_viewMatrix = glm::translate(glm::mat4(1.0f), _position) * glm::toMat4(orientation);
-			_viewMatrix = glm::inverse(_viewMatrix);
+			// recompute right and up
+			_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+			_up = glm::normalize(glm::cross(_right, _forward));
+
+			_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
 		}
 
 		void applyGravity(float dt, float floorY);
@@ -133,16 +139,16 @@ namespace elements {
 		float _near;
 		float _far;
 		float _pitch = 0.0f;
-		float _yaw = 0.0f;
+		float _yaw = -glm::half_pi<float>();
 		float _currentSpeed = 0.0f;
 		float _targetSpeed = 5.0f;
 		float _accel = 10.0f;
 		float _eyeHeight = 1.8f;
 
 		glm::vec2 _currentPos2D = { 0.0f, 0.0f };
-		const glm::vec3 _right = { 1.0f, 0.0f, 0.0f };
-		const glm::vec3 _up = { 0.0f, 1.0f, 0.0f };
-		const glm::vec3 _forward = { 0.0f, 0.0f, -1.0f };
+		glm::vec3 _right = { 1.0f, 0.0f, 0.0f };
+		glm::vec3 _up = { 0.0f, 1.0f, 0.0f };
+		glm::vec3 _forward = { 0.0f, 0.0f, -1.0f };
 
 		const float _rotationSpeed = 2.0f;
 
