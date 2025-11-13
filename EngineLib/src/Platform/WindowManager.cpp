@@ -74,6 +74,7 @@ namespace window {
 
         // UI + scene
         _sceneView = std::make_unique<gui::SceneView>();
+        _sceneView->resize(_width, _height);
         _controlPanel = std::make_unique<gui::ControlPanel>(_sceneView.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
 

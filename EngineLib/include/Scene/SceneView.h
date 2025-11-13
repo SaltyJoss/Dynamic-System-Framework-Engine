@@ -121,6 +121,7 @@ namespace gui {
         bool _isHovered = false;
         bool skyboxEnabled = true;
         bool _firstMouse = true;
+        bool _firstUpdate = true;
 
         unsigned int _worldGridVAO = 0;
         unsigned int _shadowFBO = 0;

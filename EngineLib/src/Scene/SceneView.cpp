@@ -29,10 +29,10 @@ namespace gui{
 
 	SceneView::SceneView() :
 		_camera(nullptr), _frameBuffer(nullptr), _shader(nullptr), _light(nullptr),
-		_worldGridShader(nullptr), _shadowShader(nullptr), _size(1280, 720)
+		_worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(1280,720);
+		_frameBuffer->createBuffers(1920, 1080);
 
 		_shader = std::make_unique<shaders::Shader>();
 		_shader->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
@@ -59,7 +59,7 @@ namespace gui{
 		_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
 		_light = std::make_unique<elements::Light>();
-		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 1280.0f / 720.0f, 0.5f, 2000.0f);
+		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 16 / 9, 0.5f, 2000.0f);
 
 		glGenVertexArrays(1, &_worldGridVAO);
 
@@ -110,14 +110,18 @@ namespace gui{
 	}
 
 	void SceneView::resize(int32_t width, int32_t height) {
+		// update camera projection
 		float aspect = (float)width / (float)height;
 		_camera->setAspect(aspect);
 
-		_frameBuffer->deleteBuffers();
-		float scale = 2.0f;
-		_frameBuffer->createBuffers(width*2.0f, height*2.0f);
+		// store updated size
+		_size = glm::vec2(width, height);
 
-		LOG_INFO("Framebuffer resized", (int32_t)_size.x, (int32_t)_size.y);
+		// rebuild framebuffer
+		_frameBuffer->deleteBuffers();
+		_frameBuffer->createBuffers(width * 2.0f, height * 2.0f);
+
+		LOG_INFO("Framebuffer resized: %d x %d", width, height);
 	}
 
 	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
@@ -370,6 +374,9 @@ namespace gui{
  */
 
 	void gui::SceneView::handleContinuousMovement(GLFWwindow* window, float dt) {
+		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
+		if (!win || !win->isMouseCaptured()) return;
+
 		float kspd = 2.5f * dt;
 
 		if (elements::Input::IsKeyPressed(window, GLFW_KEY_W)) {
@@ -394,13 +401,15 @@ namespace gui{
 	}
 
 	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
+		if (!win || !win->isMouseCaptured()) return;
+
 		// If cursor is not captured, only rotate when hovering
 		bool captured = false;
 		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window)))
 			captured = win->isMouseCaptured();
 
 		if (!captured && !_isHovered) {
-			// keep positions synced so next capture doesn’t jump
 			_lastMousePos = { (float)xpos, (float)ypos };
 			_firstMouse = true;
 			return;
@@ -412,7 +421,7 @@ namespace gui{
 		}
 
 		double xoffset = xpos - _lastMousePos.x;
-		double yoffset = ypos - _lastMousePos.y;
+		double yoffset = _lastMousePos.y - ypos;
 		_lastMousePos = { (float)xpos, (float)ypos };
 
 		if (_controlMode == ControlMode::Camera) {
@@ -428,7 +437,7 @@ namespace gui{
 			_camera->processKeyboard(key, delta);
 		}
 		else if (_controlMode == ControlMode::Object && _mesh) {
-			// Object movement logic can be added here!
+			// Object movement logic to be added here!
 		}
 	}
 

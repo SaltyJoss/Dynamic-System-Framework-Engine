@@ -55,7 +55,6 @@ namespace elements {
 		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
 		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
 		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
-		void setFOV(float FOV) { _FOV = FOV; }
 
 		void setDistance(float offset) {
 			_distance += offset;
@@ -124,6 +123,16 @@ namespace elements {
 		void processKeyboard(int key, float delta);
 		void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
 		void clampToFloor(float floorY);
+
+		void updateProjectionMatrix() {
+			_projection = glm::perspective(_FOV, _aspect, _near, _far);
+		}
+
+		float getFOV() const { return glm::degrees(_FOV); }
+		void setFOV(float fovDeg) {
+			_FOV = glm::radians(fovDeg);
+			updateProjectionMatrix();
+		}
 
 	private:
 		glm::mat4 _viewMatrix;

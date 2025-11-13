@@ -1,6 +1,7 @@
 
 #include "pch.h"
 
+#include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/ControlPanel.h"
 #include <imgui.h>
@@ -116,5 +117,10 @@ void gui::ControlPanel::renderDisplaySettings() {
     if (ImGui::Checkbox("Show Skybox", &enabled)) {
         _sceneView->setSkyboxEnabled(enabled);
         LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
+    }
+
+    float fov = _sceneView->getCamera()->getFOV(); // in degrees
+    if (ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f, "%.1f°")) {
+        _sceneView->getCamera()->setFOV(fov);
     }
 }
