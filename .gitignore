@@ -466,3 +466,6 @@ vcpkg_downloads/
 !**/*.sln
 !CMakeLists.txt
 /Engine/assets/hdr
+/Engine/assets/objects/Misc
+/Engine/assets/objects/Models/44-moon-photorealistic-2k/Supporting Files
+/Engine/assets/objects/Models/44-moon-photorealistic-2k
