@@ -3,7 +3,7 @@
 in vec3 WorldDir;
 out vec4 FragColour;
 
-uniform samplerCube equirectMap;
+uniform samplerCube environmentMap;
 uniform float roughness;
 
 const float PI = 3.14159265359;
@@ -51,7 +51,7 @@ void main()
 		float NdotL = max(dot(N, L), 0.0);
 		if(NdotL > 0.0)
 		{
-			prefilteredColour += texture(equirectMap, L).rgb * NdotL;
+			prefilteredColour += texture(environmentMap, L).rgb * NdotL;
 			totalWeight += NdotL;
 		}
 	}

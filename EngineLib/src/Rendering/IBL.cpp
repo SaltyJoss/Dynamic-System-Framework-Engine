@@ -16,10 +16,22 @@
 #include "EngineLib/LogMacros.h"
 
 namespace render {
+/*
+* ----------------------------------------------
+*					IBL METHODS
+* ----------------------------------------------
+* 
+* Summary:
+* ----------------------------------------------
+* IBL() -> Constructor that initializes the IBL object.
+* ~IBL() -> Destructor that cleans up IBL resources.
+* init(const std::string& hdrPath) -> Initializes the IBL by loading the HDR image and generating the necessary maps.
+* ----------------------------------------------
+*/
 	IBL::IBL() = default;
 
 	IBL::~IBL() {
-		if (_envCubemap)		glDeleteTextures(1, &_envCubemap);
+		if (_envCubemap)	glDeleteTextures(1, &_envCubemap);
 		if (_irradianceMap)	glDeleteTextures(1, &_irradianceMap);
 		if (_prefilterMap)	glDeleteTextures(1, &_prefilterMap);
 		if (_brdfLUT)		glDeleteTextures(1, &_brdfLUT);
@@ -37,6 +49,11 @@ namespace render {
 /*
  * ----------------------------------------------
  *				   HDR LOADING
+ * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * loadHDR() -> Loads an HDR image from the specified file path and creates an OpenGL texture for it.
  * ----------------------------------------------
  */
 
@@ -66,6 +83,11 @@ namespace render {
 /*
  * ----------------------------------------------
  *		EQUIRECTANGULAR TO CUBEMAP CONVERSION
+ * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * generateCubemap() -> Converts the loaded equirectangular HDR texture into a cubemap texture for environment mapping.
  * ----------------------------------------------
  */
 
@@ -148,6 +170,11 @@ namespace render {
  * ----------------------------------------------
  *		   IRRADIANCE MAP GENERATION
  * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * generateIrradianceMap() -> Generates the irradiance cubemap used for diffuse IBL by convolving the environment cubemap.
+ * ----------------------------------------------
  */
 
 	void IBL::generateIrradianceMap() {
@@ -212,6 +239,8 @@ namespace render {
 			glBindVertexArray(cubeVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glDeleteVertexArrays(1, &cubeVAO);
@@ -225,6 +254,11 @@ namespace render {
 /*
  * ----------------------------------------------
  *			PREFILTER MAP GENERATION
+ * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * generatePrefilterMap() -> Generates the prefilter cubemap used for specular IBL by convolving the environment cubemap at different roughness levels and storing them in mipmap levels.
  * ----------------------------------------------
  */
 
@@ -273,7 +307,7 @@ namespace render {
 		shaders::Shader prefilterShader;
 		prefilterShader.load("Engine/assets/shaders/cubemap.vert.glsl", "Engine/assets/shaders/prefilter_cubemap.frag.glsl");
 		prefilterShader.use();
-		prefilterShader.setInt1(0, "equirectMap");
+		prefilterShader.setInt1(0, "environmentMap");
 		prefilterShader.setMat4(captureProj, "projection");
 
 		glActiveTexture(GL_TEXTURE0);
@@ -312,6 +346,11 @@ namespace render {
 /*
  * ----------------------------------------------
  *			  BRDF LUT GENERATION
+ * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * generateBRDFLUT() -> Generates the BRDF lookup texture used for specular IBL.
  * ----------------------------------------------
  */
 
@@ -371,6 +410,13 @@ namespace render {
 /*
  * ----------------------------------------------
  *					GETTERS
+ * ----------------------------------------------
+ * 
+ * Summary:
+ * ----------------------------------------------
+ * getIrradianceMap() -> Returns the OpenGL texture ID of the irradiance map.
+ * getPrefilterMap() -> Returns the OpenGL texture ID of the prefilter map.
+ * getBRDFLUT() -> Returns the OpenGL texture ID of the BRDF LUT.
  * ----------------------------------------------
  */
 

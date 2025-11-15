@@ -17,6 +17,7 @@ namespace elements {
             _position = glm::vec3{ 1.5f, 3.5f, 3.0f };
             _colour = glm::vec3(1.0f, 1.0f, 1.0f);
             _strength = 50.0f;
+			_intensity = 1.0f;
             _size = 10.0f;
         }
 
@@ -29,16 +30,21 @@ namespace elements {
         glm::vec3 getColour() const { return _colour; }
 
         void update(shaders::Shader* shader) override {
-            shader->setVec3(_direction, "lightDirection");
+            glm::vec3 dir = glm::normalize(_direction);
+
             shader->setVec3(_position, "lightPosition");
-            shader->setVec3(_colour * _strength, "lightColour");
+            shader->setVec3(_direction, "lightDirection");
+            shader->setVec3(_colour, "lightColour");
+            shader->setFlt1(_intensity, "lightIntensity");
+			shader->setFlt1(_strength, "lightStrength");
             shader->setFlt1(_size, "lightSize");
         }
 
         glm::vec3 _direction;
-        glm::vec3 _position;
         glm::vec3 _colour;
-        float _strength;
+		glm::vec3 _position;
+		float _strength;
+        float _intensity;
         float _size;
     };
 }

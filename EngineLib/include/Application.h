@@ -11,11 +11,9 @@ namespace elements { class Camera; }
 class ENGINE_API Application {
 public:
 	Application(const std::string& name);
-
 	~Application();
 
 	static Application& Instance() { return *sInstance; }
-
 	void run();
 
 private:

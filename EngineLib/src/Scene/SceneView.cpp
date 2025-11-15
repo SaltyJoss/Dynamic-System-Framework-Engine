@@ -27,6 +27,20 @@
 
 namespace gui{
 
+/*
+ * --------------------------------------------
+ *				SCENEVIEW METHODS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * SceneView() -> Constructor that initializes the scene view, including framebuffer, shaders, skybox, camera, light, and shadow resources.
+ * ~SceneView() -> Destructor that cleans up resources such as shaders, framebuffer, and meshes.
+ * render() -> Renders the scene, including shadow pass, world grid
+ * resize() -> Resizes the framebuffer and updates the camera aspect ratio when the viewport size changes.
+ * --------------------------------------------
+ */
+
 	SceneView::SceneView() :
 		_camera(nullptr), _frameBuffer(nullptr), _shader(nullptr), _light(nullptr),
 		_worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
@@ -86,13 +100,13 @@ namespace gui{
 
 		if (skyboxEnabled)
 		{
-			glDepthMask(GL_FALSE);   // don't write
-			glDepthFunc(GL_LEQUAL);  // allow skybox if depth == far plane
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_LEQUAL);
 
 			SkyboxRender();
 
-			glDepthMask(GL_TRUE);    // restore
-			glDepthFunc(GL_LESS);    // restore
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
 		}
 		
 		_frameBuffer->unbind();
@@ -125,201 +139,18 @@ namespace gui{
 		LOG_INFO("Framebuffer resized: %d x %d", width, height);
 	}
 
-	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
-
-		auto plane = std::make_shared<elements::Mesh>();
-
-		std::vector<glm::vec3> pos = {
-			{-size, planeHeight, -size},
-			{ size, planeHeight, -size},
-			{ size, planeHeight,  size},
-			{-size, planeHeight,  size}
-		};
-
-		glm::vec3 normal(0.0f, 1.0f, 0.0f);
-
-		for (auto& p : pos) {
-			elements::VertexHolder vh(p, normal);
-			plane->addVertex(vh);
-		}
-
-		plane->addVertexIndex(0);
-		plane->addVertexIndex(1);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(3);
-		plane->addVertexIndex(0);
-
-		plane->init();
-		return plane;
-	}
-
-	void SceneView::onMouseWheel(double delta) { 
-		if (!_isHovered) return;
-
-		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
-	}
-
-	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) { 
-		glm::vec2 pos2d{ x, y };
-		glm::vec2 delta = pos2d - _lastMousePos;
-		_lastMousePos = pos2d;
-
-		if (!_isHovered) {
-			_camera->setCurrentPos2D(pos2d);
-			_object->setLastMousePos(pos2d);
-			return;
-		}
-
-		if (_controlMode == ControlMode::Camera) {
-			_camera->onMouseMove(x, y, button);
-		}
-		else if (_controlMode == ControlMode::Object && _object) {
-			_object->onMouseMove(x, y, button);
-		}
-	}
-
-	void SceneView::loadMesh(const std::string& filepath) {
-		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
-		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
-		_mesh->load(filepath);
-
-		_mesh->_position = glm::vec3(0.0f);
-
-		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
-	}
-
-	void SceneView::resetView() {
-		_camera->reset();
-	}
-
-	/*
-	 * --------------------------------------------
-	 *				RENDERING METHODS
-	 * --------------------------------------------
-	 */
-
-	void SceneView::loadNewHDR(const std::string& path)
-	{
-		LOG_INFO("Loading new HDR: %s", path.c_str());
-
-		if (!_ibl) return;
-
-		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
-
-		// Rebind PBR textures
-		_shader->use();
-		_shader->setInt1(0, "irradianceMap");
-		_shader->setInt1(1, "prefilterMap");
-		_shader->setInt1(2, "brdfLUT");
-
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
-
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
-
-		glActiveTexture(GL_TEXTURE10);
-		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
-
-		// Update skybox
-		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
-
-		LOG_INFO("HDR updated successfully.");
-	}
-
-	void SceneView::WorldGridRender() {
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
-		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		_worldGridShader->use();
-		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
-		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
-
-		glBindVertexArray(_worldGridVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glDepthMask(GL_TRUE);
-	}
-
-	void SceneView::MeshRender() {
-		_shader->use();
-
-		for (int i = 0; i < NUM_CASCADES; i++) {
-			glActiveTexture(GL_TEXTURE5 + i);
-			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
-			_shader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
-			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
-		}
-
-		_shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
-
-		_camera->update(_shader.get());
-		_light->update(_shader.get());
-
-		// Render checker floor
-		if (_checkerPlane) {
-			glm::mat4 floorModel(1.0f);
-			_shader->setMat4(floorModel, "model");
-
-			// Set checkerboard uniforms
-			_shader->setBool(true, "isFloor");
-			_shader->setVec3(glm::vec3(1.0f), "colour1");
-			_shader->setVec3(glm::vec3(0.0f), "colour2");
-			_shader->setFlt1(1.0f, "checkSize");
-
-			_checkerPlane->update(_shader.get());
-			_checkerPlane->render();
-		}
-
-		if (_object && _object->getMesh()) {
-			glm::mat4 model(1.0f);
-
-			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
-			_shader->setBool(false, "isFloor");            // mark as non-floor
-			_object->getMesh()->update(_shader.get());
-			_object->getMesh()->render();
-		}
-	}
-
-	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
-		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
-
-		glm::vec3 lightDir = glm::normalize(_light->getDirection());
-
-		// Fake camera position far along direction
-		glm::vec3 lightPos = -lightDir * 50.0f;
-
-		glm::mat4 lightView = glm::lookAt(
-			lightPos,
-			glm::vec3(0.0f),
-			glm::vec3(0, 1, 0)
-		);
-
-		float minX = FLT_MAX, maxX = -FLT_MAX;
-		float minY = FLT_MAX, maxY = -FLT_MAX;
-		float minZ = FLT_MAX, maxZ = -FLT_MAX;
-
-		for (auto& corner : corners) {
-			glm::vec4 trf = lightView * glm::vec4(corner);
-			minX = std::min(minX, trf.x);
-			maxX = std::max(maxX, trf.x);
-			minY = std::min(minY, trf.y);
-			maxY = std::max(maxY, trf.y);
-			minZ = std::min(minZ, trf.z);
-			maxZ = std::max(maxZ, trf.z);
-		}
-
-		glm::mat4 lightProj = glm::ortho(minX, maxX, minY, maxY, minZ - 20.0f, maxZ + 20.0f);
-
-		return lightProj * lightView;
-	}
+/* 
+ * --------------------------------------------
+ *			 INITIALIZATION METHODS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * InitShadowResource() -> Initializes the framebuffer and depth textures for cascaded shadow mapping.
+ * InitIBL() -> Initializes Image-Based Lighting (IBL) resources including irradiance map, prefilter map, and BRDF LUT.
+ * createCheckerPlane() -> Creates a checkerboard plane mesh at a specified size for use as a ground plane.
+ * --------------------------------------------
+ */
 
 	void SceneView::InitShadowResource() {
 		int shadowRes[NUM_CASCADES] = { 4096, 2048 };
@@ -370,6 +201,196 @@ namespace gui{
 
 		glActiveTexture(GL_TEXTURE10);
 		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+	}
+
+	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
+
+		auto plane = std::make_shared<elements::Mesh>();
+
+		std::vector<glm::vec3> pos = {
+			{-size, planeHeight, -size},
+			{ size, planeHeight, -size},
+			{ size, planeHeight,  size},
+			{-size, planeHeight,  size}
+		};
+
+		glm::vec3 normal(0.0f, 1.0f, 0.0f);
+
+		for (auto& p : pos) {
+			elements::VertexHolder vh(p, normal);
+			plane->addVertex(vh);
+		}
+
+		plane->addVertexIndex(0);
+		plane->addVertexIndex(1);
+		plane->addVertexIndex(2);
+		plane->addVertexIndex(2);
+		plane->addVertexIndex(3);
+		plane->addVertexIndex(0);
+
+		plane->init();
+		return plane;
+	}
+
+/*
+ * --------------------------------------------
+ *				RENDERING METHODS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * loadNewHDR() -> Loads a new HDR environment map for Image-Based Lighting (IBL) and updates the relevant textures and skybox.
+ * loadMesh() -> Loads a mesh from a specified file path and centers it in the scene.
+ * WorldGridRender() -> Renders a world grid in the scene for reference.
+ * MeshRender() -> Renders the mesh and checkerboard floor in the scene using PBR shading.
+ * --------------------------------------------
+ */
+
+	void SceneView::loadNewHDR(const std::string& path)
+	{
+		LOG_INFO("Loading new HDR: %s", path.c_str());
+
+		if (!_ibl) return;
+
+		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
+
+		// Rebind PBR textures
+		_shader->use();
+		_shader->setInt1(0, "irradianceMap");
+		_shader->setInt1(1, "prefilterMap");
+		_shader->setInt1(2, "brdfLUT");
+
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
+
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
+
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+
+		// Update skybox
+		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
+
+		LOG_INFO("HDR updated successfully.");
+	}
+
+	void SceneView::loadMesh(const std::string& filepath) {
+		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
+		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
+		_mesh->load(filepath);
+
+		_mesh->_position = glm::vec3(0.0f);
+
+		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
+	}
+
+	void SceneView::WorldGridRender() {
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		_worldGridShader->use();
+		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
+		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
+
+		glBindVertexArray(_worldGridVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glDepthMask(GL_TRUE);
+	}
+
+	void SceneView::MeshRender() {
+		_shader->use();
+
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			glActiveTexture(GL_TEXTURE5 + i);
+			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
+			_shader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
+			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+		}
+
+		_shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
+
+		_camera->update(_shader.get());
+		_light->update(_shader.get());
+
+		// Render checker floor
+		if (_checkerPlane) {
+			glm::mat4 floorModel(1.0f);
+			_shader->setMat4(floorModel, "model");
+
+			// Set checkerboard uniforms
+			_shader->setBool(true, "isFloor");
+			_shader->setBool(false, "useTexture");
+			_shader->setFlt1(2.5f, "checkSize");
+			_shader->setVec3(glm::vec3(1.0f), "colour1");
+			_shader->setVec3(glm::vec3(0.0f), "colour2");
+
+			_checkerPlane->update(_shader.get());
+			_checkerPlane->render();
+		}
+
+		if (_object && _object->getMesh()) {
+			glm::mat4 model(1.0f);
+
+			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
+			_shader->setBool(false, "isFloor");            // mark as non-floor
+			_shader->setBool(false, "useTexture");        // no texture for now
+			_object->getMesh()->update(_shader.get());
+			_object->getMesh()->render();
+		}
+	}
+
+/*
+ * ------------------------------------------------
+ *				 SHADOW MAPPING
+ * ------------------------------------------------
+ * 
+ * Summary:
+ * ------------------------------------------------
+ * LightSpaceMatrix() -> Computes the light space transformation matrix for shadow mapping based on the camera's frustum corners.
+ * ShadowPass() -> Renders the scene from the light's perspective to generate shadow maps for cascaded shadow mapping.
+ * SkyboxRender() -> Renders the skybox using the environment cubemap.
+ * UpdatePhysics() -> Updates the physics simulation for the scene, including gravity and collision with the floor.
+ * ------------------------------------------------
+ */
+
+	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
+		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
+
+		glm::vec3 lightDir = glm::normalize(_light->getDirection());
+
+		// Fake camera position far along direction
+		glm::vec3 lightPos = -lightDir * 50.0f;
+
+		glm::mat4 lightView = glm::lookAt(
+			lightPos,
+			glm::vec3(0.0f),
+			glm::vec3(0, 1, 0)
+		);
+
+		float minX = FLT_MAX, maxX = -FLT_MAX;
+		float minY = FLT_MAX, maxY = -FLT_MAX;
+		float minZ = FLT_MAX, maxZ = -FLT_MAX;
+
+		for (auto& corner : corners) {
+			glm::vec4 trf = lightView * glm::vec4(corner);
+			minX = std::min(minX, trf.x);
+			maxX = std::max(maxX, trf.x);
+			minY = std::min(minY, trf.y);
+			maxY = std::max(maxY, trf.y);
+			minZ = std::min(minZ, trf.z);
+			maxZ = std::max(maxZ, trf.z);
+		}
+
+		glm::mat4 lightProj = glm::ortho(minX, maxX, minY, maxY, minZ - 20.0f, maxZ + 20.0f);
+
+		return lightProj * lightView;
 	}
 
 	void SceneView::ShadowPass() {
@@ -432,7 +453,7 @@ namespace gui{
 		auto mesh = _object->getMesh();
 
 		// constants
-		const float floorY = planeHeight;           // same height as checkerboard
+		const float floorY = planeHeight;
 		const glm::vec3 gravity(0.0f, -9.81f, 0.0f);
 
 		// --- apply physics ---
@@ -462,6 +483,16 @@ namespace gui{
  * ------------------------------------------------
  *				KEYBOARD & MOUSE INPUT
  * ------------------------------------------------
+ * 
+ * Summary:
+ * ------------------------------------------------
+ * handleContinuousMovement() -> Processes continuous keyboard input for camera or object movement based on the current control mode.
+ * resetMouseDelta() -> Resets the mouse delta tracking to ensure correct mouse movement calculations.
+ * handleMouseLook() -> Handles mouse movement for camera or object rotation based on the current control mode.
+ * processMovementKey() -> Processes individual movement key inputs for camera or object movement.
+ * onMouseWheel() -> Handles mouse wheel input for zooming the camera or moving the object along the Z-axis.
+ * onMouseMove() -> Handles mouse movement input for rotating the camera or manipulating the object.
+ * ------------------------------------------------
  */
 
 	void gui::SceneView::handleContinuousMovement(GLFWwindow* window, float dt) {
@@ -484,18 +515,12 @@ namespace gui{
 		}
 	}
 
-	void gui::SceneView::resetMouseDelta() {
-		// force next sample to re-seed
-		// (reuse your firstMouse flag or equivalent)
-		// simplest: store a boolean
-		_firstMouse = true;  // make this a member instead of static
-	}
+	void gui::SceneView::resetMouseDelta() { _firstMouse = true; }
 
 	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
-		// If cursor is not captured, only rotate when hovering
 		bool captured = false;
 		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window)))
 			captured = win->isMouseCaptured();
@@ -528,9 +553,48 @@ namespace gui{
 			_camera->processKeyboard(key, delta);
 		}
 		else if (_controlMode == ControlMode::Object && _mesh) {
-			// Object movement logic to be added here!
+			// WILL ADD OBJECT MOVEMENT LATER
 		}
 	}
 
+	void SceneView::onMouseWheel(double delta) {
+		if (!_isHovered) return;
+
+		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
+		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
+	}
+
+	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) {
+		glm::vec2 pos2d{ x, y };
+		glm::vec2 delta = pos2d - _lastMousePos;
+		_lastMousePos = pos2d;
+
+		if (!_isHovered) {
+			_camera->setCurrentPos2D(pos2d);
+			_object->setLastMousePos(pos2d);
+			return;
+		}
+
+		if (_controlMode == ControlMode::Camera) {
+			_camera->onMouseMove(x, y, button);
+		}
+		else if (_controlMode == ControlMode::Object && _object) {
+			_object->onMouseMove(x, y, button);
+		}
+	}
+
+/*
+ * --------------------------------------------
+ *				CAMERA METHODS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * getCamera() -> Returns a pointer to the scene's camera.
+ * resetView() -> Resets the camera view to its default position and orientation.
+ * --------------------------------------------
+ */
+
 	elements::Camera* SceneView::getCamera() { return _camera.get(); }
+	void SceneView::resetView() { _camera->reset(); }
 }

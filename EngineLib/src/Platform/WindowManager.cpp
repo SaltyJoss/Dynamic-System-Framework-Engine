@@ -26,8 +26,31 @@
 
 #include "EngineLib/LogMacros.h"
 
+bool controlPanelOpen = false;
 
 namespace window {
+/*
+ * --------------------------------------------
+ *              GLWINDOW METHODS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * GLWindow() -> Constructor that initializes the GLWindow object.
+ * ~GLWindow() -> Destructor that cleans up resources and ends rendering and GUI contexts.
+ * render() -> Renders the scene view, control panel, and debug panel.
+ * init(int width, int height, const std::string& header) -> Initializes the GLWindow with the specified width, height, and header.
+ * onResize(int width, int height) -> Handles window resize events and updates the scene view accordingly.
+ * shouldClose() const -> Checks if the window should close.
+ * pollEvents() -> Polls for window events.
+ * swapBuffers() -> Swaps the front and back buffers of the window.
+ * getNativeWin() -> Returns the native GLFW window pointer.
+ * setNativeWin(void* window) -> Sets the native GLFW window pointer.
+ * getWidth() const -> Returns the width of the window.
+ * getHeight() const -> Returns the height of the window.
+ * getHeader() const -> Returns the header string of the window.
+ * --------------------------------------------
+ */
     GLWindow::GLWindow() {
         _header = new std::string();
     }
@@ -49,8 +72,7 @@ namespace window {
         _GUICntx->preRender();
 
         if (_sceneView)     _sceneView->render();
-        if (_controlPanel)  _controlPanel->render(_sceneView.get());
-        if (_debugPanel)    _debugPanel->render();
+        if (!controlPanelOpen)  _controlPanel->render(_sceneView.get());
 
         _GUICntx->postRender();
         _renderCntx->postRender();
@@ -98,41 +120,28 @@ namespace window {
         render();
     }
 
-    bool GLWindow::shouldClose() const {
-        return glfwWindowShouldClose(_window);
-    }
-
-    void GLWindow::pollEvents() {
-        glfwPollEvents();
-    }
-
-    void GLWindow::swapBuffers() {
-        glfwSwapBuffers(_window);
-    }
-
-    void* window::GLWindow::getNativeWin() {
-        return _window;
-    }
-
-    void window::GLWindow::setNativeWin(void* window) {
-        _window = static_cast<GLFWwindow*>(window);
-    }
-
-    int window::GLWindow::getWidth() const {
-        return _width;
-    }
-
-    int window::GLWindow::getHeight() const {
-        return _height;
-    }
-
-    const std::string& window::GLWindow::getHeader() const {
-        return *_header;
-    }
+	// Miscellaneous
+    bool GLWindow::shouldClose() const { return glfwWindowShouldClose(_window); }
+    void GLWindow::pollEvents() { glfwPollEvents(); }
+    void GLWindow::swapBuffers() { glfwSwapBuffers(_window); }
+    void* window::GLWindow::getNativeWin() { return _window; }
+    void window::GLWindow::setNativeWin(void* window) { _window = static_cast<GLFWwindow*>(window);}
+    int window::GLWindow::getWidth() const { return _width; }
+    int window::GLWindow::getHeight() const { return _height; }
+    const std::string& window::GLWindow::getHeader() const { return *_header; }
 
 /*
  * --------------------------------------------
  *				USER INTERACTIONS
+ * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * update() -> Updates the window state, handles input, and applies camera movement and gravity.
+ * setMouseCaptured(bool captured) -> Sets whether the mouse is captured (disabled) or not.
+ * onKey(int key, int scancode, int action, int mods) -> Handles key press events.
+ * onScroll(double delta) -> Handles mouse scroll events.
+ * onCursorPos(double xpos, double ypos) -> Handles mouse cursor position events.
  * --------------------------------------------
  */
 
@@ -175,8 +184,10 @@ namespace window {
     }
 
     void window::GLWindow::onKey(int key, int scancode, int action, int mods) {
-        if (action == GLFW_PRESS && key == GLFW_KEY_TAB) {
+        if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
             setMouseCaptured(!_mouseCaptured);
+			// close control panel when key is pressed again
+            controlPanelOpen = !controlPanelOpen;
             return;
         }
 
@@ -198,13 +209,14 @@ namespace window {
  * --------------------------------------------
  *				WINDOW STATES
  * --------------------------------------------
+ * 
+ * Summary:
+ * --------------------------------------------
+ * isRunning() const -> Checks if the window is currently running.
+ * onClose() -> Handles window close events by setting the running state to false.
+ * --------------------------------------------
  */
 
-    bool GLWindow::isRunning() const {
-        return _isRunning;
-    }
-
-    void GLWindow::onClose() {
-        _isRunning = false;
-    }
+    bool GLWindow::isRunning() const { return _isRunning; }
+    void GLWindow::onClose() { _isRunning = false; }
 }

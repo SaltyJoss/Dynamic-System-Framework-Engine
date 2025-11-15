@@ -53,6 +53,12 @@ namespace window {
 
     private:
 
+        struct UIState {
+			bool sceneViewOpen = true;
+			bool controlPanelOpen = true;
+			bool debugPanelOpen = false;
+        };
+
         bool _isRunning = true;
         GLFWwindow* _window = nullptr;
 

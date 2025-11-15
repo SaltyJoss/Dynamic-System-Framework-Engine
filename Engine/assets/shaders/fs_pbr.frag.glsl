@@ -3,8 +3,10 @@
 // ------------------------ OUTPUTS & INPUTS ------------------------
 
 out vec4 FragColour;
+
 in vec3 WorldPos;
 in vec3 Normal;
+in vec2 TexCoords;
 
 // ------------------------ UNIFORMS ------------------------
 
@@ -14,6 +16,9 @@ uniform float metallic;
 uniform float roughness;
 uniform float ao;
 
+uniform bool useTexture;
+uniform sampler2D albedoTex;
+
 // CheckerBoard Plane parameters
 uniform float checkSize;
 uniform vec3 colour1;
@@ -22,9 +27,10 @@ uniform bool isFloor; // true for the checker floor, false for objects
 
 // lights
 uniform vec3 lightPosition;
-uniform vec3 lightColour;
-uniform float lightSize;
 uniform vec3 lightDirection;
+uniform vec3 lightColour;
+float lightSize;
+float lightIntensity;
 
 // Shadow map (Cascaded)
 uniform sampler2DShadow cascadeShadowMap[2];
@@ -148,28 +154,37 @@ void main()
 	// =====================================================
 	if (isFloor)
 	{
-		// Checkerboard pattern in world-space XZ
-		float pattern = mod(floor(WorldPos.x * checkSize) +
+		float p = mod(floor(WorldPos.x * checkSize) +
 			floor(WorldPos.z * checkSize), 2.0);
-		vec3 base = mix(colour1, colour2, pattern);
 
-		// Simple IBL diffuse (no spec, no shadow)
+		vec3 base = p < 1.0 ? colour1 : colour2;
+
+		vec3 N = vec3(0.0, 1.0, 0.0);
+		vec3 L = normalize(lightPosition - WorldPos);
+		float NdotL = max(dot(N, L), 0.0);
+
+		float shadow = computeShadowCSM(WorldPos, N, L);
+
+		// direct
+		vec3 direct = base * lightColour *
+			lightIntensity * NdotL;
+		direct *= (1.0 - shadow);
+
+		// IBL
 		vec3 diffuseIBL = texture(irradianceMap, N).rgb * base;
 
-		vec3 colour = diffuseIBL;
+		vec3 colour = diffuseIBL + direct;
 
-		// Tone mapping + gamma
+		// tone map
 		colour = colour / (colour + vec3(1.0));
 		colour = pow(colour, vec3(1.0 / 2.2));
 
 		FragColour = vec4(colour, 1.0);
-		return;
+		return;	
 	}
 
-    vec3 finalAlbedo = albedo;
+	vec3 finalAlbedo = albedo;
 	vec3 F0 = mix(vec3(0.04), finalAlbedo, metallic);
-
-
 
 // -----------------------------------------
 //            DIRECT LIGHTING (PBR)

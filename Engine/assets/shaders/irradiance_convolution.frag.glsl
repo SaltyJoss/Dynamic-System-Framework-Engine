@@ -3,21 +3,9 @@
 in vec3 WorldDir;
 out vec4 FragColour;
 
-uniform sampler2D equirectMap;
+uniform samplerCube equirectMap;
 
 const float PI = 3.14159265359;
-
-// Converts a 3D direction vector to 2D equirectangular UV coordinates
-vec2 dirToEquirectUV(vec3 dir)
-{
-	float phi = atan(dir.z, dir.x);					// azimuthal angle
-	float theta = acos(clamp(dir.y, -1.0, 1.0));	// polar angle
-
-	float u = phi / (2.0 * PI) * 0.5;
-	float v = theta / PI;
-
-	return vec2(u, v);
-}
 
 void main()
 {
@@ -51,14 +39,12 @@ void main()
 		);
 
 		// Rotate H to world space
-		vec3 L = tangent * H.x + bitangent * H.y + N * H.z;
-		L = normalize(L);
-
+		vec3 L = normalize(tangent * H.x + bitangent * H.y + N * H.z);
 		float NdotL = max(dot(N, L), 0.0);
+
 		if (NdotL > 0.0)
 		{
-			vec2 uv = dirToEquirectUV(L);
-			vec3 sampleColor = texture(equirectMap, uv).rgb;
+			vec3 sampleColor = texture(equirectMap, L).rgb;
 			// Lambertian Integrand
 			irradiance += sampleColor * NdotL;
 		}

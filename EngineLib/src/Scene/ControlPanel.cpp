@@ -8,6 +8,8 @@
 
 #include "EngineLib/LogMacros.h"
 
+
+
 void gui::ControlPanel::render(gui::SceneView* sceneView) {
     _sceneView = sceneView; // store pointer for convenience
     _mesh = sceneView->getMesh();
@@ -104,13 +106,15 @@ void gui::ControlPanel::renderCameraProperties() {
         *_controlMode = SceneView::ControlMode::Object;
 
     ImGui::SeparatorText("Light Controls");
+
     elements::Light* light = _sceneView->getLight();
 
-    ImGui::DragFloat3("Light Position", &light->_position.x, 0.1f);
-    ImGui::DragFloat("Strength", &light->_strength, 0.1f, 0.0f, 500.0f);
+    // Directional light: POSITION NOT USED
     ImGui::DragFloat3("Light Direction", &light->_direction.x, 0.01f);
-    if (glm::length(light->_direction) > 0.001f)
-        light->_direction = glm::normalize(light->_direction);
+    if (glm::length(light->_direction) < 0.001f)
+        light->_direction = glm::vec3(0.0f, -1.0f, 0.0f); // fallback
+
+    ImGui::DragFloat("Light Intensity", &light->_intensity, 0.05f, 0.0f, 50.0f);
 
     ImGui::SeparatorText("Object Appearance");
     if (!_mesh) {
