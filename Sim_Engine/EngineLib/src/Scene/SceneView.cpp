@@ -499,17 +499,29 @@ namespace gui{
 
 		float kspd = 2.5f * dt;
 
+		// Forward
 		if (elements::Input::IsKeyPressed(window, GLFW_KEY_W)) {
 			processMovementKey(GLFW_KEY_W, kspd);
 		}
+		// Backward
 		if (elements::Input::IsKeyPressed(window, GLFW_KEY_S)) {
 			processMovementKey(GLFW_KEY_S, kspd);
 		}
+		// Left
 		if (elements::Input::IsKeyPressed(window, GLFW_KEY_A)) {
 			processMovementKey(GLFW_KEY_A, kspd);
 		}
+		// Right
 		if (elements::Input::IsKeyPressed(window, GLFW_KEY_D)) {
 			processMovementKey(GLFW_KEY_D, kspd);
+		}
+		// Up
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) {
+			processMovementKey(GLFW_KEY_SPACE, kspd);
+		}
+		// Down
+		if (elements::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+			processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd);
 		}
 	}
 

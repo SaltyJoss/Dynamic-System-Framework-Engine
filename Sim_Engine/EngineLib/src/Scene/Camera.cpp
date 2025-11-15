@@ -25,6 +25,10 @@ namespace elements {
 			moveLeft(velocity);
 		if (key == GLFW_KEY_D)
 			moveRight(velocity);
+		if (key == GLFW_KEY_SPACE)
+			moveUp(velocity);
+		if (key == GLFW_KEY_LEFT_SHIFT)
+			moveDown(velocity);
 		updateViewMatrix();
 	}
 
@@ -129,5 +133,13 @@ namespace elements {
 
 	void Camera::moveRight(float velocity) {
 		_position += glm::normalize(_right) * velocity;
+	}
+
+	void Camera::moveUp(float velocity) {
+		_position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
+	}
+
+	void Camera::moveDown(float velocity) {
+		_position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
 	}
 }

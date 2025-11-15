@@ -114,6 +114,25 @@ namespace elements {
 			_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
 		}
 
+		// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---
+		//void updateViewMatrix() {
+		//	float yawRad = glm::radians(_yaw);
+		//	float pitchRad = glm::radians(_pitch);
+		//
+		//	glm::vec3 f;
+		//	f.x = cosf(yawRad) * cosf(pitchRad);
+		//	f.y = sinf(pitchRad);
+		//	f.z = sinf(yawRad) * cosf(pitchRad);
+		//	_forward = glm::normalize(f);
+		//
+		//	const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+		//
+		//	_right = glm::normalize(glm::cross(worldUp, _forward));
+		//	_up = glm::normalize(glm::cross(_forward, _right));
+		//
+		//	_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+		//}
+
 		void applyGravity(float dt, float floorY);
 		void fall();
 
@@ -121,6 +140,8 @@ namespace elements {
 		void moveBackward(float delta);
 		void moveLeft(float delta);
 		void moveRight(float delta);
+		void moveUp(float delta);
+		void moveDown(float delta);
 
 		void processKeyboard(int key, float delta);
 		void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
@@ -159,13 +180,16 @@ namespace elements {
 		float _eyeHeight = 1.8f;
 
 		glm::vec2 _currentPos2D = { 0.0f, 0.0f };
+		
+		// --- ORIENTATION VECTORS ---
+		// --> xyz basis vectors
 		glm::vec3 _right = { 1.0f, 0.0f, 0.0f };
 		glm::vec3 _up = { 0.0f, 1.0f, 0.0f };
 		glm::vec3 _forward = { 0.0f, 0.0f, -1.0f };
 
 		const float _rotationSpeed = 2.0f;
 
-		// --- PLAYER ---
+		// --- OBJECTS --- 
 		bool _isGrounded = true;
 		float _verticalVelocity = 0.0f;
 		float _upwardForce = 5.5f;
