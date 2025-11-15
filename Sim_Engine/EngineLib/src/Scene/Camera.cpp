@@ -106,32 +106,28 @@ namespace elements {
 		}
 	}
 
-	void Camera::jump()
+	void Camera::fall()
 	{
 		if (_isGrounded)
 		{
 			_isGrounded = false;
-			_verticalVelocity = _jumpStrength;
+			_verticalVelocity = _upwardForce;
 		}
 	}
 
 	void Camera::moveForward(float velocity) {
-		glm::vec3 dir = glm::vec3(_forward.x, 0.0f, _forward.z);
-		_position += glm::normalize(dir) * velocity;
+		_position += glm::normalize(_forward) * velocity;
 	}
 
 	void Camera::moveBackward(float velocity) {
-		glm::vec3 dir = glm::vec3(_forward.x, 0.0f, _forward.z);
-		_position -= glm::normalize(dir) * velocity;
+		_position -= glm::normalize(_forward) * velocity;
 	}
 
 	void Camera::moveLeft(float velocity) {
-		glm::vec3 dir = glm::vec3(_right.x, 0.0f, _right.z);
-		_position -= glm::normalize(dir) * velocity;
+		_position -= glm::normalize(_right) * velocity;
 	}
 
 	void Camera::moveRight(float velocity) {
-		glm::vec3 dir = glm::vec3(_right.x, 0.0f, _right.z);
-		_position += glm::normalize(dir) * velocity;
+		_position += glm::normalize(_right) * velocity;
 	}
 }

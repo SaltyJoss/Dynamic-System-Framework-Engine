@@ -118,10 +118,7 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
     <None Include="Engine\assets\shaders\world_grid.vert.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Game\src\Main.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(FileName).obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(FileName).obj</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="Engine\src\Main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

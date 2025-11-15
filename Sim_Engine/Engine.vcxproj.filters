@@ -13,14 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\Game">
-      <UniqueIdentifier>{5da5f8b4-e734-4e61-943a-58ead1b2af61}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{24fad0de-209b-44aa-ae44-94e00b13b501}</UniqueIdentifier>
     </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{a5193cd0-207f-4ebc-b82b-b995201af49b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sim">
+      <UniqueIdentifier>{5da5f8b4-e734-4e61-943a-58ead1b2af61}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -71,8 +71,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Game\src\Main.cpp">
-      <Filter>Source Files\Game</Filter>
+    <ClCompile Include="Engine\src\Main.cpp">
+      <Filter>Source Files\Sim</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

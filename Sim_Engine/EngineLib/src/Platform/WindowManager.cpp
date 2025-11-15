@@ -72,7 +72,8 @@ namespace window {
         _GUICntx->preRender();
 
         if (_sceneView)     _sceneView->render();
-        if (!controlPanelOpen)  _controlPanel->render(_sceneView.get());
+        if (_controlPanel)  _controlPanel->render(_sceneView.get());
+		if (_debugPanel)    _debugPanel->render();
 
         _GUICntx->postRender();
         _renderCntx->postRender();
@@ -189,10 +190,6 @@ namespace window {
 			// close control panel when key is pressed again
             controlPanelOpen = !controlPanelOpen;
             return;
-        }
-
-        if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
-            _sceneView->getCamera()->jump();
         }
     }
 

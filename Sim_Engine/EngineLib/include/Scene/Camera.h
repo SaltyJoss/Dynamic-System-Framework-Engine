@@ -115,7 +115,7 @@ namespace elements {
 		}
 
 		void applyGravity(float dt, float floorY);
-		void jump();
+		void fall();
 
 		void moveForward(float delta);
 		void moveBackward(float delta);
@@ -168,7 +168,7 @@ namespace elements {
 		// --- PLAYER ---
 		bool _isGrounded = true;
 		float _verticalVelocity = 0.0f;
-		float _jumpStrength = 5.5f;
+		float _upwardForce = 5.5f;
 		float _gravity = -9.81f;
 
 	};

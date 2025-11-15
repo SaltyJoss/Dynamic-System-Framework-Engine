@@ -111,10 +111,7 @@ namespace gui{
 		
 		_frameBuffer->unbind();
 
-		ImGui::Begin("Game Engine");
-
-		ImGui::Text("FPS: %.1f", _fpsCounter.getFPS());
-
+		ImGui::Begin("Sim Engine");
 
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -186,7 +183,7 @@ namespace gui{
 	void SceneView::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
-		_ibl->init("Engine/assets/hdr/mr8k.hdr");
+		_ibl->init("Engine/assets/hdr/space-6.hdr");
 
 		_shader->use();
 		_shader->setInt1(0, "irradianceMap");
@@ -446,6 +443,7 @@ namespace gui{
 		_skybox->render(projection, view);
 	}
 
+	// To be updated, very basic physics for testing and demo purposes
 	void gui::SceneView::updatePhysics(float dt)
 	{
 		// --- sanity checks ---
@@ -474,7 +472,7 @@ namespace gui{
 			}
 		}
 
-		// optional: horizontal damping for stability
+		// horizontal damping for stability
 		mesh->_velocity.x *= 0.98f;
 		mesh->_velocity.z *= 0.98f;
 	}
