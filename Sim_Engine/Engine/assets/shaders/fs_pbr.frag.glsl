@@ -29,8 +29,8 @@ uniform bool isFloor; // true for the checker floor, false for objects
 uniform vec3 lightPosition;
 uniform vec3 lightDirection;
 uniform vec3 lightColour;
-float lightSize;
-float lightIntensity;
+uniform float lightSize;
+uniform float lightIntensity;
 
 // Shadow map (Cascaded)
 uniform sampler2DShadow cascadeShadowMap[2];
@@ -117,10 +117,12 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
         projCoords.y < 0.0 || projCoords.y > 1.0) return 0.0;
 
 	// 5. Bias to prevent shadow acne
-    float bias = max(0.002 * (1.0 - dot(N, L)), 0.0007);
+	float bias = max(0.005 * (1.0 - dot(N, L)), 0.001);
 
 	// 6. PCF Sampling
 	vec2 texelSize = 1.0 / textureSize(cascadeShadowMap[cascadeIndex], 0);
+	bias += texelSize.x * 2.0;
+
 	float sum = 0.0;
     int samples = 0;
 
@@ -141,6 +143,53 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 
     return shadowAmount;
 }
+
+// ------------------------ DIRECT PBR LIGHT EVAL ------------------------
+
+vec3 evaluateDirectionalLightPBR(
+	vec3 N, vec3 V,
+	vec3 albedo, float roughness, float metallic,
+	vec3 lightDir, vec3 lightCol, float intensity,
+	float sizeScale,
+	float shadow
+) {
+	// Light direction: from surface to light
+	vec3 L = normalize(lightDir);
+	vec3 H = normalize(V + L);
+
+	float NdotL = max(dot(N, L), 0.0);
+	if (NdotL <= 0.0)
+		return vec3(0.0);
+
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+	// Optionally scale roughness by light size for softer highlights
+	float effectiveRoughness = clamp(roughness * sizeScale, 0.001, 1.0);
+
+	float NDF = DistributionGGX(N, H, effectiveRoughness);
+	float G = GeometrySmith(N, V, L, effectiveRoughness);
+	vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+	float NdotV = max(dot(N, V), 0.0);
+
+	vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+	vec3 nominator = NDF * G * F;
+	float denominator = max(4.0 * NdotV * NdotL, 0.001);
+	vec3 specular = nominator / denominator;
+
+	vec3 radiance = lightCol * intensity;
+
+	vec3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
+
+	// Apply shadows here
+	Lo *= (1.0 - shadow);
+
+	return Lo;
+}
+
+// ------------------------ MAIN FUNCTION ------------------------
 
 void main()
 {
@@ -190,9 +239,9 @@ void main()
 //            DIRECT LIGHTING (PBR)
 // ------------------------------------------
 
-	vec3 L = normalize(-lightPosition);
+	vec3 L = normalize(lightPosition - WorldPos);
 	vec3 H = normalize(V + L);
-	vec3 radiance = lightColour;
+	vec3 radiance = lightColour * lightIntensity;
 
 	float shadow = computeShadowCSM(WorldPos, N, L);
 
@@ -243,4 +292,5 @@ void main()
 	colour = pow(colour, vec3(1.0 / 2.2));
 
     FragColour = vec4(colour, 1.0);
+	return;
 }

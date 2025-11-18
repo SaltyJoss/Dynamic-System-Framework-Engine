@@ -24,11 +24,12 @@ namespace elements {
 		LOG_INFO("Loading mesh from %s", path.c_str());
 
 		const uint32_t _meshImportFlags =
-			aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
-			aiProcess_SortByPType |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_FindInvalidData |
 			aiProcess_GenNormals |
-			aiProcess_GenUVCoords |
+			aiProcess_ImproveCacheLocality |
 			aiProcess_OptimizeMeshes |
 			aiProcess_ValidateDataStructure;
 
@@ -59,6 +60,11 @@ namespace elements {
 				for (size_t j = 0; j < face.mNumIndices; j++) { addVertexIndex(face.mIndices[j]); }		
 			}
 			LOG_INFO("Vertex indices added: %zu", _vertexIndices.size());
+
+			for (auto& v : _vertices) {
+				v._normal = -v._normal;
+			}
+			LOG_INFO("Mesh normals flipped");
 
 			init();
 			LOG_INFO("Mesh initialized successfully");
