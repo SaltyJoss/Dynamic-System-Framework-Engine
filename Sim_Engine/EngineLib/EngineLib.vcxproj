@@ -60,16 +60,17 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
@@ -86,16 +87,17 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
@@ -112,6 +114,9 @@
     <ClInclude Include="..\External\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\External\MathLib\include\integrators\Integration.h" />
+    <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h" />
+    <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />
     <ClInclude Include="..\External\stb\stb_image.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="include\Application.h" />
@@ -144,6 +149,7 @@
     <ClInclude Include="include\Scene\Light.h" />
     <ClInclude Include="include\Scene\Mesh.h" />
     <ClInclude Include="include\Scene\Object.h" />
+    <ClInclude Include="include\Scene\PhysicsSystem.h" />
     <ClInclude Include="include\Scene\SceneView.h" />
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
@@ -228,6 +234,7 @@
     <ClCompile Include="src\Scene\DebugPanel.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />
     <ClCompile Include="src\Scene\Mesh.cpp" />
+    <ClCompile Include="src\Scene\PhysicsSystem.cpp" />
     <ClCompile Include="src\Scene\SceneView.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>

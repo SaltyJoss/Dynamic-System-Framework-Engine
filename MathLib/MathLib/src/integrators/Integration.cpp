@@ -3,7 +3,7 @@
 
 namespace integration {
 	// General ODE integrator function
-	VectorXd integration::integrate_ODE(
+	VectorXd integrator::integrate_ODE(
 		const std::function<double(double, const double&)>& f,
 		double y0, double t0, double t_final, double dt,
 		const std::function<double(const std::function <double(double, const double&)>&, double, const double&, double)>& step_function
@@ -23,7 +23,7 @@ namespace integration {
 	}
 
 	// General PDE integrator function
-	VectorXd integration::integrate_PDE(
+	VectorXd integrator::integrate_PDE(
 		const std::function<VectorXd(double, const VectorXd&)>& f,
 		const VectorXd& u0, double t0, double t_final, double dt,
 		const std::function<VectorXd(const std::function <VectorXd(double, const VectorXd&)>&, double, const VectorXd&, double)>& step_function
@@ -46,7 +46,7 @@ namespace integration {
 		return result;
 	}
 
-	inline void integration::append(Eigen::VectorXd& v, double value) {
+	void integrator::append(Eigen::VectorXd& v, double value) {
 		v.conservativeResize(v.size() + 1);
 		v(v.size() - 1) = value;
 	}

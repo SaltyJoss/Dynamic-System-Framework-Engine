@@ -14,6 +14,7 @@
 #include "Scene/Light.h"
 #include "Scene/Input.h"
 #include "Scene/Object.h"
+#include "Scene/PhysicsSystem.h"
 
 #include "Rendering/Cubemap.h"
 #include "Rendering/SkyboxRenderer.h"
@@ -60,6 +61,13 @@ namespace gui{
 		_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
 		_light = std::make_unique<elements::Light>();
+		_sunLight = std::make_unique<elements::Light>();
+		_sunLight->_isDirectional = true;
+		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
+		_sunLight->_intensity = 1.0f;
+
+		_physics = std::make_unique<physics::PhysicsSystem>();
+
 		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 16 / 9, 0.5f, 2000.0f);
 
 		glGenVertexArrays(1, &_worldGridVAO);
@@ -96,8 +104,8 @@ namespace gui{
 
 		WorldGridRender();
 		MeshRender();
+		_sunLight->update(_shader.get());
 		
-
 		if (skyboxEnabled)
 		{
 			glDepthMask(GL_FALSE);
@@ -164,7 +172,7 @@ namespace gui{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			float border[] = { 1,1,1,1 };
@@ -385,6 +393,33 @@ namespace gui{
 			maxZ = std::max(maxZ, trf.z);
 		}
 
+		// Compute cascade center in light space
+		glm::vec3 center = {
+			0.5f * (minX + maxX),
+			0.5f * (minY + maxY),
+			0.5f * (minZ + maxZ)
+		};
+
+		// Cascade radius (half-size of the bounding sphere)
+		float radius = glm::length(glm::vec3(maxX - minX, maxY - minY, 0.0f)) * 0.5f;
+
+		// Pick resolution based on cascade level (match your ShadowPass())
+		// (ShadowPass uses 4096 >> index, so we assume highest = 4096)
+		int shadowMapResolution = 4096;
+
+		// The size of one texel in world-space
+		float worldUnitsPerTexel = (radius * 2.0f) / shadowMapResolution;
+
+		// Snap X and Y (Z never snapped)
+		center.x = std::floor(center.x / worldUnitsPerTexel) * worldUnitsPerTexel;
+		center.y = std::floor(center.y / worldUnitsPerTexel) * worldUnitsPerTexel;
+
+		// Recompute min/max using snapped centre
+		minX = center.x - radius;
+		maxX = center.x + radius;
+		minY = center.y - radius;
+		maxY = center.y + radius;
+
 		glm::mat4 lightProj = glm::ortho(minX, maxX, minY, maxY, minZ - 20.0f, maxZ + 20.0f);
 
 		return lightProj * lightView;
@@ -444,37 +479,9 @@ namespace gui{
 	}
 
 	// To be updated, very basic physics for testing and demo purposes
-	void gui::SceneView::updatePhysics(float dt)
+	void gui::SceneView::updatePhysics(double dt)
 	{
-		// --- sanity checks ---
-		if (!_object || !_object->getMesh()) return;
-		auto mesh = _object->getMesh();
-
-		// constants
-		const float floorY = planeHeight;
-		const glm::vec3 gravity(0.0f, -9.81f, 0.0f);
-
-		// --- apply physics ---
-		if (!mesh->_isStatic)
-		{
-			// apply gravity
-			mesh->_acceleration = gravity;
-
-			// integrate (basic semi-implicit Euler)
-			mesh->_velocity += mesh->_acceleration * dt;
-			mesh->_position += mesh->_velocity * dt;
-
-			// --- floor collision clamp ---
-			if (mesh->_position.y < floorY)
-			{
-				mesh->_position.y = floorY;
-				mesh->_velocity.y = 0.0f;
-			}
-		}
-
-		// horizontal damping for stability
-		mesh->_velocity.x *= 0.98f;
-		mesh->_velocity.z *= 0.98f;
+		_physics->updateRotation(dt, _object.get());
 	}
 
 /*

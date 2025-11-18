@@ -107,14 +107,12 @@ void gui::ControlPanel::renderCameraProperties() {
 
     ImGui::SeparatorText("Light Controls");
 
-    elements::Light* light = _sceneView->getLight();
+    elements::Light* sunLight = _sceneView->getSunLight();
 
-    // Directional light: POSITION NOT USED
-    ImGui::DragFloat3("Light Direction", &light->_direction.x, 0.01f);
-    if (glm::length(light->_direction) < 0.001f)
-        light->_direction = glm::vec3(0.0f, -1.0f, 0.0f); // fallback
-
-    ImGui::DragFloat("Light Intensity", &light->_intensity, 0.05f, 0.0f, 50.0f);
+    ImGui::SliderFloat3("Direction", &sunLight->_direction.x, -1.0f, 1.0f);
+    ImGui::ColorEdit3("Colour", &sunLight->_colour.x);
+    ImGui::SliderFloat("Intensity", &sunLight->_intensity, 0.0f, 20.0f);
+    ImGui::Checkbox("Directional", &sunLight->_isDirectional);
 
     ImGui::SeparatorText("Object Appearance");
     if (!_mesh) {

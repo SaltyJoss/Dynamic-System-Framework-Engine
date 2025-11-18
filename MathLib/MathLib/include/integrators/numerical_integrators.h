@@ -1,3 +1,7 @@
+#pragma once
+
+#include "MathLibAPI.h"
+
 #include <Eigen/Dense>
 #include <functional>
 using namespace Eigen;
@@ -5,7 +9,7 @@ using namespace Eigen;
 // Numerical integration methods
 namespace integration {
 	// Ordinary Differential Equation (ODE) solvers
-	class ODE_Integration {
+	class MATHLIB_API ODE {
 	public:
 		// Euler method
 		VectorXd eulerStep(const VectorXd& x, const VectorXd& dxdt, double dt);
@@ -18,7 +22,7 @@ namespace integration {
 	};
 
 	// Partial Differential Equation (PDE) solvers
-	class PDE_Integration {
+	class MATHLIB_API PDE {
 	public:
 		// Finite Difference Method (FDM) for discrete points in space
 		VectorXd fdmStep(const VectorXd& u, double dx, double dt, double alpha);

@@ -1,24 +1,27 @@
 #include "pch.h"
 #include "integrators/numerical_integrators.h"
 
+#pragma message("MATHLIB_BUILD = " _CRT_STRINGIZE(MATHLIB_BUILD))
+#pragma message("MATHLIB_API = " _CRT_STRINGIZE(MATHLIB_API))
+
 // Numerical integration methods
 namespace integration {
 	// Ordinary Differential Equation (ODE) solvers
 	// ----------------------------------------------------------------
 	// Euler method
-	VectorXd integration::eulerStep(const VectorXd& x, const VectorXd& dxdt, double dt) {
+	VectorXd ODE::eulerStep(const VectorXd& x, const VectorXd& dxdt, double dt) {
 		return x + dxdt * dt;
 	}
 
 	// Second-order Runge-Kutta method (Heun / Midpoint method)
-	VectorXd integration::rk2Step(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
+	VectorXd ODE::rk2Step(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
 		VectorXd k1 = dt * f(t, x);
 		VectorXd k2 = dt * f(t + dt / 2.0, x + k1 / 2.0);
 		return x + k2;
 	}
 
 	// Fourth-order Runge-Kutta method
-	VectorXd integration::rk4Step(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
+	VectorXd ODE::rk4Step(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
 		VectorXd k1 = dt * f(t, x);
 		VectorXd k2 = dt * f(t + dt / 2.0, x + k1 / 2.0);
 		VectorXd k3 = dt * f(t + dt / 2.0, x + k2 / 2.0);
@@ -29,13 +32,7 @@ namespace integration {
 	// Partial Differential Equation (PDE) solvers
 	// ----------------------------------------------------------------
 	// Finite Difference Method
-	VectorXd integration::fdmStep(const VectorXd& u, double dx, double dt, double alpha) {
-		int n = u.size();
-		VectorXd u_new = u;
-		double r = alpha * dt / (dx * dx);
-		for (int i = 1; i < n - 1; ++i) {
-			u_new(i) = u(i) + r * (u(i + 1) - 2 * u(i) + u(i - 1));
-		}
-		return u_new;
+	VectorXd PDE::fdmStep(const VectorXd& u, double dx, double dt, double alpha) {
+		/*stub*/
 	}
 }

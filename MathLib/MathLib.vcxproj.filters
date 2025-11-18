@@ -81,6 +81,9 @@
     <ClInclude Include="MathLib\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MathLib\include\MathLibAPI.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MathLib\src\integrators\Integration.cpp">

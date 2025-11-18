@@ -58,6 +58,18 @@
     <Filter Include="Header Files\include\EngineLib">
       <UniqueIdentifier>{1827a04a-13b7-4b24-b434-cc50c7a74428}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\MathLib">
+      <UniqueIdentifier>{6805009e-bf8b-4f69-bd4e-c99eb80e17d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib">
+      <UniqueIdentifier>{919c820f-030b-404d-9fcb-1dfa7873cdbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Integration">
+      <UniqueIdentifier>{71e5c4ee-dde7-4ce6-b560-8155656a9c7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Physics">
+      <UniqueIdentifier>{78ee7892-6bd1-47e7-a240-acfebdbff310}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -198,6 +210,18 @@
     <ClInclude Include="include\Rendering\CubeVertices.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\MathLibAPI.h">
+      <Filter>External\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\Integration.h">
+      <Filter>External\MathLib\Integration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h">
+      <Filter>External\MathLib\Integration</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\PhysicsSystem.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -289,6 +313,9 @@
     </ClCompile>
     <ClCompile Include="src\Rendering\CubeVertices.cpp">
       <Filter>Source Files\src\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\PhysicsSystem.cpp">
+      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

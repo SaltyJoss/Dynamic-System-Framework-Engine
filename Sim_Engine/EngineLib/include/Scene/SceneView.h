@@ -28,7 +28,9 @@ namespace elements {
     class Object;
 }
 
-extern Debug gLog;
+namespace physics {
+    class PhysicsSystem;
+}
 
 namespace gui {
     class ENGINE_API SceneView{
@@ -37,6 +39,7 @@ namespace gui {
         ~SceneView();
 
         elements::Light* getLight() { return _light.get(); }
+		elements::Light* getSunLight() { return _sunLight.get(); }
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
@@ -69,7 +72,7 @@ namespace gui {
 
         void onMouseMove(double x, double y, elements::eInputButton button);
         void onMouseWheel(double delta);
-        void updatePhysics(float dt);
+        void updatePhysics(double dt);
 
         void handleContinuousMovement(GLFWwindow* window, float dt);
 		void processMovementKey(int key, float delta);
@@ -95,6 +98,7 @@ namespace gui {
         std::unique_ptr<render::Cubemap> _cubemap;
         std::unique_ptr<render::SkyboxRenderer> _skybox;
         std::unique_ptr<shaders::Shader> _skyboxShader;
+		std::unique_ptr<physics::PhysicsSystem> _physics;
 
         std::unique_ptr<shaders::Shader> _shader;
         std::unique_ptr<shaders::Shader> _worldGridShader;
@@ -102,6 +106,7 @@ namespace gui {
         std::unique_ptr<render::IBL> _ibl;
 
         std::unique_ptr<elements::Light> _light;
+        std::unique_ptr<elements::Light> _sunLight;
         std::unique_ptr<elements::Camera> _camera;
         std::shared_ptr<elements::Object> _object;
 

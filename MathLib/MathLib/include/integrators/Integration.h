@@ -1,10 +1,14 @@
+#pragma once
+
+#include "MathLibAPI.h"
+
 #include <Eigen/Dense>
 #include <iostream>
 
 using Eigen::VectorXd;
 
 namespace integration {
-	class integrator {
+	class MATHLIB_API integrator {
 	public:
 		// General ODE integrator function
 		VectorXd integrate_ODE(
@@ -20,7 +24,8 @@ namespace integration {
 			const std::function<VectorXd(const std::function <VectorXd(double, const VectorXd&)>&, double, const VectorXd&, double)>& step_function
 		);
 
+	private: 
 		// Helper function to append a value to an Eigen::VectorXd (originally tried to use push_back, but Eigen doesn't support it)
-		inline void append(Eigen::VectorXd& v, double value);
+		static void append(Eigen::VectorXd& v, double value);
 	};
 }
