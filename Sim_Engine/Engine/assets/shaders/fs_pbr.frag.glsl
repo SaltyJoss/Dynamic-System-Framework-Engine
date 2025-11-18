@@ -235,31 +235,44 @@ void main()
 	vec3 finalAlbedo = albedo;
 	vec3 F0 = mix(vec3(0.04), finalAlbedo, metallic);
 
-// -----------------------------------------
-//            DIRECT LIGHTING (PBR)
-// ------------------------------------------
+	// -----------------------------------------
+	//          DIRECT LIGHTING (PBR)
+	// ------------------------------------------
 
 	vec3 L = normalize(lightPosition - WorldPos);
 	vec3 H = normalize(V + L);
-	vec3 radiance = lightColour * lightIntensity;
 
-	float shadow = computeShadowCSM(WorldPos, N, L);
-
-	float NDF = DistributionGGX(N, H, roughness * lightSize);
-	float G = GeometrySmith(N, V, L, roughness * lightSize);
-	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
-
-	float NdotV = max(dot(N, V), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
+	float NdotV = max(dot(N, V), 0.0);
+
+	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
 	vec3 kS = F;
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-	vec3 nominator = NDF * G * F;
-	float denominator = 4.0 * NdotV * NdotL;
-	vec3 specular = nominator / max(denominator, 0.001);
+	float NDF = DistributionGGX(N, H, roughness);
+	float G = GeometrySmith(N, V, L, roughness);
 
-	vec3 Lo = (kD * finalAlbedo / PI + specular) * radiance * NdotL;
+	float denom = 4.0 * max(NdotL, 0.0001) * max(NdotV, 0.0001) + 0.0001;
+	vec3 specular = (NDF * G * F) / denom;
+
+	vec3 radiance = lightColour * lightIntensity;
+
+	// -----------------------------------------
+	//      APPLY LAMBERT BLEND FIX HERE
+	// -----------------------------------------
+
+	vec3 Lo_PBR = (kD * finalAlbedo / PI + specular) * radiance * NdotL;
+
+	// Lambert stabiliser
+	vec3 lambertDirect = finalAlbedo * lightColour * lightIntensity * NdotL;
+
+	// Blend 10% Lambert (removes centre-dot)
+	vec3 Lo = mix(lambertDirect, Lo_PBR, 0.9);
+
+	// Shadows
+	float shadow = computeShadowCSM(WorldPos, N, L);
+	Lo *= (1.0 - shadow);
 
 
 
@@ -291,6 +304,14 @@ void main()
     colour = colour / (colour + vec3(1.0));
 	colour = pow(colour, vec3(1.0 / 2.2));
 
-    FragColour = vec4(colour, 1.0);
+	// --- TEMP: simple Lambert debug ---
+	vec3 N1 = normalize(Normal);
+	vec3 L1 = normalize(lightPosition - WorldPos);
+
+	float NdotL1 = max(dot(N1, L1), 0.0);
+	vec3 lambert1 = albedo * lightColour * lightIntensity * NdotL1;
+
+	FragColour = vec4(colour, 1.0);
 	return;
+
 }
