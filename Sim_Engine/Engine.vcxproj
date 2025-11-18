@@ -57,7 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$SolutionDir)External\GLFW;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLM;$(SolutionDir)External\assimp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$SolutionDir)External\GLFW;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLM;$(SolutionDir)External\assimp;$(SolutionDir)External\MathLib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
@@ -66,8 +66,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)bin\EngineLib\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>"glfw3.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)bin\EngineLib\Debug\;$(SolutionDir)External\MathLib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(SolutionDir)bin\Debug\EngineLib.dll" "$(TargetDir)"
@@ -83,7 +83,7 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$SolutionDir)External\GLFW;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLM;$(SolutionDir)External\assimp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$SolutionDir)External\GLFW;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLM;$(SolutionDir)External\assimp;$(SolutionDir)External\MathLib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessToFile>false</PreprocessToFile>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
@@ -93,8 +93,8 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)bin\EngineLib\Release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>"glfw3.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)bin\EngineLib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(SolutionDir)bin\EngineLib\Release\EngineLib.dll" "$(TargetDir)"</Command>
