@@ -84,12 +84,6 @@ namespace gui{
 
 		InitShadowResource();
 		InitIBL();
-
-		//earthDay = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_daymap.jpg", true);
-		//earthNight = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_nightmap.jpg", true);
-		//earthClouds = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_clouds.jpg", true);
-		//earthNormal = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_normal_map.jpg", false);
-		//earthSpec = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_specular_map.jpg", false);
 	}
 
 	SceneView::~SceneView()
