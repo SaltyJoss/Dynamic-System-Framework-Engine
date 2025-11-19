@@ -84,6 +84,8 @@ namespace gui {
         void render();
         void resize(int32_t width, int32_t height);
 
+		elements::Object* getObject() { return _object.get(); }
+
 
         // Physics
         void updatePhysics(double dt);

@@ -29,15 +29,22 @@ namespace elements {
 			state.mass = 1.0; // in kg
 			state.inertia = Eigen::Matrix3d::Identity();
 			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();
-
-			// For testing rotation around Y:
-			state.angularVelocity.y() = 1.0;   // 1 rad/s
+			state.torques = Eigen::Vector3d::Zero();			
 		}
 
 		void reset() {
 			_position = { 0.0f, 0.0f, 0.0f };
 			_rotation = { 0.0f, 0.0f, 0.0f };
+			
+			state.theta = 0.0;
+			state.linearVelocity = Eigen::Vector3d::Zero();
+			state.angularVelocity = Eigen::Vector3d::Zero();
+
+			state.mass = 1.0; // in kg
+			state.inertia = Eigen::Matrix3d::Identity();
+			state.forces = Eigen::Vector3d::Zero();
+			state.torques = Eigen::Vector3d::Zero();
+
 			applyTransformToMesh();
 		}
 

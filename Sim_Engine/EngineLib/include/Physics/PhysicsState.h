@@ -11,6 +11,7 @@ namespace physics {
 		Eigen::Vector3d linearVelocity;		// Velocity of the object's center of mass
 		Eigen::Vector3d angularVelocity;	// Angular velocity vector
 
+		double gravity;				// Gravitational acceleration (in m/s^2)
 		double mass;				// Mass of the object (in kg)
 		Eigen::Matrix3d inertia;	// Inertia tensor for rotational dynamics
 		Eigen::Vector3d forces;		// Accumulated forces acting on the object

@@ -25,7 +25,7 @@ namespace physics {
 		PhysicsSystem();
 		
 		// Simulation Control
-		void update(double dt);
+		void update(double dt, elements::Object* obj);
 
 
 		// System-Updates

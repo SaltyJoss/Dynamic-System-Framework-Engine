@@ -4,6 +4,7 @@
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/ControlPanel.h"
+#include "Scene/Object.h"
 #include <imgui.h>
 
 #include "EngineLib/LogMacros.h"
@@ -13,6 +14,8 @@
 void gui::ControlPanel::render(gui::SceneView* sceneView) {
     _sceneView = sceneView; // store pointer for convenience
     _mesh = sceneView->getMesh();
+	_obj = sceneView->getObject();
+    _sunLight = _sceneView->getSunLight();
 
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
@@ -20,84 +23,93 @@ void gui::ControlPanel::render(gui::SceneView* sceneView) {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
     ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse);
 
-    if (ImGui::Button("Open")) { _fileDialog.Open(); LOG_INFO("File dialog opened"); }
-    ImGui::SameLine(0, 5.0f);
-    ImGui::Text(_currentFile.c_str());
-
+    if (ImGui::Button("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
+    ImGui::SameLine(0, 10.0f);
 	if (ImGui::Button("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
-	ImGui::SameLine(0, 5.0f);
-	ImGui::Text(_currentFile.c_str());
 
-    if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
     if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
+    if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
     if (ImGui::CollapsingHeader("Display Settings")) { renderDisplaySettings(); }
 
     ImGui::End();
     ImGui::PopStyleColor();
 
-    _fileDialog.Display();
-    if (_fileDialog.HasSelected()) {
-        auto file_path = _fileDialog.GetSelected().string();
-        _currentFile = file_path.substr(file_path.find_last_of("/\\") + 1);
+    _meshLoad.Display();
+    if (_meshLoad.HasSelected()) {
+        auto file_path = _meshLoad.GetSelected().string();
+        _currentMeshFile = file_path.substr(file_path.find_last_of("/\\") + 1);
         _meshLoadCallback(file_path);
-        LOG_INFO("Mesh loaded from file: %s", _currentFile.c_str());
+        LOG_INFO("Mesh loaded from file: %s", _currentMeshFile.c_str());
         
-        _fileDialog.ClearSelected();
+        _meshLoad.ClearSelected();
     }
 
 	_hdrLoad.Display();
     if (_hdrLoad.HasSelected()) {
         auto file_path = _hdrLoad.GetSelected().string();
-        _currentFile = file_path.substr(file_path.find_last_of("/\\") + 1);
+        _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
         _sceneView->loadNewHDR(file_path);
-        LOG_INFO("HDR loaded from file: %s", _currentFile.c_str());
+        LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
         _hdrLoad.ClearSelected();
 	}
 }
 
 void gui::ControlPanel::renderSimulationProperties() {
     ImGui::SeparatorText("Simulation Controls");
-    static bool physicsEnabled = true;
-    static bool gravityEnabled = true;
-    ImGui::Checkbox("Enable Physcics", &physicsEnabled);
     ImGui::Checkbox("Enable Gravity", &gravityEnabled);
 }
 
 void gui::ControlPanel::renderObjectProperties() {
     ImGui::SeparatorText("Object Controls");
-    static char velocityBuf[64] = "";
-    static char torqueBuf[64] = "";
-    ImGui::InputText("Velocity", velocityBuf, IM_ARRAYSIZE(velocityBuf));
-    ImGui::InputText("Torque", torqueBuf, IM_ARRAYSIZE(torqueBuf));
+
+    if (gravityEnabled) {
+        double minGravity = 0.0; double maxGravity = 20.0;
+        ImGui::DragScalar("Gravity", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("Mass:");
+    double minMass = 0.25; double maxMass = 100.0; 
+    ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+
+    ImGui::Separator();
+
+	ImGui::Text("Linear Velocity:");
+	double minVelocity = -100.0; double maxVelocity = 100.0;
+	ImGui::DragScalar("(x-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
+    ImGui::DragScalar("(y-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
+    ImGui::DragScalar("(z-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
+    
+	ImGui::Separator();
+
+    ImGui::Text("Angular Velocity:");
+	double minTorque = -100.0; double maxTorque = 100.0;
+	ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
+    ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
+    ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
+
+    ImGui::Separator();
+
+    ImGui::Text("Reset Object:");
+	// Reset Object Button
+    if (ImGui::Button("Reset")) {
+		_obj->reset();
+		LOG_INFO("Object reset to initial position and orientation.");
+    }
 }
 
 void gui::ControlPanel::renderLinkProperties() {
     ImGui::SeparatorText("Link Controls");
-    static char linkLengthBuf[64] = "";
-    static char dampingBuf[64] = "";
-    ImGui::InputText("Link Length", linkLengthBuf, IM_ARRAYSIZE(linkLengthBuf));
-    ImGui::InputText("Damping", dampingBuf, IM_ARRAYSIZE(dampingBuf));
+	// Placeholder for future link properties
 }
 
 void gui::ControlPanel::renderStats() {
     ImGui::SeparatorText("Simulation Statistics");
-    static float data[100];
-    for (int i = 0; i < 100; i++) data[i] = sinf(i * 0.1f);
-    ImGui::PlotLines("Velocity", data, 100);
+	// Placeholder for future statistics display of the simulations' states
 }
 
 void gui::ControlPanel::renderCameraProperties() {
-    ImGui::SeparatorText("Background");
-
-    glm::vec3 col = _sceneView->getBackgroundColour();
-    if (ImGui::ColorEdit3("Canvas Colour", &col.x)) {
-        _sceneView->setBackgroundColour(col);
-    }
-    float a = _sceneView->getBackgroundAlpha();
-    if (ImGui::SliderFloat("Alpha", &a, 0.0f, 1.0f)) {
-        _sceneView->setBackgroundAlpha(a);
-    }
-
     ImGui::Text("Control Mode:");
     if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera))
         *_controlMode = SceneView::ControlMode::Camera;
@@ -107,12 +119,7 @@ void gui::ControlPanel::renderCameraProperties() {
 
     ImGui::SeparatorText("Light Controls");
 
-    elements::Light* sunLight = _sceneView->getSunLight();
-
-    ImGui::SliderFloat3("Direction", &sunLight->_direction.x, -1.0f, 1.0f);
-    ImGui::ColorEdit3("Colour", &sunLight->_colour.x);
-    ImGui::SliderFloat("Intensity", &sunLight->_intensity, 0.0f, 20.0f);
-    ImGui::Checkbox("Directional", &sunLight->_isDirectional);
+	// Kept for future use with star light simulation (NOT NEEDED PURELY VISUAL)
 
     ImGui::SeparatorText("Object Appearance");
     if (!_mesh) {
@@ -120,8 +127,6 @@ void gui::ControlPanel::renderCameraProperties() {
         LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
     }
     else {
-        ImGui::ColorPicker3("Color", glm::value_ptr(_mesh->_colour), ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_DisplayRGB);
-        ImGui::SliderFloat("Metallic", &_mesh->_metallic, 0.0f, 1.0f);
     }
 }
 
@@ -135,7 +140,7 @@ void gui::ControlPanel::renderDisplaySettings() {
     }
 
     float fov = _sceneView->getCamera()->getFOV(); // in degrees
-    if (ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f, "%.1f°")) {
+    if (ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f, "%.5f")) {
         _sceneView->getCamera()->setFOV(fov);
     }
 }

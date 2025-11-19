@@ -15,11 +15,12 @@ namespace gui {
     class ENGINE_API ControlPanel {
     public:
         ControlPanel(SceneView* sceneView) : _sceneView(sceneView), _controlMode(&sceneView->ctrlMode) {
-            _currentFile = "<...>";
+            _currentMeshFile = "<...>";
+            _currentHDRFile = "<...>";
 
-            _fileDialog.SetTitle("Open Object Mesh");
-			_fileDialog.SetDirectory("Engine/assets/objects");
-            _fileDialog.SetTypeFilters({ ".fbx", ".obj" });
+            _meshLoad.SetTitle("Open Object Mesh");
+			_meshLoad.SetDirectory("Engine/assets/objects/shapes");
+            _meshLoad.SetTypeFilters({ ".fbx", ".obj" });
 
 			_hdrLoad.SetTitle("Load HDR Environment");
 			_hdrLoad.SetDirectory("Engine/assets/hdr");
@@ -40,6 +41,7 @@ namespace gui {
   
         // Internal state
         bool simulationRunning = false;
+        bool gravityEnabled = false;
         float simulationSpeed = 1;
         int povMode = 0;
 
@@ -51,10 +53,13 @@ namespace gui {
         float position = 0.0f;
 
         std::shared_ptr<elements::Mesh> _mesh;
+        elements::Light* _sunLight;
+		elements::Object* _obj;
 
-        ImGui::FileBrowser _fileDialog;
+        ImGui::FileBrowser _meshLoad;
         ImGui::FileBrowser _hdrLoad;
-        std::string _currentFile;
+        std::string _currentMeshFile;
+        std::string _currentHDRFile;
 
         std::function<void(const std::string&)> _meshLoadCallback;
         std::function<void(bool)> _simCallback;

@@ -221,7 +221,7 @@ namespace gui{
 // --------------------------------------------------
 	// To be updated, very basic physics for testing and demo purposes
 	void gui::SceneView::updatePhysics(double dt) {
-		_physics->updateRotation(dt, _object.get());
+		_physics->update(dt, _object.get());
 	}
 
 // --------------------------------------------------
@@ -330,7 +330,7 @@ namespace gui{
 		//}
 
 		if (_object && _object->getMesh()) {
-			updatePhysics(0.016); // temp fixed timestep at 60fps
+			updatePhysics(0.00833); // temp fixed timestep at 60fps
 			glm::mat4 model(1.0f);
 
 			model = glm::translate(model, _object->getMesh()->_position);

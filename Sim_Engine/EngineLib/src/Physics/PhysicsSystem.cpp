@@ -22,10 +22,17 @@ namespace physics {
 // --------------------------------------------------
 //				  SIMULATION CONTROL
 // --------------------------------------------------
-	void PhysicsSystem::update(double dt) {
-		// THIS is going to be used for updating all objects in the scene
-		// Currently no global updates needed
-		// Not really needed yet, but keeping incase of future functionality
+	void PhysicsSystem::update(double dt, elements::Object* obj) {
+		if (!obj) return;
+
+		// Apply forces (uses mass)
+		applyForces(dt, obj);
+
+		// Translate object (uses velocity)
+		updateTranslation(dt, obj);
+
+		// Rotate object (uses angular velocity)
+		updateRotation(dt, obj);
 	}
 
 // --------------------------------------------------
@@ -36,19 +43,11 @@ namespace physics {
 	void PhysicsSystem::updateRotation(double dt, elements::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtn
 		if (!obj || !obj->getMesh()) return;
 
-		auto& theta = obj->state.theta;
-		auto& w = obj->state.angularVelocity;
+		auto& s = obj->state;
 
-		Eigen::VectorXd x(1);
-		x(0) = theta;
-
-		Eigen::VectorXd dxdt(1);
-		dxdt(0) = w(1); // Rotation around y ---> (0) is x, (1) is y, (2) is z
-
-		integrateEuler(x, dxdt, dt);
-		theta = x(0);
-		obj->getMesh()->_rotation.x = static_cast<float>(theta);
-		obj->getMesh()->_rotation.y = static_cast<float>(theta);
+		s.theta += s.angularVelocity.y() * dt;
+		obj->getMesh()->_rotation.y = (float)s.theta;
+		obj->getMesh()->_rotation.x = (float)s.theta;
 
 		// Debug logging
 		//_logTimer += dt;
@@ -61,12 +60,30 @@ namespace physics {
 
 	void PhysicsSystem::updateTranslation(double dt, elements::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
+
+		auto& s = obj->state;
+
+		// v * dt is displacement
+		Eigen::Vector3d dp = s.linearVelocity * dt;
+
+		auto mesh = obj->getMesh();
+		mesh->_position += glm::vec3(dp.x(), dp.y(), dp.z());
 	}
 
 	// FORCE APPLICATION
 	void PhysicsSystem::applyForces(double dt, elements::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
+		auto& s = obj->state;
+
+		// acceleration = F / m
+		Eigen::Vector3d accel = s.forces / s.mass;
+
+		// update velocity
+		s.linearVelocity += accel * dt;
+
+		// reset forces after applying
+		s.forces.setZero();
 	}
 
 	void PhysicsSystem::applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque) {
