@@ -21,6 +21,7 @@
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
 #include "Rendering/IBL.h"
+#include "Rendering/Texture.h"
 
 #include <Platform/WindowManager.h>
 
@@ -83,6 +84,12 @@ namespace gui{
 
 		InitShadowResource();
 		InitIBL();
+
+		//earthDay = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_daymap.jpg", true);
+		//earthNight = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_nightmap.jpg", true);
+		//earthClouds = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_clouds.jpg", true);
+		//earthNormal = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_normal_map.jpg", false);
+		//earthSpec = render::Texture::load("Engine/assets/objects/Models/Earth/textures/8k_earth_specular_map.jpg", false);
 	}
 
 	SceneView::~SceneView()
@@ -172,7 +179,7 @@ namespace gui{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			float border[] = { 1,1,1,1 };
@@ -261,18 +268,18 @@ namespace gui{
 
 		// Rebind PBR textures
 		_shader->use();
-		_shader->setInt1(0, "irradianceMap");
-		_shader->setInt1(1, "prefilterMap");
-		_shader->setInt1(2, "brdfLUT");
 
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
+		_shader->setInt1(0, "irradianceMap");
 
 		glActiveTexture(GL_TEXTURE9);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
+		_shader->setInt1(1, "prefilterMap");
 
 		glActiveTexture(GL_TEXTURE10);
 		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+		_shader->setInt1(2, "brdfLUT");
 
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
@@ -325,27 +332,34 @@ namespace gui{
 		_light->update(_shader.get());
 
 		// Render checker floor
-		if (_checkerPlane) {
-			glm::mat4 floorModel(1.0f);
-			_shader->setMat4(floorModel, "model");
+		//if (_checkerPlane) {
+		//	glm::mat4 floorModel(1.0f);
+		//	_shader->setMat4(floorModel, "model");
 
-			// Set checkerboard uniforms
-			_shader->setBool(true, "isFloor");
-			_shader->setBool(false, "useTexture");
-			_shader->setFlt1(2.5f, "checkSize");
-			_shader->setVec3(glm::vec3(1.0f), "colour1");
-			_shader->setVec3(glm::vec3(0.0f), "colour2");
+		//	// Set checkerboard uniforms
+		//	_shader->setBool(true, "isFloor");
+		//	_shader->setBool(false, "useTexture");
+		//	_shader->setFlt1(2.5f, "checkSize");
+		//	_shader->setVec3(glm::vec3(1.0f), "colour1");
+		//	_shader->setVec3(glm::vec3(0.0f), "colour2");
 
-			_checkerPlane->update(_shader.get());
-			_checkerPlane->render();
-		}
+		//	_checkerPlane->update(_shader.get());
+		//	_checkerPlane->render();
+		//}
 
 		if (_object && _object->getMesh()) {
 			glm::mat4 model(1.0f);
 
 			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
+			
 			_shader->setBool(false, "isFloor");            // mark as non-floor
-			_shader->setBool(false, "useTexture");        // no texture for now
+			// material – start with something sane
+			_shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");   // orange-ish
+			_shader->setFlt1(0.0f, "metallic");                        // dielectric
+			_shader->setFlt1(0.3f, "roughness");                       // not too glossy
+			_shader->setFlt1(1.0f, "ao");
+			_shader->setBool(false, "useTexture");                     // ignore albedoTex for now
+
 			_object->getMesh()->update(_shader.get());
 			_object->getMesh()->render();
 		}

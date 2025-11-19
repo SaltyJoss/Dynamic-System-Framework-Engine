@@ -138,6 +138,7 @@
     <ClInclude Include="include\Rendering\RenderBase.h" />
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
+    <ClInclude Include="include\Rendering\Texture.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
     <ClInclude Include="include\Scene\DebugLogEntry.h" />
@@ -229,6 +230,7 @@
     <ClCompile Include="src\Rendering\OpenGLContext.cpp" />
     <ClCompile Include="src\Rendering\ShaderUtil.cpp" />
     <ClCompile Include="src\Rendering\SkyboxRenderer.cpp" />
+    <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Scene\Camera.cpp" />
     <ClCompile Include="src\Scene\ControlPanel.cpp" />
     <ClCompile Include="src\Scene\DebugPanel.cpp" />

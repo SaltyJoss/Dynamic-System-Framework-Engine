@@ -14,7 +14,7 @@ namespace elements {
 		VertexHolder(const glm::vec3& pos, 
 					 const glm::vec3& normal,
 					 const glm::vec2& texCoord = glm::vec2(0.0f))
-			: _pos(pos), _normal(normal), _texCoord() {}
+			: _pos(pos), _normal(normal), _texCoord(texCoord) {}
 
 		~VertexHolder() = default;
 

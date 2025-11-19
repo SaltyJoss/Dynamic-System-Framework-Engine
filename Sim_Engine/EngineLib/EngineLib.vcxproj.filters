@@ -222,6 +222,9 @@
     <ClInclude Include="include\Scene\PhysicsSystem.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="include\Rendering\Texture.h">
+      <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -316,6 +319,9 @@
     </ClCompile>
     <ClCompile Include="src\Scene\PhysicsSystem.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Texture.cpp">
+      <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

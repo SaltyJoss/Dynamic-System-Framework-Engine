@@ -19,6 +19,13 @@ uniform float ao;
 uniform bool useTexture;
 uniform sampler2D albedoTex;
 
+// Textures
+uniform sampler2D dayTex;
+uniform sampler2D nightTex;
+uniform sampler2D cloudTex;
+uniform sampler2D normalTex;
+uniform sampler2D specularTex;
+
 // CheckerBoard Plane parameters
 uniform float checkSize;
 uniform vec3 colour1;
@@ -194,8 +201,8 @@ vec3 evaluateDirectionalLightPBR(
 void main()
 {
 	// --- SETUP ---
-    vec3 N = normalize(Normal);             // Normal
-    vec3 V = normalize(camPos - WorldPos);  // View
+	vec3 N = normalize(Normal);             // Normal
+	vec3 V = normalize(camPos - WorldPos);  // View
 	vec3 R = reflect(-V, N);                // Reflection
 
 	// =====================================================
@@ -229,7 +236,7 @@ void main()
 		colour = pow(colour, vec3(1.0 / 2.2));
 
 		FragColour = vec4(colour, 1.0);
-		return;	
+		return;
 	}
 
 	vec3 finalAlbedo = albedo;
@@ -276,11 +283,11 @@ void main()
 
 
 
-// -----------------------------------------
-//          INDIRECT LIGHTING (IBL)
-// ------------------------------------------
+	// -----------------------------------------
+	//          INDIRECT LIGHTING (IBL)
+	// ------------------------------------------
 
-	// IBL contribution
+		// IBL contribution
 	vec3 diffuseIBL = texture(irradianceMap, N).rgb * finalAlbedo;
 
 	// Specular IBL
@@ -292,26 +299,20 @@ void main()
 
 
 
-// -----------------------------------------
-//          FINAL LIGHT COMBINATION
-// ------------------------------------------
+	// -----------------------------------------
+	//          FINAL LIGHT COMBINATION
+	// ------------------------------------------
 
-	// Direct lighting contribution
+		// Direct lighting contribution
 	vec3 direct = (1.0 - shadow) * Lo;
 	vec3 colour = IBL + direct;
 
 	// Ambient occlusion
-    colour = colour / (colour + vec3(1.0));
+	colour = colour / (colour + vec3(1.0));
 	colour = pow(colour, vec3(1.0 / 2.2));
-
-	// --- TEMP: simple Lambert debug ---
-	vec3 N1 = normalize(Normal);
-	vec3 L1 = normalize(lightPosition - WorldPos);
-
-	float NdotL1 = max(dot(N1, L1), 0.0);
-	vec3 lambert1 = albedo * lightColour * lightIntensity * NdotL1;
 
 	FragColour = vec4(colour, 1.0);
 	return;
 
 }
+

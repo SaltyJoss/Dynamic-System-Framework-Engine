@@ -16,6 +16,7 @@ namespace render {
 	class IBL;
     class Cubemap;
     class SkyboxRenderer;
+	class Texture;
 }
 namespace shaders {
     class Shader;
@@ -123,6 +124,8 @@ namespace gui {
         glm::vec3 planeNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
         std::string folder = "s3";
+
+        GLuint earthDay, earthNight, earthClouds, earthNormal, earthSpec;
 
         float _backgroundAlpha = 1.0f;
         float planeY = planeHeight;

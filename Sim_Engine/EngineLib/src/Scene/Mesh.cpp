@@ -52,6 +52,23 @@ namespace elements {
 				vh._pos = { mesh->mVertices[i].x, mesh->mVertices[i].y ,mesh->mVertices[i].z };
 				vh._normal = { mesh->mNormals[i].x, mesh->mNormals[i].y ,mesh->mNormals[i].z };
 
+				if (mesh->mTextureCoords[0]) {
+					vh._texCoord = {
+						mesh->mTextureCoords[0][i].x,
+						mesh->mTextureCoords[0][i].y
+					};
+					if (i < 5) {     // only print first 5 so you don't spam 100k logs
+						LOG_INFO("UV[%d] = %f %f",
+							i,
+							mesh->mTextureCoords[0][i].x,
+							mesh->mTextureCoords[0][i].y);
+					}
+				}
+				else {
+					LOG_WARN("Mesh has NO UVs at all (mesh->mTextureCoords[0] == NULL)");
+					vh._texCoord = glm::vec2(0.0f);
+				}
+
 				addVertex(vh);
 			}
 			LOG_INFO("Vertices added: %zu", _vertices.size());
