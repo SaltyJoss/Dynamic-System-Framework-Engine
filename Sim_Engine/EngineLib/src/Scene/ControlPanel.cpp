@@ -106,16 +106,47 @@ void gui::ControlPanel::renderLinkProperties() {
 
 void gui::ControlPanel::renderStats() {
     ImGui::SeparatorText("Simulation Statistics");
-	// Placeholder for future statistics display of the simulations' states
+    if (_obj && _obj->getMesh())
+    {
+        const glm::vec3& pos = _obj->getMesh()->_position;
+        const glm::vec3& rot = _obj->getMesh()->_rotation; // radians most likely
+
+        ImGui::SeparatorText("Telemetry");
+
+        // Position block
+        if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV))
+        {
+            // Position
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
+            ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
+
+            // Rotation
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f",
+                glm::degrees(rot.x * (180 / PI)),
+                glm::degrees(rot.y * (180 / PI)),
+                glm::degrees(rot.z * (180 / PI)));
+
+            ImGui::EndTable();
+        }
+
+        // You can add more simulation data later:
+        // Velocity, acceleration, forces, torque, mass…
+    }
 }
 
 void gui::ControlPanel::renderCameraProperties() {
     ImGui::Text("Control Mode:");
-    if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera))
-        *_controlMode = SceneView::ControlMode::Camera;
+    if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera)) { *_controlMode = SceneView::ControlMode::Camera; }
     ImGui::SameLine();
-    if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object))
-        *_controlMode = SceneView::ControlMode::Object;
+    if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object)) { *_controlMode = SceneView::ControlMode::Object; }
+
+    if (*_controlMode == SceneView::ControlMode::Object) { _sceneView->attachCameraToObject(_obj); }
+    else { _sceneView->detachCameraFromObject(); }
+        
 
     ImGui::SeparatorText("Light Controls");
 
@@ -126,15 +157,13 @@ void gui::ControlPanel::renderCameraProperties() {
         ImGui::Text("No mesh loaded!");
         LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
     }
-    else {
-    }
 }
 
 void gui::ControlPanel::renderDisplaySettings() {
     ImGui::SeparatorText("Display Settings");
 
     bool enabled = _sceneView->isSkyboxEnabled();
-    if (ImGui::Checkbox("Show Skybox", &enabled)) {
+    if (ImGui::Checkbox("Enable Skybox", &enabled)) {
         _sceneView->setSkyboxEnabled(enabled);
         LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
     }

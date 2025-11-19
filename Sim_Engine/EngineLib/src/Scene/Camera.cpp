@@ -13,6 +13,38 @@
 
 namespace elements {
 
+	void Camera::update(shaders::Shader* shader) {
+		if (_following)
+		{
+			// convert Euler degrees from object into radians
+			float yaw = glm::radians(_targetRot.y);
+			float pitch = glm::radians(_targetRot.x);
+			float roll = glm::radians(_targetRot.z);
+
+			// object rotation matrix
+			glm::mat4 R = glm::yawPitchRoll(yaw, pitch, roll);
+
+			// rotate the camera offset so it stays fixed to the object’s orientation
+			glm::vec3 rotatedOffset = glm::vec3(R * glm::vec4(_followOffset, 0.0f));
+
+			// new camera position
+			_position = _targetPos + rotatedOffset;
+
+			// look at the object
+			_forward = glm::normalize(_targetPos - _position);
+			_right = glm::normalize(glm::cross(_forward, glm::vec3(0, 1, 0)));
+			_up = glm::cross(_right, _forward);
+
+			updateViewMatrix();
+		}
+
+		glm::mat4 model{ 1.0f };
+		shader->setMat4(model, "model");
+		shader->setMat4(_viewMatrix, "view");
+		shader->setMat4(getProjection(), "projection");
+		shader->setVec3(_position, "camPos");
+	}
+
 	void Camera::processKeyboard(int key, float dt) {
 		_currentSpeed = glm::mix(_currentSpeed, _targetSpeed, 1.0f - expf(-_accel * dt));
 		float velocity = _currentSpeed * dt;
@@ -121,4 +153,55 @@ namespace elements {
 	void Camera::moveDown(float velocity) {
 		_position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
 	}
+
+	// Camera Follow
+	void Camera::startFollow(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& offset) {
+		_following = true;
+		_targetPos = pos;
+		_targetRot = rot;
+		_followOffset = offset;
+	}
+
+	void Camera::updateViewMatrix() {
+
+		if (_following)
+		{
+			glm::vec3 camPos = _targetPos + _followOffset;
+
+			_position = camPos;
+			_viewMatrix = glm::lookAt(_position, _targetPos, glm::vec3(0, 1, 0));
+			return;
+		}
+
+		// derive direction from yaw/pitch
+		_forward.x = cosf(_yaw) * cosf(_pitch);
+		_forward.y = sinf(_pitch);
+		_forward.z = sinf(_yaw) * cosf(_pitch);
+		_forward = glm::normalize(_forward);
+
+		// recompute right and up
+		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+		_up = glm::normalize(glm::cross(_right, _forward));
+
+		_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+	}
+
+	// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---
+	//void updateViewMatrix() {
+	//	float yawRad = glm::radians(_yaw);
+	//	float pitchRad = glm::radians(_pitch);
+	//
+	//	glm::vec3 f;
+	//	f.x = cosf(yawRad) * cosf(pitchRad);
+	//	f.y = sinf(pitchRad);
+	//	f.z = sinf(yawRad) * cosf(pitchRad);
+	//	_forward = glm::normalize(f);
+	//
+	//	const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+	//
+	//	_right = glm::normalize(glm::cross(worldUp, _forward));
+	//	_up = glm::normalize(glm::cross(_forward, _right));
+	//
+	//	_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+	//}
 }

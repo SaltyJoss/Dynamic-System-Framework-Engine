@@ -52,6 +52,8 @@ namespace gui {
         float damping = 0.1f;
         float position = 0.0f;
 
+		double PI = 3.14159265358979323846;
+
         std::shared_ptr<elements::Mesh> _mesh;
         elements::Light* _sunLight;
 		elements::Object* _obj;

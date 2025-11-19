@@ -119,7 +119,23 @@ namespace gui{
 	elements::Camera* SceneView::getCamera() { return _camera.get(); }
 	void SceneView::resetView() { _camera->reset(); }
 
-	
+	void SceneView::attachCameraToObject(elements::Object* obj) {
+		if (!obj) return;
+
+		_cameraFollowTarget = obj;
+
+		glm::vec3 pos = obj->getMesh()->_position;
+		glm::vec3 rot = obj->getMesh()->_rotation;
+
+		_camera->startFollow(pos, rot, glm::vec3(0, 2, 5)); // example offset
+	}
+
+	void SceneView::detachCameraFromObject() {
+		_cameraFollowTarget = nullptr;
+		_camera->clearFollow();
+	}
+
+
 // --------------------------------------------------
 //			    MESH LOADING & GEOMETRY
 // --------------------------------------------------
@@ -205,6 +221,7 @@ namespace gui{
 		// update camera projection
 		float aspect = (float)width / (float)height;
 		_camera->setAspect(aspect);
+		_camera->update(_shader.get());
 
 		// store updated size
 		_size = glm::vec2(width, height);
@@ -331,6 +348,16 @@ namespace gui{
 
 		if (_object && _object->getMesh()) {
 			updatePhysics(0.00833); // temp fixed timestep at 60fps
+
+			if (_cameraFollowTarget) {
+				glm::vec3 pos = _cameraFollowTarget->getMesh()->_position;
+				glm::vec3 rot = _cameraFollowTarget->getMesh()->_rotation;
+
+				_camera->setFollowTarget(pos, rot);
+			}
+
+			_camera->update(_shader.get());
+
 			glm::mat4 model(1.0f);
 
 			model = glm::translate(model, _object->getMesh()->_position);

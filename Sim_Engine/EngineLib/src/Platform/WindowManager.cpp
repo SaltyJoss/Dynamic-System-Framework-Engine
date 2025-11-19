@@ -188,6 +188,7 @@ namespace window {
             setMouseCaptured(!_mouseCaptured);
 			// close control panel when key is pressed again
             controlPanelOpen = !controlPanelOpen;
+            ImGui::SetWindowFocus(nullptr);   // clear focus
             return;
         }
     }

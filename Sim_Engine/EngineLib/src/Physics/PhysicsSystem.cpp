@@ -46,8 +46,9 @@ namespace physics {
 		auto& s = obj->state;
 
 		s.theta += s.angularVelocity.y() * dt;
-		obj->getMesh()->_rotation.y = (float)s.theta;
 		obj->getMesh()->_rotation.x = (float)s.theta;
+		obj->getMesh()->_rotation.y = (float)s.theta;
+		obj->getMesh()->_rotation.z = (float)s.theta;
 
 		// Debug logging
 		//_logTimer += dt;

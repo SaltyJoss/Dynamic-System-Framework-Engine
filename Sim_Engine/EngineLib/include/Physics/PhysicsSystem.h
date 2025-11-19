@@ -27,7 +27,6 @@ namespace physics {
 		// Simulation Control
 		void update(double dt, elements::Object* obj);
 
-
 		// System-Updates
 		void updateRotation(double dt, elements::Object* obj);
 		void updateTranslation(double dt, elements::Object* obj);
@@ -46,6 +45,9 @@ namespace physics {
 		// Config
 		void setGravity(const Eigen::Vector3d& gravity) { _gravity = gravity; }
 		Eigen::Vector3d getGravity() const { return _gravity; }
+
+		// Misc
+		bool isGravityEnabled() const { return _gravity != Eigen::Vector3d(0.0f, 0.0f, 0.0f); }
 			
 		
 	private:

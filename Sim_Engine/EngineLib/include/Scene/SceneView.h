@@ -72,6 +72,8 @@ namespace gui {
         elements::Camera* getCamera();
         void resetView();
 
+		void attachCameraToObject(elements::Object* obj);
+        void detachCameraFromObject();
 
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
@@ -124,6 +126,7 @@ namespace gui {
         std::unique_ptr<elements::Camera> _camera;
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Light> _sunLight;
+        elements::Object* _cameraFollowTarget = nullptr;
 
         std::shared_ptr<elements::Mesh> _mesh;
         std::shared_ptr<elements::Object> _object;

@@ -3,6 +3,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -31,13 +32,7 @@ namespace elements {
 			updateViewMatrix();
 		}
 
-		void update(shaders::Shader* shader) override {
-			glm::mat4 model{ 1.0f };
-			shader->setMat4(model, "model");
-			shader->setMat4(_viewMatrix, "view");
-			shader->setMat4(getProjection(), "projection");
-			shader->setVec3(_position, "camPos");
-		}
+		void update(shaders::Shader* shader);
 
 
 		const glm::mat4& getProjection() const { return _projection; }
@@ -57,6 +52,7 @@ namespace elements {
 		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
 		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
 		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
+		
 
 		void setDistance(float offset) {
 			_distance += offset;
@@ -100,40 +96,15 @@ namespace elements {
 			_currentPos2D = pos2d;
 		}
 
-		void updateViewMatrix() {
-			// derive direction from yaw/pitch
-			_forward.x = cosf(_yaw) * cosf(_pitch);
-			_forward.y = sinf(_pitch);
-			_forward.z = sinf(_yaw) * cosf(_pitch);
-			_forward = glm::normalize(_forward);
-
-			// recompute right and up
-			_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-			_up = glm::normalize(glm::cross(_right, _forward));
-
-			_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+		void startFollow(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& offset);
+		void clearFollow() { _following = false; }
+		void setFollowTarget(const glm::vec3& pos, const glm::vec3& rot) { 
+			_targetPos = pos;
+			_targetRot = rot;
 		}
 
-		// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---
-		//void updateViewMatrix() {
-		//	float yawRad = glm::radians(_yaw);
-		//	float pitchRad = glm::radians(_pitch);
-		//
-		//	glm::vec3 f;
-		//	f.x = cosf(yawRad) * cosf(pitchRad);
-		//	f.y = sinf(pitchRad);
-		//	f.z = sinf(yawRad) * cosf(pitchRad);
-		//	_forward = glm::normalize(f);
-		//
-		//	const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
-		//
-		//	_right = glm::normalize(glm::cross(worldUp, _forward));
-		//	_up = glm::normalize(glm::cross(_forward, _right));
-		//
-		//	_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
-		//}
+		void updateViewMatrix();
 
-		void applyGravity(float dt, float floorY);
 		void fall();
 
 		void moveForward(float delta);
@@ -160,6 +131,11 @@ namespace elements {
 		}
 
 	private:
+		bool _following = false;
+		glm::vec3 _targetPos;
+		glm::vec3 _followOffset;
+		glm::vec3 _targetRot{ 0.0f, 0.0f, 0.0f };
+
 		glm::mat4 _viewMatrix;
 		glm::mat4 _projection  = glm::mat4{ 1.0f };
 

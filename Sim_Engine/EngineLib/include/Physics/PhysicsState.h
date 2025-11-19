@@ -20,8 +20,6 @@ namespace physics {
 	};
 }
 
-
-
 /*
 * NOTES:
 * This struct encapsulates the physical state of an object in a physics simulation.
