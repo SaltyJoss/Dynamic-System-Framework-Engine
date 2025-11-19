@@ -1,5 +1,6 @@
 #pragma once
 #include "EngineCore.h"
+#include <glad/glad.h>
 
 #include <string>
 #include "Platform/Logger.h"

@@ -89,27 +89,6 @@ namespace elements {
 		return corners;
 	}
 
-	void Camera::applyGravity(float dt, float floorY)
-	{
-		// Only apply gravity if not grounded
-		if (!_isGrounded)
-		{
-			_verticalVelocity += _gravity * dt;
-			_position.y += _verticalVelocity * dt;
-
-			// Clamp to floor
-			float minY = floorY + _eyeHeight;
-			if (_position.y <= minY)
-			{
-				_position.y = minY;
-				_verticalVelocity = 0.0f;
-				_isGrounded = true;
-			}
-
-			updateViewMatrix();
-		}
-	}
-
 	void Camera::fall()
 	{
 		if (_isGrounded)

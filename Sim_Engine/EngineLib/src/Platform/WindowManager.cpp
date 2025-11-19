@@ -101,8 +101,7 @@ namespace window {
         _controlPanel = std::make_unique<gui::ControlPanel>(_sceneView.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
 
-        _controlPanel->setMeshLoadCallback([this](std::string path)
-            {
+        _controlPanel->setMeshLoadCallback([this](std::string path) {
                 _sceneView->loadMesh(path);
                 LOG_INFO("Mesh loaded: %s", path.c_str());
             }
@@ -160,7 +159,7 @@ namespace window {
 
         if (_sceneView) {
             _sceneView->handleContinuousMovement(_window, smoothedDt);
-            _sceneView->getCamera()->applyGravity(smoothedDt, _sceneView->getPlaneHeight());
+            //_sceneView->getCamera()->applyGravity(smoothedDt, _sceneView->getPlaneHeight());
         }
     }
 

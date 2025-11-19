@@ -7,6 +7,7 @@
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtx/euler_angles.hpp>  
 #include <imgui.h>
 
 #include "Scene/Camera.h"
@@ -54,8 +55,6 @@ namespace gui{
 		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
 		_sunLight->_intensity = 1.0f;
 
-		_physics = std::make_unique<physics::PhysicsSystem>();
-
 		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 16 / 9, 0.5f, 2000.0f);
 
 		glGenVertexArrays(1, &_worldGridVAO);
@@ -63,6 +62,7 @@ namespace gui{
 		_mesh = std::make_shared<elements::Mesh>();
 		_mesh->init();
 
+		_physics = std::make_unique<physics::PhysicsSystem>();
 		_object = std::make_shared<elements::Object>(_mesh);
 
 		if (_checkerPlane) _checkerPlane->clear();
@@ -330,9 +330,17 @@ namespace gui{
 		//}
 
 		if (_object && _object->getMesh()) {
+			updatePhysics(0.016); // temp fixed timestep at 60fps
 			glm::mat4 model(1.0f);
 
-			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
+			model = glm::translate(model, _object->getMesh()->_position);
+			model = model * glm::yawPitchRoll(
+				_object->getMesh()->_rotation.y,
+				_object->getMesh()->_rotation.x,
+				_object->getMesh()->_rotation.z
+			);
+
+			_shader->setMat4(model, "model");
 
 			_shader->setBool(false, "isFloor");            // mark as non-floor
 			// material – start with something sane
@@ -384,7 +392,14 @@ namespace gui{
 			// main mesh
 			if (_object && _object->getMesh()) {
 				glm::mat4 model(1.0f);
-				model = glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
+
+				model = glm::translate(model, _object->getMesh()->_position);
+				model = model * glm::yawPitchRoll(
+					_object->getMesh()->_rotation.y,
+					_object->getMesh()->_rotation.x,
+					_object->getMesh()->_rotation.z
+				);
+
 				_shadowShader->setMat4(model, "model");
 				_object->getMesh()->render();
 			}

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Rendering/Texture.h"
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -8,7 +9,6 @@
 #include <stb/stb_image.h>
 #include <iostream>
 
-#include "Rendering/Texture.h"
 #include "EngineLib/LogMacros.h"
 
 namespace render {

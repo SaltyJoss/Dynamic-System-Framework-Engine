@@ -70,6 +70,9 @@
     <Filter Include="Source Files\src\Physics">
       <UniqueIdentifier>{78ee7892-6bd1-47e7-a240-acfebdbff310}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Physics">
+      <UniqueIdentifier>{d43d5b11-cb31-46c6-b14d-141624d0bc78}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -219,11 +222,14 @@
     <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h">
       <Filter>External\MathLib\Integration</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\PhysicsSystem.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="include\Rendering\Texture.h">
       <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Physics\PhysicsSystem.h">
+      <Filter>Header Files\include\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Physics\PhysicsState.h">
+      <Filter>Header Files\include\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -317,11 +323,11 @@
     <ClCompile Include="src\Rendering\CubeVertices.cpp">
       <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="src\Scene\PhysicsSystem.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="src\Rendering\Texture.cpp">
       <Filter>Source Files\src\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Physics\PhysicsSystem.cpp">
+      <Filter>Source Files\src\Physics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

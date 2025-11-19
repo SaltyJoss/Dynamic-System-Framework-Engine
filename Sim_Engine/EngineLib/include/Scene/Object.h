@@ -1,10 +1,12 @@
 #pragma once
+
 #include "EngineCore.h"
+#include "Physics/PhysicsState.h"
+#include "Scene/Element.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-#include "Scene/Element.h"
 #include "Rendering/ShaderUtil.h"
 #include "Scene/Input.h"
 #include "Scene/Mesh.h"
@@ -13,16 +15,25 @@
 extern ENGINE_API Debug gLog;
 
 namespace elements {
-	class ENGINE_API Object : public Element
-	{
+	class ENGINE_API Object : public Element {
 	public:
-		Object(std::shared_ptr<elements::Mesh> mesh) : _mesh(mesh), _position(0.0f), _rotation(0.0f), _distance(5.0f), _lastMousePos(0.0f) {}
+		physics::PhysicsState state;
+
+		Object(std::shared_ptr<elements::Mesh> mesh) : _mesh(mesh), _position(0.0f), 
+			_rotation(0.0f), _distance(5.0f), _lastMousePos(0.0f) 
+		{
+			state.theta = 0.0;
+			state.linearVelocity = Eigen::Vector3d::Zero();
+			state.angularVelocity = Eigen::Vector3d::Zero();
+
+			// For testing rotation around Y:
+			state.angularVelocity.y() = 1.0;   // 1 rad/s
+		}
 
 		void reset() {
 			_position = { 0.0f, 0.0f, 0.0f };
 			_rotation = { 0.0f, 0.0f, 0.0f };
 			applyTransformToMesh();
-
 		}
 
 		void onMouseWheel(double delta) { _distance += delta * 0.5f; }
