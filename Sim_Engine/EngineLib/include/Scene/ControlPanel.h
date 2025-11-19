@@ -1,20 +1,20 @@
 #pragma once
-#include "EngineCore.h"
 
-#include "Scene/Light.h"
+#include "EngineCore.h"
 #include "Scene/SceneView.h"
+#include "Scene/Light.h"
+#include "Platform/Logger.h"
 
 #include <imgui.h>
 #include "Platform/imguiWidgets.h"
 #include <imfilebrowser.h>
-#include "Platform/Logger.h"
 
 extern ENGINE_API Debug gLog;
 
 namespace gui {
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(SceneView* sceneView) : _sceneView(sceneView), _controlMode(&sceneView->_controlMode) {
+        ControlPanel(SceneView* sceneView) : _sceneView(sceneView), _controlMode(&sceneView->ctrlMode) {
             _currentFile = "<...>";
 
             _fileDialog.SetTitle("Open Object Mesh");

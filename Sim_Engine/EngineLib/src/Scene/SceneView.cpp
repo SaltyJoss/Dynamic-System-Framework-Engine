@@ -465,10 +465,10 @@ namespace gui{
 //					INPUT HANDLING
 // --------------------------------------------------
 	void gui::SceneView::processMovementKey(int key, float delta) {
-		if (_controlMode == ControlMode::Camera) {
+		if (ctrlMode == ControlMode::Camera) {
 			_camera->processKeyboard(key, delta);
 		}
-		else if (_controlMode == ControlMode::Object && _mesh) {
+		else if (ctrlMode == ControlMode::Object && _mesh) {
 			// WILL ADD OBJECT MOVEMENT LATER
 		}
 	}
@@ -528,10 +528,10 @@ namespace gui{
 		double yoffset = _lastMousePos.y - ypos;
 		_lastMousePos = { (float)xpos, (float)ypos };
 
-		if (_controlMode == ControlMode::Camera) {
+		if (ctrlMode == ControlMode::Camera) {
 			_camera->processMouseMovement(xoffset, yoffset);
 		}
-		else if (_controlMode == ControlMode::Object && _object) {
+		else if (ctrlMode == ControlMode::Object && _object) {
 			_object->onMouseMove(xpos, ypos, elements::eInputButton::Right);
 		}
 	}
@@ -548,10 +548,10 @@ namespace gui{
 			return;
 		}
 
-		if (_controlMode == ControlMode::Camera) {
+		if (ctrlMode == ControlMode::Camera) {
 			_camera->onMouseMove(x, y, button);
 		}
-		else if (_controlMode == ControlMode::Object && _object) {
+		else if (ctrlMode == ControlMode::Object && _object) {
 			_object->onMouseMove(x, y, button);
 		}
 	}
@@ -559,8 +559,8 @@ namespace gui{
 	void SceneView::onMouseWheel(double delta) {
 		if (!_isHovered) return;
 
-		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
+		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
+		else if (ctrlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
 	}
 
 

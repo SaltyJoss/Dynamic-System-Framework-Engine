@@ -64,8 +64,10 @@ namespace gui {
             Object
         };
 
-        void setControlMode(ControlMode mode) { _controlMode = mode; }
-        ControlMode getControlMode() const { return _controlMode; }
+        ControlMode ctrlMode = ControlMode::Camera;
+
+        void setControlMode(ControlMode mode) { ctrlMode = mode; }
+        ControlMode getControlMode() const { return ctrlMode; }
 
         elements::Camera* getCamera();
         void resetView();
@@ -96,7 +98,6 @@ namespace gui {
         void onMouseWheel(double delta);
 
         void resetMouseDelta();
-
 
 
     private:       
@@ -162,8 +163,6 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
-        ControlMode _controlMode = ControlMode::Camera;
-
 
 		// Misc Settings
         glm::vec2 _size;
