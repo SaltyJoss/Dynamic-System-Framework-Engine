@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "Scene/SceneView.h"
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -8,15 +9,12 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 
-#include "Scene/SceneView.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/Light.h"
-#include "Scene/Input.h"
 #include "Scene/Object.h"
-#include "Scene/PhysicsSystem.h"
+#include "Physics/PhysicsSystem.h"
 
-#include "Rendering/Cubemap.h"
 #include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
@@ -28,20 +26,9 @@
 #include "EngineLib/LogMacros.h"
 
 namespace gui{
-
-/*
- * --------------------------------------------
- *				SCENEVIEW METHODS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * SceneView() -> Constructor that initializes the scene view, including framebuffer, shaders, skybox, camera, light, and shadow resources.
- * ~SceneView() -> Destructor that cleans up resources such as shaders, framebuffer, and meshes.
- * render() -> Renders the scene, including shadow pass, world grid
- * resize() -> Resizes the framebuffer and updates the camera aspect ratio when the viewport size changes.
- * --------------------------------------------
- */
+// --------------------------------------------------
+//				CONSTRUCTOR & DESTRUCTOR
+// --------------------------------------------------
 
 	SceneView::SceneView() :
 		_camera(nullptr), _frameBuffer(nullptr), _shader(nullptr), _light(nullptr),
@@ -94,6 +81,90 @@ namespace gui{
 		if (_checkerPlane) _checkerPlane->clear();
 	}
 
+// --------------------------------------------------
+//				    LIGHT & SKYBOX
+// --------------------------------------------------
+	void SceneView::loadNewHDR(const std::string& path)
+	{
+		LOG_INFO("Loading new HDR: %s", path.c_str());
+
+		if (!_ibl) return;
+
+		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
+
+		// Rebind PBR textures
+		_shader->use();
+
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
+		_shader->setInt1(0, "irradianceMap");
+
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
+		_shader->setInt1(1, "prefilterMap");
+
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+		_shader->setInt1(2, "brdfLUT");
+
+		// Update skybox
+		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
+
+		LOG_INFO("HDR updated successfully.");
+	}
+
+// --------------------------------------------------
+//				CONTROL MODES & CAMERA
+// --------------------------------------------------
+	elements::Camera* SceneView::getCamera() { return _camera.get(); }
+	void SceneView::resetView() { _camera->reset(); }
+
+	
+// --------------------------------------------------
+//			    MESH LOADING & GEOMETRY
+// --------------------------------------------------
+	void SceneView::loadMesh(const std::string& filepath) {
+		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
+		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
+		_mesh->load(filepath);
+
+		_mesh->_position = glm::vec3(0.0f);
+
+		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
+	}
+
+	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
+
+		auto plane = std::make_shared<elements::Mesh>();
+
+		std::vector<glm::vec3> pos = {
+			{-size, planeHeight, -size},
+			{ size, planeHeight, -size},
+			{ size, planeHeight,  size},
+			{-size, planeHeight,  size}
+		};
+
+		glm::vec3 normal(0.0f, 1.0f, 0.0f);
+
+		for (auto& p : pos) {
+			elements::VertexHolder vh(p, normal);
+			plane->addVertex(vh);
+		}
+
+		plane->addVertexIndex(0);
+		plane->addVertexIndex(1);
+		plane->addVertexIndex(2);
+		plane->addVertexIndex(2);
+		plane->addVertexIndex(3);
+		plane->addVertexIndex(0);
+
+		plane->init();
+		return plane;
+	}
+
+// --------------------------------------------------
+//				RENDERING ENTRY POINTS
+// --------------------------------------------------
 	void SceneView::render() {
 		_fpsCounter.update();
 		ShadowPass();
@@ -106,7 +177,7 @@ namespace gui{
 		WorldGridRender();
 		MeshRender();
 		_sunLight->update(_shader.get());
-		
+
 		if (skyboxEnabled)
 		{
 			glDepthMask(GL_FALSE);
@@ -117,7 +188,7 @@ namespace gui{
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 		}
-		
+
 		_frameBuffer->unbind();
 
 		ImGui::Begin("Sim Engine");
@@ -145,19 +216,17 @@ namespace gui{
 		LOG_INFO("Framebuffer resized: %d x %d", width, height);
 	}
 
-/* 
- * --------------------------------------------
- *			 INITIALIZATION METHODS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * InitShadowResource() -> Initializes the framebuffer and depth textures for cascaded shadow mapping.
- * InitIBL() -> Initializes Image-Based Lighting (IBL) resources including irradiance map, prefilter map, and BRDF LUT.
- * createCheckerPlane() -> Creates a checkerboard plane mesh at a specified size for use as a ground plane.
- * --------------------------------------------
- */
+// --------------------------------------------------
+//						PHYSICS
+// --------------------------------------------------
+	// To be updated, very basic physics for testing and demo purposes
+	void gui::SceneView::updatePhysics(double dt) {
+		_physics->updateRotation(dt, _object.get());
+	}
 
+// --------------------------------------------------
+//			 INTERNAL REDNDERING PIPELINE
+// --------------------------------------------------
 	void SceneView::InitShadowResource() {
 		int shadowRes[NUM_CASCADES] = { 4096, 2048 };
 
@@ -209,87 +278,6 @@ namespace gui{
 		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
 	}
 
-	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
-
-		auto plane = std::make_shared<elements::Mesh>();
-
-		std::vector<glm::vec3> pos = {
-			{-size, planeHeight, -size},
-			{ size, planeHeight, -size},
-			{ size, planeHeight,  size},
-			{-size, planeHeight,  size}
-		};
-
-		glm::vec3 normal(0.0f, 1.0f, 0.0f);
-
-		for (auto& p : pos) {
-			elements::VertexHolder vh(p, normal);
-			plane->addVertex(vh);
-		}
-
-		plane->addVertexIndex(0);
-		plane->addVertexIndex(1);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(3);
-		plane->addVertexIndex(0);
-
-		plane->init();
-		return plane;
-	}
-
-/*
- * --------------------------------------------
- *				RENDERING METHODS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * loadNewHDR() -> Loads a new HDR environment map for Image-Based Lighting (IBL) and updates the relevant textures and skybox.
- * loadMesh() -> Loads a mesh from a specified file path and centers it in the scene.
- * WorldGridRender() -> Renders a world grid in the scene for reference.
- * MeshRender() -> Renders the mesh and checkerboard floor in the scene using PBR shading.
- * --------------------------------------------
- */
-
-	void SceneView::loadNewHDR(const std::string& path)
-	{
-		LOG_INFO("Loading new HDR: %s", path.c_str());
-
-		if (!_ibl) return;
-
-		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
-
-		// Rebind PBR textures
-		_shader->use();
-
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
-		_shader->setInt1(0, "irradianceMap");
-
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
-		_shader->setInt1(1, "prefilterMap");
-
-		glActiveTexture(GL_TEXTURE10);
-		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
-		_shader->setInt1(2, "brdfLUT");
-
-		// Update skybox
-		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
-
-		LOG_INFO("HDR updated successfully.");
-	}
-
-	void SceneView::loadMesh(const std::string& filepath) {
-		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
-		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
-		_mesh->load(filepath);
-
-		_mesh->_position = glm::vec3(0.0f);
-
-		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
-	}
 
 	void SceneView::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
@@ -345,7 +333,7 @@ namespace gui{
 			glm::mat4 model(1.0f);
 
 			_shader->setMat4(glm::translate(glm::mat4(1.0f), _object->getMesh()->_position), "model");
-			
+
 			_shader->setBool(false, "isFloor");            // mark as non-floor
 			// material – start with something sane
 			_shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");   // orange-ish
@@ -359,19 +347,50 @@ namespace gui{
 		}
 	}
 
-/*
- * ------------------------------------------------
- *				 SHADOW MAPPING
- * ------------------------------------------------
- * 
- * Summary:
- * ------------------------------------------------
- * LightSpaceMatrix() -> Computes the light space transformation matrix for shadow mapping based on the camera's frustum corners.
- * ShadowPass() -> Renders the scene from the light's perspective to generate shadow maps for cascaded shadow mapping.
- * SkyboxRender() -> Renders the skybox using the environment cubemap.
- * UpdatePhysics() -> Updates the physics simulation for the scene, including gravity and collision with the floor.
- * ------------------------------------------------
- */
+
+	void SceneView::ShadowPass() {
+		float nearPlane = _camera->getNear();
+		float farPlane = _camera->getFar();
+
+		float cascadeNear[NUM_CASCADES];
+		float cascadeFar[NUM_CASCADES];
+
+		cascadeNear[0] = nearPlane;
+		cascadeFar[0] = nearPlane + _cascadeSplits[0] * (farPlane);
+
+		cascadeNear[1] = cascadeFar[0];
+		cascadeFar[1] = nearPlane + _cascadeSplits[1] * (farPlane);
+
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
+
+			int baseRes = 4096;
+			int res = baseRes >> i;   // 4096, 2048
+			glViewport(0, 0, res, res);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
+			glClear(GL_DEPTH_BUFFER_BIT);
+
+			_shadowShader->use();
+			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
+
+			// checker plane
+			if (_checkerPlane) {
+				glm::mat4 model(1.0f);
+				_shadowShader->setMat4(model, "model");
+				_checkerPlane->render();
+			}
+
+			// main mesh
+			if (_object && _object->getMesh()) {
+				glm::mat4 model(1.0f);
+				model = glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
+				_shadowShader->setMat4(model, "model");
+				_object->getMesh()->render();
+			}
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 
 	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
@@ -433,52 +452,8 @@ namespace gui{
 		return lightProj * lightView;
 	}
 
-	void SceneView::ShadowPass() {
-		float nearPlane = _camera->getNear();
-		float farPlane = _camera->getFar();
 
-		float cascadeNear[NUM_CASCADES];
-		float cascadeFar[NUM_CASCADES];
-
-		cascadeNear[0] = nearPlane;
-		cascadeFar[0] = nearPlane + _cascadeSplits[0] * (farPlane);
-
-		cascadeNear[1] = cascadeFar[0];
-		cascadeFar[1] = nearPlane + _cascadeSplits[1] * (farPlane);
-
-		for (int i = 0; i < NUM_CASCADES; i++) {
-			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
-
-			int baseRes = 4096;
-			int res = baseRes >> i;   // 4096, 2048
-			glViewport(0, 0, res, res);
-
-			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
-			glClear(GL_DEPTH_BUFFER_BIT);
-
-			_shadowShader->use();
-			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
-
-			// checker plane
-			if (_checkerPlane) {
-				glm::mat4 model(1.0f);
-				_shadowShader->setMat4(model, "model");
-				_checkerPlane->render();
-			}
-
-			// main mesh
-			if (_object && _object->getMesh()) {
-				glm::mat4 model(1.0f);
-				model = glm::translate(glm::mat4(1.0f), _object->getMesh()->_position);
-				_shadowShader->setMat4(model, "model");
-				_object->getMesh()->render();
-			}
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	void SceneView::SkyboxRender()
-	{
+	void SceneView::SkyboxRender() {
 		glm::mat4 view = _camera->getViewMatrix();
 		glm::mat4 projection = _camera->getProjection();
 
@@ -486,27 +461,17 @@ namespace gui{
 		_skybox->render(projection, view);
 	}
 
-	// To be updated, very basic physics for testing and demo purposes
-	void gui::SceneView::updatePhysics(double dt)
-	{
-		_physics->updateRotation(dt, _object.get());
+// --------------------------------------------------
+//					INPUT HANDLING
+// --------------------------------------------------
+	void gui::SceneView::processMovementKey(int key, float delta) {
+		if (_controlMode == ControlMode::Camera) {
+			_camera->processKeyboard(key, delta);
+		}
+		else if (_controlMode == ControlMode::Object && _mesh) {
+			// WILL ADD OBJECT MOVEMENT LATER
+		}
 	}
-
-/*
- * ------------------------------------------------
- *				KEYBOARD & MOUSE INPUT
- * ------------------------------------------------
- * 
- * Summary:
- * ------------------------------------------------
- * handleContinuousMovement() -> Processes continuous keyboard input for camera or object movement based on the current control mode.
- * resetMouseDelta() -> Resets the mouse delta tracking to ensure correct mouse movement calculations.
- * handleMouseLook() -> Handles mouse movement for camera or object rotation based on the current control mode.
- * processMovementKey() -> Processes individual movement key inputs for camera or object movement.
- * onMouseWheel() -> Handles mouse wheel input for zooming the camera or moving the object along the Z-axis.
- * onMouseMove() -> Handles mouse movement input for rotating the camera or manipulating the object.
- * ------------------------------------------------
- */
 
 	void gui::SceneView::handleContinuousMovement(GLFWwindow* window, float dt) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
@@ -540,8 +505,6 @@ namespace gui{
 		}
 	}
 
-	void gui::SceneView::resetMouseDelta() { _firstMouse = true; }
-
 	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
@@ -573,21 +536,6 @@ namespace gui{
 		}
 	}
 
-	void gui::SceneView::processMovementKey(int key, float delta) {
-		if (_controlMode == ControlMode::Camera) {
-			_camera->processKeyboard(key, delta);
-		}
-		else if (_controlMode == ControlMode::Object && _mesh) {
-			// WILL ADD OBJECT MOVEMENT LATER
-		}
-	}
-
-	void SceneView::onMouseWheel(double delta) {
-		if (!_isHovered) return;
-
-		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
-	}
 
 	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) {
 		glm::vec2 pos2d{ x, y };
@@ -608,18 +556,13 @@ namespace gui{
 		}
 	}
 
-/*
- * --------------------------------------------
- *				CAMERA METHODS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * getCamera() -> Returns a pointer to the scene's camera.
- * resetView() -> Resets the camera view to its default position and orientation.
- * --------------------------------------------
- */
+	void SceneView::onMouseWheel(double delta) {
+		if (!_isHovered) return;
 
-	elements::Camera* SceneView::getCamera() { return _camera.get(); }
-	void SceneView::resetView() { _camera->reset(); }
+		if (_controlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
+		else if (_controlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
+	}
+
+
+	void gui::SceneView::resetMouseDelta() { _firstMouse = true; }
 }
