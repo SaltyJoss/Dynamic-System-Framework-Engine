@@ -26,6 +26,11 @@ namespace elements {
 			state.linearVelocity = Eigen::Vector3d::Zero();
 			state.angularVelocity = Eigen::Vector3d::Zero();
 
+			state.mass = 1.0; // in kg
+			state.inertia = Eigen::Matrix3d::Identity();
+			state.forces = Eigen::Vector3d::Zero();
+			state.torques = Eigen::Vector3d::Zero();
+
 			// For testing rotation around Y:
 			state.angularVelocity.y() = 1.0;   // 1 rad/s
 		}
