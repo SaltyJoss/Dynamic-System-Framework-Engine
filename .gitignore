@@ -469,3 +469,7 @@ vcpkg_downloads/
 /Engine/assets/objects/Misc
 /Engine/assets/objects/Models/44-moon-photorealistic-2k/Supporting Files
 /Engine/assets/objects/Models/44-moon-photorealistic-2k
+/Sim_Engine/Engine/assets/objects/Models/Black_Hole
+/Sim_Engine/Engine/assets/objects/Models/Earth
+/Sim_Engine/Engine/assets/objects/Models/Solar_System
+/Sim_Engine/Engine/assets/objects/Models/Star_Cluster
