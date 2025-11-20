@@ -19,6 +19,12 @@ namespace elements {
 		glm::vec3 position{ 0.0f };
 		glm::vec3 rotation{ 0.0f }; // Euler angles
 		glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+
+		Transform()
+			: position(0), rotation(0), scale(1) {
+		}
+
+		glm::mat4 toMatrix() const;
 	};
 
 	class ENGINE_API Object : public Element {

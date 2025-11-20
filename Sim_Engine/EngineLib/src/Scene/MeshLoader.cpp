@@ -14,7 +14,7 @@
 
 namespace gui {
 	std::vector<std::shared_ptr<elements::Mesh>> MeshLoader::load(const std::string& filepath) {
-		std::vector<std::shared_ptr<elements::Mesh>> result;
+		_imported.clear();
 
 		const uint32_t importFlags =
 			aiProcess_Triangulate |
@@ -28,22 +28,37 @@ namespace gui {
 		const aiScene* scene = importer.ReadFile(filepath.c_str(), importFlags);
 		if (!scene || !scene->mRootNode) {
 			LOG_ERROR("Failed to load mesh from %s: %s", filepath.c_str(), importer.GetErrorString());
-			return result;
+			return {};
 		}
 
-		processNode(scene->mRootNode, scene, result);
-		return result;
+		glm::mat4 rootTransform(1.0f);
+		processNode(scene->mRootNode, scene, rootTransform);
+
+		return _imported;
 	}
 
-	void MeshLoader::processNode(aiNode* node, const aiScene* scene, std::vector<std::shared_ptr<elements::Mesh>>& out) {
-		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-			aiMesh* aiMesh = scene->mMeshes[node->mMeshes[i]];
-			auto mesh = processMesh(aiMesh);
-			if (mesh) { out.push_back(mesh); }
-				
+	void MeshLoader::processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform) {
+		// convert aiMatrix4x4s to glm::mat4
+		aiMatrix4x4 a = node->mTransformation;
+		glm::mat4 nodeTransform = glm::mat4(
+			a.a1, a.b1, a.c1, a.d1,
+			a.a2, a.b2, a.c2, a.d2,
+			a.a3, a.b3, a.c3, a.d3,
+			a.a4, a.b4, a.c4, a.d4
+		);
+
+		glm::mat4 globalTransform = parentTransform * nodeTransform;
+
+		// Process meshes in this node
+		for (unsigned int i = 0; i < node->mNumMeshes; i++)
+		{
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			auto m = processMesh(mesh);
+			m->localTransform = globalTransform;   // <-- IMPORTANT
+			_imported.push_back(std::move(m));
 		}
 		for (unsigned int i = 0; i < node->mNumChildren; i++) {
-			processNode(node->mChildren[i], scene, out);
+			processNode(node->mChildren[i], scene, globalTransform);
 		}
 	}
 

@@ -26,6 +26,6 @@ namespace gui {
 		std::vector<std::shared_ptr<elements::Mesh>> _imported;
 		std::shared_ptr<elements::Mesh> processMesh(aiMesh* mesh);
 
-		void processNode(aiNode* node, const aiScene* scene, std::vector<std::shared_ptr<elements::Mesh>>& out);
+		void processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform);
 	};
 }

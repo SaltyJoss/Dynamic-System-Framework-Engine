@@ -378,14 +378,7 @@ namespace gui{
 				);
 			}
 
-			glm::mat4 model(1.0f);
-
-			model = glm::translate(model, obj->transform.position);
-			model = model * glm::yawPitchRoll(
-				obj->transform.rotation.y,
-				obj->transform.rotation.x,
-				obj->transform.rotation.z
-			);
+			glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
 
 			_shader->setMat4(model, "model");
 
@@ -440,14 +433,7 @@ namespace gui{
 			for (auto& obj : _objects) {
 				if (!obj || !obj->getMesh()) continue;
 
-				glm::mat4 model(1.0f);
-
-				model = glm::translate(model, obj->transform.position);
-				model = model * glm::yawPitchRoll(
-					obj->transform.rotation.y,
-					obj->transform.rotation.x,
-					obj->transform.rotation.z
-				);
+				glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
 
 				_shadowShader->setMat4(model, "model");
 				obj->getMesh()->render();

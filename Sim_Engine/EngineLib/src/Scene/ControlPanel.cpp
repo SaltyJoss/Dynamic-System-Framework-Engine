@@ -81,21 +81,29 @@ namespace gui {
         double minMass = 0.25; double maxMass = 100.0;
         ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
 
+		ImGui::Separator();
+
+        ImGui::Text("Scale:");
+        double minScale = 0.01; double maxScale = 100.0;
+        ImGui::DragScalar("(x-axis)", ImGuiDataType_Double, &_obj->transform.scale.x, 0.025f, &minScale, &maxScale);
+        ImGui::DragScalar("(y-axis)", ImGuiDataType_Double, &_obj->transform.scale.y, 0.025f, &minScale, &maxScale);
+        ImGui::DragScalar("(z-axis)", ImGuiDataType_Double, &_obj->transform.scale.z, 0.025f, &minScale, &maxScale);
+
         ImGui::Separator();
 
         ImGui::Text("Linear Velocity:");
         double minVelocity = -100.0; double maxVelocity = 100.0;
-        ImGui::DragScalar("(x-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
-        ImGui::DragScalar("(y-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
-        ImGui::DragScalar("(z-axis)", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
+        ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
+        ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
+        ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
 
         ImGui::Separator();
 
         ImGui::Text("Angular Velocity:");
         double minTorque = -100.0; double maxTorque = 100.0;
-        ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
-        ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
-        ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
+        ImGui::DragScalar("(x-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
+        ImGui::DragScalar("(y-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
+        ImGui::DragScalar("(z-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
 
         ImGui::Separator();
 
