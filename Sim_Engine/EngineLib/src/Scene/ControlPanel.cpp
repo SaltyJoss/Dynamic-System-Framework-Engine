@@ -126,14 +126,13 @@ void gui::ControlPanel::renderStats() {
             ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
             ImGui::TableSetColumnIndex(1);
             ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f",
-                glm::degrees(rot.x * (180 / PI)),
-                glm::degrees(rot.y * (180 / PI)),
-                glm::degrees(rot.z * (180 / PI)));
+                glm::degrees(rot.x),
+                glm::degrees(rot.y),
+                glm::degrees(rot.z));
 
             ImGui::EndTable();
         }
 
-        // You can add more simulation data later:
         // Velocity, acceleration, forces, torque, mass…
     }
 }

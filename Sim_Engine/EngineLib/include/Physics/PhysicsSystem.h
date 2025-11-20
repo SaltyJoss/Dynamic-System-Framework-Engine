@@ -2,6 +2,7 @@
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <integrators/numerical_integrators.h>
+#include "const_math.h"
 
 #include <memory>
 #include <string>
@@ -17,6 +18,10 @@ using namespace integration;
 
 namespace elements {
 	class Mesh;
+}
+
+namespace constants {
+	class PhysConstants;
 }
 
 namespace physics {
@@ -52,6 +57,7 @@ namespace physics {
 		
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
+		constants::MathConstants _const;
 
 		Eigen::Vector3d _gravity = Eigen::Vector3d(0.0f, -9.81f, 0.0f);
 

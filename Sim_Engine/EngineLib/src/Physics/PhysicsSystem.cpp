@@ -4,6 +4,7 @@
 
 #include "Scene/Mesh.h"
 #include "integrators/Integration.h"
+#include "const_phys.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -45,11 +46,43 @@ namespace physics {
 
 		auto& s = obj->state;
 
-		s.theta += s.angularVelocity.y() * dt;
-		obj->getMesh()->_rotation.x = (float)s.theta;
-		obj->getMesh()->_rotation.y = (float)s.theta;
-		obj->getMesh()->_rotation.z = (float)s.theta;
+		// state vector = [theta_x, theta_y, theta_z]
+		Eigen::VectorXd x(3);
+		x(0) = s.theta.x();
+		x(1) = s.theta.y();
+		x(2) = s.theta.z();
 
+		// derivative = angular velocity (rad/s)
+		Eigen::VectorXd dxdt(3);
+		dxdt(0) = s.angularVelocity.x();
+		dxdt(1) = s.angularVelocity.y();
+		dxdt(2) = s.angularVelocity.z();
+
+		// Euler integrate using your ODE helper
+		Eigen::VectorXd next = _ODE->eulerStep(x, dxdt, dt);
+
+		// write back to state
+		s.theta.x() = next(0);
+		s.theta.y() = next(1);
+		s.theta.z() = next(2);
+
+		// --- WRAP ANGLES INTO [-pi, pi] OR [0, 2pi] ---
+		auto wrapRad = [](double a) -> double {
+			a = fmod(a, constants::PhysConstants::TWO_PI);
+			if (a < 0.0) a += constants::PhysConstants::TWO_PI;
+			return a;
+			};
+
+		s.theta.x() = wrapRad(s.theta.x());
+		s.theta.y() = wrapRad(s.theta.y());
+		s.theta.z() = wrapRad(s.theta.z());
+
+		// sync to mesh (still radians!)
+		auto mesh = obj->getMesh();
+		mesh->_rotation.x = static_cast<float>(s.theta.x());
+		mesh->_rotation.y = static_cast<float>(s.theta.y());
+		mesh->_rotation.z = static_cast<float>(s.theta.z());
+		
 		// Debug logging
 		//_logTimer += dt;
 

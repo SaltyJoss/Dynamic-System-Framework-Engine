@@ -114,6 +114,8 @@
     <ClInclude Include="..\External\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\External\MathLib\include\const_math.h" />
+    <ClInclude Include="..\External\MathLib\include\const_phys.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\Integration.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h" />
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />

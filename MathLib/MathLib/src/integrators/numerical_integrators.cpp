@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "integrators/numerical_integrators.h"
 
-#pragma message("MATHLIB_BUILD = " _CRT_STRINGIZE(MATHLIB_BUILD))
-#pragma message("MATHLIB_API = " _CRT_STRINGIZE(MATHLIB_API))
-
 // Numerical integration methods
 namespace integration {
 	// Ordinary Differential Equation (ODE) solvers
@@ -33,6 +30,12 @@ namespace integration {
 	// ----------------------------------------------------------------
 	// Finite Difference Method
 	VectorXd PDE::fdmStep(const VectorXd& u, double dx, double dt, double alpha) {
-		/*stub*/
+		int n = u.size();
+		VectorXd u_new = u;
+		double r = alpha * dt / (dx * dx);
+		for (int i = 1; i < n - 1; ++i) {
+			u_new(i) = u(i) + r * (u(i + 1) - 2 * u(i) + u(i - 1));
+		}
+		return u_new;
 	}
 }

@@ -7,7 +7,7 @@
 namespace physics {
 	// public struct for physical states
 	struct ENGINE_API PhysicsState {
-		double theta;						// Orientation angle around a fixed axis (e.g., for 2D rotation)
+		Eigen::Vector3d theta;						// Orientation angle around a fixed axis (e.g., for 2D rotation)
 		Eigen::Vector3d linearVelocity;		// Velocity of the object's center of mass
 		Eigen::Vector3d angularVelocity;	// Angular velocity vector
 

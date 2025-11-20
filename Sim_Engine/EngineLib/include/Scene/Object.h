@@ -22,7 +22,7 @@ namespace elements {
 		Object(std::shared_ptr<elements::Mesh> mesh) : _mesh(mesh), _position(0.0f), 
 			_rotation(0.0f), _distance(5.0f), _lastMousePos(0.0f) 
 		{
-			state.theta = 0.0;
+			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();
 			state.angularVelocity = Eigen::Vector3d::Zero();
 
@@ -36,7 +36,7 @@ namespace elements {
 			_position = { 0.0f, 0.0f, 0.0f };
 			_rotation = { 0.0f, 0.0f, 0.0f };
 			
-			state.theta = 0.0;
+			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();
 			state.angularVelocity = Eigen::Vector3d::Zero();
 

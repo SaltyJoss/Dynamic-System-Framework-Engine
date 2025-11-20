@@ -231,6 +231,12 @@
     <ClInclude Include="include\Physics\PhysicsState.h">
       <Filter>Header Files\include\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\const_math.h">
+      <Filter>External\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\const_phys.h">
+      <Filter>External\MathLib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
