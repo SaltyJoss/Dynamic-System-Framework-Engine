@@ -130,6 +130,8 @@ namespace gui {
 
         std::shared_ptr<elements::Mesh> _mesh;
         std::shared_ptr<elements::Object> _object;
+	    std::vector<std::unique_ptr<elements::Object>> _objects;
+        elements::Object* _selectedObject = nullptr;
 
         std::shared_ptr<elements::Mesh> _checkerPlane;
         std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);

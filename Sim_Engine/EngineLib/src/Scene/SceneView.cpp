@@ -140,11 +140,17 @@ namespace gui{
 //			    MESH LOADING & GEOMETRY
 // --------------------------------------------------
 	void SceneView::loadMesh(const std::string& filepath) {
-		if (!_mesh) _mesh = std::make_shared<elements::Mesh>();
-		else _mesh->clear(); // implement clear() to delete VAO/VBO etc.
+		_mesh = std::make_shared<elements::Mesh>();
 		_mesh->load(filepath);
 
-		_mesh->_position = glm::vec3(0.0f);
+		auto obj = std::make_unique<elements::Object>(_mesh);
+		obj->state.theta = Eigen::Vector3d::Zero();
+		obj->state.angularVelocity = Eigen::Vector3d::Zero();
+		obj->state.linearVelocity = Eigen::Vector3d::Zero();
+		
+		// Add object to scene
+		_selectedObject = obj.get();
+		_objects.push_back(std::move(obj));
 
 		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
 	}
@@ -346,25 +352,24 @@ namespace gui{
 		//	_checkerPlane->render();
 		//}
 
-		if (_object && _object->getMesh()) {
+		for (auto& obj : _objects) {
+			if (!obj || !obj->getMesh()) continue;
 			updatePhysics(0.00833); // temp fixed timestep at 60fps
 
-			if (_cameraFollowTarget) {
-				glm::vec3 pos = _cameraFollowTarget->getMesh()->_position;
-				glm::vec3 rot = _cameraFollowTarget->getMesh()->_rotation;
-
-				_camera->setFollowTarget(pos, rot);
+			if (_cameraFollowTarget == obj.get()) {
+				_camera->setFollowTarget(
+					obj->getMesh()->_position,
+					obj->getMesh()->_rotation
+				);
 			}
-
-			_camera->update(_shader.get());
 
 			glm::mat4 model(1.0f);
 
-			model = glm::translate(model, _object->getMesh()->_position);
+			model = glm::translate(model, obj->getMesh()->_position);
 			model = model * glm::yawPitchRoll(
-				_object->getMesh()->_rotation.y,
-				_object->getMesh()->_rotation.x,
-				_object->getMesh()->_rotation.z
+				obj->getMesh()->_rotation.y,
+				obj->getMesh()->_rotation.x,
+				obj->getMesh()->_rotation.z
 			);
 
 			_shader->setMat4(model, "model");
@@ -377,8 +382,8 @@ namespace gui{
 			_shader->setFlt1(1.0f, "ao");
 			_shader->setBool(false, "useTexture");                     // ignore albedoTex for now
 
-			_object->getMesh()->update(_shader.get());
-			_object->getMesh()->render();
+			obj->getMesh()->update(_shader.get());
+			obj->getMesh()->render();
 		}
 	}
 
@@ -417,18 +422,19 @@ namespace gui{
 			}
 
 			// main mesh
-			if (_object && _object->getMesh()) {
-				glm::mat4 model(1.0f);
+			for (auto& obj : _objects) {
+				if (!obj || !obj->getMesh()) continue;
 
-				model = glm::translate(model, _object->getMesh()->_position);
-				model = model * glm::yawPitchRoll(
-					_object->getMesh()->_rotation.y,
-					_object->getMesh()->_rotation.x,
-					_object->getMesh()->_rotation.z
+				glm::mat4 model(1.0f);
+				model = glm::translate(model, obj->getMesh()->_position);
+				model *= glm::yawPitchRoll(
+					obj->getMesh()->_rotation.y,
+					obj->getMesh()->_rotation.x,
+					obj->getMesh()->_rotation.z
 				);
 
 				_shadowShader->setMat4(model, "model");
-				_object->getMesh()->render();
+				obj->getMesh()->render();
 			}
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
