@@ -15,37 +15,49 @@
 extern ENGINE_API Debug gLog;
 
 namespace elements {
+	struct Transform {
+		glm::vec3 position{ 0.0f };
+		glm::vec3 rotation{ 0.0f }; // Euler angles
+		glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+	};
+
 	class ENGINE_API Object : public Element {
 	public:
+		Transform transform;
 		physics::PhysicsState state;
 
-		Object(std::shared_ptr<elements::Mesh> mesh) : _mesh(mesh), _position(0.0f), 
-			_rotation(0.0f), _distance(5.0f), _lastMousePos(0.0f) 
+		explicit Object(std::shared_ptr<Mesh> mesh)
+			: _mesh(std::move(mesh))
 		{
+			transform.position = glm::vec3(0.0f);
+			transform.rotation = glm::vec3(0.0f);
+			transform.scale = glm::vec3(1.0f);  // if you have it
+
 			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();
 			state.angularVelocity = Eigen::Vector3d::Zero();
-
-			state.mass = 1.0; // in kg
-			state.inertia = Eigen::Matrix3d::Identity();
-			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();			
-		}
-
-		void reset() {
-			_position = { 0.0f, 0.0f, 0.0f };
-			_rotation = { 0.0f, 0.0f, 0.0f };
-			
-			state.theta = Eigen::Vector3d::Zero();
-			state.linearVelocity = Eigen::Vector3d::Zero();
-			state.angularVelocity = Eigen::Vector3d::Zero();
-
-			state.mass = 1.0; // in kg
+			state.mass = 1.0;
 			state.inertia = Eigen::Matrix3d::Identity();
 			state.forces = Eigen::Vector3d::Zero();
 			state.torques = Eigen::Vector3d::Zero();
+		}
 
-			applyTransformToMesh();
+		Mesh* getMesh() { return _mesh.get(); }
+		const Mesh* getMesh() const { return _mesh.get(); }
+
+		void update(shaders::Shader* shader) override {
+			if (_mesh) _mesh->update(shader);
+		}
+
+		void reset() {
+			transform.position = glm::vec3(0.0f);
+			transform.rotation = glm::vec3(0.0f);
+
+			state.theta = Eigen::Vector3d::Zero();
+			state.linearVelocity = Eigen::Vector3d::Zero();
+			state.angularVelocity = Eigen::Vector3d::Zero();
+			state.forces = Eigen::Vector3d::Zero();
+			state.torques = Eigen::Vector3d::Zero();
 		}
 
 		void onMouseWheel(double delta) { _distance += delta * 0.5f; }
@@ -57,46 +69,25 @@ namespace elements {
 
 			if (button == eInputButton::Right) {
 				delta *= 0.004f;
-				_rotation.x += -delta.y;
-				_rotation.y += delta.x;
+				transform.rotation.x += -delta.y;
+				transform.rotation.y += delta.x;
 
-				applyTransformToMesh();
 			}
 			else if (button == eInputButton::Left) {
 				delta *= 0.003f;
-				_position += glm::vec3(delta.x * _distance, -delta.y * _distance, 0.0f);
+				transform.position += glm::vec3(delta.x * _distance, -delta.y * _distance, 0.0f);
 
-				applyTransformToMesh();
 			}
 
 		}
 
-		void applyTransformToMesh() {
-			if (!_mesh) return;
-			_mesh->_position = _position;
-			_mesh->_rotation = _rotation;
-		}
-
-		std::shared_ptr<Mesh> getMesh() { return _mesh; }
 		void setLastMousePos(const glm::vec2& pos) { _lastMousePos = pos; }
 		glm::vec2 getLastMousePos() const { return _lastMousePos; }
 
-		void update(shaders::Shader* shader) override {
-			if (_mesh) { _mesh->update(shader); }
-		}
-
 	private:
-		std::shared_ptr<elements::Mesh> _mesh;
-
-		glm::mat4 _modelMatrix;
-		glm::vec3 _position = { 0.0f, 0.0f, 0.0f };
-		glm::vec3 _rotation = { 0.0f, 0.0f, 0.0f };
-
+		std::shared_ptr<Mesh> _mesh;
+		glm::vec2 _lastMousePos{ 0.0f };
 		float _distance = 5.0f;
-
-		const float _rotationSpeed = 2.0f;
-
-		glm::vec2 _lastMousePos;
 
 	};
 }

@@ -9,6 +9,10 @@ extern ENGINE_API Debug gLog;
 namespace elements {
 	class ENGINE_API Element {
 	public:
-		virtual void update(shaders::Shader* shader) = 0;
+		virtual ~Element() = default;
+
+		virtual void update(shaders::Shader* shader) {
+			// nothing by default
+		}
 	};
 }

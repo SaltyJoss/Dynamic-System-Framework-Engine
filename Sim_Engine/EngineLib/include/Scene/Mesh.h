@@ -1,5 +1,8 @@
 #pragma once
 #include "EngineCore.h"
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #include "Rendering/RenderBase.h"
 #include "Scene/VertexHolder.h"
@@ -10,48 +13,46 @@
 
 extern ENGINE_API Debug gLog;
 
+namespace render {
+	class VertexIndexBuffer;
+}
+
 namespace elements {
-	class ENGINE_API Mesh : public Element {
+	class ENGINE_API Mesh {
 	public:
 		Mesh() = default;
 		
-		virtual ~Mesh();
+		//load
+		bool load(const std::string& filepath);
 
-		bool load(const std::string& path);
+		// CPU buffers
+		std::vector<VertexHolder> _vertices;
+		std::vector<unsigned int> _indices;
+
 		void addVertex(const VertexHolder& vertex) { _vertices.push_back(vertex); }
-		void addVertexIndex(unsigned int vertexIndx) { _vertexIndices.push_back(vertexIndx); }
-		
+		void addVertexIndex(unsigned int vertexIndx) { _indices.push_back(vertexIndx); }
+
+		// GPU
 		void init();
 		void createBuffers();
 		void deleteBuffers();
-		void render();
 		void bind();
 		void unbind();
-		void clear();
+		void render();
+		void clean();
 
-		std::vector<unsigned int> getVertexIndices() { return _vertexIndices; }
-
-		void update(shaders::Shader* shader) override {	// will use for specifying objects colour and texture
+		// Update
+		void update(shaders::Shader* shader) {	// will use for specifying objects colour and texture
 			shader->setVec3(_colour, "albedo");
 			shader->setFlt1(_metallic, "metallic");
 			shader->setFlt1(1.0f, "ao");
 		}
 
-		void integrate(float dt, float floorY = 0.0f);
-
-		glm::vec3 _position = glm::vec3(0.0f);
-		glm::vec3 _rotation = glm::vec3(0.0f);
-		glm::vec3 _velocity = glm::vec3(0.0f);
-		glm::vec3 _acceleration = glm::vec3(0.0f);
 		glm::vec3 _colour = { 0.0f, 0.0f, 1.0f };
-
 		float _metallic = 0.1; // When rotating could be useful for seeing rotations with respect to a fixed light source.
 		bool _isStatic = false; // true for floor or immovable meshes
 
 	private:
 		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
-		
-		std::vector<VertexHolder> _vertices;
-		std::vector<unsigned int> _vertexIndices;
 	};
 }

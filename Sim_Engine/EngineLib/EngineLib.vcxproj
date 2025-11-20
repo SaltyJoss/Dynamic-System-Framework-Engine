@@ -153,6 +153,7 @@
     <ClInclude Include="include\Scene\Input.h" />
     <ClInclude Include="include\Scene\Light.h" />
     <ClInclude Include="include\Scene\Mesh.h" />
+    <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
     <ClInclude Include="include\Scene\SceneView.h" />
     <ClInclude Include="include\Scene\Styles.h" />
@@ -240,6 +241,7 @@
     <ClCompile Include="src\Scene\DebugPanel.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />
     <ClCompile Include="src\Scene\Mesh.cpp" />
+    <ClCompile Include="src\Scene\MeshLoader.cpp" />
     <ClCompile Include="src\Scene\SceneView.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>

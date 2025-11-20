@@ -13,6 +13,7 @@
 
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
+#include "Scene/MeshLoader.h"
 #include "Scene/Light.h"
 #include "Physics/PhysicsSystem.h"
 
@@ -64,7 +65,7 @@ namespace gui{
 
 		_physics = std::make_unique<physics::PhysicsSystem>();
 
-		if (_checkerPlane) _checkerPlane->clear();
+		if (_checkerPlane) _checkerPlane->clean();
 		_checkerPlane = createCheckerPlane(50.0f);
 		planeY = 2.5f;
 
@@ -76,8 +77,8 @@ namespace gui{
 	{
 		_shader->unload();
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
-		if (_mesh) _mesh->clear();
-		if (_checkerPlane) _checkerPlane->clear();
+		if (_mesh) _mesh->clean();
+		if (_checkerPlane) _checkerPlane->clean();
 	}
 
 // --------------------------------------------------
@@ -123,8 +124,8 @@ namespace gui{
 
 		_cameraFollowTarget = obj;
 
-		glm::vec3 pos = obj->getMesh()->_position;
-		glm::vec3 rot = obj->getMesh()->_rotation;
+		glm::vec3 pos = obj->transform.position;
+		glm::vec3 rot = obj->transform.rotation;
 
 		_camera->startFollow(pos, rot, glm::vec3(0, 2, 5)); // example offset
 	}
@@ -139,19 +140,32 @@ namespace gui{
 //			    MESH LOADING & GEOMETRY
 // --------------------------------------------------
 	void SceneView::loadMesh(const std::string& filepath) {
-		_mesh = std::make_shared<elements::Mesh>();
-		_mesh->load(filepath);
+		gui::MeshLoader loader;
+		auto meshes = loader.load(filepath);
 
-		auto obj = std::make_unique<elements::Object>(_mesh);
-		obj->state.theta = Eigen::Vector3d::Zero();
-		obj->state.angularVelocity = Eigen::Vector3d::Zero();
-		obj->state.linearVelocity = Eigen::Vector3d::Zero();
-		
-		// Add object to scene
-		_selectedObject = obj.get();
-		_objects.push_back(std::move(obj));
+		if (meshes.empty()) {
+			LOG_WARN("No meshes imported from %s", filepath.c_str());
+			return;
+		}
 
-		LOG_INFO("Mesh loaded and centered from %s", filepath.c_str());
+		// For now: spawn one Object per submesh
+		for (auto& m : meshes) {
+			auto obj = std::make_unique<elements::Object>(m);
+
+			// initialise physics state
+			obj->state.theta = Eigen::Vector3d::Zero();
+			obj->state.angularVelocity = Eigen::Vector3d::Zero();
+			obj->state.linearVelocity = Eigen::Vector3d::Zero();
+			obj->state.mass = 1.0;
+			obj->state.inertia = Eigen::Matrix3d::Identity();
+			obj->state.forces = Eigen::Vector3d::Zero();
+			obj->state.torques = Eigen::Vector3d::Zero();
+
+			_selectedObject = obj.get();
+			_objects.push_back(std::move(obj));
+		}
+
+		LOG_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
 	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
@@ -359,18 +373,18 @@ namespace gui{
 
 			if (_cameraFollowTarget == obj.get()) {
 				_camera->setFollowTarget(
-					obj->getMesh()->_position,
-					obj->getMesh()->_rotation
+					obj->transform.position,
+					obj->transform.rotation
 				);
 			}
 
 			glm::mat4 model(1.0f);
 
-			model = glm::translate(model, obj->getMesh()->_position);
+			model = glm::translate(model, obj->transform.position);
 			model = model * glm::yawPitchRoll(
-				obj->getMesh()->_rotation.y,
-				obj->getMesh()->_rotation.x,
-				obj->getMesh()->_rotation.z
+				obj->transform.rotation.y,
+				obj->transform.rotation.x,
+				obj->transform.rotation.z
 			);
 
 			_shader->setMat4(model, "model");
@@ -406,7 +420,7 @@ namespace gui{
 			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
 			int baseRes = 4096;
-			int res = baseRes >> i;   // 4096, 2048
+			int res = baseRes >> i;   // 4096, 4096
 			glViewport(0, 0, res, res);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
@@ -427,11 +441,12 @@ namespace gui{
 				if (!obj || !obj->getMesh()) continue;
 
 				glm::mat4 model(1.0f);
-				model = glm::translate(model, obj->getMesh()->_position);
-				model *= glm::yawPitchRoll(
-					obj->getMesh()->_rotation.y,
-					obj->getMesh()->_rotation.x,
-					obj->getMesh()->_rotation.z
+
+				model = glm::translate(model, obj->transform.position);
+				model = model * glm::yawPitchRoll(
+					obj->transform.rotation.y,
+					obj->transform.rotation.x,
+					obj->transform.rotation.z
 				);
 
 				_shadowShader->setMat4(model, "model");
@@ -606,10 +621,11 @@ namespace gui{
 	}
 
 	void SceneView::onMouseWheel(double delta) {
+		auto* obj = _selectedObject;
 		if (!_isHovered) return;
 
 		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (ctrlMode == ControlMode::Object && _mesh) _mesh->_position.z += (float)delta * 0.1f;
+		else if (ctrlMode == ControlMode::Object && _mesh) obj->transform.position.z += (float)delta * 0.1f;
 	}
 
 

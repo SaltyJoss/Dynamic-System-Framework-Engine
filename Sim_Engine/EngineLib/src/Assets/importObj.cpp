@@ -9,62 +9,91 @@
 
 namespace mesh_import
 {
-  bool ObjMeshImporter::fromFile(const std::string& filepath, elements::Mesh* pMesh)
-  {
-    std::ifstream in(filepath, std::ios::in);
-    if (!in) {
-      LOG_ERROR("Failed to open OBJ file: %s", filepath.c_str());
-      return false;
-    }
-
-    LOG_INFO("Importing OBJ file: %s", filepath.c_str());
-
-    std::vector<glm::vec3> t_vert;
-    std::string s_line;
-
-    while (std::getline(in, s_line)) {
-      std::istringstream ss_line(s_line);
-      std::string id;
-      ss_line >> id;
-
-      if (id == "v") {
-        glm::vec3 v;
-
-        ss_line >> v.x >> v.y >> v.z;
-
-        t_vert.push_back(v);
-      }
-
-      // Faces
-      else if (id == "f") {
-        std::string v1, v2, v3;
-        ss_line >> v1 >> v2 >> v3;
-
-        uint32_t vert_idx[3];
-        vert_idx[0] = utils::tokenize(v1, '/').at(0);
-        vert_idx[1] = utils::tokenize(v2, '/').at(0);
-        vert_idx[2] = utils::tokenize(v3, '/').at(0);
-
-        pMesh->addVertexIndex(vert_idx[0] - 1);
-        pMesh->addVertexIndex(vert_idx[1] - 1);
-        pMesh->addVertexIndex(vert_idx[2] - 1);
-
-      }
-    }
-
-    // Now use the indices to create the concrete vertices for the mesh
-    for (auto v_idx : pMesh->getVertexIndices()) {
-        if (v_idx < t_vert.size()) {
-            glm::vec3 vertex = t_vert[v_idx];
-            elements::VertexHolder vh(vertex, glm::vec3(0.0f, 0.0f, 0.0f)); // default normal
-            pMesh->addVertex(vh);  // now types match
+    bool ObjMeshImporter::fromFile(const std::string& filepath, elements::Mesh* pMesh)
+    {
+        if (!pMesh) {
+            LOG_ERROR("OBJ importer: pMesh was NULL");
+            return false;
         }
-        else {
-            LOG_WARN_ONCE("Vertex index out of range: %u", v_idx);
+
+        std::ifstream in(filepath);
+        if (!in.is_open()) {
+            LOG_ERROR("Failed to open OBJ file: %s", filepath.c_str());
+            return false;
         }
-    } 
-    
-    LOG_INFO("OBJ import completed: %s", filepath.c_str());
-    return true;
-  }
+
+        LOG_INFO("Importing OBJ file: %s", filepath.c_str());
+
+        // Temporary OBJ attribute arrays
+        std::vector<glm::vec3> temp_positions;
+        std::vector<glm::vec3> temp_normals;
+        std::vector<glm::vec2> temp_uvs;
+
+        pMesh->clean();  // wipe old mesh data
+
+        std::string line;
+        while (std::getline(in, line))
+        {
+            std::istringstream ss(line);
+            std::string header;
+            ss >> header;
+
+			// Vertex position
+            if (header == "v") {
+                glm::vec3 pos;
+                ss >> pos.x >> pos.y >> pos.z;
+                temp_positions.push_back(pos);
+            }
+
+			// Texture coordinate
+            else if (header == "vt") {
+                glm::vec2 uv;
+                ss >> uv.x >> uv.y;
+                temp_uvs.push_back(uv);
+            }
+
+			// Vertex normal
+            else if (header == "vn") {
+                glm::vec3 n;
+                ss >> n.x >> n.y >> n.z;
+                temp_normals.push_back(n);
+            }
+
+			// Face
+            else if (header == "f")
+            {
+                std::string f1, f2, f3;
+                ss >> f1 >> f2 >> f3;
+                std::vector<std::string> faces = { f1, f2, f3 };
+
+                for (auto& f : faces)
+                {
+                    auto toks = utils::tokenize(f, '/');
+
+                    int vIdx = toks.size() > 0 ? (int)toks[0] - 1 : -1;
+                    int vtIdx = toks.size() > 1 ? (int)toks[1] - 1 : -1;
+                    int vnIdx = toks.size() > 2 ? (int)toks[2] - 1 : -1;
+
+                    if (vIdx < 0 || vIdx >= temp_positions.size()) {
+                        LOG_WARN("OBJ face index out of range (v = %d)", vIdx);
+                        continue;
+                    }
+
+                    glm::vec3 pos = temp_positions[vIdx];
+                    glm::vec3 normal = (vnIdx >= 0 && vnIdx < temp_normals.size()) ? temp_normals[vnIdx] : glm::vec3(0);
+                    glm::vec2 uv = (vtIdx >= 0 && vtIdx < temp_uvs.size()) ? temp_uvs[vtIdx] : glm::vec2(0);
+
+                    // Push vertex
+                    pMesh->_vertices.emplace_back(pos, normal, uv);
+                    // Push index
+                    pMesh->_indices.push_back((unsigned int)pMesh->_vertices.size() - 1);
+                }
+            }
+        }
+
+        LOG_INFO("OBJ import finished. Vertices: %zu  Indices: %zu",
+            pMesh->_vertices.size(), pMesh->_indices.size());
+
+        return true;
+    }
 }

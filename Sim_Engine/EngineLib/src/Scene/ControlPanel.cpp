@@ -116,8 +116,8 @@ namespace gui {
         ImGui::SeparatorText("Simulation Statistics");
         if (_obj && _obj->getMesh())
         {
-            const glm::vec3& pos = _obj->getMesh()->_position;
-            const glm::vec3& rot = _obj->getMesh()->_rotation; // radians most likely
+            const glm::vec3& pos = _obj->transform.position;
+            const glm::vec3& rot = _obj->transform.rotation; // radians most likely
 
             ImGui::SeparatorText("Telemetry");
 

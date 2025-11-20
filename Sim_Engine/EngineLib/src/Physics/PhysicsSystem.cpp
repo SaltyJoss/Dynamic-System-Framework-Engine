@@ -79,16 +79,14 @@ namespace physics {
 		s.theta.z() = wrapRad(s.theta.z());
 
 		// sync to mesh (still radians!)
-		auto mesh = obj->getMesh();
-		mesh->_rotation.x = static_cast<float>(s.theta.x());
-		mesh->_rotation.y = static_cast<float>(s.theta.y());
-		mesh->_rotation.z = static_cast<float>(s.theta.z());
+		obj->transform.rotation.x = static_cast<float>(s.theta.x());
+		obj->transform.rotation.y = static_cast<float>(s.theta.y());
+		obj->transform.rotation.z = static_cast<float>(s.theta.z());
 		
 		// Debug logging
 		//_logTimer += dt;
-
 		//if (_logTimer >= 0.2) { // print every 0.2 seconds (5 logs per sec)
-		//	LOG_INFO("theta = %f", theta);
+		//	LOG_INFO("theta = %f", s.theta);
 		//	_logTimer = 0.0;
 		//}
 	}
@@ -101,8 +99,7 @@ namespace physics {
 		// v * dt is displacement
 		Eigen::Vector3d dp = s.linearVelocity * dt;
 
-		auto mesh = obj->getMesh();
-		mesh->_position += glm::vec3(dp.x(), dp.y(), dp.z());
+		obj->transform.position += glm::vec3(dp.x(), dp.y(), dp.z());
 	}
 
 	// FORCE APPLICATION
