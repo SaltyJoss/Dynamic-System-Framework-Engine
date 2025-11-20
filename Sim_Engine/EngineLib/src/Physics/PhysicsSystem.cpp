@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Physics/PhysicsSystem.h"
 
+#include "Scene/Object.h"
 #include "Scene/Mesh.h"
 #include "integrators/Integration.h"
 #include "const_phys.h"

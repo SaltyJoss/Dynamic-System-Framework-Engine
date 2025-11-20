@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "Scene/Object.h"
 #include "Scene/SceneView.h"
 
 #ifdef __gl_h_
@@ -13,7 +14,6 @@
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/Light.h"
-#include "Scene/Object.h"
 #include "Physics/PhysicsSystem.h"
 
 #include "Rendering/SkyboxRenderer.h"
@@ -63,7 +63,6 @@ namespace gui{
 		_mesh->init();
 
 		_physics = std::make_unique<physics::PhysicsSystem>();
-		_object = std::make_shared<elements::Object>(_mesh);
 
 		if (_checkerPlane) _checkerPlane->clear();
 		_checkerPlane = createCheckerPlane(50.0f);
@@ -242,16 +241,18 @@ namespace gui{
 // --------------------------------------------------
 //						PHYSICS
 // --------------------------------------------------
-	// To be updated, very basic physics for testing and demo purposes
 	void gui::SceneView::updatePhysics(double dt) {
-		_physics->update(dt, _object.get());
+		// Update each object's physics state
+		for (auto& obj : _objects) {
+			if (obj) { _physics->update(dt, obj.get()); }
+		}
 	}
 
 // --------------------------------------------------
 //			 INTERNAL REDNDERING PIPELINE
 // --------------------------------------------------
 	void SceneView::InitShadowResource() {
-		int shadowRes[NUM_CASCADES] = { 4096, 2048 };
+		int shadowRes[NUM_CASCADES] = { 4096, 4096 };
 
 		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
 		glGenTextures(NUM_CASCADES, _cascadeDepth);
@@ -579,8 +580,8 @@ namespace gui{
 		if (ctrlMode == ControlMode::Camera) {
 			_camera->processMouseMovement(xoffset, yoffset);
 		}
-		else if (ctrlMode == ControlMode::Object && _object) {
-			_object->onMouseMove(xpos, ypos, elements::eInputButton::Right);
+		else if (ctrlMode == ControlMode::Object && _selectedObject) {
+			_selectedObject->onMouseMove(xpos, ypos, elements::eInputButton::Right);
 		}
 	}
 
@@ -592,15 +593,15 @@ namespace gui{
 
 		if (!_isHovered) {
 			_camera->setCurrentPos2D(pos2d);
-			_object->setLastMousePos(pos2d);
+			_selectedObject->setLastMousePos(pos2d);
 			return;
 		}
 
 		if (ctrlMode == ControlMode::Camera) {
 			_camera->onMouseMove(x, y, button);
 		}
-		else if (ctrlMode == ControlMode::Object && _object) {
-			_object->onMouseMove(x, y, button);
+		else if (ctrlMode == ControlMode::Object && _selectedObject) {
+			_selectedObject->onMouseMove(x, y, button);
 		}
 	}
 

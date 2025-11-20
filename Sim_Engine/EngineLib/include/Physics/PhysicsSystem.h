@@ -18,6 +18,7 @@ using namespace integration;
 
 namespace elements {
 	class Mesh;
+	class Object;
 }
 
 namespace constants {

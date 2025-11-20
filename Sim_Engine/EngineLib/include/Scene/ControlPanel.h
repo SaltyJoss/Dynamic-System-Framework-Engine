@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
+#include "Scene/Object.h"
 #include "Scene/SceneView.h"
 #include "Scene/Light.h"
 #include "Platform/Logger.h"
@@ -14,7 +15,11 @@ extern ENGINE_API Debug gLog;
 namespace gui {
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(SceneView* sceneView) : _sceneView(sceneView), _controlMode(&sceneView->ctrlMode) {
+        ControlPanel(SceneView* sceneView) : 
+            _sceneView(sceneView), _controlMode(&sceneView->ctrlMode),
+            _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+            _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal) 
+        {
             _currentMeshFile = "<...>";
             _currentHDRFile = "<...>";
 
@@ -38,6 +43,9 @@ namespace gui {
         void renderLinkProperties();
         void renderDisplaySettings();
         void renderStats();
+
+        void renderHierarchy(SceneView* view);
+        void renderSceneObjects();
   
         // Internal state
         bool simulationRunning = false;

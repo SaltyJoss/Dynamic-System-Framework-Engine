@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
+#include "Scene/Object.h"
 #include "Scene/Input.h"
 #include "FpsCounter.h"
 #include "Platform/Logger.h"
@@ -86,7 +87,21 @@ namespace gui {
         void render();
         void resize(int32_t width, int32_t height);
 
-		elements::Object* getObject() { return _object.get(); }
+		// Scene Objects Management
+		std::vector<std::unique_ptr<elements::Object>>& getObjects() { return _objects; }
+        elements::Object* getObject() { return _selectedObject; }
+        void setSelectedObject(elements::Object* obj) { _selectedObject = obj; }
+
+        void deleteObject(int index) {
+            if (index < 0 || index >= _objects.size()) return;
+
+            // if the selected object is being erased, clear selection
+            if (_selectedObject == _objects[index].get()) {
+                _selectedObject = nullptr;
+            }
+
+            _objects.erase(_objects.begin() + index);
+        }
 
 
         // Physics
@@ -129,7 +144,6 @@ namespace gui {
         elements::Object* _cameraFollowTarget = nullptr;
 
         std::shared_ptr<elements::Mesh> _mesh;
-        std::shared_ptr<elements::Object> _object;
 	    std::vector<std::unique_ptr<elements::Object>> _objects;
         elements::Object* _selectedObject = nullptr;
 
