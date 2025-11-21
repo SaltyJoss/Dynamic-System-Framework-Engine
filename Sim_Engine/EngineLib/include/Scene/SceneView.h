@@ -95,7 +95,6 @@ namespace gui {
         void deleteObject(int index) {
             if (index < 0 || index >= _objects.size()) return;
 
-            // if the selected object is being erased, clear selection
             if (_selectedObject == _objects[index].get()) {
                 _selectedObject = nullptr;
             }

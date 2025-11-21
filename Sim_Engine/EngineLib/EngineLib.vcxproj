@@ -216,7 +216,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="include\Scene\Object.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -243,6 +242,7 @@
     <ClCompile Include="src\Scene\Input.cpp" />
     <ClCompile Include="src\Scene\Mesh.cpp" />
     <ClCompile Include="src\Scene\MeshLoader.cpp" />
+    <ClCompile Include="src\Scene\Object.cpp" />
     <ClCompile Include="src\Scene\SceneView.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>

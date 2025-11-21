@@ -18,10 +18,10 @@ namespace elements {
 	struct Transform {
 		glm::vec3 position{ 0.0f };
 		glm::vec3 rotation{ 0.0f }; // Euler angles
-		glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
 
 		Transform()
-			: position(0), rotation(0), scale(1) {
+			: position(0.0f), rotation(0.0f), scale(0.01f, 0.01f, 0.01f) {
 		}
 
 		glm::mat4 toMatrix() const;
@@ -37,7 +37,7 @@ namespace elements {
 		{
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec3(0.0f);
-			transform.scale = glm::vec3(1.0f);  // if you have it
+			transform.scale = glm::vec3(0.01f);
 
 			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();
@@ -58,6 +58,7 @@ namespace elements {
 		void reset() {
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec3(0.0f);
+			transform.scale = glm::vec3(0.01f);
 
 			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();

@@ -341,8 +341,8 @@
     <ClCompile Include="src\Scene\MeshLoader.cpp">
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="include\Scene\Object.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Scene\Object.cpp">
+      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

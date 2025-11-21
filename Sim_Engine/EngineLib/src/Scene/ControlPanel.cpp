@@ -84,10 +84,10 @@ namespace gui {
 		ImGui::Separator();
 
         ImGui::Text("Scale:");
-        double minScale = 0.01; double maxScale = 100.0;
-        ImGui::DragScalar("(x-axis)", ImGuiDataType_Double, &_obj->transform.scale.x, 0.025f, &minScale, &maxScale);
-        ImGui::DragScalar("(y-axis)", ImGuiDataType_Double, &_obj->transform.scale.y, 0.025f, &minScale, &maxScale);
-        ImGui::DragScalar("(z-axis)", ImGuiDataType_Double, &_obj->transform.scale.z, 0.025f, &minScale, &maxScale);
+        float minScale = 0.001; float maxScale = 100.0;
+        ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.01f, minScale, maxScale);
+        ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.01f, minScale, maxScale);
+        ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.01f, minScale, maxScale);
 
         ImGui::Separator();
 
