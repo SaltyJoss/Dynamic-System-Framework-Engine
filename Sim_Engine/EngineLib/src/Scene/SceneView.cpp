@@ -230,7 +230,8 @@ namespace gui{
 		glEnable(GL_DEPTH_TEST);
 
 		if (_hasRobot) {
-			glm::mat4 base = glm::translate(glm::mat4(1.0f), glm::vec3(0, -1.0f, -2.0f));
+			glm::mat4 base = glm::mat4(1.0f);
+			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
 			updateRobotKinematics(base);
 		}
 
@@ -263,7 +264,7 @@ namespace gui{
 
 	void SceneView::resize(int32_t width, int32_t height) {
 		// update camera projection
-		float aspect = (float)width / (float)height;
+		float aspect = width / height;
 		_camera->setAspect(aspect);
 		_camera->update(_shader.get());
 
@@ -318,6 +319,7 @@ namespace gui{
 			elements::Object* obj = objs[0]; // assumes one object per link
 			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
+
 			LOG_INFO("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
 		}
 		LOG_INFO("Instantiated %zu robot links", _robot.links.size());
@@ -359,16 +361,25 @@ namespace gui{
 			world[child] = world[parent] * T_offset * R_joint;
 		}
 
-		for (int i = 0; i < (int)_robot.links.size(); i++) {
+		// Update link object transforms
+		for (size_t i = 0; i < _robot.links.size(); i++) {
 			auto* obj = _robot.links[i].attachedObject;
+			auto* mesh = obj->getMesh();
+			if (!mesh) continue;
 
-			glm::vec3 pos = glm::vec3(world[i][3]);
-			glm::quat q = glm::quat_cast(world[i]);
+			// Robot-object transform is identity
+			obj->transform.position = glm::vec3(0.0f);
+			obj->transform.rotation = glm::vec3(0.0f);
+			obj->transform.scale = glm::vec3(1.0f);
 
-			LOG_INFO_ONCE("Link %s world pos: %.3f %.3f %.3f", _robot.links[i].name.c_str(), pos.x, pos.y, pos.z);
+			// Visual scale if you need the robot bigger/smaller
+			float s = _robot.scale;
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(s));
 
-			obj->transform.position = pos;
-			obj->transform.rotation = glm::eulerAngles(q);
+			// FK-driven world matrix goes straight into the mesh
+			mesh->localTransform = world[i] * S;
+
+			auto pos = glm::vec3(world[i][3]);
 		}
 	}
 
