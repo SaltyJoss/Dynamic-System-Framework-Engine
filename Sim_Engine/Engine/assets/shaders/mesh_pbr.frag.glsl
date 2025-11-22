@@ -125,6 +125,7 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 // ---- Main
 void main()
 {
+	// DO NOT DELETE ME - PBR shader template (Related to tutorial from learnopengl.com)
     // 1. Retrieve N, V, L, H
     // 2. Compute shadowAmount = computeShadowCSM(...)
     // 3. Compute direct lighting using GGX
