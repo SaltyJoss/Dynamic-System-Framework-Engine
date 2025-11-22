@@ -137,12 +137,15 @@
     <ClInclude Include="include\Rendering\CubeVertices.h" />
     <ClInclude Include="include\Rendering\GUIContext.h" />
     <ClInclude Include="include\Rendering\IBL.h" />
+    <ClInclude Include="include\Rendering\ModelGroup.h" />
     <ClInclude Include="include\Rendering\OpenGLBufferManager.h" />
     <ClInclude Include="include\Rendering\OpenGLContext.h" />
     <ClInclude Include="include\Rendering\RenderBase.h" />
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
     <ClInclude Include="include\Rendering\Texture.h" />
+    <ClInclude Include="include\Robots\RobotLoader.h" />
+    <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
     <ClInclude Include="include\Scene\DebugLogEntry.h" />
@@ -236,6 +239,7 @@
     <ClCompile Include="src\Rendering\ShaderUtil.cpp" />
     <ClCompile Include="src\Rendering\SkyboxRenderer.cpp" />
     <ClCompile Include="src\Rendering\Texture.cpp" />
+    <ClCompile Include="src\Robots\RobotLoader.cpp" />
     <ClCompile Include="src\Scene\Camera.cpp" />
     <ClCompile Include="src\Scene\ControlPanel.cpp" />
     <ClCompile Include="src\Scene\DebugPanel.cpp" />

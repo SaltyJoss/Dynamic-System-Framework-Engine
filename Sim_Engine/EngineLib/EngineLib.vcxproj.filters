@@ -73,6 +73,12 @@
     <Filter Include="Header Files\include\Physics">
       <UniqueIdentifier>{d43d5b11-cb31-46c6-b14d-141624d0bc78}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Robots">
+      <UniqueIdentifier>{1cd8b23d-b604-4e86-98b3-cb1a69d31446}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Robots">
+      <UniqueIdentifier>{b18e9a1f-2d67-4c7f-929d-03a6f3422dba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -240,6 +246,15 @@
     <ClInclude Include="include\Scene\MeshLoader.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="include\Rendering\ModelGroup.h">
+      <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotLoader.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotModel.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -343,6 +358,9 @@
     </ClCompile>
     <ClCompile Include="src\Scene\Object.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotLoader.cpp">
+      <Filter>Source Files\src\Robots</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -10,6 +10,10 @@ extern ENGINE_API Debug gLog;
 namespace render {
 	class ENGINE_API GUIContext : public RenderContext {
 	public:
+		GUIContext() {
+			
+		}
+
 		bool init(window::IWindow* win) override;
 		void preRender() override;
 		void postRender() override;

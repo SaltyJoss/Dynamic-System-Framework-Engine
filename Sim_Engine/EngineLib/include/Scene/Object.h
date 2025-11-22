@@ -15,9 +15,10 @@
 extern ENGINE_API Debug gLog;
 
 namespace elements {
+	// Represents the position, rotation, and scale of an object in 3D space.
 	struct Transform {
 		glm::vec3 position{ 0.0f };
-		glm::vec3 rotation{ 0.0f }; // Euler angles
+		glm::vec3 rotation{ 0.0f };
 		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
 
 		Transform()
@@ -27,6 +28,7 @@ namespace elements {
 		glm::mat4 toMatrix() const;
 	};
 
+	// Represents a 3D object in the scene with a mesh, transform, and physics state.
 	class ENGINE_API Object : public Element {
 	public:
 		Transform transform;

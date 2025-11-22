@@ -18,14 +18,14 @@ namespace gui {
         ControlPanel(SceneView* sceneView) : 
             _sceneView(sceneView), _controlMode(&sceneView->ctrlMode),
             _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
-            _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal) 
+            _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
         {
             _currentMeshFile = "<...>";
             _currentHDRFile = "<...>";
 
-            _meshLoad.SetTitle("Open Object Mesh");
-			_meshLoad.SetDirectory("Engine/assets/objects/shapes");
-            _meshLoad.SetTypeFilters({ ".fbx", ".obj" });
+            _meshLoad.SetTitle("Open Object Model");
+			_meshLoad.SetDirectory("Engine/assets/objects");
+            _meshLoad.SetTypeFilters({ ".fbx", ".obj", ".dae"});
 
 			_hdrLoad.SetTitle("Load HDR Environment");
 			_hdrLoad.SetDirectory("Engine/assets/hdr");
@@ -33,8 +33,8 @@ namespace gui {
         }
 
         void render(gui::SceneView* sceneView);
-        void setSimulationCallback(const std::function<void(bool)>& callback) { _simCallback = callback; }
-        void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { _meshLoadCallback = callback; }
+        void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
+        void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
     private:
         void renderSimulationProperties();
@@ -44,12 +44,19 @@ namespace gui {
         void renderDisplaySettings();
         void renderStats();
 
-        void renderHierarchy(SceneView* view);
+        void renderRoboticSelector();
+        void renderRoboticCard(const char* name, const char* company);
+
         void renderSceneObjects();
   
         // Internal state
         bool simulationRunning = false;
         bool gravityEnabled = false;
+        bool _showRobotSelector = false;
+        bool _robotRequested = false;
+
+        std::string _requestedRobot;
+
         float simulationSpeed = 1;
         int povMode = 0;
 
@@ -71,8 +78,8 @@ namespace gui {
         std::string _currentMeshFile;
         std::string _currentHDRFile;
 
-        std::function<void(const std::string&)> _meshLoadCallback;
-        std::function<void(bool)> _simCallback;
+        std::function<void(const std::string&)> meshLoadCallback;
+        std::function<void(bool)> simCallback;
         SceneView* _sceneView = nullptr;
         SceneView::ControlMode* _controlMode;
     };

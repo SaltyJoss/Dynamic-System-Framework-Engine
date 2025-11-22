@@ -20,11 +20,36 @@ namespace gui {
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
-        ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse);
+        ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
-        if (ImGui::Button("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
-        ImGui::SameLine(0, 10.0f);
-        if (ImGui::Button("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
+                if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Reset View")) {
+                    _sceneView->resetView();
+                    LOG_INFO("Scene view reset to default position and orientation.");
+                }
+                if (ImGui::MenuItem("Properties")) {
+                    // Placeholder for future properties dialog
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Robotic Arms")) {
+                if (ImGui::MenuItem("Select Model")) {
+                    _showRobotSelector = true;
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        renderRoboticSelector();
 
         if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
         if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
@@ -39,7 +64,7 @@ namespace gui {
         if (_meshLoad.HasSelected()) {
             auto file_path = _meshLoad.GetSelected().string();
             _currentMeshFile = file_path.substr(file_path.find_last_of("/\\") + 1);
-            _meshLoadCallback(file_path);
+            meshLoadCallback(file_path);
             LOG_INFO("Mesh loaded from file: %s", _currentMeshFile.c_str());
 
             _meshLoad.ClearSelected();
@@ -84,10 +109,10 @@ namespace gui {
 		ImGui::Separator();
 
         ImGui::Text("Scale:");
-        float minScale = 0.001; float maxScale = 100.0;
-        ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.01f, minScale, maxScale);
-        ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.01f, minScale, maxScale);
-        ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.01f, minScale, maxScale);
+        float minScale = 0.0001; float maxScale = 100.0;
+        ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
+        ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
+        ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
 
         ImGui::Separator();
 
@@ -189,26 +214,52 @@ namespace gui {
         }
     }
 
-    void ControlPanel::renderHierarchy(SceneView* view)
-    {
-        auto& objs = view->getObjects();
+	// Robotic Arm Selector
+    void ControlPanel::renderRoboticSelector() {
+        if (!_showRobotSelector) return;
 
-        for (size_t i = 0; i < objs.size(); i++)
-        {
-            elements::Object* obj = objs[i].get();
+        ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
 
-            bool selected = (view->getObject() == obj);
-            std::string objName = "Object " + std::to_string(i);
+        ImGui::Text("Select a robotic arm model:");
+        ImGui::Separator();
+        ImGui::Spacing();
 
-            if (ImGui::Selectable(objName.c_str(), selected))
-            {
-                view->setSelectedObject(obj);
-            }
-        }
+        renderRoboticCard("Z1", "Unitree Robotics");
+        renderRoboticCard("UR5", "Universal Robots");
+        renderRoboticCard("Panda", "Franka Robotics");
+        renderRoboticCard("KUKA iiwa", "KUKA");
+
+        ImGui::End();
     }
 
+	// Robotic Arm Card for Selector (lists robotic arms to choose from)
+    void ControlPanel::renderRoboticCard(const char* name, const char* company) {
+        ImGui::PushID(name);
+
+        ImGui::BeginChild("robot_card", ImVec2(0, 42.5), true, ImGuiWindowFlags_None);
+
+        if (ImGui::Selectable(name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
+            // Load JSON + STLs here
+            LOG_INFO("Selected robot: %s", name);
+            _showRobotSelector = false;
+
+            _requestedRobot = name;
+            _robotRequested = true;
+
+            _sceneView->loadRobot(_requestedRobot);
+        }
+
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", company);
+
+        ImGui::EndChild();
+        ImGui::Spacing();
+
+        ImGui::PopID();
+	}
+
+	// Scene Objects List
     void ControlPanel::renderSceneObjects() {
-        ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 150), true);
+        ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
 
         auto& objs = _sceneView->getObjects();
         int indexToDelete = -1;

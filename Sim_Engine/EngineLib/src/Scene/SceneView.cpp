@@ -15,7 +15,10 @@
 #include "Scene/Mesh.h"
 #include "Scene/MeshLoader.h"
 #include "Scene/Light.h"
+
 #include "Physics/PhysicsSystem.h"
+#include "Robots/RobotLoader.h"
+#include "Robots/RobotModel.h"
 
 #include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
@@ -168,6 +171,22 @@ namespace gui{
 		LOG_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
+	std::vector<elements::Object*> SceneView::loadMeshReturn(const std::string& filepath) {
+		gui::MeshLoader loader;
+		auto meshes = loader.load(filepath);
+
+		std::vector<elements::Object*> result;
+
+		for (auto& m : meshes) {
+			auto obj = std::make_unique<elements::Object>(m);
+			auto raw = obj.get();
+			_objects.push_back(std::move(obj));
+			result.push_back(raw);
+		}
+
+		return result;
+	}
+
 	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
 
 		auto plane = std::make_shared<elements::Mesh>();
@@ -201,6 +220,7 @@ namespace gui{
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
 	void SceneView::render() {
+		updatePhysics(0.00833f); // temp fixed timestep at 120fps
 		_fpsCounter.update();
 		ShadowPass();
 
@@ -208,6 +228,11 @@ namespace gui{
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
+
+		if (_hasRobot) {
+			glm::mat4 base = glm::translate(glm::mat4(1.0f), glm::vec3(0, -1.0f, -2.0f));
+			updateRobotKinematics(base);
+		}
 
 		WorldGridRender();
 		MeshRender();
@@ -260,6 +285,119 @@ namespace gui{
 		for (auto& obj : _objects) {
 			if (obj) { _physics->update(dt, obj.get()); }
 		}
+	}
+
+// --------------------------------------------------
+//				  ROBOTIC ARM SYSTEM
+// --------------------------------------------------
+	// Method to load a robot model by name
+	void SceneView::loadRobot(const std::string& name) {
+		clearRobot();
+
+		std::string jsonPath = "Engine/assets/Objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
+
+		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
+		_hasRobot = true;
+
+		instantiateRobotLinks();
+		buildLinkIndex();
+
+		LOG_INFO("Loaded robot: %s", name.c_str());
+	}
+
+	// Method to create Object instances for each robot link
+	void SceneView::instantiateRobotLinks() {
+
+
+		for (auto& link : _robot.links) {
+			auto objs = loadMeshReturn(link.meshFile);
+			if (objs.empty()) {
+				LOG_ERROR("Failed to load mesh for link %s", link.name.c_str());
+				continue;
+			}
+			elements::Object* obj = objs[0]; // assumes one object per link
+			obj->transform.scale = glm::vec3(_robot.scale);
+			link.attachedObject = obj;
+			LOG_INFO("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
+		}
+		LOG_INFO("Instantiated %zu robot links", _robot.links.size());
+	}
+
+	// Method to build a name-to-index map for robot links
+	void SceneView::buildLinkIndex() {
+		_linkIndex.clear();
+		for (size_t i = 0; i < _robot.links.size(); i++) {
+			_linkIndex[_robot.links[i].name] = (int)i;
+		}
+	}
+
+	void SceneView::updateRobotKinematics(const glm::mat4& baseTransform) {
+		if (!_hasRobot) return;
+
+		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+
+		int rootIdx = _linkIndex["link00"];  // Z1 root link
+		world[rootIdx] = baseTransform;
+
+		// Sort joints in parent-to-child order
+		std::vector<RobotJoint> sorted = _robot.joints;
+
+		std::sort(sorted.begin(), sorted.end(),
+			[&](const RobotJoint& a, const RobotJoint& b) {
+				int a_parent_indx = _linkIndex[a.parent];
+				int b_parent_indx = _linkIndex[b.parent];
+				return a_parent_indx < b_parent_indx;
+			});
+
+		for (auto& joint : sorted) {
+			int parent = _linkIndex[joint.parent];
+			int child = _linkIndex[joint.child];
+
+			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset * _robot.scale);
+			glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
+
+			world[child] = world[parent] * T_offset * R_joint;
+		}
+
+		for (int i = 0; i < (int)_robot.links.size(); i++) {
+			auto* obj = _robot.links[i].attachedObject;
+
+			glm::vec3 pos = glm::vec3(world[i][3]);
+			glm::quat q = glm::quat_cast(world[i]);
+
+			LOG_INFO_ONCE("Link %s world pos: %.3f %.3f %.3f", _robot.links[i].name.c_str(), pos.x, pos.y, pos.z);
+
+			obj->transform.position = pos;
+			obj->transform.rotation = glm::eulerAngles(q);
+		}
+	}
+
+	// Method to clear the current robot from the scene
+	void SceneView::clearRobot() {
+		if (!_hasRobot) return;
+
+		// Remove robot objects from _objects
+		for (auto& link : _robot.links) {
+			if (link.attachedObject) {
+				// find and erase matching object
+				_objects.erase(
+					std::remove_if(
+						_objects.begin(),
+						_objects.end(),
+						[&](const std::unique_ptr<elements::Object>& obj) {
+							return obj.get() == link.attachedObject;
+						}),
+					_objects.end()
+				);
+			}
+		}
+
+		_robot.links.clear();
+		_robot.joints.clear();
+		_linkIndex.clear();
+		_hasRobot = false;
+
+		LOG_INFO("Cleared old robot model");
 	}
 
 // --------------------------------------------------
@@ -369,7 +507,6 @@ namespace gui{
 
 		for (auto& obj : _objects) {
 			if (!obj || !obj->getMesh()) continue;
-			updatePhysics(0.00833); // temp fixed timestep at 60fps
 
 			if (_cameraFollowTarget == obj.get()) {
 				_camera->setFollowTarget(
@@ -379,6 +516,17 @@ namespace gui{
 			}
 
 			glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
+
+			LOG_INFO_ONCE("Object model matrix:\n"
+				"  [%f %f %f %f]\n"
+				"  [%f %f %f %f]\n"
+				"  [%f %f %f %f]\n"
+				"  [%f %f %f %f]",
+				model[0][0], model[0][1], model[0][2], model[0][3],
+				model[1][0], model[1][1], model[1][2], model[1][3],
+				model[2][0], model[2][1], model[2][2], model[2][3],
+				model[3][0], model[3][1], model[3][2], model[3][3]
+			);
 
 			_shader->setMat4(model, "model");
 
@@ -393,6 +541,8 @@ namespace gui{
 			obj->getMesh()->update(_shader.get());
 			obj->getMesh()->render();
 		}
+
+		//LOG_INFO("Rendering %d scene objects", (int)_objects.size());
 	}
 
 

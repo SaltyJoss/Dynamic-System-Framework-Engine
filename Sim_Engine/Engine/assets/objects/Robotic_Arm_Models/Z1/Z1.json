@@ -1,0 +1,85 @@
+{
+    "scale": 1000.0,
+    "links": [
+        {
+            "name": "link00",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link00.dae"
+        },
+        {
+            "name": "link01",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link01.dae"
+        },
+        {
+            "name": "link02",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link02.dae"
+        },
+        {
+            "name": "link03",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link03.dae"
+        },
+        {
+            "name": "link04",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link04.dae"
+        },
+        {
+            "name": "link05",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link05.dae"
+        },
+        {
+            "name": "link06",
+            "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link06.dae"
+        }
+    ],
+
+    "joints": [
+        {
+            "name": "joint1",
+            "parent": "link00",
+            "child": "link01",
+            "axis": [ 0, 0, 1 ],
+            "offset": [ 0, 0, 0.0585 ],
+            "quat": [ 1, 0, 0, 0 ]
+        },
+        {
+            "name": "joint2",
+            "parent": "link01",
+            "child": "link02",
+            "axis": [ 0, 1, 0 ],
+            "offset": [ 0, 0, 0.045 ],
+            "quat": [ 1, 0, 0, 0 ]
+        },
+        {
+            "name": "joint3",
+            "parent": "link02",
+            "child": "link03",
+            "axis": [ 0, 1, 0 ],
+            "offset": [ -0.35, 0, 0 ],
+            "quat": [ 1, 0, 0, 0 ]
+        },
+        {
+            "name": "joint4",
+            "parent": "link03",
+            "child": "link04",
+            "axis": [ 0, 1, 0 ],
+            "offset": [ 0.218, 0, 0.057 ],
+            "quat": [ 1, 0, 0, 0 ]
+        },
+
+        {
+            "name": "joint5",
+            "parent": "link04",
+            "child": "link05",
+            "axis": [ 0, 0, 1 ],
+            "offset": [ 0.07, 0, 0 ],
+            "quat": [ 1, 0, 0, 0 ]
+        },
+        {
+            "name": "joint6",
+            "parent": "link05",
+            "child": "link06",
+            "axis": [ 1, 0, 0 ],
+            "offset": [ 0.0492, 0, 0 ],
+            "quat": [ 1, 0, 0, 0 ]
+        }
+    ]
+}

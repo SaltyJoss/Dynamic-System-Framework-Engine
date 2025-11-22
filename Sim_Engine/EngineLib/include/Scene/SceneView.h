@@ -2,8 +2,10 @@
 
 #include "EngineCore.h"
 #include "Scene/Object.h"
+#include "Rendering/ModelGroup.h"
 #include "Scene/Input.h"
 #include "FpsCounter.h"
+#include "Robots/RobotModel.h"
 #include "Platform/Logger.h"
 
 #include <glm/glm.hpp>
@@ -78,6 +80,7 @@ namespace gui {
 
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
+        std::vector<elements::Object*> loadMeshReturn(const std::string& filepath);
         void setMesh(std::shared_ptr<elements::Mesh> mesh) { _mesh = mesh; }
 
         std::shared_ptr<elements::Mesh> getMesh() { return _mesh; }
@@ -105,6 +108,10 @@ namespace gui {
 
         // Physics
         void updatePhysics(double dt);
+
+		// Robotic Arm System
+        void loadRobot(const std::string& name);
+        bool hasRobot() const { return _hasRobot; }
 
 
 		// Input Handling
@@ -144,6 +151,7 @@ namespace gui {
 
         std::shared_ptr<elements::Mesh> _mesh;
 	    std::vector<std::unique_ptr<elements::Object>> _objects;
+        std::vector<ModelGroup> modelGroups;
         elements::Object* _selectedObject = nullptr;
 
         std::shared_ptr<elements::Mesh> _checkerPlane;
@@ -170,6 +178,16 @@ namespace gui {
 
 		// Physics System
 		std::unique_ptr<physics::PhysicsSystem> _physics;
+
+        // Robotic Arm System
+        RobotModel _robot;
+        bool _hasRobot = false;
+        std::unordered_map<std::string, int> _linkIndex;
+
+        void instantiateRobotLinks();
+        void buildLinkIndex();
+        void updateRobotKinematics(const glm::mat4& baseTransform);
+        void clearRobot();
 
 
         // Editor & UI

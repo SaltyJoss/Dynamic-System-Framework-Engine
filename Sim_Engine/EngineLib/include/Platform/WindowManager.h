@@ -71,6 +71,7 @@ namespace window {
 
         bool _isHovered = false;
         bool _mouseCaptured = false;
+        
 
         int _width = 0;
         int _height = 0;
