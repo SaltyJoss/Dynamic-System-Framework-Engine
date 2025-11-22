@@ -538,6 +538,11 @@ namespace gui{
 				shader->setFlt1(1.0f, "ao");
 				shader->setBool(false, "useTexture");
 
+				shader->setVec3(_light->getPosition(), "lightPosition");
+				shader->setVec3(_light->getColour(), "lightColour");
+				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(_camera->getPosition(), "camPos");
+
 				shader->setInt1(0, "irradianceMap");
 				shader->setInt1(1, "prefilterMap");
 				shader->setInt1(2, "brdfLUT");
