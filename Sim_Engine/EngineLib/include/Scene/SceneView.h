@@ -85,6 +85,14 @@ namespace gui {
 
         std::shared_ptr<elements::Mesh> getMesh() { return _mesh; }
 
+        enum class ShaderMode {
+            Basic = 0,
+            Lit = 1,
+            PBR = 2,
+        };
+
+        ShaderMode currentShaderMode = ShaderMode::Lit;  // default
+        void reloadAllShaders();
 
 		// Rendering Entry Points
         void render();
@@ -138,7 +146,10 @@ namespace gui {
 
         // Core Rendering State
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
-        std::unique_ptr<shaders::Shader> _shader;
+        std::shared_ptr<shaders::Shader> _shaderBasic;
+        std::shared_ptr<shaders::Shader> _shaderLit;
+        std::shared_ptr<shaders::Shader> _shaderPBR;
+        std::shared_ptr<shaders::Shader> _shaderPBRShadow;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
 
@@ -161,6 +172,9 @@ namespace gui {
 		// Environment & Lighting
         std::unique_ptr<render::IBL> _ibl;
         std::unique_ptr<render::SkyboxRenderer> _skybox;
+
+        // current selection
+        int _currentShaderIndex = 1; // 1 = lit by default
 
 
 		// Shadow Mapping

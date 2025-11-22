@@ -5,8 +5,6 @@
 
 extern ENGINE_API Debug gLog;
 
-using GLuint = std::uint32_t;
-
 namespace render {
 	class ENGINE_API IBL {
 	public:

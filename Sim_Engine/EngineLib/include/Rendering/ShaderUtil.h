@@ -10,10 +10,15 @@ namespace shaders {
 		unsigned int _programID;
 		unsigned int getCompiledShader(unsigned int shaderType, const std::string& shaderSource);
 
+		std::string _vertexFile;
+		std::string _fragmentFile;
+
 	public:
 		Shader() = default;
 
 		bool load(const std::string& vertexShaderFile, const std::string& fragmentShaderFile);
+		bool reload();
+
 		void use();
 		void unload();
 

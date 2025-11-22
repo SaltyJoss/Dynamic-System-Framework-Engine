@@ -36,17 +36,25 @@ namespace gui{
 // --------------------------------------------------
 
 	SceneView::SceneView() :
-		_camera(nullptr), _frameBuffer(nullptr), _shader(nullptr), _light(nullptr),
-		_worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
+		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
+		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
 		_frameBuffer->createBuffers(1920, 1080);
 
-		_shader = std::make_unique<shaders::Shader>();
-		_shader->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
+		// Shader Types A
+		_shaderBasic = std::make_shared<shaders::Shader>();
+		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
+
+		_shaderLit = std::make_shared<shaders::Shader>();
+		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
+
+		_shaderPBR = std::make_shared<shaders::Shader>();
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
 		_skybox = std::make_unique<render::SkyboxRenderer>();
 		
+		// Shader Types B
 		_worldGridShader = std::make_unique<shaders::Shader>();
 		_worldGridShader->load("Engine/assets/shaders/world_grid.vert.glsl", "Engine/assets/shaders/world_grid.frag.glsl");
 
@@ -78,7 +86,6 @@ namespace gui{
 
 	SceneView::~SceneView()
 	{
-		_shader->unload();
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
 		if (_mesh) _mesh->clean();
 		if (_checkerPlane) _checkerPlane->clean();
@@ -91,24 +98,13 @@ namespace gui{
 	{
 		LOG_INFO("Loading new HDR: %s", path.c_str());
 
-		if (!_ibl) return;
+		// Make sure IBL system exists
+		if (!_ibl) {
+			LOG_ERROR("Cannot load HDR because IBL system is not initialised.");
+			return;
+		}
 
 		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
-
-		// Rebind PBR textures
-		_shader->use();
-
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
-		_shader->setInt1(0, "irradianceMap");
-
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
-		_shader->setInt1(1, "prefilterMap");
-
-		glActiveTexture(GL_TEXTURE10);
-		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
-		_shader->setInt1(2, "brdfLUT");
 
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
@@ -237,7 +233,6 @@ namespace gui{
 
 		WorldGridRender();
 		MeshRender();
-		_sunLight->update(_shader.get());
 
 		if (skyboxEnabled)
 		{
@@ -263,10 +258,12 @@ namespace gui{
 	}
 
 	void SceneView::resize(int32_t width, int32_t height) {
+		// ignore zero sizes
+		if (width == 0 || height == 0) { return; }
+
 		// update camera projection
 		float aspect = width / height;
 		_camera->setAspect(aspect);
-		_camera->update(_shader.get());
 
 		// store updated size
 		_size = glm::vec2(width, height);
@@ -449,22 +446,7 @@ namespace gui{
 	{
 		_ibl = std::make_unique<render::IBL>();
 		_ibl->init("Engine/assets/hdr/space-6.hdr");
-
-		_shader->use();
-		_shader->setInt1(0, "irradianceMap");
-		_shader->setInt1(1, "prefilterMap");
-		_shader->setInt1(2, "brdfLUT");
-
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
-
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
-
-		glActiveTexture(GL_TEXTURE10);
-		glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
 	}
-
 
 	void SceneView::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
@@ -486,35 +468,37 @@ namespace gui{
 	}
 
 	void SceneView::MeshRender() {
-		_shader->use();
+		shaders::Shader* shader = nullptr;
 
-		for (int i = 0; i < NUM_CASCADES; i++) {
-			glActiveTexture(GL_TEXTURE5 + i);
-			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
-			_shader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
-			_shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+		switch (currentShaderMode) {
+			case ShaderMode::Basic:     shader = _shaderBasic.get(); break;
+			case ShaderMode::Lit:       shader = _shaderLit.get(); break;
+			case ShaderMode::PBR:       shader = _shaderPBR.get(); break;
 		}
 
-		_shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
+		if (!shader) {
+			LOG_ERROR("Shader is NULL after switch!");
+			return;
+		}
 
-		_camera->update(_shader.get());
-		_light->update(_shader.get());
+		shader->use();
 
-		// Render checker floor
-		//if (_checkerPlane) {
-		//	glm::mat4 floorModel(1.0f);
-		//	_shader->setMat4(floorModel, "model");
+		// Only PBR know about cascades & those uniforms
+		if (currentShaderMode == ShaderMode::PBR) {
+			for (int i = 0; i < NUM_CASCADES; i++) {
+				glActiveTexture(GL_TEXTURE5 + i);
+				glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
+				shader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
+				shader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+			}
 
-		//	// Set checkerboard uniforms
-		//	_shader->setBool(true, "isFloor");
-		//	_shader->setBool(false, "useTexture");
-		//	_shader->setFlt1(2.5f, "checkSize");
-		//	_shader->setVec3(glm::vec3(1.0f), "colour1");
-		//	_shader->setVec3(glm::vec3(0.0f), "colour2");
+			shader->setFlt2(_cascadeSplits[0], _cascadeSplits[1], "cascadeSplits");
+		}
 
-		//	_checkerPlane->update(_shader.get());
-		//	_checkerPlane->render();
-		//}
+		// Camera / SunLight / light common to all mesh shaders
+		_camera->update(shader);
+		_sunLight->update(shader);
+		_light->update(shader);
 
 		for (auto& obj : _objects) {
 			if (!obj || !obj->getMesh()) continue;
@@ -527,33 +511,51 @@ namespace gui{
 			}
 
 			glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
+			shader->setMat4(model, "model");
+			shader->setBool(false, "isFloor");
 
-			LOG_INFO_ONCE("Object model matrix:\n"
-				"  [%f %f %f %f]\n"
-				"  [%f %f %f %f]\n"
-				"  [%f %f %f %f]\n"
-				"  [%f %f %f %f]",
-				model[0][0], model[0][1], model[0][2], model[0][3],
-				model[1][0], model[1][1], model[1][2], model[1][3],
-				model[2][0], model[2][1], model[2][2], model[2][3],
-				model[3][0], model[3][1], model[3][2], model[3][3]
-			);
+			// Per-mode material uniforms
+			switch (currentShaderMode)
+			{
+			case ShaderMode::Basic:
+				// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
+				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "color");
+				break;
 
-			_shader->setMat4(model, "model");
+			case ShaderMode::Lit:
+				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
+				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");
+				shader->setVec3(_light->getPosition(), "lightPosition");
+				shader->setVec3(_light->getColour(), "lightColour");
+				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(_camera->getPosition(), "camPos");
+				break;
 
-			_shader->setBool(false, "isFloor");            // mark as non-floor
-			// material – start with something sane
-			_shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");   // orange-ish
-			_shader->setFlt1(0.0f, "metallic");                        // dielectric
-			_shader->setFlt1(0.3f, "roughness");                       // not too glossy
-			_shader->setFlt1(1.0f, "ao");
-			_shader->setBool(false, "useTexture");                     // ignore albedoTex for now
+			case ShaderMode::PBR:
+				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");
+				shader->setFlt1(0.0f, "metallic");
+				shader->setFlt1(0.3f, "roughness");
+				shader->setFlt1(1.0f, "ao");
+				shader->setBool(false, "useTexture");
 
-			obj->getMesh()->update(_shader.get());
+				shader->setInt1(0, "irradianceMap");
+				shader->setInt1(1, "prefilterMap");
+				shader->setInt1(2, "brdfLUT");
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getIrradianceMap());
+
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, _ibl->getPrefilterMap());
+
+				glActiveTexture(GL_TEXTURE2);
+				glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+				break;
+			}
+
+			obj->getMesh()->update(shader);
 			obj->getMesh()->render();
 		}
-
-		//LOG_INFO("Rendering %d scene objects", (int)_objects.size());
 	}
 
 
@@ -670,6 +672,16 @@ namespace gui{
 
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 		_skybox->render(projection, view);
+	}
+
+	void SceneView::reloadAllShaders()
+	{
+		_shaderBasic->reload();
+		_shaderLit->reload();
+		_shaderPBR->reload();
+		_shaderPBRShadow->reload();
+
+		LOG_INFO("All shaders reloaded from disk.");
 	}
 
 // --------------------------------------------------

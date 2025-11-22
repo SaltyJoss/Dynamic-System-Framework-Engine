@@ -200,8 +200,27 @@ vec3 evaluateDirectionalLightPBR(
 
 void main()
 {
-	vec3 L1 = normalize(lightPosition - WorldPos);
-	FragColour = vec4(normalize(L1) * 0.5 + 0.5, 1.0);
-	return;
+// 1. Base colour (ignore textures + checker to simplify)
+    vec3 baseColor = albedo;
+
+    // 2. Vectors
+    vec3 N = normalize(Normal);
+    vec3 L = normalize(lightPosition - WorldPos);
+    vec3 V = normalize(camPos - WorldPos);
+
+    // 3. Simple diffuse
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 diffuse = baseColor * lightColour * NdotL * lightIntensity;
+
+    // 4. Simple specular (Blinn-Phong)
+    vec3 H = normalize(V + L);
+    float spec = pow(max(dot(N, H), 0.0), 16.0);
+    vec3 specular = 0.2 * spec * lightColour;
+
+    // 5. Ambient
+    vec3 ambient = 0.1 * baseColor;
+
+    vec3 colour = ambient + diffuse + specular;
+    FragColour = vec4(colour, 1.0);
 }
 

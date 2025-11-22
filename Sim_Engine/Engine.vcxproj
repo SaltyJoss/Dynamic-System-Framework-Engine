@@ -108,6 +108,9 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl" />
     <None Include="Engine\assets\shaders\irradiance_convolution.frag.glsl" />
     <None Include="Engine\assets\shaders\irradiance.vert.glsl" />
+    <None Include="Engine\assets\shaders\mesh_basic.frag.glsl" />
+    <None Include="Engine\assets\shaders\mesh_lit.frag.glsl" />
+    <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl" />
     <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />

@@ -32,6 +32,9 @@ namespace shaders {
 	}
 
 	bool Shader::load(const std::string& vertexShaderFile, const std::string& fragmentShaderFile) {
+		_vertexFile = vertexShaderFile;
+		_fragmentFile = fragmentShaderFile;
+
 		std::ifstream isVS(vertexShaderFile);
 		std::ifstream isFS(fragmentShaderFile);
 
@@ -73,7 +76,18 @@ namespace shaders {
 		return true;
 	}
 
-	void Shader::use() { glUseProgram(_programID); LOG_INFO_ONCE("Shader program bound"); }
+	bool Shader::reload()
+	{
+		if (_vertexFile.empty() || _fragmentFile.empty()) {
+			LOG_ERROR("Shader reload failed: no shader source paths stored.");
+			return false;
+		}
+
+		glDeleteProgram(_programID);
+		return load(_vertexFile, _fragmentFile);
+	}
+
+ 	void Shader::use() { glUseProgram(_programID); LOG_INFO_ONCE("Shader program bound"); }
 	void Shader::unload() { glDeleteProgram(_programID); LOG_INFO_ONCE("Shader program deleted"); }
 
 	void Shader::setMat4(const glm::mat4& mat4, const std::string& name) {

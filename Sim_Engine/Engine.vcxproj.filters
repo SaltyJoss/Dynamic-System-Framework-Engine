@@ -22,6 +22,9 @@
     <Filter Include="Source Files\Sim">
       <UniqueIdentifier>{5da5f8b4-e734-4e61-943a-58ead1b2af61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\basic">
+      <UniqueIdentifier>{028e6b10-e52a-4d04-9182-b9d818947368}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl">
@@ -68,6 +71,15 @@
     </None>
     <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl">
       <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\mesh_basic.frag.glsl">
+      <Filter>Resource Files\shaders\basic</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\mesh_lit.frag.glsl">
+      <Filter>Resource Files\shaders\basic</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl">
+      <Filter>Resource Files\shaders\basic</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

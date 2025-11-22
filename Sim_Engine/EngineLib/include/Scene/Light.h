@@ -34,6 +34,7 @@ namespace elements {
         glm::vec3 getPosition() const { return _position; }
 		glm::vec3 getDirection() const { return _direction; }
         glm::vec3 getColour() const { return _colour; }
+		float getIntensity() const { return _intensity; }    
 
         void update(shaders::Shader* shader) override {
             if (_isDirectional) {

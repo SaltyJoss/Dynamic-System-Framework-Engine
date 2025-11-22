@@ -46,6 +46,32 @@ namespace gui {
                 }
                 ImGui::EndMenu();
             }
+
+            if (ImGui::BeginMenu("Shader"))
+            {
+                // Reload button
+                if (ImGui::MenuItem("Reload Shaders")) {
+                    LOG_INFO("Shader reload requested.");
+                    _sceneView->reloadAllShaders();
+                }
+
+                ImGui::Separator();
+
+                // Shader selection
+                if (ImGui::MenuItem("Basic Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Basic)) {
+                    _sceneView->currentShaderMode = SceneView::ShaderMode::Basic;
+                }
+
+                if (ImGui::MenuItem("Lit Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Lit)) {
+                    _sceneView->currentShaderMode = SceneView::ShaderMode::Lit;
+                }
+
+                if (ImGui::MenuItem("PBR Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::PBR)) {
+                    _sceneView->currentShaderMode = SceneView::ShaderMode::PBR;
+                }
+
+                ImGui::EndMenu();
+            }
             ImGui::EndMenuBar();
         }
 
