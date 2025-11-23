@@ -13,11 +13,11 @@ namespace elements {
     public:
 
         Light() {
-            _direction = glm::vec3(-1.0f, -1.0f, -0.5f);
-            _position = glm::vec3{ 1.5f, 3.5f, 3.0f };
-            _colour = glm::vec3(1.0f, 0.98f, 0.95f);
+            _direction = glm::vec3(-1.0f, -1.0f, -0.3f);
+            _position = glm::vec3(-4.0f, 20.0f, 12.0f);
+            _colour = glm::vec3(0.3f, 0.2f, 0.8f);
             _strength = 25.0f;
-			_intensity = 1.0f;
+			_intensity = 10.0f;
             _size = 25.0f;
         }
 

@@ -231,7 +231,7 @@ namespace gui{
 			updateRobotKinematics(base);
 		}
 
-		WorldGridRender();
+		//WorldGridRender();
 		MeshRender();
 
 		if (skyboxEnabled)
@@ -518,12 +518,12 @@ namespace gui{
 			{
 			case ShaderMode::Basic:
 				// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "colour");
+				shader->setVec3(_light->getColour(), "colour");
 				break;
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");
+				shader->setVec3(_light->getColour(), "albedo");
 				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
 				shader->setFlt1(1.0f, "lightIntensity");
@@ -531,14 +531,14 @@ namespace gui{
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");
+				shader->setVec3(_light->getColour(), "albedo");
 				shader->setFlt1(0.0f, "metallic");
-				shader->setFlt1(0.3f, "roughness");
+				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 
-				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
+				//shader->setVec3(glm::normalize(_light->getDirection()), "lightDirection");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
-				shader->setFlt1(1.0f, "lightIntensity");
+				shader->setFlt1(_light->getIntensity(), "lightIntensity");
 				shader->setVec3(_camera->getPosition(), "camPos");
 
 				shader->setInt1(0, "irradianceMap");

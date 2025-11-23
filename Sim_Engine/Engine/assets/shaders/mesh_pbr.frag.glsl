@@ -8,6 +8,7 @@ out vec4 FragColour;
 in vec3 WorldPos;
 in vec3 Normal;
 in vec2 TexCoords;
+in vec4 Colour;
 
 // ------------------------------------------------------------
 // Material parameters
@@ -166,59 +167,28 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 void main()
 {
 
-    // HAVING MASSIVE ISSUES WITH THIS PBR SHADER, SO IM TRYING DIFFERENT THINGS
-	// I DO NOT UNDERSTAND WHY IT'S NOT WORKING - IT SHOULD BE FINE (i think)
-	// I BELIVE THE PROBLEM IS WITH THE SHADOWS OR IBL TEXTURES NOT BEING BOUND PROPERLY
-	// OR ITS WITH THE BRDF LUT OR PREFILTER MAP
-    // 
-    // --- Basic vectors ---
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
-
-    // Light treated as positional; if you want directional, normalise lightDirection instead
     vec3 L = normalize(lightPosition - WorldPos);
-    vec3 H = normalize(V + L);
 
     float NdotL = max(dot(N, L), 0.0);
     float NdotV = max(dot(N, V), 0.0);
 
-    // If light is behind the surface, we can early out on direct lighting
-    if (NdotL <= 0.0 || NdotV <= 0.0)
-    {
-        // Still allow IBL to contribute some ambient
-        vec3 baseColour = albedo;
-        if (useTexture)
-            baseColour *= texture(albedoTex, TexCoords).rgb;
-
-        vec3 F0 = mix(vec3(0.04), baseColour, metallic);
-
-        // IBL diffuse
-        vec3 irradiance = texture(irradianceMap, N).rgb;
-        vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
-
-        // IBL specular
-        vec3 R = reflect(-V, N);
-        vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
-        vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-        vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
-        vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
-
-        vec3 colour = diffuseIBL + specularIBL;
-        colour *= ao;
-
-        FragColour = vec4(colour, 1.0);
+    if (NdotL <= 0.0 || NdotV <= 0.0) {
+        // tiny ambient so you still see *something* on grazing angles
+        FragColour = vec4(0.05 * albedo, 1.0);
         return;
     }
 
-    // --- Material base colour, with optional albedo texture ---
+    // base colour (ignore textures for now)
     vec3 baseColour = albedo;
-    if (useTexture)
-        baseColour *= texture(albedoTex, TexCoords).rgb;
 
-    // --- Base reflectance F0 ---
+    // base reflectance
     vec3 F0 = mix(vec3(0.04), baseColour, metallic);
 
-    // --- Cook-Torrance BRDF for direct lighting ---
+    // halfway vector
+    vec3 H = normalize(V + L);
+
     float NDF = DistributionGGX(N, H, roughness);
     float G = GeometrySmith(N, V, L, roughness);
     vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
@@ -226,40 +196,130 @@ void main()
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    float denom = max(4.0 * NdotV * NdotL, 0.0001);
-    vec3  specular = (NDF * G * F) / denom;
+    float denom = max(4.0 * NdotV * NdotL, 0.001);
+    vec3  spec = (NDF * G * F) / denom;
+    vec3  radiance = lightColour * lightIntensity;
 
-    vec3 radiance = lightColour * lightIntensity;
-
-    vec3 Lo = (kD * baseColour / PI + specular) * radiance * NdotL;
-
-    // --- Shadowing ---
+    // direct lighting only, plus a tiny ambient
+    vec3 Lo = (kD * baseColour / PI + spec) * radiance * NdotL;
     float shadow = computeShadowCSM(WorldPos, N, L);
     Lo *= (1.0 - shadow);
 
-    // --------------------------------------------------------
-    // Image-Based Lighting (IBL) ---------> I NEED TO GO TO WORK BUT IM PRETTY SURE THIS IS THE PROBLEM
-    // --------------------------------------------------------
+    // --- Diffuse IBL ---
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
 
-    vec3 R = reflect(-V, N);
+    // --- Specular IBL ---
+    vec3 R = reflect(-V, N);  // reflection dir
+    // scale max mip level to however many mip levels you generated (e.g. 4)
     vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
     vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
 
+    // combine
     vec3 ambient = (diffuseIBL + specularIBL) * ao;
-    // adds a small lambert-like fallback so it can't go to pure black
-    ambient += 0.05 * baseColour;
-
-    // --------------------------------------------------------
-    // Final colour
-    // --------------------------------------------------------
     vec3 colour = ambient + Lo;
 
-    // colour = colour / (colour + vec3(1.0));
-    // colour = pow(colour, vec3(1.0/2.2));
+FragColour = vec4(textureLod(prefilterMap, N, 0.0).rgb, 1.0);
+return;
 
-    FragColour = vec4(colour, 1.0);
+
+    // HAVING MASSIVE ISSUES WITH THIS PBR SHADER, SO IM TRYING DIFFERENT THINGS
+	// I DO NOT UNDERSTAND WHY IT'S NOT WORKING - IT SHOULD BE FINE (i think)
+	// I BELIVE THE PROBLEM IS WITH THE SHADOWS OR IBL TEXTURES NOT BEING BOUND PROPERLY
+	// OR ITS WITH THE BRDF LUT OR PREFILTER MAP
+    // 
+    //// --- Basic vectors ---
+    //vec3 N = normalize(Normal);
+    //vec3 V = normalize(camPos - WorldPos);
+
+    //// Light treated as positional; if you want directional, normalise lightDirection instead
+    //vec3 L = normalize(lightPosition - WorldPos);
+    //vec3 H = normalize(V + L);
+
+    //float NdotL = max(dot(N, L), 0.0);
+    //float NdotV = max(dot(N, V), 0.0);
+
+    //// If light is behind the surface, we can early out on direct lighting
+    //if (NdotL <= 0.0 || NdotV <= 0.0)
+    //{
+    //    // Still allow IBL to contribute some ambient
+    //    vec3 baseColour = albedo;
+    //    if (useTexture)
+    //        baseColour *= texture(albedoTex, TexCoords).rgb;
+
+    //    vec3 F0 = mix(vec3(0.04), baseColour, metallic);
+
+    //    // IBL diffuse
+    //    vec3 irradiance = texture(irradianceMap, N).rgb;
+    //    vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
+
+    //    // IBL specular
+    //    vec3 R = reflect(-V, N);
+    //    vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
+    //    vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
+    //    vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
+    //    vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
+
+    //    vec3 colour = diffuseIBL + specularIBL;
+    //    colour *= ao;
+
+    //    FragColour = vec4(colour, 1.0);
+    //    return;
+    //}
+
+    //// --- Material base colour, with optional albedo texture ---
+    //vec3 baseColour = albedo;
+    //if (useTexture)
+    //    baseColour *= texture(albedoTex, TexCoords).rgb;
+
+    //// --- Base reflectance F0 ---
+    //vec3 F0 = mix(vec3(0.04), baseColour, metallic);
+
+    //// --- Cook-Torrance BRDF for direct lighting ---
+    //float NDF = DistributionGGX(N, H, roughness);
+    //float G = GeometrySmith(N, V, L, roughness);
+    //vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    //vec3 kS = F;
+    //vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+    //float denom = max(4.0 * NdotV * NdotL, 0.0001);
+    //vec3  specular = (NDF * G * F) / denom;
+
+    //vec3 radiance = lightColour * lightIntensity;
+
+    //vec3 Lo = (kD * baseColour / PI + specular) * radiance * NdotL;
+
+    //// --- Shadowing ---
+    //float shadow = computeShadowCSM(WorldPos, N, L);
+    //Lo *= (1.0 - shadow);
+
+    //// --------------------------------------------------------
+    //// Image-Based Lighting (IBL) ---------> I NEED TO GO TO WORK BUT IM PRETTY SURE THIS IS THE PROBLEM
+    //// --------------------------------------------------------
+    //vec3 irradiance = texture(irradianceMap, N).rgb;
+    //vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
+
+    //vec3 R = reflect(-V, N);
+    //vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
+    //vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
+    //vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
+    //vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
+
+    //vec3 ambient = (diffuseIBL + specularIBL) * ao;
+    //// adds a small lambert-like fallback so it can't go to pure black
+    //ambient += 0.05 * baseColour;
+
+    //// --------------------------------------------------------
+    //// Final colour
+    //// --------------------------------------------------------
+    //vec3 colour = ambient + Lo;
+
+    //// colour = colour / (colour + vec3(1.0));
+    //// colour = pow(colour, vec3(1.0/2.2));
+
+    //FragColour = vec4(colour, 1.0);
+    //return;
 }
