@@ -165,6 +165,12 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 
 void main()
 {
+
+    // HAVING MASSIVE ISSUES WITH THIS PBR SHADER, SO IM TRYING DIFFERENT THINGS
+	// I DO NOT UNDERSTAND WHY IT'S NOT WORKING - IT SHOULD BE FINE (i think)
+	// I BELIVE THE PROBLEM IS WITH THE SHADOWS OR IBL TEXTURES NOT BEING BOUND PROPERLY
+	// OR ITS WITH THE BRDF LUT OR PREFILTER MAP
+    // 
     // --- Basic vectors ---
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
@@ -232,7 +238,7 @@ void main()
     Lo *= (1.0 - shadow);
 
     // --------------------------------------------------------
-    // Image-Based Lighting (IBL)
+    // Image-Based Lighting (IBL) ---------> I NEED TO GO TO WORK BUT IM PRETTY SURE THIS IS THE PROBLEM
     // --------------------------------------------------------
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
@@ -244,13 +250,14 @@ void main()
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
 
     vec3 ambient = (diffuseIBL + specularIBL) * ao;
+    // adds a small lambert-like fallback so it can't go to pure black
+    ambient += 0.05 * baseColour;
 
     // --------------------------------------------------------
     // Final colour
     // --------------------------------------------------------
     vec3 colour = ambient + Lo;
 
-    // You can add tone mapping / gamma correction here if desired:
     // colour = colour / (colour + vec3(1.0));
     // colour = pow(colour, vec3(1.0/2.2));
 

@@ -13,23 +13,24 @@ namespace elements {
     public:
 
         Light() {
-            _direction = glm::vec3(-1.0f, -1.0f, -0.3f);
+            _direction = glm::vec3(-1.0f, -1.0f, -0.5f);
             _position = glm::vec3{ 1.5f, 3.5f, 3.0f };
-            _colour = glm::vec3(1.0f, 1.0f, 1.0f);
-            _strength = 50.0f;
-			_intensity = 50.0f;
+            _colour = glm::vec3(1.0f, 0.98f, 0.95f);
+            _strength = 25.0f;
+			_intensity = 1.0f;
             _size = 25.0f;
         }
 
         struct DirectionalLight {
             glm::vec3 direction{ -1.0, -0.3f, 0.2f };
             glm::vec3 colour{ 1.0f, 0.98f, 0.95f };
-            float intensity = 1.0f;
+            float intensity = 10.0f;
         };
 
         ~Light() {}
 
 		void setDirection(const glm::vec3& dir) { _direction = glm::normalize(dir); }
+        void setIntensity(const float intsy) { _intensity = intsy; }
 
         glm::vec3 getPosition() const { return _position; }
 		glm::vec3 getDirection() const { return _direction; }

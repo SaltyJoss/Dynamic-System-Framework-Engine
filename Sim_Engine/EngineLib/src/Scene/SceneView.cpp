@@ -497,7 +497,6 @@ namespace gui{
 
 		// Camera / SunLight / light common to all mesh shaders
 		_camera->update(shader);
-		_sunLight->update(shader);
 		_light->update(shader);
 
 		for (auto& obj : _objects) {
@@ -519,15 +518,15 @@ namespace gui{
 			{
 			case ShaderMode::Basic:
 				// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "color");
+				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "colour");
 				break;
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
 				shader->setVec3(glm::vec3(0.8f, 0.3f, 0.2f), "albedo");
-				shader->setVec3(_light->getPosition(), "lightPosition");
-				shader->setVec3(_light->getColour(), "lightColour");
-				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
+				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
+				shader->setFlt1(1.0f, "lightIntensity");
 				shader->setVec3(_camera->getPosition(), "camPos");
 				break;
 
@@ -536,11 +535,10 @@ namespace gui{
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.3f, "roughness");
 				shader->setFlt1(1.0f, "ao");
-				shader->setBool(false, "useTexture");
 
-				shader->setVec3(_light->getPosition(), "lightPosition");
-				shader->setVec3(_light->getColour(), "lightColour");
-				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
+				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
+				shader->setFlt1(1.0f, "lightIntensity");
 				shader->setVec3(_camera->getPosition(), "camPos");
 
 				shader->setInt1(0, "irradianceMap");
@@ -555,10 +553,15 @@ namespace gui{
 
 				glActiveTexture(GL_TEXTURE2);
 				glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
+
+				LOG_INFO_ONCE("RadianceMap = %u, Prefilter = %u, BRDF = %u", _ibl->getIrradianceMap(), _ibl->getPrefilterMap(), _ibl->getBRDFLUT());
 				break;
 			}
 
-			obj->getMesh()->update(shader);
+			int loc = glGetUniformLocation(shader->getProgramID(), "albedo");
+			LOG_INFO_ONCE("Lit Shader albedo uniform location = %d", loc);
+
+			//obj->getMesh()->update(shader);
 			obj->getMesh()->render();
 		}
 	}
@@ -684,7 +687,6 @@ namespace gui{
 		_shaderBasic->reload();
 		_shaderLit->reload();
 		_shaderPBR->reload();
-		_shaderPBRShadow->reload();
 
 		LOG_INFO("All shaders reloaded from disk.");
 	}

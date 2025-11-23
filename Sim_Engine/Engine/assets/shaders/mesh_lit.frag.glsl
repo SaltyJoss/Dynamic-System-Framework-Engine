@@ -11,8 +11,8 @@ uniform vec3 albedo;
 
 // Simple point or directional light approximated by a position
 uniform vec3 lightPosition;   // world-space
-uniform vec3 lightColour;     // usually vec3(1.0)
-uniform float lightIntensity; // e.g. 1.0–5.0
+uniform vec3 lightColour;
+uniform float lightIntensity;
 
 // Camera, for specular
 uniform vec3 camPos;

@@ -6,11 +6,11 @@ in vec2 TexCoords;
 
 out vec4 FragColour;
 
-uniform vec3 color; // simple RGB override
+uniform vec3 colour; // simple RGB override
 
 void main()
 {
-    FragColour = vec4(color, 1.0);
+    FragColour = vec4(colour, 1.0);
 }
 
 /*
