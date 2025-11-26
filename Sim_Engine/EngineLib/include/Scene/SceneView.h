@@ -329,6 +329,7 @@ namespace gui {
 		// Robotic Arm System
         void loadRobot(const std::string& name);
         bool hasRobot() const { return _hasRobot; }
+		void setRobotLinkRotation(const std::string& linkName, float angle);
         void clearRobot();
 
         RobotModel& getRobotModel() { return _robot; }

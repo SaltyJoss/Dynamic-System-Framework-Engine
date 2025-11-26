@@ -347,6 +347,7 @@ namespace gui{
 		}
 	}
 
+	// Method to update robot link transforms based on joint angles (NEEDS TO BE REVISED BASED ON ROBOT STRUCTURE)
 	void SceneView::updateRobotKinematics(const glm::mat4& baseTransform) {
 		if (!_hasRobot) return;
 
@@ -394,6 +395,33 @@ namespace gui{
 
 			auto pos = glm::vec3(world[i][3]);
 		}
+	}
+
+	// Method to set the rotation angle of a specific robot link angle in degrees
+	// NOTE: this sets the joint angle that affects the link, not the link transform directly
+	void SceneView::setRobotLinkRotation(const std::string& linkName, float angle) {
+		if (!_hasRobot) {
+			LOG_WARN("No robot loaded to set link rotation.");
+			D_WARN("No robot loaded to set link rotation.");
+			return;
+		}
+		auto it = _linkIndex.find(linkName);
+		if (it == _linkIndex.end()) {
+			D_ERROR_ONCE("Link name %s not found in robot model.", linkName.c_str());
+			return;
+		}
+		int linkIdx = it->second;
+		// Find the joint that connects to this link
+		for (auto& joint : _robot.joints) {
+			if (joint.child == linkName) {
+				joint.angle = glm::radians(angle); // store angle in radians
+				//LOG_INFO("Set rotation of link %s to %.2f degrees.", linkName.c_str(), angle);
+				D_INFO_ONCE("Set rotation of link %s to %.2f degrees.", linkName.c_str(), angle);
+				return;
+			}
+		}
+		LOG_WARN("No joint found for link %s to set rotation.", linkName.c_str());
+		D_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 	}
 
 	// Method to clear the current robot from the scene
