@@ -1,4 +1,49 @@
 #pragma once
+
+// =============================================
+//            File: Logger.h
+// =============================================
+// Class responsible for logging messages to a file and console with different severity levels.
+//
+// Summary:
+// =============================================
+//
+// structs / enumerations:
+// --------------------------------------------
+// LogLevel
+//      -> Enumeration of log severity levels (Info, Warning, Error).
+// LogEntry
+//      -> Struct representing a log entry with level, type, and message.
+// --------------------------------------------
+//
+// public:
+// --------------------------------------------
+// Debug()
+//      -> Constructor that initializes the logger and creates a log file.
+// ~Debug()
+//      -> Destructor that closes the log file.
+// void logError(const char* type, const char* format, ...)
+//      -> Logs an error message with the specified type and formatted message.
+// void logInfo(const char* type, const char* format, ...)
+//      -> Logs an informational message with the specified type and formatted message.
+// void logWarning(const char* type, const char* format, ...)
+//      -> Logs a warning message with the specified type and formatted message.
+// void logDebug(const char* type, const char* format, ...)
+//      -> Logs a debug message with the specified type and formatted message, used to parse logs seperately to the debug panel in the application
+// --------------------------------------------
+//
+// private:
+// --------------------------------------------
+// std::mutex _mutex
+//      -> Mutex for thread-safe logging.
+// std::ofstream _file
+//      -> Output file stream for the log file.
+// void logCentral(const char* level, const char* type, const char* format, va_list args)
+//      -> Centralized logging function that handles formatting and writing log entries.
+// --------------------------------------------
+//
+// =============================================
+
 #include "EngineCore.h"
 
 #include <filesystem>
@@ -8,7 +53,7 @@
 #include <mutex>
 #include <sstream>
 
-enum class LogLevel { Info, Warning, Error };
+enum class LogLevel { Trace, Debug, Info, Warning, Error, Ok, Fail, Runtime, Output };
 
 struct LogEntry {
     LogLevel level;
@@ -48,6 +93,14 @@ public:
         if (_file.is_open()) _file.close();
     }
 
+    static Debug& Instance() {
+        static Debug inst;
+        return inst;
+    }
+
+    const std::vector<LogEntry>& Entries() const { return _entries; }
+
+	// General logging functions
     void logError(const char* type, const char* format, ...) {
         va_list args;
         va_start(args, format);
@@ -69,10 +122,33 @@ public:
         va_end(args);
     }
 
+    // Centeralised logging function for debug panel logs only, outputted to debug panel console only
+    void dLog(LogLevel level, const char* format, ...) {
+        char buffer[1024];
+
+        va_list args;
+        va_start(args, format);
+        std::vsnprintf(buffer, sizeof(buffer), format, args);
+        va_end(args);
+
+        LogEntry e;
+        e.level = level;
+        e.message = buffer;
+
+        _entries.push_back(std::move(e));
+    }
+
+    void clear() {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _entries.clear();
+    }
+
 private:
     std::mutex _mutex;
     std::ofstream _file;
+    std::vector<LogEntry> _entries;
 
+	// Centralised logging function for global logs outputted to file and console
     void logCentral(const char* level, const char* type, const char* format, va_list args) {
         char buffer[1024];
         vsnprintf(buffer, sizeof(buffer), format, args);
@@ -87,7 +163,7 @@ private:
               << "[" << level << " / " << type << "]: "
               << buffer;
 
-
+		// Lock for thread safety - construct log line outside lock to minimize lock time
         std::string logLine = oss.str(); // construct outside lock
         {
             std::lock_guard<std::mutex> lock(_mutex);
@@ -97,5 +173,6 @@ private:
     }
 };
 
+// Global logger instance
 extern ENGINE_API Debug gLog;
 

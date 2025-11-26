@@ -1,5 +1,21 @@
 #pragma once
 
+// ============================================
+//            File: RobotLoader.h
+// ============================================
+// Class responsible for loading robotic models from JSON files.
+//
+// Summary:
+// ============================================
+//
+// public:
+// --------------------------------------------
+// RobotModel loadFromJSON(const std::string& filepath)
+//      -> Loads a robotic model from the specified JSON file path and returns a RobotModel object.
+// --------------------------------------------
+// 
+// ============================================
+
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
 

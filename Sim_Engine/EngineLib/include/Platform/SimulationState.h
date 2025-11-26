@@ -1,5 +1,22 @@
 #pragma once
 
+// ============================================
+// 		File: SimulationState.h
+// ============================================
+// Structs and enums representing the current state of selections in the simulation.
+//
+// Summary:
+// ============================================
+// structs / enumerations:
+// --------------------------------------------
+// SelectionType
+//      -> Enumeration of different types of selections in the simulation (NONE, LINK, ROBOT
+// Selection
+//      -> Struct representing the current selection state, including type and index.
+// --------------------------------------------
+//
+// ============================================
+
 #include "EngineCore.h"
 #include <Robots/RobotModel.h>
 

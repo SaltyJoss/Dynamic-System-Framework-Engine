@@ -1,5 +1,224 @@
 #pragma once
 
+//=============================================
+//            File: SceneView.h
+//=============================================
+// Class representing a 3D scene view with camera, lighting, and object management.
+// 
+// Summary:
+// ============================================
+// 
+// public:
+// --------------------------------------------
+// SceneView()
+// 	    -> Constructor that initializes the SceneView.
+// ~SceneView()
+// 	    -> Destructor that cleans up resources.
+// elements::Light* getLight()
+//      -> Returns a pointer to the main light in the scene.
+// elements::Light* getSunLight()
+// 	    -> Returns a pointer to the sun light in the scene.
+// bool isSkyboxEnabled()
+//      -> Checks if the skybox is enabled.
+// void setSkyboxEnabled(bool b)
+//      -> Sets whether the skybox is enabled.
+// void loadNewHDR(const std::string& path)
+// 	    -> Loads a new HDR environment map from the specified path.
+// void setBackgroundColour(const glm::vec3& c)
+//      -> Sets the background colour of the scene.
+// glm::vec3 getBackgroundColour()
+// 	    -> Returns the background colour of the scene.
+// void setBackgroundAlpha(float a)
+//      -> Sets the background alpha (transparency) of the scene.
+// float getBackgroundAlpha()
+// 	    -> Returns the background alpha (transparency) of the scene.
+// float getPlaneHeight()
+//      -> Returns the height of the ground plane.
+// enum class ControlMode
+//      -> Enumeration for control modes (Camera or Object).
+// void setControlMode(ControlMode mode)
+//      -> Sets the current control mode.
+// ControlMode getControlMode()
+//  	-> Returns the current control mode.
+// elements::Camera* getCamera()
+// 	    -> Returns a pointer to the camera in the scene.
+// void resetView()
+//      -> Resets the camera view to the default position and orientation.
+// void attachCameraToObject(elements::Object* obj)
+//      -> Attaches the camera to follow the specified object.
+// void detachCameraFromObject()
+//      -> Detaches the camera from any object it is following.
+// void loadMesh(const std::string& filepath)
+//      -> Loads a mesh from the specified file path.
+// std::vector<elements::Object*> loadMeshReturn(const std::string& filepath)
+// 	    -> Loads a mesh and returns a vector of pointers to the created objects.
+// void setMesh(std::shared_ptr<elements::Mesh> mesh)
+//      -> Sets the current mesh for the scene.
+// std::shared_ptr<elements::Mesh> getMesh()
+// 	    -> Returns the current mesh for the scene.
+// enum class ShaderMode
+//      -> Enumeration for shader modes (Basic, Lit, PBR).
+// void reloadAllShaders()
+//      -> Reloads all shaders used in the scene.
+// void render()
+//      -> Renders the scene.
+// void resize(int32_t width, int32_t height)   
+//      -> Resizes the scene view to the specified width and height.
+// std::vector<std::unique_ptr<elements::Object>>& getObjects()
+//      -> Returns a reference to the vector of scene objects.
+// elements::Object* getObject()
+// 	    -> Returns a pointer to the currently selected object.
+// void setSelectedObject(elements::Object* obj)
+// 	    -> Sets the currently selected object.
+// void deleteObject(int index)
+//      -> Deletes the object at the specified index.
+// void updatePhysics(double dt)
+//      -> Updates the physics simulation with the given time step.
+// void loadRobot(const std::string& name)
+//      -> Loads a robotic arm model by name.
+// bool hasRobot()
+// 	    -> Checks if a robotic arm model is currently loaded.
+// void clearRobot()
+//      -> Clears the currently loaded robotic arm model.
+// RobotModel& getRobotModel()
+// 	    -> Returns a reference to the robotic arm model.
+// enum class robotFocusMode
+//      -> Enumeration for robot focus modes (Base, Link, Joint).
+// void processMovementKey(int key, float delta)
+// 	    -> Processes a movement key input for camera control.
+// void handleContinuousMovement(GLFWwindow* window, float dt)
+//      -> Handles continuous movement input for the camera.
+// void handleMouseLook(GLFWwindow* window, double xpos, double ypos)
+//      -> Handles mouse look input for the camera.
+// void onMouseMove(double x, double y, elements::eInputButton button)
+//      -> Handles mouse movement input for the scene.
+// void onMouseWheel(double delta)
+//      -> Handles mouse wheel input for zooming.
+// void resetMouseDelta()
+//      -> Resets the mouse delta values.
+// --------------------------------------------
+// 
+// private:
+// -------------------------------------------- 
+// void MeshRender()
+//      -> Renders the mesh in the scene.
+// void WorldGridRender()
+//  	-> Renders the world grid in the scene.
+// void InitShadowResource()
+// 	    -> Initializes resources for shadow mapping.
+// void InitIBL()
+//      -> Initializes resources for image-based lighting (IBL).
+// void ShadowPass()
+// 	    -> Performs the shadow mapping pass.
+// void SkyboxRender()
+// 	    -> Renders the skybox in the scene.
+// void instantiateRobotLinks()
+// 	    -> Instantiates Object instances for each link in the robotic arm model.
+// void buildLinkIndex()
+// 	    -> Builds an index mapping link names to their corresponding Object instances.
+// void updateRobotKinematics(const glm::mat4& baseTransform)
+//      -> Updates the kinematics of the robotic arm model based on the base transform.
+// 
+// 
+// Internal Pointer Variables:
+// -----
+// std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer
+//      -> Unique pointer to the framebuffer used for rendering.
+// std::shared_ptr<shaders::Shader> _shaderBasic
+// 	    -> Shared pointer to the basic shader.
+// std::shared_ptr<shaders::Shader> _shaderLit
+//      -> Shared pointer to the lit shader.
+// std::shared_ptr<shaders::Shader> _shaderPBR
+// 	    -> Shared pointer to the PBR shader.
+// std::unique_ptr<shaders::Shader> _worldGridShader
+// 	    -> Unique pointer to the world grid shader.
+// std::unique_ptr<shaders::Shader> _shadowShader
+//      -> Unique pointer to the shadow mapping shader.
+// std::unique_ptr<elements::Camera> _camera
+//      -> Unique pointer to the camera in the scene.
+// std::unique_ptr<elements::Light> _light
+// 	    -> Unique pointer to the main light in the scene.
+// std::unique_ptr<elements::Light> _sunLight
+//      -> Unique pointer to the sun light in the scene.
+// elements::Object* _cameraFollowTarget
+// 	    -> Pointer to the object the camera is following (if any).
+// std::shared_ptr<elements::Mesh> _mesh
+//      -> Shared pointer to the current mesh in the scene.
+// std::vector<std::unique_ptr<elements::Object>> _objects
+// 	    -> Vector of unique pointers to the scene objects.
+// std::vector<ModelGroup> modelGroups
+//      -> Vector of model groups for rendering.
+// elements::Object* _selectedObject
+// 	    -> Pointer to the currently selected object.
+// std::shared_ptr<elements::Mesh> _checkerPlane
+//      -> Shared pointer to the checkerboard ground plane mesh.
+// std::shared_ptr<elements::Mesh> createCheckerPlane(float size)
+//      -> Creates a checkerboard ground plane mesh of the specified size.
+// render::SkyboxRenderer* _skybox
+//      -> Pointer to the skybox renderer.
+// std::unique_ptr<render::IBL> _ibl
+//      -> Unique pointer to the image-based lighting 
+// physics::PhysicsSystem* _physics
+// 	    -> Pointer to the physics system for simulation.
+// RobotModel _robot
+//      -> Instance of the robotic arm model.
+// std::unordered_map<std::string, int> _linkIndex
+// 	    -> Map of link names to their corresponding indices in the robotic arm model.
+// gui::FpsCounter _fpsCounter
+//      -> FPS counter for performance monitoring.
+// -----
+// 
+// Internal State Variables:
+// -----
+// glm::mat4 LightSpaceMatrix(float nearPlane, float farPlane)
+// 	    -> Computes the light space matrix for shadow mapping.
+// int _currentShadowIndex
+// 	    -> Current index for shadow mapping cascades.
+// int NUM_CASCADES
+// 	    -> Number of cascades for shadow mapping.
+// GLuint _cascadeFBO[NUM_CASCADES]
+//      -> Array of OpenGL framebuffer IDs for cascade shadow maps.
+// GLuint _cascadeDepth[NUM_CASCADES]
+//      -> Array of OpenGL texture IDs for cascade shadow maps.
+// glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES]
+//      -> Array of light space matrices for each cascade.
+// float _cascadeSplits[NUM_CASCADES]
+// 	    -> Array of split distances for cascade shadow mapping.
+// int SHADOW_W
+//      -> Width of the shadow map textures.
+// int SHADOW_H
+// 	    -> Height of the shadow map textures.
+// bool _hasRobot
+//      -> Indicates whether a robotic arm model is currently loaded.
+// bool _isHovered
+//      -> Indicates whether the scene view is currently hovered by the mouse.
+// bool skyboxEnabled
+//      -> Indicates whether the skybox is enabled.
+// bool _firstMouse
+// 	    -> Indicates whether this is the first mouse input event.
+// bool _firstUpdate
+//      -> Indicates whether this is the first update call.
+// glm::vec2 _lastMousePos
+// 	    -> Last recorded mouse position for input handling.
+// glm::vec2 _size 
+//      -> Size of the scene view.
+// glm::vec3 _backgroundColour
+//      -> Background colour of the scene.
+// float _backgroundAlpha
+// 	    -> Background alpha (transparency) of the scene.
+// float planeHeight
+//      -> Height of the ground plane.
+// float planeY
+// 	    -> Y-coordinate of the ground plane.
+// glm::vec3 planeNormal
+//      -> Normal vector of the ground plane.
+// int _worldGridVAO
+// 	    -> OpenGL Vertex Array Object ID for the world grid.
+// -----
+// ---------------------------------------------
+// 
+// ============================================
+
 #include "EngineCore.h"
 #include "Scene/Object.h"
 #include "Rendering/ModelGroup.h"
@@ -15,6 +234,7 @@
 
 extern ENGINE_API Debug gLog;
 
+// Forward Declarations
 namespace render {
     class OpenGLFrameBuffer;
 	class IBL;
@@ -30,12 +250,12 @@ namespace elements {
     class Mesh;
     class Object;
 }
-
 namespace physics {
     class PhysicsSystem;
 }
 
 namespace gui {
+    // SceneView Class
     class ENGINE_API SceneView {
     public:
         SceneView();
@@ -47,17 +267,14 @@ namespace gui {
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
-
         void loadNewHDR(const std::string& path);
-
 
         // Background & Scene
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
-        glm::vec3 getBackgroundColour() const { return _backgroundColour; }
-
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
-        float getBackgroundAlpha() const { return _backgroundAlpha; }
 
+        glm::vec3 getBackgroundColour() const { return _backgroundColour; }
+        float getBackgroundAlpha() const { return _backgroundAlpha; }
         float getPlaneHeight() const { return planeHeight; }
 
 
@@ -123,17 +340,13 @@ namespace gui {
             Joint
 		};
 
-
 		// Input Handling
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
         void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
-
         void onMouseMove(double x, double y, elements::eInputButton button);
         void onMouseWheel(double delta);
-
         void resetMouseDelta();
-
 
     private:       
 		// Rendering Pipeline Methods
@@ -151,7 +364,6 @@ namespace gui {
         std::shared_ptr<shaders::Shader> _shaderBasic;
         std::shared_ptr<shaders::Shader> _shaderLit;
         std::shared_ptr<shaders::Shader> _shaderPBR;
-        std::shared_ptr<shaders::Shader> _shaderPBRShadow;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
 

@@ -1,3 +1,6 @@
+// ==================================================
+//				File: PhysicsSystem.cpp
+// ==================================================
 
 #include "pch.h"
 #include "Physics/PhysicsSystem.h"
@@ -17,7 +20,8 @@ namespace physics {
 	PhysicsSystem::PhysicsSystem() {
 		_ODE = std::make_unique<integration::ODE>();
 
-		LOG_INFO("PhysicsSystem initialized.");
+		LOG_INFO("PhysicsSystem initialised.");
+		D_INFO("Physics initialised");
 	}
 
 
@@ -141,16 +145,19 @@ namespace physics {
 	// Low-Level Integrators
 	void PhysicsSystem::integrateEuler(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt) {
 		x = _ODE->eulerStep(x, dxdt, dt);
+		D_INFO_ONCE("Integrator -> Euler Method");
 	}
 	
 	void PhysicsSystem::integrateRK2(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt) {
 		// RK2 integration implementation
 		//x = _ODE->rk2Step(x, _t, dt, dxdt);
+		D_INFO_ONCE("Integrator -> Runge-Kutta 2nd Order Method");
 	}
 
 	void PhysicsSystem::integrateRK4(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt) {
 		// RK4 integration implementation
-		//x = _ODE->rk4Step(x, _t, dt, dxdt);
+		//x = _ODE->rk4Step(x, _t, dt, dxdt);#
+		D_INFO_ONCE("Integrator -> Runge-Kutta 4th Order Method");
 	}
 
 

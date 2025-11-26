@@ -29,28 +29,7 @@
 bool controlPanelOpen = false;
 
 namespace window {
-/*
- * --------------------------------------------
- *              GLWINDOW METHODS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * GLWindow() -> Constructor that initializes the GLWindow object.
- * ~GLWindow() -> Destructor that cleans up resources and ends rendering and GUI contexts.
- * render() -> Renders the scene view, control panel, and debug panel.
- * init(int width, int height, const std::string& header) -> Initializes the GLWindow with the specified width, height, and header.
- * onResize(int width, int height) -> Handles window resize events and updates the scene view accordingly.
- * shouldClose() const -> Checks if the window should close.
- * pollEvents() -> Polls for window events.
- * swapBuffers() -> Swaps the front and back buffers of the window.
- * getNativeWin() -> Returns the native GLFW window pointer.
- * setNativeWin(void* window) -> Sets the native GLFW window pointer.
- * getWidth() const -> Returns the width of the window.
- * getHeight() const -> Returns the height of the window.
- * getHeader() const -> Returns the header string of the window.
- * --------------------------------------------
- */
+
     GLWindow::GLWindow() {
         _header = new std::string();
     }

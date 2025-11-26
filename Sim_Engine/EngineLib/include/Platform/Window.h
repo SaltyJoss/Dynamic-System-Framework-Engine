@@ -1,4 +1,57 @@
 #pragma once
+
+// ============================================
+//            File: Window.h
+// ============================================
+// Interface for a basic windowing system.
+//
+// Summary:
+// ============================================
+//
+// interface:
+// --------------------------------------------
+// IWindow
+//      -> Interface class defining basic window operations and callbacks.
+// --------------------------------------------
+//
+// public:
+// --------------------------------------------
+// virtual bool init(int width, int height, const std::string& title)
+//      -> Initializes the window with the specified width, height, and title.
+// virtual bool isRunning()
+//      -> Checks if the window is currently running.
+// virtual bool shouldClose()
+//      -> Checks if the window should close.
+// virtual void pollEvents()
+//      -> Polls for window events.
+// virtual void swapBuffers()
+//      -> Swaps the front and back buffers of the window.
+// virtual void* getNativeWin()
+//      -> Returns the native window pointer.
+// virtual void setNativeWin(void* window)
+//      -> Sets the native window pointer.
+// virtual void onKey(int key, int scancode, int action, int mods)
+//      -> Handles key press events.
+// virtual void onScroll(double delta)
+//      -> Handles mouse scroll events.
+// virtual void onResize(int width, int height)
+//      -> Handles window resize events.
+// virtual void onCursorPos(double xpos, double ypos)
+//      -> Handles mouse cursor position events.
+// virtual void onClose()
+//      -> Handles window close events.
+// virtual ~IWindow()
+//      -> Virtual destructor for the IWindow interface.
+// virtual int getWidth()
+//      -> Returns the width of the window.
+// virtual int getHeight()
+//      -> Returns the height of the window.
+// virtual const std::string& getHeader()
+//      -> Returns the header string of the window.
+// --------------------------------------------
+//
+// ============================================
+
 #include "EngineCore.h"
 
 #include <imgui.h>

@@ -149,7 +149,6 @@
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
-    <ClInclude Include="include\Scene\DebugLogEntry.h" />
     <ClInclude Include="include\Scene\DebugPanel.h" />
     <ClInclude Include="include\Scene\Element.h" />
     <ClInclude Include="include\Scene\Face.h" />

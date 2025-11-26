@@ -97,19 +97,23 @@ namespace gui{
 	void SceneView::loadNewHDR(const std::string& path)
 	{
 		LOG_INFO("Loading new HDR: %s", path.c_str());
+		D_INFO("Loading new HDR: %s", path.c_str());
 
 		// Make sure IBL system exists
 		if (!_ibl) {
 			LOG_ERROR("Cannot load HDR because IBL system is not initialised.");
+			D_FAIL("Cannot load HDR because IBL system is not initialised.");
 			return;
 		}
 
 		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
+		D_OK("IBL rebuilt successfully.");
 
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 
 		LOG_INFO("HDR updated successfully.");
+		D_OK("Loaded HDR successfully.");
 	}
 
 // --------------------------------------------------
@@ -144,6 +148,7 @@ namespace gui{
 
 		if (meshes.empty()) {
 			LOG_WARN("No meshes imported from %s", filepath.c_str());
+			D_WARN("No meshes imported from %s", filepath.c_str());
 			return;
 		}
 
@@ -165,6 +170,7 @@ namespace gui{
 		}
 
 		LOG_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
+		D_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
 	std::vector<elements::Object*> SceneView::loadMeshReturn(const std::string& filepath) {
@@ -311,7 +317,8 @@ namespace gui{
 		buildLinkIndex();
 
 
-		LOG_INFO("Loaded robot: %s", name.c_str());
+		LOG_INFO("Loaded robot model -> %s", name.c_str());
+		D_OK("Loaded robot model -> %s", name.c_str());
 	}
 
 	// Method to create Object instances for each robot link
@@ -320,15 +327,16 @@ namespace gui{
 			auto objs = loadMeshReturn(link.meshFile);
 			if (objs.empty()) {
 				LOG_ERROR("Failed to load mesh for link %s", link.name.c_str());
+				D_ERROR("Failed to load mesh for link %s", link.name.c_str());
 				continue;
 			}
 			elements::Object* obj = objs[0]; // assumes one object per link
 			obj->transform.scale = glm::vec3(1.0f);
 			link.attachedObject = obj;
 
-			LOG_INFO("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
-		}
-		LOG_INFO("Instantiated %zu robot links", _robot.links.size());
+			LOG_INFO_ONCE("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
+			D_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
+		}		
 	}
 
 	// Method to build a name-to-index map for robot links
@@ -414,6 +422,7 @@ namespace gui{
 		_hasRobot = false;
 
 		LOG_INFO("Cleared old robot model");
+		D_WARN("old robot model destroyed");
 	}
 
 // --------------------------------------------------
@@ -479,13 +488,20 @@ namespace gui{
 		shaders::Shader* shader = nullptr;
 
 		switch (currentShaderMode) {
-			case ShaderMode::Basic:     shader = _shaderBasic.get(); break;
-			case ShaderMode::Lit:       shader = _shaderLit.get(); break;
-			case ShaderMode::PBR:       shader = _shaderPBR.get(); break;
+			case ShaderMode::Basic:     
+				shader = _shaderBasic.get();
+				break;
+			case ShaderMode::Lit:
+				shader = _shaderLit.get();
+				break;
+			case ShaderMode::PBR:
+				shader = _shaderPBR.get();
+				break;
 		}
 
 		if (!shader) {
 			LOG_ERROR("Shader is NULL after switch!");
+
 			return;
 		}
 
@@ -563,6 +579,7 @@ namespace gui{
 				glBindTexture(GL_TEXTURE_2D, _ibl->getBRDFLUT());
 
 				LOG_INFO_ONCE("RadianceMap = %u, Prefilter = %u, BRDF = %u", _ibl->getIrradianceMap(), _ibl->getPrefilterMap(), _ibl->getBRDFLUT());
+				D_INFO_ONCE("RadianceMap = %u, Prefilter = %u, BRDF = %u", _ibl->getIrradianceMap(), _ibl->getPrefilterMap(), _ibl->getBRDFLUT());
 				break;
 			}
 
@@ -692,11 +709,12 @@ namespace gui{
 
 	void SceneView::reloadAllShaders()
 	{
-		_shaderBasic->reload();
-		_shaderLit->reload();
-		_shaderPBR->reload();
+		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
+		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
 		LOG_INFO("All shaders reloaded from disk.");
+		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 
 // --------------------------------------------------

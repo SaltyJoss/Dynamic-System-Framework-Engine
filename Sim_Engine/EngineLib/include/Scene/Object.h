@@ -1,5 +1,57 @@
 #pragma once
 
+//=============================================
+//            File: Object.h
+//=============================================
+// Class representing a 3D object in the scene with a mesh, transform, and physics state.
+// 
+// Summary:
+// ============================================
+// 
+// structs:
+// --------------------------------------------
+// Transform
+//      -> Represents the position, rotation, and scale of an object in 3D space.
+// --------------------------------------------
+// 
+// public:
+// --------------------------------------------
+// Object(std::shared_ptr<Mesh> mesh)
+//      -> Constructor that initializes the object with a given mesh.
+// Mesh* getMesh()
+//      -> Returns a pointer to the object's mesh.
+// const Mesh* getMesh() const
+//      -> Returns a const pointer to the object's mesh.
+// void update(shaders::Shader* shader) override
+//      -> Updates the object's mesh with the given shader.
+// void reset()
+//      -> Resets the object's transform and physics state to default values.
+// void onMouseWheel(double delta)
+//      -> Handles mouse wheel input to adjust the object's distance.
+// void onMouseMove(double x, double y, eInputButton button)
+//      -> Handles mouse movement input to adjust the object's rotation and position.
+// void setLastMousePos(const glm::vec2& pos)
+//      -> Sets the last mouse position for input handling.
+// glm::vec2 getLastMousePos() const
+//      -> Returns the last mouse position for input handling.
+// --------------------------------------------
+// 
+// private:
+// --------------------------------------------
+// std::shared_ptr<Mesh> _mesh
+// 		-> Shared pointer to the object's mesh.
+// glm::vec2 _lastMousePos{ 0.0f }
+// 		-> Last recorded mouse position for input handling.
+// --------------------------------------------
+// 
+// Internal State Variables:
+// --------------------------------------------
+// float _distance = 5.0f
+//      -> Distance factor used for mouse wheel input handling.
+// ---------------------------------------------
+// 
+// ============================================
+
 #include "EngineCore.h"
 #include "Physics/PhysicsState.h"
 #include "Scene/Element.h"
@@ -60,7 +112,6 @@ namespace elements {
 		void reset() {
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec3(0.0f);
-			transform.scale = glm::vec3(0.01f);
 
 			state.theta = Eigen::Vector3d::Zero();
 			state.linearVelocity = Eigen::Vector3d::Zero();
@@ -69,7 +120,7 @@ namespace elements {
 			state.torques = Eigen::Vector3d::Zero();
 		}
 
-		void onMouseWheel(double delta) { _distance += delta * 0.5f; }
+		void onMouseWheel(double delta) { _distance += (float)delta * 0.5f; }
 
 		void onMouseMove(double x, double y, eInputButton button) {
 			glm::vec2 pos2d{ x, y };

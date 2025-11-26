@@ -1,3 +1,6 @@
+// ==================================================
+//				File: ControlPanel.cpp
+// ==================================================
 
 #include "pch.h"
 
@@ -6,6 +9,7 @@
 #include "Scene/ControlPanel.h"
 #include "Robots/RobotModel.h"
 #include <imgui.h>
+#include <chrono>
 
 #include "EngineLib/LogMacros.h"
 
@@ -81,14 +85,17 @@ namespace gui {
                 // Shader selection
                 if (ImGui::MenuItem("Basic Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Basic)) {
                     _sceneView->currentShaderMode = SceneView::ShaderMode::Basic;
+                    D_INFO("Shader -> Basic Shader");
                 }
 
                 if (ImGui::MenuItem("Lit Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Lit)) {
                     _sceneView->currentShaderMode = SceneView::ShaderMode::Lit;
+                    D_INFO("Shader -> Lit Shader");
                 }
 
                 if (ImGui::MenuItem("PBR Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::PBR)) {
                     _sceneView->currentShaderMode = SceneView::ShaderMode::PBR;
+                    D_INFO("Shader -> PBR Shader");
                 }
 
                 ImGui::EndMenu();
@@ -113,6 +120,7 @@ namespace gui {
             _currentMeshFile = file_path.substr(file_path.find_last_of("/\\") + 1);
             meshLoadCallback(file_path);
             LOG_INFO("Mesh loaded from file: %s", _currentMeshFile.c_str());
+			D_OK("Mesh loaded from file: %s", _currentMeshFile.c_str());
 
             _meshLoad.ClearSelected();
         }
@@ -123,13 +131,50 @@ namespace gui {
             _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
             _sceneView->loadNewHDR(file_path);
             LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
+			D_OK("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();
         }
     }
 
     void ControlPanel::renderSimulationProperties() {
         ImGui::SeparatorText("Simulation Controls");
+
+        float step = 0.001f;
+        float stepFast = 0.01f;
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::InputScalar("seconds", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+
+		// Simulation Start/Stop Button
+        if (ImGui::Button(simulationRunning ? "Stop" : "Start")) {
+            simulationRunning = !simulationRunning;
+            LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
+			D_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
+		}
+
+		// Deals with simulation time tracking using chrono
+        if (simulationRunning) {
+            auto now = std::chrono::high_resolution_clock::now();
+            double deltaSeconds = std::chrono::duration<double>(now - lastUpdateTime).count();
+            lastUpdateTime = now;
+            simTime += static_cast<float>(deltaSeconds);
+            if (simTime >= simLength) {
+                simulationRunning = false;
+                simTime = 0.0f;
+				D_INFO("Simulation ended");
+                D_OK("Total elapsed time : % .1f seconds.", simLength);
+            }
+        }
+        else {
+            lastUpdateTime = std::chrono::high_resolution_clock::now();
+        }
+		ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
+
+        
+		// Gravity Toggle
+        ImGui::Separator();
+		ImGui::Text("Physics Settings:");
         ImGui::Checkbox("Enable Gravity", &gravityEnabled);
+
     }
 
     void ControlPanel::renderObjectProperties() {
@@ -184,6 +229,7 @@ namespace gui {
         if (ImGui::Button("Reset")) {
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
+            D_INFO("Reset %s", _obj);
         }
     }
 
@@ -200,6 +246,20 @@ namespace gui {
             const glm::vec3& rot = _obj->transform.rotation;
 
             ImGui::Text("Plots");
+
+			// Linear velocity plot
+            static std::vector<float> linVelHistory;
+            linVelHistory.push_back(static_cast<float>(_obj->state.linearVelocity.norm()));
+            if (linVelHistory.size() > 100) linVelHistory.erase(linVelHistory.begin());
+
+			// Angular velocity plot
+            static std::vector<float> angVelHistory;
+            angVelHistory.push_back(static_cast<float>(_obj->state.angularVelocity.norm()));
+            if (angVelHistory.size() > 100) angVelHistory.erase(angVelHistory.begin());
+
+			// Plot Outputs
+            ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+            ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
 
             ImGui::Separator();
 
@@ -329,7 +389,6 @@ namespace gui {
                 ImGuiTableFlags_RowBg |
                 ImGuiTableFlags_NoBordersInBody;
 
-            // 4 columns because we define 4 headers
             if (ImGui::BeginTable("RobotTable", 3, tableFlags))
             {
                 ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
@@ -372,7 +431,7 @@ namespace gui {
 
                         if (i == 0) {
                             // Base link: parent is robot root
-							parentName = "Z1";          // robot base name if first link (link00)
+							parentName = _requestedRobot;          // robot base name if first link (link00)
                         }
                         else if (hasPrevJoint) {
                             // For link i, previous joint connects parent->child
@@ -389,7 +448,8 @@ namespace gui {
                         ImGuiTreeNodeFlags leafFlags =
                             ImGuiTreeNodeFlags_Leaf |
                             ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                            ImGuiTreeNodeFlags_Bullet;
+                            ImGuiTreeNodeFlags_DrawLinesToNodes |
+                            ImGuiTreeNodeFlags_OpenOnArrow;
 
                         if (linkSelected) {
                             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
@@ -423,7 +483,7 @@ namespace gui {
 
                     ImGui::TreePop();
                 }
-
+				_currentObjectName = "Robot: " + _requestedRobot;
                 ImGui::EndTable();
             }
 
@@ -431,6 +491,7 @@ namespace gui {
                 _sceneView->clearRobot();
                 _hasRobot = false;
                 LOG_INFO("%s removed from scene.", _requestedRobot);
+				D_INFO("%s removed.", _requestedRobot);
             }
         }
 
@@ -454,6 +515,7 @@ namespace gui {
                 ImGui::TableSetColumnIndex(0);
 
                 if (ImGui::Selectable(("Object " + std::to_string(i)).c_str(), isSelected)) {
+					_currentObjectName = "Object " + std::to_string(i);
                     _sceneView->setSelectedObject(obj);
                 }
 

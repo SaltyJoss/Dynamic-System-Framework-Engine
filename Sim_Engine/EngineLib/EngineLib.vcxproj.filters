@@ -129,9 +129,6 @@
     <ClInclude Include="include\Scene\ControlPanel.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\DebugLogEntry.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="include\Scene\DebugPanel.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>

@@ -36,6 +36,7 @@ namespace render {
 		if (_prefilterMap)	glDeleteTextures(1, &_prefilterMap);
 		if (_brdfLUT)		glDeleteTextures(1, &_brdfLUT);
 		LOG_INFO("IBL resources deleted in destructor");
+
 	}
 
 	void IBL::init(const std::string& hdrPath) {
@@ -44,6 +45,8 @@ namespace render {
 		generateIrradianceMap();
 		generatePrefilterMap();
 		generateBRDFLUT();
+
+		D_OK("IBL built successfully.");
 	}
 
 /*
@@ -64,6 +67,7 @@ namespace render {
 
 		if(!data) {
 			LOG_ERROR("Failed to load HDR image from %s", hdrPath.c_str());
+			D_FAIL("Failed to load HDR image from %s", hdrPath.c_str());
 			return;
 		}
 

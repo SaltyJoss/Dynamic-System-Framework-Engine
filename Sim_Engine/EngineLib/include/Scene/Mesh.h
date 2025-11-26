@@ -1,4 +1,57 @@
 #pragma once
+
+//=============================================
+//				File: Mesh.h
+//=============================================
+// Class responsible for loading 3D mesh files using the Assimp library.
+// 
+// Summary:
+// ============================================
+// 
+// public:
+// --------------------------------------------
+// Mesh()
+//      -> Default constructor for the Mesh class.
+// bool load(const std::string& filepath)
+//      -> Loads a mesh from the specified file path.
+// void addVertex(const VertexHolder& vertex)
+//      -> Adds a vertex to the mesh's vertex list.
+// void addVertexIndex(unsigned int vertexIndx)
+//      -> Adds a vertex index to the mesh's index list.
+// void init()
+//      -> Initializes the mesh for rendering.
+// void createBuffers()
+//      -> Creates the necessary GPU buffers for the mesh.
+// void deleteBuffers()
+//      -> Deletes the GPU buffers associated with the mesh.
+// void bind()
+//      -> Binds the mesh's GPU buffers for rendering.
+// void unbind()
+//      -> Unbinds the mesh's GPU buffers.
+// void render()
+//      -> Renders the mesh.
+// void clean()
+// 		-> Cleans up the mesh resources.
+// void update(shaders::Shader* shader)
+//		-> Updates the shader with the mesh's material properties.
+// glm::mat4 localTransform
+//      -> Local transformation matrix for the mesh.
+// glm::vec3 _colour
+//      -> Colour of the mesh.s
+// float _metallic
+//		-> Metallic property of the mesh material.
+// bool _isStatic
+// 		-> Indicates if the mesh is static (immovable).
+// --------------------------------------------
+// 
+// private:
+// --------------------------------------------
+// std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr
+// 		-> Unique pointer to the mesh's vertex and index buffer manager.
+// --------------------------------------------
+// 
+// ============================================
+
 #include "EngineCore.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
