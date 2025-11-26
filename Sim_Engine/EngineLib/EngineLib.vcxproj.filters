@@ -255,6 +255,9 @@
     <ClInclude Include="include\Robots\RobotModel.h">
       <Filter>Header Files\include\Robots</Filter>
     </ClInclude>
+    <ClInclude Include="include\Platform\SimulationState.h">
+      <Filter>Header Files\include\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

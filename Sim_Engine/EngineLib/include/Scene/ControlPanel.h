@@ -5,6 +5,7 @@
 #include "Scene/SceneView.h"
 #include "Scene/Light.h"
 #include "Platform/Logger.h"
+#include "Platform/SimulationState.h"
 
 #include <imgui.h>
 #include "Platform/imguiWidgets.h"
@@ -15,24 +16,9 @@ extern ENGINE_API Debug gLog;
 namespace gui {
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(SceneView* sceneView) : 
-            _sceneView(sceneView), _controlMode(&sceneView->ctrlMode),
-            _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
-            _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
-        {
-            _currentMeshFile = "<...>";
-            _currentHDRFile = "<...>";
+        ControlPanel(SceneView* sceneView);
 
-            _meshLoad.SetTitle("Open Object Model");
-			_meshLoad.SetDirectory("Engine/assets/objects");
-            _meshLoad.SetTypeFilters({ ".fbx", ".obj", ".dae"});
-
-			_hdrLoad.SetTitle("Load HDR Environment");
-			_hdrLoad.SetDirectory("Engine/assets/hdr");
-			_hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
-        }
-
-        void render(gui::SceneView* sceneView);
+        void render(SceneView* sceneView);
         void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
@@ -54,6 +40,7 @@ namespace gui {
         bool gravityEnabled = false;
         bool _showRobotSelector = false;
         bool _robotRequested = false;
+        bool _hasRobot = false;
 
         std::string _requestedRobot;
 
@@ -82,5 +69,7 @@ namespace gui {
         std::function<void(bool)> simCallback;
         SceneView* _sceneView = nullptr;
         SceneView::ControlMode* _controlMode;
+
+        Selection _selection;
     };
 }

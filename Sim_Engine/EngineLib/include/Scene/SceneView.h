@@ -36,7 +36,7 @@ namespace physics {
 }
 
 namespace gui {
-    class ENGINE_API SceneView{
+    class ENGINE_API SceneView {
     public:
         SceneView();
         ~SceneView();
@@ -103,15 +103,7 @@ namespace gui {
         elements::Object* getObject() { return _selectedObject; }
         void setSelectedObject(elements::Object* obj) { _selectedObject = obj; }
 
-        void deleteObject(int index) {
-            if (index < 0 || index >= _objects.size()) return;
-
-            if (_selectedObject == _objects[index].get()) {
-                _selectedObject = nullptr;
-            }
-
-            _objects.erase(_objects.begin() + index);
-        }
+        void deleteObject(int index);
 
 
         // Physics
@@ -120,6 +112,16 @@ namespace gui {
 		// Robotic Arm System
         void loadRobot(const std::string& name);
         bool hasRobot() const { return _hasRobot; }
+        void clearRobot();
+
+        RobotModel& getRobotModel() { return _robot; }
+
+		// Robot Focus Modes - NOT USED YET, KEEPING FOR IDEA I HAVE!
+        enum class robotFocusMode {
+            Base,
+            Link,
+            Joint
+		};
 
 
 		// Input Handling
@@ -201,7 +203,6 @@ namespace gui {
         void instantiateRobotLinks();
         void buildLinkIndex();
         void updateRobotKinematics(const glm::mat4& baseTransform);
-        void clearRobot();
 
 
         // Editor & UI

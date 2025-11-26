@@ -4,17 +4,38 @@
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/ControlPanel.h"
+#include "Robots/RobotModel.h"
 #include <imgui.h>
 
 #include "EngineLib/LogMacros.h"
 
-
 namespace gui {
-    void ControlPanel::render(gui::SceneView* sceneView) {
-        _sceneView = sceneView; // store pointer for convenience
-        _mesh = sceneView->getMesh();
-        _obj = sceneView->getObject();
+    ControlPanel::ControlPanel(SceneView* sceneView) :
+        _sceneView(sceneView), _controlMode(&sceneView->ctrlMode),
+        _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+        _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
+    {
+        // File browsers
+        _currentMeshFile = "<...>";
+        _currentHDRFile = "<...>";
+        // Mesh loader
+        _meshLoad.SetTitle("Open Object Model");
+        _meshLoad.SetDirectory("Engine/assets/objects");
+        _meshLoad.SetTypeFilters({ ".fbx", ".obj", ".dae", ".stl"});
+        // HDR loader
+        _hdrLoad.SetTitle("Load HDR Environment");
+        _hdrLoad.SetDirectory("Engine/assets/hdr");
+        _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
+    }
+
+    void ControlPanel::render(SceneView* sceneView) {
+        // Initialize pointers to scene elements
+        _sceneView = sceneView; // stores pointer for convenience
+        _mesh = _sceneView->getMesh();
+        _obj = _sceneView->getObject();
         _sunLight = _sceneView->getSunLight();
+        _hasRobot = _sceneView->hasRobot();
+
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
@@ -119,7 +140,7 @@ namespace gui {
             return;
         }
 
-        ImGui::SeparatorText("Object Controls");
+        ImGui::SeparatorText("Object Properties");
 
         if (gravityEnabled) {
             double minGravity = 0.0; double maxGravity = 20.0;
@@ -176,9 +197,14 @@ namespace gui {
         if (_obj && _obj->getMesh())
         {
             const glm::vec3& pos = _obj->transform.position;
-            const glm::vec3& rot = _obj->transform.rotation; // radians most likely
+            const glm::vec3& rot = _obj->transform.rotation;
 
-            ImGui::SeparatorText("Telemetry");
+            ImGui::Text("Plots");
+
+            ImGui::Separator();
+
+            ImGui::Text("Telemetry");
+			ImGui::Separator();
 
             // Position block
             if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV))
@@ -273,6 +299,7 @@ namespace gui {
             _robotRequested = true;
 
             _sceneView->loadRobot(_requestedRobot);
+			_hasRobot = true;
         }
 
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", company);
@@ -287,8 +314,130 @@ namespace gui {
     void ControlPanel::renderSceneObjects() {
         ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
 
-        auto& objs = _sceneView->getObjects();
+		auto& objs = _sceneView->getObjects();          // get reference to scene objects
         int indexToDelete = -1;
+
+        // Robot section
+        if (_hasRobot) {
+            ImGui::Text("Robot Table:");
+            ImGui::Separator();
+
+            ImGuiTableFlags tableFlags =
+                ImGuiTableFlags_BordersV |
+                ImGuiTableFlags_BordersOuterH |
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_NoBordersInBody;
+
+            // 4 columns because we define 4 headers
+            if (ImGui::BeginTable("RobotTable", 3, tableFlags))
+            {
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Parent");
+                ImGui::TableHeadersRow();
+
+                RobotModel& robot = _sceneView->getRobotModel();
+
+                bool robotSelected = (_selection.type == SelectionType::ROBOT);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+
+                ImGuiTreeNodeFlags rootFlags =
+                    ImGuiTreeNodeFlags_SpanAllColumns |
+                    ImGuiTreeNodeFlags_DefaultOpen;
+
+                bool openRoot = ImGui::TreeNodeEx("Z1", rootFlags);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::TextUnformatted("ROOT");
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::TextDisabled("--");
+
+                if (openRoot)
+                {
+                    for (int i = 0; i < (int)robot.links.size(); ++i)
+                    {
+                        const auto& link = robot.links[i];
+
+                        auto* attachedObj = link.attachedObject;
+                        bool linkSelected = (attachedObj != nullptr && attachedObj == _sceneView->getObject());
+
+						// Determine parent link name
+                        const bool hasPrevJoint = (i > 0 && (i - 1) < (int)robot.joints.size());
+                        const auto* joint = hasPrevJoint ? &robot.joints[i - 1] : nullptr;
+
+                        std::string parentName;
+
+                        if (i == 0) {
+                            // Base link: parent is robot root
+							parentName = "Z1";          // robot base name if first link (link00)
+                        }
+                        else if (hasPrevJoint) {
+                            // For link i, previous joint connects parent->child
+                            parentName = joint->parent; // parent link name
+                        }
+                        else {
+                            parentName = "?";
+                        }
+
+                        ImGui::TableNextRow();
+
+                        // Column 0 -> name
+                        ImGui::TableSetColumnIndex(0);
+                        ImGuiTreeNodeFlags leafFlags =
+                            ImGuiTreeNodeFlags_Leaf |
+                            ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                            ImGuiTreeNodeFlags_Bullet;
+
+                        if (linkSelected) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
+                        }
+
+                        ImGui::TreeNodeEx(link.name.c_str(), leafFlags);
+
+                        if (linkSelected) {
+                            ImGui::PopStyleColor();
+                        }
+
+                        if (ImGui::IsItemClicked() && attachedObj != nullptr) {
+                            _selection.type = SelectionType::LINK;
+                            _selection.index = i;
+                            _sceneView->setSelectedObject(attachedObj);
+							// THIS IS WHERE I GOT TO @ 11:50PM 2025-11-25
+							LOG_INFO("Selected link: %s", link.name.c_str());
+                        }
+
+                        // Column 1 -> type
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::TextUnformatted("LINK");
+
+                        // Column 2 -> parent
+                        ImGui::TableSetColumnIndex(2);
+                        if (!parentName.empty())
+                            ImGui::TextUnformatted(parentName.c_str());
+                        else
+                            ImGui::TextDisabled("--");
+                    }
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::EndTable();
+            }
+
+            if (ImGui::Button("Remove")) {
+                _sceneView->clearRobot();
+                _hasRobot = false;
+                LOG_INFO("%s removed from scene.", _requestedRobot);
+            }
+        }
+
+		ImGui::Separator();
+
+        ImGui::Text("General Object Table");
+        ImGui::Separator();
 
         if (ImGui::BeginTable("ObjTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
         {
@@ -325,4 +474,3 @@ namespace gui {
         ImGui::EndChild();
     }
 }
-

@@ -37,10 +37,10 @@ namespace gui{
 
 	SceneView::SceneView() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
-		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
+		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(1920, 1080);
+		_frameBuffer->createBuffers(3840, 2160);
 
 		// Shader Types A
 		_shaderBasic = std::make_shared<shaders::Shader>();
@@ -212,6 +212,16 @@ namespace gui{
 		return plane;
 	}
 
+	void SceneView::deleteObject(int index) {
+		if (index < 0 || index >= _objects.size()) return;
+
+		if (_selectedObject == _objects[index].get()) {
+			_selectedObject = nullptr;
+		}
+
+		_objects.erase(_objects.begin() + index);
+	}
+
 // --------------------------------------------------
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
@@ -300,13 +310,12 @@ namespace gui{
 		instantiateRobotLinks();
 		buildLinkIndex();
 
+
 		LOG_INFO("Loaded robot: %s", name.c_str());
 	}
 
 	// Method to create Object instances for each robot link
 	void SceneView::instantiateRobotLinks() {
-
-
 		for (auto& link : _robot.links) {
 			auto objs = loadMeshReturn(link.meshFile);
 			if (objs.empty()) {
@@ -314,7 +323,7 @@ namespace gui{
 				continue;
 			}
 			elements::Object* obj = objs[0]; // assumes one object per link
-			obj->transform.scale = glm::vec3(_robot.scale);
+			obj->transform.scale = glm::vec3(1.0f);
 			link.attachedObject = obj;
 
 			LOG_INFO("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
@@ -333,6 +342,7 @@ namespace gui{
 	void SceneView::updateRobotKinematics(const glm::mat4& baseTransform) {
 		if (!_hasRobot) return;
 
+		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
 		int rootIdx = _linkIndex["link00"];  // Z1 root link
@@ -364,14 +374,12 @@ namespace gui{
 			auto* mesh = obj->getMesh();
 			if (!mesh) continue;
 
-			// Robot-object transform is identity
-			obj->transform.position = glm::vec3(0.0f);
-			obj->transform.rotation = glm::vec3(0.0f);
-			obj->transform.scale = glm::vec3(1.0f);
+			//// Robot-object transform is identity
+			//obj->transform.position = glm::vec3(0.0f);
+			//obj->transform.rotation = glm::vec3(0.0f);
 
-			// Visual scale if you need the robot bigger/smaller
-			float s = _robot.scale;
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(s));
+			// Visual Scaling matrix
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(_robot.scale));
 
 			// FK-driven world matrix goes straight into the mesh
 			mesh->localTransform = world[i] * S;

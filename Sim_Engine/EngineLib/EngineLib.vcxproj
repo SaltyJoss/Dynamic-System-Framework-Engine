@@ -130,6 +130,7 @@
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
+    <ClInclude Include="include\Platform\SimulationState.h" />
     <ClInclude Include="include\Platform\str_utils.h" />
     <ClInclude Include="include\Platform\Window.h" />
     <ClInclude Include="include\Platform\WindowManager.h" />
