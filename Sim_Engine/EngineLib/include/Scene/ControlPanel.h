@@ -22,23 +22,23 @@
 // 
 // private:
 // --------------------------------------------
-// void renderSimulationProperties()
+// void simulationProperties()
 //      -> Renders the simulation properties section of the control panel.
-// void renderCameraProperties()
+// void cameraProperties()
 //      -> Renders the camera properties section of the control panel.
-// void renderObjectProperties()
+// void objectProperties()
 // 	    -> Renders the object properties section of the control panel.
-// void renderLinkProperties()
+// void linkProperties()
 //      -> Renders the link properties section of the control panel.
-// void renderDisplaySettings()
+// void displaySettings()
 //      -> Renders the display settings section of the control panel.
-// void renderStats()
+// void stats()
 //      -> Renders the simulation statistics section of the control panel.
-// void renderRoboticSelector()
+// void roboticArmSelector()
 //      -> Renders the robotic arm selector section of the control panel.
-// void renderRoboticCard(const char* name, const char* company)
+// void roboticCardDisplay(const char* name, const char* company)
 //      -> Renders a card for a robotic arm model in the selector.
-// void renderSceneObjects()
+// void sceneObjectsTable()
 //      -> Renders the list of scene objects in the control panel.
 // --------------------------------------------
 // 
@@ -105,6 +105,8 @@
 #include <MathLibAPI.h>
 #include "const_phys.h"
 
+#include "Physics/PhysicsSystem.h"
+
 #include "Scene/Object.h"
 #include "Scene/SceneView.h"
 #include "Scene/Light.h"
@@ -128,27 +130,53 @@ namespace gui {
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
     private:
-        void renderSimulationProperties();
-        void renderCameraProperties();
-        void renderObjectProperties();
-        void renderLinkProperties();
-        void renderDisplaySettings();
-        void renderStats();
+		// Internal Pointers
+        std::shared_ptr<elements::Mesh> _mesh;
 
-        void renderRoboticSelector();
-        void renderRoboticCard(const char* name, const char* company);
+        SceneView* _sceneView = nullptr;
+		physics::PhysicsSystem* _physSys = nullptr;
+        elements::Light* _sunLight;
+        elements::Object* _obj;
+        ImGui::FileBrowser _meshLoad;
+        ImGui::FileBrowser _hdrLoad;
+        std::string _currentMeshFile;
+        std::string _currentHDRFile;
 
-        void renderSceneObjects();
+        SceneView::ControlMode* _controlMode;
+
+        std::function<void(const std::string&)> meshLoadCallback;
+        std::function<void(bool)> simCallback;
+
+        Selection _selection;
+
+		// Internal Methods
+        void simulationProperties();
+        void cameraProperties();
+        void objectProperties();
+        void linkProperties();
+        void displaySettings();
+        void stats();
+
+        void roboticArmSelector();
+        void roboticCardDisplay(const char* name, const char* company);
+
+        void sceneObjectsTable();
   
-        // Internal state
+        // Menu Button States
+        bool _showRobotSelector = false;
+		bool _showSimulationProperties = false;
+		bool _showCameraProperties = false;
+		bool _showDisplaySettings = false;
+
+        // Internal states
         bool simulationRunning = false;
         bool gravityEnabled = false;
-        bool _showRobotSelector = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
 
         std::string _requestedRobot;
         std::string _currentObjectName;
+        std::string _currentLinkName;
 
 		float simLength = 30.0f;  // ~30 seconds default
 		float deltaTime = 0.016f; // ~60 FPS default
@@ -156,7 +184,7 @@ namespace gui {
 
         int povMode = 0;
 
-        // Physics
+        // Internal Physics
         float velocity = 0.0f;
         float torque = 0.0f;
         float linkLength = 1.0f;
@@ -164,22 +192,6 @@ namespace gui {
         float position = 0.0f;
 
 		double PI = constants::PhysConstants::PI;
-
-        std::shared_ptr<elements::Mesh> _mesh;
-        elements::Light* _sunLight;
-		elements::Object* _obj;
-
-        ImGui::FileBrowser _meshLoad;
-        ImGui::FileBrowser _hdrLoad;
-        std::string _currentMeshFile;
-        std::string _currentHDRFile;
-
-        std::function<void(const std::string&)> meshLoadCallback;
-        std::function<void(bool)> simCallback;
-        SceneView* _sceneView = nullptr;
-        SceneView::ControlMode* _controlMode;
-
-        Selection _selection;
 
 
 		// Time tracking for simulation updates

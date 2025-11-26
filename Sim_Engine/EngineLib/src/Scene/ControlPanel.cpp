@@ -100,16 +100,28 @@ namespace gui {
 
                 ImGui::EndMenu();
             }
+
+            // Simulation Start/Stop Button
+            if (ImGui::Button(simulationRunning ? "Stop" : "Start")) {
+                simulationRunning = !simulationRunning;
+                LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
+                D_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
+            }
             ImGui::EndMenuBar();
         }
 
-        renderRoboticSelector();
+        roboticArmSelector();
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Simulation")) {
+            simulationProperties();
+            objectProperties();
+            linkProperties();
+            stats();
+        }
+        if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
+        if (ImGui::CollapsingHeader("Display")) { displaySettings(); }
 
-        if (ImGui::CollapsingHeader("Simulation Settings")) { renderSimulationProperties(); renderObjectProperties(); renderLinkProperties(); renderStats(); }
-        if (ImGui::CollapsingHeader("Camera Settings")) { renderCameraProperties(); }
-        if (ImGui::CollapsingHeader("Display Settings")) { renderDisplaySettings(); }
-
-		renderSceneObjects();
+        sceneObjectsTable();
 
         ImGui::End();
         ImGui::PopStyleColor();
@@ -136,20 +148,54 @@ namespace gui {
         }
     }
 
-    void ControlPanel::renderSimulationProperties() {
-        ImGui::SeparatorText("Simulation Controls");
+    void ControlPanel::simulationProperties() {
+        ImGui::Text("Setup");
+        ImGui::Separator();
 
+		ImGui::Text("Simulation Length:");
         float step = 0.001f;
         float stepFast = 0.01f;
         ImGui::SetNextItemWidth(150.0f);
         ImGui::InputScalar("seconds", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
 
-		// Simulation Start/Stop Button
-        if (ImGui::Button(simulationRunning ? "Stop" : "Start")) {
-            simulationRunning = !simulationRunning;
-            LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
-			D_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
-		}
+		ImGui::NewLine();
+
+        ImGui::Text("Integration Method");
+        const char* methodNames[] = { "Euler", "Runge-Kutta 2", "Runge-Kutta 4" };
+		const char* currentMethod = methodNames[0];
+        
+		ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::BeginCombo("##", currentMethod)) {
+            for (int n = 0; n < IM_ARRAYSIZE(methodNames); n++) {
+                bool isSelected = (currentMethod == methodNames[n]);
+                if (ImGui::Selectable(methodNames[n], isSelected)) {
+                    currentMethod = methodNames[n];
+                    switch (n) {
+                    case 0:
+                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::Euler);
+                        D_INFO("Integrator set to Euler");
+                        break;
+                    case 1:
+                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::RK2);
+                        D_INFO("Integrator set to Verlet");
+                        break;
+                    case 2:
+                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::RK4);
+                        D_INFO("Integrator set to Runge-Kutta 4");
+                        break;
+                    default:
+                        break;
+                    }
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+			}
+            ImGui::EndCombo();
+        }
+
+        ImGui::NewLine();
+        ImGui::Text("Elapsed Time");
 
 		// Deals with simulation time tracking using chrono
         if (simulationRunning) {
@@ -168,27 +214,26 @@ namespace gui {
             lastUpdateTime = std::chrono::high_resolution_clock::now();
         }
 		ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
-
-        
-		// Gravity Toggle
-        ImGui::Separator();
-		ImGui::Text("Physics Settings:");
-        ImGui::Checkbox("Enable Gravity", &gravityEnabled);
-
     }
 
-    void ControlPanel::renderObjectProperties() {
+    void ControlPanel::objectProperties() {
+        ImGui::Text("Physics Settings:");
+		ImGui::Separator();
+
         if (!_obj) {
-            ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
             return;
         }
 
-        ImGui::SeparatorText("Object Properties");
+        ImGui::Text("Gravity");
+
+        // Gravity Toggle
+        ImGui::Checkbox("Enable Gravity", &gravityEnabled);
 
         if (gravityEnabled) {
             double minGravity = 0.0; double maxGravity = 20.0;
+			ImGui::SetNextItemWidth(150.0f);
             ImGui::DragScalar("Gravity", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
         }
 
@@ -196,10 +241,12 @@ namespace gui {
 
         ImGui::Text("Mass:");
         double minMass = 0.25; double maxMass = 100.0;
+        ImGui::SetNextItemWidth(150.0f);
         ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
 
 		ImGui::Separator();
 
+        ImGui::SetNextItemWidth(150.0f);
         ImGui::Text("Scale:");
         float minScale = 0.0001; float maxScale = 100.0;
         ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
@@ -233,12 +280,22 @@ namespace gui {
         }
     }
 
-    void ControlPanel::renderLinkProperties() {
-        ImGui::SeparatorText("Link Controls");
-        // Placeholder for future link properties
+    void ControlPanel::linkProperties() {
+        if (!_hasRobot) { return; }
+        ImGui::Text("Link Controls");
+		ImGui::Separator();
+
+		// Rotate link01 around y axis, rotates all child links
+        ImGui::Text("Rotate %s", _currentLinkName);
+        float minAngle = -360.0f; float maxAngle = 360.0f;
+        ImGui::SliderFloat("Angle## (deg)", &position, minAngle, maxAngle, "%.1f");
+		_sceneView->setRobotLinkRotation(_currentLinkName, position);
+		ImGui::Separator();
     }
 
-    void ControlPanel::renderStats() {
+    void ControlPanel::stats() {
+        if (!_obj) { return; }
+
         ImGui::SeparatorText("Simulation Statistics");
         if (_obj && _obj->getMesh())
         {
@@ -284,21 +341,18 @@ namespace gui {
                     glm::degrees(rot.z));
 
                 ImGui::EndTable();
-            }
-
-            // Velocity, acceleration, forces, torque, mass…
+            }            
         }
     }
 
-    void ControlPanel::renderCameraProperties() {
+    void ControlPanel::cameraProperties() {
         ImGui::Text("Control Mode:");
-        if (ImGui::RadioButton("Camera", *_controlMode == SceneView::ControlMode::Camera)) { *_controlMode = SceneView::ControlMode::Camera; }
+        if (ImGui::RadioButton("Camera##", *_controlMode == SceneView::ControlMode::Camera)) { *_controlMode = SceneView::ControlMode::Camera; }
         ImGui::SameLine();
-        if (ImGui::RadioButton("Object", *_controlMode == SceneView::ControlMode::Object)) { *_controlMode = SceneView::ControlMode::Object; }
+        if (ImGui::RadioButton("Object##", *_controlMode == SceneView::ControlMode::Object)) { *_controlMode = SceneView::ControlMode::Object; }
 
         if (*_controlMode == SceneView::ControlMode::Object) { _sceneView->attachCameraToObject(_obj); }
         else { _sceneView->detachCameraFromObject(); }
-
 
         ImGui::SeparatorText("Light Controls");
 
@@ -311,7 +365,7 @@ namespace gui {
         }
     }
 
-    void ControlPanel::renderDisplaySettings() {
+    void ControlPanel::displaySettings() {
         ImGui::SeparatorText("Display Settings");
 
         bool enabled = _sceneView->isSkyboxEnabled();
@@ -327,7 +381,7 @@ namespace gui {
     }
 
 	// Robotic Arm Selector
-    void ControlPanel::renderRoboticSelector() {
+    void ControlPanel::roboticArmSelector() {
         if (!_showRobotSelector) return;
 
         ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
@@ -336,16 +390,16 @@ namespace gui {
         ImGui::Separator();
         ImGui::Spacing();
 
-        renderRoboticCard("Z1", "Unitree Robotics");
-        renderRoboticCard("UR5", "Universal Robots");
-        renderRoboticCard("Panda", "Franka Robotics");
-        renderRoboticCard("KUKA iiwa", "KUKA");
+        roboticCardDisplay("Z1", "Unitree Robotics");
+        roboticCardDisplay("UR5", "Universal Robots");
+        roboticCardDisplay("Panda", "Franka Robotics");
+        roboticCardDisplay("KUKA iiwa", "KUKA");
 
         ImGui::End();
     }
 
 	// Robotic Arm Card for Selector (lists robotic arms to choose from)
-    void ControlPanel::renderRoboticCard(const char* name, const char* company) {
+    void ControlPanel::roboticCardDisplay(const char* name, const char* company) {
         ImGui::PushID(name);
 
         ImGui::BeginChild("robot_card", ImVec2(0, 42.5), true, ImGuiWindowFlags_None);
@@ -371,7 +425,7 @@ namespace gui {
 	}
 
 	// Scene Objects List
-    void ControlPanel::renderSceneObjects() {
+    void ControlPanel::sceneObjectsTable() {
         ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
 
 		auto& objs = _sceneView->getObjects();          // get reference to scene objects
@@ -465,8 +519,9 @@ namespace gui {
                             _selection.type = SelectionType::LINK;
                             _selection.index = i;
                             _sceneView->setSelectedObject(attachedObj);
-							// THIS IS WHERE I GOT TO @ 11:50PM 2025-11-25
+                            _currentLinkName = link.name;
 							LOG_INFO("Selected link: %s", link.name.c_str());
+
                         }
 
                         // Column 1 -> type
