@@ -91,6 +91,12 @@ namespace constants {
 }
 
 namespace physics {
+	enum class eIntegrationMethod {
+		Euler = 0,	// Simple Euler Integration
+		RK2 = 1,	// Second-Order Runge-Kutta 
+		RK4 = 2		// Fourth-Order Runge-Kutta 
+	};
+
 	class ENGINE_API PhysicsSystem {
 	public:
 		PhysicsSystem();
@@ -108,10 +114,10 @@ namespace physics {
 
 		void handleFloorCollision(double dt, elements::Object* obj, float floorY = 0.0f);
 
-		// Low-Level Integrators
-		void integrateEuler(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt);
-		void integrateRK2(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt);
-		void integrateRK4(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt);
+		// Integrator Methods
+		VectorXd integrationMethod(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);
+		eIntegrationMethod getIntegrationMethod() const { return _method; }
+		void setIntegrationMethod(eIntegrationMethod method) { _method = method; }
 
 		// Config
 		void setGravity(const Eigen::Vector3d& gravity) { _gravity = gravity; }
@@ -119,7 +125,6 @@ namespace physics {
 
 		// Misc
 		bool isGravityEnabled() const { return _gravity != Eigen::Vector3d(0.0f, 0.0f, 0.0f); }
-			
 		
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
@@ -132,11 +137,11 @@ namespace physics {
 		double _h = 1.0f;
 		double _t = 0.0f;
 
+		// Integration method
+		eIntegrationMethod _method;
+
 		// global coefficients
 		double _angularDamping = 0.98f;
 		double _linearDamping = 0.98f;
-
-		// Debugging
-		double _logTimer = 0.0;
 	};
 } // namespace physics
