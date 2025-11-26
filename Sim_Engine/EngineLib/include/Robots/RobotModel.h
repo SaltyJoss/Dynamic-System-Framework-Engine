@@ -84,3 +84,4 @@ struct RobotModel {
 	std::vector<RobotLink> links;
 	std::vector<RobotJoint> joints;
 };
+
