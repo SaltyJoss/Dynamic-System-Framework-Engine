@@ -428,31 +428,33 @@ namespace gui {
     void ControlPanel::sceneObjectsTable() {
         ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
 
-		auto& objs = _sceneView->getObjects();          // get reference to scene objects
+        auto& objs = _sceneView->getObjects();          // get reference to scene objects
         int indexToDelete = -1;
 
-        // Robot section
-        if (_hasRobot) {
-            ImGui::Text("Robot Table:");
-            ImGui::Separator();
+        ImGui::Text("Scene Table");
+        ImGui::Separator();
 
-            ImGuiTableFlags tableFlags =
-                ImGuiTableFlags_BordersV |
-                ImGuiTableFlags_BordersOuterH |
-                ImGuiTableFlags_Resizable |
-                ImGuiTableFlags_RowBg |
-                ImGuiTableFlags_NoBordersInBody;
+        ImGuiTableFlags tableFlags =
+            ImGuiTableFlags_BordersV |
+            ImGuiTableFlags_BordersOuterH |
+            ImGuiTableFlags_Resizable |
+            ImGuiTableFlags_RowBg |
+            ImGuiTableFlags_NoBordersInBody;
 
-            if (ImGui::BeginTable("RobotTable", 3, tableFlags))
-            {
-                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("Parent");
-                ImGui::TableHeadersRow();
+        if (ImGui::BeginTable("SceneTable", 3, tableFlags))
+        {
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Parent / Action");
+            ImGui::TableHeadersRow();
 
+            // Robot section
+            if (_hasRobot) {
                 RobotModel& robot = _sceneView->getRobotModel();
 
                 bool robotSelected = (_selection.type == SelectionType::ROBOT);
+
+                // Robot Root Row
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
 
@@ -466,7 +468,12 @@ namespace gui {
                 ImGui::TextUnformatted("ROOT");
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::TextDisabled("--");
+                if (ImGui::Button("Remove Robot")) {
+                    _sceneView->clearRobot();
+                    _hasRobot = false;
+                    LOG_INFO("%s removed from scene.", _requestedRobot);
+                    D_INFO("%s removed.", _requestedRobot);
+                }
 
                 if (openRoot)
                 {
@@ -475,9 +482,9 @@ namespace gui {
                         const auto& link = robot.links[i];
 
                         auto* attachedObj = link.attachedObject;
-                        bool linkSelected = (attachedObj != nullptr && attachedObj == _sceneView->getObject());
+                        bool linkSelected = (_selection.type == SelectionType::LINK && _selection.index == i);
 
-						// Determine parent link name
+                        // Determine parent link name
                         const bool hasPrevJoint = (i > 0 && (i - 1) < (int)robot.joints.size());
                         const auto* joint = hasPrevJoint ? &robot.joints[i - 1] : nullptr;
 
@@ -485,7 +492,7 @@ namespace gui {
 
                         if (i == 0) {
                             // Base link: parent is robot root
-							parentName = _requestedRobot;          // robot base name if first link (link00)
+                            parentName = _requestedRobot;          // robot base name if first link (link00)
                         }
                         else if (hasPrevJoint) {
                             // For link i, previous joint connects parent->child
@@ -520,7 +527,7 @@ namespace gui {
                             _selection.index = i;
                             _sceneView->setSelectedObject(attachedObj);
                             _currentLinkName = link.name;
-							LOG_INFO("Selected link: %s", link.name.c_str());
+                            LOG_INFO("Selected link: %s", link.name.c_str());
 
                         }
 
@@ -538,43 +545,44 @@ namespace gui {
 
                     ImGui::TreePop();
                 }
-				_currentObjectName = "Robot: " + _requestedRobot;
-                ImGui::EndTable();
+                _currentObjectName = "Robot: " + _requestedRobot;
             }
 
-            if (ImGui::Button("Remove")) {
-                _sceneView->clearRobot();
-                _hasRobot = false;
-                LOG_INFO("%s removed from scene.", _requestedRobot);
-				D_INFO("%s removed.", _requestedRobot);
-            }
-        }
-
-		ImGui::Separator();
-
-        ImGui::Text("General Object Table");
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("ObjTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
-        {
-            ImGui::TableSetupColumn("Object ID");
+            // General objects
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
-            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 60.f);
-            ImGui::TableHeadersRow();
+            ImGui::TextUnformatted("General Objects");
 
+            ImGui::TableSetColumnIndex(1);
+            ImGui::TextDisabled("OBJECT");
+
+            ImGui::TableSetColumnIndex(2);
+            ImGui::TextDisabled("Actions");
+
+            // General Object Loop
             for (int i = 0; i < objs.size(); i++) {
                 auto* obj = objs[i].get();
-                bool isSelected = (obj == _sceneView->getObject());
+
+                bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
+
+				if (obj->category != elements::ObjectCategory::General) { continue; } // skip non-general objects
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
+                std::string label = "Object " + std::to_string(i);
 
-                if (ImGui::Selectable(("Object " + std::to_string(i)).c_str(), isSelected)) {
-					_currentObjectName = "Object " + std::to_string(i);
-                    _sceneView->setSelectedObject(obj);
+                if (ImGui::Selectable(label.c_str(), isSelected)) {
+                    _currentObjectName = label;
+                    _selection.type = SelectionType::OBJECT;
+                    _selection.index = i;
+                    _sceneView->setSelectedObject(obj); // fine to keep for inspector
                 }
 
                 ImGui::TableSetColumnIndex(1);
+                ImGui::TextUnformatted("OBJECT");
+
+                ImGui::TableSetColumnIndex(2);
                 if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
                     indexToDelete = i;
                 }
@@ -588,6 +596,6 @@ namespace gui {
             LOG_INFO("Deleted object at index %d", indexToDelete);
         }
 
-        ImGui::EndChild();
+		ImGui::EndChild();
     }
 }

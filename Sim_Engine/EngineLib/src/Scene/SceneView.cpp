@@ -332,6 +332,7 @@ namespace gui{
 			}
 			elements::Object* obj = objs[0]; // assumes one object per link
 			obj->transform.scale = glm::vec3(1.0f);
+			obj->category = elements::ObjectCategory::RobotLink;
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());

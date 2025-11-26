@@ -67,6 +67,8 @@
 extern ENGINE_API Debug gLog;
 
 namespace elements {
+	enum class ObjectCategory { General, RobotLink };
+
 	// Represents the position, rotation, and scale of an object in 3D space.
 	struct Transform {
 		glm::vec3 position{ 0.0f };
@@ -85,6 +87,7 @@ namespace elements {
 	public:
 		Transform transform;
 		physics::PhysicsState state;
+		ObjectCategory category = ObjectCategory::General;
 
 		explicit Object(std::shared_ptr<Mesh> mesh)
 			: _mesh(std::move(mesh))

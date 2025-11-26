@@ -24,7 +24,8 @@
 enum class SelectionType {
 	NONE,
 	LINK,
-	ROBOT
+	ROBOT,
+	OBJECT
 	// may add more types later (e.g., JOINT, SENSOR, OBJECT)
 };
 
