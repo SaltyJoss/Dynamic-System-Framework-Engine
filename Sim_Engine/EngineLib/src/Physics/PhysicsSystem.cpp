@@ -167,8 +167,14 @@ namespace physics {
 		if (method == eIntegrationMethod::Euler) {
 			return _ODE->eulerStep(x, dxdt, dt);
 		}
-		else if (method == eIntegrationMethod::RK2) {
-			return _ODE->rk2Step(x, t, dt, f);
+		else if (method == eIntegrationMethod::Midpoint) {
+			return _ODE->midpointStep(x, t, dt, f);
+		}
+		else if (method == eIntegrationMethod::Heun) {
+			return _ODE->heunStep(x, t, dt, f);
+		}
+		else if (method == eIntegrationMethod::Ralston) {
+			return _ODE->ralstonStep(x, t, dt, f);
 		}
 		else if (method == eIntegrationMethod::RK4) {
 			return _ODE->rk4Step(x, t, dt, f);

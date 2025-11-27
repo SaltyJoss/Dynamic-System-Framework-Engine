@@ -111,9 +111,11 @@ namespace physics {
 
 		// Integrator Methods
 		enum class eIntegrationMethod {
-			Euler = 0,	// Simple Euler Integration
-			RK2 = 1,	// Second-Order Runge-Kutta 
-			RK4 = 2		// Fourth-Order Runge-Kutta 
+			Euler = 0,		// First-Order Euler Method
+			Midpoint = 1,	// Second-Order Runge-Kutta (Midpoint)
+			Heun = 2,		// Second-Order Runge-Kutta (Heun)
+			Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
+			RK4 = 4			// Fourth-Order Runge-Kutta 
 		};
 		
 		VectorXd integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);

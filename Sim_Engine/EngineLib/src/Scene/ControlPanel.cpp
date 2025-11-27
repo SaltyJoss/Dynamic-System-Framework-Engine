@@ -178,9 +178,15 @@ namespace gui {
                     case physics::PhysicsSystem::eIntegrationMethod::Euler:
                         D_INFO("Integrator set to Euler");
                         break;
-                    case physics::PhysicsSystem::eIntegrationMethod::RK2:
-                        D_INFO("Integrator set to RK2");
+                    case physics::PhysicsSystem::eIntegrationMethod::Midpoint:
+                        D_INFO("Integrator set to RK2 (Midpoint)");
                         break;
+                    case physics::PhysicsSystem::eIntegrationMethod::Heun:
+                        D_INFO("Integrator set to RK2 (Heun)");
+						break;
+                    case physics::PhysicsSystem::eIntegrationMethod::Ralston:
+                        D_INFO("Integrator set to RK2 (Ralston)");
+						break;
                     case physics::PhysicsSystem::eIntegrationMethod::RK4:
                         D_INFO("Integrator set to RK4");
                         break;
