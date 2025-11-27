@@ -235,7 +235,7 @@ namespace gui {
         if (gravityEnabled) {
             double minGravity = 0.0; double maxGravity = 20.0;
 			ImGui::SetNextItemWidth(150.0f);
-            ImGui::DragScalar("Gravity", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
+            ImGui::DragScalar("m/s^2", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
         }
 
         ImGui::Separator();
@@ -246,6 +246,13 @@ namespace gui {
         ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
 
 		ImGui::Separator();
+
+        ImGui::Text("Damping Coefficient");
+		double minDamping = 0.0; double maxDamping = 1.0;
+		ImGui::SetNextItemWidth(150.0f);
+		ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
+
+        ImGui::Separator();
 
         ImGui::SetNextItemWidth(150.0f);
         ImGui::Text("Scale:");

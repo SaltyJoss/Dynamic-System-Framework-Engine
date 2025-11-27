@@ -79,6 +79,9 @@
     <Filter Include="Source Files\src\Robots">
       <UniqueIdentifier>{b18e9a1f-2d67-4c7f-929d-03a6f3422dba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Numerics">
+      <UniqueIdentifier>{69bc06b0-298b-4c2b-9ebd-ea2125ceae55}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">

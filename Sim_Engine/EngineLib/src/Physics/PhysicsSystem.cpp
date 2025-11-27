@@ -50,43 +50,58 @@ namespace physics {
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
-		std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f;
 
-		// state vector = [theta_x, theta_y, theta_z]
-		Eigen::VectorXd x(3);
+		// state vector: [theta_x, theta_y, theta_z, omega_x, omega_y, omega_z]
+		Eigen::VectorXd x(6);
 		x(0) = s.theta.x();
 		x(1) = s.theta.y();
 		x(2) = s.theta.z();
-
-		// derivative = angular velocity (rad/s)
-		Eigen::VectorXd dxdt(3);
-		dxdt(0) = s.angularVelocity.x();
-		dxdt(1) = s.angularVelocity.y();
-		dxdt(2) = s.angularVelocity.z();
+		x(3) = s.angularVelocity.x();
+		x(4) = s.angularVelocity.y();
+		x(5) = s.angularVelocity.z();
 
 		// define derivative function for RK2/RK4
-		f = [&](double t, const Eigen::VectorXd& state) -> Eigen::VectorXd {
-			Eigen::VectorXd deriv(3);
-			deriv(0) = s.angularVelocity.x();
-			deriv(1) = s.angularVelocity.y();
-			deriv(2) = s.angularVelocity.z();
+		auto f = [&](double t, const Eigen::VectorXd& state) -> Eigen::VectorXd {
+			Eigen::VectorXd deriv(6);
+
+			// unpacking state vector (theta = angle, omega = angular velocity)
+			double theta_x = state(0);
+			double theta_y = state(1);
+			double theta_z = state(2);
+			double omega_x = state(3);
+			double omega_y = state(4);
+			double omega_z = state(5);
+
+			// derivative: dtheta/dt = omega
+			deriv(0) = omega_x;
+			deriv(1) = omega_y;
+			deriv(2) = omega_z;
+
+			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
+			deriv(3) = -(s.damping) * omega_x;
+			deriv(4) = -(s.damping) * omega_y;
+			deriv(5) = -(s.damping) * omega_z;
+
 			return deriv;
 		};
 
 		// Euler integrate using your ODE helper
-		Eigen::VectorXd next = integrationMethod(x, dxdt, 0.0, dt, f, method);
+		Eigen::VectorXd next = integrationMethod(x, 0.0, dt, f, method);
 
 		// write back to state
 		s.theta.x() = next(0);
 		s.theta.y() = next(1);
 		s.theta.z() = next(2);
+		s.angularVelocity.x() = next(3);
+		s.angularVelocity.y() = next(4);
+		s.angularVelocity.z() = next(5);
 
 		// WRAP ANGLES INTO [-pi, pi] OR [0, 2pi]
 		auto wrapRad = [](double a) -> double {
 			a = fmod(a, constants::PhysConstants::TWO_PI);
 			if (a < 0.0) a += constants::PhysConstants::TWO_PI;
 			return a;
-			};
+		};
 
 		s.theta.x() = wrapRad(s.theta.x());
 		s.theta.y() = wrapRad(s.theta.y());
@@ -133,7 +148,7 @@ namespace physics {
 	}
 
 	// Damping application
-	void PhysicsSystem::applyDamping(double dt, elements::Object* obj, float dampingFactor) {
+	void PhysicsSystem::applyDamping(double dt, elements::Object* obj, float dampingCoefficient) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
@@ -147,7 +162,8 @@ namespace physics {
 // --------------------------------------------------
 //				   INTEGRATION (ODE)
 // --------------------------------------------------
-	VectorXd PhysicsSystem::integrationMethod(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd &)> f, eIntegrationMethod method) {
+	VectorXd PhysicsSystem::integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd &)> f, eIntegrationMethod method) {
+		Eigen::VectorXd dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
 		if (method == eIntegrationMethod::Euler) {
 			return _ODE->eulerStep(x, dxdt, dt);
 		}

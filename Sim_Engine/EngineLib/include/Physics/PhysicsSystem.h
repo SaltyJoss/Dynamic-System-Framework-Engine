@@ -105,7 +105,7 @@ namespace physics {
 
 		void applyForces(double dt, elements::Object* obj);
 		void applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque);
-		void applyDamping(double dt, elements::Object* obj, float dampingFactor = 0.98f);
+		void applyDamping(double dt, elements::Object* obj, float dampingCoefficient);
 
 		void handleFloorCollision(double dt, elements::Object* obj, float floorY = 0.0f);
 
@@ -116,7 +116,7 @@ namespace physics {
 			RK4 = 2		// Fourth-Order Runge-Kutta 
 		};
 		
-		VectorXd integrationMethod(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);
+		VectorXd integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);
 
 		eIntegrationMethod method = eIntegrationMethod::Euler;
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
@@ -138,9 +138,5 @@ namespace physics {
 		double _dt = 1.0f / 120.0f; // ~120 FPS
 		double _h = 1.0f;
 		double _t = 0.0f;
-
-		// global coefficients
-		double _angularDamping = 0.98f;
-		double _linearDamping = 0.98f;
 	};
 } // namespace physics

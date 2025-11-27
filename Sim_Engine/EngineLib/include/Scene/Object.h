@@ -100,6 +100,7 @@ namespace elements {
 			state.linearVelocity = Eigen::Vector3d::Zero();
 			state.angularVelocity = Eigen::Vector3d::Zero();
 			state.mass = 1.0;
+			state.damping = 0.0; // no damping by default (for now)
 			state.inertia = Eigen::Matrix3d::Identity();
 			state.forces = Eigen::Vector3d::Zero();
 			state.torques = Eigen::Vector3d::Zero();

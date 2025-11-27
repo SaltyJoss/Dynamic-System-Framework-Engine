@@ -161,6 +161,7 @@ namespace gui{
 			obj->state.angularVelocity = Eigen::Vector3d::Zero();
 			obj->state.linearVelocity = Eigen::Vector3d::Zero();
 			obj->state.mass = 1.0;
+			obj->state.damping = 0.0;
 			obj->state.inertia = Eigen::Matrix3d::Identity();
 			obj->state.forces = Eigen::Vector3d::Zero();
 			obj->state.torques = Eigen::Vector3d::Zero();

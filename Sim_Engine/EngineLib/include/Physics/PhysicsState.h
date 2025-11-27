@@ -51,6 +51,7 @@ namespace physics {
 
 		double gravity;
 		double mass;
+		double damping;
 		Eigen::Matrix3d inertia;
 		Eigen::Vector3d forces;
 		Eigen::Vector3d position;
