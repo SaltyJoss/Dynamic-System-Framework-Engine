@@ -69,7 +69,9 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\MathLib\$(Configuration)\" /Y</Command>
+      <Command>xcopy /Y /D "$(TargetPath)" "$(SolutionDir)..\Sim_Engine\External\MathLib\$(Configuration)\"
+
+xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\External\MathLib\$(Configuration)\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,7 +94,9 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\MathLib\$(Configuration)\" /Y</Command>
+      <Command>xcopy /Y /D "$(TargetPath)" "$(SolutionDir)..\Sim_Engine\External\MathLib\$(Configuration)\"
+
+xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\External\MathLib\$(Configuration)\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -100,6 +104,7 @@
     <ClInclude Include="MathLib\include\const_math.h" />
     <ClInclude Include="MathLib\include\const_phys.h" />
     <ClInclude Include="MathLib\include\integrators\Integration.h" />
+    <ClInclude Include="MathLib\include\integrators\IntegrationAnalysis.h" />
     <ClInclude Include="MathLib\include\integrators\numerical_integrators.h" />
     <ClInclude Include="MathLib\include\MathLibAPI.h" />
     <ClInclude Include="MathLib\pch.h" />
@@ -111,6 +116,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MathLib\src\integrators\Integration.cpp" />
+    <ClCompile Include="MathLib\src\integrators\IntegrationAnalysis.cpp" />
     <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

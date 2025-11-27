@@ -72,7 +72,8 @@
     <PostBuildEvent>
       <Command>xcopy /Y /D "$(SolutionDir)bin\Debug\EngineLib.dll" "$(TargetDir)"
 xcopy "$(ProjectDir)External\GLEW\bin\*.dll" "$(TargetDir)" /Y
-xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
+xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)External\MathLib\$(Configuration)\*.dll" "$(TargetDir)" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -97,7 +98,9 @@ xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y</Command>
       <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(SolutionDir)bin\EngineLib\Release\EngineLib.dll" "$(TargetDir)"</Command>
+      <Command>xcopy /Y /D "$(SolutionDir)bin\EngineLib\Release\EngineLib.dll" "$(TargetDir)"
+xcopy "$(ProjectDir)External\assimp\bin\*.dll" "$(TargetDir)" /Y
+xcopy "$(ProjectDir)External\MathLib\$(Configuration)\*.dll" "$(TargetDir)" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

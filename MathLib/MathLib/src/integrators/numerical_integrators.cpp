@@ -10,11 +10,25 @@ namespace integration {
 		return x + dxdt * dt;
 	}
 
-	// Second-order Runge-Kutta method (Heun / Midpoint method)
-	VectorXd ODE::rk2Step(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
+	// Second-order Runge-Kutta method (Midpoint method)
+	VectorXd ODE::midpointStep(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
 		VectorXd k1 = dt * f(t, x);
 		VectorXd k2 = dt * f(t + dt / 2.0, x + k1 / 2.0);
 		return x + k2;
+	}
+
+	// Second-order Runge-Kutta method (Heun's method)
+	VectorXd ODE::heunStep(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
+		VectorXd k1 = dt * f(t, x);
+		VectorXd k2 = dt * f(t + dt, x + k1);
+		return x + (k1 + k2) / 2.0;
+	}
+
+	// Second-order Runge-Kutta method (Ralston's method)
+	VectorXd ODE::ralstonStep(const VectorXd& x, double t, double dt, std::function<VectorXd(double, const VectorXd&)> f) {
+		VectorXd k1 = dt * f(t, x);
+		VectorXd k2 = dt * f(t + (2.0 / 3.0) * dt, x + (2.0 / 3.0) * k1);
+		return x + (k1 + 3.0 * k2) / 4.0;
 	}
 
 	// Fourth-order Runge-Kutta method
