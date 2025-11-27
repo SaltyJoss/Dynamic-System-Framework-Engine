@@ -91,11 +91,6 @@ namespace constants {
 }
 
 namespace physics {
-	enum class eIntegrationMethod {
-		Euler = 0,	// Simple Euler Integration
-		RK2 = 1,	// Second-Order Runge-Kutta 
-		RK4 = 2		// Fourth-Order Runge-Kutta 
-	};
 
 	class ENGINE_API PhysicsSystem {
 	public:
@@ -115,9 +110,17 @@ namespace physics {
 		void handleFloorCollision(double dt, elements::Object* obj, float floorY = 0.0f);
 
 		// Integrator Methods
+		enum class eIntegrationMethod {
+			Euler = 0,	// Simple Euler Integration
+			RK2 = 1,	// Second-Order Runge-Kutta 
+			RK4 = 2		// Fourth-Order Runge-Kutta 
+		};
+		
 		VectorXd integrationMethod(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);
-		eIntegrationMethod getIntegrationMethod() const { return _method; }
-		void setIntegrationMethod(eIntegrationMethod method) { _method = method; }
+
+		eIntegrationMethod method = eIntegrationMethod::Euler;
+		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
+		eIntegrationMethod getIntegrationMethod() const { return method; }
 
 		// Config
 		void setGravity(const Eigen::Vector3d& gravity) { _gravity = gravity; }
@@ -129,16 +132,12 @@ namespace physics {
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
 		constants::MathConstants _const;
-
 		Eigen::Vector3d _gravity = Eigen::Vector3d(0.0f, -9.81f, 0.0f);
 
 		// Simulation parameters
-		double _dt = 0.016f; // ~60 FPS
+		double _dt = 1.0f / 120.0f; // ~120 FPS
 		double _h = 1.0f;
 		double _t = 0.0f;
-
-		// Integration method
-		eIntegrationMethod _method;
 
 		// global coefficients
 		double _angularDamping = 0.98f;

@@ -17,9 +17,9 @@
 #include "EngineLib/LogMacros.h"
 
 namespace physics {
+	// Constructor
 	PhysicsSystem::PhysicsSystem() {
 		_ODE = std::make_unique<integration::ODE>();
-		_method = eIntegrationMethod::Euler;
 
 		LOG_INFO("PhysicsSystem initialised.");
 		D_INFO("Physics initialised");
@@ -45,12 +45,12 @@ namespace physics {
 // --------------------------------------------------
 //				  PER-SYSTEM UPDATES
 // --------------------------------------------------
-
-	// MOTION UPDATES
+	// Rotation update
 	void PhysicsSystem::updateRotation(double dt, elements::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtn
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
+		std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f;
 
 		// state vector = [theta_x, theta_y, theta_z]
 		Eigen::VectorXd x(3);
@@ -64,15 +64,24 @@ namespace physics {
 		dxdt(1) = s.angularVelocity.y();
 		dxdt(2) = s.angularVelocity.z();
 
+		// define derivative function for RK2/RK4
+		f = [&](double t, const Eigen::VectorXd& state) -> Eigen::VectorXd {
+			Eigen::VectorXd deriv(3);
+			deriv(0) = s.angularVelocity.x();
+			deriv(1) = s.angularVelocity.y();
+			deriv(2) = s.angularVelocity.z();
+			return deriv;
+		};
+
 		// Euler integrate using your ODE helper
-		Eigen::VectorXd next = integrationMethod(x, dxdt, 0.0, dt, nullptr, getIntegrationMethod());
+		Eigen::VectorXd next = integrationMethod(x, dxdt, 0.0, dt, f, method);
 
 		// write back to state
 		s.theta.x() = next(0);
 		s.theta.y() = next(1);
 		s.theta.z() = next(2);
 
-		// --- WRAP ANGLES INTO [-pi, pi] OR [0, 2pi] ---
+		// WRAP ANGLES INTO [-pi, pi] OR [0, 2pi]
 		auto wrapRad = [](double a) -> double {
 			a = fmod(a, constants::PhysConstants::TWO_PI);
 			if (a < 0.0) a += constants::PhysConstants::TWO_PI;
@@ -87,10 +96,9 @@ namespace physics {
 		obj->transform.rotation.x = static_cast<float>(s.theta.x());
 		obj->transform.rotation.y = static_cast<float>(s.theta.y());
 		obj->transform.rotation.z = static_cast<float>(s.theta.z());
-		
-
 	}
 
+	// Translation update
 	void PhysicsSystem::updateTranslation(double dt, elements::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
@@ -102,7 +110,7 @@ namespace physics {
 		obj->transform.position += glm::vec3(dp.x(), dp.y(), dp.z());
 	}
 
-	// FORCE APPLICATION
+	// Force application
 	void PhysicsSystem::applyForces(double dt, elements::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
@@ -118,17 +126,19 @@ namespace physics {
 		s.forces.setZero();
 	}
 
+	// Torque application
 	void PhysicsSystem::applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
 
+	// Damping application
 	void PhysicsSystem::applyDamping(double dt, elements::Object* obj, float dampingFactor) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
 
-	// COLLISION AND BOUNDARIES
+	// Collision handling
 	void PhysicsSystem::handleFloorCollision(double dt, elements::Object* obj, float floorY) {
 		if (!obj || !obj->getMesh()) return;
 
@@ -137,8 +147,6 @@ namespace physics {
 // --------------------------------------------------
 //				   INTEGRATION (ODE)
 // --------------------------------------------------
-
-
 	VectorXd PhysicsSystem::integrationMethod(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd &)> f, eIntegrationMethod method) {
 		if (method == eIntegrationMethod::Euler) {
 			return _ODE->eulerStep(x, dxdt, dt);
@@ -152,6 +160,12 @@ namespace physics {
 		else {
 			LOG_WARN("Unknown integration method: %s. Defaulting to Euler Method (simplest)", method);
 			return _ODE->eulerStep(x, dxdt, dt);
+		}
+
+		if (!f) {
+			// If no function provided, assume constant derivative (dxdt)
+			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
+			return x + dxdt * dt;
 		}
 	}
 
