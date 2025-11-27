@@ -325,6 +325,9 @@ namespace gui {
 
         // Physics
         void updatePhysics(double dt);
+		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
+		physics::PhysicsSystem& getPhysicsSystem() { return *_physics; } // mutable
+		const physics::PhysicsSystem& getPhysicsSystem() const { return *_physics; } // const
 
 		// Robotic Arm System
         void loadRobot(const std::string& name);
@@ -434,6 +437,7 @@ namespace gui {
         glm::vec2 _size;
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
         float _backgroundAlpha = 1.0f;
+		float dt = 1.0f / 120.0f; // default to 120 fps
 
         static constexpr float planeHeight = -2.5f;
         float planeY = planeHeight;

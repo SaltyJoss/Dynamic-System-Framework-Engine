@@ -134,7 +134,7 @@ namespace gui {
         std::shared_ptr<elements::Mesh> _mesh;
 
         SceneView* _sceneView = nullptr;
-		physics::PhysicsSystem* _physSys = nullptr;
+		physics::PhysicsSystem* _phys = nullptr;
         elements::Light* _sunLight;
         elements::Object* _obj;
         ImGui::FileBrowser _meshLoad;
@@ -179,7 +179,7 @@ namespace gui {
         std::string _currentLinkName;
 
 		float simLength = 30.0f;  // ~30 seconds default
-		float deltaTime = 0.016f; // ~60 FPS default
+        float deltaTime = 1 / 120; // ~60 FPS default
 		float simTime = 0.0f;     // current simulation time
 
         int povMode = 0;
@@ -192,7 +192,6 @@ namespace gui {
         float position = 0.0f;
 
 		double PI = constants::PhysConstants::PI;
-
 
 		// Time tracking for simulation updates
         double finalTime = 0.0f;

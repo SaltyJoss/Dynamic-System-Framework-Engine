@@ -151,6 +151,5 @@ namespace elements {
 		std::shared_ptr<Mesh> _mesh;
 		glm::vec2 _lastMousePos{ 0.0f };
 		float _distance = 5.0f;
-
 	};
 }

@@ -15,7 +15,7 @@
 
 namespace gui {
     ControlPanel::ControlPanel(SceneView* sceneView) :
-        _sceneView(sceneView), _controlMode(&sceneView->ctrlMode),
+		_sceneView(sceneView), _controlMode(&sceneView->ctrlMode), _obj(nullptr), _sunLight(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -34,19 +34,17 @@ namespace gui {
 
     void ControlPanel::render(SceneView* sceneView) {
         // Initialize pointers to scene elements
-        _sceneView = sceneView; // stores pointer for convenience
+        _sceneView = sceneView;
         _mesh = _sceneView->getMesh();
         _obj = _sceneView->getObject();
         _sunLight = _sceneView->getSunLight();
         _hasRobot = _sceneView->hasRobot();
-
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
-
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
@@ -74,7 +72,7 @@ namespace gui {
 
             if (ImGui::BeginMenu("Shader"))
             {
-                // Reload button
+                // Reload shader button
                 if (ImGui::MenuItem("Reload Shaders")) {
                     LOG_INFO("Shader reload requested.");
                     _sceneView->reloadAllShaders();
@@ -161,27 +159,30 @@ namespace gui {
 		ImGui::NewLine();
 
         ImGui::Text("Integration Method");
-        const char* methodNames[] = { "Euler", "Runge-Kutta 2", "Runge-Kutta 4" };
-		const char* currentMethod = methodNames[0];
+        auto& phys = _sceneView->getPhysicsSystem();
+        auto currentEnum = phys.getIntegrationMethod();
+
+        static const char* methodNames[] = { "Euler", "RK2", "RK4" };
+        const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
         
 		ImGui::SetNextItemWidth(150.0f);
         if (ImGui::BeginCombo("##", currentMethod)) {
-            for (int n = 0; n < IM_ARRAYSIZE(methodNames); n++) {
-                bool isSelected = (currentMethod == methodNames[n]);
+            for (int n = 0; n < IM_ARRAYSIZE(methodNames); ++n) {
+                bool isSelected = (n == static_cast<int>(currentEnum));
+
                 if (ImGui::Selectable(methodNames[n], isSelected)) {
-                    currentMethod = methodNames[n];
-                    switch (n) {
-                    case 0:
-                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::Euler);
+                    auto updatedMethod = static_cast<physics::PhysicsSystem::eIntegrationMethod>(n);
+                    phys.setIntegrationMethod(updatedMethod);
+
+                    switch (updatedMethod) {
+                    case physics::PhysicsSystem::eIntegrationMethod::Euler:
                         D_INFO("Integrator set to Euler");
                         break;
-                    case 1:
-                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::RK2);
-                        D_INFO("Integrator set to Verlet");
+                    case physics::PhysicsSystem::eIntegrationMethod::RK2:
+                        D_INFO("Integrator set to RK2");
                         break;
-                    case 2:
-                        _physSys->setIntegrationMethod(physics::eIntegrationMethod::RK4);
-                        D_INFO("Integrator set to Runge-Kutta 4");
+                    case physics::PhysicsSystem::eIntegrationMethod::RK4:
+                        D_INFO("Integrator set to RK4");
                         break;
                     default:
                         break;
@@ -492,7 +493,7 @@ namespace gui {
 
                         if (i == 0) {
                             // Base link: parent is robot root
-                            parentName = _requestedRobot;          // robot base name if first link (link00)
+                            parentName = _requestedRobot; // robot base name if first link (link00)
                         }
                         else if (hasPrevJoint) {
                             // For link i, previous joint connects parent->child

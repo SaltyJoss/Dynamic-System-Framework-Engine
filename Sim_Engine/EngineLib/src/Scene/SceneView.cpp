@@ -232,7 +232,7 @@ namespace gui{
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
 	void SceneView::render() {
-		updatePhysics(0.00833f); // temp fixed timestep at 120fps
+		updatePhysics(dt);
 		_fpsCounter.update();
 		ShadowPass();
 
