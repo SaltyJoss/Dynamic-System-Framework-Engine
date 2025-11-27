@@ -117,6 +117,7 @@
     <ClInclude Include="..\External\MathLib\include\const_math.h" />
     <ClInclude Include="..\External\MathLib\include\const_phys.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\Integration.h" />
+    <ClInclude Include="..\External\MathLib\include\integrators\IntegrationAnalysis.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h" />
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />
     <ClInclude Include="..\External\stb\stb_image.h" />

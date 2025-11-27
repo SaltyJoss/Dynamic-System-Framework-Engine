@@ -67,7 +67,7 @@ namespace gui{
 		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
 		_sunLight->_intensity = 1.0f;
 
-		_camera = std::make_unique<elements::Camera>(glm::vec3(0, 15, 20), 45.0f, 16 / 9, 0.5f, 2000.0f);
+		_camera = std::make_unique<elements::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
 
 		glGenVertexArrays(1, &_worldGridVAO);
 
@@ -107,13 +107,13 @@ namespace gui{
 		}
 
 		_ibl->init(path); // rebuild envCubemap, irradiance, prefilter, brdfLUT
-		D_OK("IBL rebuilt successfully.");
+		D_SUCCESS("IBL rebuilt successfully.");
 
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 
 		LOG_INFO("HDR updated successfully.");
-		D_OK("Loaded HDR successfully.");
+		D_SUCCESS("Loaded HDR successfully.");
 	}
 
 // --------------------------------------------------
@@ -278,18 +278,16 @@ namespace gui{
 		// ignore zero sizes
 		if (width == 0 || height == 0) { return; }
 
-		// update camera projection
-		float aspect = width / height;
-		_camera->setAspect(aspect);
+		glViewport(0, 0, width, height);	// set OpenGL viewport
+		_size = glm::ivec2(width, height);	// update internal size
 
-		// store updated size
-		_size = glm::vec2(width, height);
-
-		// rebuild framebuffer
 		_frameBuffer->deleteBuffers();
 		_frameBuffer->createBuffers(width, height);
 
-		LOG_INFO("Framebuffer resized: %d x %d", width, height);
+		// update camera aspect ratio
+		_camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
+
+		LOG_INFO("Resized SceneView to %dx%d", width, height);
 	}
 
 // --------------------------------------------------
@@ -318,7 +316,7 @@ namespace gui{
 		buildLinkIndex();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
-		D_OK("Loaded robot model -> %s", name.c_str());
+		D_SUCCESS("Loaded robot model -> %s", name.c_str());
 	}
 
 	// Method to create Object instances for each robot link

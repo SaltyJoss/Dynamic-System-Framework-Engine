@@ -46,8 +46,6 @@
 // --------------------------------------------
 // bool simulationRunning
 //      -> Indicates whether the simulation is currently running.
-// bool gravityEnabled
-//      -> Indicates whether gravity is enabled in the simulation.
 // bool _showRobotSelector
 //      -> Indicates whether the robotic arm selector is visible.
 // bool _robotRequested
@@ -134,7 +132,7 @@ namespace gui {
         std::shared_ptr<elements::Mesh> _mesh;
 
         SceneView* _sceneView = nullptr;
-		physics::PhysicsSystem* _phys = nullptr;
+        physics::PhysicsSystem* _phys;
         elements::Light* _sunLight;
         elements::Object* _obj;
         ImGui::FileBrowser _meshLoad;
@@ -170,7 +168,7 @@ namespace gui {
 
         // Internal states
         bool simulationRunning = false;
-        bool gravityEnabled = false;
+		bool diagRunning = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
 
@@ -179,10 +177,12 @@ namespace gui {
         std::string _currentLinkName;
 
 		float simLength = 30.0f;  // ~30 seconds default
-        float deltaTime = 1 / 120; // ~60 FPS default
+        float deltaTime = 1 / 120; // ~120 FPS default
 		float simTime = 0.0f;     // current simulation time
+		float diagTime = 0.0f;    // current diagnostic time
 
         int povMode = 0;
+        float fov = _sceneView->getCamera()->getFOV();
 
         // Internal Physics
         float velocity = 0.0f;
@@ -195,6 +195,7 @@ namespace gui {
 
 		// Time tracking for simulation updates
         double finalTime = 0.0f;
-		std::chrono::high_resolution_clock::time_point lastUpdateTime = std::chrono::high_resolution_clock::now();
+		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
+        std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();
     };
 }

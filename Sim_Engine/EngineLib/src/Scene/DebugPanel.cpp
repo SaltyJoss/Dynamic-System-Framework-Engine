@@ -171,8 +171,8 @@ namespace gui {
 				_entries.push_back(_e);
                 break;
             // Ok level for successful operations (e.g. asset loaded, sim completed)
-            case LogLevel::Ok:
-                levelStr = "OK";
+            case LogLevel::Success:
+                levelStr = "SUCCESS";
 				levelColour = okCol;
                 break;
             // Fail level for runtime failures (e.g. failed to load asset, sim failed to complete)

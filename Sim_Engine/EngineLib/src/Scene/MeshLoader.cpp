@@ -54,7 +54,7 @@ namespace gui {
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 			auto m = processMesh(mesh);
-			m->localTransform = globalTransform;   // <-- IMPORTANT
+			m->localTransform = globalTransform;
 			_imported.push_back(std::move(m));
 		}
 		for (unsigned int i = 0; i < node->mNumChildren; i++) {

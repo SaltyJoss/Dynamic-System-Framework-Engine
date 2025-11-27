@@ -19,6 +19,9 @@ namespace gui {
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
+		diagTime = 0.0f; // initialize diagnostic time
+		simTime = 0.0f;  // initialize simulation time
+
         // File browsers
         _currentMeshFile = "<...>";
         _currentHDRFile = "<...>";
@@ -39,6 +42,8 @@ namespace gui {
         _obj = _sceneView->getObject();
         _sunLight = _sceneView->getSunLight();
         _hasRobot = _sceneView->hasRobot();
+
+		_phys = &_sceneView->getPhysicsSystem();
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
@@ -100,10 +105,33 @@ namespace gui {
             }
 
             // Simulation Start/Stop Button
-            if (ImGui::Button(simulationRunning ? "Stop" : "Start")) {
+            if (ImGui::Button(simulationRunning ? "Termiante" : "Run")) {
                 simulationRunning = !simulationRunning;
                 LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
-                D_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
+                D_RUNTIME("Simulation %s", simulationRunning ? "started" : "stopped");
+            }
+
+            // Diagnostic Start/Stop Button
+            if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
+                diagRunning = !diagRunning;
+                LOG_INFO("Diagnostics %s", diagRunning ? "started" : "stopped");
+                D_SUCCESS("Diagnostics %s", diagRunning ? "started" : "stopped");
+
+                if (diagRunning) { 
+                    _phys->startDiagnostics(_obj); 
+
+                    if (diagRunning && !_phys->diagnosticsRunning()) {
+                        diagRunning = false;
+                        LOG_WARN("Diagnostics terminated");
+                        D_FAIL("Diagnostics terminated");
+                    }
+                }
+                else {
+                    _phys->stopDiagnostics();
+                    diagRunning = false;
+                    D_RUNTIME("Diagnostic run time: %.3f seconds", diagTime);
+                    diagTime = 0.0f;
+                }
             }
             ImGui::EndMenuBar();
         }
@@ -112,8 +140,8 @@ namespace gui {
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
-            objectProperties();
             linkProperties();
+            objectProperties();
             stats();
         }
         if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
@@ -130,7 +158,7 @@ namespace gui {
             _currentMeshFile = file_path.substr(file_path.find_last_of("/\\") + 1);
             meshLoadCallback(file_path);
             LOG_INFO("Mesh loaded from file: %s", _currentMeshFile.c_str());
-			D_OK("Mesh loaded from file: %s", _currentMeshFile.c_str());
+			D_SUCCESS("Mesh loaded from file: %s", _currentMeshFile.c_str());
 
             _meshLoad.ClearSelected();
         }
@@ -141,7 +169,7 @@ namespace gui {
             _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
             _sceneView->loadNewHDR(file_path);
             LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
-			D_OK("HDR loaded from file: %s", _currentHDRFile.c_str());
+			D_SUCCESS("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();
         }
     }
@@ -162,7 +190,7 @@ namespace gui {
         auto& phys = _sceneView->getPhysicsSystem();
         auto currentEnum = phys.getIntegrationMethod();
 
-        static const char* methodNames[] = { "Euler", "RK2", "RK4" };
+        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
         const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
         
 		ImGui::SetNextItemWidth(150.0f);
@@ -202,25 +230,36 @@ namespace gui {
         }
 
         ImGui::NewLine();
-        ImGui::Text("Elapsed Time");
+        ImGui::Text("Elapsed Time...");
 
 		// Deals with simulation time tracking using chrono
         if (simulationRunning) {
             auto now = std::chrono::high_resolution_clock::now();
-            double deltaSeconds = std::chrono::duration<double>(now - lastUpdateTime).count();
-            lastUpdateTime = now;
+            double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
+            simLastUpdateTime = now;
             simTime += static_cast<float>(deltaSeconds);
             if (simTime >= simLength) {
                 simulationRunning = false;
                 simTime = 0.0f;
-				D_INFO("Simulation ended");
-                D_OK("Total elapsed time : % .1f seconds.", simLength);
+                D_SUCCESS("Total elapsed time : % .1f seconds.", simLength);
             }
         }
         else {
-            lastUpdateTime = std::chrono::high_resolution_clock::now();
+            simLastUpdateTime = std::chrono::high_resolution_clock::now();
         }
 		ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
+
+        if (diagRunning) {
+			// Update diagnostic time
+            auto now = std::chrono::high_resolution_clock::now();
+            double deltaSeconds = std::chrono::duration<double>(now - diagLastUpdateTime).count();
+            diagLastUpdateTime = now;
+            diagTime += static_cast<float>(deltaSeconds);
+
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostics Running...");
+			ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
+		}
+
     }
 
     void ControlPanel::objectProperties() {
@@ -233,19 +272,15 @@ namespace gui {
             return;
         }
 
+		// Gravity Controls
         ImGui::Text("Gravity");
-
-        // Gravity Toggle
-        ImGui::Checkbox("Enable Gravity", &gravityEnabled);
-
-        if (gravityEnabled) {
-            double minGravity = 0.0; double maxGravity = 20.0;
-			ImGui::SetNextItemWidth(150.0f);
-            ImGui::DragScalar("m/s^2", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
-        }
+        double minGravity = 0.0; double maxGravity = 20.0;
+		ImGui::SetNextItemWidth(150.0f);
+        ImGui::DragScalar("m/s^2", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
 
         ImGui::Separator();
 
+		// Mass Controls
         ImGui::Text("Mass:");
         double minMass = 0.25; double maxMass = 100.0;
         ImGui::SetNextItemWidth(150.0f);
@@ -253,6 +288,7 @@ namespace gui {
 
 		ImGui::Separator();
 
+		// Damping Controls
         ImGui::Text("Damping Coefficient");
 		double minDamping = 0.0; double maxDamping = 1.0;
 		ImGui::SetNextItemWidth(150.0f);
@@ -260,30 +296,35 @@ namespace gui {
 
         ImGui::Separator();
 
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::Text("Scale:");
-        float minScale = 0.0001; float maxScale = 100.0;
-        ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
-        ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
-        ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
+        if (_obj->category == elements::ObjectCategory::General) {
+            ImGui::SetNextItemWidth(150.0f);
+            // Scale Controls
+            ImGui::Text("Scale:");
+            float minScale = 0.0001; float maxScale = 100.0;
+            ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
+            ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
+            ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
 
-        ImGui::Separator();
+            ImGui::Separator();
 
-        ImGui::Text("Linear Velocity:");
-        double minVelocity = -100.0; double maxVelocity = 100.0;
-        ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
-        ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
-        ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
+            // Linear Velocity Controls
+            ImGui::Text("Linear Velocity:");
+            double minVelocity = -100.0; double maxVelocity = 100.0;
+            ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
+            ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
+            ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
 
-        ImGui::Separator();
+            ImGui::Separator();
 
-        ImGui::Text("Angular Velocity:");
-        double minTorque = -100.0; double maxTorque = 100.0;
-        ImGui::DragScalar("(x-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
-        ImGui::DragScalar("(y-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
-        ImGui::DragScalar("(z-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
+            // Angular Velocity Controls
+            ImGui::Text("Angular Velocity:");
+            double minTorque = -100.0; double maxTorque = 100.0;
+            ImGui::DragScalar("(x-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
+            ImGui::DragScalar("(y-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
+            ImGui::DragScalar("(z-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
 
-        ImGui::Separator();
+            ImGui::Separator();
+        }
 
         ImGui::Text("Reset Object:");
         // Reset Object Button
@@ -300,7 +341,7 @@ namespace gui {
 		ImGui::Separator();
 
 		// Rotate link01 around y axis, rotates all child links
-        ImGui::Text("Rotate %s", _currentLinkName);
+        ImGui::Text("Rotate %s", _currentLinkName.c_str());
         float minAngle = -360.0f; float maxAngle = 360.0f;
         ImGui::SliderFloat("Angle## (deg)", &position, minAngle, maxAngle, "%.1f");
 		_sceneView->setRobotLinkRotation(_currentLinkName, position);
@@ -318,19 +359,21 @@ namespace gui {
 
             ImGui::Text("Plots");
 
-			// Linear velocity plot
-            static std::vector<float> linVelHistory;
-            linVelHistory.push_back(static_cast<float>(_obj->state.linearVelocity.norm()));
-            if (linVelHistory.size() > 100) linVelHistory.erase(linVelHistory.begin());
+            if (_obj->category == elements::ObjectCategory::General) {
+                // Linear velocity plot
+                static std::vector<float> linVelHistory;
+                linVelHistory.push_back(static_cast<float>(_obj->state.linearVelocity.norm()));
+                if (linVelHistory.size() > 100) linVelHistory.erase(linVelHistory.begin());
 
-			// Angular velocity plot
-            static std::vector<float> angVelHistory;
-            angVelHistory.push_back(static_cast<float>(_obj->state.angularVelocity.norm()));
-            if (angVelHistory.size() > 100) angVelHistory.erase(angVelHistory.begin());
+                // Angular velocity plot
+                static std::vector<float> angVelHistory;
+                angVelHistory.push_back(static_cast<float>(_obj->state.angularVelocity.norm()));
+                if (angVelHistory.size() > 100) angVelHistory.erase(angVelHistory.begin());
 
-			// Plot Outputs
-            ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
-            ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                // Plot Outputs
+                ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+            }
 
             ImGui::Separator();
 
@@ -388,9 +431,9 @@ namespace gui {
             LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
         }
 
-        float fov = _sceneView->getCamera()->getFOV(); // in degrees
-        if (ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f, "%.5f")) {
-            _sceneView->getCamera()->setFOV(fov);
+        if (ImGui::SliderFloat("Field of View", &fov, 25.0f, 125.0f, "%.5f")) {
+			fov = glm::clamp(fov, 25.0f, 125.0f);
+			_sceneView->getCamera()->setFOV(fov);
         }
     }
 

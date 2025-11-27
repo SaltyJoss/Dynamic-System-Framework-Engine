@@ -37,7 +37,7 @@
 // 	    -> Logs a warning message to the debug panel.
 // D_ERROR(fmt, ...)
 //      -> Logs an error message to the debug panel.
-// D_OK(fmt, ...)
+// D_SUCCESS(fmt, ...)
 //      -> Logs a success message to the debug panel.
 // D_FAIL(fmt, ...)
 //      -> Logs a failure message to the debug panel.
@@ -105,8 +105,8 @@ extern ENGINE_API Debug gLog;
 #define D_INFO(fmt,  ...) Debug::Instance().dLog(LogLevel::Info,    fmt, ##__VA_ARGS__)
 #define D_WARN(fmt,  ...) Debug::Instance().dLog(LogLevel::Warning, fmt, ##__VA_ARGS__)
 #define D_ERROR(fmt, ...) Debug::Instance().dLog(LogLevel::Error,   fmt, ##__VA_ARGS__)
-#define D_OK(fmt,    ...) Debug::Instance().dLog(LogLevel::Info,    fmt, ##__VA_ARGS__) // Using Info level for OK messages
-#define D_FAIL(fmt,  ...) Debug::Instance().dLog(LogLevel::Warning, fmt, ##__VA_ARGS__) // Using Info level for FAIL messages
+#define D_SUCCESS(fmt,    ...) Debug::Instance().dLog(LogLevel::Success,    fmt, ##__VA_ARGS__) // Using Info level for OK messages
+#define D_FAIL(fmt,  ...) Debug::Instance().dLog(LogLevel::Fail, fmt, ##__VA_ARGS__) // Using Info level for FAIL messages
 #define D_RUNTIME(fmt, ...) Debug::Instance().dLog(LogLevel::Runtime, fmt, ##__VA_ARGS__) // Using Runtime level for runtime messages (e.g. performance, sim time)
 #define D_OUTPUT(fmt, ...) Debug::Instance().dLog(LogLevel::Output,    fmt, ##__VA_ARGS__) // Using Info level for general output messages
 
@@ -150,7 +150,7 @@ extern ENGINE_API Debug gLog;
     do { \
         static bool _okayed = false; \
         if (!_okayed) { \
-            D_OK(fmt, ##__VA_ARGS__); \
+            D_SUCCESS(fmt, ##__VA_ARGS__); \
             _okayed = true; \
         } \
     } while(0)

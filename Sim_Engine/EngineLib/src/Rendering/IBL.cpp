@@ -46,7 +46,7 @@ namespace render {
 		generatePrefilterMap();
 		generateBRDFLUT();
 
-		D_OK("IBL built successfully.");
+		D_SUCCESS("IBL built successfully.");
 	}
 
 /*

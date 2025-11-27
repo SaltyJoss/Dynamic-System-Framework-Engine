@@ -258,6 +258,9 @@
     <ClInclude Include="include\Platform\SimulationState.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\IntegrationAnalysis.h">
+      <Filter>External\MathLib\Integration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

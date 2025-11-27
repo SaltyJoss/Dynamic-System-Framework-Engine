@@ -47,7 +47,10 @@ namespace elements {
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
-		void setAspect(float aspect) { _projection  = glm::perspective(_FOV, aspect, _near, _far); }
+		void setAspect(float aspect) {
+			_aspect = aspect;
+			updateProjectionMatrix();
+		}
 		void setFocus(const glm::vec3& focus) { _focus = focus; updateViewMatrix(); }
 		void setCurrentPos2D(const glm::vec2& pos) { _currentPos2D = pos; }
 		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
@@ -59,8 +62,7 @@ namespace elements {
 			updateViewMatrix();
 		}
 
-		void reset()
-		{
+		void reset() {
 			_focus = { 0.0f, 0.0f, 0.0f };
 			//_distance = 5.0f;
 			updateViewMatrix();
@@ -124,9 +126,9 @@ namespace elements {
 			_projection = glm::perspective(_FOV, _aspect, _near, _far);
 		}
 
-		float getFOV() const { return glm::degrees(_FOV); }
-		void setFOV(float fovDeg) {
-			_FOV = glm::radians(fovDeg);
+		float getFOV() const { return _FOV; }
+		void setFOV(float fov) {
+			_FOV = glm::radians(fov);
 			updateProjectionMatrix();
 		}
 

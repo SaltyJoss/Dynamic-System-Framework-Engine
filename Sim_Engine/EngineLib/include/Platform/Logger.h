@@ -53,7 +53,7 @@
 #include <mutex>
 #include <sstream>
 
-enum class LogLevel { Trace, Debug, Info, Warning, Error, Ok, Fail, Runtime, Output };
+enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
 
 struct LogEntry {
     LogLevel level;
