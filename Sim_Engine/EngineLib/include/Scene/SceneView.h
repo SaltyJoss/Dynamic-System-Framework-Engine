@@ -255,6 +255,7 @@ namespace physics {
 }
 
 namespace gui {
+	class AxisOrientator;
     // SceneView Class
     class ENGINE_API SceneView {
     public:
@@ -360,6 +361,7 @@ namespace gui {
         void InitIBL();
         void ShadowPass();
         void SkyboxRender();
+		void oreintationGizmoRender(); // Not really sure what to call this yet so GizmoRender for now!
         glm::mat4 LightSpaceMatrix(float near, float far);
 
 
@@ -377,6 +379,8 @@ namespace gui {
         std::unique_ptr<elements::Light> _light;
         std::unique_ptr<elements::Light> _sunLight;
         elements::Object* _cameraFollowTarget = nullptr;
+		std::unique_ptr<AxisOrientator> _axisOrientator;
+
 
         std::shared_ptr<elements::Mesh> _mesh;
 	    std::vector<std::unique_ptr<elements::Object>> _objects;

@@ -15,6 +15,7 @@
 #include "Scene/Mesh.h"
 #include "Scene/MeshLoader.h"
 #include "Scene/Light.h"
+#include "Scene/AxisOrientator.h"
 
 #include "Physics/PhysicsSystem.h"
 #include "Robots/RobotLoader.h"
@@ -68,6 +69,7 @@ namespace gui{
 		_sunLight->_intensity = 1.0f;
 
 		_camera = std::make_unique<elements::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
+		_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 		glGenVertexArrays(1, &_worldGridVAO);
 
@@ -136,6 +138,10 @@ namespace gui{
 	void SceneView::detachCameraFromObject() {
 		_cameraFollowTarget = nullptr;
 		_camera->clearFollow();
+	}
+
+	void SceneView::oreintationGizmoRender() {
+		// Placeholder for orientation gizmo rendering
 	}
 
 
@@ -242,6 +248,8 @@ namespace gui{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
+		glm::mat4 view = _camera->getViewMatrix();
+
 		if (_hasRobot) {
 			glm::mat4 base = glm::mat4(1.0f);
 			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
@@ -261,6 +269,8 @@ namespace gui{
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 		}
+
+		_axisOrientator->render(view);
 
 		_frameBuffer->unbind();
 

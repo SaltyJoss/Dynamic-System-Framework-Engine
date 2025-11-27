@@ -148,6 +148,7 @@
     <ClInclude Include="include\Rendering\Texture.h" />
     <ClInclude Include="include\Robots\RobotLoader.h" />
     <ClInclude Include="include\Robots\RobotModel.h" />
+    <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
     <ClInclude Include="include\Scene\DebugPanel.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
+    <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\External\GLAD\glad.c">
