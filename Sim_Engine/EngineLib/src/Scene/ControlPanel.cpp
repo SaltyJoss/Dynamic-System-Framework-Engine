@@ -523,10 +523,11 @@ namespace gui {
                         }
 
                         if (ImGui::IsItemClicked() && attachedObj != nullptr) {
+                            _currentLinkName = link.name;
                             _selection.type = SelectionType::LINK;
                             _selection.index = i;
+                            _selection.source = SelectionSource::CONTROL_PANEL;
                             _sceneView->setSelectedObject(attachedObj);
-                            _currentLinkName = link.name;
                             LOG_INFO("Selected link: %s", link.name.c_str());
 
                         }
@@ -576,7 +577,9 @@ namespace gui {
                     _currentObjectName = label;
                     _selection.type = SelectionType::OBJECT;
                     _selection.index = i;
+                    _selection.source = SelectionSource::CONTROL_PANEL;
                     _sceneView->setSelectedObject(obj); // fine to keep for inspector
+                    LOG_INFO("Selected Object: %s", label.c_str());
                 }
 
                 ImGui::TableSetColumnIndex(1);

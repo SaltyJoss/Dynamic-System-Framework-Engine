@@ -49,6 +49,18 @@ namespace robots {
 				jointData["offset"][2].get<float>()
 			);
 
+			joint.continuous = jointData["continuous"].get<bool>();
+			if (!joint.continuous) {
+				joint.minAngle = jointData["minAngle"].get<float>();
+				joint.maxAngle = jointData["maxAngle"].get<float>();
+			} else {
+				joint.minAngle = -FLT_MAX;
+				joint.maxAngle = FLT_MAX;
+			}
+
+			joint.minAngle = glm::radians(joint.minAngle);
+			joint.maxAngle = glm::radians(joint.maxAngle);
+
 			robot.joints.push_back(joint);
 		}
 

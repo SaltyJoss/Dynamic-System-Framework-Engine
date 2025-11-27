@@ -77,6 +77,10 @@ struct RobotJoint {
 	glm::vec3 axis;
 	glm::vec3 offset;
 	float angle = 0.0f;
+
+	float      minAngle; // lower limit [rad]
+	float      maxAngle; // upper limit [rad]
+	bool       continuous; // true for base, false for limited joints
 };
 
 struct RobotModel {
@@ -84,4 +88,20 @@ struct RobotModel {
 	std::vector<RobotLink> links;
 	std::vector<RobotJoint> joints;
 };
+
+inline float wrapRad(float a) {
+	const float TWO_PI = 6.28318530718f;
+	a = fmod(a, TWO_PI);
+	if (a < 0.0f) a += TWO_PI;
+	return a;
+}
+
+inline float clampJointAngle(const RobotJoint& joint, float angle) {
+	if (joint.continuous) {
+		return wrapRad(angle);
+	}
+
+	return std::clamp(angle, joint.minAngle, joint.maxAngle);
+}
+
 

@@ -38,7 +38,12 @@
             "child": "link01",
             "axis": [ 0, 0, 1 ],
             "offset": [ 0, 0, 0.0585 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -360,
+                "upper_deg": 360,
+                "continuous": true
+            }
         },
         {
             "name": "joint2",
@@ -46,7 +51,12 @@
             "child": "link02",
             "axis": [ 0, 1, 0 ],
             "offset": [ 0, 0, 0.045 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -270,
+                "upper_deg": 270,
+                "continuous": false
+            }
         },
         {
             "name": "joint3",
@@ -54,7 +64,12 @@
             "child": "link03",
             "axis": [ 0, 1, 0 ],
             "offset": [ -0.35, 0, 0 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -275,
+                "upper_deg": -2.5,
+                "continuous": false
+            }
         },
         {
             "name": "joint4",
@@ -62,7 +77,12 @@
             "child": "link04",
             "axis": [ 0, 1, 0 ],
             "offset": [ 0.218, 0, 0.057 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -115,
+                "upper_deg": 95,
+                "continuous": false
+            }
         },
 
         {
@@ -71,7 +91,12 @@
             "child": "link05",
             "axis": [ 0, 0, 1 ],
             "offset": [ 0.07, 0, 0 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -95,
+                "upper_deg": 95,
+                "continuous": false
+            }
         },
         {
             "name": "joint6",
@@ -79,7 +104,12 @@
             "child": "link06",
             "axis": [ 1, 0, 0 ],
             "offset": [ 0.0492, 0, 0 ],
-            "quat": [ 1, 0, 0, 0 ]
+            "quat": [ 1, 0, 0, 0 ],
+            "limit": {
+                "lower_deg": -360,
+                "upper_deg": 360,
+                "continuous": true
+            }
         }
     ]
 }

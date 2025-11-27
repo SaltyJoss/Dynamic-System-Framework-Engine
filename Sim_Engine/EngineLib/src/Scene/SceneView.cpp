@@ -316,7 +316,6 @@ namespace gui{
 		instantiateRobotLinks();
 		buildLinkIndex();
 
-
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
 		D_OK("Loaded robot model -> %s", name.c_str());
 	}
@@ -402,8 +401,8 @@ namespace gui{
 	// NOTE: this sets the joint angle that affects the link, not the link transform directly
 	void SceneView::setRobotLinkRotation(const std::string& linkName, float angle) {
 		if (!_hasRobot) {
-			LOG_WARN("No robot loaded to set link rotation.");
-			D_WARN("No robot loaded to set link rotation.");
+			LOG_WARN_ONCE("No robot loaded to set link rotation.");
+			D_WARN_ONCE("No robot loaded to set link rotation.");
 			return;
 		}
 		auto it = _linkIndex.find(linkName);
@@ -421,7 +420,7 @@ namespace gui{
 				return;
 			}
 		}
-		LOG_WARN("No joint found for link %s to set rotation.", linkName.c_str());
+		LOG_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 		D_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 	}
 

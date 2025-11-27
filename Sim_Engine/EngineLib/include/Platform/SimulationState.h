@@ -29,9 +29,17 @@ enum class SelectionType {
 	// may add more types later (e.g., JOINT, SENSOR, OBJECT)
 };
 
+enum class SelectionSource {
+	NONE,
+	CONTROL_PANEL,
+	SCENE_VIEW
+	// may add more sources later (e.g., HIERARCHY_VIEW, PROPERTIES_PANEL)
+};
+
 // Current selection state
 struct Selection {
 	SelectionType type = SelectionType::NONE;
+	SelectionSource source;
 	int index = -1; // Index of the selected link or robot
 };
 
