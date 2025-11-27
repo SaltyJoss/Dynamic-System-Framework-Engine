@@ -31,7 +31,6 @@ namespace physics {
 // --------------------------------------------------
 	void PhysicsSystem::update(double dt, elements::Object* obj) {
 		if (!obj) return;
-
 		// Apply forces (uses mass)
 		applyForces(dt, obj);
 
@@ -40,6 +39,9 @@ namespace physics {
 
 		// Rotate object (uses angular velocity)
 		updateRotation(dt, obj);
+
+		// Handle floor collision
+		//handleFloorCollision(dt, obj, 0.0f);
 	}
 
 // --------------------------------------------------
@@ -111,6 +113,15 @@ namespace physics {
 		obj->transform.rotation.x = static_cast<float>(s.theta.x());
 		obj->transform.rotation.y = static_cast<float>(s.theta.y());
 		obj->transform.rotation.z = static_cast<float>(s.theta.z());
+
+		// update diagnostics if running
+		if (_diagRunning && obj == _diagObject) {
+			IntegratorDiagSample sample;
+			sample.t = _t;
+			sample.theta = s.theta;
+			sample.omega = s.angularVelocity;
+			_diagSamples.push_back(sample);
+		}
 	}
 
 	// Translation update
@@ -189,6 +200,58 @@ namespace physics {
 			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
 			return x + dxdt * dt;
 		}
+	}
+
+// --------------------------------------------------
+//				Integration Analysis
+// --------------------------------------------------
+	void PhysicsSystem::startDiagnostics(elements::Object* obj) {
+		if (!obj) {
+			_diagRunning = false;
+			D_ERROR("Null diagnostic object");
+			return;
+		}
+
+		if (_diagRunning) return; // already running
+		_diagRunning = true;
+		_diagObject = obj;
+		_diagResult = IntegratorDiagResult();
+	}
+
+	void PhysicsSystem::stopDiagnostics() {
+		if (!_diagRunning) return;
+		_diagRunning = false;
+
+		if (_diagSamples.empty()) {
+			_diagResult = IntegratorDiagResult();
+			D_WARN("Integrator diagnostics stopped");
+			return;
+		}
+
+		// build scalar series: omega/time
+		std::vector<double> omegaNorms;
+		omegaNorms.reserve(_diagSamples.size());
+
+		for (const auto& sample : _diagSamples) {
+			omegaNorms.push_back(sample.omega.norm());
+		}
+
+		// MathLib computes stats
+		integration::analysis analyser;
+		integration::ErrorStats omegaStats = analyser.computeErrorStats(omegaNorms);
+
+		// Fill result struct
+		_diagResult.duration = _diagSamples.back().t;
+		_diagResult.omegaNormStats = omegaStats;
+		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, just zeroed for now
+
+		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu", 
+			_diagSamples.size(), 
+			_diagResult.omegaNormStats.minError,
+			_diagResult.omegaNormStats.maxError,
+			_diagResult.omegaNormStats.meanError,
+			_diagResult.omegaNormStats.rmsError
+		);
 	}
 
 

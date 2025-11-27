@@ -67,6 +67,7 @@
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <integrators/numerical_integrators.h>
+#include <integrators/IntegrationAnalysis.h>
 #include "const_math.h"
 
 #include <memory>
@@ -91,11 +92,34 @@ namespace constants {
 }
 
 namespace physics {
+	struct IntegratorDiagSample {
+		double t = 0.0;              // simulation time
+		Eigen::Vector3d theta;       // angles (rad)
+		Eigen::Vector3d omega;       // angular velocity (rad/s)
+	};
 
 	class ENGINE_API PhysicsSystem {
 	public:
 		PhysicsSystem();
 		
+		// Mode Selection
+		enum class eSimulationMode {
+			Normal = 0,				// standard physics simulation
+			IntegrationAnalysis = 1 // run comparative tests of integrators
+		};
+
+		struct IntegratorDiagResult {
+			double duration;
+			Eigen::Vector3d thetaMin, thetaMax, thetaMean, thetaRms;
+			Eigen::Vector3d omegaMin, omegaMax, omegaMean, omegaRms;
+
+			integration::ErrorStats omegaNormStats;
+			integration::ErrorStats thetaNormStats;
+		};
+
+		void setSimulationMode(eSimulationMode mode) { _simulationMode = mode; }
+		eSimulationMode getSimulationMode() const { return _simulationMode; }
+
 		// Simulation Control
 		void update(double dt, elements::Object* obj);
 
@@ -128,13 +152,31 @@ namespace physics {
 		void setGravity(const Eigen::Vector3d& gravity) { _gravity = gravity; }
 		Eigen::Vector3d getGravity() const { return _gravity; }
 
-		// Misc
-		bool isGravityEnabled() const { return _gravity != Eigen::Vector3d(0.0f, 0.0f, 0.0f); }
-		
+		// Integration Analysis testing
+		void startDiagnostics(elements::Object* obj);
+		void stopDiagnostics();
+
+		bool diagnosticsRunning() const { return _diagRunning; }
+		void setDiagnosticRunning(bool running) { _diagRunning = running; }
+
+		const IntegratorDiagResult& diagResult() const { return _diagResult; }
+		const std::vector<IntegratorDiagSample>& diagSamples() const { return _diagSamples; }
+
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
 		constants::MathConstants _const;
 		Eigen::Vector3d _gravity = Eigen::Vector3d(0.0f, -9.81f, 0.0f);
+
+		// Integration analysis
+		eSimulationMode _simulationMode = eSimulationMode::Normal;
+
+		std::vector<integration::ErrorSample> _errorSamples;
+
+		bool _diagRunning = false;
+		elements::Object* _diagObject = nullptr;
+
+		std::vector<IntegratorDiagSample> _diagSamples;
+		IntegratorDiagResult _diagResult;
 
 		// Simulation parameters
 		double _dt = 1.0f / 120.0f; // ~120 FPS
