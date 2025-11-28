@@ -329,6 +329,15 @@ namespace gui {
         ImGui::Text("Reset Object:");
         // Reset Object Button
         if (ImGui::Button("Reset")) {
+            if (!_obj) {
+                LOG_WARN("No object selected to reset.");
+                return;
+			}
+
+            if (_hasRobot && _obj->category == scene::ObjectCategory::General) {
+                LOG_WARN("Cannot reset individual robot links. Please reset the entire robot model.");
+                return;
+			}
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
@@ -337,14 +346,27 @@ namespace gui {
 
     void ControlPanel::linkProperties() {
         if (!_hasRobot) { return; }
+
         ImGui::Text("Link Controls");
 		ImGui::Separator();
 
-		// Rotate link01 around y axis, rotates all child links
+        // Rotate link01 around y axis, rotates all child links#
+        const RobotModel& robot = _sim->getRobotModel();
+		float minAngle = -360.0f; float maxAngle = 360.0f;
+
+        for (const auto& joint : robot.joints) {
+            if (joint.child == _currentLinkName) {
+                minAngle = joint.minAngle;
+                maxAngle = joint.maxAngle;
+                break;
+            }
+        }
+
+        float& angle = _linkAngles[_currentLinkName];
+
         ImGui::Text("Rotate %s", _currentLinkName.c_str());
-        float minAngle = -360.0f; float maxAngle = 360.0f;
-        ImGui::SliderFloat("Angle## (deg)", &position, minAngle, maxAngle, "%.1f");
-		_sim->setRobotLinkRotation(_currentLinkName, position);
+        ImGui::SliderFloat("Angle## (deg)", &angle, minAngle, maxAngle, "%.1f");
+		_sim->setRobotLinkRotation(_currentLinkName, angle);
 		ImGui::Separator();
     }
 
@@ -528,8 +550,8 @@ namespace gui {
                 if (ImGui::Button("Remove Robot")) {
                     _sim->clearRobot();
                     _hasRobot = false;
-                    LOG_INFO("%s removed from scene.", _requestedRobot);
-                    D_INFO("%s removed.", _requestedRobot);
+                    LOG_INFO("%s removed from scene.", _requestedRobot.c_str());
+                    D_INFO("%s removed.", _requestedRobot.c_str());
                 }
 
                 if (openRoot)
@@ -658,4 +680,5 @@ namespace gui {
 
 		ImGui::EndChild();
     }
+
 }

@@ -1,0 +1,2147 @@
+commit f9a2a7129b4944d889be41828524c3067a3ba780
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 28 09:34:49 2025 +0000
+
+    fixes(General): update code comments and naming styles
+
+commit e3dafad1691c3a7a1b2f9aeb3915baaa95ac86b3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 28 07:51:34 2025 +0000
+
+    fixes
+
+commit 5edcb8e5c9daebfc0272d7c239e3740585414bbf
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 22:52:42 2025 +0000
+
+    feat(GUI): add orientation "gizmo" to SceneView rendering pipeline
+    
+    - I love the word gizmo
+    - Added AxisOrientator class with OpenGL-based rendering logic.
+    - Implemented shaders and geometry for axis lines and cones.
+    - Adjusted the rendering pipeline to include the gizmo.
+    
+    I USED A FEW DIFFERENT RESOURCES TO CONSTRUCT THE CODE.
+    THESE WILL BE REFERENCED IN MY REPORT, MAKING A LIST TO TAG ON THIS GITHUB TOO.
+
+commit 19b59a8cf80f1d6c810c68a70c3581113c177059
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 21:19:18 2025 +0000
+
+    fixes
+    
+    - Expanded integration method options in the UI.
+    - Fixed SceneView resizing and aspect ratio handling.
+    - Updated logging messages for clarity and consistency.
+    - Cleaned up redundant code and improved formatting.
+    - Restricted certain controls to General object categories.
+    - Removed gravityEnabled toggle; simplified gravity adjustment.
+    - Replaced D_OK with D_SUCCESS for clarity.
+    - Updated Logger to support new Success and Fail levels.
+    - Added diagnostic controls and time tracking to the UI.
+    - Refactored Camera FOV/aspect handling for consistency.
+
+commit 944693a059c81c3523d30d1d33a893b837bd6933
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 21:19:03 2025 +0000
+
+    feat(Physics): improved the `PhysicsSystem` with integration diagnostics
+    
+    - Added IntegrationAnalysis.h and related structs/methods.
+    - Added eSimulationMode for toggling diagnostic modes.
+    - Implemented diagnostic data collection and result computation.
+
+commit c2da00e321a5d63b81b5875346680657580632fd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 15:30:18 2025 +0000
+
+    fixes: update EngineLib to add new integration methods
+
+commit 8cfecc568c9a7391e3b65881ce9a7198041ca131
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 15:25:07 2025 +0000
+
+    feat(MathLib): add new integration and analysis methods to improve understanding and availablility for testing.
+    
+    - MY ANALYSIS METHODS ARE VERY SIMPLE.
+    - Need to research more, but this was meant to be something done later down the line, just need to explore the values now for testing, and thought it best to add the methods as ill be using them anyway for my report.
+
+commit 18c131d7c6bf9493bf87153f37491a3ed6b93db0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 14:41:30 2025 +0000
+
+    fixes
+
+commit bf65589a12d376a6123ee3a922a8fa4bd029d6c6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 14:41:27 2025 +0000
+
+    feat(Physics): integrated the numerical methods, add damping coefficient, improved derivative usage in updateRotation()
+
+commit b0cd9da4f5dcbfeb99fb36158ffd7fa9b2a4075d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 14:13:38 2025 +0000
+
+    fixes: Improved ControlPanel UI
+
+commit b0b874cbc3405e110530b68a0fa98350ffaea161
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 14:13:15 2025 +0000
+
+    refactor(PhysicsSystem): refactor `eIntegrationMethod` enum to be publicly accessible, enabling dynamic integration method selection in the GUI. Replaced `_method` with a public `method` variable in `PhysicsSystem` and updated default timestep to 120 FPS. Enhanced `integrationMethod` to support RK2/RK4 with derivative functions.
+    
+    TODO:
+    - Build a 6D state of x instead of 3D
+    - Define f using the 6D structure!
+    - Apply damping (will change coefficient value based on user input for now)
+
+commit 6ffcfc0d1c839db1266494808040f046cc8b00c2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 27 00:16:03 2025 +0000
+
+    feat(General): add joint limits, selection tracking, and logging updates
+    
+    - Need to go to bed, will finish tomorrow, just commiting to not lose progress.
+
+commit f9bf93b34b958cb2f93bdb0cf967a58159f77848
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 23:39:24 2025 +0000
+
+    fixes(ControlPanel): move scene tables (Objects etc.) into a single table
+
+commit a7608f32bf9520352264c3763a0e8b59d6e74d22
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 22:09:49 2025 +0000
+
+    - General code cleanup
+    
+    TODO:
+    - introduce bounds for each link.
+    - start work on the in-application scripting (this will allow users to write, run, load and save scripts to control the arm for simulations.
+    - create simulation data output.
+    - fix integrator type selection issue
+    - update github for all current issues
+    - improve code comments (Look at adding documentations?)
+
+commit 41f926af9e70892226c1edbb3692443534da654d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 22:09:38 2025 +0000
+
+    feat(ControlPanel): improve the UI for the ControlPanel
+
+commit 2e470c33cb9114ccc011a4886ea310462aee43c1
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 22:08:58 2025 +0000
+
+    feat(SceneView): add `setRobotLinkRotation` in `SceneView` to update robot link angles.
+
+commit 89b4276703c14f0d20090641e3fe26d51953a03d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 22:07:53 2025 +0000
+
+    refactor(PhysicSystem): refactor the physics system to support dynamic integration method selection
+
+commit eb61f25982e9063403917df1c36e89a35517302a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 18:38:25 2025 +0000
+
+    refactor(General): enhance logging, simulation, and documentation
+    
+    - Added new logging macros for debug panel integration (`D_INFO`, `D_WARN`, etc.) and one-time logs (`LOG_INFO_ONCE`).
+    - Expanded `LogLevel` enumeration and centralized logging with a singleton `Debug` instance.
+    - Refactored `DebugPanel` to include a table-based layout with color-coded log levels for better visualization.
+    - Introduced simulation time tracking and controls in `ControlPanel` using `std::chrono`.
+    - Added plots for linear and angular velocity magnitudes in the `ControlPanel`.
+    - Enhanced logging for HDR loading, mesh loading, and robot interactions in `SceneView`.
+    - Added detailed documentation across multiple files to improve code readability and maintainability.
+    - Removed `DebugLogEntry.h` and replaced its functionality with the new `DebugPanelLog` system.
+    - Improved shader reloading logic and added debug panel messages for IBL initialization.
+    - Fixed minor issues, such as type casting in `Object` and redundant comments in `WindowManager`.
+
+commit a8827b23c08cb964ee8c142de19531f6287969ba
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 26 11:45:16 2025 +0000
+
+    feat(Control Panel): Added robot link table
+    
+    TODO
+    - Spend some time doing code comments
+    - Refactor Control Panel (Using existing designs that I like)
+    - Assign to debug Panel.
+
+commit 9be0ff186b6e2e75c997393208c4b940244f80ad
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 23 23:32:37 2025 +0000
+
+    fixes
+    
+    -IBL WORKS, but hdr map is very dark on account of it being ***SPACE***
+    - Need to produce some directional light to act an illuminated celestial body.
+
+commit 5df52dcac82066519a2f5b3c38f84a6d0dea958c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 23 14:10:29 2025 +0000
+
+    fixes:
+    
+    TODO:
+    - investigate IBL section in PBR shader causing disappearing objects
+    - Focused on Image-Based Lighting (IBL) calculations in main shader
+    - Current implementation:
+        * irradianceMap for diffuse IBL
+        * prefilterMap + BRDF LUT for specular IBL
+        * fresnelSchlickRoughness for F term
+    - Added note: suspected issue in ambient computation or reflection vector
+    - Preserved lambert-like fallback to avoid pure black
+
+commit a5cbda34de269a17741469ff8bbb13e568ad7275
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 22 21:18:25 2025 +0000
+
+    fixes
+    
+    TODO:
+    - SORT PBR SHADERS TO replicate real world lighting in space with a large directional light (sun).
+
+commit 18cdf148e8c7f5887791b3a891ab43f8f8c4982f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 22 20:56:40 2025 +0000
+
+    fixes
+
+commit dd23a25cefce5d82d07f9f92126b9ac5646f8270
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 22 20:55:42 2025 +0000
+
+    Refactor: Introduce reloadable shader system and expand rendering pipeline (debugged with GPT)
+    
+    - Replaced legacy single `_shader` pipeline with a modular reloadable shader system.
+    - Added dedicated shader programs: Basic, Lit, PBR, PBRShadow, Debug.
+    - Implemented runtime shader switching via ImGui.
+    - Removed invalid global shader usage from InitIBL() and loadNewHDR().
+    - Moved all IBL texture binding into the PBR branch of MeshRender().
+    - Fixed crashes caused by null shader pointers and initialization order issues.
+    - Updated skybox to correctly use regenerated environment cubemaps.
+    - Cleaned SceneView destructor and removed stale shader references.
+    - Fixed resize crash by guarding zero-size window events during minimization.
+    - General cleanup of shader lifecycle, render order, and resource ownership.
+    - Major debugging and
+
+commit 052a435e60c5e3f95d6f7998db2227ab510e5261
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 22 18:41:17 2025 +0000
+
+    fixes(Robot): Fix robot orientation: apply Z-up → Y-up conversion at base transform
+
+commit e3809d47f8432f3de1d03a92a2f17beffcb400d8
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 22 17:29:10 2025 +0000
+
+    feat(ROBOT): Add RobotLoader pipeline with JSON robot model reader and mesh loading
+    
+    - Implement RobotLoader with JSON parsing for link/joint structures
+    - Add support for loading per-link mesh files (DAE and STL) via SceneView::instantiateRobotLinks
+    - Integrate robot model into SceneView (load, clear, instantiate, kinematics index)
+    - Add Object creation path using Mesh::load(...) for each robot link
+    - Ensure meshes upload correctly to GPU (init + createBuffers)
+    - Add baseTransform application stub in updateRobotKinematics
+    - Fix load order so robot meshes now render correctly
+    
+    TODO:
+    - Apply correct link/world positioning using joint offsets and transforms
+    - Verify unit scaling consistency across robot files
+    - Finalise joint rotation propagation and FK chain
+
+commit 8bab1fc8183db53eb3e142fd0e98ce898004bdd2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 21 13:35:42 2025 +0000
+
+    fixes(State): Fixed objects scale rotation and position
+    
+    TODO
+    - Implement linking against relevant objects (e.g. robotic arm link1, link2 and base)
+    - Use JSON or alternative to log correct names of each sub-node.
+    - RESEARCH how to implement in C code, thinking in Object.h create new struct ModelInstance or a relevant name.
+
+commit 27ca6395908a7f44da392ef34fd207ce7dc087f5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 21:04:40 2025 +0000
+
+    feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+    
+    - Updated MeshLoader::load() to return a vector of shared_ptr<Mesh>
+    - Added recursive processNode() to apply node-local transforms
+    - Ensured each aiMesh is converted into its own Mesh instance
+    - Fixed transform propagation by passing parent matrix down recursion
+    - Removed old single-mesh accumulation logic
+    - Prepared pipeline so SceneView can spawn one Object per submesh
+
+commit 588f75d4c09c9692de0c3b0164f7386f65341563
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 21:04:35 2025 +0000
+
+    feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+    
+    - Updated MeshLoader::load() to return a vector of shared_ptr<Mesh>
+    - Added recursive processNode() to apply node-local transforms
+    - Ensured each aiMesh is converted into its own Mesh instance
+    - Fixed transform propagation by passing parent matrix down recursion
+    - Removed old single-mesh accumulation logic
+    - Prepared pipeline so SceneView can spawn one Object per submesh
+
+commit 8d1ca404efce32f6122ee32a3b89a2160aa6d8e3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 21:04:04 2025 +0000
+
+    feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+    
+    - Updated MeshLoader::load() to return a vector of shared_ptr<Mesh>
+    - Added recursive processNode() to apply node-local transforms
+    - Ensured each aiMesh is converted into its own Mesh instance
+    - Fixed transform propagation by passing parent matrix down recursion
+    - Removed old single-mesh accumulation logic
+    - Prepared pipeline so SceneView can spawn one Object per submesh
+
+commit 46a3ce18a1f791ab47f6358d7526e325b2199010
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 20:08:52 2025 +0000
+
+    refactory(Meshes): Overhauled the mesh handling system to separate geometry loading,
+    scene transforms, and rendering responsibilities.
+    
+    - Removed legacy Mesh::load/processNode/processMesh pipeline.
+    - Added new MeshLoader class to import meshes via Assimp and
+      return per-submesh objects using shared_ptr<Mesh>.
+    - Updated SceneView::loadMesh to spawn Objects from imported meshes
+      instead of storing a single Mesh.
+    - Moved position/rotation/velocity state out of Mesh and into
+      Object::transform and PhysicsState.
+    - Cleaned up Mesh class to only store raw geometry data and GPU buffers.
+    - Updated MeshRender and ShadowPass to use Object.transform
+      instead of Mesh::_position/_rotation.
+    - Replaced all unique_ptr<Mesh> ownership paths with shared_ptr<Mesh>
+      to avoid deleted copy/assign operations and ensure multiple Objects can safely reference the same geometry.
+    - Fixed OpenGL buffer creation for newly imported submeshes.
+    - Updated checker plane and existing engine utilities to use the new API.
+    - Verified rendering path works with single and multi-submesh models.
+    
+    This refactor fully decouples mesh geometry from scene transforms and prepares the system for hierarchical model loading and node transforms.
+
+commit 0308228f495dcb83c90ca7aebf2d24255340db5a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 15:52:30 2025 +0000
+
+    fixes: QOL fixes, UI fixes.
+    
+    TODO:
+    - Boiled Loading other peoples .fbx files down to my PRIMITIVE mesh loading and vertex holding logic, already started researching the best way to move forward and otherpeoples answers (im still new to opengl), so committing before that!
+
+commit f5babd4c5f3bf154f4df74480064479888df1584
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 10:46:40 2025 +0000
+
+    refactor(Obj): Created collection of objects instead of only allowing one object, loading objects pushes to collection.
+    
+    TODO:
+    - Update control panel for object tracking (selecting active object), object deletion and object reset.
+    - Test current state once above is done
+    - Focus on loading posiiton relative to one another
+
+commit 5e482da8f62766e71caeb9b36b773263b7f4b79c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 20 10:32:31 2025 +0000
+
+    feat(Phys): Updated PhysicsSystems to correctly calculate rotation within -360 and 360 degree range, using MathLib constants and EulerStep
+    
+    TODO:
+    - Swap to container for objects, so I can have more than one at any given time
+    - Creat Numerical Method selector in control panel
+    - Learn about linking objects for robotic arm
+
+commit 149aa34fd73a247ee58f7075e531f6d30f405ce5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 23:04:37 2025 +0000
+
+    feat(Physics): Added basic camera tracking of the rigid-body object
+    
+    TODO:
+    - Fix rotational tracking
+    - Add two objects interacting correctly
+    - Start developing links for arm
+
+commit 5d2d3ca7f453fc177d7998d93c3ad71fd9e93351
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 20:40:00 2025 +0000
+
+    feat(Physics): Added user input to objects linear and angular velocities, the objects mass, and the a reset button for all object state.
+
+commit 5dbaa2275b904b985941b5e1fc7d64ce7e3f5530
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 18:24:12 2025 +0000
+
+    feat(Physics): Added new variables, matricies and vectors to PhysicsState
+    
+    - Along with some notes of my reading
+
+commit 52662a1a2e883e0a5c7c725a0eb0c7c2d5ecc305
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 18:09:03 2025 +0000
+
+    feat(PhysicsSystem): MESHES NOW ROTATE! BASIC refactoring of physicsSystem, in preparation for pipeline plan to inact robotic arm aspect.
+    
+    TODO:
+    - FIx lighting, but not needed right now, taking a step-back from the visual to focus on the the actual.
+
+commit 1cbd6472e3cd05d4a02ce49743f9584b76814359
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 15:17:43 2025 +0000
+
+    fixes
+
+commit 1d8ff11d9809a1b10ea01445a892acecb7cbf357
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 15:09:26 2025 +0000
+
+    removals
+
+commit 571c2771267b660ec39eec3c857b70ad843d488e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 15:09:19 2025 +0000
+
+    refactor(SceneView): Reorganised SceneView for redability and logically correct pipeline
+
+commit 517e0c424b3695e1ef5ce4702384970f42b29130
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 14:13:44 2025 +0000
+
+    fixes: Prepartion for code refactor, making object physics easier to manage
+
+commit 64ff0f436a152c96a2d4544fd24c993617572ea6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 01:04:15 2025 +0000
+
+    removals
+
+commit 8132e9a1404d6f33e78329d8c9c9bfa5a54d68dd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 19 01:03:37 2025 +0000
+
+    Attempted FIxes
+
+commit 6a4c884f478ed42c06da4e54f356f14393dacc8b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 18 17:52:26 2025 +0000
+
+    fixes(Shader): Some fixes to shader issues
+    
+    TODO
+    - Refactor entire fs_pbr.frag.glsl main()
+
+commit 24e5732e60b0c20e1665659a9f0130694f117b7b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 18 16:33:03 2025 +0000
+
+    added Eigen to externals
+
+commit 88a51eb7e3aa34422e87546828a3c89412b965e5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 18 16:32:50 2025 +0000
+
+    feat(MathLib): Added MathLib dll into SimEngine, basic method created to test
+    
+    TODO:
+    - Give the method an object to transform
+
+commit 44e670b38c68d59cbc6db8702d89f7b1bfe2542f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 18 16:31:47 2025 +0000
+
+    fixes(Shader): Fixed lighting map, mesh normals inverted to correct colour
+    
+    TODO:
+    - Find solution to tiny black dot in objects center
+
+commit 2aa1401d7b150941e5b7a121e1e0fe39eb0298ff
+Merge: 037ac72 96bf217
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Nov 17 15:13:48 2025 +0000
+
+    Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+
+commit 037ac722ced1d6ba1c17a28ae886b4221fc29dae
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Nov 17 15:13:42 2025 +0000
+
+    removals
+
+commit ffddca22eb81a8ffd7df4fea5c217fdd56144cd9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Nov 17 15:13:33 2025 +0000
+
+    refactor(MathLib): Moved MathCore to MathLib DLL, tweaked existing file names, and logic to function within the mathlib scope.
+
+commit 80d2103ec0458e418de3abb3a624d6511f59aeea
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 22:01:06 2025 +0000
+
+    feat(Positioning): Added up and down functionality into the camera movement
+
+commit 96bf21784de967f2ea260545094b537f952588d8
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Sat Nov 15 16:59:03 2025 +0000
+
+    Update project title and add subtitle
+
+commit 2f9f8524bb2b294e4dc75ed738fa030a30a00354
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 16:51:27 2025 +0000
+
+    fixes
+
+commit 44b652b860f94b8caf7b7e80ec65fdbbde66f31d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 16:50:33 2025 +0000
+
+    removals: old file structure
+
+commit eafc1d8ab03a343764b1ac137fe14105ed7c3593
+Merge: d922350 261a901
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 15:54:24 2025 +0000
+
+    Add 'Sim_Engine/' from commit '261a901b789ddc05c2bfc2a1480ef5ba371ca704'
+    
+    git-subtree-dir: Sim_Engine
+    git-subtree-mainline: d922350f866199da47d6869c23aa8ae4446e3212
+    git-subtree-split: 261a901b789ddc05c2bfc2a1480ef5ba371ca704
+
+commit 261a901b789ddc05c2bfc2a1480ef5ba371ca704
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 15:14:30 2025 +0000
+
+    feat(Shaders): Improved IBL and PBR shader logic, shader files and c++ / header files now all work together
+    
+    - Map lighting is better, for disseertation fork this is purely cosmetic.
+
+commit 82a2420c8812c1077b1633e130a470789ec4ff51
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 15 15:13:20 2025 +0000
+
+    feat(Shaders): Improved IBL and PBR shader logic, shader files and c++ / header files now all work together
+    
+    - Map lighting is better, for disseertation fork this is purely cosmetic.
+
+commit 1750a0060599373dda336d1cc2ee39ecb9d346fd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 23:37:51 2025 +0000
+
+    fixes: fixed IBL not allowing meshes to be visible
+
+commit 73b31d368674cf524deb5dc1da11c4573a9a56af
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 23:27:45 2025 +0000
+
+    fixes
+    
+    TODO:
+    - Figure out why objects are not visible while "IBL" skybox is active
+
+commit 380957c1a6296c44b52117e72d5971924fb23670
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 20:56:10 2025 +0000
+
+    fixes
+
+commit 75e1ce3776a7bd3a53a5ee996c1a2e0f29546755
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 20:56:03 2025 +0000
+
+    fixes
+
+commit 7d45a12e0e6545b43e8c173e845feefbe87beaf6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 19:07:59 2025 +0000
+
+    feat(IBL): Image Base Lighting implemented
+    
+    TODO:
+    - Fix viewport artificting error
+
+commit 4fae8690cb1c1707bf1de12e069861698365281d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 17:57:33 2025 +0000
+
+    fixes
+
+commit 8f96666ec32b34b57768da4ce43765f1487eb4c4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 17:57:30 2025 +0000
+
+    fixes
+
+commit 5f30c5c77deab466c45728b7f6660cf460ff7aad
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 17:57:22 2025 +0000
+
+    feat(IBL): Added equirect cubemap shader logic (fragment)
+
+commit 7536104443534bcd5e9e759eaf500b00ce2a99a3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 17:56:46 2025 +0000
+
+    feat(IBL): Added Irradiance glsl shader logic
+
+commit cab85a1ce2b5571c96a437e8454f40239ae8d910
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 17:13:31 2025 +0000
+
+    feat(IBL): Added Equirectangular Cubemap glsl shaders
+
+commit ece48c10dcf66c71fa8adb23e8cc10cbaac098e0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 16:54:42 2025 +0000
+
+    fixes
+
+commit d2ec06475abbb2acbe7c11afa29088657b84ec6b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 16:54:15 2025 +0000
+
+    feat(IBL): added shader logic for BRDF-LUT
+
+commit 4e552384243331d6f97d933f7148ad7fdb6be57d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 16:49:49 2025 +0000
+
+    feat(IBL): Added IBL header and cpp file, along with BASIC logic for IBL integration
+    
+    TODO:
+    - Create the respective .vert and .frag shader files for glsl shader logic
+
+commit b0356ec058525617899ac75e6b53f53d1168f18e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 14:38:01 2025 +0000
+
+    fixes
+
+commit 3756d9444228f7114578a5b4a8c3a60f2df86013
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 13:48:23 2025 +0000
+
+    feat(CSM): Moved from PCF-only shader to CMS & PCF shader
+    
+    TODO:
+    - Fix objects shadows on the plane
+
+commit e7ddf71e6211b57483a319528239877343ce8f1c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 11:30:30 2025 +0000
+
+    general commit: Attempting to add cascading shadows
+
+commit 20a84177736d277e9f112e54e91bb75977fde21c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 10:56:54 2025 +0000
+
+    fixes: movement stuttering
+
+commit 9042cabb3f4bc1c66787a8b550caf1ce632099af
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 06:01:34 2025 +0000
+
+    fixes & tweaks
+
+commit d693e2b4dc7530ee20f458919ac2aaf997fc621b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 05:13:58 2025 +0000
+
+    feat: HUGE FEAT, FUNCTIONAL WALKING AND JUMPING OF PLAYER CAMERA
+
+commit 351246fa57217a72a1b408edfc537cef492dc50c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 05:06:42 2025 +0000
+
+    feat: Added gravity logic, basic implementation (DISFUNCTIONAL)
+
+commit 2c979fbf5a4f1b642c403dbaa25eaa7cbdafbf93
+Merge: 7a475cb 78202a3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 03:28:48 2025 +0000
+
+    fixes: Release support fixes, functional.
+
+commit 7a475cbbdc292b356d381f0aeefef8ad3dc50a53
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 03:24:37 2025 +0000
+
+    Release IS WORKING!
+
+commit 78202a3946adaba3d6f0e92ba55af82cebac6f89
+Merge: 54df47a 7aaf076
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Nov 13 03:17:26 2025 +0000
+
+    Merge pull request #6 from SaltyJoss/Salty/Dev
+    
+    Merge pull request #3 from SaltyJoss/Salty/Playground
+
+commit 54df47a6edac53d37d9efec80c90ceeed1238e64
+Merge: a7143cb 622baaf
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Nov 13 01:22:58 2025 +0000
+
+    EngineLib DLL integration, input/movement updates, and CI runtime fixes
+    
+    - Refactored EngineLib into a dynamic DLL for modular linkage
+    - Implemented continuous input and camera movement system
+    - Integrated OpenGLContext and WindowManager initialisation flow
+    - Fixed inconsistent runtime library settings (Debug vs Release)
+    - Updated .gitignore to include external runtime DLLs and exclude build artifacts
+    - Added GitHub Actions workflow cleanup and consistent /MD Release build
+    - Ensured platform and rendering subsystems build cleanly across configurations
+    
+    This merge brings all Playground branch improvements into main,
+    resolving linker conflicts and stabilising the engine’s build pipeline.
+
+commit 622baaf4a956afee65c9ff68195a688f1e777058
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 01:18:47 2025 +0000
+
+    fixes to .vcxproj
+
+commit 07bff665af6e239610e40d5587f837e1eaf3bb1c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 01:04:40 2025 +0000
+
+    fixes
+
+commit de9dbee49aa88ba3193f6fb605987035a26ce9ca
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 01:04:29 2025 +0000
+
+    Sync CI workflow from main
+
+commit a7143cb2f0222a54c8f9bb53bf52122e31f3f9db
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Nov 13 00:53:53 2025 +0000
+
+    Simplify msbuild command in build workflow
+
+commit a8b7c4ecf43e15abddfe82838195a7527743a108
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Nov 13 00:49:57 2025 +0000
+
+    Add clean and rebuild steps to build workflow
+
+commit f122530c32da8fd8692b2f2329f6a742f92d303b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 00:30:30 2025 +0000
+
+    gitignore update
+
+commit f2ed95a848cf1116fc8b08b75c9fe33a927537c5
+Merge: 6f9df09 2e59858
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Nov 13 00:16:10 2025 +0000
+
+    Resolved merge conflict, kept local dll porject structure
+
+commit 6f9df09cc4551db0e730cbdb034532da645774f8
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 12 23:53:35 2025 +0000
+
+    feat(movement): added WASD movement, along realtime mouse input
+    
+    TODO:
+    - Object movement
+    - Some plane to move upon
+
+commit e28dd1097590709e087cf9a2b2cfe121ddff03fd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 12 21:00:28 2025 +0000
+
+    refactor(DLL): build to DLL/EXE structure - fix GLAD integration and Win32 architecture issues
+    
+    - Resolved Win32 architecture inclusion and linking issues
+    - Fixed GLAD initialisation (updated version, removed GLEW remnants)
+    - Refactored build configurations for consistent DLL operations
+    - General code cleanup and stability fixes
+    - Succesfully project to DLL + EXE (main.cpp as entry point)
+
+commit e0883ac74f1ed27677f27b7af19e73b5d1e7eb9f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 12 16:54:49 2025 +0000
+
+    fixes(DLL): Sorted build config along with header and cpp fixes
+
+commit 5ff10724ad8d88ca44f72e80c1cd86c34a24c7e4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Nov 12 00:36:07 2025 +0000
+
+    fixes(DLL): sorted all errors from move to DLL.
+    
+    TODO:
+    - Fix runtime errors
+
+commit 36ac104cbc0d728a8d9baf5fa77642d8fa4350f2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 18:24:26 2025 +0000
+
+    fixes
+
+commit 1586e1fbfa0f1be58093df48d5cb6413c2500f94
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 18:24:20 2025 +0000
+
+    removals
+
+commit 5e99bb135556602c4afd53efc32a0e907c173ec0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 18:24:11 2025 +0000
+
+    refactor(DLL): moved all cpp and h files to a dll library (Engine
+
+commit 7aaf07659c694b7a8ff45dfddb2efa2750f7ebed
+Merge: dd5cfdb 2e59858
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Tue Nov 11 13:58:00 2025 +0000
+
+    Merge pull request #3 from SaltyJoss/Salty/Playground
+    
+    Resolve merge: keep test files
+
+commit 2e59858ff8a8fd9f816200726527f89847198b90
+Merge: f1f4dbf dd5cfdb
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Tue Nov 11 13:57:52 2025 +0000
+
+    Merge branch 'Salty/Dev' into Salty/Playground
+
+commit f1f4dbf2d18adad6e5920d9fc492eafd833d667e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 13:53:40 2025 +0000
+
+    Resolve merge: keep test files
+
+commit dd5cfdbeb57f22b91de6366a795bfc094242a9a1
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 13:40:22 2025 +0000
+
+    fixes
+
+commit 2cae0ec8be10c5dc876a49507cfd5263d85fc415
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 13:40:06 2025 +0000
+
+    tests: Added foundation for testing
+
+commit 6ff7d44c84272bf84e66385780042be4c670854b
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Tue Nov 11 13:39:50 2025 +0000
+
+    Update README with GitHub badges
+    
+    Added various GitHub badges for project status and metrics.
+
+commit c6880ba4eb6193395ad63afe4e097d2f601b7b97
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Tue Nov 11 12:24:44 2025 +0000
+
+    Create build script to use Engine.sln
+
+commit d922350f866199da47d6869c23aa8ae4446e3212
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Nov 11 08:56:23 2025 +0000
+
+    refactor(Solution): Refactored entire solution to flow a bit better, more organised (QoL and futureproofing)
+
+commit 1100a215946a8dfb1715cb75a40eed32aa6dd9f9
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Sun Nov 9 00:57:13 2025 +0000
+
+    Add images section with intro image
+
+commit 6a5693efe34b2d091133c8249cc30ac0b11ec7b4
+Merge: dd8591c c6d95e0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 9 00:55:18 2025 +0000
+
+    Merge branch 'Main' of https://github.com/SaltyJoss/Project-Pulsar into Main
+
+commit dd8591ce073f231ac6c054eefbe5b6ae4b2927e7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 9 00:55:13 2025 +0000
+
+    tweak
+
+commit c6d95e0c7e9a4c4c01ccde0933bc676d32247f3d
+Merge: 9840607 c099bb8
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Sun Nov 9 00:52:14 2025 +0000
+
+    Merge pull request from SaltyJoss/Salty/Dev for FPS Counter addition and UI tweak
+    
+    added fps counter, and semi-translusent docking stations
+
+commit c099bb8db5e961ddab9435e5a4febcb3695cfc65
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 9 00:49:36 2025 +0000
+
+    added fps counter, and semi-translusent docking stations
+
+commit 98406071125234b1419ea43e857592aa7fa99015
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 23:42:57 2025 +0000
+
+    fixes
+
+commit 9c2c729a5a6f94e6fb550b538bdce48e6623fcc9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 23:42:06 2025 +0000
+
+    fixes
+
+commit 6ca156d1df3fa26b835f763d011df49223989220
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 22:59:13 2025 +0000
+
+    fixes
+
+commit 0235ae986ac096d83878b8fe6821007bc2f4cf0a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 22:31:49 2025 +0000
+
+    feat(skybox): Added fully fucnctional skybox to engine
+    
+    TODO:
+    - Lighting and shading improvements
+
+commit 025152c580e3bb7ca4cd423b0898ec7101f1c954
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 18:13:13 2025 +0000
+
+    fixes: Update gitignore to exclude External/*/bin and their dlls
+
+commit da3992886a25681866888a5728485ef84c1cbe29
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 18:04:20 2025 +0000
+
+    fixes
+
+commit 1387e79774942d0e8662d4e080815e1732ec154a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 17:25:04 2025 +0000
+
+    fixes: Corrected dependencies in old Libraries folder, relocated to External, and split by file not lib and include
+
+commit c2c96fa75ff946204cf45c1661a4724cce199fc3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 17:13:10 2025 +0000
+
+    fixes: Shader filepaths sorted. IT RUNS
+
+commit babf35b6dc6023000a293cdac105f5e1be22dbb5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 17:09:48 2025 +0000
+
+    fixes: correctly added paths for include, library and other linked dependencies
+
+commit c788bc6311e279ce0959878e1c3a5ad614363d7a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 15:41:25 2025 +0000
+
+    refactor: Solution created,  folders intiialised
+    
+    TODO:
+    - Add dependicies
+    - Add Correct Libs
+    - Make possible for contributors to use on person machine with MINIMAL setup
+
+commit 70a323328eb687f514c3cf6516023f53a228b3f1
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 15:02:49 2025 +0000
+
+    refactor(repo): cleanup
+
+commit 2462a746164aa206531411329c7d19dec0cf52e6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 14:59:18 2025 +0000
+
+    refactor(repo): migrate simulator + reorganize into Engine/Game structre
+
+commit bf1c0dda26f2f672b4190c965a0f3568ac0ae410
+Merge: be97154 5e562db
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 14:21:46 2025 +0000
+
+    Add 'GameSim/' from commit '5e562dbc6304bc29cdda8e0a9e4039231588b495'
+    
+    git-subtree-dir: GameSim
+    git-subtree-mainline: be97154588434ce4883e3539ca4e6a7853727054
+    git-subtree-split: 5e562dbc6304bc29cdda8e0a9e4039231588b495
+
+commit be97154588434ce4883e3539ca4e6a7853727054
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Sat Nov 8 12:17:17 2025 +0000
+
+    Update README.md
+
+commit 3ad6f602f398e0fc8591812583de016674bd29c1
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Sat Nov 8 12:16:02 2025 +0000
+
+    Initial commit
+
+commit 655fb2d463ee873372aed0d98c51aaa5757e4117
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 01:37:56 2025 +0000
+
+    feat(Shders): Add directional shadow shaders
+
+commit 5e562dbc6304bc29cdda8e0a9e4039231588b495
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 01:37:56 2025 +0000
+
+    feat(Shders): Add directional shadow shaders
+
+commit 74fb1d5fcf5cee8d92a0ae6adfcf60b6f69c3126
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 00:25:24 2025 +0000
+
+    fixes
+
+commit 33d44586d7ca9d42714535e3df9dc183967fb1c7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 8 00:25:24 2025 +0000
+
+    fixes
+
+commit 03fd5e13e146fdfb38e064ae6f77e09d33e54a5c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 20:57:15 2025 +0000
+
+    feat: FIRST SUCCESFULL WORLD GRID RUN
+    
+    TODO:
+    - Improve LOD usage
+    - Small Win, but lets me have a better looksing and cleaner base
+
+commit 40376a5d57ebe83c8ce889b2f681c6694ff4a8fc
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 20:57:15 2025 +0000
+
+    feat: FIRST SUCCESFULL WORLD GRID RUN
+    
+    TODO:
+    - Improve LOD usage
+    - Small Win, but lets me have a better looksing and cleaner base
+
+commit d31d2ffaff278498d6b170b0d9ead33c762bd39f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 18:47:18 2025 +0000
+
+    feat: World Grid now ouputs as an a basic interpolation
+
+commit fbe1d89b8549d92d612875c4861a0a3d669e162d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 18:47:18 2025 +0000
+
+    feat: World Grid now ouputs as an a basic interpolation
+
+commit a621362411a2322e20bb1a9668004fbecd036a1a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 17:40:50 2025 +0000
+
+    fixes
+
+commit a0e670161fcc8b35788919e11588c097fbc4fdfb
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 17:40:50 2025 +0000
+
+    fixes
+
+commit f219cef609cda91fbca8b5a966391f8ddd9e9058
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 17:40:45 2025 +0000
+
+    feat: Initialised new shared pointer of shaderUtil, WorldGridShader
+    
+    TODO;
+    - REPLACE THE CHECKER BOARD AS A PROCEDURAL GRID THAT UNIFORMLY GENERATES IN ALL DIRECTION
+
+commit 2e8e8334fd14dad31ee50f92ff46b479ed2fb5d0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Nov 7 17:40:45 2025 +0000
+
+    feat: Initialised new shared pointer of shaderUtil, WorldGridShader
+    
+    TODO;
+    - REPLACE THE CHECKER BOARD AS A PROCEDURAL GRID THAT UNIFORMLY GENERATES IN ALL DIRECTION
+
+commit 35a3e86374cb9896bed2b11bc2a04be973e1b0c9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 14:00:14 2025 +0000
+
+    fixes
+
+commit 145f70211bf1060bd1755d0cd52bc2d8e661523f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 14:00:14 2025 +0000
+
+    fixes
+
+commit eabdf8760f2e6be789c0b61ffb344cbc0bfd2ea7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 14:00:11 2025 +0000
+
+    feat(Object): Added object.h to deal with object specific movements
+    
+    - BUGS: Need to make rotation function correctly (I believe simple fix)
+    - BUGS: Need to make object stay with mouse
+
+commit 5ce85e96b32bd385652ed043b2ab36b58754e586
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 14:00:11 2025 +0000
+
+    feat(Object): Added object.h to deal with object specific movements
+    
+    - BUGS: Need to make rotation function correctly (I believe simple fix)
+    - BUGS: Need to make object stay with mouse
+
+commit 3f42023a331cc78fee2d15e5da807ccc5cf87d33
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 12:28:43 2025 +0000
+
+    fixes
+
+commit 29ac66205644d5ed7d00466692632504b8ce04e5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 12:28:43 2025 +0000
+
+    fixes
+
+commit e1ce07aba45261b6c2e834078ccf48cca05d9ab6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 12:28:18 2025 +0000
+
+    feat(Looger): Added mutex lock in Debug::logCentral for thread-safe logging to file and console
+    
+    - Suppresses potential deadlock warning does pop up
+    - Leaving this warning will most likely have no impact as logging occurs within main loop and application shutdown
+
+commit f651156b0fa1e1f11c05aced683470e12e879381
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 12:28:18 2025 +0000
+
+    feat(Looger): Added mutex lock in Debug::logCentral for thread-safe logging to file and console
+    
+    - Suppresses potential deadlock warning does pop up
+    - Leaving this warning will most likely have no impact as logging occurs within main loop and application shutdown
+
+commit ee48a4661119d1f705bc2231baf6b895be102b6b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:11:59 2025 +0000
+
+    fixes: Removed unused files in elements
+
+commit 315b9f917d622eaa30aa2386907312fa6a1ee1af
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:11:59 2025 +0000
+
+    fixes: Removed unused files in elements
+
+commit b927341eea3ab96800bec6ccd3a4cc3ce0aae2dd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:05:31 2025 +0000
+
+    fixes: Position of Camera AND Object no longer moves right when mouse is centered
+    
+    - Changed onMouseMove to Correctly
+    - Little tweak to resolution in SceneView.h, 720p -> 1080p -> may turn up to my monitors native res of 1440p
+
+commit 792d7b1a25be9009fd4976fc72af6032e43bf587
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:05:31 2025 +0000
+
+    fixes: Position of Camera AND Object no longer moves right when mouse is centered
+    
+    - Changed onMouseMove to Correctly
+    - Little tweak to resolution in SceneView.h, 720p -> 1080p -> may turn up to my monitors native res of 1440p
+
+commit 8ca2539dd563aa9aaea7dfacff55e181aa5fa38d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:01:49 2025 +0000
+
+    fixes: Moved objects into Objects Folder, with subfolders for types
+    
+    - More to be added, these are NOT MY OWN, are tests added from the public github https://github.com/jayanam/jgl_demos/tree/master/JGL_MeshLoader
+
+commit bf41b2192f8e8cf62b438f5ef39e5accd29e7055
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Nov 2 11:01:49 2025 +0000
+
+    fixes: Moved objects into Objects Folder, with subfolders for types
+    
+    - More to be added, these are NOT MY OWN, are tests added from the public github https://github.com/jayanam/jgl_demos/tree/master/JGL_MeshLoader
+
+commit 043427de6b9b61a3927d315bf77559f615abe5f3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:49:51 2025 +0000
+
+    fixes
+
+commit 04a2e1496f30650cbb55005290a025a5de089577
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:49:51 2025 +0000
+
+    fixes
+
+commit 9cbb87f90f051e356cafbe8d40b588a0772b7a2d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:49:45 2025 +0000
+
+    fixes: Simulator no longer moves when mouse is not within its frame
+
+commit 5a8dcd7d317bf2fcaabc15f9a7f1d4894d667504
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:49:45 2025 +0000
+
+    fixes: Simulator no longer moves when mouse is not within its frame
+
+commit 8f259aff64868badd0d0fd5b30d6a873a29892cb
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:10:57 2025 +0000
+
+    feat(Camera Focus Changer): Add buttons to change from Camera focus to Obejct focus when changing position relative to the world
+
+commit 4f3f7ddd502b62354a948797e8116fce59550b2e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 19:10:57 2025 +0000
+
+    feat(Camera Focus Changer): Add buttons to change from Camera focus to Obejct focus when changing position relative to the world
+
+commit bb5dd37217d608b1572fa596fc1084608f111f34
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 18:36:54 2025 +0000
+
+    feat(Checkered Plane): Added basic checkered plane to act as a "0" layer for objects.
+    
+    - Helps me gauge the size of an object, and provides a surface to check future shadows, lighting etc
+
+commit b157a8545f13095820d79c2d3373179d58587371
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 18:36:54 2025 +0000
+
+    feat(Checkered Plane): Added basic checkered plane to act as a "0" layer for objects.
+    
+    - Helps me gauge the size of an object, and provides a surface to check future shadows, lighting etc
+
+commit 7199b8f86f45c66d299d95c0ece7caf0f0d5df4d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 17:24:24 2025 +0000
+
+    fixes: MEMORY LEAK
+
+commit acf426f8877dd4358eec3f7e79844f3de7e142bd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 17:24:24 2025 +0000
+
+    fixes: MEMORY LEAK
+
+commit fa0686fbd78063aae6debec3bbeff54b2d6a062d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 16:47:35 2025 +0000
+
+    feat(Logs): Added logging to files.
+
+commit b9d861e054ed42c437782999d15dada6fce7d039
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 16:47:35 2025 +0000
+
+    feat(Logs): Added logging to files.
+
+commit e042200cce45270a00a8d4e0303b722a386292a7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 15:52:16 2025 +0000
+
+    fixes
+
+commit 7b2ee5ec82728b46181b9db9044441bab6d08a9f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 15:52:16 2025 +0000
+
+    fixes
+
+commit 92ff672973ad738da1355bd8ef456bfe77942fe3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 15:51:43 2025 +0000
+
+    feat(Logs): Added Logger.h thats a global header for debugging logs, using 3 distinct type {WARN, ERROR, INFO}
+
+commit a028a348e10ef2ecaab234ce1865e6eeae6b47a5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 15:51:43 2025 +0000
+
+    feat(Logs): Added Logger.h thats a global header for debugging logs, using 3 distinct type {WARN, ERROR, INFO}
+
+commit 6e6b4180c403cd732347f8f582568ca29488ba7b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 13:51:06 2025 +0000
+
+    fixes: OBJECT CREATION NOW WORKS!
+
+commit 58280fc3bee3e450a31c3f88c2198ae7b770efb7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sat Nov 1 13:51:06 2025 +0000
+
+    fixes: OBJECT CREATION NOW WORKS!
+
+commit 27fc6ec4259bd05427488f517725bc3c5ed1172d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:23:49 2025 +0000
+
+    fixes
+
+commit 501169d00271b633166f527bc2d9a4e4efb98ed3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:23:49 2025 +0000
+
+    fixes
+
+commit 49fb90bfdb23a3ab6878962343514e15bd5f4343
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:10:06 2025 +0000
+
+    fixes
+
+commit d92ebb8082a2ee6f50f94fc0d490fe1da248af73
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:10:06 2025 +0000
+
+    fixes
+
+commit 496466961504b4ab5cb565d22dbc2adb5ab0253d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:10:02 2025 +0000
+
+    tweaks: adjust GUI panel positions, docking behavior, and initial layouts
+
+commit 54c0a82a4463d782181e9894918b98b8198a717d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:10:02 2025 +0000
+
+    tweaks: adjust GUI panel positions, docking behavior, and initial layouts
+
+commit 124ff013831794c317cdd9ace18cc9dafa2c670b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:09:15 2025 +0000
+
+    fixes: OpenGLContext init, correct window pointer handling, prevent NULL this/window deref
+
+commit 5fecab0f119ca8f02526ebaff225b399517cd488
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:09:15 2025 +0000
+
+    fixes: OpenGLContext init, correct window pointer handling, prevent NULL this/window deref
+
+commit f4e7242705ac6416ba712011b1f42958c47bbf6f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:07:51 2025 +0000
+
+    fixes: Stub unused logic files - commented-out placeholders for future implementation
+
+commit e60725493109eabfd5d11e8f98a2d5a92a9fd7f2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 18:07:51 2025 +0000
+
+    fixes: Stub unused logic files - commented-out placeholders for future implementation
+
+commit 0fbcf869c20e16dd3872d9cdafe0780dc35808e6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 13:57:15 2025 +0000
+
+    Added ASSIMP library
+
+commit 434396b8c5c414fd4afc9f863bb461ddf97191db
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 13:57:15 2025 +0000
+
+    Added ASSIMP library
+
+commit 77d99207f23d1c9af13ea74ebb955606bc54b5a4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 11:15:33 2025 +0000
+
+    fixes
+
+commit e77c82db86eb1d584b055423dd5b8f37f44f5b45
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 11:15:33 2025 +0000
+
+    fixes
+
+commit fd6adb726e3ddb52ed53a760faf76bea50d84cfd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 11:15:30 2025 +0000
+
+    feat(Scene View): Add scene view logic, will change to adapt my old logic, this is BAREBONES
+
+commit ffbb4402858a3a330bc9a48374f6544c6f9e781e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 11:15:30 2025 +0000
+
+    feat(Scene View): Add scene view logic, will change to adapt my old logic, this is BAREBONES
+
+commit 9bad0af8b88c50f3b84a90e09d01f3c80d957d43
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 10:56:11 2025 +0000
+
+    feat(ShaderUtil): Moved basic shader logic over to ShaderUtil
+
+commit df7307b070e4b966de0330fb947b57b1e20263ab
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 10:56:11 2025 +0000
+
+    feat(ShaderUtil): Moved basic shader logic over to ShaderUtil
+
+commit 07f07bca8a9186656da45f2e3c278d03f79019e3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 10:55:41 2025 +0000
+
+    fixes
+
+commit 8088767ed795aa7b5ee940964e55c9dad9083625
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Fri Oct 31 10:55:41 2025 +0000
+
+    fixes
+
+commit 01c139690d39379297c972399f58a4f909492eea
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:37 2025 +0000
+
+    fixes
+
+commit d2939d59a103b6e516eca94378c13e5a7c3ac502
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:37 2025 +0000
+
+    fixes
+
+commit 6275fefafcd9c227592d26bcf7e8d78e89f1ec0b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:34 2025 +0000
+
+    feat(Scene View): SceneView initialisation
+
+commit 8d68084e59fde39267d2c0488c168acfb0f8b5cd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:34 2025 +0000
+
+    feat(Scene View): SceneView initialisation
+
+commit 042bee21b6369cc223f75d439b9e974464283de3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:09 2025 +0000
+
+    feat(Elements): Addition of elements into Element folder
+
+commit 5054d4e05d20326da622537e116b2841d334a6bc
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 19:33:09 2025 +0000
+
+    feat(Elements): Addition of elements into Element folder
+
+commit eabd03e4e81e9b43a528ae84cd6e1f561f655293
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:36:16 2025 +0000
+
+    fixes
+
+commit 1ef90078fafbb61060f4b97e7185cb7d3cdf03f5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:36:16 2025 +0000
+
+    fixes
+
+commit b4027e6814ad356b4c811eee6f272f19cd6c77b9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:36:14 2025 +0000
+
+    feat(GUIContext): Add logic into GUIContext.cpp
+
+commit d98c259854e86e956f510cfe0ff0aa6a651df4d6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:36:14 2025 +0000
+
+    feat(GUIContext): Add logic into GUIContext.cpp
+
+commit bb0f740cba7a1fef0ab096fa5ceb5f26cb080e00
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:35:55 2025 +0000
+
+    Add ImGui Docking libraries
+
+commit 2d73706fbe21449812b82545de2112a22bc0f02e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:35:55 2025 +0000
+
+    Add ImGui Docking libraries
+
+commit 8fc7dd334810ba3cc7f6129d98e3d2e0d35e30ac
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:35:29 2025 +0000
+
+    feat(OpenGLContext): Add logic to OpenGLContext.cpp
+
+commit 224947e3da58e752b44884f7d14376583103c005
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 18:35:29 2025 +0000
+
+    feat(OpenGLContext): Add logic to OpenGLContext.cpp
+
+commit 5564670fffaf1fb1d663e060bd9f8463e5957550
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 17:01:21 2025 +0000
+
+    Added GLEW library into includes
+
+commit 73271a6817907a3b6d6ceb59b41a9b1deaec1c2a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 17:01:21 2025 +0000
+
+    Added GLEW library into includes
+
+commit 29aa976aa8236bcefb14c684a65e1f8e53a59dd4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 17:00:40 2025 +0000
+
+    feat(Buffer Management): Added method logic for VertexIndexBuffers and FrameBuffers
+
+commit d948bc0f170b58ae60f0df7ddede0b2184831bb9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 17:00:40 2025 +0000
+
+    feat(Buffer Management): Added method logic for VertexIndexBuffers and FrameBuffers
+
+commit c1bd4e4e2802ecc1abc9d2146c26a905dccbca74
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:44:02 2025 +0000
+
+    fixes
+    
+    - bad spelling :|
+
+commit 64a086def03cd190864ac411c483fcc764fcd0cb
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:44:02 2025 +0000
+
+    fixes
+    
+    - bad spelling :|
+
+commit 827de47ab3642ddb99f0565c60f2d4a905129977
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:43:49 2025 +0000
+
+    feat(Mesh): Initialised a mesh header and cpp file  for all stages of the rendering a mesh object into the sim
+
+commit 4bb34f5c68d279b6ece2e1e4cd69a46dd2be9a2c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:43:49 2025 +0000
+
+    feat(Mesh): Initialised a mesh header and cpp file  for all stages of the rendering a mesh object into the sim
+
+commit 6d8230d0e4324f7cca95fb1dc8f34ce8599a47a0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:07:05 2025 +0000
+
+    feat(Window Manager): Updated WindowManager.h to function inline with current idea of project structure
+
+commit 6ef817621cb708237718cc316f1a2e3c47466f18
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:07:05 2025 +0000
+
+    feat(Window Manager): Updated WindowManager.h to function inline with current idea of project structure
+
+commit b90a704d520c97a4d2c785b75e9b288147018831
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:06:16 2025 +0000
+
+    feat(Render Base):  introduced centeralised base for render operations in Render/
+    
+    - RenderBase.h written
+    - OpenGLBufferManager and OpenGLContext overriding classes methods.
+
+commit 63b623532c191c6e4e437c58f3f701459a8d2e68
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 15:06:16 2025 +0000
+
+    feat(Render Base):  introduced centeralised base for render operations in Render/
+    
+    - RenderBase.h written
+    - OpenGLBufferManager and OpenGLContext overriding classes methods.
+
+commit 9d4e1726e7a79f5b0c65115c061f07f22b822cd1
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 12:44:08 2025 +0000
+
+    refactor(File structure): Finally refactored files, not pushing to main until code works
+
+commit e86c0d5657ddb2c11112f2a1e6d768f441ec30c8
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 30 12:44:08 2025 +0000
+
+    refactor(File structure): Finally refactored files, not pushing to main until code works
+
+commit 5fc04ec7a525d749cec43661ab0ce61069507ea9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 17:57:59 2025 +0000
+
+    feat(Simulator): Reintroduce Basic object initialisation (but in 3D)
+    
+    - Not correctly initialised with GUI <--- DOING NOW
+
+commit bf2c2874ef2ddd978dc2ade2760d85d0559dec37
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 17:57:59 2025 +0000
+
+    feat(Simulator): Reintroduce Basic object initialisation (but in 3D)
+    
+    - Not correctly initialised with GUI <--- DOING NOW
+
+commit 182bbb6ac3536ef3b6035259c93af26c30c6dee6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:23 2025 +0000
+
+    fixes
+
+commit a25bd85bf105d372e3ed3a0a9117be2a81371239
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:23 2025 +0000
+
+    fixes
+
+commit 371be02c1afa3830f0f1b31afa5bcb05912f0d4f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:15 2025 +0000
+
+    fixes
+
+commit ccb60061cb6cd96ab6b46a8c2d257ad59269566a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:15 2025 +0000
+
+    fixes
+
+commit b7fa57c86a628ce2c9bb480ecba8a6b9b1045616
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:03 2025 +0000
+
+    libs(GLM): Added OpenGL's Mathematics library, DOES NOT REPLACE MY OWN LOGIC TO BE LATER INCOPERATED
+
+commit a1d41b0747889d4eb6e901f8eca39ccf1f7a7bd4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 14:00:03 2025 +0000
+
+    libs(GLM): Added OpenGL's Mathematics library, DOES NOT REPLACE MY OWN LOGIC TO BE LATER INCOPERATED
+
+commit c243baffd4fc49f8a3213bc63030d7287b3fbbb5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 13:58:49 2025 +0000
+
+    feat(Simulation Manager): Initialised basic structure of Simulation Manager Files.
+
+commit 9c7bdcee4d13e4413da75036e6b35a8b674b6bce
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Wed Oct 29 13:58:49 2025 +0000
+
+    feat(Simulation Manager): Initialised basic structure of Simulation Manager Files.
+
+commit d8f792a136a97e638f2f2f3b60b220b80b5f28a0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 19:08:16 2025 +0000
+
+    fixes
+
+commit ac8473da68e4e1d6a4b958e6ace95442d70c5ed0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 19:08:16 2025 +0000
+
+    fixes
+
+commit 482914963435d644dc6db18a875063ad5e715cf4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 19:08:08 2025 +0000
+
+    feat(Styles): Added Two styles into Style header, and cpp file
+
+commit 2f1b0fbdbb6d3cc0dc4edea9760011ade769e0a2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 19:08:08 2025 +0000
+
+    feat(Styles): Added Two styles into Style header, and cpp file
+
+commit 04b284f65ffc279d2d8bbe2ee91710c895eebf9e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:41:11 2025 +0000
+
+    fixes(GUI): Improved overall placements of each section of the GUI
+
+commit f40d005e4aee1cd9a8ba3f736a36fd479d4bf8cd
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:41:11 2025 +0000
+
+    fixes(GUI): Improved overall placements of each section of the GUI
+
+commit ef24297c25a2b6b45afa7d1704de5decf0fc923c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:37:21 2025 +0000
+
+    refactore(GUI): Refactored the present GUI so it is sized correctly
+
+commit 5263940f448374deba8e2dff63260753944461dc
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:37:21 2025 +0000
+
+    refactore(GUI): Refactored the present GUI so it is sized correctly
+
+commit a7aca6560e4508f4a75a48cf6b6ec9081c7b2b84
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:03:10 2025 +0000
+
+    fixes(GUI): Commented out calls to TitleBarPanel.h, may revist in the future if I have time!
+
+commit e262268631693ada52913a11d68d64435e0cce83
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 17:03:10 2025 +0000
+
+    fixes(GUI): Commented out calls to TitleBarPanel.h, may revist in the future if I have time!
+
+commit 8a02ab08909a1b06fb2890d05b676a1853ad31a1
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:39:03 2025 +0000
+
+    fixes
+
+commit 20b50dc1bac02df396fc9b62d5f437e2c58f2155
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:39:03 2025 +0000
+
+    fixes
+
+commit 451804d85af0d237a6d398c2c6b729dd6dc9cf21
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:38:55 2025 +0000
+
+    fixes: Corrected "Exception thrown: read access violation. **this** was nullptr." due to mismatched objects
+
+commit b3ba6591bb76f57ef2b664aa6c40f59af96ed164
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:38:55 2025 +0000
+
+    fixes: Corrected "Exception thrown: read access violation. **this** was nullptr." due to mismatched objects
+
+commit 95461c68a6f70920fb9447b4b3d645198cfdd0a9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:30:14 2025 +0000
+
+    feat(GUI): Added TaskBarPanel, removed GLFW OS border. Bugs currently needing fixing.
+
+commit 07d1c84600b94ad639e5f6517b4ffb7e5bc78a3d
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 16:30:14 2025 +0000
+
+    feat(GUI): Added TaskBarPanel, removed GLFW OS border. Bugs currently needing fixing.
+
+commit f125a8b14a3f0b4013d4a335a340f286458945f5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:57:38 2025 +0000
+
+    fixes
+
+commit 8ac7f65ee9a9fb6691fb2ec9199f685c07329076
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:57:38 2025 +0000
+
+    fixes
+
+commit 8a8408ee5826fb6fbbf6bef5bf73c436394e2b1b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:57:29 2025 +0000
+
+    refactor(Application): Application and GUIManager initialisation refactored to improve stability, state persistence, and lifetime management.
+    
+    -  Fixed crashes caused by per-frame GUIManager creation and invalid ImGui contexts
+
+commit c74b767a89ea207a664c5ab1286dc1e81304cfc2
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:57:29 2025 +0000
+
+    refactor(Application): Application and GUIManager initialisation refactored to improve stability, state persistence, and lifetime management.
+    
+    -  Fixed crashes caused by per-frame GUIManager creation and invalid ImGui contexts
+
+commit 87f56981c20583d5441f2c38e5a205e6a0956752
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:22:46 2025 +0000
+
+    feat(DebugLog): Add basic GUI for Debug Logging and Error Handling
+    
+    - This is being extended as this commits
+
+commit 114ffc7e2c1fd09c61158f7991832984918d5f90
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 12:22:46 2025 +0000
+
+    feat(DebugLog): Add basic GUI for Debug Logging and Error Handling
+    
+    - This is being extended as this commits
+
+commit df45a40c26eeaaba21f0034e16fb00b36dddcb48
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:43:12 2025 +0000
+
+    fixes
+
+commit b9352a1fc22eaec44745973fc46cca8119cb19f7
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:43:12 2025 +0000
+
+    fixes
+
+commit 51259e64ae69282b6a7f1f35d8fc4e983025b721
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:43:08 2025 +0000
+
+    fixes
+
+commit e5dda9ef58f12f5ef3ec6ddb0b2a55362ffa4fd3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:43:08 2025 +0000
+
+    fixes
+
+commit edd07d761020a6919089523a4f46b9d3da6b36aa
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:39:24 2025 +0000
+
+    feat(SimulationPanels): Added basic simulator panels (DUMMY PANELS FOR NOW), improving GUI layout
+
+commit eed6503f1bf5f32e4d957471ef1acf998bfd755c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 11:39:24 2025 +0000
+
+    feat(SimulationPanels): Added basic simulator panels (DUMMY PANELS FOR NOW), improving GUI layout
+
+commit 3aa9a0fdf10b50a562a3f30ba410d6e11ef918ba
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 09:46:46 2025 +0000
+
+    feat(SimulationPanels): Initialisation of simulation panels in header and cpp files
+
+commit 348b913dbc68e82289257551d5b44968fa89e1c4
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Tue Oct 28 09:46:46 2025 +0000
+
+    feat(SimulationPanels): Initialisation of simulation panels in header and cpp files
+
+commit 26f30b3954559340331b7e39e1a76898f7c2a18c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 18:18:36 2025 +0000
+
+    additions: general
+
+commit 82d20f4796b092c17a9d906a648f8ab800895b33
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 18:18:36 2025 +0000
+
+    additions: general
+
+commit c9643912ec7a1f8c2383bf1f6f085974a0fc12b9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 18:18:23 2025 +0000
+
+    feat(Simulator): Addition of ControlPanel header and cpp file
+
+commit ca3e7123e32d2e9442cc7566a50cb5e6a12c6b90
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 18:18:23 2025 +0000
+
+    feat(Simulator): Addition of ControlPanel header and cpp file
+
+commit f46d2c8eebbbe48381a2bc81e01af66486d4fc95
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 16:13:32 2025 +0000
+
+    fixes
+
+commit aecd9ed601e947f1a28bf9b821e0f112b9acc22e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 16:13:32 2025 +0000
+
+    fixes
+
+commit 1a4b1bd8bed1fb1d2d7939f392886e9901994fce
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 16:13:25 2025 +0000
+
+    feat(Simulation_Core): Added Application class and header file to deal the central application
+
+commit c6cbf588a0a7422c0ba165bc2f5ca6b2dae00b1e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 16:13:25 2025 +0000
+
+    feat(Simulation_Core): Added Application class and header file to deal the central application
+
+commit 6cfb78e0768dcffe0703154a3b57af614598eb24
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 15:52:25 2025 +0000
+
+    feat(GUI Manager): Add GUI Manager class and header, updated main.cpp
+
+commit 482f08e9d2160aaf3c54d9ec6b0b9543da38e691
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 15:52:25 2025 +0000
+
+    feat(GUI Manager): Add GUI Manager class and header, updated main.cpp
+
+commit 9c11d3235178ae77f33aac4dbdec0577166a3c04
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 14:57:17 2025 +0000
+
+    feat(ImGui): Basic initilisation and implementation of ImGui into GLFW window
+
+commit 8678a8fdfa9d45f080624103f5062ed1e0281001
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 14:57:17 2025 +0000
+
+    feat(ImGui): Basic initilisation and implementation of ImGui into GLFW window
+
+commit 21c86b6ec5f894af49f7ab53fe2e21615897ada3
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 14:26:17 2025 +0000
+
+    feat(ImGui library): Added relevant ImGui files into lib folder
+
+commit 43983c87142f627f58b97baceadf68b5716a1c50
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 14:26:17 2025 +0000
+
+    feat(ImGui library): Added relevant ImGui files into lib folder
+
+commit f67132de47ca81fa8068a5aef632c37998e563df
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 13:54:38 2025 +0000
+
+    fixes: Restrcuture of MathCore for better readablility and seperation between Solutions!
+
+commit 69c38596a9bf05373a635e916db400b31e9edc4f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 13:54:38 2025 +0000
+
+    fixes: Restrcuture of MathCore for better readablility and seperation between Solutions!
+
+commit 770e79760dc30695866efe559dc4d187cf8e1bc6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:42:21 2025 +0000
+
+    chore(shaderClass): Add basic error handingling for compilation and linking of shaders
+
+commit e0c05e963d97a927b71d8e235d5b16971a2bb864
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:42:21 2025 +0000
+
+    chore(shaderClass): Add basic error handingling for compilation and linking of shaders
+
+commit d3d40e3104253eb6650d34e349bf8dc4cfd554b6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:27:11 2025 +0000
+
+    feat(OpenGL Sim): Add basic uniform shader
+
+commit 2932571e5c16a0f6b6e15fd10aa506b92c953d85
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:27:11 2025 +0000
+
+    feat(OpenGL Sim): Add basic uniform shader
+
+commit 7a1c558c5ccf096ad213684bbaf87324f474abe9
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:20:17 2025 +0000
+
+    feat(OpenGL Sim): Added basic Shader for current triangle object using interpolation
+    
+    - Changed: VAO1.LinkVBO to VAO1.LinkAttrib
+    - LinkAttrib ++ 3 new arguments
+       - GLuint numComponents
+       - GLenum type
+       - GLsizeiptr stride
+       - void* offset
+
+commit a73817658670aec6a1b34c86b3875dd436c94434
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 11:20:17 2025 +0000
+
+    feat(OpenGL Sim): Added basic Shader for current triangle object using interpolation
+    
+    - Changed: VAO1.LinkVBO to VAO1.LinkAttrib
+    - LinkAttrib ++ 3 new arguments
+       - GLuint numComponents
+       - GLenum type
+       - GLsizeiptr stride
+       - void* offset
+
+commit c7add94253fe1bdcd401f36692293a0b00a221ff
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:38:18 2025 +0000
+
+    chore(OpenGL Sim): Update main file to use new classes, and their functions
+
+commit bb3e6cd19ec7c20c2bddc0bb1ae1ab245dbeed4f
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:38:18 2025 +0000
+
+    chore(OpenGL Sim): Update main file to use new classes, and their functions
+
+commit b24f263adcece9dc8f7db081712d36947753623a
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:32:18 2025 +0000
+
+    feat(OpenGL Sim): Created VAO, VBO, and EBO classes
+    
+    - Added: VAO.h, VAO.cpp
+    - Added: VBO.h, VBO.cpp
+    - Added: EBO.h, EBO.cpp
+
+commit becd3632ef71d49fbc4107d0c12c80130b58263b
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:32:18 2025 +0000
+
+    feat(OpenGL Sim): Created VAO, VBO, and EBO classes
+    
+    - Added: VAO.h, VAO.cpp
+    - Added: VBO.h, VBO.cpp
+    - Added: EBO.h, EBO.cpp
+
+commit eb840bd011d8f4288db5c94e9ce428daf11d9b28
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:22:16 2025 +0000
+
+    feat(OpenGL): Added Basic Shader class and header
+    
+    - Added: shaderClass.h
+    - Added: shaderClass.cpp
+
+commit 000616bdd805ffad33d18a2252bf0aeefa43743e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Mon Oct 27 10:22:16 2025 +0000
+
+    feat(OpenGL): Added Basic Shader class and header
+    
+    - Added: shaderClass.h
+    - Added: shaderClass.cpp
+
+commit 731bb3887db559b5f040e3aab962af83836ce6a6
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 23:12:15 2025 +0000
+
+    feat(OpenGL Sim): Basic test for drawing a triangle onto gl program
+
+commit 99f4f0f26e5933929f229047f905ecb5c7ebc913
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 23:12:15 2025 +0000
+
+    feat(OpenGL Sim): Basic test for drawing a triangle onto gl program
+
+commit ef5e20550c152306280f0db02935f5445fb0d8e0
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:56:57 2025 +0000
+
+    fixes
+
+commit 225087f25c0b0ddd650f9c3678a003ec6614b74c
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:56:57 2025 +0000
+
+    fixes
+
+commit 0c82f0cb25f82b889beaf3222a64bd62a66c36d5
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:54:28 2025 +0000
+
+    feat(OpenGL Sim): Added basic test window, intiialisation check for the new libs included.
+
+commit c4c9507d47cc6cd35fbf5bb463a9a6375ff14a9e
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:54:28 2025 +0000
+
+    feat(OpenGL Sim): Added basic test window, intiialisation check for the new libs included.
+
+commit 283d8e5f597669f8d894a85cfce4b0a1d82ef8da
+Merge: b097d5a 529c683
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:46:19 2025 +0000
+
+    Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+
+commit 3cfbc7047cad44a76e8789ce885b781910497b72
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:46:06 2025 +0000
+
+    feat(OpenGL): Setup basic simulation folder structure. Inlucdes OpenGL libraries.
+
+commit b097d5a9e2767cc85d7813742b53cdaedbc9f098
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Sun Oct 26 22:46:06 2025 +0000
+
+    feat(OpenGL): Setup basic simulation folder structure. Inlucdes OpenGL libraries.
+
+commit 1b4bb18e1afc2688d6c6240fd1cd42fc37380434
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 23 16:50:04 2025 +0100
+
+    feat: Add Eigen-based numerical integration header with Euler, RK2, and RK4
+
+commit 529c683b04579d4ca3dcaf132044f22d14ee2f31
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Oct 23 11:37:34 2025 +0100
+
+    Remove duplicate entry
+
+commit ca4afbe05eba12881b3ad8c7236c87edf4759ae2
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Oct 23 11:36:55 2025 +0100
+
+    Update .gitignore to include .out directory
+
+commit f65c84c18eee5260778c8e429bf64bd94da91cfc
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Oct 23 11:36:21 2025 +0100
+
+    Fix duplicate entry for '*.VC.VC.opendb' in .gitignore
+
+commit 100de0d61d1a94486e413601e0ac484e5576b32b
+Merge: 8ed245a c4e8bee
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 23 11:34:11 2025 +0100
+
+    Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+
+commit 8ed245a8e5aab10fb22128d03459a6e388702d47
+Author: saltyjoss <joss.salton@gmail.com>
+Date:   Thu Oct 23 11:34:02 2025 +0100
+
+    Initial project setup: folder structure, CMakeLists.txt, vcpkg Eigen3 integration, placeholder src/main.cpp
+
+commit c4e8beea156ac2e02fc131879fa752010ad822e6
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Oct 23 10:59:18 2025 +0100
+
+    Update README.md
+
+commit ee90cf0b67fe19a15a6e8fdb765fd3ea04b66aab
+Author: Joss Salton <145990319+SaltyJoss@users.noreply.github.com>
+Date:   Thu Oct 23 10:56:06 2025 +0100
+
+    Initial commit

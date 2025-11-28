@@ -363,7 +363,7 @@ namespace gui{
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
-		int rootIdx = _linkIndex["link00"];  // Z1 root link
+		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;
 
 		// Sort joints in parent-to-child order
@@ -391,10 +391,6 @@ namespace gui{
 			auto* obj = _robot.links[i].attachedObject;
 			auto* mesh = obj->getMesh();
 			if (!mesh) continue;
-
-			//// Robot-object transform is identity
-			//obj->transform.position = glm::vec3(0.0f);
-			//obj->transform.rotation = glm::vec3(0.0f);
 
 			// Visual Scaling matrix
 			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(_robot.scale));
@@ -424,8 +420,7 @@ namespace gui{
 		for (auto& joint : _robot.joints) {
 			if (joint.child == linkName) {
 				joint.angle = glm::radians(angle); // store angle in radians
-				//LOG_INFO("Set rotation of link %s to %.2f degrees.", linkName.c_str(), angle);
-				D_INFO_ONCE("Set rotation of link %s to %.2f degrees.", linkName.c_str(), angle);
+				D_INFO_ONCE("%s -> %.2f degrees.", linkName.c_str(), angle);
 				return;
 			}
 		}

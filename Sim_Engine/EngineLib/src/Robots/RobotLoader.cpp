@@ -48,26 +48,44 @@ namespace robots {
 				jointData["offset"][1].get<float>(),
 				jointData["offset"][2].get<float>()
 			);
+			
+			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
 
-			/*joint.continuous = jointData["continuous"].get<bool>();
+			if (limits.contains("continuous")) { joint.continuous = limits["continuous"].get<bool>(); }
+			else { joint.continuous = false; }
+			
 			if (!joint.continuous) {
-				joint.minAngle = jointData["minAngle"].get<float>();
-				joint.maxAngle = jointData["maxAngle"].get<float>();
+				if (limits.contains("lower_limit") && limits["lower_limit"].is_number()) { joint.minAngle = limits["lower_limit"].get<float>(); }
+				if (limits.contains("upper_limit") && limits["upper_limit"].is_number()) { joint.maxAngle = limits["upper_limit"].get<float>(); }
 			} else {
-				joint.minAngle = -FLT_MAX;
-				joint.maxAngle = FLT_MAX;
+				joint.minAngle = -360.0f;
+				joint.maxAngle = 360.0f;
 			}
 
-			joint.minAngle = glm::radians(joint.minAngle);
-			joint.maxAngle = glm::radians(joint.maxAngle);*/
+			// joint.minAngle = glm::radians(joint.minAngle);
+			// joint.maxAngle = glm::radians(joint.maxAngle);
 
 			robot.joints.push_back(joint);
+
+			LOG_INFO("Joint: %s \n\t\t| Parent: %s, \n\t\t| Child: %s, \n\t\t| Continuous: %s, \n\t\t| Min: %.2f, \n\t\t| Max: %.2f",
+				joint.name.c_str(),
+				joint.parent.c_str(),
+				joint.child.c_str(),
+				joint.continuous ? "True" : "False",
+				joint.minAngle,
+				joint.maxAngle
+			);
+			D_SUCCESS("Joint: %s \n\t\t\t| Parent: %s\n\t\t\t| Child: %s, \n\t\t\t| Continuous: %s, \n\t\t\t| Min: %.2f, \n\t\t\t| Max: %.2f",
+				joint.name.c_str(),
+				joint.parent.c_str(),
+				joint.child.c_str(),
+				joint.continuous ? "True" : "False",
+				joint.minAngle,
+				joint.maxAngle
+			);
 		}
 
-		LOG_INFO("Robot loaded: %d links, %d joints",
-			(int)robot.links.size(),
-			(int)robot.joints.size());
-
+		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		return robot;
 	}
 }

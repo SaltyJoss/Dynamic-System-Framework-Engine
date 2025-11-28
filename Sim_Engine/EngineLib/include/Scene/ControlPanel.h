@@ -104,6 +104,7 @@
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include "const_phys.h"
+#include <cmath>
 
 #include "Physics/PhysicsSystem.h"
 
@@ -112,6 +113,7 @@
 #include "Scene/Light.h"
 #include "Platform/Logger.h"
 #include "Platform/SimulationState.h"
+#include <unordered_map>
 
 #include <imgui.h>
 #include "Platform/imguiWidgets.h"
@@ -167,6 +169,8 @@ namespace gui {
 		bool _showSimulationProperties = false;
 		bool _showCameraProperties = false;
 		bool _showDisplaySettings = false;
+        bool autoScroll = true;
+        bool scrollToBottom = false;
 
         // Internal states
         bool simulationRunning = false;
@@ -177,6 +181,9 @@ namespace gui {
         std::string _requestedRobot;
         std::string _currentObjectName;
         std::string _currentLinkName;
+        std::string _lastLinkName;
+
+        std::unordered_map<std::string, float> _linkAngles;
 
 		float simLength = 30.0f;  // ~30 seconds default
         float deltaTime = 1 / 120; // ~120 FPS default

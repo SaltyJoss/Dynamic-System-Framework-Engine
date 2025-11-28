@@ -40,8 +40,6 @@
             "offset": [ 0, 0, 0.0585 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -360,
-                "upper_deg": 360,
                 "continuous": true
             }
         },
@@ -53,9 +51,9 @@
             "offset": [ 0, 0, 0.045 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -270,
-                "upper_deg": 270,
-                "continuous": false
+                "continuous": false,
+                "lower_limit": 0.0,
+                "upper_limit": 180.0
             }
         },
         {
@@ -66,9 +64,9 @@
             "offset": [ -0.35, 0, 0 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -275,
-                "upper_deg": -2.5,
-                "continuous": false
+                "continuous": false,
+                "lower_limit": -275.0,
+                "upper_limit": -2.0
             }
         },
         {
@@ -79,9 +77,9 @@
             "offset": [ 0.218, 0, 0.057 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -115,
-                "upper_deg": 95,
-                "continuous": false
+                "continuous": false,
+                "lower_limit": -115.0,
+                "upper_limit": 95.0
             }
         },
 
@@ -93,9 +91,9 @@
             "offset": [ 0.07, 0, 0 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -95,
-                "upper_deg": 95,
-                "continuous": false
+                "continuous": false,
+                "lower_limit": -95.0,
+                "upper_limit": 95.0
             }
         },
         {
@@ -106,8 +104,6 @@
             "offset": [ 0.0492, 0, 0 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "lower_deg": -360,
-                "upper_deg": 360,
                 "continuous": true
             }
         }

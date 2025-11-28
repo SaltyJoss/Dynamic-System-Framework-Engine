@@ -80,9 +80,9 @@ struct RobotJoint {
 	glm::vec3 offset;
 	float angle = 0.0f;
 
-	float      minAngle; // lower limit [rad]
-	float      maxAngle; // upper limit [rad]
-	bool       continuous; // true for base, false for limited joints
+	float minAngle; // lower limit 
+	float maxAngle; // upper limit 
+	bool continuous; // true for base, false for limited joints
 };
 
 struct RobotModel {

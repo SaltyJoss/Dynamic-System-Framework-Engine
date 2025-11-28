@@ -13,7 +13,7 @@ namespace gui {
         ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
-        ImGui::Begin("Output", nullptr, ImGuiWindowFlags_NoCollapse);
+        ImGui::Begin("Output", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 
         if (ImGui::BeginTabBar("Debug Tabs")) {
             if (ImGui::BeginTabItem("Log")) {
@@ -126,8 +126,12 @@ namespace gui {
     }
 
     void DebugPanel::renderLog() {
+        ImGuiWindowFlags window_flags = ImGuiChildFlags_None 
+                                      | ImGuiWindowFlags_HorizontalScrollbar 
+                                      | ImGuiWindowFlags_AlwaysVerticalScrollbar;
+
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
-        ImGui::BeginChild("LogChild", ImVec2(0, -30), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+        ImGui::BeginChild("LogChild", ImVec2(0, -30), true, window_flags);
 
         const auto& entries = gLog.Instance().Entries();
 
@@ -208,8 +212,17 @@ namespace gui {
         ImGui::EndChild();
         ImGui::PopStyleColor();
 
-        if (ImGui::Button("Clear"))
-            ImGui::SameLine();
-        if (ImGui::Button("Copy")) ImGui::LogToClipboard();
+		// Auto-scroll to bottom
+        if (autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+            ImGui::SetScrollHereY(1.0f);
+
+		// Auto-scroll toggle (doesnt work atm)
+        ImGui::Checkbox("Auto-Scroll", &autoScroll);
+
+		// Scroll to bottom button (does not do any atm)
+		ImGui::SameLine();
+		if (ImGui::Button("Scroll to Bottom"))
+			ImGui::SetScrollHereY(1.0f);
+
     }
 }
