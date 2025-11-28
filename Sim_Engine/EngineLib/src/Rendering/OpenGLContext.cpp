@@ -10,7 +10,7 @@
 #include "Rendering/OpenGLContext.h"
 
 #include "EngineLib/LogMacros.h"
-#include <Scene/SceneView.h>
+#include <Scene/SimulationManager.h>
 
 namespace render {
 	static void onKey_Callback(GLFWwindow* win, int  key, int scancode, int action, int mods) {

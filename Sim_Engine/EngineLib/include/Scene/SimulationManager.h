@@ -1,22 +1,32 @@
 #pragma once
 
 //=============================================
-//            File: SceneView.h
+//            File: simManager.h
 //=============================================
 // Class representing a 3D scene view with camera, lighting, and object management.
 // 
 // Summary:
 // ============================================
 // 
+// structures & enumerations:
+// --------------------------------------------
+// enum class ControlMode
+//      -> Enumeration for control modes (Camera or Object).
+// enum class ShaderMode
+// 	    -> Enumeration for shader modes (Basic, Lit, PBR).
+// enum class robotFocusMode
+//      -> Enumeration for robot focus modes (Base, Link, Joint).
+// --------------------------------------------
+// 
 // public:
 // --------------------------------------------
-// SceneView()
-// 	    -> Constructor that initializes the SceneView.
-// ~SceneView()
+// simManager()
+// 	    -> Constructor that initializes the simManager.
+// ~simManager()
 // 	    -> Destructor that cleans up resources.
-// elements::Light* getLight()
+// scene::Light* getLight()
 //      -> Returns a pointer to the main light in the scene.
-// elements::Light* getSunLight()
+// scene::Light* getSunLight()
 // 	    -> Returns a pointer to the sun light in the scene.
 // bool isSkyboxEnabled()
 //      -> Checks if the skybox is enabled.
@@ -34,41 +44,37 @@
 // 	    -> Returns the background alpha (transparency) of the scene.
 // float getPlaneHeight()
 //      -> Returns the height of the ground plane.
-// enum class ControlMode
-//      -> Enumeration for control modes (Camera or Object).
 // void setControlMode(ControlMode mode)
 //      -> Sets the current control mode.
 // ControlMode getControlMode()
 //  	-> Returns the current control mode.
-// elements::Camera* getCamera()
+// scene::Camera* getCamera()
 // 	    -> Returns a pointer to the camera in the scene.
 // void resetView()
 //      -> Resets the camera view to the default position and orientation.
-// void attachCameraToObject(elements::Object* obj)
+// void attachCameraToObject(scene::Object* obj)
 //      -> Attaches the camera to follow the specified object.
 // void detachCameraFromObject()
 //      -> Detaches the camera from any object it is following.
 // void loadMesh(const std::string& filepath)
 //      -> Loads a mesh from the specified file path.
-// std::vector<elements::Object*> loadMeshReturn(const std::string& filepath)
+// std::vector<scene::Object*> loadMeshReturn(const std::string& filepath)
 // 	    -> Loads a mesh and returns a vector of pointers to the created objects.
-// void setMesh(std::shared_ptr<elements::Mesh> mesh)
+// void setMesh(std::shared_ptr<scene::Mesh> mesh)
 //      -> Sets the current mesh for the scene.
-// std::shared_ptr<elements::Mesh> getMesh()
+// std::shared_ptr<scene::Mesh> getMesh()
 // 	    -> Returns the current mesh for the scene.
-// enum class ShaderMode
-//      -> Enumeration for shader modes (Basic, Lit, PBR).
 // void reloadAllShaders()
 //      -> Reloads all shaders used in the scene.
 // void render()
 //      -> Renders the scene.
 // void resize(int32_t width, int32_t height)   
 //      -> Resizes the scene view to the specified width and height.
-// std::vector<std::unique_ptr<elements::Object>>& getObjects()
+// std::vector<std::unique_ptr<scene::Object>>& getObjects()
 //      -> Returns a reference to the vector of scene objects.
-// elements::Object* getObject()
+// scene::Object* getObject()
 // 	    -> Returns a pointer to the currently selected object.
-// void setSelectedObject(elements::Object* obj)
+// void setSelectedObject(scene::Object* obj)
 // 	    -> Sets the currently selected object.
 // void deleteObject(int index)
 //      -> Deletes the object at the specified index.
@@ -82,15 +88,13 @@
 //      -> Clears the currently loaded robotic arm model.
 // RobotModel& getRobotModel()
 // 	    -> Returns a reference to the robotic arm model.
-// enum class robotFocusMode
-//      -> Enumeration for robot focus modes (Base, Link, Joint).
 // void processMovementKey(int key, float delta)
 // 	    -> Processes a movement key input for camera control.
 // void handleContinuousMovement(GLFWwindow* window, float dt)
 //      -> Handles continuous movement input for the camera.
 // void handleMouseLook(GLFWwindow* window, double xpos, double ypos)
 //      -> Handles mouse look input for the camera.
-// void onMouseMove(double x, double y, elements::eInputButton button)
+// void onMouseMove(double x, double y, scene::eInputButton button)
 //      -> Handles mouse movement input for the scene.
 // void onMouseWheel(double delta)
 //      -> Handles mouse wheel input for zooming.
@@ -99,7 +103,7 @@
 // --------------------------------------------
 // 
 // private:
-// -------------------------------------------- 
+// --------------------------------------------
 // void MeshRender()
 //      -> Renders the mesh in the scene.
 // void WorldGridRender()
@@ -134,25 +138,27 @@
 // 	    -> Unique pointer to the world grid shader.
 // std::unique_ptr<shaders::Shader> _shadowShader
 //      -> Unique pointer to the shadow mapping shader.
-// std::unique_ptr<elements::Camera> _camera
+// std::unique_ptr<scene::Camera> _camera
 //      -> Unique pointer to the camera in the scene.
-// std::unique_ptr<elements::Light> _light
+// std::unique_ptr<scene::Light> _light
 // 	    -> Unique pointer to the main light in the scene.
-// std::unique_ptr<elements::Light> _sunLight
+// std::unique_ptr<scene::Light> _sunLight
 //      -> Unique pointer to the sun light in the scene.
-// elements::Object* _cameraFollowTarget
+// scene::Object* _cameraFollowTarget
 // 	    -> Pointer to the object the camera is following (if any).
-// std::shared_ptr<elements::Mesh> _mesh
+// std::unique_ptr<gui::AxisOrientator> _axisOrientator
+//      -> Unique pointer to the axis orientator for the scene (general camera navigation aid).
+// std::shared_ptr<scene::Mesh> _mesh
 //      -> Shared pointer to the current mesh in the scene.
-// std::vector<std::unique_ptr<elements::Object>> _objects
+// std::vector<std::unique_ptr<scene::Object>> _objects
 // 	    -> Vector of unique pointers to the scene objects.
 // std::vector<ModelGroup> modelGroups
 //      -> Vector of model groups for rendering.
-// elements::Object* _selectedObject
+// scene::Object* _selectedObject
 // 	    -> Pointer to the currently selected object.
-// std::shared_ptr<elements::Mesh> _checkerPlane
+// std::shared_ptr<scene::Mesh> _checkerPlane
 //      -> Shared pointer to the checkerboard ground plane mesh.
-// std::shared_ptr<elements::Mesh> createCheckerPlane(float size)
+// std::shared_ptr<scene::Mesh> createCheckerPlane(float size)
 //      -> Creates a checkerboard ground plane mesh of the specified size.
 // render::SkyboxRenderer* _skybox
 //      -> Pointer to the skybox renderer.
@@ -215,11 +221,10 @@
 // int _worldGridVAO
 // 	    -> OpenGL Vertex Array Object ID for the world grid.
 // -----
-// ---------------------------------------------
-// 
-// Created by: Joss Salton
-// GitHub: SaltyJoss
-// 
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"
@@ -246,7 +251,7 @@ namespace render {
 namespace shaders {
     class Shader;
 }
-namespace elements {
+namespace scene {
     class Light;
     class Camera;
     class Input;
@@ -257,17 +262,18 @@ namespace physics {
     class PhysicsSystem;
 }
 
+// I want to rename to more appropriate namespace later
 namespace gui {
 	class AxisOrientator;
-    // SceneView Class
-    class ENGINE_API SceneView {
+	// simManager Class (Plan on renaming later)
+    class ENGINE_API simManager {
     public:
-        SceneView();
-        ~SceneView();
+        simManager();
+        ~simManager();
 
         // Light & Skybox
-        elements::Light* getLight() { return _light.get(); }
-		elements::Light* getSunLight() { return _sunLight.get(); }
+        scene::Light* getLight() { return _light.get(); }
+		scene::Light* getSunLight() { return _sunLight.get(); }
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
@@ -293,18 +299,18 @@ namespace gui {
         void setControlMode(ControlMode mode) { ctrlMode = mode; }
         ControlMode getControlMode() const { return ctrlMode; }
 
-        elements::Camera* getCamera();
+        scene::Camera* getCamera();
         void resetView();
 
-		void attachCameraToObject(elements::Object* obj);
+		void attachCameraToObject(scene::Object* obj);
         void detachCameraFromObject();
 
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
-        std::vector<elements::Object*> loadMeshReturn(const std::string& filepath);
-        void setMesh(std::shared_ptr<elements::Mesh> mesh) { _mesh = mesh; }
+        std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);
+        void setMesh(std::shared_ptr<scene::Mesh> mesh) { _mesh = mesh; }
 
-        std::shared_ptr<elements::Mesh> getMesh() { return _mesh; }
+        std::shared_ptr<scene::Mesh> getMesh() { return _mesh; }
 
         enum class ShaderMode {
             Basic = 0,
@@ -320,9 +326,9 @@ namespace gui {
         void resize(int32_t width, int32_t height);
 
 		// Scene Objects Management
-		std::vector<std::unique_ptr<elements::Object>>& getObjects() { return _objects; }
-        elements::Object* getObject() { return _selectedObject; }
-        void setSelectedObject(elements::Object* obj) { _selectedObject = obj; }
+		std::vector<std::unique_ptr<scene::Object>>& getObjects() { return _objects; }
+        scene::Object* getObject() { return _selectedObject; }
+        void setSelectedObject(scene::Object* obj) { _selectedObject = obj; }
 
         void deleteObject(int index);
 
@@ -352,7 +358,7 @@ namespace gui {
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
         void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
-        void onMouseMove(double x, double y, elements::eInputButton button);
+        void onMouseMove(double x, double y, scene::eInputButton button);
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
@@ -378,20 +384,20 @@ namespace gui {
 
 
         // Scene Objects
-        std::unique_ptr<elements::Camera> _camera;
-        std::unique_ptr<elements::Light> _light;
-        std::unique_ptr<elements::Light> _sunLight;
-        elements::Object* _cameraFollowTarget = nullptr;
+        std::unique_ptr<scene::Camera> _camera;
+        std::unique_ptr<scene::Light> _light;
+        std::unique_ptr<scene::Light> _sunLight;
+        scene::Object* _cameraFollowTarget = nullptr;
 		std::unique_ptr<AxisOrientator> _axisOrientator;
 
 
-        std::shared_ptr<elements::Mesh> _mesh;
-	    std::vector<std::unique_ptr<elements::Object>> _objects;
+        std::shared_ptr<scene::Mesh> _mesh;
+	    std::vector<std::unique_ptr<scene::Object>> _objects;
         std::vector<ModelGroup> modelGroups;
-        elements::Object* _selectedObject = nullptr;
+        scene::Object* _selectedObject = nullptr;
 
-        std::shared_ptr<elements::Mesh> _checkerPlane;
-        std::shared_ptr<elements::Mesh> createCheckerPlane(float size = 50.0f);
+        std::shared_ptr<scene::Mesh> _checkerPlane;
+        std::shared_ptr<scene::Mesh> createCheckerPlane(float size = 50.0f);
 
 
 		// Environment & Lighting
@@ -461,3 +467,24 @@ namespace gui {
 // NEED TO MANAGE TEXTURE RESOURCES (RELOAD ON DEMAND)
 // MAYBE A RESOURCE MANAGER CLASS TO HANDLE ALL OF THE ABOVE?
 // MAYBE SPLIT SCENEVIEW INTO RENDERER AND SCENE MANAGER CLASSES?????? *Not sure though*
+//
+// TODO:
+// - Look for decrepated methods and variables to clean up.
+// - Consider splitting simManager into smaller, more focused classes if it becomes too large.
+// - Explore my initial idea of central scene (efficitly this), then optional 4 sub-views for different camera angles (top, side, front, perspective), static in relation to the robotic arm (like CAD or modelling software), each allows either focus on the entire robot for all 4 angles, or focus on a specific link/joint for all 4 angles. This would be useful for debugging and visualizing the robot's configuration from multiple perspectives simultaneously (Plus user may need this for precise joint adjustments and understanding spatial relationships between links).
+// 
+// simManager name replacement ideas (Given its current main function of rendering and managing the simulations 3D scene):
+// - SceneRenderer
+// - SceneManager
+// - SimulationView
+// - SimulationRenderer
+// - SimulationViewport
+// - sim3DView
+// - sim3DRenderer
+// - sim3DManager
+// - RenderManager3D
+// - simSceneManager
+// - simSceneRenderer
+// * Some of these were generate with github copilot *
+//
+// END OF FILE

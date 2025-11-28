@@ -49,7 +49,14 @@
 // float _distance = 5.0f
 //      -> Distance factor used for mouse wheel input handling.
 // ---------------------------------------------
+//
+// Built upon code from:
+// ============================================
+//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
+// ============================================
 // 
+// ============================================
+//              GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"
@@ -66,7 +73,7 @@
 
 extern ENGINE_API Debug gLog;
 
-namespace elements {
+namespace scene {
 	enum class ObjectCategory { General, RobotLink };
 
 	// Represents the position, rotation, and scale of an object in 3D space.

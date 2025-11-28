@@ -11,7 +11,7 @@
 
 #include "EngineLib/LogMacros.h"
 
-namespace elements {
+namespace scene {
 
 	void Camera::update(shaders::Shader* shader) {
 		if (_following)

@@ -1,4 +1,53 @@
 #pragma once
+
+// =============================================
+//            File: Light.h
+// =============================================
+// Class representing a light source in the 3D scene.
+//
+// Summary:
+// =============================================
+//
+// public:
+// --------------------------------------------
+// Light()
+//      -> Constructor that initializes the light with default properties.
+// ~Light()
+//      -> Destructor for the Light class.
+// void setDirection(const glm::vec3& dir)
+//      -> Sets the direction of the light.
+// void setIntensity(const float intsy)
+//      -> Sets the intensity of the light.
+// glm::vec3 getPosition() const
+//      -> Returns the position of the light.
+// glm::vec3 getDirection() const
+//      -> Returns the direction of the light.
+// glm::vec3 getColour() const
+//      -> Returns the colour of the light.
+// float getIntensity() const
+//      -> Returns the intensity of the light.
+// void update(shaders::Shader* shader) override
+//      -> Updates the shader with the light's properties.
+// bool _isDirectional
+//      -> Indicates whether the light is directional.
+// glm::vec3 _direction
+//      -> Direction vector of the light.
+// glm::vec3 _colour
+//      -> Colour of the light.
+// glm::vec3 _position
+//      -> Position of the light.
+// float _strength
+//      -> Strength of the light. (Mainly used for point lights)
+// float _intensity
+//      -> Intensity of the light. (Mainly used for directional lights)
+// float _size
+//      -> Size of the light (for point lights).
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
+// ============================================
+
 #include "EngineCore.h"
 
 #include "Scene/Element.h"
@@ -7,8 +56,8 @@
 
 extern ENGINE_API Debug gLog;
 
-namespace elements {
-    class ENGINE_API Light : public Element
+namespace scene {
+	class ENGINE_API Light : public Element
     {
     public:
 

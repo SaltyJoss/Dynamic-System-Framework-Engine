@@ -1,7 +1,7 @@
 #pragma once
 
 //=============================================
-//            File: SceneView.h
+//            File: simManager.h
 //=============================================
 // Class representing a 3D scene view with camera, lighting, and object management.
 // 
@@ -15,7 +15,7 @@
 // --------------------------------------------
 // 
 // private:
-// ---------------------------------------------
+// --------------------------------------------
 // void init()
 //		-> Initializes the axis orientator resources, including VAOs, VBOs, and shaders - deals with setting up the geometry for the axes and cones
 //		-> Does a lot of OpenGL buffer setup and shader compilation, so it's separated out for clarity.
@@ -34,11 +34,10 @@
 // 		-> Flag indicating whether the axis orientator has been initialized.
 // static int g_ConeVertexCount
 // 		-> Number of vertices used to render the cones at the ends of the axes.
-// ---------------------------------------------
-// 
-// Created by: Joss Salton
-// GitHub: SaltyJoss
-// 
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"

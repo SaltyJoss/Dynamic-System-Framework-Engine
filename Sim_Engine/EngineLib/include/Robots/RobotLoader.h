@@ -13,7 +13,9 @@
 // RobotModel loadFromJSON(const std::string& filepath)
 //      -> Loads a robotic model from the specified JSON file path and returns a RobotModel object.
 // --------------------------------------------
-// 
+//
+// ============================================
+//			  GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"

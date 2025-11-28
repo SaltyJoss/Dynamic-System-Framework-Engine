@@ -11,7 +11,7 @@
 // structs / enumerations:
 // --------------------------------------------
 // LogLevel
-//      -> Enumeration of log severity levels (Info, Warning, Error).
+//      -> Enumeration of log severity levels (Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output).
 // LogEntry
 //      -> Struct representing a log entry with level, type, and message.
 // --------------------------------------------
@@ -30,6 +30,12 @@
 //      -> Logs a warning message with the specified type and formatted message.
 // void logDebug(const char* type, const char* format, ...)
 //      -> Logs a debug message with the specified type and formatted message, used to parse logs seperately to the debug panel in the application
+// void dLog(LogLevel level, const char* format, ...)
+//      -> Logs a debug panel message with the specified level and formatted message.
+// const std::vector<LogEntry>& Entries() const
+// 	    -> Returns a constant reference to the vector of log entries.
+// void clear()
+// 	    -> Clears all log entries from the logger.
 // --------------------------------------------
 //
 // private:
@@ -42,7 +48,9 @@
 //      -> Centralized logging function that handles formatting and writing log entries.
 // --------------------------------------------
 //
-// =============================================
+// ============================================
+//			  GitHub: SaltyJoss
+// ============================================
 
 #include "EngineCore.h"
 

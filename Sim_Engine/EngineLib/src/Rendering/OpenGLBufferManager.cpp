@@ -18,14 +18,14 @@ namespace render {
 	* 
 	* Summary:
 	* --------------------------------------------
-	* createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) -> Creates the VAO, VBO, and EBO buffers and uploads the vertex and index data to the GPU.
+	* createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) -> Creates the VAO, VBO, and EBO buffers and uploads the vertex and index data to the GPU.
 	* deleteBuffers() -> Deletes the VAO, VBO, and EBO buffers.
 	* bind() -> Binds the VAO for rendering.
 	* unbind() -> Unbinds the VAO.
-	* draw(int indxCount) -> Draws the elements using the bound VAO and the specified index count.
+	* draw(int indxCount) -> Draws the scene using the bound VAO and the specified index count.
 	* --------------------------------------------
 	*/
-	void render::OpenGLVertexIndexBuffer::createBuffers(const std::vector<elements::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
+	void render::OpenGLVertexIndexBuffer::createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
 		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
 
 		glGenVertexArrays(1, &_VAO);
@@ -37,19 +37,19 @@ namespace render {
 		glBindVertexArray(_VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(elements::VertexHolder), vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(scene::VertexHolder), vertices.data(), GL_STATIC_DRAW);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(elements::VertexHolder), (void*)offsetof(elements::VertexHolder, _pos));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _pos));
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(elements::VertexHolder), (void*)offsetof(elements::VertexHolder, _normal));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _normal));
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(elements::VertexHolder), (void*)offsetof(elements::VertexHolder, _texCoord));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _texCoord));
 
 		glBindVertexArray(0);
 

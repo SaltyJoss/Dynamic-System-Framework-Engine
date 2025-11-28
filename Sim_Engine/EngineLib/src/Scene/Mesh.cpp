@@ -12,7 +12,7 @@
 
 #include "EngineLib/LogMacros.h"
 
-namespace elements {
+namespace scene {
 	void Mesh::init() {
 		_rndrBffrMngr = std::make_unique<render::OpenGLVertexIndexBuffer>();
 

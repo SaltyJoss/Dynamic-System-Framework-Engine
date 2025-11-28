@@ -160,7 +160,7 @@
     <ClInclude Include="include\Scene\Mesh.h" />
     <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
-    <ClInclude Include="include\Scene\SceneView.h" />
+    <ClInclude Include="include\Scene\SimulationManager.h" />
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
@@ -250,7 +250,7 @@
     <ClCompile Include="src\Scene\Mesh.cpp" />
     <ClCompile Include="src\Scene\MeshLoader.cpp" />
     <ClCompile Include="src\Scene\Object.cpp" />
-    <ClCompile Include="src\Scene\SceneView.cpp" />
+    <ClCompile Include="src\Scene\SimulationManager.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

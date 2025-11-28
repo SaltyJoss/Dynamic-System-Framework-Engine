@@ -2055,7 +2055,7 @@ void ImGui::EndCombo()
     g.BeginComboDepth--;
 }
 
-// Call directly after the BeginCombo/EndCombo block. The preview is designed to only host non-interactive elements
+// Call directly after the BeginCombo/EndCombo block. The preview is designed to only host non-interactive scene
 // (Experimental, see GitHub issues: #1658, #4168)
 bool ImGui::BeginComboPreview()
 {
@@ -4910,7 +4910,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         state->Flags = flags;
         state->WrapWidth = wrap_width;
 
-        // Although we are active we don't prevent mouse from hovering other elements unless we are interacting right now with the widget.
+        // Although we are active we don't prevent mouse from hovering other scene unless we are interacting right now with the widget.
         // Down the line we should have a cleaner library-wide concept of Selected vs Active.
         g.ActiveIdAllowOverlap = !io.MouseDown[0];
 

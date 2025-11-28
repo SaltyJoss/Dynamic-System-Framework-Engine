@@ -49,7 +49,9 @@
 // virtual const std::string& getHeader()
 //      -> Returns the header string of the window.
 // --------------------------------------------
-//
+// 
+// ============================================
+//			  GitHub: saltyjoss
 // ============================================
 
 #include "EngineCore.h"

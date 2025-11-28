@@ -9,7 +9,7 @@
 
 namespace mesh_import
 {
-    bool ObjMeshImporter::fromFile(const std::string& filepath, elements::Mesh* pMesh)
+    bool ObjMeshImporter::fromFile(const std::string& filepath, scene::Mesh* pMesh)
     {
         if (!pMesh) {
             LOG_ERROR("OBJ importer: pMesh was NULL");

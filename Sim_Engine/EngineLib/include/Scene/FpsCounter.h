@@ -1,4 +1,39 @@
 #pragma once
+
+// =============================================
+//            File: FpsCounter.h
+// =============================================
+// Class for tracking and calculating frames per second (FPS).
+//
+// Summary:
+// =============================================
+//
+// public:
+// --------------------------------------------
+// void update()
+//      -> Updates the FPS counter, should be called once per frame.
+// double getFPS() const
+//      -> Returns the current FPS value.
+// --------------------------------------------
+//
+// private:
+// --------------------------------------------
+// bool init
+//      -> Indicates whether the FPS counter has been initialized.
+// double last
+//      -> Timestamp of the last update.
+// double accum
+//      -> Accumulated time since the last FPS calculation.
+// int frames
+//      -> Number of frames counted since the last FPS calculation.
+// double fps
+//      -> Current FPS value.
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
+// ============================================
+
 #include "EngineCore.h"
 #include "Platform/Logger.h"
 #include <GLFW/glfw3.h>

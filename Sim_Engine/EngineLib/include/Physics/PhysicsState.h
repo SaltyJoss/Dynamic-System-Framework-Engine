@@ -27,6 +27,8 @@
 // 		-> Gravitational acceleration (in m/s^2).
 // double mass
 //      -> Mass of the object (in kg).
+// double damping
+//      -> Damping coefficient for simulating energy loss (in kg/s).
 // Eigen::Matrix3d inertia
 //      -> Inertia tensor for rotational dynamics.
 // Eigen::Vector3d forces
@@ -38,7 +40,8 @@
 // --------------------------------------------
 // 
 // ============================================
-
+//			  GitHub: saltyjoss
+// ============================================
 #include "EngineCore.h"
 #include "PhysicsSystem.h"
 
@@ -135,7 +138,7 @@ namespace physics {
 *	->	struct RobotLink {
 *			std::string name;
 *			std::string meshFile;
-*			elements::Object* attachedObject = nullptr;
+*			scene::Object* attachedObject = nullptr;
 *		};
 * 
 * - But maybe should instead have:
@@ -143,7 +146,7 @@ namespace physics {
 *			std::string name;
 *			glm::mat4 localTransform; // Transform relative to parent
 *			std::string meshFile;
-*			elements::Object* attachedObject = nullptr;
+*			scene::Object* attachedObject = nullptr;
 * 	};
 * 
 * - No need for global transform here, that is stored in ModelGroup.h so that rendering can access it directly.
@@ -160,7 +163,7 @@ namespace physics {
 *		}
 * 
 * - This makes sure that each link's global transform is computed based on its parent's global transform.
-* - Right now I am doing this in SceneView, but it may be better suited for PhysicsSystem later on.
+* - Right now I am doing this in simManager, but it may be better suited for PhysicsSystem later on.
 * - The correct place may depend on whether the transforms are needed for rendering or physics calculations first.
 * - I may need to refactor sceneview later to separate rendering from physics updates, and other seperations honestly
 *		-> Keep code modular and maintainable as complexity increases.

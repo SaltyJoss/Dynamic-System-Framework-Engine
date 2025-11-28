@@ -63,10 +63,10 @@
 // GLFWwindow* _window
 //      -> Pointer to the native GLFW window.
 // std::unique_ptr<render::GUIContext> _GUICntx
-//  	-> Unique pointer to the GUI context for rendering GUI elements.
+//  	-> Unique pointer to the GUI context for rendering GUI scene.
 // std::unique_ptr<render::OpenGLContext> _renderCntx
 //      -> Unique pointer to the OpenGL rendering context.
-// std::unique_ptr<gui::SceneView> _sceneView
+// std::unique_ptr<gui::simManager> _sim
 //      -> Unique pointer to the scene view for rendering 3D scenes.
 // std::unique_ptr<gui::ControlPanel> _controlPanel
 //      -> Unique pointer to the control panel for user interactions.
@@ -84,6 +84,13 @@
 // 	    -> Pointer to the header string of the window.
 // --------------------------------------------
 // 
+// Built upon code from:
+// ============================================
+//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
+// ============================================
+// 
+// ============================================
+//			  GitHub: saltyjoss
 // ============================================
 
 #include "EngineCore.h"
@@ -101,7 +108,7 @@ namespace render {
     class OpenGLContext; 
 }
 namespace gui { 
-    class SceneView; 
+    class simManager; 
     class ControlPanel; 
     class DebugPanel; 
 }
@@ -143,7 +150,7 @@ namespace window {
         struct UIState {
 			bool sceneViewOpen = true;
 			bool controlPanelOpen = true;
-			bool debugPanelOpen = false;
+			bool debugPanelOpen = true;
         };
 
         bool _isRunning = true;
@@ -152,7 +159,7 @@ namespace window {
         std::unique_ptr<render::GUIContext> _GUICntx;
         std::unique_ptr<render::OpenGLContext> _renderCntx;
 
-        std::unique_ptr<gui::SceneView> _sceneView;
+        std::unique_ptr<gui::simManager> _sim;
         std::unique_ptr<gui::ControlPanel> _controlPanel;
         std::unique_ptr<gui::DebugPanel> _debugPanel;
 

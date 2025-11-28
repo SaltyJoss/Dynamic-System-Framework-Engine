@@ -7,14 +7,19 @@
 //
 // Summary:
 // ============================================
+// 
 // structs / enumerations:
 // --------------------------------------------
-// SelectionType
-//      -> Enumeration of different types of selections in the simulation (NONE, LINK, ROBOT
-// Selection
+// enum class SelectionType
+//      -> Enumeration of different types of selections in the simulation (NONE, LINK, ROBOT, OBJECT).
+// enum class SelectionSource
+//      -> Enumeration of different sources of selection (NONE, CONTROL_PANEL, SCENE_VIEW).
+// struct Selection
 //      -> Struct representing the current selection state, including type and index.
 // --------------------------------------------
 //
+// ============================================
+//			  GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"

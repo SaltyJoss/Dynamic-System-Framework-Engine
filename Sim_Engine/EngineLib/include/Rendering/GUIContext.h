@@ -1,4 +1,37 @@
 #pragma once
+
+// =============================================
+//            File: GUIContext.h
+// =============================================
+// Class representing a GUI rendering context.
+//
+// Summary:
+// =============================================
+//
+// public:
+// --------------------------------------------
+// GUIContext()
+//      -> Constructor that initializes the GUIContext.
+// bool init(window::IWindow* win) override
+//      -> Initializes the GUI context with the given window.
+// void preRender() override
+//      -> Prepares the GUI context for rendering.
+// void postRender() override
+//      -> Finalizes the GUI context after rendering.
+// void end() override
+//      -> Cleans up the GUI context resources.
+// --------------------------------------------
+//
+// private:
+// --------------------------------------------
+// std::unique_ptr<gui::Styles> _style
+//      -> Unique pointer to the GUI styles manager.
+// --------------------------------------------
+//
+// ============================================
+//			  GitHub: SaltyJoss
+// ============================================
+
 #include "EngineCore.h"
 
 #include "RenderBase.h"

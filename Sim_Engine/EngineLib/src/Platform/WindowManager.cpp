@@ -13,7 +13,7 @@
 #include "Rendering/OpenGLBufferManager.h"
 #include "Rendering/ShaderUtil.h"
 
-#include "Scene/SceneView.h"
+#include "Scene/SimulationManager.h"
 #include "Scene/DebugPanel.h"
 #include "Scene/ControlPanel.h"
 
@@ -50,8 +50,8 @@ namespace window {
         _renderCntx->preRender();
         _GUICntx->preRender();
 
-        if (_sceneView)     _sceneView->render();
-        if (_controlPanel)  _controlPanel->render(_sceneView.get());
+        if (_sim)     _sim->render();
+        if (_controlPanel)  _controlPanel->render(_sim.get());
 		if (_debugPanel)    _debugPanel->render();
 
         _GUICntx->postRender();
@@ -75,13 +75,13 @@ namespace window {
         _GUICntx->init(this);
 
         // UI + scene
-        _sceneView = std::make_unique<gui::SceneView>();
-        _sceneView->resize(_width, _height);
-        _controlPanel = std::make_unique<gui::ControlPanel>(_sceneView.get());
+        _sim = std::make_unique<gui::simManager>();
+        _sim->resize(_width, _height);
+        _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
 
         _controlPanel->setMeshLoadCallback([this](std::string path) {
-                _sceneView->loadMesh(path);
+                _sim->loadMesh(path);
                 LOG_INFO("Mesh loaded: %s", path.c_str());
             }
         );
@@ -94,7 +94,7 @@ namespace window {
         _width = width;
         _height = height;
 
-        _sceneView->resize(_width, _height);
+        _sim->resize(_width, _height);
         LOG_INFO("Window resized: Width=%d, Height=%d", width, height);
         render();
     }
@@ -136,9 +136,9 @@ namespace window {
         static float smoothedDt = 0.016f;
         smoothedDt = glm::mix(smoothedDt, dt, 0.2f);
 
-        if (_sceneView) {
-            _sceneView->handleContinuousMovement(_window, smoothedDt);
-            //_sceneView->getCamera()->applyGravity(smoothedDt, _sceneView->getPlaneHeight());
+        if (_sim) {
+            _sim->handleContinuousMovement(_window, smoothedDt);
+            //_sim->getCamera()->applyGravity(smoothedDt, _sim->getPlaneHeight());
         }
     }
 
@@ -152,8 +152,8 @@ namespace window {
             glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if (glfwRawMouseMotionSupported())
                 glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            // tell SceneView to reset its first-mouse state
-            if (_sceneView) _sceneView->resetMouseDelta();
+            // tell simManager to reset its first-mouse state
+            if (_sim) _sim->resetMouseDelta();
         }
         else {
             glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -173,12 +173,12 @@ namespace window {
     }
 
     void window::GLWindow::onScroll(double delta) {
-        if (_sceneView) { _sceneView->onMouseWheel(delta); }
+        if (_sim) { _sim->onMouseWheel(delta); }
     }
 
     void window::GLWindow::onCursorPos(double xpos, double ypos) {
 		// LOG_INFO("Mouse moved to: X=%.2f, Y=%.2f", xpos, ypos);
-		if (_sceneView) { _sceneView->handleMouseLook(_window, xpos, ypos); }
+		if (_sim) { _sim->handleMouseLook(_window, xpos, ypos); }
 	}
 
 /*

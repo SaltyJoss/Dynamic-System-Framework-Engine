@@ -13,7 +13,7 @@
 // DebugPanel()
 //      -> Constructor for the DebugPanel class.
 // void render()
-//      -> Renders the debug panel GUI elements.
+//      -> Renders the debug panel GUI scene.
 // --------------------------------------------
 //
 // private:
@@ -61,12 +61,16 @@
 // const ImVec4 outputCol
 // 		-> Light grey
 //      -> Colour for general output log entries.
-// =============================================
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
+// ============================================
 
 #include "EngineCore.h"
 
 #include "imgui.h"
-#include "SceneView.h"
+#include "Scene/SimulationManager.h"
 #include "Camera.h"
 #include "Platform/Logger.h"
 

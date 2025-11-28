@@ -4,7 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-glm::mat4 elements::Transform::toMatrix() const
+glm::mat4 scene::Transform::toMatrix() const
 {
     glm::mat4 model(1.0f);
 

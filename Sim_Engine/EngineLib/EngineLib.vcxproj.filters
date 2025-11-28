@@ -156,9 +156,6 @@
     <ClInclude Include="include\Scene\Object.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\SceneView.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="include\Scene\Styles.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
@@ -264,6 +261,9 @@
     <ClInclude Include="include\Scene\AxisOrientator.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="include\Scene\SimulationManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -282,9 +282,6 @@
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\Mesh.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene\SceneView.cpp">
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\Styles.cpp">
@@ -373,6 +370,9 @@
     </ClCompile>
     <ClCompile Include="src\Scene\AxisOrientator.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\SimulationManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

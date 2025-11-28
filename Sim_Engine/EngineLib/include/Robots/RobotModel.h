@@ -26,7 +26,7 @@
 //      -> Name of the robotic link.
 // std::string meshFile
 //      -> File path to the mesh associated with the link.
-// elements::Object* attachedObject
+// scene::Object* attachedObject
 // 		-> Pointer to the object attached to this link (initialized to nullptr).
 // 
 // RobotJoint:
@@ -53,7 +53,9 @@
 // std::vector<RobotJoint> joints
 //      -> Vector of joints that connect the links in the robotic model.
 // --------------------------------------------
-// 
+//
+// ============================================
+//			  GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"
@@ -66,7 +68,7 @@ extern ENGINE_API Debug gLog;
 struct RobotLink {
 	std::string name;
 	std::string meshFile;
-	elements::Object* attachedObject = nullptr;
+	scene::Object* attachedObject = nullptr;
 };
 
 struct RobotJoint {

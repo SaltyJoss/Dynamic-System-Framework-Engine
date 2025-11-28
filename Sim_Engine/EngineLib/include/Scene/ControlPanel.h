@@ -3,17 +3,17 @@
 //=============================================
 //            File: ControlPanel.h
 //=============================================
-// GUI Control Panel for interacting with the SceneView.
+// GUI Control Panel for interacting with the simManager.
 // 
 // Summary:
 // ============================================
 // 
 // public:
 // --------------------------------------------
-// ControlPanel(SceneView* sceneView)
-//      -> Constructor that initializes the ControlPanel with a reference to the SceneView.
-// render(SceneView* sceneView)
-//      -> Renders the control panel GUI elements.
+// ControlPanel(simManager* sceneView)
+//      -> Constructor that initializes the ControlPanel with a reference to the simManager.
+// render(simManager* sceneView)
+//      -> Renders the control panel GUI scene.
 // setSimulationCallback(const std::function<void(bool)>& callback)
 //      -> Sets the callback function to be called when the simulation state changes.
 // setMeshLoadCallback(const std::function<void(const std::string&)>& callback)
@@ -70,11 +70,11 @@
 //      -> Controls the position parameter for robotic arm links
 // double PI
 // 	    -> Constant value for PI.
-// std::shared_ptr<elements::Mesh> _mesh
+// std::shared_ptr<scene::Mesh> _mesh
 //      -> Shared pointer to the mesh being manipulated.
-// elements::Light* _sunLight
+// scene::Light* _sunLight
 //      -> Pointer to the sun light in the scene.
-// elements::Object* _obj
+// scene::Object* _obj
 //      -> Pointer to the currently selected object in the scene.
 // ImGui::FileBrowser _meshLoad
 //      -> File browser for loading mesh files.
@@ -88,14 +88,16 @@
 // 	    -> Callback function to be called when a new mesh is loaded.
 // std::function<void(bool)> simCallback
 //      -> Callback function to be called when the simulation state changes.
-// SceneView* _sceneView
-// 	    -> Pointer to the associated SceneView.
-// SceneView::ControlMode* _controlMode
-//      -> Pointer to the current control mode of the SceneView.
+// simManager* _sim
+// 	    -> Pointer to the associated simManager.
+// simManager::ControlMode* _controlMode
+//      -> Pointer to the current control mode of the simManager.
 // Selection _selection
 //      -> Stores the current selection state in the control panel.
 //--------------------------------------------
-// 
+//
+// ============================================
+//              GitHub: SaltyJoss
 // ============================================
 
 // Includes
@@ -106,7 +108,7 @@
 #include "Physics/PhysicsSystem.h"
 
 #include "Scene/Object.h"
-#include "Scene/SceneView.h"
+#include "Scene/SimulationManager.h"
 #include "Scene/Light.h"
 #include "Platform/Logger.h"
 #include "Platform/SimulationState.h"
@@ -121,26 +123,26 @@ namespace gui {
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(SceneView* sceneView);
+        ControlPanel(simManager* sim);
 
-        void render(SceneView* sceneView);
+        void render(simManager* sim);
         void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
     private:
 		// Internal Pointers
-        std::shared_ptr<elements::Mesh> _mesh;
+        std::shared_ptr<scene::Mesh> _mesh;
 
-        SceneView* _sceneView = nullptr;
+        simManager* _sim = nullptr;
         physics::PhysicsSystem* _phys;
-        elements::Light* _sunLight;
-        elements::Object* _obj;
+        scene::Light* _sunLight;
+        scene::Object* _obj;
         ImGui::FileBrowser _meshLoad;
         ImGui::FileBrowser _hdrLoad;
         std::string _currentMeshFile;
         std::string _currentHDRFile;
 
-        SceneView::ControlMode* _controlMode;
+        simManager::ControlMode* _controlMode;
 
         std::function<void(const std::string&)> meshLoadCallback;
         std::function<void(bool)> simCallback;
@@ -182,7 +184,7 @@ namespace gui {
 		float diagTime = 0.0f;    // current diagnostic time
 
         int povMode = 0;
-        float fov = _sceneView->getCamera()->getFOV();
+        float fov = _sim->getCamera()->getFOV();
 
         // Internal Physics
         float velocity = 0.0f;

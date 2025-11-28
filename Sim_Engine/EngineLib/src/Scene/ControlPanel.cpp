@@ -14,8 +14,8 @@
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
-    ControlPanel::ControlPanel(SceneView* sceneView) :
-		_sceneView(sceneView), _controlMode(&sceneView->ctrlMode), _obj(nullptr), _sunLight(nullptr),
+    ControlPanel::ControlPanel(simManager* sceneView) :
+		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _obj(nullptr), _sunLight(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -35,15 +35,15 @@ namespace gui {
         _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
     }
 
-    void ControlPanel::render(SceneView* sceneView) {
-        // Initialize pointers to scene elements
-        _sceneView = sceneView;
-        _mesh = _sceneView->getMesh();
-        _obj = _sceneView->getObject();
-        _sunLight = _sceneView->getSunLight();
-        _hasRobot = _sceneView->hasRobot();
+    void ControlPanel::render(simManager* sceneView) {
+        // Initialize pointers to scene scene
+        _sim = sceneView;
+        _mesh = _sim->getMesh();
+        _obj = _sim->getObject();
+        _sunLight = _sim->getSunLight();
+        _hasRobot = _sim->hasRobot();
 
-		_phys = &_sceneView->getPhysicsSystem();
+		_phys = &_sim->getPhysicsSystem();
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
@@ -60,7 +60,7 @@ namespace gui {
             }
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Reset View")) {
-                    _sceneView->resetView();
+                    _sim->resetView();
                     LOG_INFO("Scene view reset to default position and orientation.");
                 }
                 if (ImGui::MenuItem("Properties")) {
@@ -80,24 +80,24 @@ namespace gui {
                 // Reload shader button
                 if (ImGui::MenuItem("Reload Shaders")) {
                     LOG_INFO("Shader reload requested.");
-                    _sceneView->reloadAllShaders();
+                    _sim->reloadAllShaders();
                 }
 
                 ImGui::Separator();
 
                 // Shader selection
-                if (ImGui::MenuItem("Basic Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Basic)) {
-                    _sceneView->currentShaderMode = SceneView::ShaderMode::Basic;
+                if (ImGui::MenuItem("Basic Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Basic)) {
+                    _sim->currentShaderMode = simManager::ShaderMode::Basic;
                     D_INFO("Shader -> Basic Shader");
                 }
 
-                if (ImGui::MenuItem("Lit Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::Lit)) {
-                    _sceneView->currentShaderMode = SceneView::ShaderMode::Lit;
+                if (ImGui::MenuItem("Lit Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Lit)) {
+                    _sim->currentShaderMode = simManager::ShaderMode::Lit;
                     D_INFO("Shader -> Lit Shader");
                 }
 
-                if (ImGui::MenuItem("PBR Shader", nullptr, _sceneView->currentShaderMode == SceneView::ShaderMode::PBR)) {
-                    _sceneView->currentShaderMode = SceneView::ShaderMode::PBR;
+                if (ImGui::MenuItem("PBR Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::PBR)) {
+                    _sim->currentShaderMode = simManager::ShaderMode::PBR;
                     D_INFO("Shader -> PBR Shader");
                 }
 
@@ -167,7 +167,7 @@ namespace gui {
         if (_hdrLoad.HasSelected()) {
             auto file_path = _hdrLoad.GetSelected().string();
             _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
-            _sceneView->loadNewHDR(file_path);
+            _sim->loadNewHDR(file_path);
             LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
 			D_SUCCESS("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();
@@ -187,7 +187,7 @@ namespace gui {
 		ImGui::NewLine();
 
         ImGui::Text("Integration Method");
-        auto& phys = _sceneView->getPhysicsSystem();
+        auto& phys = _sim->getPhysicsSystem();
         auto currentEnum = phys.getIntegrationMethod();
 
         static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
@@ -296,7 +296,7 @@ namespace gui {
 
         ImGui::Separator();
 
-        if (_obj->category == elements::ObjectCategory::General) {
+        if (_obj->category == scene::ObjectCategory::General) {
             ImGui::SetNextItemWidth(150.0f);
             // Scale Controls
             ImGui::Text("Scale:");
@@ -344,7 +344,7 @@ namespace gui {
         ImGui::Text("Rotate %s", _currentLinkName.c_str());
         float minAngle = -360.0f; float maxAngle = 360.0f;
         ImGui::SliderFloat("Angle## (deg)", &position, minAngle, maxAngle, "%.1f");
-		_sceneView->setRobotLinkRotation(_currentLinkName, position);
+		_sim->setRobotLinkRotation(_currentLinkName, position);
 		ImGui::Separator();
     }
 
@@ -359,7 +359,7 @@ namespace gui {
 
             ImGui::Text("Plots");
 
-            if (_obj->category == elements::ObjectCategory::General) {
+            if (_obj->category == scene::ObjectCategory::General) {
                 // Linear velocity plot
                 static std::vector<float> linVelHistory;
                 linVelHistory.push_back(static_cast<float>(_obj->state.linearVelocity.norm()));
@@ -404,12 +404,12 @@ namespace gui {
 
     void ControlPanel::cameraProperties() {
         ImGui::Text("Control Mode:");
-        if (ImGui::RadioButton("Camera##", *_controlMode == SceneView::ControlMode::Camera)) { *_controlMode = SceneView::ControlMode::Camera; }
+        if (ImGui::RadioButton("Camera##", *_controlMode == simManager::ControlMode::Camera)) { *_controlMode = simManager::ControlMode::Camera; }
         ImGui::SameLine();
-        if (ImGui::RadioButton("Object##", *_controlMode == SceneView::ControlMode::Object)) { *_controlMode = SceneView::ControlMode::Object; }
+        if (ImGui::RadioButton("Object##", *_controlMode == simManager::ControlMode::Object)) { *_controlMode = simManager::ControlMode::Object; }
 
-        if (*_controlMode == SceneView::ControlMode::Object) { _sceneView->attachCameraToObject(_obj); }
-        else { _sceneView->detachCameraFromObject(); }
+        if (*_controlMode == simManager::ControlMode::Object) { _sim->attachCameraToObject(_obj); }
+        else { _sim->detachCameraFromObject(); }
 
         ImGui::SeparatorText("Light Controls");
 
@@ -425,15 +425,15 @@ namespace gui {
     void ControlPanel::displaySettings() {
         ImGui::SeparatorText("Display Settings");
 
-        bool enabled = _sceneView->isSkyboxEnabled();
+        bool enabled = _sim->isSkyboxEnabled();
         if (ImGui::Checkbox("Enable Skybox", &enabled)) {
-            _sceneView->setSkyboxEnabled(enabled);
+            _sim->setSkyboxEnabled(enabled);
             LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
         }
 
         if (ImGui::SliderFloat("Field of View", &fov, 25.0f, 125.0f, "%.5f")) {
 			fov = glm::clamp(fov, 25.0f, 125.0f);
-			_sceneView->getCamera()->setFOV(fov);
+			_sim->getCamera()->setFOV(fov);
         }
     }
 
@@ -469,7 +469,7 @@ namespace gui {
             _requestedRobot = name;
             _robotRequested = true;
 
-            _sceneView->loadRobot(_requestedRobot);
+            _sim->loadRobot(_requestedRobot);
 			_hasRobot = true;
         }
 
@@ -485,7 +485,7 @@ namespace gui {
     void ControlPanel::sceneObjectsTable() {
         ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
 
-        auto& objs = _sceneView->getObjects();          // get reference to scene objects
+        auto& objs = _sim->getObjects();          // get reference to scene objects
         int indexToDelete = -1;
 
         ImGui::Text("Scene Table");
@@ -507,7 +507,7 @@ namespace gui {
 
             // Robot section
             if (_hasRobot) {
-                RobotModel& robot = _sceneView->getRobotModel();
+                RobotModel& robot = _sim->getRobotModel();
 
                 bool robotSelected = (_selection.type == SelectionType::ROBOT);
 
@@ -526,7 +526,7 @@ namespace gui {
 
                 ImGui::TableSetColumnIndex(2);
                 if (ImGui::Button("Remove Robot")) {
-                    _sceneView->clearRobot();
+                    _sim->clearRobot();
                     _hasRobot = false;
                     LOG_INFO("%s removed from scene.", _requestedRobot);
                     D_INFO("%s removed.", _requestedRobot);
@@ -584,7 +584,7 @@ namespace gui {
                             _selection.type = SelectionType::LINK;
                             _selection.index = i;
                             _selection.source = SelectionSource::CONTROL_PANEL;
-                            _sceneView->setSelectedObject(attachedObj);
+                            _sim->setSelectedObject(attachedObj);
                             LOG_INFO("Selected link: %s", link.name.c_str());
 
                         }
@@ -624,7 +624,7 @@ namespace gui {
 
                 bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
 
-				if (obj->category != elements::ObjectCategory::General) { continue; } // skip non-general objects
+				if (obj->category != scene::ObjectCategory::General) { continue; } // skip non-general objects
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -635,7 +635,7 @@ namespace gui {
                     _selection.type = SelectionType::OBJECT;
                     _selection.index = i;
                     _selection.source = SelectionSource::CONTROL_PANEL;
-                    _sceneView->setSelectedObject(obj); // fine to keep for inspector
+                    _sim->setSelectedObject(obj); // fine to keep for inspector
                     LOG_INFO("Selected Object: %s", label.c_str());
                 }
 
@@ -652,7 +652,7 @@ namespace gui {
         }
 
         if (indexToDelete != -1) {
-            _sceneView->deleteObject(indexToDelete);
+            _sim->deleteObject(indexToDelete);
             LOG_INFO("Deleted object at index %d", indexToDelete);
         }
 

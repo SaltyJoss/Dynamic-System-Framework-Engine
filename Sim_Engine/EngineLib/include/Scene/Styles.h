@@ -1,4 +1,25 @@
 #pragma once
+
+// =============================================
+//            File: Styles.h
+// =============================================
+// GUI Styles for dark and light modes.
+//
+// Summary:
+// =============================================
+// 
+// public:
+// --------------------------------------------
+// void DarkMode()
+//      -> Applies the dark mode style to the GUI.
+// void LightMode()
+//      -> Applies the light mode style to the GUI.
+// --------------------------------------------
+//
+// ============================================
+//              GitHub: SaltyJoss
+// ============================================
+
 #include "EngineCore.h"
 
 namespace gui {

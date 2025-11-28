@@ -49,7 +49,14 @@
 // std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr
 // 		-> Unique pointer to the mesh's vertex and index buffer manager.
 // --------------------------------------------
+//
+// Built upon code from:
+// ============================================
+//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
+// ============================================
 // 
+// ============================================
+//              GitHub: SaltyJoss
 // ============================================
 
 #include "EngineCore.h"
@@ -70,7 +77,7 @@ namespace render {
 	class VertexIndexBuffer;
 }
 
-namespace elements {
+namespace scene {
 	class ENGINE_API Mesh {
 	public:
 		Mesh() = default;

@@ -1,4 +1,10 @@
 #pragma once
+
+// Built upon code from:
+// ============================================
+//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
+// ============================================
+
 #include "EngineCore.h"
 #include "Platform/Logger.h"
 

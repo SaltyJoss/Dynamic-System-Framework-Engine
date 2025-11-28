@@ -5,7 +5,7 @@
 
 #include "EngineLib/LogMacros.h"
 
-using namespace elements;
+using namespace scene;
 
 eInputButton Input::GetPressedButton(GLFWwindow* window)
 {

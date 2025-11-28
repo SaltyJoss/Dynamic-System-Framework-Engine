@@ -929,7 +929,7 @@ static void DemoWindowWidgetsBasic()
             ImGui::PopID();
         }
 
-        // Use AlignTextToFramePadding() to align text baseline to the baseline of framed widgets elements
+        // Use AlignTextToFramePadding() to align text baseline to the baseline of framed widgets scene
         // (otherwise a Text+SameLine+Button sequence will have the text a little too high by default!)
         // See 'Demo->Layout->Text Baseline Alignment' for details.
         ImGui::AlignTextToFramePadding();
@@ -5194,7 +5194,7 @@ static void DemoWindowLayout()
                 offset.y += ImGui::GetIO().MouseDelta.y;
             }
             ImGui::PopID();
-            if (!ImGui::IsItemVisible()) // Skip rendering as ImDrawList elements are not clipped.
+            if (!ImGui::IsItemVisible()) // Skip rendering as ImDrawList scene are not clipped.
                 continue;
 
             const ImVec2 p0 = ImGui::GetItemRectMin();
@@ -5420,7 +5420,7 @@ static void DemoWindowPopups()
         // Popup on a Text() element which doesn't have an identifier: we need to provide an identifier to BeginPopupContextItem().
         // Using an explicit identifier is also convenient if you want to activate the popups from different locations.
         {
-            HelpMarker("Text() elements don't have stable identifiers so we need to provide one.");
+            HelpMarker("Text() scene don't have stable identifiers so we need to provide one.");
             static float value = 0.5f;
             ImGui::Text("Value = %.3f <-- (1) right-click this text", value);
             if (ImGui::BeginPopupContextItem("my popup"))
@@ -9034,13 +9034,13 @@ struct ExampleAppConsole
             //      while (clipper.Step())
             //         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
             // - That your items are evenly spaced (same height)
-            // - That you have cheap random access to your elements (you can access them given their index,
+            // - That you have cheap random access to your scene (you can access them given their index,
             //   without processing all the ones before)
             // You cannot this code as-is if a filter is active because it breaks the 'cheap random-access' property.
             // We would need random-access on the post-filtered list.
             // A typical application wanting coarse clipping and filtering may want to pre-compute an array of indices
             // or offsets of items that passed the filtering test, recomputing this array when user changes the filter,
-            // and appending newly elements as they are inserted. This is left as a task to the user until we can manage
+            // and appending newly scene as they are inserted. This is left as a task to the user until we can manage
             // to improve this example code!
             // If your items are of variable height:
             // - Split them into same height items would be simpler and facilitate random-seeking into your list.

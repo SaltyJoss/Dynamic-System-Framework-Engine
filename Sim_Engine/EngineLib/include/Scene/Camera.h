@@ -16,7 +16,7 @@
 
 extern ENGINE_API Debug gLog;
 
-namespace elements {
+namespace scene {
 	class ENGINE_API Camera : public Element
 	{
 	public:

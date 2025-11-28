@@ -29,7 +29,7 @@ namespace physics {
 // --------------------------------------------------
 //				  SIMULATION CONTROL
 // --------------------------------------------------
-	void PhysicsSystem::update(double dt, elements::Object* obj) {
+	void PhysicsSystem::update(double dt, scene::Object* obj) {
 		if (!obj) return;
 		// Apply forces (uses mass)
 		applyForces(dt, obj);
@@ -48,7 +48,7 @@ namespace physics {
 //				  PER-SYSTEM UPDATES
 // --------------------------------------------------
 	// Rotation update
-	void PhysicsSystem::updateRotation(double dt, elements::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtn
+	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtn
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
@@ -125,7 +125,7 @@ namespace physics {
 	}
 
 	// Translation update
-	void PhysicsSystem::updateTranslation(double dt, elements::Object* obj) {
+	void PhysicsSystem::updateTranslation(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
@@ -137,7 +137,7 @@ namespace physics {
 	}
 
 	// Force application
-	void PhysicsSystem::applyForces(double dt, elements::Object* obj) {
+	void PhysicsSystem::applyForces(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
@@ -153,19 +153,19 @@ namespace physics {
 	}
 
 	// Torque application
-	void PhysicsSystem::applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque) {
+	void PhysicsSystem::applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
 
 	// Damping application
-	void PhysicsSystem::applyDamping(double dt, elements::Object* obj, float dampingCoefficient) {
+	void PhysicsSystem::applyDamping(double dt, scene::Object* obj, float dampingCoefficient) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
 
 	// Collision handling
-	void PhysicsSystem::handleFloorCollision(double dt, elements::Object* obj, float floorY) {
+	void PhysicsSystem::handleFloorCollision(double dt, scene::Object* obj, float floorY) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
@@ -205,7 +205,7 @@ namespace physics {
 // --------------------------------------------------
 //				Integration Analysis
 // --------------------------------------------------
-	void PhysicsSystem::startDiagnostics(elements::Object* obj) {
+	void PhysicsSystem::startDiagnostics(scene::Object* obj) {
 		if (!obj) {
 			_diagRunning = false;
 			D_ERROR("Null diagnostic object");

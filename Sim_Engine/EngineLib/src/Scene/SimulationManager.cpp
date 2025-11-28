@@ -1,7 +1,7 @@
 
 #include "pch.h"
 #include "Scene/Object.h"
-#include "Scene/SceneView.h"
+#include "Scene/SimulationManager.h"
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -36,7 +36,7 @@ namespace gui{
 //				CONSTRUCTOR & DESTRUCTOR
 // --------------------------------------------------
 
-	SceneView::SceneView() :
+	simManager::simManager() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
 		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
@@ -62,18 +62,18 @@ namespace gui{
 		_shadowShader = std::make_unique<shaders::Shader>();
 		_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
-		_light = std::make_unique<elements::Light>();
-		_sunLight = std::make_unique<elements::Light>();
+		_light = std::make_unique<scene::Light>();
+		_sunLight = std::make_unique<scene::Light>();
 		_sunLight->_isDirectional = true;
 		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
 		_sunLight->_intensity = 1.0f;
 
-		_camera = std::make_unique<elements::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
+		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
 		_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 		glGenVertexArrays(1, &_worldGridVAO);
 
-		_mesh = std::make_shared<elements::Mesh>();
+		_mesh = std::make_shared<scene::Mesh>();
 		_mesh->init();
 
 		_physics = std::make_unique<physics::PhysicsSystem>();
@@ -86,7 +86,7 @@ namespace gui{
 		InitIBL();
 	}
 
-	SceneView::~SceneView()
+	simManager::~simManager()
 	{
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
 		if (_mesh) _mesh->clean();
@@ -96,7 +96,7 @@ namespace gui{
 // --------------------------------------------------
 //				    LIGHT & SKYBOX
 // --------------------------------------------------
-	void SceneView::loadNewHDR(const std::string& path)
+	void simManager::loadNewHDR(const std::string& path)
 	{
 		LOG_INFO("Loading new HDR: %s", path.c_str());
 		D_INFO("Loading new HDR: %s", path.c_str());
@@ -121,10 +121,10 @@ namespace gui{
 // --------------------------------------------------
 //				CONTROL MODES & CAMERA
 // --------------------------------------------------
-	elements::Camera* SceneView::getCamera() { return _camera.get(); }
-	void SceneView::resetView() { _camera->reset(); }
+	scene::Camera* simManager::getCamera() { return _camera.get(); }
+	void simManager::resetView() { _camera->reset(); }
 
-	void SceneView::attachCameraToObject(elements::Object* obj) {
+	void simManager::attachCameraToObject(scene::Object* obj) {
 		if (!obj) return;
 
 		_cameraFollowTarget = obj;
@@ -135,12 +135,12 @@ namespace gui{
 		_camera->startFollow(pos, rot, glm::vec3(0, 2, 5)); // example offset
 	}
 
-	void SceneView::detachCameraFromObject() {
+	void simManager::detachCameraFromObject() {
 		_cameraFollowTarget = nullptr;
 		_camera->clearFollow();
 	}
 
-	void SceneView::oreintationGizmoRender() {
+	void simManager::oreintationGizmoRender() {
 		// Placeholder for orientation gizmo rendering
 	}
 
@@ -148,7 +148,7 @@ namespace gui{
 // --------------------------------------------------
 //			    MESH LOADING & GEOMETRY
 // --------------------------------------------------
-	void SceneView::loadMesh(const std::string& filepath) {
+	void simManager::loadMesh(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
@@ -160,7 +160,7 @@ namespace gui{
 
 		// For now: spawn one Object per submesh
 		for (auto& m : meshes) {
-			auto obj = std::make_unique<elements::Object>(m);
+			auto obj = std::make_unique<scene::Object>(m);
 
 			// initialise physics state
 			obj->state.theta = Eigen::Vector3d::Zero();
@@ -180,14 +180,14 @@ namespace gui{
 		D_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
-	std::vector<elements::Object*> SceneView::loadMeshReturn(const std::string& filepath) {
+	std::vector<scene::Object*> simManager::loadMeshReturn(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
-		std::vector<elements::Object*> result;
+		std::vector<scene::Object*> result;
 
 		for (auto& m : meshes) {
-			auto obj = std::make_unique<elements::Object>(m);
+			auto obj = std::make_unique<scene::Object>(m);
 			auto raw = obj.get();
 			_objects.push_back(std::move(obj));
 			result.push_back(raw);
@@ -196,9 +196,9 @@ namespace gui{
 		return result;
 	}
 
-	std::shared_ptr<elements::Mesh> gui::SceneView::createCheckerPlane(float size) {
+	std::shared_ptr<scene::Mesh> gui::simManager::createCheckerPlane(float size) {
 
-		auto plane = std::make_shared<elements::Mesh>();
+		auto plane = std::make_shared<scene::Mesh>();
 
 		std::vector<glm::vec3> pos = {
 			{-size, planeHeight, -size},
@@ -210,7 +210,7 @@ namespace gui{
 		glm::vec3 normal(0.0f, 1.0f, 0.0f);
 
 		for (auto& p : pos) {
-			elements::VertexHolder vh(p, normal);
+			scene::VertexHolder vh(p, normal);
 			plane->addVertex(vh);
 		}
 
@@ -225,7 +225,7 @@ namespace gui{
 		return plane;
 	}
 
-	void SceneView::deleteObject(int index) {
+	void simManager::deleteObject(int index) {
 		if (index < 0 || index >= _objects.size()) return;
 
 		if (_selectedObject == _objects[index].get()) {
@@ -238,7 +238,7 @@ namespace gui{
 // --------------------------------------------------
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
-	void SceneView::render() {
+	void simManager::render() {
 		updatePhysics(dt);
 		_fpsCounter.update();
 		ShadowPass();
@@ -284,7 +284,7 @@ namespace gui{
 		ImGui::End();
 	}
 
-	void SceneView::resize(int32_t width, int32_t height) {
+	void simManager::resize(int32_t width, int32_t height) {
 		// ignore zero sizes
 		if (width == 0 || height == 0) { return; }
 
@@ -297,13 +297,13 @@ namespace gui{
 		// update camera aspect ratio
 		_camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
 
-		LOG_INFO("Resized SceneView to %dx%d", width, height);
+		LOG_INFO("Resized simManager to %dx%d", width, height);
 	}
 
 // --------------------------------------------------
 //						PHYSICS
 // --------------------------------------------------
-	void gui::SceneView::updatePhysics(double dt) {
+	void gui::simManager::updatePhysics(double dt) {
 		// Update each object's physics state
 		for (auto& obj : _objects) {
 			if (obj) { _physics->update(dt, obj.get()); }
@@ -314,7 +314,7 @@ namespace gui{
 //				  ROBOTIC ARM SYSTEM
 // --------------------------------------------------
 	// Method to load a robot model by name
-	void SceneView::loadRobot(const std::string& name) {
+	void simManager::loadRobot(const std::string& name) {
 		clearRobot();
 
 		std::string jsonPath = "Engine/assets/Objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
@@ -330,7 +330,7 @@ namespace gui{
 	}
 
 	// Method to create Object instances for each robot link
-	void SceneView::instantiateRobotLinks() {
+	void simManager::instantiateRobotLinks() {
 		for (auto& link : _robot.links) {
 			auto objs = loadMeshReturn(link.meshFile);
 			if (objs.empty()) {
@@ -338,9 +338,9 @@ namespace gui{
 				D_ERROR("Failed to load mesh for link %s", link.name.c_str());
 				continue;
 			}
-			elements::Object* obj = objs[0]; // assumes one object per link
+			scene::Object* obj = objs[0]; // assumes one object per link
 			obj->transform.scale = glm::vec3(1.0f);
-			obj->category = elements::ObjectCategory::RobotLink;
+			obj->category = scene::ObjectCategory::RobotLink;
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
@@ -349,7 +349,7 @@ namespace gui{
 	}
 
 	// Method to build a name-to-index map for robot links
-	void SceneView::buildLinkIndex() {
+	void simManager::buildLinkIndex() {
 		_linkIndex.clear();
 		for (size_t i = 0; i < _robot.links.size(); i++) {
 			_linkIndex[_robot.links[i].name] = (int)i;
@@ -357,7 +357,7 @@ namespace gui{
 	}
 
 	// Method to update robot link transforms based on joint angles (NEEDS TO BE REVISED BASED ON ROBOT STRUCTURE)
-	void SceneView::updateRobotKinematics(const glm::mat4& baseTransform) {
+	void simManager::updateRobotKinematics(const glm::mat4& baseTransform) {
 		if (!_hasRobot) return;
 
 		// World transforms for each link
@@ -408,7 +408,7 @@ namespace gui{
 
 	// Method to set the rotation angle of a specific robot link angle in degrees
 	// NOTE: this sets the joint angle that affects the link, not the link transform directly
-	void SceneView::setRobotLinkRotation(const std::string& linkName, float angle) {
+	void simManager::setRobotLinkRotation(const std::string& linkName, float angle) {
 		if (!_hasRobot) {
 			LOG_WARN_ONCE("No robot loaded to set link rotation.");
 			D_WARN_ONCE("No robot loaded to set link rotation.");
@@ -434,7 +434,7 @@ namespace gui{
 	}
 
 	// Method to clear the current robot from the scene
-	void SceneView::clearRobot() {
+	void simManager::clearRobot() {
 		if (!_hasRobot) return;
 
 		// Remove robot objects from _objects
@@ -445,7 +445,7 @@ namespace gui{
 					std::remove_if(
 						_objects.begin(),
 						_objects.end(),
-						[&](const std::unique_ptr<elements::Object>& obj) {
+						[&](const std::unique_ptr<scene::Object>& obj) {
 							return obj.get() == link.attachedObject;
 						}),
 					_objects.end()
@@ -465,7 +465,7 @@ namespace gui{
 // --------------------------------------------------
 //			 INTERNAL REDNDERING PIPELINE
 // --------------------------------------------------
-	void SceneView::InitShadowResource() {
+	void simManager::InitShadowResource() {
 		int shadowRes[NUM_CASCADES] = { 4096, 4096 };
 
 		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
@@ -496,13 +496,13 @@ namespace gui{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void SceneView::InitIBL()
+	void simManager::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
 		_ibl->init("Engine/assets/hdr/space-6.hdr");
 	}
 
-	void SceneView::WorldGridRender() {
+	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
@@ -521,7 +521,7 @@ namespace gui{
 		glDepthMask(GL_TRUE);
 	}
 
-	void SceneView::MeshRender() {
+	void simManager::MeshRender() {
 		shaders::Shader* shader = nullptr;
 
 		switch (currentShaderMode) {
@@ -629,7 +629,7 @@ namespace gui{
 	}
 
 
-	void SceneView::ShadowPass() {
+	void simManager::ShadowPass() {
 		float nearPlane = _camera->getNear();
 		float farPlane = _camera->getFar();
 
@@ -675,7 +675,7 @@ namespace gui{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	glm::mat4 SceneView::LightSpaceMatrix(float nearPlane, float farPlane) {
+	glm::mat4 simManager::LightSpaceMatrix(float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
 		glm::vec3 lightDir = glm::normalize(_light->getDirection());
@@ -736,7 +736,7 @@ namespace gui{
 	}
 
 
-	void SceneView::SkyboxRender() {
+	void simManager::SkyboxRender() {
 		glm::mat4 view = _camera->getViewMatrix();
 		glm::mat4 projection = _camera->getProjection();
 
@@ -744,7 +744,7 @@ namespace gui{
 		_skybox->render(projection, view);
 	}
 
-	void SceneView::reloadAllShaders()
+	void simManager::reloadAllShaders()
 	{
 		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
 		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
@@ -757,7 +757,7 @@ namespace gui{
 // --------------------------------------------------
 //					INPUT HANDLING
 // --------------------------------------------------
-	void gui::SceneView::processMovementKey(int key, float delta) {
+	void gui::simManager::processMovementKey(int key, float delta) {
 		if (ctrlMode == ControlMode::Camera) {
 			_camera->processKeyboard(key, delta);
 		}
@@ -766,39 +766,39 @@ namespace gui{
 		}
 	}
 
-	void gui::SceneView::handleContinuousMovement(GLFWwindow* window, float dt) {
+	void gui::simManager::handleContinuousMovement(GLFWwindow* window, float dt) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
 		float kspd = 2.5f * dt;
 
 		// Forward
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_W)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W)) {
 			processMovementKey(GLFW_KEY_W, kspd);
 		}
 		// Backward
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_S)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S)) {
 			processMovementKey(GLFW_KEY_S, kspd);
 		}
 		// Left
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_A)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A)) {
 			processMovementKey(GLFW_KEY_A, kspd);
 		}
 		// Right
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_D)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D)) {
 			processMovementKey(GLFW_KEY_D, kspd);
 		}
 		// Up
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) {
 			processMovementKey(GLFW_KEY_SPACE, kspd);
 		}
 		// Down
-		if (elements::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
 			processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd);
 		}
 	}
 
-	void gui::SceneView::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+	void gui::simManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
@@ -825,12 +825,12 @@ namespace gui{
 			_camera->processMouseMovement(xoffset, yoffset);
 		}
 		else if (ctrlMode == ControlMode::Object && _selectedObject) {
-			_selectedObject->onMouseMove(xpos, ypos, elements::eInputButton::Right);
+			_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);
 		}
 	}
 
 
-	void SceneView::onMouseMove(double x, double y, elements::eInputButton button) {
+	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
 		glm::vec2 pos2d{ x, y };
 		glm::vec2 delta = pos2d - _lastMousePos;
 		_lastMousePos = pos2d;
@@ -849,7 +849,7 @@ namespace gui{
 		}
 	}
 
-	void SceneView::onMouseWheel(double delta) {
+	void simManager::onMouseWheel(double delta) {
 		auto* obj = _selectedObject;
 		if (!_isHovered) return;
 
@@ -858,5 +858,5 @@ namespace gui{
 	}
 
 
-	void gui::SceneView::resetMouseDelta() { _firstMouse = true; }
+	void gui::simManager::resetMouseDelta() { _firstMouse = true; }
 }

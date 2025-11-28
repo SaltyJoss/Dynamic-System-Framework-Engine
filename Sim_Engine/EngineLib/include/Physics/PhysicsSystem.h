@@ -7,37 +7,59 @@
 //
 // Summary:
 // ============================================
+// 
+// structures & enumeratiors:
+// --------------------------------------------
+// struct IntegratorDiagSample
+//      -> Structure to hold diagnostic samples for integrator analysis.
+// struct IntegratorDiagResult
+//      -> Structure to hold the results of integrator diagnostics.
+// enum class eSimulationMode
+//      -> Enumeration for simulation modes (Normal, IntegrationAnalysis).
+// enum class eIntegrationMethod
+//      -> Enumeration of available numerical integration methods (Euler, Midpoint, Heun, Ralston, RK4).
+// --------------------------------------------
 //
 // public:
 // --------------------------------------------
 // PhysicsSystem()
 //      -> Constructor that initializes the physics system.
-// void update(double dt, elements::Object* obj)
+// void update(double dt, scene::Object* obj)
 //      -> Updates the physics simulation for the given object over the time step dt.
-// void updateRotation(double dt, elements::Object* obj)
+// void updateRotation(double dt, scene::Object* obj)
 //      -> Updates the rotation of the object based on its angular velocity.
-// void updateTranslation(double dt, elements::Object* obj)
+// void updateTranslation(double dt, scene::Object* obj)
 //      -> Updates the translation of the object based on its linear velocity.
-// void applyForces(double dt, elements::Object* obj)
+// void applyForces(double dt, scene::Object* obj)
 //      -> Applies forces to the object, updating its linear velocity.
-// void applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque)
+// void applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque)
 //      -> Applies torque to the object, updating its angular velocity.
-// void applyDamping(double dt, elements::Object* obj, float dampingFactor = 0.98f)
+// void applyDamping(double dt, scene::Object* obj, float dampingFactor = 0.98f)
 //      -> Applies damping to the object's velocities to simulate energy loss.
-// void handleFloorCollision(double dt, elements::Object* obj, float floorY = 0.0f)
+// void handleFloorCollision(double dt, scene::Object* obj, float floorY = 0.0f)
 //      -> Handles collision of the object with a floor at the specified Y position.
-// void integrateEuler(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt)
-//      -> Integrates the state vector x using the Euler method.
-// void integrateRK2(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt)
-//      -> Integrates the state vector x using the second-order Runge-Kutta method.
-// void integrateRK4(Eigen::VectorXd& x, Eigen::VectorXd& dxdt, double dt)
-//      -> Integrates the state vector x using the fourth-order Runge-Kutta method.
+// VectorXd integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method)
+//      -> Performs a single integration step using the specified eIntegrationMethod (Euler, Midpoint, Heun, Ralston, RK4).
+// void setIntegrationMethod(eIntegrationMethod m)
+//      -> Sets the current integration method.
+// eIntegrationMethod getIntegrationMethod() const
+//      -> Returns the current integration method.
 // void setGravity(const Eigen::Vector3d& gravity)
 //      -> Sets the gravity vector for the physics simulation.
 // Eigen::Vector3d getGravity()
-//      -> Returns the current gravity vector.
-// bool isGravityEnabled() const
-//      -> Checks if gravity is enabled in the simulation.
+//      -> Returns the current gravity vector
+// void startDiagnostics(scene::Object* obj)
+//      -> Starts the integration diagnostics for the specified object.
+// void stopDiagnostics()
+//      -> Stops the integration diagnostics.
+// bool diagnosticsRunning() const
+// 		-> Returns whether diagnostics are currently running.
+// void setDiagnosticRunning(bool running)
+// 		-> Sets the diagnostics running state.
+// const IntegratorDiagResult& diagResult() const
+//      -> Returns the results of the integration diagnostics.
+// const std::vector<IntegratorDiagSample>& diagSamples() const
+//      -> Returns the samples collected during integration diagnostics.
 // --------------------------------------------
 //
 // private:
@@ -48,20 +70,30 @@
 //      -> Instance of mathematical constants.
 // Eigen::Vector3d _gravity
 //      -> Gravity vector for the simulation.
+// eSimulationMode _simulationMode
+//      -> Current simulation mode (Normal, IntegrationAnalysis).
+// std::vector<integration::ErrorSample> _errorSamples
+//      -> Vector of error samples for integration analysis.
+// bool _diagRunning
+//	    -> Indicates whether diagnostics are currently running.
+// scene::Object* _diagObject
+//      -> Pointer to the object being diagnosed.
+// std::vector<IntegratorDiagSample> _diagSamples
+//      -> Vector of samples collected during diagnostics.
+// IntegratorDiagResult _diagResult
+//      -> Results of the integration diagnostics.
 // double _dt
 //      -> Time step for the simulation.
 // double _h
 //      -> Simulation parameter h.
 // double _t
 //      -> Simulation time variable.
-// double _angularDamping
-//      -> Coefficient for angular damping.
-// double _linearDamping
-//      -> Coefficient for linear damping.
 // double _logTimer
 //      -> Timer for logging purposes.
 // --------------------------------------------
 // 
+// ============================================
+//			  GitHub: saltyjoss
 // ============================================
 
 #include "EngineCore.h"
@@ -82,7 +114,7 @@
 extern ENGINE_API Debug gLog;
 using namespace integration;
 
-namespace elements {
+namespace scene {
 	class Mesh;
 	class Object;
 }
@@ -92,10 +124,19 @@ namespace constants {
 }
 
 namespace physics {
-	struct IntegratorDiagSample {
+	struct ENGINE_API IntegratorDiagSample {
 		double t = 0.0;              // simulation time
 		Eigen::Vector3d theta;       // angles (rad)
 		Eigen::Vector3d omega;       // angular velocity (rad/s)
+	};
+
+	struct ENGINE_API IntegratorDiagResult {
+		double duration;
+		Eigen::Vector3d thetaMin, thetaMax, thetaMean, thetaRms;
+		Eigen::Vector3d omegaMin, omegaMax, omegaMean, omegaRms;
+
+		integration::ErrorStats omegaNormStats;
+		integration::ErrorStats thetaNormStats;
 	};
 
 	class ENGINE_API PhysicsSystem {
@@ -108,30 +149,21 @@ namespace physics {
 			IntegrationAnalysis = 1 // run comparative tests of integrators
 		};
 
-		struct IntegratorDiagResult {
-			double duration;
-			Eigen::Vector3d thetaMin, thetaMax, thetaMean, thetaRms;
-			Eigen::Vector3d omegaMin, omegaMax, omegaMean, omegaRms;
-
-			integration::ErrorStats omegaNormStats;
-			integration::ErrorStats thetaNormStats;
-		};
-
 		void setSimulationMode(eSimulationMode mode) { _simulationMode = mode; }
 		eSimulationMode getSimulationMode() const { return _simulationMode; }
 
 		// Simulation Control
-		void update(double dt, elements::Object* obj);
+		void update(double dt, scene::Object* obj);
 
 		// System-Updates
-		void updateRotation(double dt, elements::Object* obj);
-		void updateTranslation(double dt, elements::Object* obj);
+		void updateRotation(double dt, scene::Object* obj);
+		void updateTranslation(double dt, scene::Object* obj);
 
-		void applyForces(double dt, elements::Object* obj);
-		void applyTorque(double dt, elements::Object* obj, const Eigen::Vector3d& torque);
-		void applyDamping(double dt, elements::Object* obj, float dampingCoefficient);
+		void applyForces(double dt, scene::Object* obj);
+		void applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque);
+		void applyDamping(double dt, scene::Object* obj, float dampingCoefficient);
 
-		void handleFloorCollision(double dt, elements::Object* obj, float floorY = 0.0f);
+		void handleFloorCollision(double dt, scene::Object* obj, float floorY = 0.0f);
 
 		// Integrator Methods
 		enum class eIntegrationMethod {
@@ -153,7 +185,7 @@ namespace physics {
 		Eigen::Vector3d getGravity() const { return _gravity; }
 
 		// Integration Analysis testing
-		void startDiagnostics(elements::Object* obj);
+		void startDiagnostics(scene::Object* obj);
 		void stopDiagnostics();
 
 		bool diagnosticsRunning() const { return _diagRunning; }
@@ -173,7 +205,7 @@ namespace physics {
 		std::vector<integration::ErrorSample> _errorSamples;
 
 		bool _diagRunning = false;
-		elements::Object* _diagObject = nullptr;
+		scene::Object* _diagObject = nullptr;
 
 		std::vector<IntegratorDiagSample> _diagSamples;
 		IntegratorDiagResult _diagResult;
