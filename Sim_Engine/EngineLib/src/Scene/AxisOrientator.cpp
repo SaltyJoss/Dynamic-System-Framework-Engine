@@ -229,7 +229,7 @@ namespace gui {
             0.1f,
             100.0f
         );
-
+        
         // Extract camera orientation from main view
         glm::mat4 invView = glm::inverse(viewMatrix);
         glm::mat4 rot = glm::mat4(glm::mat3(invView)); // drop translation
