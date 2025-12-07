@@ -1,0 +1,27 @@
+#pragma once
+
+#include "MathLibAPI.h"
+
+namespace mathlib {
+	// Basic type definitions
+	using uint = unsigned int;
+	using uchar = unsigned char;
+	using ustring = unsigned std::string;
+	using ufloat = unsigned float;
+	using udouble = unsigned double;
+	using ushort = unsigned short;
+	using ulong = unsigned long;
+	using ullong = unsigned long long;
+
+	// Eigen type aliases
+	using Vec3 = Eigen::Vector3d;
+	using Vec4 = Eigen::Vector4d;
+	using VecX = Eigen::VectorXd;
+	using Mat3 = Eigen::Matrix3d;
+	using Mat4 = Eigen::Matrix4d;
+	using MatX = Eigen::MatrixXd;
+
+	using Pose = Eigen::Isometry3d;
+	using Quat = Eigen::Quaterniond;
+
+}
