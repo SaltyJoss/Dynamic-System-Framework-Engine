@@ -103,9 +103,23 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClInclude Include="MathLib\framework.h" />
     <ClInclude Include="MathLib\include\const_math.h" />
     <ClInclude Include="MathLib\include\const_phys.h" />
+    <ClInclude Include="MathLib\include\control\Error.h" />
+    <ClInclude Include="MathLib\include\control\Metrics.h" />
+    <ClInclude Include="MathLib\include\control\PID.h" />
+    <ClInclude Include="MathLib\include\core\Types.h" />
+    <ClInclude Include="MathLib\include\core\Utils.h" />
+    <ClInclude Include="MathLib\include\dynamics\MassMatrix.h" />
+    <ClInclude Include="MathLib\include\dynamics\Nonlinear_Terms.h" />
+    <ClInclude Include="MathLib\include\dynamics\RigidBody.h" />
+    <ClInclude Include="MathLib\include\dynamics\StateSpace.h" />
     <ClInclude Include="MathLib\include\integrators\Integration.h" />
     <ClInclude Include="MathLib\include\integrators\IntegrationAnalysis.h" />
     <ClInclude Include="MathLib\include\integrators\numerical_integrators.h" />
+    <ClInclude Include="MathLib\include\kinematics\DH_Params.h" />
+    <ClInclude Include="MathLib\include\kinematics\Forward_Kinematics.h" />
+    <ClInclude Include="MathLib\include\kinematics\Jacobian.h" />
+    <ClInclude Include="MathLib\include\kinematics\Trajectory.h" />
+    <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h" />
     <ClInclude Include="MathLib\include\MathLibAPI.h" />
     <ClInclude Include="MathLib\pch.h" />
   </ItemGroup>
@@ -115,9 +129,20 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="MathLib\src\control\Error.cpp" />
+    <ClCompile Include="MathLib\src\control\Metrics.cpp" />
+    <ClCompile Include="MathLib\src\control\PID.cpp" />
+    <ClCompile Include="MathLib\src\dynamics\MassMatrix.cpp" />
+    <ClCompile Include="MathLib\src\dynamics\Nonlinear_Terms.cpp" />
+    <ClCompile Include="MathLib\src\dynamics\StateSpace.cpp" />
     <ClCompile Include="MathLib\src\integrators\Integration.cpp" />
     <ClCompile Include="MathLib\src\integrators\IntegrationAnalysis.cpp" />
     <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp" />
+    <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp" />
+    <ClCompile Include="MathLib\src\kinematics\Forward_Kinematics.cpp" />
+    <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp" />
+    <ClCompile Include="MathLib\src\kinematics\Trajectory.cpp" />
+    <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

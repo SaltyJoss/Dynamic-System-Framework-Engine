@@ -1,14 +1,12 @@
 #pragma once
 
 #include "MathLibAPI.h"
+#include <Eigen/Dense>
 
 namespace mathlib {
 	// Basic type definitions
 	using uint = unsigned int;
 	using uchar = unsigned char;
-	using ustring = unsigned std::string;
-	using ufloat = unsigned float;
-	using udouble = unsigned double;
 	using ushort = unsigned short;
 	using ulong = unsigned long;
 	using ullong = unsigned long long;

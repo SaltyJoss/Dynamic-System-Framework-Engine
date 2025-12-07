@@ -4,7 +4,7 @@
 
 namespace kinematics {
 	/// <inheritdoc/>
-	Pose FK::FK(const std::vector<DH_Params>& dh_p, const VecX& q) {
+	Pose Forward_Kinematics::FK(const std::vector<DH_Params>& dh_p, const VecX& q) {
 		Pose T = Pose::Identity(); // Initialize as identity matrix
 		for (size_t i = 0; i < dh_p.size(); ++i) { // Loop through each joint
 			double theta = dh_p[i].theta + (dh_p[i].isRevolute ? q(i) : 0.0);	// Adjust theta for revolute joints
@@ -22,7 +22,7 @@ namespace kinematics {
 	}
 
 	/// <inheritdoc/>
-	std::vector<Pose> FK::linkTransformas(const std::vector<DH_Params>& dh_p, const VecX& q) {
+	std::vector<Pose> Forward_Kinematics::linkTransformas(const std::vector<DH_Params>& dh_p, const VecX& q) {
 		std::vector<Pose> transforms;	// Vector to hold transformation matrices for each link
 		Pose T = Pose::Identity();
 		for (size_t i = 0; i < dh_p.size(); ++i) {

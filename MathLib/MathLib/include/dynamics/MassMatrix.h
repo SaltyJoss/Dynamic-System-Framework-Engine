@@ -2,8 +2,11 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
 #include "dynamics/RigidBody.h"
+
+using namespace mathlib;
+using namespace kinematics;
 
 namespace dynamics {
 	class MATHLIB_API MassMatrix {
@@ -15,6 +18,6 @@ namespace dynamics {
 		/// <param name="inertias">A vector of LinkInertia structures representing the inertia properties of each link.</param>
 		/// <param name="q">A vector of joint angles.</param>
 		/// <returns>A MatX representing the mass matrix of the manipulator.</returns>
-		MatX massMatrix(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q);
+		MatX massMatrix(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q);
 	};
 }

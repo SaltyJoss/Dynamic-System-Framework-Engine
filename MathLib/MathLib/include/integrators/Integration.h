@@ -2,30 +2,30 @@
 
 #include "MathLibAPI.h"
 
-#include <Eigen/Dense>
-#include <iostream>
+#include "core/Types.h"
+#include <functional>
 
-using Eigen::VectorXd;
+using namespace mathlib;
 
 namespace integration {
 	class MATHLIB_API integrator {
 	public:
 		// General ODE integrator function
-		VectorXd integrate_ODE(
+		VecX integrate_ODE(
 			const std::function<double(double, const double&)>& f,
 			double y0, double t0, double t_final, double dt,
 			const std::function<double(const std::function <double(double, const double&)>&, double, const double&, double)>& step_function
 		);
 
 		// General PDE integrator function
-		VectorXd integrate_PDE(
-			const std::function<VectorXd(double, const VectorXd&)>& f,
-			const VectorXd& u0, double t0, double t_final, double dt,
-			const std::function<VectorXd(const std::function <VectorXd(double, const VectorXd&)>&, double, const VectorXd&, double)>& step_function
+		VecX integrate_PDE(
+			const std::function<VecX(double, const VecX&)>& f,
+			const VecX& u0, double t0, double t_final, double dt,
+			const std::function<VecX(const std::function <VecX(double, const VecX&)>&, double, const VecX&, double)>& step_function
 		);
 
 	private: 
-		// Helper function to append a value to an Eigen::VectorXd (originally tried to use push_back, but Eigen doesn't support it)
-		static void append(Eigen::VectorXd& v, double value);
+		// Helper function to append a value to an Eigen::VecX (originally tried to use push_back, but Eigen doesn't support it)
+		static void append(VecX& v, double value);
 	};
 }

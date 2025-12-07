@@ -3,7 +3,7 @@
 
 namespace dynamics {
 	/// <inheritdoc/>
-	VecX StateSpace::dynamicRHS(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot, const VecX& tau, const Vec3& gravity) {
+	VecX StateSpace::dynamicRHS(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot, const VecX& tau, const Vec3& gravity) {
 		size_t n = dh_p.size();
 		VecX rhs = VecX::Zero(n);
 

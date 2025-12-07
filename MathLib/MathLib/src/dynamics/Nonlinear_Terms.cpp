@@ -3,7 +3,7 @@
 
 namespace dynamics {
 	/// <inheritdoc/>
-	VecX Nonlinear_Terms::coriolisCentrifugal(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot) {
+	VecX Nonlinear_Terms::coriolisCentrifugal(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot) {
 		size_t n = dh_p.size();
 		VecX C = VecX::Zero(n);
 		// Placeholder implementation: In a real scenario, this would involve complex calculations
@@ -15,7 +15,7 @@ namespace dynamics {
 	}
 
 	/// <inheritdoc/>
-	VecX Nonlinear_Terms::gravityTorque(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const Vec3& gravity) {
+	VecX Nonlinear_Terms::gravityTorque(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const Vec3& gravity) {
 		size_t n = dh_p.size();
 		VecX G = VecX::Zero(n);
 		// Placeholder implementation: In a real scenario, this would involve complex calculations

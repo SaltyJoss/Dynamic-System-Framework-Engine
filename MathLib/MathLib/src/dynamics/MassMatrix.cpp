@@ -2,7 +2,7 @@
 #include "dynamics/MassMatrix.h"
 
 namespace dynamics {
-	MatX MassMatrix::massMatrix(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q) {
+	MatX MassMatrix::massMatrix(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q) {
 		size_t n = dh_p.size();
 		MatX M = MatX::Zero(n, n);
 

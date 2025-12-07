@@ -87,6 +87,48 @@
     <ClInclude Include="MathLib\include\integrators\IntegrationAnalysis.h">
       <Filter>Header Files\include\integrators</Filter>
     </ClInclude>
+    <ClInclude Include="MathLib\include\dynamics\MassMatrix.h">
+      <Filter>Header Files\include\dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\dynamics\Nonlinear_Terms.h">
+      <Filter>Header Files\include\dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\dynamics\RigidBody.h">
+      <Filter>Header Files\include\dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\dynamics\StateSpace.h">
+      <Filter>Header Files\include\dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\Error.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\Metrics.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\PID.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\DH_Params.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\Forward_Kinematics.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\Jacobian.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\Trajectory.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\core\Types.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\core\Utils.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MathLib\src\integrators\Integration.cpp">
@@ -103,6 +145,39 @@
     </ClCompile>
     <ClCompile Include="MathLib\src\integrators\IntegrationAnalysis.cpp">
       <Filter>Source Files\src\integrators</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\dynamics\MassMatrix.cpp">
+      <Filter>Source Files\src\dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\dynamics\Nonlinear_Terms.cpp">
+      <Filter>Source Files\src\dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\dynamics\StateSpace.cpp">
+      <Filter>Source Files\src\dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp">
+      <Filter>Source Files\src\kinematics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\kinematics\Forward_Kinematics.cpp">
+      <Filter>Source Files\src\kinematics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp">
+      <Filter>Source Files\src\kinematics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\kinematics\Trajectory.cpp">
+      <Filter>Source Files\src\kinematics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp">
+      <Filter>Source Files\src\kinematics</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\control\Error.cpp">
+      <Filter>Source Files\src\control</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\control\Metrics.cpp">
+      <Filter>Source Files\src\control</Filter>
+    </ClCompile>
+    <ClCompile Include="MathLib\src\control\PID.cpp">
+      <Filter>Source Files\src\control</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

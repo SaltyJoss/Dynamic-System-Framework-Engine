@@ -2,10 +2,12 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
+
+using namespace mathlib;
 
 namespace kinematics {
-	class MATHLIB_API FK {
+	class MATHLIB_API Forward_Kinematics {
 	public:
 		/// <summary>
 		/// Forward Kinematics using Denavit-Hartenberg parameters

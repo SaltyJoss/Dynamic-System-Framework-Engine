@@ -3,6 +3,8 @@
 #include "MathLibAPI.h"
 #include "core/Types.h"
 
+using namespace mathlib;
+
 namespace control {
 	class MATHLIB_API Metrics {
 	public:

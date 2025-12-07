@@ -2,8 +2,11 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
 #include "dynamics/RigidBody.h"
+
+using namespace mathlib;
+using namespace kinematics;
 
 namespace dynamics {
 	class MATHLIB_API Nonlinear_Terms {
@@ -16,7 +19,7 @@ namespace dynamics {
 		/// <param name="q">A vector of joint angles.</param>
 		/// <param name="q_dot">A vector of joint velocities.</param>
 		/// <returns>A VecX representing the nonlinear terms of the manipulator.</returns>
-		VecX coriolisCentrifugal(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot);
+		VecX coriolisCentrifugal(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot);
 
 		/// <summary>
 		/// Computes the gravity torque vector of a robotic manipulator.
@@ -26,6 +29,6 @@ namespace dynamics {
 		/// <param name="q">A vector of joint angles.</param>
 		/// <param name="gravity">A Vec3 representing the gravity vector.</param>
 		/// <returns>A VecX representing the gravity torque vector of the manipulator.</returns>
-		VecX gravityTorque(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const Vec3& gravity = Vec3{0,0,0});
+		VecX gravityTorque(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const Vec3& gravity = Vec3{0,0,0});
 	};
 }

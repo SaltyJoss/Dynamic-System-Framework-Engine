@@ -2,8 +2,11 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
 #include "dynamics/RigidBody.h"
+
+using namespace mathlib;
+using namespace kinematics;
 
 namespace dynamics {
 	class MATHLIB_API StateSpace {
@@ -18,6 +21,6 @@ namespace dynamics {
 		/// <param name="tau">A vector of joint torques.</param>
 		/// <param name="gravity">A Vec3 representing the gravity vector.</param>
 		/// <returns>A VecX representing the dynamic right-hand side of the equations of motion.</returns>
-		VecX dynamicRHS(const std::vector<DH_Param>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot, const VecX& tau, const Vec3& gravity = Vec3{ 0,0,0 });
+		VecX dynamicRHS(const std::vector<DH_Params>& dh_p, const std::vector<LinkInertia>& inertias, const VecX& q, const VecX& q_dot, const VecX& tau, const Vec3& gravity = Vec3{ 0,0,0 });
 	};
 }

@@ -2,7 +2,9 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
+
+using namespace mathlib;
 
 namespace kinematics {
 	class MATHLIB_API Transform_Utils {
@@ -13,7 +15,7 @@ namespace kinematics {
 		/// <param name="translation">Translation vector</param>
 		/// <param name="rotation">Rotation quaternion</param>
 		/// <returns>Transformation matrix</returns>
-		Pose makeTransform(const Eigen::Vector3d& translation, const Eigen::Quaterniond& rotation);
+		Pose makeTransform(const Vec3& translation, const Eigen::Quaterniond& rotation);
 		
 		/// <summary>
 		/// Extract translation vector from transformation matrix

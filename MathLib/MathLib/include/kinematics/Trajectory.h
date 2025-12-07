@@ -3,6 +3,8 @@
 #include "MathLibAPI.h"
 #include "core/Types.h"
 
+using namespace mathlib;
+
 namespace kinematics {
 	struct MATHLIB_API JointTrajectoryPoint {
 		double t;   // Time at this trajectory point

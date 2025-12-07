@@ -2,10 +2,12 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
-#include "kinematics/DH_Param.h"
+#include "kinematics/DH_Params.h"
+
+using namespace mathlib;
 
 namespace kinematics {
-	class MATHAPI_LIB Jacobian {
+	class MATHLIB_API Jacobian {
 	public:
 		/// <summary>
 		/// Compute the geometric Jacobian matrix for a robotic manipulator
