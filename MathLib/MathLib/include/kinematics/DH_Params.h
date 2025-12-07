@@ -26,5 +26,5 @@ namespace kinematics {
 	/// <param name="p">DH parameters</param>
 	/// <param name="joint_val">Joint variable (angle or displacement)</param>
 	/// <returns>Transformation matrix</returns>
-	Mat4 dhTransform(const DH_Params& p, double joint_val);
+	Mat4  MATHLIB_API dhTransform(const DH_Params& p, double joint_val);
 }
