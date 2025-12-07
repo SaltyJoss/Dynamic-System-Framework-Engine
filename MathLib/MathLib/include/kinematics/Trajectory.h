@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MathLibAPI.h"
-
+#include "core/Types.h"
 
 namespace kinematics {
 	struct MATHLIB_API JointTrajectoryPoint {

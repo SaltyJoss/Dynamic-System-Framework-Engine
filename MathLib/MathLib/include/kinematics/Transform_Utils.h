@@ -1,8 +1,8 @@
 #pragma once
 
 #include "MathLibAPI.h"
-#include "kinematics/DH_Params.h"
 #include "core/Types.h"
+#include "kinematics/DH_Param.h"
 
 namespace kinematics {
 	class MATHLIB_API Transform_Utils {
