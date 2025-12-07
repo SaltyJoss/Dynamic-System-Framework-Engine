@@ -4,6 +4,11 @@
 #include "core/Types.h"
 
 namespace kinematics {
+	enum class JointType {
+		Revolute,
+		Prismatic
+	};
+
 	/// <summary>
 	/// Denavit-Hartenberg parameters structure
 	/// </summary>
@@ -12,6 +17,7 @@ namespace kinematics {
 		double alpha;  // Link twist
 		double d;      // Link offset
 		double theta;  // Joint angle
+		JointType type; // Joint type (Revolute or Prismatic)
 	};
 
 	class MATHLIB_API DH {
