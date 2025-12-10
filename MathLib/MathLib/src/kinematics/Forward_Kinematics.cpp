@@ -10,16 +10,14 @@ namespace kinematics {
     Pose Forward_Kinematics::FK(const std::vector<DH_Params>& dh_p, const VecX& q) {
         Pose T = Pose::Identity();   // Initialize as identity
 
-        const std::size_t n = dh_p.size();
+		const std::size_t n = dh_p.size();  // number of joints
         assert(static_cast<std::size_t>(q.size()) >= n);   // basic safety
 
         for (std::size_t i = 0; i < n; ++i) {
-            const DH_Params& p = dh_p[i];
-
-            const double joint = q(static_cast<Eigen::Index>(i));
-
-            double theta = p.theta;
-            double d = p.d;
+			const DH_Params& p = dh_p[i];   // current joint parameters
+			const double joint = q(static_cast<Eigen::Index>(i));   // current joint variable
+			double theta = p.theta; // base angle
+			double d = p.d; // base offset
 
             if (p.type == JointType::Revolute) {
                 theta += joint;   // q affects angle
@@ -60,9 +58,7 @@ namespace kinematics {
 
         for (std::size_t i = 0; i < n; ++i) {
             const DH_Params& p = dh_p[i];
-
             const double joint = q(static_cast<Eigen::Index>(i));
-
             double theta = p.theta;
             double d = p.d;
 

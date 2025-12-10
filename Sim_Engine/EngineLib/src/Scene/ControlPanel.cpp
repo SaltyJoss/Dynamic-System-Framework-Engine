@@ -22,6 +22,9 @@ namespace gui {
 		diagTime = 0.0f; // initialize diagnostic time
 		simTime = 0.0f;  // initialize simulation time
 
+        diagRunning = false;
+		simulationRunning = false;
+
         // File browsers
         _currentMeshFile = "<...>";
         _currentHDRFile = "<...>";
@@ -120,7 +123,7 @@ namespace gui {
                 if (diagRunning) { 
                     _phys->startDiagnostics(_obj); 
 
-                    if (diagRunning && !_phys->diagnosticsRunning()) {
+                    if (!_phys->diagnosticsRunning()) {
                         diagRunning = false;
                         LOG_WARN("Diagnostics terminated");
                         D_FAIL("Diagnostics terminated");
@@ -257,8 +260,11 @@ namespace gui {
             diagTime += static_cast<float>(deltaSeconds);
 
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostics Running...");
-			ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
-		}
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
+		} else {
+            diagLastUpdateTime = std::chrono::high_resolution_clock::now();
+        }
+		ImGui::Separator();
 
     }
 

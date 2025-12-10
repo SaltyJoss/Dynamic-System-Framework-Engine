@@ -120,10 +120,6 @@ namespace scene {
 	class Object;
 }
 
-namespace constants {
-	class PhysConstants;
-}
-
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
 		double t = 0.0;              // simulation time
@@ -175,7 +171,7 @@ namespace physics {
 			RK4 = 4			// Fourth-Order Runge-Kutta 
 		};
 		
-		VecX integrationMethod(VecX& x, double t, double dt, std::function<Eigen::VectorXd(double, const VecX&)> f, eIntegrationMethod method);
+		VecX integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, eIntegrationMethod method);
 
 		eIntegrationMethod method = eIntegrationMethod::Euler;
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
