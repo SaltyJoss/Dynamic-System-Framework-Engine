@@ -32,7 +32,7 @@
 //      -> Updates the translation of the object based on its linear velocity.
 // void applyForces(double dt, scene::Object* obj)
 //      -> Applies forces to the object, updating its linear velocity.
-// void applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque)
+// void applyTorque(double dt, scene::Object* obj, const Vec3& torque)
 //      -> Applies torque to the object, updating its angular velocity.
 // void applyDamping(double dt, scene::Object* obj, float dampingFactor = 0.98f)
 //      -> Applies damping to the object's velocities to simulate energy loss.
@@ -44,9 +44,9 @@
 //      -> Sets the current integration method.
 // eIntegrationMethod getIntegrationMethod() const
 //      -> Returns the current integration method.
-// void setGravity(const Eigen::Vector3d& gravity)
+// void setGravity(const Vec3& gravity)
 //      -> Sets the gravity vector for the physics simulation.
-// Eigen::Vector3d getGravity()
+// Vec3 getGravity()
 //      -> Returns the current gravity vector
 // void startDiagnostics(scene::Object* obj)
 //      -> Starts the integration diagnostics for the specified object.
@@ -68,7 +68,7 @@
 //      -> Unique pointer to the ODE integrator.
 // constants::MathConstants _const
 //      -> Instance of mathematical constants.
-// Eigen::Vector3d _gravity
+// Vec3 _gravity
 //      -> Gravity vector for the simulation.
 // eSimulationMode _simulationMode
 //      -> Current simulation mode (Normal, IntegrationAnalysis).
@@ -98,14 +98,13 @@
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
+#include <core/Types.h>
 #include <integrators/numerical_integrators.h>
 #include <integrators/IntegrationAnalysis.h>
-#include "const_math.h"
 
 #include <memory>
 #include <string>
 #include <vector>
-#include <Eigen/Dense>
 
 #include "PhysicsState.h"
 #include "Scene/Object.h"
@@ -113,6 +112,8 @@
 
 extern ENGINE_API Debug gLog;
 using namespace integration;
+using namespace constants;
+using namespace mathlib;
 
 namespace scene {
 	class Mesh;
@@ -126,14 +127,14 @@ namespace constants {
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
 		double t = 0.0;              // simulation time
-		Eigen::Vector3d theta;       // angles (rad)
-		Eigen::Vector3d omega;       // angular velocity (rad/s)
+		Vec3 theta;       // angles (rad)
+		Vec3 omega;       // angular velocity (rad/s)
 	};
 
 	struct ENGINE_API IntegratorDiagResult {
 		double duration;
-		Eigen::Vector3d thetaMin, thetaMax, thetaMean, thetaRms;
-		Eigen::Vector3d omegaMin, omegaMax, omegaMean, omegaRms;
+		Vec3 thetaMin, thetaMax, thetaMean, thetaRms;
+		Vec3 omegaMin, omegaMax, omegaMean, omegaRms;
 
 		integration::ErrorStats omegaNormStats;
 		integration::ErrorStats thetaNormStats;
@@ -160,7 +161,7 @@ namespace physics {
 		void updateTranslation(double dt, scene::Object* obj);
 
 		void applyForces(double dt, scene::Object* obj);
-		void applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque);
+		void applyTorque(double dt, scene::Object* obj, const Vec3& torque);
 		void applyDamping(double dt, scene::Object* obj, float dampingCoefficient);
 
 		void handleFloorCollision(double dt, scene::Object* obj, float floorY = 0.0f);
@@ -174,15 +175,15 @@ namespace physics {
 			RK4 = 4			// Fourth-Order Runge-Kutta 
 		};
 		
-		VectorXd integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method);
+		VecX integrationMethod(VecX& x, double t, double dt, std::function<Eigen::VectorXd(double, const VecX&)> f, eIntegrationMethod method);
 
 		eIntegrationMethod method = eIntegrationMethod::Euler;
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
 
 		// Config
-		void setGravity(const Eigen::Vector3d& gravity) { _gravity = gravity; }
-		Eigen::Vector3d getGravity() const { return _gravity; }
+		void setGravity(const Vec3& gravity) { _gravity = gravity; }
+		Vec3 getGravity() const { return _gravity; }
 
 		// Integration Analysis testing
 		void startDiagnostics(scene::Object* obj);
@@ -196,8 +197,7 @@ namespace physics {
 
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
-		constants::MathConstants _const;
-		Eigen::Vector3d _gravity = Eigen::Vector3d(0.0f, -9.81f, 0.0f);
+		Vec3 _gravity = Vec3(0.0f, -9.81f, 0.0f);
 
 		// Integration analysis
 		eSimulationMode _simulationMode = eSimulationMode::Normal;

@@ -15,7 +15,7 @@
 
 namespace gui {
     ControlPanel::ControlPanel(simManager* sceneView) :
-		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _obj(nullptr), _sunLight(nullptr),
+		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _sunLight(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {

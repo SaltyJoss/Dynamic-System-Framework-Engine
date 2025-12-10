@@ -21,7 +21,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -114,11 +114,24 @@
     <ClInclude Include="..\External\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
-    <ClInclude Include="..\External\MathLib\include\const_math.h" />
-    <ClInclude Include="..\External\MathLib\include\const_phys.h" />
+    <ClInclude Include="..\External\MathLib\include\control\Error.h" />
+    <ClInclude Include="..\External\MathLib\include\control\Metrics.h" />
+    <ClInclude Include="..\External\MathLib\include\control\PID.h" />
+    <ClInclude Include="..\External\MathLib\include\core\constants.h" />
+    <ClInclude Include="..\External\MathLib\include\core\Types.h" />
+    <ClInclude Include="..\External\MathLib\include\core\Utils.h" />
+    <ClInclude Include="..\External\MathLib\include\dynamics\MassMatrix.h" />
+    <ClInclude Include="..\External\MathLib\include\dynamics\Nonlinear_Terms.h" />
+    <ClInclude Include="..\External\MathLib\include\dynamics\RigidBody.h" />
+    <ClInclude Include="..\External\MathLib\include\dynamics\StateSpace.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\Integration.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\IntegrationAnalysis.h" />
     <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\DH_Params.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\Forward_Kinematics.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\Jacobian.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\Trajectory.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\Transform_Utils.h" />
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />
     <ClInclude Include="..\External\stb\stb_image.h" />
     <ClInclude Include="framework.h" />

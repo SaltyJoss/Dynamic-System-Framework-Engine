@@ -102,8 +102,6 @@
 
 // Includes
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include "const_phys.h"
 #include <cmath>
 
 #include "Physics/PhysicsSystem.h"
@@ -199,8 +197,6 @@ namespace gui {
         float linkLength = 1.0f;
         float damping = 0.1f;
         float position = 0.0f;
-
-		double PI = constants::PhysConstants::PI;
 
 		// Time tracking for simulation updates
         double finalTime = 0.0f;

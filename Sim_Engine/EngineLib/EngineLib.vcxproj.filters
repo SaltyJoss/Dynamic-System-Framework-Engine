@@ -64,9 +64,6 @@
     <Filter Include="External\MathLib">
       <UniqueIdentifier>{919c820f-030b-404d-9fcb-1dfa7873cdbc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="External\MathLib\Integration">
-      <UniqueIdentifier>{71e5c4ee-dde7-4ce6-b560-8155656a9c7e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\src\Physics">
       <UniqueIdentifier>{78ee7892-6bd1-47e7-a240-acfebdbff310}</UniqueIdentifier>
     </Filter>
@@ -81,6 +78,21 @@
     </Filter>
     <Filter Include="Header Files\include\Numerics">
       <UniqueIdentifier>{69bc06b0-298b-4c2b-9ebd-ea2125ceae55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Kinematics">
+      <UniqueIdentifier>{861e856c-5c9b-465d-984d-f745b316131e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Dynamics">
+      <UniqueIdentifier>{591a9235-73d2-4778-9562-f011f1eb3bd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Integrators">
+      <UniqueIdentifier>{ee6c0b6c-7bde-4a0a-9f83-93b9ce44fd05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Control">
+      <UniqueIdentifier>{a4d4a70c-6a0c-422c-987a-b6514af2e088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\MathLib\Core">
+      <UniqueIdentifier>{f6973194-a3e6-4912-a732-5d314ebe78d4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -219,12 +231,6 @@
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h">
       <Filter>External\MathLib</Filter>
     </ClInclude>
-    <ClInclude Include="..\External\MathLib\include\integrators\Integration.h">
-      <Filter>External\MathLib\Integration</Filter>
-    </ClInclude>
-    <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h">
-      <Filter>External\MathLib\Integration</Filter>
-    </ClInclude>
     <ClInclude Include="include\Rendering\Texture.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
@@ -233,12 +239,6 @@
     </ClInclude>
     <ClInclude Include="include\Physics\PhysicsState.h">
       <Filter>Header Files\include\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\External\MathLib\include\const_math.h">
-      <Filter>External\MathLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\External\MathLib\include\const_phys.h">
-      <Filter>External\MathLib</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\MeshLoader.h">
       <Filter>Header Files\include\Scene</Filter>
@@ -255,14 +255,65 @@
     <ClInclude Include="include\Platform\SimulationState.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="..\External\MathLib\include\integrators\IntegrationAnalysis.h">
-      <Filter>External\MathLib\Integration</Filter>
-    </ClInclude>
     <ClInclude Include="include\Scene\AxisOrientator.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\SimulationManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\Error.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\Metrics.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\PID.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\Integration.h">
+      <Filter>External\MathLib\Integrators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\IntegrationAnalysis.h">
+      <Filter>External\MathLib\Integrators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\integrators\numerical_integrators.h">
+      <Filter>External\MathLib\Integrators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\dynamics\MassMatrix.h">
+      <Filter>External\MathLib\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\dynamics\Nonlinear_Terms.h">
+      <Filter>External\MathLib\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\dynamics\RigidBody.h">
+      <Filter>External\MathLib\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\dynamics\StateSpace.h">
+      <Filter>External\MathLib\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\DH_Params.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\Forward_Kinematics.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\Jacobian.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\Trajectory.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\Transform_Utils.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\core\constants.h">
+      <Filter>External\MathLib\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\core\Types.h">
+      <Filter>External\MathLib\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\core\Utils.h">
+      <Filter>External\MathLib\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

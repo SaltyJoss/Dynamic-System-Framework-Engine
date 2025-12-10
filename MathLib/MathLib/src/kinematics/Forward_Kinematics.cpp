@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "kinematics/Forward_Kinematics.h"
 
-#include <cmath>        // for std::sin, std::cos
-#include <cassert>      // optional, for assert
+#include <cmath>
+#include <cassert>
 
 namespace kinematics {
 
@@ -36,11 +36,11 @@ namespace kinematics {
             const double ca = std::cos(alpha);
             const double sa = std::sin(alpha);
 
-            Pose A; // current joint transform
-            A << cth, -sth * ca, sth* sa, a* cth,
-                sth, cth* ca, -cth * sa, a* sth,
-                0.0, sa, ca, d,
-                0.0, 0.0, 0.0, 1.0;
+			Pose A; // individual link transform
+            A << cth,  -sth * ca,    sth* sa,   a* cth, // row 1 - rotation
+                 sth,    cth* ca,  -cth * sa,   a* sth, // row 2 - rotation
+                 0.0,         sa,         ca,        d, // row 3 - translation
+                 0.0,        0.0,        0.0,      1.0; // row 4 - homogeneous
 
             T = T * A; // accumulate
         }
@@ -49,7 +49,7 @@ namespace kinematics {
     }
 
     /// <inheritdoc/>
-    std::vector<Pose> Forward_Kinematics::linkTransformas(const std::vector<DH_Params>& dh_p, const VecX& q) {
+    std::vector<Pose> Forward_Kinematics::linkTransforms(const std::vector<DH_Params>& dh_p, const VecX& q) {
         std::vector<Pose> transforms;
         transforms.reserve(dh_p.size());   // avoid reallocs
 
@@ -82,10 +82,10 @@ namespace kinematics {
             const double sa = std::sin(alpha);
 
             Pose A;
-            A << cth, -sth * ca, sth* sa, a* cth,
-                sth, cth* ca, -cth * sa, a* sth,
-                0.0, sa, ca, d,
-                0.0, 0.0, 0.0, 1.0;
+            A << cth,  -sth * ca,    sth* sa,   a* cth,
+                 sth,    cth* ca,  -cth * sa,   a* sth,
+                 0.0,         sa,         ca,        d,
+                 0.0,        0.0,        0.0,      1.0;
 
             T = T * A;
             transforms.push_back(T);    // store current link transform

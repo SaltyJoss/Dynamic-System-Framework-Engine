@@ -4,11 +4,9 @@
 
 #include "pch.h"
 #include "Physics/PhysicsSystem.h"
-
 #include "Scene/Object.h"
 #include "Scene/Mesh.h"
 #include "integrators/Integration.h"
-#include "const_phys.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -54,7 +52,7 @@ namespace physics {
 		auto& s = obj->state;
 
 		// state vector: [theta_x, theta_y, theta_z, omega_x, omega_y, omega_z]
-		Eigen::VectorXd x(6);
+		VecX x(6);
 		x(0) = s.theta.x();
 		x(1) = s.theta.y();
 		x(2) = s.theta.z();
@@ -63,8 +61,8 @@ namespace physics {
 		x(5) = s.angularVelocity.z();
 
 		// define derivative function for RK2/RK4
-		auto f = [&](double t, const Eigen::VectorXd& state) -> Eigen::VectorXd {
-			Eigen::VectorXd deriv(6);
+		auto f = [&](double t, const VecX& state) -> VecX {
+			VecX deriv(6);
 
 			// unpacking state vector (theta = angle, omega = angular velocity)
 			double theta_x = state(0);
@@ -88,7 +86,7 @@ namespace physics {
 		};
 
 		// Euler integrate using your ODE helper
-		Eigen::VectorXd next = integrationMethod(x, 0.0, dt, f, method);
+		VecX next = integrationMethod(x, 0.0, dt, f, method);
 
 		// write back to state
 		s.theta.x() = next(0);
@@ -100,8 +98,8 @@ namespace physics {
 
 		// WRAP ANGLES INTO [-pi, pi] OR [0, 2pi]
 		auto wrapRad = [](double a) -> double {
-			a = fmod(a, constants::PhysConstants::TWO_PI);
-			if (a < 0.0) a += constants::PhysConstants::TWO_PI;
+			a = fmod(a, TWO_PI);
+			if (a < 0.0) a += TWO_PI;
 			return a;
 		};
 
@@ -131,7 +129,7 @@ namespace physics {
 		auto& s = obj->state;
 
 		// v * dt is displacement
-		Eigen::Vector3d dp = s.linearVelocity * dt;
+		Vec3 dp = s.linearVelocity * dt;
 
 		obj->transform.position += glm::vec3(dp.x(), dp.y(), dp.z());
 	}
@@ -143,7 +141,7 @@ namespace physics {
 		auto& s = obj->state;
 
 		// acceleration = F / m
-		Eigen::Vector3d accel = s.forces / s.mass;
+		Vec3 accel = s.forces / s.mass;
 
 		// update velocity
 		s.linearVelocity += accel * dt;
@@ -153,7 +151,7 @@ namespace physics {
 	}
 
 	// Torque application
-	void PhysicsSystem::applyTorque(double dt, scene::Object* obj, const Eigen::Vector3d& torque) {
+	void PhysicsSystem::applyTorque(double dt, scene::Object* obj, const Vec3& torque) {
 		if (!obj || !obj->getMesh()) return;
 
 	}
@@ -173,8 +171,8 @@ namespace physics {
 // --------------------------------------------------
 //				   INTEGRATION (ODE)
 // --------------------------------------------------
-	VectorXd PhysicsSystem::integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd &)> f, eIntegrationMethod method) {
-		Eigen::VectorXd dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
+	VecX PhysicsSystem::integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX &)> f, eIntegrationMethod method) {
+		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
 		if (method == eIntegrationMethod::Euler) {
 			return _ODE->eulerStep(x, dxdt, dt);
 		}

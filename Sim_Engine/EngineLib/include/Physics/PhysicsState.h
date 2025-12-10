@@ -17,11 +17,11 @@
 // 
 // Internal State Variables:
 // --------------------------------------------
-// Eigen::Vector3d theta
+// Vec3 theta
 //      -> Orientation angle around a fixed axis (e.g., for 2D rotation).
-// Eigen::Vector3d linearVelocity
+// Vec3 linearVelocity
 //      -> Velocity of the object's center of mass.
-// Eigen::Vector3d angularVelocity
+// Vec3 angularVelocity
 //		-> Angular velocity vector for rotational motion.
 // double gravity
 // 		-> Gravitational acceleration (in m/s^2).
@@ -31,11 +31,11 @@
 //      -> Damping coefficient for simulating energy loss (in kg/s).
 // Eigen::Matrix3d inertia
 //      -> Inertia tensor for rotational dynamics.
-// Eigen::Vector3d forces
+// Vec3 forces
 //      -> Accumulated forces acting on the object.
-// Eigen::Vector3d position
+// Vec3 position
 //      -> Position of the object in world space.
-// Eigen::Vector3d torques
+// Vec3 torques
 //      -> Accumulated torques acting on the object
 // --------------------------------------------
 // 
@@ -43,22 +43,23 @@
 //			  GitHub: saltyjoss
 // ============================================
 #include "EngineCore.h"
+#include <core/constants.h>
 #include "PhysicsSystem.h"
 
 namespace physics {
 	// public struct for physical states
 	struct ENGINE_API PhysicsState {
-		Eigen::Vector3d theta;
-		Eigen::Vector3d linearVelocity;
-		Eigen::Vector3d angularVelocity;
+		Vec3 theta;
+		Vec3 linearVelocity;
+		Vec3 angularVelocity;
 
 		double gravity;
 		double mass;
 		double damping;
-		Eigen::Matrix3d inertia;
-		Eigen::Vector3d forces;
-		Eigen::Vector3d position;
-		Eigen::Vector3d torques;
+		Mat3 inertia;
+		Vec3 forces;
+		Vec3 position;
+		Vec3 torques;
 	};
 }
 

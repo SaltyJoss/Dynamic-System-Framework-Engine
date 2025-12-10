@@ -63,12 +63,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MathLib\include\const_math.h">
-      <Filter>Header Files\include</Filter>
-    </ClInclude>
-    <ClInclude Include="MathLib\include\const_phys.h">
-      <Filter>Header Files\include</Filter>
-    </ClInclude>
     <ClInclude Include="MathLib\include\integrators\Integration.h">
       <Filter>Header Files\include\integrators</Filter>
     </ClInclude>
@@ -127,6 +121,9 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="MathLib\include\core\Utils.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\core\constants.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>

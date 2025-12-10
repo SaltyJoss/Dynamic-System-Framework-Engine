@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -101,11 +101,10 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="MathLib\framework.h" />
-    <ClInclude Include="MathLib\include\const_math.h" />
-    <ClInclude Include="MathLib\include\const_phys.h" />
     <ClInclude Include="MathLib\include\control\Error.h" />
     <ClInclude Include="MathLib\include\control\Metrics.h" />
     <ClInclude Include="MathLib\include\control\PID.h" />
+    <ClInclude Include="MathLib\include\core\constants.h" />
     <ClInclude Include="MathLib\include\core\Types.h" />
     <ClInclude Include="MathLib\include\core\Utils.h" />
     <ClInclude Include="MathLib\include\dynamics\MassMatrix.h" />

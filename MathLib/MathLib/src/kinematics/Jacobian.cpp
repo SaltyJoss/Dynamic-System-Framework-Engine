@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "kinematics/Jacobian.h"
+#include "kinematics/Forward_Kinematics.h"
 
 namespace kinematics {
 	/// <inheritdoc/>
@@ -7,7 +8,7 @@ namespace kinematics {
 		size_t n = dh_p.size();	// Number of joints
 		MatX J = MatX::Zero(6, n);	// Initialize Jacobian matrix
 
-		std::vector<Pose> transforms = FK().linkTransformas(dh_p, q);	// Get link transformations
+		std::vector<Pose> transforms = Forward_Kinematics().linkTransforms(dh_p, q);	// Get link transformations
 
 		Pose T_end = transforms.back();	// End-effector transformation
 		Vec3 p_end = T_end.block<3, 1>(0, 3);	// End-effector position
@@ -17,11 +18,11 @@ namespace kinematics {
 		for (size_t i = 0; i < n; ++i) {
 			Vec3 z_i = transforms[i].block<3, 1>(0, 2);	// z-axis of current joint
 			Vec3 p_i = transforms[i].block<3, 1>(0, 3);	// position of current joint
-			if (dh_p[i].isRevolute) {
+			if (dh_p[i].type == JointType::Revolute) {
 				J.block<3, 1>(0, i) = z_i.cross(p_end - p_i);	// Linear velocity part
 				J.block<3, 1>(3, i) = z_i;						// Angular velocity part
 			}
-			else if (dh_p[i].isPrismatic) {
+			else if (dh_p[i].type == JointType::Prismatic) {
 				J.block<3, 1>(0, i) = z_i;						// Linear velocity part
 				J.block<3, 1>(3, i) = Vec3::Zero();			// Angular velocity part
 			}
