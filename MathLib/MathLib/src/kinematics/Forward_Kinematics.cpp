@@ -8,7 +8,7 @@ namespace kinematics {
 
     /// <inheritdoc/>
     Pose Forward_Kinematics::FK(const std::vector<DH_Params>& dh_p, const VecX& q) {
-        Pose T = Pose::Identity();   // Initialize as identity
+		Pose T = Pose::Identity();   // Initialize as identity
 
 		const std::size_t n = dh_p.size();  // number of joints
         assert(static_cast<std::size_t>(q.size()) >= n);   // basic safety
