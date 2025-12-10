@@ -184,6 +184,7 @@ namespace gui {
         std::unordered_map<std::string, float> _linkAngles;
 
 		float simLength = 30.0f;  // ~30 seconds default
+		float diagLength = 15.0f; // ~15 seconds default
         float deltaTime = 1 / 120; // ~120 FPS default
 		float simTime = 0.0f;     // current simulation time
 		float diagTime = 0.0f;    // current diagnostic time

@@ -118,7 +118,7 @@ namespace gui {
             if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
                 diagRunning = !diagRunning;
                 LOG_INFO("Diagnostics %s", diagRunning ? "started" : "stopped");
-                D_SUCCESS("Diagnostics %s", diagRunning ? "started" : "stopped");
+                D_RUNTIME("Diagnostics %s", diagRunning ? "started" : "stopped");
 
                 if (diagRunning) { 
                     _phys->startDiagnostics(_obj); 
@@ -182,10 +182,21 @@ namespace gui {
         ImGui::Separator();
 
 		ImGui::Text("Simulation Length:");
+		ImGui::SameLine();
+		ImGui::Text("           Diagnostic Length:");
+
         float step = 0.001f;
         float stepFast = 0.01f;
         ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+        ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+
+		ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::InputScalar("seconds##diag", ImGuiDataType_Float, &diagLength, &step, &stepFast, "%.3f");
+        ImGui::Text("Delta Time (dt)");
+        ImGui::SetNextItemWidth(150.0f);
+		ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
 
 		ImGui::NewLine();
 
@@ -233,7 +244,6 @@ namespace gui {
         }
 
         ImGui::NewLine();
-        ImGui::Text("Elapsed Time...");
 
 		// Deals with simulation time tracking using chrono
         if (simulationRunning) {
@@ -241,16 +251,19 @@ namespace gui {
             double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
             simLastUpdateTime = now;
             simTime += static_cast<float>(deltaSeconds);
+
+            ImGui::Text("Elapsed Time...");
+            ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
+
             if (simTime >= simLength) {
                 simulationRunning = false;
                 simTime = 0.0f;
-                D_SUCCESS("Total elapsed time : % .1f seconds.", simLength);
+                D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
             }
         }
         else {
             simLastUpdateTime = std::chrono::high_resolution_clock::now();
         }
-		ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
 
         if (diagRunning) {
 			// Update diagnostic time
@@ -261,6 +274,13 @@ namespace gui {
 
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostics Running...");
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
+
+            if (diagTime >= diagLength) {
+                diagRunning = false;
+                diagTime = 0.0f;
+                _phys->stopDiagnostics();
+                D_RUNTIME("Diagnostic run time: %.3f seconds", diagLength);
+			}
 		} else {
             diagLastUpdateTime = std::chrono::high_resolution_clock::now();
         }
@@ -269,14 +289,13 @@ namespace gui {
     }
 
     void ControlPanel::objectProperties() {
-        ImGui::Text("Physics Settings:");
-		ImGui::Separator();
-
         if (!_obj) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
             return;
         }
+
+        ImGui::SeparatorText("Physics Settings:");
 
 		// Gravity Controls
         ImGui::Text("Gravity");

@@ -243,7 +243,7 @@ namespace physics {
 		_diagResult.omegaNormStats = omegaStats;
 		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, just zeroed for now
 
-		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu", 
+		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu", 
 			_diagSamples.size(), 
 			_diagResult.omegaNormStats.minError,
 			_diagResult.omegaNormStats.maxError,
