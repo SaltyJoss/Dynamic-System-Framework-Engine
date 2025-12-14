@@ -2,6 +2,9 @@
 #include "pch.h"
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
+#include <MathLibAPI.h>
+#include <core/Types.h>
+#include <kinematics/Forward_Kinematics.h>
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -322,6 +325,28 @@ namespace gui{
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
 
+		{
+			VecX q = _robot.makeJointVector();   // all angles at their defaults
+			kinematics::Forward_Kinematics fk;
+
+			mathlib::Pose T_ee = fk.FK(_robot.dhParams, q);
+
+			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f",
+				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f",
+				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+		}
+
+		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
+			const auto& p = _robot.dhParams[i];
+			LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+			D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+		}
+
 		instantiateRobotLinks();
 		buildLinkIndex();
 
@@ -360,8 +385,33 @@ namespace gui{
 	void simManager::updateRobotKinematics(const glm::mat4& baseTransform) {
 		if (!_hasRobot) return;
 
+		// Get current joint angles as Eigen vector
+		VecX q = _robot.makeJointVector();
+
+		//// Compute forward kinematics
+		//kinematics::Forward_Kinematics fk;
+		//std::vector<Pose> eigenTrans = fk.linkTransforms(_robot.dhParams, q);
+
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+
+		//// Convert Eigen poses to glm::mat4 and apply base transform to root link
+		//for (std::size_t i = 0; i < eigenTrans.size(); ++i) {
+		//	const Pose& pose = eigenTrans[i];
+		//	glm::mat4 glmMat(1.0f);
+		//	for (int r = 0; r < 4; ++r) {
+		//		for (int c = 0; c < 4; ++c) {
+		//			glmMat[c][r] = static_cast<float>(pose(r, c));
+		//		}
+		//	}
+
+		//	// Apply base transform to the root link
+		//	if (i == 0) {
+		//		world[i] = baseTransform * glmMat;
+		//	} else {
+		//		world[i] = glmMat;
+		//	}
+		//}
 
 		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;
@@ -397,8 +447,6 @@ namespace gui{
 
 			// FK-driven world matrix goes straight into the mesh
 			mesh->localTransform = world[i] * S;
-
-			auto pos = glm::vec3(world[i][3]);
 		}
 	}
 
@@ -412,7 +460,7 @@ namespace gui{
 		}
 		auto it = _linkIndex.find(linkName);
 		if (it == _linkIndex.end()) {
-			D_ERROR_ONCE("Link name %s not found in robot model.", linkName.c_str());
+			D_WARN_ONCE("Link name not found in robot model.");
 			return;
 		}
 		int linkIdx = it->second;
