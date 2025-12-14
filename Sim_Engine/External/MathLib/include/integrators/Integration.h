@@ -1,6 +1,8 @@
 #pragma once
 
 #include "MathLibAPI.h"
+
+#include "core/Types.h"
 #include <functional>
 
 using namespace mathlib;

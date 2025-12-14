@@ -14,7 +14,7 @@ namespace kinematics {
 	/// <summary>
 	/// Denavit-Hartenberg parameters structure
 	/// </summary>
-	struct MATHLIB_API DH_Params {
+	struct DH_Params {
 		double a;      // Link length
 		double alpha;  // Link twist
 		double d;      // Link offset
@@ -22,7 +22,7 @@ namespace kinematics {
 		JointType type; // Joint type (Revolute or Prismatic)
 	};
 
-	class MATHLIB_API DH {
+	class DH {
 	public:
 		/// <summary>
 		/// Compute the Denavit-Hartenberg transformation matrix
