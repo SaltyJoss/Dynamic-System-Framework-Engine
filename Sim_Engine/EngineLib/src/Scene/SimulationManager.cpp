@@ -337,6 +337,16 @@ namespace gui{
 				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
 		}
 
+		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
+			const auto& p = _robot.dhParams[i];
+			LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+			D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+		}
+
 		instantiateRobotLinks();
 		buildLinkIndex();
 
@@ -378,53 +388,53 @@ namespace gui{
 		// Get current joint angles as Eigen vector
 		VecX q = _robot.makeJointVector();
 
-		// Compute forward kinematics
-		kinematics::Forward_Kinematics fk;
-		std::vector<Pose> eigenTrans = fk.linkTransforms(_robot.dhParams, q);
+		//// Compute forward kinematics
+		//kinematics::Forward_Kinematics fk;
+		//std::vector<Pose> eigenTrans = fk.linkTransforms(_robot.dhParams, q);
 
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
-		// Convert Eigen poses to glm::mat4 and apply base transform to root link
-		for (std::size_t i = 0; i < eigenTrans.size(); ++i) {
-			const Pose& pose = eigenTrans[i];
-			glm::mat4 glmMat(1.0f);
-			for (int r = 0; r < 4; ++r) {
-				for (int c = 0; c < 4; ++c) {
-					glmMat[c][r] = static_cast<float>(pose(r, c));
-				}
-			}
+		//// Convert Eigen poses to glm::mat4 and apply base transform to root link
+		//for (std::size_t i = 0; i < eigenTrans.size(); ++i) {
+		//	const Pose& pose = eigenTrans[i];
+		//	glm::mat4 glmMat(1.0f);
+		//	for (int r = 0; r < 4; ++r) {
+		//		for (int c = 0; c < 4; ++c) {
+		//			glmMat[c][r] = static_cast<float>(pose(r, c));
+		//		}
+		//	}
 
-			// Apply base transform to the root link
-			if (i == 0) {
-				world[i] = baseTransform * glmMat;
-			} else {
-				world[i] = glmMat;
-			}
-		}
-
-		//int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
-		//world[rootIdx] = baseTransform;
-
-		//// Sort joints in parent-to-child order
-		//std::vector<RobotJoint> sorted = _robot.joints;
-
-		//std::sort(sorted.begin(), sorted.end(),
-		//	[&](const RobotJoint& a, const RobotJoint& b) {
-		//		int a_parent_indx = _linkIndex[a.parent];
-		//		int b_parent_indx = _linkIndex[b.parent];
-		//		return a_parent_indx < b_parent_indx;
-		//	});
-
-		//for (auto& joint : sorted) {
-		//	int parent = _linkIndex[joint.parent];
-		//	int child = _linkIndex[joint.child];
-
-		//	glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset * _robot.scale);
-		//	glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
-
-		//	world[child] = world[parent] * T_offset * R_joint;
+		//	// Apply base transform to the root link
+		//	if (i == 0) {
+		//		world[i] = baseTransform * glmMat;
+		//	} else {
+		//		world[i] = glmMat;
+		//	}
 		//}
+
+		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
+		world[rootIdx] = baseTransform;
+
+		// Sort joints in parent-to-child order
+		std::vector<RobotJoint> sorted = _robot.joints;
+
+		std::sort(sorted.begin(), sorted.end(),
+			[&](const RobotJoint& a, const RobotJoint& b) {
+				int a_parent_indx = _linkIndex[a.parent];
+				int b_parent_indx = _linkIndex[b.parent];
+				return a_parent_indx < b_parent_indx;
+			});
+
+		for (auto& joint : sorted) {
+			int parent = _linkIndex[joint.parent];
+			int child = _linkIndex[joint.child];
+
+			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset * _robot.scale);
+			glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
+
+			world[child] = world[parent] * T_offset * R_joint;
+		}
 
 		// Update link object transforms
 		for (size_t i = 0; i < _robot.links.size(); i++) {
@@ -450,7 +460,7 @@ namespace gui{
 		}
 		auto it = _linkIndex.find(linkName);
 		if (it == _linkIndex.end()) {
-			D_ERROR_ONCE("Link name %s not found in robot model.", linkName.c_str());
+			D_WARN_ONCE("Link name not found in robot model.");
 			return;
 		}
 		int linkIdx = it->second;
