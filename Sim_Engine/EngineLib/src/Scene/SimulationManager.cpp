@@ -269,10 +269,6 @@ namespace gui{
 			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
 			updateRobotKinematics(base);
 		}
-		
-		if (_settingsCurrent.grid) { WorldGridRender(); }
-
-		MeshRender();
 
 		if (skyboxEnabled)
 		{
@@ -284,6 +280,10 @@ namespace gui{
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 		}
+
+		MeshRender();
+
+		if (_settingsCurrent.grid) { WorldGridRender(); }
 
 		if (_settingsCurrent.axisOrientator) { _axisOrientator->render(view); }
 
@@ -545,10 +545,10 @@ namespace gui{
 
 	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_BLEND);
 
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(-1.0f, -1.0f);
@@ -559,9 +559,14 @@ namespace gui{
 
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
 
 		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
 	}
 
 	void simManager::MeshRender() {

@@ -219,7 +219,7 @@ void main()
 	vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
 	// Directional Light
-    vec3 Ld = normalize(-lightPosition);
+    vec3 Ld = normalize(-lightDirection);
 
 	// Shadows
 	float shadow = computeShadowCSM(WorldPos, N, Ld);

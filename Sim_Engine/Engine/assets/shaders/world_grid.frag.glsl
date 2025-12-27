@@ -57,9 +57,12 @@ void main() {
     rgb = mix(rgb, vec3(0.75, 0.25, 0.25), xAxis * 0.5);
     rgb = mix(rgb, vec3(0.25, 0.45, 0.75), zAxis * 0.5);
 
-    float alpha = 0.35 * a0 + 0.75 * a1 + 1.00 * a2;
-    alpha = max(alpha, 0.65 * max(xAxis, zAxis));
-    alpha = clamp(alpha, 0.0, 1.0) * fade;
+    float line = max(max(a0, a1), a2);
+    line = max(line, max(xAxis, zAxis));
+    line = clamp(line, 0.0, 1.0) * fade;
 
-    FragColour = vec4(rgb, alpha);
+    if (line < 0.02)
+        discard;
+
+    FragColour = vec4(rgb, 1.0);
 }
