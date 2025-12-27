@@ -388,30 +388,8 @@ namespace gui{
 		// Get current joint angles as Eigen vector
 		VecX q = _robot.makeJointVector();
 
-		//// Compute forward kinematics
-		//kinematics::Forward_Kinematics fk;
-		//std::vector<Pose> eigenTrans = fk.linkTransforms(_robot.dhParams, q);
-
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
-
-		//// Convert Eigen poses to glm::mat4 and apply base transform to root link
-		//for (std::size_t i = 0; i < eigenTrans.size(); ++i) {
-		//	const Pose& pose = eigenTrans[i];
-		//	glm::mat4 glmMat(1.0f);
-		//	for (int r = 0; r < 4; ++r) {
-		//		for (int c = 0; c < 4; ++c) {
-		//			glmMat[c][r] = static_cast<float>(pose(r, c));
-		//		}
-		//	}
-
-		//	// Apply base transform to the root link
-		//	if (i == 0) {
-		//		world[i] = baseTransform * glmMat;
-		//	} else {
-		//		world[i] = glmMat;
-		//	}
-		//}
 
 		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;

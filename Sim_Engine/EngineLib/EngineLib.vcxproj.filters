@@ -258,9 +258,6 @@
     <ClInclude Include="include\Scene\AxisOrientator.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\SimulationManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\External\MathLib\include\control\Error.h">
       <Filter>External\MathLib\Control</Filter>
     </ClInclude>
@@ -314,6 +311,9 @@
     </ClInclude>
     <ClInclude Include="..\External\MathLib\include\core\Utils.h">
       <Filter>External\MathLib\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\SimulationManager.h">
+      <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -423,7 +423,7 @@
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\SimulationManager.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
