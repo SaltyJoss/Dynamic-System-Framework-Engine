@@ -9,59 +9,57 @@ uniform float gGridCellSize = 0.25;
 uniform float gGridSize = 1000.0;
 
 uniform vec3 gCameraWorldPos;
-uniform vec4 gGridColourThin = vec4(0.5, 0.5, 0.5, 1.0);
-uniform vec4 gGridColourThick = vec4(0.0, 0.0, 0.0, 1.0);
+uniform vec4 gGridColourThin = vec4(0.55, 0.55, 0.55, 1.0);
+uniform vec4 gGridColourThick = vec4(0.15, 0.15, 0.15, 1.0);
 
+float worldUnitsPerPixel(vec2 worldXZ)
+{
+    float dx = length(vec2(dFdx(worldXZ.x), dFdy(worldXZ.x)));
+    float dz = length(vec2(dFdx(worldXZ.y), dFdy(worldXZ.y)));
+    return max(max(dx, dz), 1e-6);
+}
+
+float gridAA(vec2 worldXZ, float spacing)
+{
+    vec2 p = worldXZ / spacing;
+    vec2 g = abs(fract(p - 0.5) - 0.5) / fwidth(p);
+    float line = 1.0 - clamp(min(g.x, g.y), 0.0, 1.0);
+    return line;
+}
+
+float visibility(float spacing, float wupp)
+{
+    float ratio = (wupp * gGridMinPixelsBetweenCells) / spacing;
+    return 1.0 - smoothstep(1.0, 2.0, ratio);
+}
 
 void main() {
-    vec2 dvx = vec2(dFdx(WorldPos.x), dFdy(WorldPos.x));
-    vec2 dvy = vec2(dFdx(WorldPos.z), dFdy(WorldPos.z));
+    vec2 xz = WorldPos.xz;
+    float wupp = worldUnitsPerPixel(xz);
 
-    float lx = length(dvx);
-    float ly = length(dvy);
+    float s0 = gGridCellSize;
+    float s1 = gGridCellSize * 10.0;
+    float s2 = gGridCellSize * 100.0;
 
-    vec2 dudv = vec2(lx, ly);
-    dudv = max(dudv, vec2(1e-6));
+    float a0 = gridAA(xz, s0) * visibility(s0, wupp);
+    float a1 = gridAA(xz, s1) * visibility(s1, wupp);
+    float a2 = gridAA(xz, s2) * visibility(s2, wupp);
 
-    float l = length(dudv);
-    float LOD = max(0.0, (log(l * gGridMinPixelsBetweenCells / gGridCellSize) / log(10.0)) + 1.0);
+    float xAxis = 1.0 - smoothstep(0.0, wupp * 2.0, abs(xz.y));
+    float zAxis = 1.0 - smoothstep(0.0, wupp * 2.0, abs(xz.x));
 
-    float GridCellSizeLOD0 = gGridCellSize * pow(10.0, floor(LOD));
-    float GridCellSizeLOD1 = GridCellSizeLOD0 * 10.0;
-    float GridCellSizeLOD2 = GridCellSizeLOD1 * 10.0;
+    float d = length(xz - gCameraWorldPos.xz);
+    float fade = exp(-d / (gGridSize * 0.35));
 
-    dudv *= 4.0;
+    float majorMask = max(a1, a2);
+    vec3 rgb = mix(gGridColourThin.rgb, gGridColourThick.rgb, majorMask);
 
-    vec2 cell = vec2(1.0) - abs(clamp(mod(WorldPos.xz, GridCellSizeLOD0) / dudv, 0.0, 1.0) * 2.0 - vec2(1.0));
-    float LOD_0a = max(cell.x, cell.y);
+    rgb = mix(rgb, vec3(0.75, 0.25, 0.25), xAxis * 0.5);
+    rgb = mix(rgb, vec3(0.25, 0.45, 0.75), zAxis * 0.5);
 
-    cell = vec2(1.0) - abs(clamp(mod(WorldPos.xz, GridCellSizeLOD1) / dudv, 0.0, 1.0) * 2.0 - vec2(1.0));
-    float LOD_1a = max(cell.x, cell.y);
+    float alpha = 0.35 * a0 + 0.75 * a1 + 1.00 * a2;
+    alpha = max(alpha, 0.65 * max(xAxis, zAxis));
+    alpha = clamp(alpha, 0.0, 1.0) * fade;
 
-    cell = vec2(1.0) - abs(clamp(mod(WorldPos.xz, GridCellSizeLOD2) / dudv, 0.0, 1.0) * 2.0 - vec2(1.0));
-    float LOD_2a = max(cell.x, cell.y);
-
-    float LOD_fade = fract(LOD);
-
-    vec4 Colour;
-
-    if (LOD_2a > 0.0){
-        Colour = gGridColourThick;
-        Colour.a *= LOD_2a;
-    }
-    else {
-        if (LOD_1a > 0.0) {
-            Colour = mix(gGridColourThick, gGridColourThin, LOD_fade);
-            Colour.a *= LOD_1a;
-        }
-        else {
-            Colour = gGridColourThin;
-            Colour.a *= (LOD_0a * (1.0 - smoothstep(0.0, 1.0, LOD_fade)));
-        }
-    }
-
-    float OpacityFalloff = 1.0 - clamp((length(WorldPos.xz - gCameraWorldPos.xz) / gGridSize), 0.0, 1.0);
-    Colour.a *= OpacityFalloff;
-
-    FragColour = Colour;
+    FragColour = vec4(rgb, alpha);
 }

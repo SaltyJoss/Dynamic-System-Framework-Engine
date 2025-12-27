@@ -315,6 +315,9 @@
     <ClInclude Include="include\Scene\SimulationManager.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="RenderPreeset.h">
+      <Filter>Header Files\include\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

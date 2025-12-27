@@ -178,6 +178,7 @@
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
+    <ClInclude Include="RenderPreeset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\External\GLAD\glad.c">
