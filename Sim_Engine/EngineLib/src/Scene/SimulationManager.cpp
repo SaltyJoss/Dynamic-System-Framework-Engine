@@ -99,8 +99,7 @@ namespace gui{
 // --------------------------------------------------
 //				    LIGHT & SKYBOX
 // --------------------------------------------------
-	void simManager::loadNewHDR(const std::string& path)
-	{
+	void simManager::loadNewHDR(const std::string& path) {
 		LOG_INFO("Loading new HDR: %s", path.c_str());
 		D_INFO("Loading new HDR: %s", path.c_str());
 
@@ -118,10 +117,19 @@ namespace gui{
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 
 		_activeHDRPath = path;
-		_hdrUserOverride = true;
 
 		LOG_INFO("HDR updated successfully.");
 		D_SUCCESS("Loaded HDR successfully.");
+	}
+
+	void simManager::loadNewHDR_UI(const std::string& path) {
+		loadNewHDR(path);
+		_hdrUserOverride = true;
+	}
+
+	void simManager::loadNewHDR_Preset(const std::string& path) {
+		loadNewHDR(path);
+		_hdrUserOverride = false;
 	}
 
 // --------------------------------------------------
@@ -250,7 +258,7 @@ namespace gui{
 		if (_settingsCurrent.shadows) { ShadowPass(); }
 
 		_frameBuffer->bind();
-
+		glClearColor(_clearColour.r, _clearColour.g, _clearColour.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
@@ -490,8 +498,15 @@ namespace gui{
 //			 INTERNAL REDNDERING PIPELINE
 // --------------------------------------------------
 	void simManager::InitShadowResource(int baseRes) {
+		if (_shadowsInit) {
+			glDeleteFramebuffers(NUM_CASCADES, _cascadeFBO);
+			glDeleteTextures(NUM_CASCADES, _cascadeDepth);
+		}
+
 		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
 		glGenTextures(NUM_CASCADES, _cascadeDepth);
+
+		_shadowsInit = true;
 
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			const int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
@@ -583,7 +598,11 @@ namespace gui{
 				shader->setFlt1(0.85f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 			}
+
+			_checkerPlane->render();
 		}
+
+		shader->setBool(false, "isFloor");
 
 		// Only PBR know about cascades & those uniforms
 		if (currentShaderMode == ShaderMode::PBR) {
@@ -600,6 +619,7 @@ namespace gui{
 		// Camera / SunLight / light common to all mesh shaders
 		_camera->update(shader);
 		_light->update(shader);
+		_sunLight->update(shader);
 
 		for (auto& obj : _objects) {
 			if (!obj || !obj->getMesh()) continue;
@@ -625,7 +645,7 @@ namespace gui{
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(_light->getColour(), "albedo");
+				shader->setVec3(_sunLight->getColour(), "albedo");
 				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
 				shader->setFlt1(1.0f, "lightIntensity");
@@ -633,14 +653,14 @@ namespace gui{
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(_light->getColour(), "albedo");
+				shader->setVec3(glm::vec3(0.75f), "albedo");
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 
-				//shader->setVec3(glm::normalize(_light->getDirection()), "lightDirection");
-				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
-				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(glm::normalize(_sunLight->getDirection()), "lightDirection");
+				shader->setFlt1(_sunLight->getIntensity(), "lightIntensity");
+				shader->setVec3(_sunLight->getColour(), "lightColour");
 				shader->setVec3(_camera->getPosition(), "camPos");
 
 				shader->setInt1(0, "irradianceMap");
@@ -668,7 +688,6 @@ namespace gui{
 			obj->getMesh()->render();
 		}
 	}
-
 
 	void simManager::ShadowPass() {
 		float nearPlane = _camera->getNear();
@@ -719,7 +738,7 @@ namespace gui{
 	glm::mat4 simManager::LightSpaceMatrix(float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
-		glm::vec3 lightDir = glm::normalize(_light->getDirection());
+		glm::vec3 lightDir = glm::normalize(_sunLight->getDirection());
 
 		// Fake camera position far along direction
 		glm::vec3 lightPos = -lightDir * 50.0f;
@@ -754,8 +773,7 @@ namespace gui{
 		// Cascade radius (half-size of the bounding sphere)
 		float radius = glm::length(glm::vec3(maxX - minX, maxY - minY, 0.0f)) * 0.5f;
 
-		// (ShadowPass uses 4096 >> index, so we assume highest = 4096)
-		int shadowMapResolution = 4096;
+		int shadowMapResolution = _settingsCurrent.shadowMapRes;
 
 		// The size of one texel in world-space
 		float worldUnitsPerTexel = (radius * 2.0f) / shadowMapResolution;
@@ -794,8 +812,11 @@ namespace gui{
 		return "Engine/assets/hdr/studio_small_03_4k.hdr";
 	}	
 
-	void simManager::applyRenderSettings(const render::RenderSettings& s) {
+	void simManager::applyRenderSettings(const render::RenderSettings& s) { applyRenderProfile(s, _lookCurrent); }
+
+	void simManager::applyRenderProfile(const render::RenderSettings& s, render::LookPreset l) {
 		const bool first = !_settingsValid;
+		const bool lookChanged = first || l != _lookCurrent;
 
 		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
 
@@ -806,7 +827,29 @@ namespace gui{
 			D_INFO("Shadow settings changed -> shadow resources re-initialised.");
 		}
 
+		if (lookChanged && !_hdrUserOverride) {
+			const std::string hdr = getDefaultHDR(l);
+			if (hdr != _activeHDRPath) {
+				loadNewHDR_Preset(hdr);
+				LOG_INFO("Preset HDR applied -> %s", hdr.c_str());
+				D_INFO("Preset HDR applied -> %s", hdr.c_str());
+			}
+		}
+
+		_lookCurrent = l;
 		_settingsCurrent = s;
+
+		if (lookChanged) {
+			if (l == render::LookPreset::Studio) {
+				skyboxEnabled = false;
+				_clearColour = glm::vec3(0.97f);
+			}
+			else {
+				skyboxEnabled = true;
+				_clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
+			}
+		}
+
 		_settingsValid = true;
 	}
 
@@ -901,7 +944,6 @@ namespace gui{
 		}
 	}
 
-
 	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
 		glm::vec2 pos2d{ x, y };
 		glm::vec2 delta = pos2d - _lastMousePos;
@@ -928,7 +970,6 @@ namespace gui{
 		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
 		else if (ctrlMode == ControlMode::Object && _mesh) obj->transform.position.z += (float)delta * 0.1f;
 	}
-
 
 	void gui::simManager::resetMouseDelta() { _firstMouse = true; }
 }

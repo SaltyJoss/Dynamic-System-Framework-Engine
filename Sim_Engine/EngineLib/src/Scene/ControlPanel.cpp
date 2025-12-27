@@ -89,7 +89,7 @@ namespace gui {
 
 				if (ImGui::MenuItem("Apply Settings")) {
 					auto settings = render::MakeSettings(l, q);
-                    _sim->applyRenderSettings(settings);
+                    _sim->applyRenderProfile(settings, l);
                     LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
                 }
 
@@ -193,7 +193,7 @@ namespace gui {
         if (_hdrLoad.HasSelected()) {
             auto file_path = _hdrLoad.GetSelected().string();
             _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
-            _sim->loadNewHDR(file_path);
+            _sim->loadNewHDR_UI(file_path);
             LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
 			D_SUCCESS("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();

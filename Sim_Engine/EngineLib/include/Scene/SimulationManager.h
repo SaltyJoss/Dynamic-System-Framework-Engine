@@ -278,7 +278,10 @@ namespace gui {
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
+
         void loadNewHDR(const std::string& path);
+        void loadNewHDR_UI(const std::string& path);
+        void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
@@ -322,6 +325,7 @@ namespace gui {
 
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
         void applyRenderSettings(const render::RenderSettings& s);
+        void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
 		void resetHDRToPreset();
         void reloadAllShaders();
 
@@ -407,6 +411,7 @@ namespace gui {
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};
 		render::LookPreset _lookCurrent = render::LookPreset::Studio;
+        glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
         bool _settingsValid = false;
 
         std::unique_ptr<render::IBL> _ibl;
@@ -422,8 +427,9 @@ namespace gui {
 		// Shadow Mapping
         static constexpr int NUM_CASCADES = 2;
 
-        GLuint _cascadeFBO[NUM_CASCADES];
-        GLuint _cascadeDepth[NUM_CASCADES];
+        bool _shadowsInit = false;
+        GLuint _cascadeFBO[NUM_CASCADES]{};
+        GLuint _cascadeDepth[NUM_CASCADES]{};
         glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
 
         float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
