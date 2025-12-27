@@ -259,7 +259,7 @@ namespace gui{
 			updateRobotKinematics(base);
 		}
 
-		//WorldGridRender();
+		WorldGridRender();
 		MeshRender();
 
 		if (skyboxEnabled)
@@ -532,6 +532,9 @@ namespace gui{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(-1.0f, -1.0f);
+
 		_worldGridShader->use();
 		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
@@ -539,6 +542,7 @@ namespace gui{
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDepthMask(GL_TRUE);
 	}
 
@@ -734,7 +738,6 @@ namespace gui{
 		// Cascade radius (half-size of the bounding sphere)
 		float radius = glm::length(glm::vec3(maxX - minX, maxY - minY, 0.0f)) * 0.5f;
 
-		// Pick resolution based on cascade level (match your ShadowPass())
 		// (ShadowPass uses 4096 >> index, so we assume highest = 4096)
 		int shadowMapResolution = 4096;
 
