@@ -234,6 +234,7 @@
 #include "FpsCounter.h"
 #include "Robots/RobotModel.h"
 #include "Platform/Logger.h"
+#include "Scene/RenderPreset.h"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -283,6 +284,7 @@ namespace gui {
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
 
+		std::string getDefaultHDR(render::LookPreset p) const;
         glm::vec3 getBackgroundColour() const { return _backgroundColour; }
         float getBackgroundAlpha() const { return _backgroundAlpha; }
         float getPlaneHeight() const { return planeHeight; }
@@ -315,10 +317,12 @@ namespace gui {
         enum class ShaderMode {
             Basic = 0,
             Lit = 1,
-            PBR = 2,
+            PBR = 2
         };
 
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
+        void applyRenderSettings(const render::RenderSettings& s);
+		void resetHDRToPreset();
         void reloadAllShaders();
 
 		// Rendering Entry Points
@@ -366,7 +370,7 @@ namespace gui {
 		// Rendering Pipeline Methods
         void MeshRender();
         void WorldGridRender();
-        void InitShadowResource();
+        void InitShadowResource(int baseRes);
         void InitIBL();
         void ShadowPass();
         void SkyboxRender();
@@ -401,8 +405,15 @@ namespace gui {
 
 
 		// Environment & Lighting
+        render::RenderSettings _settingsCurrent{};
+		render::LookPreset _lookCurrent = render::LookPreset::Studio;
+        bool _settingsValid = false;
+
         std::unique_ptr<render::IBL> _ibl;
         std::unique_ptr<render::SkyboxRenderer> _skybox;
+
+        std::string _activeHDRPath;
+		bool _hdrUserOverride = false;
 
         // current selection
         int _currentShaderIndex = 1; // 1 = lit by default

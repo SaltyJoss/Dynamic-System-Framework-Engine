@@ -41,6 +41,7 @@ namespace gui {
     void ControlPanel::render(simManager* sceneView) {
         // Initialize pointers to scene scene
         _sim = sceneView;
+        fov = _sim->getCamera()->getFOV();
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
         _sunLight = _sim->getSunLight();
@@ -66,10 +67,33 @@ namespace gui {
                     _sim->resetView();
                     LOG_INFO("Scene view reset to default position and orientation.");
                 }
+                if (ImGui::MenuItem("Reset HDR")) {
+                    _sim->resetHDRToPreset();
+                }
                 if (ImGui::MenuItem("Properties")) {
                     // Placeholder for future properties dialog
                 }
                 ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Render")) {
+                if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) { l = render::LookPreset::Studio; }
+                if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) { l = render::LookPreset::Cinematic; }
+
+				ImGui::Separator();
+
+                if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) { q = render::QualityPreset::Low; }
+                if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) { q = render::QualityPreset::Medium; }
+                if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) { q = render::QualityPreset::High; }
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Apply Settings")) {
+					auto settings = render::MakeSettings(l, q);
+                    _sim->applyRenderSettings(settings);
+                    LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                }
+
+				ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Robotic Arms")) {
                 if (ImGui::MenuItem("Select Model")) {
@@ -77,7 +101,6 @@ namespace gui {
                 }
                 ImGui::EndMenu();
             }
-
             if (ImGui::BeginMenu("Shader"))
             {
                 // Reload shader button

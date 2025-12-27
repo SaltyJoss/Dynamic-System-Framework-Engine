@@ -85,7 +85,7 @@ namespace gui{
 		_checkerPlane = createCheckerPlane(50.0f);
 		planeY = 2.5f;
 
-		InitShadowResource();
+		InitShadowResource(2048); // shadow map resolution default 2048
 		InitIBL();
 	}
 
@@ -116,6 +116,9 @@ namespace gui{
 
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
+
+		_activeHDRPath = path;
+		_hdrUserOverride = true;
 
 		LOG_INFO("HDR updated successfully.");
 		D_SUCCESS("Loaded HDR successfully.");
@@ -244,7 +247,7 @@ namespace gui{
 	void simManager::render() {
 		updatePhysics(dt);
 		_fpsCounter.update();
-		ShadowPass();
+		if (_settingsCurrent.shadows) { ShadowPass(); }
 
 		_frameBuffer->bind();
 
@@ -258,8 +261,9 @@ namespace gui{
 			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
 			updateRobotKinematics(base);
 		}
+		
+		if (_settingsCurrent.grid) { WorldGridRender(); }
 
-		WorldGridRender();
 		MeshRender();
 
 		if (skyboxEnabled)
@@ -273,12 +277,11 @@ namespace gui{
 			glDepthFunc(GL_LESS);
 		}
 
-		_axisOrientator->render(view);
+		if (_settingsCurrent.axisOrientator) { _axisOrientator->render(view); }
 
 		_frameBuffer->unbind();
 
 		ImGui::Begin("Sim Engine");
-
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		uint64_t textureID = _frameBuffer->getTexture();
@@ -486,17 +489,16 @@ namespace gui{
 // --------------------------------------------------
 //			 INTERNAL REDNDERING PIPELINE
 // --------------------------------------------------
-	void simManager::InitShadowResource() {
-		int shadowRes[NUM_CASCADES] = { 4096, 4096 };
-
+	void simManager::InitShadowResource(int baseRes) {
 		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
 		glGenTextures(NUM_CASCADES, _cascadeDepth);
 
 		for (int i = 0; i < NUM_CASCADES; i++) {
+			const int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
+
 			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
-				shadowRes[i], shadowRes[i], 0,
-				GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+				res, res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -504,15 +506,18 @@ namespace gui{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
 			float border[] = { 1,1,1,1 };
 			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-				GL_TEXTURE_2D, _cascadeDepth[i], 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _cascadeDepth[i], 0);
 
 			glDrawBuffer(GL_NONE);
 			glReadBuffer(GL_NONE);
+			
+			assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE); // sanity check -> should assert true
+		
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -526,8 +531,6 @@ namespace gui{
 	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
-		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -563,11 +566,24 @@ namespace gui{
 
 		if (!shader) {
 			LOG_ERROR("Shader is NULL after switch!");
-
 			return;
 		}
 
 		shader->use();
+
+		if (_checkerPlane) {
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, glm::vec3(0.0f, planeY, 0.0f));
+			shader->setMat4(model, "model");
+			shader->setBool(true, "isFloor");
+
+			if (currentShaderMode == ShaderMode::PBR) {
+				shader->setVec3(glm::vec3(0.92f), "albedo");
+				shader->setFlt1(0.0f, "metallic");
+				shader->setFlt1(0.85f, "roughness");
+				shader->setFlt1(1.0f, "ao");
+			}
+		}
 
 		// Only PBR know about cascades & those uniforms
 		if (currentShaderMode == ShaderMode::PBR) {
@@ -670,8 +686,8 @@ namespace gui{
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
-			int baseRes = 4096;
-			int res = baseRes >> i;   // 4096, 4096
+			int baseRes = _settingsCurrent.shadowMapRes;
+			int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
 			glViewport(0, 0, res, res);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
@@ -766,6 +782,38 @@ namespace gui{
 
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 		_skybox->render(projection, view);
+	}
+
+	std::string simManager::getDefaultHDR(render::LookPreset p) const {
+		switch (p) {
+			case render::LookPreset::Studio:
+				return "Engine/assets/hdr/studio_small_03_4k.hdr";
+			case render::LookPreset::Cinematic:
+				return "Engine/assets/hdr/cinematic_01_4k.hdr";
+		}
+		return "Engine/assets/hdr/studio_small_03_4k.hdr";
+	}	
+
+	void simManager::applyRenderSettings(const render::RenderSettings& s) {
+		const bool first = !_settingsValid;
+
+		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
+
+		if (shadowResChanged) {
+			// Re-initialise shadow resources
+			InitShadowResource(s.shadowMapRes);
+			LOG_INFO("Shadow settings changed -> shadow resources re-initialised.");
+			D_INFO("Shadow settings changed -> shadow resources re-initialised.");
+		}
+
+		_settingsCurrent = s;
+		_settingsValid = true;
+	}
+
+	void simManager::resetHDRToPreset() {
+		_hdrUserOverride = false;
+		const std::string hdr = getDefaultHDR(_lookCurrent);
+		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 
 	void simManager::reloadAllShaders()

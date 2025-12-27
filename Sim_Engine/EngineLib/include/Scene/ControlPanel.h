@@ -170,6 +170,11 @@ namespace gui {
         bool autoScroll = true;
         bool scrollToBottom = false;
 
+		// Render Presets
+        render::LookPreset l = render::LookPreset::Studio;
+        render::QualityPreset q = render::QualityPreset::Medium;
+        
+
         // Internal states
         bool simulationRunning = false;
 		bool diagRunning = false;
@@ -190,7 +195,7 @@ namespace gui {
 		float diagTime = 0.0f;    // current diagnostic time
 
         int povMode = 0;
-        float fov = _sim->getCamera()->getFOV();
+        float fov = 60.0f;
 
         // Internal Physics
         float velocity = 0.0f;
