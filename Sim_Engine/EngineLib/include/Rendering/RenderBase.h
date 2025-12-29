@@ -172,7 +172,7 @@ namespace render {
 		int32_t _height = 0;
 
 		uint32_t _msaaFBO = 0;
-		uint32_t _msaaColor = 0;     // GL_TEXTURE_2D_MULTISAMPLE
+		uint32_t _msaaColour = 0;     // GL_TEXTURE_2D_MULTISAMPLE
 		uint32_t _msaaDepthRBO = 0;  // renderbuffer
 		int _samples = 1;
 	};

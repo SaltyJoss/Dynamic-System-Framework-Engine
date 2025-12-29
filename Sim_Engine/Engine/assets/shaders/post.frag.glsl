@@ -4,6 +4,7 @@ in vec2 uv;
 out vec4 FragColour;
 
 uniform sampler2D hdrScene;
+uniform vec2 uRes;
 uniform float exposure = 1.0;
 
 vec3 tonemapReinhard(vec3 x) { return x / (x + vec3(1.0)); }

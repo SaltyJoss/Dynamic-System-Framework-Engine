@@ -44,10 +44,10 @@ namespace gui{
 		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(3840, 2160, _settingsCurrent.msaaSamples);
+		_frameBuffer->createBuffers(1920, 1080, _settingsCurrent.msaaSamples);
 
 		_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_postBuffer->createBuffers(3840, 2160, 1);
+		_postBuffer->createBuffers(1920, 1080, 1);
 
 		_postShader = std::make_unique<shaders::Shader>();
 		_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");

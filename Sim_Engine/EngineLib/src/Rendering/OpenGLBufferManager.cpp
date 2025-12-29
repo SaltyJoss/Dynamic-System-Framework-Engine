@@ -140,10 +140,10 @@ namespace render {
 			glGenFramebuffers(1, &_msaaFBO);
 			glBindFramebuffer(GL_FRAMEBUFFER, _msaaFBO);
 
-			glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &_msaaColor);
-			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, _msaaColor);
+			glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &_msaaColour);
+			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, _msaaColour);
 			glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, _samples, GL_RGBA8, _width, _height, GL_TRUE);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, _msaaColor, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, _msaaColour, 0);
 
 			glGenRenderbuffers(1, &_msaaDepthRBO);
 			glBindRenderbuffer(GL_RENDERBUFFER, _msaaDepthRBO);
@@ -169,7 +169,7 @@ namespace render {
 		if (_FBO) {
 			LOG_INFO("Deleting framebuffer buffers");
 			if (_msaaFBO) glDeleteFramebuffers(1, &_msaaFBO);
-			if (_msaaColor) glDeleteTextures(1, &_msaaColor);
+			if (_msaaColour) glDeleteTextures(1, &_msaaColour);
 			if (_msaaDepthRBO) glDeleteRenderbuffers(1, &_msaaDepthRBO);
 
 			if (_FBO) glDeleteFramebuffers(1, &_FBO);
@@ -177,7 +177,7 @@ namespace render {
 			if (_depthID) glDeleteTextures(1, &_depthID);
 
 			_msaaFBO = 0;
-			_msaaColor = 0;
+			_msaaColour = 0;
 			_msaaDepthRBO = 0;
 
 			_FBO = 0;
