@@ -1,27 +1,40 @@
 #version 460 core
 
-in vec2 GridXZ;      // stable pattern space (local)
-in vec3 WorldPos;    // world space (camera centered)
+in vec2 GridXZ;
+in vec3 WorldPos;
 
 layout(location = 0) out vec4 FragColour;
 
-uniform vec3 gCameraWorldPos;
-uniform float gGridSize = 1000.0;
+uniform float gGridMinPixelsBetweenCells = 2.0;
 uniform float gGridCellSize = 0.25;
+uniform float gGridSize = 1000.0;
 
-uniform vec4 gGridColourThin  = vec4(0.55, 0.55, 0.55, 1.0);
+uniform vec3 gCameraWorldPos;
+uniform vec4 gGridColourThin = vec4(0.55, 0.55, 0.55, 1.0);
 uniform vec4 gGridColourThick = vec4(0.15, 0.15, 0.15, 1.0);
 
-float gridLine(vec2 xz, float spacing)
+float worldUnitsPerPixel(vec2 worldXZ)
 {
-    vec2 p = xz / spacing;
-    vec2 w = fwidth(p);
-    vec2 a = abs(fract(p - 0.5) - 0.5) / w;
-    return 1.0 - clamp(min(a.x, a.y), 0.0, 1.0);
+    float dx = length(vec2(dFdx(worldXZ.x), dFdy(worldXZ.x)));
+    float dz = length(vec2(dFdx(worldXZ.y), dFdy(worldXZ.y)));
+    return max(max(dx, dz), 1e-6);
 }
 
-void main()
+float gridAA(vec2 worldXZ, float spacing)
 {
+    vec2 p = worldXZ / spacing;
+    vec2 g = abs(fract(p - 0.5) - 0.5) / fwidth(p);
+    float line = 1.0 - clamp(min(g.x, g.y), 0.0, 1.0);
+    return line;
+}
+
+float visibility(float spacing, float wupp)
+{
+    float ratio = (wupp * gGridMinPixelsBetweenCells) / spacing;
+    return 1.0 - smoothstep(1.0, 2.0, ratio);
+}
+
+void main() {
     // Pattern uses GridXZ (stable)
     vec2 xz = GridXZ;
 
@@ -29,9 +42,9 @@ void main()
     float s1 = gGridCellSize * 10.0;
     float s2 = gGridCellSize * 100.0;
 
-    float a0 = gridLine(xz, s0);
-    float a1 = gridLine(xz, s1);
-    float a2 = gridLine(xz, s2);
+    float a0 = gridAA(xz, s0);
+    float a1 = gridAA(xz, s1);
+    float a2 = gridAA(xz, s2);
 
     // Axes should be in WORLD space, not local pattern space
     vec2 worldXZ = WorldPos.xz;

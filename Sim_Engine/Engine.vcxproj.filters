@@ -25,6 +25,9 @@
     <Filter Include="Resource Files\shaders\basic">
       <UniqueIdentifier>{028e6b10-e52a-4d04-9182-b9d818947368}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\Post">
+      <UniqueIdentifier>{e26424c3-6dd6-41e9-9493-6aa36e9e79b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl">
@@ -80,6 +83,12 @@
     </None>
     <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl">
       <Filter>Resource Files\shaders\basic</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\post.vert.glsl">
+      <Filter>Resource Files\shaders\Post</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\post.frag.glsl">
+      <Filter>Resource Files\shaders\Post</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -114,6 +114,8 @@ xcopy "$(ProjectDir)External\MathLib\$(Configuration)\*.dll" "$(TargetDir)" /Y</
     <None Include="Engine\assets\shaders\mesh_basic.frag.glsl" />
     <None Include="Engine\assets\shaders\mesh_lit.frag.glsl" />
     <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl" />
+    <None Include="Engine\assets\shaders\post.frag.glsl" />
+    <None Include="Engine\assets\shaders\post.vert.glsl" />
     <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
     <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />

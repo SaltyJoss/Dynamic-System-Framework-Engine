@@ -46,6 +46,14 @@ namespace gui{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
 		_frameBuffer->createBuffers(3840, 2160);
 
+		_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
+		_postBuffer->createBuffers(3840, 2160);
+
+		_postShader = std::make_unique<shaders::Shader>();
+		_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
+
+		glGenVertexArrays(1, &_fullscreenVAO);
+
 		// Shader Types A
 		_shaderBasic = std::make_shared<shaders::Shader>();
 		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
@@ -54,7 +62,7 @@ namespace gui{
 		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
 
 		_shaderPBR = std::make_shared<shaders::Shader>();
-		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
 		_skybox = std::make_unique<render::SkyboxRenderer>();
 		
@@ -84,15 +92,16 @@ namespace gui{
 		planeY = 2.5f;
 
 		InitShadowResource(2048); // shadow map resolution default 2048
-		InitWorldGridVAO();
 		InitIBL();
+
+		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Medium);
+		applyRenderProfile(s, render::LookPreset::Studio);
 	}
 
 	simManager::~simManager()
 	{
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
 		if (_mesh) _mesh->clean();
-		if (_checkerPlane) _checkerPlane->clean();
 	}
 
 // --------------------------------------------------
@@ -291,12 +300,29 @@ namespace gui{
 
 		_frameBuffer->unbind();
 
+		_postBuffer->bind();
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		_postShader->use();
+		_postShader->setInt1(0, "hdrScene");
+		_postShader->setFlt1(_settingsCurrent.exposure, "exposure");
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _frameBuffer->getTexture());
+
+		glBindVertexArray(_fullscreenVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+
+		_postBuffer->unbind();
+
 		ImGui::Begin("Sim Engine");
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		uint64_t textureID = _frameBuffer->getTexture();
+		uint64_t textureID = _postBuffer->getTexture();
 		ImGui::Image((void*)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
 		ImGui::End();
 	}
 
@@ -514,8 +540,8 @@ namespace gui{
 			const int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
 
 			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
-				res, res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
+				res, res, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -530,37 +556,9 @@ namespace gui{
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _cascadeDepth[i], 0);
 
-			glDrawBuffer(GL_NONE);
-			glReadBuffer(GL_NONE);
-			
-			assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE); // sanity check -> should assert true
-		
+			glDrawBuffer(GL_NONE);		
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	void simManager::InitWorldGridVAO() {
-		GLuint VBO;
-		float quadVerts[] = {
-			-1.0f, 0.0f, -1.0f,
-			 1.0f, 0.0f, -1.0f,
-			 1.0f, 0.0f,  1.0f,
-			 1.0f, 0.0f,  1.0f,
-			-1.0f, 0.0f,  1.0f,
-			-1.0f, 0.0f, -1.0f
-		};
-
-		glGenVertexArrays(1, &_worldGridVAO);
-		glGenBuffers(1, &VBO);
-
-		glBindVertexArray(_worldGridVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
-
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-		glBindVertexArray(0);
 	}
 
 	void simManager::InitIBL()
@@ -572,25 +570,34 @@ namespace gui{
 	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
-
 		glDepthMask(GL_FALSE);
-		glDisable(GL_BLEND);
+		
+		
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		glDisable(GL_CULL_FACE);
 
 		_worldGridShader->use();
 		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
-		_worldGridShader->setFlt1(0.01f, "gGridY");
+		_worldGridShader->setFlt1(1000.0f, "gGridSize");
 
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
+		glDisable(GL_BLEND);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 	}
 
 	void simManager::MeshRender() {
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+
 		shaders::Shader* shader = nullptr;
 
 		switch (currentShaderMode) {
@@ -723,13 +730,6 @@ namespace gui{
 
 			_shadowShader->use();
 			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
-
-			// checker plane
-			if (_checkerPlane) {
-				glm::mat4 model(1.0f);
-				_shadowShader->setMat4(model, "model");
-				_checkerPlane->render();
-			}
 
 			// main mesh
 			for (auto& obj : _objects) {
@@ -872,7 +872,7 @@ namespace gui{
 	{
 		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
 		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
-		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
 		LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");

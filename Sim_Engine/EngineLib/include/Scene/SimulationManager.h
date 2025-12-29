@@ -373,7 +373,6 @@ namespace gui {
     private:       
 		// Rendering Pipeline Methods
         void MeshRender();
-        void InitWorldGridVAO();
         void WorldGridRender();
         void InitShadowResource(int baseRes);
         void InitIBL();
@@ -385,11 +384,16 @@ namespace gui {
 
         // Core Rendering State
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
+        std::unique_ptr<render::OpenGLFrameBuffer> _postBuffer;
+        std::unique_ptr<shaders::Shader> _postShader;
+        GLuint _fullscreenVAO = 0;
+
         std::shared_ptr<shaders::Shader> _shaderBasic;
         std::shared_ptr<shaders::Shader> _shaderLit;
         std::shared_ptr<shaders::Shader> _shaderPBR;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
+		GLuint _worldGridVAO = 0;
 
 
         // Scene Objects
@@ -473,8 +477,6 @@ namespace gui {
         static constexpr float planeHeight = -2.5f;
         float planeY = planeHeight;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
-
-        unsigned int _worldGridVAO = 0;
     };
 }
 
