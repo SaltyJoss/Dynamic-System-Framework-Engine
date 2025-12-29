@@ -166,7 +166,6 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 
 void main()
 {
-
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
     vec3 L = normalize(lightPosition - WorldPos);
@@ -221,9 +220,8 @@ void main()
     vec3 ambient = (diffuseIBL + specularIBL) * ao;
     vec3 colour = ambient + Lo;
 
-FragColour = vec4(textureLod(prefilterMap, N, 0.0).rgb, 1.0);
-return;
-
+    FragColour = vec4(textureLod(prefilterMap, N, 0.0).rgb, 1.0);
+}
 
     // HAVING MASSIVE ISSUES WITH THIS PBR SHADER, SO IM TRYING DIFFERENT THINGS
 	// I DO NOT UNDERSTAND WHY IT'S NOT WORKING - IT SHOULD BE FINE (i think)

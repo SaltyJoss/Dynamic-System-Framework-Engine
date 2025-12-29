@@ -373,6 +373,7 @@ namespace gui {
     private:       
 		// Rendering Pipeline Methods
         void MeshRender();
+        void InitWorldGridVAO();
         void WorldGridRender();
         void InitShadowResource(int baseRes);
         void InitIBL();

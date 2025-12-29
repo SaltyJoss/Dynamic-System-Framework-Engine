@@ -203,14 +203,6 @@ void main()
 {
     vec3 baseColour = albedo;
 
-	if (isFloor) {
-		vec2 p = WorldPos.xz / max(checkSize, 0.0001);
-		float c = mod(floor(p.x) + floor(p.y), 2.0);
-		baseColour = mix(colour1, colour2, c);
-	} else if (useTexture) {
-		baseColour = texture(albedoTex, TexCoords).rgb;
-	}
-
 	// Material properties (NaN avoidance)
 	float r = clamp(roughness, 0.05, 1.0);
 	float m = clamp(metallic, 0.0, 1.0);

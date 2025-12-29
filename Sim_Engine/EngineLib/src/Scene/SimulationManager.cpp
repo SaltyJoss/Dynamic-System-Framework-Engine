@@ -41,7 +41,7 @@ namespace gui{
 
 	simManager::simManager() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
-		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
+		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
 		_frameBuffer->createBuffers(3840, 2160);
@@ -54,7 +54,7 @@ namespace gui{
 		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
 
 		_shaderPBR = std::make_shared<shaders::Shader>();
-		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
 
 		_skybox = std::make_unique<render::SkyboxRenderer>();
 		
@@ -81,11 +81,10 @@ namespace gui{
 
 		_physics = std::make_unique<physics::PhysicsSystem>();
 
-		if (_checkerPlane) _checkerPlane->clean();
-		_checkerPlane = createCheckerPlane(50.0f);
 		planeY = 2.5f;
 
 		InitShadowResource(2048); // shadow map resolution default 2048
+		InitWorldGridVAO();
 		InitIBL();
 	}
 
@@ -258,9 +257,13 @@ namespace gui{
 		if (_settingsCurrent.shadows) { ShadowPass(); }
 
 		_frameBuffer->bind();
+		glViewport(0, 0, _size.x, _size.y);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+
 		glClearColor(_clearColour.r, _clearColour.g, _clearColour.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
 
 		glm::mat4 view = _camera->getViewMatrix();
 
@@ -284,7 +287,6 @@ namespace gui{
 		MeshRender();
 
 		if (_settingsCurrent.grid) { WorldGridRender(); }
-
 		if (_settingsCurrent.axisOrientator) { _axisOrientator->render(view); }
 
 		_frameBuffer->unbind();
@@ -537,36 +539,55 @@ namespace gui{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	void simManager::InitWorldGridVAO() {
+		GLuint VBO;
+		float quadVerts[] = {
+			-1.0f, 0.0f, -1.0f,
+			 1.0f, 0.0f, -1.0f,
+			 1.0f, 0.0f,  1.0f,
+			 1.0f, 0.0f,  1.0f,
+			-1.0f, 0.0f,  1.0f,
+			-1.0f, 0.0f, -1.0f
+		};
+
+		glGenVertexArrays(1, &_worldGridVAO);
+		glGenBuffers(1, &VBO);
+
+		glBindVertexArray(_worldGridVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+		glBindVertexArray(0);
+	}
+
 	void simManager::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
-		_ibl->init("Engine/assets/hdr/space-6.hdr");
+		_ibl->init("Engine/assets/hdr/default_white.hdr");
 	}
 
 	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
+
 		glDepthMask(GL_FALSE);
-
 		glDisable(GL_BLEND);
-
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-1.0f, -1.0f);
+		glDisable(GL_CULL_FACE);
 
 		_worldGridShader->use();
 		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
+		_worldGridShader->setFlt1(0.01f, "gGridY");
 
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
-
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
 	}
 
 	void simManager::MeshRender() {
@@ -590,23 +611,6 @@ namespace gui{
 		}
 
 		shader->use();
-
-		if (_checkerPlane) {
-			glm::mat4 model(1.0f);
-			model = glm::translate(model, glm::vec3(0.0f, planeY, 0.0f));
-			shader->setMat4(model, "model");
-			shader->setBool(true, "isFloor");
-
-			if (currentShaderMode == ShaderMode::PBR) {
-				shader->setVec3(glm::vec3(0.92f), "albedo");
-				shader->setFlt1(0.0f, "metallic");
-				shader->setFlt1(0.85f, "roughness");
-				shader->setFlt1(1.0f, "ao");
-			}
-
-			_checkerPlane->render();
-		}
-
 		shader->setBool(false, "isFloor");
 
 		// Only PBR know about cascades & those uniforms
@@ -810,11 +814,11 @@ namespace gui{
 	std::string simManager::getDefaultHDR(render::LookPreset p) const {
 		switch (p) {
 			case render::LookPreset::Studio:
-				return "Engine/assets/hdr/studio_small_03_4k.hdr";
+				return "Engine/assets/hdr/default_white.hdr";
 			case render::LookPreset::Cinematic:
 				return "Engine/assets/hdr/cinematic_01_4k.hdr";
 		}
-		return "Engine/assets/hdr/studio_small_03_4k.hdr";
+		return "Engine/assets/hdr/default_white.hdr";
 	}	
 
 	void simManager::applyRenderSettings(const render::RenderSettings& s) { applyRenderProfile(s, _lookCurrent); }
@@ -868,7 +872,7 @@ namespace gui{
 	{
 		_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
 		_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
-		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
+		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/fs_pbr.frag.glsl");
 
 		LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");
