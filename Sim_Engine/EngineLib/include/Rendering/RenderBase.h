@@ -157,7 +157,7 @@ namespace render {
 		// This was NOT working in previous version, so revised code with docs and research -> See OpenGLBufferManager
 		FrameBuffer() : _FBO{ 0 }, _depthID{ 0 } {}
 
-		virtual void createBuffers(int32_t width, int32_t height) = 0;
+		virtual void createBuffers(int32_t width, int32_t height, int samples) = 0;
 		virtual void deleteBuffers() = 0;
 		virtual void bind() = 0;
 		virtual void unbind() = 0;
@@ -170,6 +170,11 @@ namespace render {
 
 		int32_t _width = 0;
 		int32_t _height = 0;
+
+		uint32_t _msaaFBO = 0;
+		uint32_t _msaaColor = 0;     // GL_TEXTURE_2D_MULTISAMPLE
+		uint32_t _msaaDepthRBO = 0;  // renderbuffer
+		int _samples = 1;
 	};
 
 	class RenderContext {

@@ -44,10 +44,10 @@ namespace gui{
 		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(3840, 2160);
+		_frameBuffer->createBuffers(3840, 2160, _settingsCurrent.msaaSamples);
 
 		_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_postBuffer->createBuffers(3840, 2160);
+		_postBuffer->createBuffers(3840, 2160, 1);
 
 		_postShader = std::make_unique<shaders::Shader>();
 		_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
@@ -266,7 +266,12 @@ namespace gui{
 		if (_settingsCurrent.shadows) { ShadowPass(); }
 
 		_frameBuffer->bind();
-		glViewport(0, 0, _size.x, _size.y);
+
+		GLint vp[4];
+		glGetIntegerv(GL_VIEWPORT, vp);
+		LOG_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
+		D_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
+
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
@@ -321,8 +326,8 @@ namespace gui{
 		ImGui::Begin("Sim Engine");
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		uint64_t textureID = _postBuffer->getTexture();
-		ImGui::Image((void*)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		uint32_t textureID = _postBuffer->getTexture();
+		ImGui::Image((ImTextureID)(intptr_t)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		ImGui::End();
 	}
 
@@ -334,7 +339,10 @@ namespace gui{
 		_size = glm::ivec2(width, height);	// update internal size
 
 		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers(width, height);
+		_frameBuffer->createBuffers(width, height, _settingsCurrent.msaaSamples);
+
+		_postBuffer->deleteBuffers();
+		_postBuffer->createBuffers(width, height, 1);
 
 		// update camera aspect ratio
 		_camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
@@ -571,23 +579,25 @@ namespace gui{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
-		
-		
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glDisable(GL_CULL_FACE);
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
+		glDisable(GL_BLEND);
+
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(-0.2f, -0.2f);
 
 		_worldGridShader->use();
 		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
-		_worldGridShader->setFlt1(1000.0f, "gGridSize");
 
 		glBindVertexArray(_worldGridVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawArrays(GL_TRIANGLES, 0, 3); // fullscreen triangle = 3 verts
 		glBindVertexArray(0);
 
-		glDisable(GL_BLEND);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 	}

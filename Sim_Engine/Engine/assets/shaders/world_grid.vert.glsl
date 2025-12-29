@@ -22,7 +22,8 @@ const int Indices[6] = int[6](0, 1, 2, 0, 2, 3);
 void main()
 {
 	int Index = Indices[gl_VertexID];
-	vec3 vPos3 = Pos[Index] * gGridSize;	
+	vec3 local = Pos[Index] * gGridSize;	
+	vec3 vPos3 = local;
 
 //	vPos3.x += gCameraWorldPos.x;
 //	vPos3.z += gCameraWorldPos.z;
@@ -30,6 +31,5 @@ void main()
 
 	gl_Position = gVP * vec4(vPos3, 1.0);
 	WorldPos = vPos3;
-	GridXZ = vPos3.xz;
-
+	GridXZ = local.xz;
 }

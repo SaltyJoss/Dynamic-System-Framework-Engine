@@ -15,4 +15,5 @@ void main()
     col = tonemapReinhard(col);
     col = pow(col, vec3(1.0/2.2)); // Gamma to sRGB
     FragColour = vec4(col, 1.0);
+    //  FragColour = vec4(1, 0, 1, 1); -> debugging 
 }
