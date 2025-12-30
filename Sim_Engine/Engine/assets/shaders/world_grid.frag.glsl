@@ -5,7 +5,7 @@ in vec3 WorldPos;
 
 layout(location = 0) out vec4 FragColour;
 
-uniform float gGridMinPixelsBetweenCells = .0;
+uniform float gGridMinPixelsBetweenCells = 2.0;
 uniform float gGridCellSize = 0.25;
 uniform float gGridSize = 1000.0;
 
@@ -65,8 +65,8 @@ void main() {
     xAxis *= fade;
     zAxis *= fade;
 
-    float majorMask = max(a1, a2);
-    vec3 rgb = mix(gGridColourThin.rgb, gGridColourThick.rgb, majorMask);
+    float majorMask = max(a1, a2); // major grid lines
+    vec3 rgb = mix(gGridColourThin.rgb, gGridColourThick.rgb, majorMask); // base grid color
 
     // axis tint
     rgb = mix(rgb, vec3(0.75, 0.25, 0.25), xAxis * 0.6);

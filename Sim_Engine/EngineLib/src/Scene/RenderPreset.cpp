@@ -53,7 +53,7 @@ namespace render {
 		case QualityPreset::Ultra:
 			s.shadowMapRes = 8192;
 			s.shadowCascades = 4;
-			s.pcfKernel = 7;
+			s.pcfKernel = 7; // 7 gives better softness at high res
 			s.ssao = true;
 			s.ssaoResDiv = 1;
 			s.ssaoSamples = 64;
@@ -64,7 +64,7 @@ namespace render {
 			s.envIrradianceRes = 64;
 			s.msaaSamples = 8;
 			s.fxaa = false;
-			s.renderScale = 2.0f;
+			s.renderScale = 1.5f; // default is 1920x1080, so 1.5 = 2880x1620, 2.0 = 3840x2160
 			break;
 		}
 

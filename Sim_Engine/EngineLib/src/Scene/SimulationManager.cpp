@@ -41,13 +41,13 @@ namespace gui{
 
 	simManager::simManager() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
-		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
+		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(1920, 1080, _settingsCurrent.msaaSamples);
+		_frameBuffer->createBuffers(3840, 2160, _settingsCurrent.msaaSamples);
 
 		_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_postBuffer->createBuffers(1920, 1080, 1);
+		_postBuffer->createBuffers(3840, 2160, 1);
 
 		_postShader = std::make_unique<shaders::Shader>();
 		_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
@@ -849,13 +849,9 @@ namespace gui{
 		_lookCurrent = l;
 
 		if (msaaChanged) {
-			const int msaa = std::max(1, _settingsCurrent.msaaSamples);
-
-			_frameBuffer->deleteBuffers();
-			_frameBuffer->createBuffers(_size.x, _size.y, msaa);
-
-			LOG_INFO("MSAA setting changed -> Framebuffer re-created with %d samples.", msaa);
-			D_INFO("MSAA setting changed -> Framebuffer re-created with %d samples.", msaa);
+			rebuildRenderTargets();
+			LOG_INFO("MSAA setting changed -> render targets rebuilt.");
+			D_INFO("MSAA setting changed -> render targets rebuilt.");
 		}
 
 		if (lookChanged) {
@@ -883,10 +879,10 @@ namespace gui{
 		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
 
 		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers(_size.x, _size.y, msaa);
+		_frameBuffer->createBuffers(vpW, vpH, msaa);
 		
 		_postBuffer->deleteBuffers();
-		_postBuffer->createBuffers(_size.x, _size.y, 1);
+		_postBuffer->createBuffers(vpW, vpH, 1);
 
 		_camera->setAspect((float)vpW / (float)vpH);
 		

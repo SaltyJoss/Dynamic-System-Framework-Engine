@@ -76,22 +76,38 @@ namespace gui {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Render")) {
-                if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) { l = render::LookPreset::Studio; }
-                if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) { l = render::LookPreset::Cinematic; }
 
-				ImGui::Separator();
 
-                if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) { q = render::QualityPreset::Low; }
-                if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) { q = render::QualityPreset::Medium; }
-                if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) { q = render::QualityPreset::High; }
-				if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) { q = render::QualityPreset::Ultra; }
-
-				ImGui::Separator();
-
-				if (ImGui::MenuItem("Apply Settings")) {
-					auto settings = render::MakeSettings(l, q);
-                    _sim->applyRenderProfile(settings, l);
+                if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) { 
+                    l = render::LookPreset::Studio; 
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
                     LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+					D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                }
+                if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) { 
+                    l = render::LookPreset::Cinematic;
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                    LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                    D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                }
+
+				ImGui::Separator();
+
+                if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) { 
+                    q = render::QualityPreset::Low; 
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                }
+                if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) { 
+                    q = render::QualityPreset::Medium;
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                }
+                if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) { 
+                    q = render::QualityPreset::High; 
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                }
+                if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) {
+                    q = render::QualityPreset::Ultra;
+                    _sim->applyRenderProfile(render::MakeSettings(l, q), l);
                 }
 
 				ImGui::EndMenu();
