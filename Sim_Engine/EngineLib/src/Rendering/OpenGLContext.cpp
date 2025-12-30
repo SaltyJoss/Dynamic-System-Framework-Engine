@@ -67,6 +67,7 @@ namespace render {
 
 		glfwSwapInterval(1);
 		glfwSetWindowUserPointer(glWindow, window);
+		glfwSetWindowSizeLimits(glWindow, 800, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
 		glfwSetCursorPosCallback(glWindow, CursorPos_Callback);
 		glfwSetKeyCallback(glWindow, onKey_Callback);
 		glfwSetScrollCallback(glWindow, onScroll_Callback);

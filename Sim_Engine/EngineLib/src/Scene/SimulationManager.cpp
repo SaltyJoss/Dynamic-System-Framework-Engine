@@ -593,7 +593,7 @@ namespace gui{
 		_worldGridShader->setVec3(_camera->getPosition(), "gCameraWorldPos");
 
 		glBindVertexArray(_worldGridVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3); // fullscreen triangle = 3 verts
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
 		glDisable(GL_POLYGON_OFFSET_FILL);
