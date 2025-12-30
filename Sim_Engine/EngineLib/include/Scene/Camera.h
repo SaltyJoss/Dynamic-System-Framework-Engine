@@ -126,7 +126,7 @@ namespace scene {
 			_projection = glm::perspective(_FOV, _aspect, _near, _far);
 		}
 
-		float getFOV() const { return _FOV; }
+		float getFOV() const { return _FOV; } // in radians
 		void setFOV(float fov) {
 			_FOV = glm::radians(fov);
 			updateProjectionMatrix();

@@ -76,7 +76,6 @@ namespace window {
 
         // UI + scene
         _sim = std::make_unique<gui::simManager>();
-        _sim->resize(_width, _height);
         _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
 
@@ -93,10 +92,6 @@ namespace window {
     void GLWindow::onResize(int width, int height) {
         _width = width;
         _height = height;
-
-        _sim->resize(_width, _height);
-        LOG_INFO("Window resized: Width=%d, Height=%d", width, height);
-        render();
     }
 
 	// Miscellaneous

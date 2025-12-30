@@ -41,7 +41,7 @@ namespace gui{
 
 	simManager::simManager() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
-		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
+		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(1920, 1080)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
 		_frameBuffer->createBuffers(1920, 1080, _settingsCurrent.msaaSamples);
@@ -101,6 +101,7 @@ namespace gui{
 	simManager::~simManager()
 	{
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
+		if (_postBuffer) _postBuffer->deleteBuffers();
 		if (_mesh) _mesh->clean();
 	}
 
@@ -218,35 +219,6 @@ namespace gui{
 		return result;
 	}
 
-	std::shared_ptr<scene::Mesh> gui::simManager::createCheckerPlane(float size) {
-
-		auto plane = std::make_shared<scene::Mesh>();
-
-		std::vector<glm::vec3> pos = {
-			{-size, planeHeight, -size},
-			{ size, planeHeight, -size},
-			{ size, planeHeight,  size},
-			{-size, planeHeight,  size}
-		};
-
-		glm::vec3 normal(0.0f, 1.0f, 0.0f);
-
-		for (auto& p : pos) {
-			scene::VertexHolder vh(p, normal);
-			plane->addVertex(vh);
-		}
-
-		plane->addVertexIndex(0);
-		plane->addVertexIndex(1);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(3);
-		plane->addVertexIndex(0);
-
-		plane->init();
-		return plane;
-	}
-
 	void simManager::deleteObject(int index) {
 		if (index < 0 || index >= _objects.size()) return;
 
@@ -313,6 +285,7 @@ namespace gui{
 		_postShader->use();
 		_postShader->setInt1(0, "hdrScene");
 		_postShader->setFlt1(_settingsCurrent.exposure, "exposure");
+		_postShader->setVec2(glm::vec2(_size.x, _size.y), "uRes");
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, _frameBuffer->getTexture());
@@ -326,14 +299,29 @@ namespace gui{
 		ImGui::Begin("Sim Engine");
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		ImGuiIO& io = ImGui::GetIO();
+
+		int vpW = (int)(viewportPanelSize.x * io.DisplayFramebufferScale.x);
+		int vpH = (int)(viewportPanelSize.y * io.DisplayFramebufferScale.y);
+
+		vpW = (vpW < 1) ? 1 : vpW;
+		vpH = (vpH < 1) ? 1 : vpH;
+
+		float renderScale = _settingsCurrent.renderScale;
+
+		if (vpW != _size.x || vpH != _size.y) {
+			resize(vpW, vpH);
+		}
+
 		uint32_t textureID = _postBuffer->getTexture();
-		ImGui::Image((ImTextureID)(intptr_t)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		ImGui::Image((ImTextureID)(intptr_t)textureID, viewportPanelSize, ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 	}
 
 	void simManager::resize(int32_t width, int32_t height) {
 		// ignore zero sizes
 		if (width == 0 || height == 0) { return; }
+		_size = glm::ivec2(width, height);
 
 		glViewport(0, 0, width, height);	// set OpenGL viewport
 		_size = glm::ivec2(width, height);	// update internal size
@@ -345,7 +333,7 @@ namespace gui{
 		_postBuffer->createBuffers(width, height, 1);
 
 		// update camera aspect ratio
-		_camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
+		_camera->setAspect((float)width / (float)height);
 
 		LOG_INFO("Resized simManager to %dx%d", width, height);
 	}

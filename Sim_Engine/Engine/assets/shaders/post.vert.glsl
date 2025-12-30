@@ -2,12 +2,14 @@
 
 out vec2 uv;
 
+// Fullscreen triangle vertices
 const vec2 verts[3] = vec2[3](
     vec2(-1.0, -1.0),
     vec2( 3.0, -1.0),
     vec2(-1.0,  3.0)
 );
 
+// Main vertex shader entry point
 void main()
 {
     vec2 position = verts[gl_VertexID];

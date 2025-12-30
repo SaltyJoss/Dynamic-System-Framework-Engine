@@ -84,6 +84,7 @@ namespace gui {
                 if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) { q = render::QualityPreset::Low; }
                 if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) { q = render::QualityPreset::Medium; }
                 if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) { q = render::QualityPreset::High; }
+				if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) { q = render::QualityPreset::Ultra; }
 
 				ImGui::Separator();
 

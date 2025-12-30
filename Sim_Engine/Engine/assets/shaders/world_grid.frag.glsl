@@ -13,6 +13,7 @@ uniform vec3 gCameraWorldPos;
 uniform vec4 gGridColourThin = vec4(0.55, 0.55, 0.55, 1.0);
 uniform vec4 gGridColourThick = vec4(0.15, 0.15, 0.15, 1.0);
 
+// Compute world units per pixel at given world XZ position
 float worldUnitsPerPixel(vec2 worldXZ)
 {
     float dx = length(vec2(dFdx(worldXZ.x), dFdy(worldXZ.x)));
@@ -20,6 +21,7 @@ float worldUnitsPerPixel(vec2 worldXZ)
     return max(max(dx, dz), 1e-6);
 }
 
+// Anti-aliased grid line computation
 float gridAA(vec2 worldXZ, float spacing)
 {
     vec2 p = worldXZ / spacing;
@@ -28,12 +30,14 @@ float gridAA(vec2 worldXZ, float spacing)
     return line;
 }
 
+// Compute visibility based on spacing and world units per pixel
 float visibility(float spacing, float wupp)
 {
     float ratio = (wupp * gGridMinPixelsBetweenCells) / spacing;
     return 1.0 - smoothstep(1.0, 2.0, ratio);
 }
 
+// Main fragment shader entry point
 void main() {
     // Pattern uses GridXZ (stable)
     vec2 xz = GridXZ;

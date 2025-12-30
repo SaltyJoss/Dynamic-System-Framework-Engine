@@ -115,6 +115,11 @@ namespace shaders {
 		glUniform3f(matLoc, a, b, c);
 	}
 
+	void Shader::setVec2(const glm::vec2& vec2, const std::string& name) {
+		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
+		glProgramUniform2fv(getProgramID(), matLoc, 1, glm::value_ptr(vec2));
+	}
+
 	void Shader::setVec3(const glm::vec3& vec3, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glProgramUniform3fv(getProgramID(), matLoc, 1, glm::value_ptr(vec3));

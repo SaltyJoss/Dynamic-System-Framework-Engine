@@ -19,7 +19,7 @@ namespace render {
 	bool render::GUIContext::init(window::IWindow* window) {
 		__super::init(window);
 
-		const char* glslVersion = "#version 410";
+		const char* glslVersion = "#version 460 core";
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
