@@ -326,6 +326,7 @@ namespace gui {
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
         void applyRenderSettings(const render::RenderSettings& s);
         void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
+        void rebuildRenderTargets();
 		void resetHDRToPreset();
         void reloadAllShaders();
 

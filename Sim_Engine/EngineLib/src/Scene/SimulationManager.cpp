@@ -259,8 +259,7 @@ namespace gui{
 			updateRobotKinematics(base);
 		}
 
-		if (skyboxEnabled)
-		{
+		if (skyboxEnabled) {
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_LEQUAL);
 
@@ -323,19 +322,19 @@ namespace gui{
 		if (width == 0 || height == 0) { return; }
 		_size = glm::ivec2(width, height);
 
-		glViewport(0, 0, width, height);	// set OpenGL viewport
-		_size = glm::ivec2(width, height);	// update internal size
+		if (_settingsValid) { rebuildRenderTargets(); }
+		else {
+			_frameBuffer->deleteBuffers();
+			_frameBuffer->createBuffers(width, height, 1);
 
-		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers(width, height, _settingsCurrent.msaaSamples);
+			_postBuffer->deleteBuffers();
+			_postBuffer->createBuffers(width, height, 1);
 
-		_postBuffer->deleteBuffers();
-		_postBuffer->createBuffers(width, height, 1);
+			// update camera aspect ratio
+			_camera->setAspect((float)width / (float)height);
+		}
 
-		// update camera aspect ratio
-		_camera->setAspect((float)width / (float)height);
-
-		LOG_INFO("Resized simManager to %dx%d", width, height);
+		LOG_INFO("Resized simManager viewport to %dx%d", width, height);
 	}
 
 // --------------------------------------------------
@@ -514,8 +513,8 @@ namespace gui{
 		_linkIndex.clear();
 		_hasRobot = false;
 
-		LOG_INFO("Cleared old robot model");
-		D_WARN("old robot model destroyed");
+		LOG_INFO("Old robot model removed");
+		D_WARN("Old robot model removed");
 	}
 
 // --------------------------------------------------
@@ -533,7 +532,7 @@ namespace gui{
 		_shadowsInit = true;
 
 		for (int i = 0; i < NUM_CASCADES; i++) {
-			const int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
+			const int res = (i == 0) ? baseRes : (baseRes / 2); // 8192, 4096, 2048, 1024, 512, 256, 128
 
 			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
@@ -552,7 +551,7 @@ namespace gui{
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _cascadeDepth[i], 0);
 
-			glDrawBuffer(GL_NONE);		
+			glDrawBuffer(GL_NONE);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -823,9 +822,12 @@ namespace gui{
 
 	void simManager::applyRenderProfile(const render::RenderSettings& s, render::LookPreset l) {
 		const bool first = !_settingsValid;
-		const bool lookChanged = first || l != _lookCurrent;
 
+		const bool lookChanged = first || l != _lookCurrent;
 		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
+
+		const bool msaaChanged = first || (s.msaaSamples != _settingsCurrent.msaaSamples);
+		const bool renderScaleChanged = first || (s.renderScale != _settingsCurrent.renderScale);
 
 		if (shadowResChanged) {
 			// Re-initialise shadow resources
@@ -843,8 +845,18 @@ namespace gui{
 			}
 		}
 
-		_lookCurrent = l;
 		_settingsCurrent = s;
+		_lookCurrent = l;
+
+		if (msaaChanged) {
+			const int msaa = std::max(1, _settingsCurrent.msaaSamples);
+
+			_frameBuffer->deleteBuffers();
+			_frameBuffer->createBuffers(_size.x, _size.y, msaa);
+
+			LOG_INFO("MSAA setting changed -> Framebuffer re-created with %d samples.", msaa);
+			D_INFO("MSAA setting changed -> Framebuffer re-created with %d samples.", msaa);
+		}
 
 		if (lookChanged) {
 			if (l == render::LookPreset::Studio) {
@@ -858,6 +870,28 @@ namespace gui{
 		}
 
 		_settingsValid = true;
+	}
+
+	void simManager::rebuildRenderTargets() {
+		const int vpW = (float)_size.x;
+		const int vpH = (float)_size.y;
+
+		const float scale = _settingsCurrent.renderScale;
+		const int w = std::max(1, (int)std::lround(vpW * scale));
+		const int h = std::max(1, (int)std::lround(vpH * scale));
+
+		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
+
+		_frameBuffer->deleteBuffers();
+		_frameBuffer->createBuffers(_size.x, _size.y, msaa);
+		
+		_postBuffer->deleteBuffers();
+		_postBuffer->createBuffers(_size.x, _size.y, 1);
+
+		_camera->setAspect((float)vpW / (float)vpH);
+		
+		LOG_INFO("RenderTargets rebuilt: vp=%dx%d rt=%dx%d scale=%.2f msaa=%d", vpW, vpH, w, h, scale, msaa);
+		D_INFO("RenderTargets rebuilt: vp=%dx%d rt=%dx%d scale=%.2f msaa=%d", vpW, vpH, w, h, scale, msaa);
 	}
 
 	void simManager::resetHDRToPreset() {

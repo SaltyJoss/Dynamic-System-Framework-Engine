@@ -22,7 +22,7 @@ Application::Application(const std::string& appName) {
     LOG_INFO("Working directory set to: %s", fs::current_path().string().c_str());
 
 	_window = std::make_unique<window::GLWindow>();
-	_window->init(1280, 720, appName);
+	_window->init(1920, 1080, appName);
 }
 
 Application::~Application() = default;

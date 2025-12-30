@@ -59,25 +59,24 @@ namespace render {
 			s.ssaoSamples = 64;
 			s.ssaoStrength = 1.0f;
 			s.bloom = true;
-			s.exposure = 1.0f;
 			s.bloomThreshold = 1.0f;
-			s.envPreFilterRes = 1024;
-			s.envIrradianceRes = 128;
+			s.envPreFilterRes = 512;
+			s.envIrradianceRes = 64;
 			s.msaaSamples = 8;
 			s.fxaa = false;
-			s.renderScale = 1.0f;
+			s.renderScale = 2.0f;
 			break;
 		}
 
 		// Look Asxis s
 		switch (look) {
 		case LookPreset::Studio:
-			s.exposure = 1.15f;
+			s.exposure = 1.0f;
 			s.grid = true;
 			s.axisOrientator = true;
 			break;
 		case LookPreset::Cinematic:
-			s.exposure = 0.95f;
+			s.exposure = 1.0f;
 			s.grid = true;
 			s.axisOrientator = false;
 			break;
