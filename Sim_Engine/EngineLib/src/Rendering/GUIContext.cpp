@@ -57,7 +57,29 @@ namespace render {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Invisible-Window", nullptr, windowFlags);
+		ImGui::Begin("Invisible-Window", nullptr, windowFlags | ImGuiWindowFlags_MenuBar);
+
+		// Menu from control panel, moved here -> need to find a way to connect the two!
+		if (ImGui::BeginMenuBar()) {
+			if (ImGui::BeginMenu("File")) {
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Save Layout")) {
+					ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
+				}
+				if (ImGui::MenuItem("Load Layout")) {
+					ImGui::LoadIniSettingsFromDisk("Engine/configs/imgui_layout.ini");
+				}
+				ImGui::EndMenu();
+			}
+
+			if (_menuCallback) {
+				_menuCallback();
+			}
+
+			ImGui::EndMenuBar();
+		}
 
 		ImGui::PopStyleVar(3);
 

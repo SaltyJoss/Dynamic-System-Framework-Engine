@@ -54,6 +54,10 @@ namespace window {
         if (_controlPanel)  _controlPanel->render(_sim.get());
 		if (_debugPanel)    _debugPanel->render();
 
+        _GUICntx->setMenuCallback([this]() {
+            _controlPanel->drawMenus(_sim.get());
+        });
+
         _GUICntx->postRender();
         _renderCntx->postRender();
     }

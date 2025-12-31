@@ -125,6 +125,7 @@ namespace gui {
     public:
         ControlPanel(simManager* sim);
 
+		void drawMenus(simManager* sim);
         void render(simManager* sim);
         void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
