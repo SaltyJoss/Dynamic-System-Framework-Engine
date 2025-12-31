@@ -13,7 +13,7 @@ namespace gui {
         ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
-        ImGui::Begin("Output", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+        ImGui::Begin("Output", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
 
         if (ImGui::BeginTabBar("Debug Tabs")) {
             if (ImGui::BeginTabItem("Log")) {

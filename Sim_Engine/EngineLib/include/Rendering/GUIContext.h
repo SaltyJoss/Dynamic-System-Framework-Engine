@@ -52,7 +52,7 @@ namespace render {
 		void postRender() override;
 		void end() override;
 
-		void setMenuCallback(const std::function<void()> callback) { _menuCallback = std::move(callback); }
+		void setMenuCallback(std::function<void()> callback) { _menuCallback = std::move(callback); }
 
 	private:
 		std::unique_ptr<gui::Styles> _style;

@@ -295,7 +295,7 @@ namespace gui{
 
 		_postBuffer->unbind();
 
-		ImGui::Begin("Sim Engine");
+		ImGui::Begin("Sim Engine", nullptr, ImGuiWindowFlags_NoTitleBar);
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImGuiIO& io = ImGui::GetIO();

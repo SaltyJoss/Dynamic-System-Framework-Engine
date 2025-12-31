@@ -61,19 +61,6 @@ namespace render {
 
 		// Menu from control panel, moved here -> need to find a way to connect the two!
 		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("File")) {
-
-				ImGui::Separator();
-
-				if (ImGui::MenuItem("Save Layout")) {
-					ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
-				}
-				if (ImGui::MenuItem("Load Layout")) {
-					ImGui::LoadIniSettingsFromDisk("Engine/configs/imgui_layout.ini");
-				}
-				ImGui::EndMenu();
-			}
-
 			if (_menuCallback) {
 				_menuCallback();
 			}

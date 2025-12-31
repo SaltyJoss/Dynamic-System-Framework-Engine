@@ -43,13 +43,19 @@ namespace gui {
         _phys = &_sim->getPhysicsSystem();
         _obj = _sim->getObject();
 
-        if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
-            if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
-            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+        if (ImGui::BeginMenu("File")) {
 
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Save Layout")) {
+                ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
+            }
+            if (ImGui::MenuItem("Load Layout")) {
+                ImGui::LoadIniSettingsFromDisk("Engine/configs/imgui_layout.ini");
+            }
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu("Edit")) {
             if (ImGui::MenuItem("Reset View")) {
                 _sim->resetView();
@@ -63,6 +69,16 @@ namespace gui {
             }
             ImGui::EndMenu();
         }
+
+
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
+            if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
+            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Render")) {
 
 
@@ -139,7 +155,7 @@ namespace gui {
     void ControlPanel::render(simManager* sceneView) {
         // Initialize pointers to scene scene
         _sim = sceneView;
-        fov = _sim->getCamera()->getFOV();
+        fov = _sim->getCamera()->getFOVRadians();
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
         _sunLight = _sim->getSunLight();
@@ -154,12 +170,31 @@ namespace gui {
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
         if (ImGui::BeginMenuBar()) {
+            const bool wasRunning = simulationRunning; // snapshot
+
+            if (wasRunning) {
+                ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.80f, 0.15f, 0.15f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
+            }
+
             // Simulation Start/Stop Button
-            if (ImGui::Button(simulationRunning ? "Termiante" : "Run")) {
+            if (ImGui::Button(wasRunning ? "Terminate" : "Run")) {
                 simulationRunning = !simulationRunning;
+
+				if (wasRunning && !simulationRunning) {
+                    // Stopping simulation
+                    simTime = 0.0f;
+                }
+
+				// Logs 
                 LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
                 D_RUNTIME("Simulation %s", simulationRunning ? "started" : "stopped");
             }
+
+            if (wasRunning) {
+                ImGui::PopStyleColor(3);
+			}
 
             // Diagnostic Start/Stop Button
             if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
@@ -525,10 +560,13 @@ namespace gui {
             LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
         }
 
-        if (ImGui::SliderFloat("Field of View", &fov, 25.0f, 125.0f, "%.5f")) {
-			fov = glm::clamp(fov, 25.0f, 125.0f);
-			_sim->getCamera()->setFOV(fov);
-        }
+        static float fovDeg = 70.0f;
+
+        bool edited = ImGui::SliderFloat("Field of View", &fovDeg, 25.0f, 125.0f, "%.1f");
+        bool active = ImGui::IsItemActive();
+
+        if (!active && !edited) { fovDeg = _sim->getCamera()->getFOVDegrees(); }
+        if (edited) { _sim->getCamera()->setFOVDegrees(fovDeg); }
     }
 
 	// Robotic Arm Selector

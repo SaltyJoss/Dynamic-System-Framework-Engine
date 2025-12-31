@@ -39,7 +39,7 @@ float visibility(float spacing, float wupp)
 
 // Main fragment shader entry point
 void main() {
-    // Pattern uses GridXZ (stable)
+    // Pattern uses GridXZ
     vec2 xz = GridXZ;
 
     float s0 = gGridCellSize;
