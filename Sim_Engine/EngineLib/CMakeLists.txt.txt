@@ -1,0 +1,37 @@
+# Sim_Engine/EngineLib/CMakeLists.txt
+add_library(EngineLib SHARED
+    src/Application.cpp
+    src/Assets/importObj.cpp
+    src/Physics/PhysicsSystem.cpp
+    src/Platform/Logger.cpp
+    src/Platform/WindowManager.cpp
+    src/Rendering/Cubemap.cpp
+    src/Rendering/CubeVerticies.cpp
+    src/Rendering/GUIContext.cpp
+    src/Rendering/IBL.cpp
+    src/Rendering/OpenGLBufferManager.cpp
+    src/Rendering/OpenGLContext.cpp
+    src/Rendering/ShaderUtil.cpp
+    src/Rendering/SkyboxRenderer.cpp
+    src/Rendering/Texture.cpp
+    src/Robots/RobotLoader.cpp
+    src/Robots/RobotModel.cpp
+    src/Scene/AxisOrientator.cpp
+    src/Scene/Camera.cpp
+    src/Scene/ControlPanel.cpp
+    src/Scene/DebugPanel.cpp
+    src/Scene/MeshLoader.cpp
+    src/Scene/Object.cpp
+    src/Scene/SimulationManager.cpp
+    src/Scene/Styles.cpp
+)
+
+target_include_directories(EngineLib PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(EngineLib PUBLIC 
+    MathLib
+    External
+)
+target_compile_features(EngineLib PUBLIC cxx_std_20)

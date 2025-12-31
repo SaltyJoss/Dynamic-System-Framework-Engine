@@ -19,7 +19,7 @@ namespace render {
 	bool render::GUIContext::init(window::IWindow* window) {
 		__super::init(window);
 
-		const char* glslVersion = "#version 410";
+		const char* glslVersion = "#version 460 core";
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -57,7 +57,16 @@ namespace render {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Invisible-Window", nullptr, windowFlags);
+		ImGui::Begin("Invisible-Window", nullptr, windowFlags | ImGuiWindowFlags_MenuBar);
+
+		// Menu from control panel, moved here -> need to find a way to connect the two!
+		if (ImGui::BeginMenuBar()) {
+			if (_menuCallback) {
+				_menuCallback();
+			}
+
+			ImGui::EndMenuBar();
+		}
 
 		ImGui::PopStyleVar(3);
 

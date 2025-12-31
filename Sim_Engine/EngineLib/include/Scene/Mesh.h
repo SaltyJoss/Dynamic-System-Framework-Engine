@@ -111,7 +111,7 @@ namespace scene {
 		glm::mat4 localTransform = glm::mat4(1.0f);
 
 		glm::vec3 _colour = { 0.0f, 0.0f, 1.0f };
-		float _metallic = 0.1; // When rotating could be useful for seeing rotations with respect to a fixed light source.
+		float _metallic = 0.1f; // When rotating could be useful for seeing rotations with respect to a fixed light source.
 		bool _isStatic = false; // true for floor or immovable meshes
 
 	private:

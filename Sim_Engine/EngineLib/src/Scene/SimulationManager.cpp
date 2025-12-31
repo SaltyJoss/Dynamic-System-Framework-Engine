@@ -41,10 +41,18 @@ namespace gui{
 
 	simManager::simManager() :
 		_camera(nullptr), _frameBuffer(nullptr), _shaderBasic(nullptr), _shaderLit(nullptr), _shaderPBR(nullptr),
-		_light(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
+		_light(nullptr), _sunLight(nullptr), _worldGridShader(nullptr), _shadowShader(nullptr), _size(3840, 2160)
 	{
 		_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-		_frameBuffer->createBuffers(3840, 2160);
+		_frameBuffer->createBuffers(3840, 2160, _settingsCurrent.msaaSamples);
+
+		_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
+		_postBuffer->createBuffers(3840, 2160, 1);
+
+		_postShader = std::make_unique<shaders::Shader>();
+		_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
+
+		glGenVertexArrays(1, &_fullscreenVAO);
 
 		// Shader Types A
 		_shaderBasic = std::make_shared<shaders::Shader>();
@@ -81,26 +89,26 @@ namespace gui{
 
 		_physics = std::make_unique<physics::PhysicsSystem>();
 
-		if (_checkerPlane) _checkerPlane->clean();
-		_checkerPlane = createCheckerPlane(50.0f);
 		planeY = 2.5f;
 
-		InitShadowResource();
+		InitShadowResource(2048); // shadow map resolution default 2048
 		InitIBL();
+
+		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Medium);
+		applyRenderProfile(s, render::LookPreset::Studio);
 	}
 
 	simManager::~simManager()
 	{
 		if (_frameBuffer) _frameBuffer->deleteBuffers();
+		if (_postBuffer) _postBuffer->deleteBuffers();
 		if (_mesh) _mesh->clean();
-		if (_checkerPlane) _checkerPlane->clean();
 	}
 
 // --------------------------------------------------
 //				    LIGHT & SKYBOX
 // --------------------------------------------------
-	void simManager::loadNewHDR(const std::string& path)
-	{
+	void simManager::loadNewHDR(const std::string& path) {
 		LOG_INFO("Loading new HDR: %s", path.c_str());
 		D_INFO("Loading new HDR: %s", path.c_str());
 
@@ -117,8 +125,20 @@ namespace gui{
 		// Update skybox
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 
+		_activeHDRPath = path;
+
 		LOG_INFO("HDR updated successfully.");
 		D_SUCCESS("Loaded HDR successfully.");
+	}
+
+	void simManager::loadNewHDR_UI(const std::string& path) {
+		loadNewHDR(path);
+		_hdrUserOverride = true;
+	}
+
+	void simManager::loadNewHDR_Preset(const std::string& path) {
+		loadNewHDR(path);
+		_hdrUserOverride = false;
 	}
 
 // --------------------------------------------------
@@ -199,35 +219,6 @@ namespace gui{
 		return result;
 	}
 
-	std::shared_ptr<scene::Mesh> gui::simManager::createCheckerPlane(float size) {
-
-		auto plane = std::make_shared<scene::Mesh>();
-
-		std::vector<glm::vec3> pos = {
-			{-size, planeHeight, -size},
-			{ size, planeHeight, -size},
-			{ size, planeHeight,  size},
-			{-size, planeHeight,  size}
-		};
-
-		glm::vec3 normal(0.0f, 1.0f, 0.0f);
-
-		for (auto& p : pos) {
-			scene::VertexHolder vh(p, normal);
-			plane->addVertex(vh);
-		}
-
-		plane->addVertexIndex(0);
-		plane->addVertexIndex(1);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(2);
-		plane->addVertexIndex(3);
-		plane->addVertexIndex(0);
-
-		plane->init();
-		return plane;
-	}
-
 	void simManager::deleteObject(int index) {
 		if (index < 0 || index >= _objects.size()) return;
 
@@ -244,12 +235,21 @@ namespace gui{
 	void simManager::render() {
 		updatePhysics(dt);
 		_fpsCounter.update();
-		ShadowPass();
+		if (_settingsCurrent.shadows) { ShadowPass(); }
 
 		_frameBuffer->bind();
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		GLint vp[4];
+		glGetIntegerv(GL_VIEWPORT, vp);
+		LOG_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
+		D_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
+
 		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+
+		glClearColor(_clearColour.r, _clearColour.g, _clearColour.b, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 view = _camera->getViewMatrix();
 
@@ -259,11 +259,7 @@ namespace gui{
 			updateRobotKinematics(base);
 		}
 
-		//WorldGridRender();
-		MeshRender();
-
-		if (skyboxEnabled)
-		{
+		if (skyboxEnabled) {
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_LEQUAL);
 
@@ -273,34 +269,72 @@ namespace gui{
 			glDepthFunc(GL_LESS);
 		}
 
-		_axisOrientator->render(view);
+		MeshRender();
+
+		if (_settingsCurrent.grid) { WorldGridRender(); }
+		if (_settingsCurrent.axisOrientator) { _axisOrientator->render(view); }
 
 		_frameBuffer->unbind();
 
-		ImGui::Begin("Sim Engine");
+		_postBuffer->bind();
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glClear(GL_COLOR_BUFFER_BIT);
 
+		_postShader->use();
+		_postShader->setInt1(0, "hdrScene");
+		_postShader->setFlt1(_settingsCurrent.exposure, "exposure");
+		_postShader->setVec2(glm::vec2(_size.x, _size.y), "uRes");
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _frameBuffer->getTexture());
+
+		glBindVertexArray(_fullscreenVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+
+		_postBuffer->unbind();
+
+		ImGui::Begin("Sim Engine", nullptr, ImGuiWindowFlags_NoTitleBar);
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		uint64_t textureID = _frameBuffer->getTexture();
-		ImGui::Image((void*)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		ImGuiIO& io = ImGui::GetIO();
 
+		int vpW = (int)(viewportPanelSize.x * io.DisplayFramebufferScale.x);
+		int vpH = (int)(viewportPanelSize.y * io.DisplayFramebufferScale.y);
+
+		vpW = (vpW < 1) ? 1 : vpW;
+		vpH = (vpH < 1) ? 1 : vpH;
+
+		float renderScale = _settingsCurrent.renderScale;
+
+		if (vpW != _size.x || vpH != _size.y) {
+			resize(vpW, vpH);
+		}
+
+		uint32_t textureID = _postBuffer->getTexture();
+		ImGui::Image((ImTextureID)(intptr_t)textureID, viewportPanelSize, ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 	}
 
 	void simManager::resize(int32_t width, int32_t height) {
 		// ignore zero sizes
 		if (width == 0 || height == 0) { return; }
+		_size = glm::ivec2(width, height);
 
-		glViewport(0, 0, width, height);	// set OpenGL viewport
-		_size = glm::ivec2(width, height);	// update internal size
+		if (_settingsValid) { rebuildRenderTargets(); }
+		else {
+			_frameBuffer->deleteBuffers();
+			_frameBuffer->createBuffers(width, height, 1);
 
-		_frameBuffer->deleteBuffers();
-		_frameBuffer->createBuffers(width, height);
+			_postBuffer->deleteBuffers();
+			_postBuffer->createBuffers(width, height, 1);
 
-		// update camera aspect ratio
-		_camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
+			// update camera aspect ratio
+			_camera->setAspect((float)width / (float)height);
+		}
 
-		LOG_INFO("Resized simManager to %dx%d", width, height);
+		LOG_INFO("Resized simManager viewport to %dx%d", width, height);
 	}
 
 // --------------------------------------------------
@@ -388,30 +422,8 @@ namespace gui{
 		// Get current joint angles as Eigen vector
 		VecX q = _robot.makeJointVector();
 
-		//// Compute forward kinematics
-		//kinematics::Forward_Kinematics fk;
-		//std::vector<Pose> eigenTrans = fk.linkTransforms(_robot.dhParams, q);
-
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
-
-		//// Convert Eigen poses to glm::mat4 and apply base transform to root link
-		//for (std::size_t i = 0; i < eigenTrans.size(); ++i) {
-		//	const Pose& pose = eigenTrans[i];
-		//	glm::mat4 glmMat(1.0f);
-		//	for (int r = 0; r < 4; ++r) {
-		//		for (int c = 0; c < 4; ++c) {
-		//			glmMat[c][r] = static_cast<float>(pose(r, c));
-		//		}
-		//	}
-
-		//	// Apply base transform to the root link
-		//	if (i == 0) {
-		//		world[i] = baseTransform * glmMat;
-		//	} else {
-		//		world[i] = glmMat;
-		//	}
-		//}
 
 		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;
@@ -501,24 +513,30 @@ namespace gui{
 		_linkIndex.clear();
 		_hasRobot = false;
 
-		LOG_INFO("Cleared old robot model");
-		D_WARN("old robot model destroyed");
+		LOG_INFO("Old robot model removed");
+		D_WARN("Old robot model removed");
 	}
 
 // --------------------------------------------------
 //			 INTERNAL REDNDERING PIPELINE
 // --------------------------------------------------
-	void simManager::InitShadowResource() {
-		int shadowRes[NUM_CASCADES] = { 4096, 4096 };
+	void simManager::InitShadowResource(int baseRes) {
+		if (_shadowsInit) {
+			glDeleteFramebuffers(NUM_CASCADES, _cascadeFBO);
+			glDeleteTextures(NUM_CASCADES, _cascadeDepth);
+		}
 
 		glGenFramebuffers(NUM_CASCADES, _cascadeFBO);
 		glGenTextures(NUM_CASCADES, _cascadeDepth);
 
+		_shadowsInit = true;
+
 		for (int i = 0; i < NUM_CASCADES; i++) {
+			const int res = (i == 0) ? baseRes : (baseRes / 2); // 8192, 4096, 2048, 1024, 512, 256, 128
+
 			glBindTexture(GL_TEXTURE_2D, _cascadeDepth[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
-				shadowRes[i], shadowRes[i], 0,
-				GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
+				res, res, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -526,15 +544,14 @@ namespace gui{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
 			float border[] = { 1,1,1,1 };
 			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-				GL_TEXTURE_2D, _cascadeDepth[i], 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _cascadeDepth[i], 0);
 
 			glDrawBuffer(GL_NONE);
-			glReadBuffer(GL_NONE);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -542,17 +559,21 @@ namespace gui{
 	void simManager::InitIBL()
 	{
 		_ibl = std::make_unique<render::IBL>();
-		_ibl->init("Engine/assets/hdr/space-6.hdr");
+		_ibl->init("Engine/assets/hdr/default_white.hdr");
 	}
 
 	void simManager::WorldGridRender() {
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
-		glClearColor(_backgroundColour.r, _backgroundColour.g, _backgroundColour.b, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
+		glDisable(GL_BLEND);
+
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(-0.2f, -0.2f);
 
 		_worldGridShader->use();
 		_worldGridShader->setMat4(_camera->getViewProjection(), "gVP");
@@ -560,11 +581,20 @@ namespace gui{
 
 		glBindVertexArray(_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
 
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 	}
 
 	void simManager::MeshRender() {
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+
 		shaders::Shader* shader = nullptr;
 
 		switch (currentShaderMode) {
@@ -581,11 +611,11 @@ namespace gui{
 
 		if (!shader) {
 			LOG_ERROR("Shader is NULL after switch!");
-
 			return;
 		}
 
 		shader->use();
+		shader->setBool(false, "isFloor");
 
 		// Only PBR know about cascades & those uniforms
 		if (currentShaderMode == ShaderMode::PBR) {
@@ -602,6 +632,7 @@ namespace gui{
 		// Camera / SunLight / light common to all mesh shaders
 		_camera->update(shader);
 		_light->update(shader);
+		_sunLight->update(shader);
 
 		for (auto& obj : _objects) {
 			if (!obj || !obj->getMesh()) continue;
@@ -627,7 +658,7 @@ namespace gui{
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(_light->getColour(), "albedo");
+				shader->setVec3(_sunLight->getColour(), "albedo");
 				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
 				shader->setFlt1(1.0f, "lightIntensity");
@@ -635,14 +666,14 @@ namespace gui{
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(_light->getColour(), "albedo");
+				shader->setVec3(glm::vec3(0.75f), "albedo");
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 
-				//shader->setVec3(glm::normalize(_light->getDirection()), "lightDirection");
-				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
-				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(glm::normalize(_sunLight->getDirection()), "lightDirection");
+				shader->setFlt1(_sunLight->getIntensity(), "lightIntensity");
+				shader->setVec3(_sunLight->getColour(), "lightColour");
 				shader->setVec3(_camera->getPosition(), "camPos");
 
 				shader->setInt1(0, "irradianceMap");
@@ -671,7 +702,6 @@ namespace gui{
 		}
 	}
 
-
 	void simManager::ShadowPass() {
 		float nearPlane = _camera->getNear();
 		float farPlane = _camera->getFar();
@@ -688,8 +718,8 @@ namespace gui{
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
-			int baseRes = 4096;
-			int res = baseRes >> i;   // 4096, 4096
+			int baseRes = _settingsCurrent.shadowMapRes;
+			int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
 			glViewport(0, 0, res, res);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, _cascadeFBO[i]);
@@ -697,13 +727,6 @@ namespace gui{
 
 			_shadowShader->use();
 			_shadowShader->setMat4(_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
-
-			// checker plane
-			if (_checkerPlane) {
-				glm::mat4 model(1.0f);
-				_shadowShader->setMat4(model, "model");
-				_checkerPlane->render();
-			}
 
 			// main mesh
 			for (auto& obj : _objects) {
@@ -721,7 +744,7 @@ namespace gui{
 	glm::mat4 simManager::LightSpaceMatrix(float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = _camera->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
-		glm::vec3 lightDir = glm::normalize(_light->getDirection());
+		glm::vec3 lightDir = glm::normalize(_sunLight->getDirection());
 
 		// Fake camera position far along direction
 		glm::vec3 lightPos = -lightDir * 50.0f;
@@ -756,9 +779,7 @@ namespace gui{
 		// Cascade radius (half-size of the bounding sphere)
 		float radius = glm::length(glm::vec3(maxX - minX, maxY - minY, 0.0f)) * 0.5f;
 
-		// Pick resolution based on cascade level (match your ShadowPass())
-		// (ShadowPass uses 4096 >> index, so we assume highest = 4096)
-		int shadowMapResolution = 4096;
+		int shadowMapResolution = _settingsCurrent.shadowMapRes;
 
 		// The size of one texel in world-space
 		float worldUnitsPerTexel = (radius * 2.0f) / shadowMapResolution;
@@ -785,6 +806,94 @@ namespace gui{
 
 		_skybox->setEnvironmentTexture(_ibl->getEnvCubemap());
 		_skybox->render(projection, view);
+	}
+
+	std::string simManager::getDefaultHDR(render::LookPreset p) const {
+		switch (p) {
+			case render::LookPreset::Studio:
+				return "Engine/assets/hdr/default_white.hdr";
+			case render::LookPreset::Cinematic:
+				return "Engine/assets/hdr/cinematic_01_4k.hdr";
+		}
+		return "Engine/assets/hdr/default_white.hdr";
+	}	
+
+	void simManager::applyRenderSettings(const render::RenderSettings& s) { applyRenderProfile(s, _lookCurrent); }
+
+	void simManager::applyRenderProfile(const render::RenderSettings& s, render::LookPreset l) {
+		const bool first = !_settingsValid;
+
+		const bool lookChanged = first || l != _lookCurrent;
+		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
+
+		const bool msaaChanged = first || (s.msaaSamples != _settingsCurrent.msaaSamples);
+		const bool renderScaleChanged = first || (s.renderScale != _settingsCurrent.renderScale);
+
+		if (shadowResChanged) {
+			// Re-initialise shadow resources
+			InitShadowResource(s.shadowMapRes);
+			LOG_INFO("Shadow settings changed -> shadow resources re-initialised.");
+			D_INFO("Shadow settings changed -> shadow resources re-initialised.");
+		}
+
+		if (lookChanged && !_hdrUserOverride) {
+			const std::string hdr = getDefaultHDR(l);
+			if (hdr != _activeHDRPath) {
+				loadNewHDR_Preset(hdr);
+				LOG_INFO("Preset HDR applied -> %s", hdr.c_str());
+				D_INFO("Preset HDR applied -> %s", hdr.c_str());
+			}
+		}
+
+		_settingsCurrent = s;
+		_lookCurrent = l;
+
+		if (msaaChanged) {
+			rebuildRenderTargets();
+			LOG_INFO("MSAA setting changed -> render targets rebuilt.");
+			D_INFO("MSAA setting changed -> render targets rebuilt.");
+		}
+
+		if (lookChanged) {
+			if (l == render::LookPreset::Studio) {
+				skyboxEnabled = false;
+				_clearColour = glm::vec3(0.97f);
+			}
+			else {
+				skyboxEnabled = true;
+				_clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
+			}
+		}
+
+		_settingsValid = true;
+	}
+
+	void simManager::rebuildRenderTargets() {
+		const int vpW = (float)_size.x;
+		const int vpH = (float)_size.y;
+
+		const float scale = _settingsCurrent.renderScale;
+		const int w = std::max(1, (int)std::lround(vpW * scale));
+		const int h = std::max(1, (int)std::lround(vpH * scale));
+
+		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
+
+		_frameBuffer->deleteBuffers();
+		_frameBuffer->createBuffers(vpW, vpH, msaa);
+		
+		_postBuffer->deleteBuffers();
+		_postBuffer->createBuffers(vpW, vpH, 1);
+
+		_camera->setAspect((float)vpW / (float)vpH);
+		
+		LOG_INFO("RenderTargets rebuilt: vp=%dx%d rt=%dx%d scale=%.2f msaa=%d", vpW, vpH, w, h, scale, msaa);
+		D_INFO("RenderTargets rebuilt: vp=%dx%d rt=%dx%d scale=%.2f msaa=%d", vpW, vpH, w, h, scale, msaa);
+	}
+
+	void simManager::resetHDRToPreset() {
+		_hdrUserOverride = false;
+		const std::string hdr = getDefaultHDR(_lookCurrent);
+		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 
 	void simManager::reloadAllShaders()
@@ -865,13 +974,12 @@ namespace gui{
 		_lastMousePos = { (float)xpos, (float)ypos };
 
 		if (ctrlMode == ControlMode::Camera) {
-			_camera->processMouseMovement(xoffset, yoffset);
+			_camera->processMouseMovement((float)xoffset, (float)yoffset);
 		}
 		else if (ctrlMode == ControlMode::Object && _selectedObject) {
 			_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);
 		}
 	}
-
 
 	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
 		glm::vec2 pos2d{ x, y };
@@ -899,7 +1007,6 @@ namespace gui{
 		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
 		else if (ctrlMode == ControlMode::Object && _mesh) obj->transform.position.z += (float)delta * 0.1f;
 	}
-
 
 	void gui::simManager::resetMouseDelta() { _firstMouse = true; }
 }

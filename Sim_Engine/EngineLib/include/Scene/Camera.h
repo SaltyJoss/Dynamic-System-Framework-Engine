@@ -26,14 +26,13 @@ namespace scene {
 			_aspect = aspect;
 			_near = zNear;
 			_far = zFar;
-			_FOV = fov;
+			_FOV = glm::radians(fov);
 
 			setAspect(_aspect);
 			updateViewMatrix();
 		}
 
 		void update(shaders::Shader* shader);
-
 
 		const glm::mat4& getProjection() const { return _projection; }
 		float getNear() const { return _near; }
@@ -69,7 +68,7 @@ namespace scene {
 		}
 
 		void onMouseWheel(double delta) {
-			setDistance(delta * 0.5f);
+			setDistance((float)(delta * 0.5f));
 			updateViewMatrix();
 		}
 
@@ -122,17 +121,27 @@ namespace scene {
 
 		std::array<glm::vec4, 8> getFrustumCornersWorldSpace(float near, float far) const;
 
-		void updateProjectionMatrix() {
-			_projection = glm::perspective(_FOV, _aspect, _near, _far);
+		float getFOVRadians() const { return _FOV; }
+		float getFOVDegrees() const { return glm::degrees(_FOV); }
+
+		void setFOVRadians(float rad) {
+			rad = glm::clamp(rad, glm::radians(10.0f), glm::radians(150.0f));
+			_FOV = rad;
+			updateProjectionMatrix();
 		}
 
-		float getFOV() const { return _FOV; }
-		void setFOV(float fov) {
-			_FOV = glm::radians(fov);
+		void setFOVDegrees(float deg) {
+			deg = glm::clamp(deg, 10.0f, 150.0f);
+			_FOV = glm::radians(deg);
 			updateProjectionMatrix();
 		}
 
 	private:
+		void updateProjectionMatrix() {
+			if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
+			_projection = glm::perspective(_FOV, _aspect, _near, _far);
+		}
+
 		bool _following = false;
 		glm::vec3 _targetPos;
 		glm::vec3 _followOffset;

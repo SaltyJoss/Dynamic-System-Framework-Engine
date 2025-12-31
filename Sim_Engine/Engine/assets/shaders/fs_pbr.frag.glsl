@@ -49,6 +49,7 @@ uniform vec3 camPos;
 uniform samplerCube irradianceMap; // diffuse
 uniform samplerCube prefilterMap;  // specular
 uniform sampler2D brdfLUT;         // BRDF lookup texture
+uniform float uExposure;
 
 // ------------------------ CONSTANTS ------------------------
 
@@ -200,27 +201,59 @@ vec3 evaluateDirectionalLightPBR(
 
 void main()
 {
-// 1. Base colour (ignore textures + checker to simplify)
-    vec3 baseColor = albedo;
+    vec3 baseColour = albedo;
 
-    // 2. Vectors
-    vec3 N = normalize(Normal);
-    vec3 L = normalize(lightPosition - WorldPos);
+	// Material properties (NaN avoidance)
+	float r = clamp(roughness, 0.05, 1.0);
+	float m = clamp(metallic, 0.0, 1.0);
+
+	// Geometry Vectors
+	vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
+	// Directional Light
+    vec3 Ld = normalize(-lightDirection);
 
-    // 3. Simple diffuse
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 diffuse = baseColor * lightColour * NdotL * lightIntensity;
+	// Shadows
+	float shadow = computeShadowCSM(WorldPos, N, Ld);
 
-    // 4. Simple specular (Blinn-Phong)
-    vec3 H = normalize(V + L);
-    float spec = pow(max(dot(N, H), 0.0), 16.0);
-    vec3 specular = 0.2 * spec * lightColour;
+	// Direct Lighting
+	vec3 Lo = evaluateDirectionalLightPBR(
+		N, V,
+		baseColour, r, m,
+		Ld, lightColour, lightIntensity,
+		max(lightSize, 0.001),
+		shadow
+	);
 
-    // 5. Ambient
-    vec3 ambient = 0.1 * baseColor;
+	// IBL Lighting
+	vec3 F0 = mix(vec3(0.04), baseColour, m);
 
-    vec3 colour = ambient + diffuse + specular;
-    FragColour = vec4(colour, 1.0);
+	// Fresnel at N*V for IBL blend
+	float NdotV = max(dot(N, V), 0.0);
+	vec3 F = fresnelSchlick(NdotV, F0);
+
+	vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - m);
+
+	// Diffuse IBL
+	vec3 irradiance = texture(irradianceMap, N).rgb;
+	vec3 diffuseIBL = irradiance * baseColour;
+
+	// Specular IBL
+	vec3 R = reflect(-V, N);
+	float MAX_REFLECTION_LOD = 5.0;
+	vec3 prefiltered = textureLod(prefilterMap, R, r * MAX_REFLECTION_LOD).rgb;
+	vec2 brdf = texture(brdfLUT, vec2(NdotV, r)).rg;
+	vec3 specularIBL = prefiltered * (F * brdf.x + brdf.y);
+	
+	vec3 ambient = (kD * diffuseIBL + specularIBL) * ao;
+	vec3 colour = ambient + Lo;
+
+	// Exposure + Tonemapping + Gamma
+	colour *= uExposure;
+	colour = colour / (colour + vec3(1.0));
+	colour = pow(colour, vec3(1.0/2.2)); // Gamma to sRGB
+
+	FragColour = vec4(colour, 1.0);
 }
 

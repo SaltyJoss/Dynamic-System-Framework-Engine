@@ -128,12 +128,12 @@ namespace physics {
 	};
 
 	struct ENGINE_API IntegratorDiagResult {
-		double duration;
+		double duration = 0.0; // total simulation duration
 		Vec3 thetaMin, thetaMax, thetaMean, thetaRms;
 		Vec3 omegaMin, omegaMax, omegaMean, omegaRms;
 
-		integration::ErrorStats omegaNormStats;
-		integration::ErrorStats thetaNormStats;
+		integration::ErrorStats omegaNormStats = {};
+		integration::ErrorStats thetaNormStats = {};
 	};
 
 	class ENGINE_API PhysicsSystem {

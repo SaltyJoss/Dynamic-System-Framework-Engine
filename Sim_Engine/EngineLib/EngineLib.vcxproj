@@ -59,7 +59,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -173,11 +173,13 @@
     <ClInclude Include="include\Scene\Mesh.h" />
     <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
+    <ClInclude Include="include\Scene\RenderPreset.h" />
     <ClInclude Include="include\Scene\SimulationManager.h" />
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
+    <ClInclude Include="RenderPreeset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\External\GLAD\glad.c">
@@ -263,6 +265,7 @@
     <ClCompile Include="src\Scene\Mesh.cpp" />
     <ClCompile Include="src\Scene\MeshLoader.cpp" />
     <ClCompile Include="src\Scene\Object.cpp" />
+    <ClCompile Include="src\Scene\RenderPreset.cpp" />
     <ClCompile Include="src\Scene\SimulationManager.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>

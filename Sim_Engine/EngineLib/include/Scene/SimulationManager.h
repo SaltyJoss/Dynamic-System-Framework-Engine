@@ -234,6 +234,7 @@
 #include "FpsCounter.h"
 #include "Robots/RobotModel.h"
 #include "Platform/Logger.h"
+#include "Scene/RenderPreset.h"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -277,12 +278,16 @@ namespace gui {
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
+
         void loadNewHDR(const std::string& path);
+        void loadNewHDR_UI(const std::string& path);
+        void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
 
+		std::string getDefaultHDR(render::LookPreset p) const;
         glm::vec3 getBackgroundColour() const { return _backgroundColour; }
         float getBackgroundAlpha() const { return _backgroundAlpha; }
         float getPlaneHeight() const { return planeHeight; }
@@ -315,10 +320,14 @@ namespace gui {
         enum class ShaderMode {
             Basic = 0,
             Lit = 1,
-            PBR = 2,
+            PBR = 2
         };
 
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
+        void applyRenderSettings(const render::RenderSettings& s);
+        void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
+        void rebuildRenderTargets();
+		void resetHDRToPreset();
         void reloadAllShaders();
 
 		// Rendering Entry Points
@@ -366,7 +375,7 @@ namespace gui {
 		// Rendering Pipeline Methods
         void MeshRender();
         void WorldGridRender();
-        void InitShadowResource();
+        void InitShadowResource(int baseRes);
         void InitIBL();
         void ShadowPass();
         void SkyboxRender();
@@ -376,11 +385,16 @@ namespace gui {
 
         // Core Rendering State
         std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
+        std::unique_ptr<render::OpenGLFrameBuffer> _postBuffer;
+        std::unique_ptr<shaders::Shader> _postShader;
+        GLuint _fullscreenVAO = 0;
+
         std::shared_ptr<shaders::Shader> _shaderBasic;
         std::shared_ptr<shaders::Shader> _shaderLit;
         std::shared_ptr<shaders::Shader> _shaderPBR;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
+		GLuint _worldGridVAO = 0;
 
 
         // Scene Objects
@@ -401,8 +415,16 @@ namespace gui {
 
 
 		// Environment & Lighting
+        render::RenderSettings _settingsCurrent{};
+		render::LookPreset _lookCurrent = render::LookPreset::Studio;
+        glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
+        bool _settingsValid = false;
+
         std::unique_ptr<render::IBL> _ibl;
         std::unique_ptr<render::SkyboxRenderer> _skybox;
+
+        std::string _activeHDRPath;
+		bool _hdrUserOverride = false;
 
         // current selection
         int _currentShaderIndex = 1; // 1 = lit by default
@@ -411,8 +433,9 @@ namespace gui {
 		// Shadow Mapping
         static constexpr int NUM_CASCADES = 2;
 
-        GLuint _cascadeFBO[NUM_CASCADES];
-        GLuint _cascadeDepth[NUM_CASCADES];
+        bool _shadowsInit = false;
+        GLuint _cascadeFBO[NUM_CASCADES]{};
+        GLuint _cascadeDepth[NUM_CASCADES]{};
         glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
 
         float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
@@ -455,8 +478,6 @@ namespace gui {
         static constexpr float planeHeight = -2.5f;
         float planeY = planeHeight;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
-
-        unsigned int _worldGridVAO = 0;
     };
 }
 

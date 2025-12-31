@@ -1,0 +1,4 @@
+# Sim_Engine/CMakeLists.txt
+add_subdirectory(external)
+add_subdirectory(EngineLib)
+add_subdirectory(Engine)

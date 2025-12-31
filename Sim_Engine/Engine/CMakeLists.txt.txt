@@ -1,0 +1,7 @@
+# Sim_Engine/Engine/CMakeLists.txt
+add_executable(Engine)
+
+target_sources(Engine src/main.cpp)
+target_compile_features(Engine PUBLIC cxx_std_20)
+
+target_link_libraries(Engine PRIVATE EngineLib)

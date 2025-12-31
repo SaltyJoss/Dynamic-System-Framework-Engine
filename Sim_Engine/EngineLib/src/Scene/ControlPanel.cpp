@@ -38,9 +38,124 @@ namespace gui {
         _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
     }
 
+    void ControlPanel::drawMenus(simManager* sim) {
+        _sim = sim;
+        _phys = &_sim->getPhysicsSystem();
+        _obj = _sim->getObject();
+
+        if (ImGui::BeginMenu("File")) {
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Save Layout")) {
+                ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
+            }
+            if (ImGui::MenuItem("Load Layout")) {
+                ImGui::LoadIniSettingsFromDisk("Engine/configs/imgui_layout.ini");
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Reset View")) {
+                _sim->resetView();
+                LOG_INFO("Scene view reset to default position and orientation.");
+            }
+            if (ImGui::MenuItem("Reset HDR")) {
+                _sim->resetHDRToPreset();
+            }
+            if (ImGui::MenuItem("Properties")) {
+                // Placeholder for future properties dialog
+            }
+            ImGui::EndMenu();
+        }
+
+
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
+            if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
+            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Render")) {
+
+
+            if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) {
+                l = render::LookPreset::Studio;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            }
+            if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) {
+                l = render::LookPreset::Cinematic;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) {
+                q = render::QualityPreset::Low;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+            }
+            if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) {
+                q = render::QualityPreset::Medium;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+            }
+            if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) {
+                q = render::QualityPreset::High;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+            }
+            if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) {
+                q = render::QualityPreset::Ultra;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+            }
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Robotic Arms")) {
+            if (ImGui::MenuItem("Select Model")) {
+                _showRobotSelector = true;
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Shader"))
+        {
+            // Reload shader button
+            if (ImGui::MenuItem("Reload Shaders")) {
+                LOG_INFO("Shader reload requested.");
+                _sim->reloadAllShaders();
+            }
+
+            ImGui::Separator();
+
+            // Shader selection
+            if (ImGui::MenuItem("Basic Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Basic)) {
+                _sim->currentShaderMode = simManager::ShaderMode::Basic;
+                D_INFO("Shader -> Basic Shader");
+            }
+
+            if (ImGui::MenuItem("Lit Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Lit)) {
+                _sim->currentShaderMode = simManager::ShaderMode::Lit;
+                D_INFO("Shader -> Lit Shader");
+            }
+
+            if (ImGui::MenuItem("PBR Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::PBR)) {
+                _sim->currentShaderMode = simManager::ShaderMode::PBR;
+                D_INFO("Shader -> PBR Shader");
+            }
+
+            ImGui::EndMenu();
+        }
+    }
+
     void ControlPanel::render(simManager* sceneView) {
         // Initialize pointers to scene scene
         _sim = sceneView;
+        fov = _sim->getCamera()->getFOVRadians();
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
         _sunLight = _sim->getSunLight();
@@ -55,64 +170,31 @@ namespace gui {
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
         if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
-                if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+            const bool wasRunning = simulationRunning; // snapshot
 
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Reset View")) {
-                    _sim->resetView();
-                    LOG_INFO("Scene view reset to default position and orientation.");
-                }
-                if (ImGui::MenuItem("Properties")) {
-                    // Placeholder for future properties dialog
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Robotic Arms")) {
-                if (ImGui::MenuItem("Select Model")) {
-                    _showRobotSelector = true;
-                }
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Shader"))
-            {
-                // Reload shader button
-                if (ImGui::MenuItem("Reload Shaders")) {
-                    LOG_INFO("Shader reload requested.");
-                    _sim->reloadAllShaders();
-                }
-
-                ImGui::Separator();
-
-                // Shader selection
-                if (ImGui::MenuItem("Basic Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Basic)) {
-                    _sim->currentShaderMode = simManager::ShaderMode::Basic;
-                    D_INFO("Shader -> Basic Shader");
-                }
-
-                if (ImGui::MenuItem("Lit Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::Lit)) {
-                    _sim->currentShaderMode = simManager::ShaderMode::Lit;
-                    D_INFO("Shader -> Lit Shader");
-                }
-
-                if (ImGui::MenuItem("PBR Shader", nullptr, _sim->currentShaderMode == simManager::ShaderMode::PBR)) {
-                    _sim->currentShaderMode = simManager::ShaderMode::PBR;
-                    D_INFO("Shader -> PBR Shader");
-                }
-
-                ImGui::EndMenu();
+            if (wasRunning) {
+                ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.80f, 0.15f, 0.15f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
             }
 
             // Simulation Start/Stop Button
-            if (ImGui::Button(simulationRunning ? "Termiante" : "Run")) {
+            if (ImGui::Button(wasRunning ? "Terminate" : "Run")) {
                 simulationRunning = !simulationRunning;
+
+				if (wasRunning && !simulationRunning) {
+                    // Stopping simulation
+                    simTime = 0.0f;
+                }
+
+				// Logs 
                 LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
                 D_RUNTIME("Simulation %s", simulationRunning ? "started" : "stopped");
             }
+
+            if (wasRunning) {
+                ImGui::PopStyleColor(3);
+			}
 
             // Diagnostic Start/Stop Button
             if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
@@ -170,7 +252,7 @@ namespace gui {
         if (_hdrLoad.HasSelected()) {
             auto file_path = _hdrLoad.GetSelected().string();
             _currentHDRFile = file_path.substr(file_path.find_last_of("/\\") + 1);
-            _sim->loadNewHDR(file_path);
+            _sim->loadNewHDR_UI(file_path);
             LOG_INFO("HDR loaded from file: %s", _currentHDRFile.c_str());
 			D_SUCCESS("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();
@@ -325,7 +407,7 @@ namespace gui {
             ImGui::SetNextItemWidth(150.0f);
             // Scale Controls
             ImGui::Text("Scale:");
-            float minScale = 0.0001; float maxScale = 100.0;
+            float minScale = 0.0001f; float maxScale = 100.0f;
             ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
             ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
             ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
@@ -418,8 +500,8 @@ namespace gui {
                 if (angVelHistory.size() > 100) angVelHistory.erase(angVelHistory.begin());
 
                 // Plot Outputs
-                ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
-                ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), (int)linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), (int)angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
             }
 
             ImGui::Separator();
@@ -478,10 +560,13 @@ namespace gui {
             LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
         }
 
-        if (ImGui::SliderFloat("Field of View", &fov, 25.0f, 125.0f, "%.5f")) {
-			fov = glm::clamp(fov, 25.0f, 125.0f);
-			_sim->getCamera()->setFOV(fov);
-        }
+        static float fovDeg = 70.0f;
+
+        bool edited = ImGui::SliderFloat("Field of View", &fovDeg, 25.0f, 125.0f, "%.1f");
+        bool active = ImGui::IsItemActive();
+
+        if (!active && !edited) { fovDeg = _sim->getCamera()->getFOVDegrees(); }
+        if (edited) { _sim->getCamera()->setFOVDegrees(fovDeg); }
     }
 
 	// Robotic Arm Selector

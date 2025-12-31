@@ -59,5 +59,6 @@ namespace render {
 
 	private:
 		GLFWwindow* _glfwWindow = nullptr;
+		
 	};
 }

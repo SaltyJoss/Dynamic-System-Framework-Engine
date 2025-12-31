@@ -1,0 +1,16 @@
+# MathLib/CMakeLists.txt
+file(GLOB_RECURSE MATHLIB_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+)
+
+add_library(MathLib SHARED ${MATHLIB_SOURCES})
+
+target_include_directories(MathLib PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_compile_features(MathLib PUBLIC cxx_std_20)
+target_link_libraries(MathLib PUBLIC Eigen3::Eigen)
