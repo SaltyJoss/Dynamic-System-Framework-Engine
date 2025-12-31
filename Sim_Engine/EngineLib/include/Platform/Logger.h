@@ -64,7 +64,7 @@
 enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
 
 struct LogEntry {
-    LogLevel level;
+	LogLevel level = LogLevel::Info;
     std::string type;
     std::string message;
 };

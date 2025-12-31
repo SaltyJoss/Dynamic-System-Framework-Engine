@@ -44,7 +44,7 @@ enum class SelectionSource {
 // Current selection state
 struct Selection {
 	SelectionType type = SelectionType::NONE;
-	SelectionSource source;
+	SelectionSource source = SelectionSource::NONE;
 	int index = -1; // Index of the selected link or robot
 };
 

@@ -407,7 +407,7 @@ namespace gui {
             ImGui::SetNextItemWidth(150.0f);
             // Scale Controls
             ImGui::Text("Scale:");
-            float minScale = 0.0001; float maxScale = 100.0;
+            float minScale = 0.0001f; float maxScale = 100.0f;
             ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
             ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
             ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
@@ -500,8 +500,8 @@ namespace gui {
                 if (angVelHistory.size() > 100) angVelHistory.erase(angVelHistory.begin());
 
                 // Plot Outputs
-                ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
-                ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), (int)linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+                ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), (int)angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
             }
 
             ImGui::Separator();

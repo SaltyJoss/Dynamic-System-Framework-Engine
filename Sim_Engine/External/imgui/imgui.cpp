@@ -5307,7 +5307,7 @@ void ImGui::StopMouseMovingWindow()
             g.MouseViewport = window->Viewport;
 
         // Clear the NoInputs window flag set by the Viewport system in AddUpdateViewport()
-        const bool window_can_use_inputs = ((window->Flags & ImGuiWindowFlags_NoMouseInputs) && (window->Flags & ImGuiWindowFlags_NoNavInputs)) == false;
+        const bool window_can_use_inputs = ((window->Flags & ImGuiWindowFlags_NoMouseInputs) & (window->Flags & ImGuiWindowFlags_NoNavInputs)) == false;
         if (window_can_use_inputs)
             window->Viewport->Flags &= ~ImGuiViewportFlags_NoInputs;
     }
@@ -16819,7 +16819,7 @@ ImGuiViewportP* ImGui::AddUpdateViewport(ImGuiWindow* window, ImGuiID id, const 
     flags |= ImGuiViewportFlags_IsPlatformWindow;
     if (window != NULL)
     {
-        const bool window_can_use_inputs = ((window->Flags & ImGuiWindowFlags_NoMouseInputs) && (window->Flags & ImGuiWindowFlags_NoNavInputs)) == false;
+        const bool window_can_use_inputs = ((window->Flags & ImGuiWindowFlags_NoMouseInputs) & (window->Flags & ImGuiWindowFlags_NoNavInputs)) == false;
         if (g.MovingWindow && g.MovingWindow->RootWindowDockTree == window)
             flags |= ImGuiViewportFlags_NoInputs | ImGuiViewportFlags_NoFocusOnAppearing;
         if (!window_can_use_inputs)

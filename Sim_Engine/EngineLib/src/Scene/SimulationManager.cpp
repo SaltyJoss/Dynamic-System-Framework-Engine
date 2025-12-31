@@ -974,7 +974,7 @@ namespace gui{
 		_lastMousePos = { (float)xpos, (float)ypos };
 
 		if (ctrlMode == ControlMode::Camera) {
-			_camera->processMouseMovement(xoffset, yoffset);
+			_camera->processMouseMovement((float)xoffset, (float)yoffset);
 		}
 		else if (ctrlMode == ControlMode::Object && _selectedObject) {
 			_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);

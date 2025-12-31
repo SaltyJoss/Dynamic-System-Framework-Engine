@@ -68,7 +68,7 @@ namespace scene {
 		}
 
 		void onMouseWheel(double delta) {
-			setDistance(delta * 0.5f);
+			setDistance((float)(delta * 0.5f));
 			updateViewMatrix();
 		}
 

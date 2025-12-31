@@ -53,9 +53,10 @@ namespace physics {
 		Vec3 linearVelocity;
 		Vec3 angularVelocity;
 
-		double gravity;
-		double mass;
-		double damping;
+		double gravity = 0.0; // default to zero-g
+		double mass = 1.0; // default to 1kg
+		double damping = 0.0; // default to no damping
+
 		Mat3 inertia;
 		Vec3 forces;
 		Vec3 position;

@@ -85,7 +85,7 @@ namespace shaders {
 		void setBool(bool value, const std::string& name);
 
 	private:
-		unsigned int _programID;
+		unsigned int _programID = 0;
 		unsigned int getCompiledShader(unsigned int shaderType, const std::string& shaderSource);
 
 		std::string _vertexFile;

@@ -98,8 +98,8 @@ namespace physics {
 
 		// WRAP ANGLES INTO [-pi, pi] OR [0, 2pi]
 		auto wrapRad = [](double a) -> double {
-			a = fmod(a, TWO_PI);
-			if (a < 0.0) a += TWO_PI;
+			a = fmod(a, TWO_PI_d);
+			if (a < 0.0) a += TWO_PI_d;
 			return a;
 		};
 
@@ -154,18 +154,40 @@ namespace physics {
 	void PhysicsSystem::applyTorque(double dt, scene::Object* obj, const Vec3& torque) {
 		if (!obj || !obj->getMesh()) return;
 
+		auto& s = obj->state;
+
+		// angular acceleration = torque / inertia
+		Vec3 angAccel = s.inertia.inverse() * torque;
+		// update angular velocity
+		s.angularVelocity += angAccel * dt;
 	}
 
 	// Damping application
 	void PhysicsSystem::applyDamping(double dt, scene::Object* obj, float dampingCoefficient) {
 		if (!obj || !obj->getMesh()) return;
 
+		auto& s = obj->state;
+		s.linearVelocity *= dampingCoefficient;
+		s.angularVelocity *= dampingCoefficient;
 	}
 
 	// Collision handling
 	void PhysicsSystem::handleFloorCollision(double dt, scene::Object* obj, float floorY) {
 		if (!obj || !obj->getMesh()) return;
 
+		auto& s = obj->state;
+		
+		// simple floor collision at y = floorY
+		if (obj->transform.position.y < floorY) {
+			// Simple collision response: reset position and invert Y velocity
+			obj->transform.position.y = floorY;
+			s.linearVelocity.y() = -s.linearVelocity.y() * 0.5f; // lose some energy on bounce
+		}
+		
+		// Dampen small bounces to zero
+		if (obj->transform.position.y < floorY + 0.1f && s.linearVelocity.y() < 0.1f) {
+			s.linearVelocity.y() = 0.0f; // stop small bounces
+		}
 	}
 
 // --------------------------------------------------
