@@ -47,6 +47,9 @@ namespace integration {
 
 		// Fourth-order Runge-Kutta method
 		VecX rk4Step(const VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
+
+		// RK45 method with adaptive step size (Dormand-Prince)
+		VecX rk45Step(const VecX& x, double t, double& dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
 	};
 
 	// Partial Differential Equation (PDE) solvers --> Not going to use really in my current scope, just thought to include for completeness

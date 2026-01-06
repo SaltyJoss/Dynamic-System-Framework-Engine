@@ -170,10 +170,15 @@ namespace physics {
 			Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
 			RK4 = 4			// Fourth-Order Runge-Kutta 
 		};
+
+		enum class eReferenceIntegrator {
+			DormandPrinceRK45 = 0 // Dormand-Prince RK45 method for reference
+		};
 		
 		VecX integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, eIntegrationMethod method);
-
-		eIntegrationMethod method = eIntegrationMethod::Euler;
+		VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, eReferenceIntegrator method);
+		
+		eIntegrationMethod method = eIntegrationMethod::Euler; // default method
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
 

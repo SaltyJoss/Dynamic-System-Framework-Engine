@@ -196,6 +196,13 @@ namespace physics {
 	// Integration method dispatcher
 	VecX PhysicsSystem::integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX &)> f, eIntegrationMethod method) {
 		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
+
+		if (!f) {
+			// If no function provided, assume constant derivative (dxdt)
+			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
+			return x + dxdt * dt;
+		}
+
 		if (method == eIntegrationMethod::Euler) {
 			return _ODE->eulerStep(x, dxdt, dt);
 		}
@@ -215,11 +222,18 @@ namespace physics {
 			LOG_WARN("Unknown integration method: %s. Defaulting to Euler Method (simplest)", method);
 			return _ODE->eulerStep(x, dxdt, dt);
 		}
+	}
 
-		if (!f) {
-			// If no function provided, assume constant derivative (dxdt)
-			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x + dxdt * dt;
+	// Reference integration method dispatcher
+	VecX PhysicsSystem::referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, eReferenceIntegrator method) {
+		method = eReferenceIntegrator::DormandPrinceRK45; // only one method for now
+
+		if (method == eReferenceIntegrator::DormandPrinceRK45) {
+			return _ODE->rk45Step(x, t, dt, f, rtol, atol);
+		}
+		else {
+			LOG_WARN("Unknown reference integration method: %s. Defaulting to Dormand-Prince RK45 Method", method);
+			return _ODE->rk45Step(x, t, dt, f, rtol, atol);
 		}
 	}
 
@@ -240,7 +254,7 @@ namespace physics {
 		_diagResult = IntegratorDiagResult();
 	}
 
-	// Stop diagnostics and compute results
+	// Stop diagnostics and compute results using 
 	void PhysicsSystem::stopDiagnostics() {
 		if (!_diagRunning) return;
 		_diagRunning = false;
@@ -265,8 +279,8 @@ namespace physics {
 
 		// Fill result struct
 		_diagResult.duration = _diagSamples.back().t;
-		_diagResult.omegaNormStats = omegaStats;
-		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, just zeroed for now
+		_diagResult.omegaNormStats = omegaStats; // Omega Stats are min, max, mean, rms of angular velocity norms over time
+		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, will use MSE and RMSE
 
 		// Log summary
 		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu", 
@@ -277,6 +291,5 @@ namespace physics {
 			_diagResult.omegaNormStats.rmsError
 		);
 	}
-
 
 } // namespace physics
