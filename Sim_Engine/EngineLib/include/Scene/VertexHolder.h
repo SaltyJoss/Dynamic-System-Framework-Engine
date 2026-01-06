@@ -36,11 +36,7 @@ extern ENGINE_API Debug gLog;
 namespace scene {
 	class ENGINE_API VertexHolder {
 	public:
-		VertexHolder() : _pos(), _normal(), _texCoord() {
-			_pos = glm::vec3(0.0f);
-			_normal = glm::vec3(0.0f);
-			_texCoord = glm::vec2(0.0f);
-		}
+		VertexHolder() : _pos(), _normal(), _texCoord() {}
 
 		VertexHolder(const std::vector<std::string> tokens) {}
 
@@ -51,8 +47,8 @@ namespace scene {
 
 		~VertexHolder() = default;
 
-		glm::vec3 _pos;
-		glm::vec3 _normal;
-		glm::vec2 _texCoord;
+		glm::vec3 _pos = glm::vec3(0.0f);
+		glm::vec3 _normal = glm::vec3(0.0f);
+		glm::vec2 _texCoord = glm::vec2(0.0f);
 	};
 }

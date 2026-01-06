@@ -193,6 +193,7 @@ namespace physics {
 // --------------------------------------------------
 //				   INTEGRATION (ODE)
 // --------------------------------------------------
+	// Integration method dispatcher
 	VecX PhysicsSystem::integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX &)> f, eIntegrationMethod method) {
 		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
 		if (method == eIntegrationMethod::Euler) {
@@ -225,6 +226,7 @@ namespace physics {
 // --------------------------------------------------
 //				Integration Analysis
 // --------------------------------------------------
+	// Start diagnostics
 	void PhysicsSystem::startDiagnostics(scene::Object* obj) {
 		if (!obj) {
 			_diagRunning = false;
@@ -238,6 +240,7 @@ namespace physics {
 		_diagResult = IntegratorDiagResult();
 	}
 
+	// Stop diagnostics and compute results
 	void PhysicsSystem::stopDiagnostics() {
 		if (!_diagRunning) return;
 		_diagRunning = false;
@@ -265,6 +268,7 @@ namespace physics {
 		_diagResult.omegaNormStats = omegaStats;
 		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, just zeroed for now
 
+		// Log summary
 		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu", 
 			_diagSamples.size(), 
 			_diagResult.omegaNormStats.minError,

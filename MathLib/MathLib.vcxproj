@@ -60,7 +60,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)MathLib\include;$(SolutionDir)MathLib;$(SolutionDir)External\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\MathLib\MathLib\include;$(SolutionDir)..\MathLib\MathLib;$(SolutionDir)..\MathLib\External\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
@@ -129,7 +129,6 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MathLib\src\control\Error.cpp" />
-    <ClCompile Include="MathLib\src\control\Metrics.cpp" />
     <ClCompile Include="MathLib\src\control\PID.cpp" />
     <ClCompile Include="MathLib\src\dynamics\MassMatrix.cpp" />
     <ClCompile Include="MathLib\src\dynamics\Nonlinear_Terms.cpp" />
@@ -138,7 +137,6 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClCompile Include="MathLib\src\integrators\IntegrationAnalysis.cpp" />
     <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp" />
     <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp" />
-    <ClCompile Include="MathLib\src\kinematics\Forward_Kinematics.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Trajectory.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp" />
