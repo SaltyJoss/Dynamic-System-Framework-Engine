@@ -126,8 +126,7 @@ namespace gui {
     }
 
     void DebugPanel::renderLog() {
-        ImGuiWindowFlags window_flags = ImGuiChildFlags_None 
-                                      | ImGuiWindowFlags_HorizontalScrollbar 
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar 
                                       | ImGuiWindowFlags_AlwaysVerticalScrollbar;
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
@@ -135,94 +134,84 @@ namespace gui {
 
         const auto& entries = gLog.Instance().Entries();
 
-        for (const auto& e : entries) {
+        for (int i = 0; i < (int)entries.size(); ++i) {
+			const auto& e = entries[i];
+
             const char* levelStr = "";
             ImVec4 levelColour{ 1, 1, 1, 1 }; // Colour associated log levelling! (I think its useful)
-            debugLogEntry _e;
 
+			// Determine log level string and colour
             switch (e.level) {
-            // Trace level for very detailed logging (e.g. function entries/exits, loop iterations)
-            case LogLevel::Trace:
-                levelStr = "TRACE";
-				levelColour = traceCol;
-                break;
-            // Debug level for detailed debugging information (e.g. variable values, function calls)
-            case LogLevel::Debug:
-                levelStr = "DEBUG";
-				levelColour = debugCol;
-                break;
-            // Info level for general information (e.g. startup messages, asset loaded)
-            case LogLevel::Info:
-                levelStr = "INFO";
-				levelColour = infoCol;
-                break;
-            // Warning level for non-critical issues (e.g. deprecated function, bad input)
-            case LogLevel::Warning:
-                levelStr = "WARN";
-				levelColour = warnCol;
-                _e.level = "WARN";
-                _e.desc = e.message;
-				_e.isError = false;
-                _entries.push_back(_e);
-                break;
-            // Error level for critical issues (e.g. failed to initialize, crashed)
-            case LogLevel::Error:
-                levelStr = "ERROR";
-				levelColour = errorCol;
-				_e.level = "ERROR";
-                _e.desc = e.message;
-				_e.isError = true;
-				_entries.push_back(_e);
-                break;
-            // Ok level for successful operations (e.g. asset loaded, sim completed)
-            case LogLevel::Success:
-                levelStr = "SUCCESS";
-				levelColour = okCol;
-                break;
-            // Fail level for runtime failures (e.g. failed to load asset, sim failed to complete)
-            case LogLevel::Fail:
-                levelStr = "FAIL";
-				levelColour = failCol;
-                break;
-			// Runtime level for runtime messages (e.g. performance, sim time)
-			case LogLevel::Runtime:
-				levelStr = "RUNTIME";
-				levelColour = runtimeCol;
-				break;
-            // Output level for general output messages
-            case LogLevel::Output:
-                levelStr = "OUTPUT";
-                levelColour = outputCol;
-                break;
-            // Default level for general output messages
-            default:
-                levelStr = "OUTPUT";
-				levelColour = outputCol;
-                break;
+				// trace level for detailed debugging information
+                case LogLevel::Trace:   levelStr = "TRACE";   levelColour = traceCol;   break;
+                // debug level for general debugging information
+                case LogLevel::Debug:   levelStr = "DEBUG";   levelColour = debugCol;   break;
+                // info level for informational messages
+                case LogLevel::Info:    levelStr = "INFO";    levelColour = infoCol;    break;
+                // warning level for potential issues
+                case LogLevel::Warning: levelStr = "WARN";    levelColour = warnCol;    break;
+                // error level for error messages
+                case LogLevel::Error:   levelStr = "ERROR";   levelColour = errorCol;   break;
+                // success level for successful operations
+                case LogLevel::Success: levelStr = "SUCCESS"; levelColour = okCol;      break;
+                // fail level for failed operations
+                case LogLevel::Fail:    levelStr = "FAIL";    levelColour = failCol;    break;
+				// Runtime level for runtime specific messages
+                case LogLevel::Runtime: levelStr = "RUNTIME"; levelColour = runtimeCol; break;
+                // Output level for general output messages
+                case LogLevel::Output:  levelStr = "OUTPUT";  levelColour = outputCol;  break;
+                // Default level for general output messages
+                default:                levelStr = "OUTPUT";  levelColour = outputCol;  break;
             }
 
-            // Render log entry (level and message ~ formatted)
-            ImGui::TextWrapped("[");
+            bool selected = selectedLines.count(i) > 0;
+
+            ImGui::PushID(i);
+            if (ImGui::Selectable("##logline", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+                if (ImGui::GetIO().KeyShift && lastClickedLine != -1) {
+                    int a = std::min(lastClickedLine, i);
+                    int b = std::max(lastClickedLine, i);
+                    selectedLines.clear();
+                    for (int j = a; j <= b; ++j)
+                        selectedLines.insert(j);
+                }
+                else if (ImGui::GetIO().KeyCtrl) {
+                    if (selected) selectedLines.erase(i);
+                    else selectedLines.insert(i);
+                    lastClickedLine = i;
+                }
+                else {
+                    selectedLines.clear();
+                    selectedLines.insert(i);
+                    lastClickedLine = i;
+                }
+            }
+
+            // Render coloured text on top of selectable
             ImGui::SameLine();
+            ImGui::TextUnformatted("[");
+            ImGui::SameLine(0, 0);
             ImGui::TextColored(levelColour, "%s", levelStr);
-            ImGui::SameLine();
-            ImGui::TextWrapped("]: %s", e.message.c_str());
+            ImGui::SameLine(0, 0);
+            ImGui::TextUnformatted("]: ");
+            ImGui::SameLine(0, 0);
+            ImGui::TextWrapped("%s", e.message.c_str());
+
+            ImGui::PopID();
         }
+
 
         ImGui::EndChild();
         ImGui::PopStyleColor();
 
-		// Auto-scroll to bottom
-        if (autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-            ImGui::SetScrollHereY(1.0f);
-
-		// Auto-scroll toggle (doesnt work atm)
-        ImGui::Checkbox("Auto-Scroll", &autoScroll);
-
-		// Scroll to bottom button (does not do any atm)
-		ImGui::SameLine();
-		if (ImGui::Button("Scroll to Bottom"))
-			ImGui::SetScrollHereY(1.0f);
-
+        if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
+            std::string clip;
+            for (int idx : selectedLines) {
+                const auto& e = entries[idx];
+                clip += e.message;
+                clip += "\n";
+            }
+            ImGui::SetClipboardText(clip.c_str());
+        }
     }
 }
