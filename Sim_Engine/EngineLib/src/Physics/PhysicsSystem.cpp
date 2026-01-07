@@ -181,10 +181,12 @@ namespace physics {
 		// update ref diagnostics if running
 		if (_diagRunning) {
 			ReferenceSolver::RefIntegratorDiagSample samples;
-			samples.t = _t;
+			samples.t = rt.t;
 			samples.theta = Vec3( rt.x(0), rt.x(1), rt.x(2) ); // angles
 			samples.omega = Vec3( rt.x(3), rt.x(4), rt.x(5) ); // angular velocities
 			_refDiagSamples.push_back(samples);
+
+			_t += dt; // advance global time
 		}
 	}
 
@@ -311,6 +313,7 @@ namespace physics {
 		_diagObject = obj;
 		_diagResult = IntegratorDiagResult();
 		_refDiagResult = IntegratorDiagResult();
+		gRefTracks[obj].init = false; // reset reference track for object
 	}
 
 	// Stop diagnostics and compute results using 
@@ -333,19 +336,9 @@ namespace physics {
 		// build scalar series: omega/time
 		std::vector<double> omegaNorms;
 		omegaNorms.reserve(_diagSamples.size());
-
 		for (const auto& sample : _diagSamples) {
 			omegaNorms.push_back(sample.omega.norm());
 		}
-
-		// MathLib computes stats
-		integration::analysis analyser;
-		integration::ErrorStats omegaStats = analyser.computeErrorStats(omegaNorms);
-
-		// Fill result struct
-		_diagResult.duration = _diagSamples.back().t;
-		_diagResult.omegaNormStats = omegaStats; // Omega Stats are min, max, mean, rms of angular velocity norms over time
-		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, will use MSE and RMSE
 
 		// Reference Integrator Diagnostics
 		std::vector<double> refOmegaNorms;
@@ -353,9 +346,17 @@ namespace physics {
 		for (const auto& sample : _refDiagSamples) {
 			refOmegaNorms.push_back(sample.omega.norm());
 		}
-		integration::ErrorStats refOmegaStats = analyser.computeErrorStats(refOmegaNorms);
 
+		integration::analysis analyser;
+		
+		// Fill result struct
+		integration::ErrorStats omegaStats = analyser.computeErrorStats(omegaNorms);
+		_diagResult.duration = _diagSamples.back().t;
+		_diagResult.omegaNormStats = omegaStats; // Omega Stats are min, max, mean, rms of angular velocity norms over time
+		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, will use MSE and RMSE
+		
 		// Fill reference result struct
+		integration::ErrorStats refOmegaStats = analyser.computeErrorStats(refOmegaNorms);
 		_refDiagResult.duration = _refDiagSamples.back().t;
 		_refDiagResult.omegaNormStats = refOmegaStats;
 		_refDiagResult.thetaNormStats = integration::ErrorStats();
@@ -366,7 +367,7 @@ namespace physics {
 		// Log summary
 		D_SUCCESS("Integrator diagnostics finished: \n ================================");
 
-		D_DEBUG("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu",
+		D_INFO("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %.6f\n\t\t\t Max Error: %.6f\n\t\t\t Mean Error: %.6f\n\t\t\t RMS Error: %.6f",
 			_diagSamples.size(),
 			_diagResult.omegaNormStats.minError,
 			_diagResult.omegaNormStats.maxError,
@@ -374,13 +375,21 @@ namespace physics {
 			_diagResult.omegaNormStats.rmsError
 		);
 
-		D_DEBUG("Reference integrator diagnostics: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu",
+		D_INFO("Reference integrator diagnostics: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %.6f\n\t\t\t Max Error: %.6f\n\t\t\t Mean Error: %.6f\n\t\t\t RMS Error: %.6f",
 			_refDiagSamples.size(),
 			_refDiagResult.omegaNormStats.minError,
 			_refDiagResult.omegaNormStats.maxError,
 			_refDiagResult.omegaNormStats.meanError,
 			_refDiagResult.omegaNormStats.rmsError
 		);
+
+		// debugging output of omega norms references
+		D_DEBUG("refOmegaNorms size=%zu front=%.6f back=%.6f",
+			refOmegaNorms.size(),
+			refOmegaNorms.front(),
+			refOmegaNorms.back());
+
+		D_DEBUG("Reference Integrator time taken: %f seconds", _refDiagResult.duration);
 	}
 
 } // namespace physics

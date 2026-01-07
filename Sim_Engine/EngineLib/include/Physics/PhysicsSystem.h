@@ -208,8 +208,6 @@ namespace physics {
 		const IntegratorDiagResult& diagResult() const { return _diagResult; }
 		const std::vector<IntegratorDiagSample>& diagSamples() const { return _diagSamples; }
 
-
-
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
 		std::unique_ptr<ReferenceSolver> _refSolver;

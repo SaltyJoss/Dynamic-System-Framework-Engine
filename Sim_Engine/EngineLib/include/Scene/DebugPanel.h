@@ -94,6 +94,9 @@ namespace gui {
 		void renderLog();
 		void renderErrorTable();
 
+		std::unordered_set<int> selectedLines;
+		int lastClickedLine = -1;
+
 		// Colour Keys (I am colour deficient so GPT has been used to generate the colour values)
 		const ImVec4 traceCol	= { 0.6275f, 0.6275f, 0.6275f, 1.0f };
 		const ImVec4 debugCol	= { 0.3137f, 0.6667f, 0.9412f, 1.0f };
