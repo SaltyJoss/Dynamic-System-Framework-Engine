@@ -52,48 +52,50 @@ namespace integration {
 			dt = 1.0; // Maximum step size
 		}
 
+		// Butcher tableau for Dormand-Prince method
+
 		// Dormand-Prince coefficients
-		double a11 =  1 / 5;
-		double a21 =  3 / 40;
-		double a22 =  9 / 40;
-		double a31 =  44 / 45;
-		double a32 = -56 / 15;
-		double a33 =  32 / 9;
-		double a41 =  19372 / 6561;
-		double a42 = -25360 / 2187;
-		double a43 =  64448 / 6561;
-		double a44 = -212 / 729;
-		double a51 =  9017 / 3168;
-		double a52 = -355 / 33;
-		double a53 =  46732 / 5247;
-		double a54 =  49 / 176;
-		double a55 = -5103 / 18656;
-		double a61 =  35 / 384;
-		double a62 =  0;
-		double a63 =  500 / 1113;
-		double a64 =  125 / 192;
-		double a65 = -2187 / 6784;
-		double a66 =  11 / 84;
+		double a11 =  1.0 / 5.0;
+		double a21 =  3.0 / 40.0;
+		double a22 =  9.0 / 40.0;
+		double a31 =  44.0 / 45.0;
+		double a32 = -56.0 / 15.0;
+		double a33 =  32.0 / 9.0;
+		double a41 =  19372.0 / 6561.0;
+		double a42 = -25360.0 / 2187.0;
+		double a43 =  64448.0 / 6561.0;
+		double a44 = -212.0 / 729.0;
+		double a51 =  9017.0 / 3168.0;
+		double a52 = -355.0 / 33.0;
+		double a53 =  46732.0 / 5247.0;
+		double a54 =  49.0 / 176.0;
+		double a55 = -5103.0 / 18656.0;
+		double a61 =  35.0 / 384.0;
+		double a62 =  0.0;
+		double a63 =  500.0 / 1113.0;
+		double a64 =  125.0 / 192.0;
+		double a65 = -2187.0 / 6784.0;
+		double a66 =  11.0 / 84.0;
 		// Coefficients for error estimation
-		double c1 = 1 / 5;
-		double c2 = 3 / 10;
-		double c3 = 4 / 5;
-		double c4 = 8 / 9;
-		double c5 = 1;
-		double c6 = 1;
+		double c1 = 1.0 / 5.0;
+		double c2 = 3.0 / 10.0;
+		double c3 = 4.0 / 5.0;
+		double c4 = 8.0 / 9.0;
+		double c5 = 1.0;
+		double c6 = 1.0;
 		// Weights for 4th and 5th order estimates
-		double b1 =  35 / 384;
-		double b2 =  0;
-		double b3 =  500 / 1113;
-		double b4 =  125 / 192;
-		double b5 = -2187 / 6784;
-		double b6 =  11 / 84;
-		double b1s = 517 / 57600;
-		double b2s = 0;
-		double b3s = 7571 / 16695;
-		double b4s = 393 / 640;
-		double b5s = -92097 / 339200;
-		double b6s = 187 / 2100;
+		double b1 =  35.0 / 384.0;
+		double b2 =  0.0;
+		double b3 =  500.0 / 1113.0;
+		double b4 =  125.0 / 192.0;
+		double b5 = -2187.0 / 6784.0;
+		double b6 =  11.0 / 84.0;
+		double b1s = 517.0 / 57600.0;
+		double b2s = 0.0;
+		double b3s = 7571.0 / 16695.0;
+		double b4s = 393.0 / 640.0;
+		double b5s = -92097.0 / 339200.0;
+		double b6s = 187.0 / 2100.0;
 
 		// Compute the Runge-Kutta stages
 		VecX k1 = dt * f(t, x);
