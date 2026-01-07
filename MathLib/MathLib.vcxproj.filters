@@ -155,9 +155,6 @@
     <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp">
       <Filter>Source Files\src\kinematics</Filter>
     </ClCompile>
-    <ClCompile Include="MathLib\src\kinematics\Forward_Kinematics.cpp">
-      <Filter>Source Files\src\kinematics</Filter>
-    </ClCompile>
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp">
       <Filter>Source Files\src\kinematics</Filter>
     </ClCompile>
@@ -168,9 +165,6 @@
       <Filter>Source Files\src\kinematics</Filter>
     </ClCompile>
     <ClCompile Include="MathLib\src\control\Error.cpp">
-      <Filter>Source Files\src\control</Filter>
-    </ClCompile>
-    <ClCompile Include="MathLib\src\control\Metrics.cpp">
       <Filter>Source Files\src\control</Filter>
     </ClCompile>
     <ClCompile Include="MathLib\src\control\PID.cpp">

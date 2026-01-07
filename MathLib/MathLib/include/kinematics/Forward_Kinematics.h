@@ -45,10 +45,10 @@ namespace kinematics {
 				const double sa = std::sin(alpha);
 
 				Pose A; // individual link transform
-				A << cth, -sth * ca, sth* sa, a* cth, // row 1 - rotation
-					sth, cth* ca, -cth * sa, a* sth, // row 2 - rotation
-					0.0, sa, ca, d, // row 3 - translation
-					0.0, 0.0, 0.0, 1.0; // row 4 - homogeneous
+				A << cth, -sth * ca,   sth* sa, a* cth, // row 1 - rotation
+					 sth,	cth* ca, -cth * sa, a* sth, // row 2 - rotation
+					 0.0,		 sa,		ca,		 d, // row 3 - translation
+					 0.0,		0.0,       0.0,    1.0; // row 4 - homogeneous
 
 				T = T * A; // accumulate
 			}
@@ -92,11 +92,11 @@ namespace kinematics {
 				const double ca = std::cos(alpha);
 				const double sa = std::sin(alpha);
 
-				Pose A;
-				A << cth, -sth * ca, sth* sa, a* cth,
-					sth, cth* ca, -cth * sa, a* sth,
-					0.0, sa, ca, d,
-					0.0, 0.0, 0.0, 1.0;
+				Pose A; // individual link transform
+				A << cth, -sth * ca,   sth* sa, a* cth, // row 1 - rotation
+					 sth,	cth* ca, -cth * sa, a* sth, // row 2 - rotation
+					 0.0,		 sa,		ca,		 d, // row 3 - translation
+					 0.0,		0.0,       0.0,    1.0; // row 4 - homogeneous
 
 				T = T * A;
 				transforms.push_back(T);    // store current link transform

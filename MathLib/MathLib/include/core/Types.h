@@ -1,3 +1,4 @@
+#pragma message("Generating Types.h")
 #pragma once
 
 #include "MathLibAPI.h"

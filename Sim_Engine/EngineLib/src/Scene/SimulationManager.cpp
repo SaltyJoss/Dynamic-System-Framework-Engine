@@ -91,7 +91,7 @@ namespace gui{
 
 		planeY = 2.5f;
 
-		InitShadowResource(2048); // shadow map resolution default 2048
+		InitShadowResource(_settingsCurrent.shadowMapRes); // shadow map resolution default 2048
 		InitIBL();
 
 		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Medium);
