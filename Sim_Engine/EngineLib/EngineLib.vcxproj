@@ -142,6 +142,7 @@
     <ClInclude Include="include\EngineLib\LogMacros.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
+    <ClInclude Include="include\Physics\ReferenceSolver.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="include\Rendering\OpenGLBufferManager.h" />
     <ClInclude Include="include\Rendering\OpenGLContext.h" />
     <ClInclude Include="include\Rendering\RenderBase.h" />
+    <ClInclude Include="include\Rendering\RenderPreeset.h" />
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
     <ClInclude Include="include\Rendering\Texture.h" />
@@ -179,7 +181,6 @@
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
-    <ClInclude Include="RenderPreeset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\External\GLAD\glad.c">

@@ -129,7 +129,7 @@ namespace integration {
 			// Adaptive step size control
 			if (err <= 1.0 && std::isfinite(err)) {
 				// accept
-				const double denom = std::max(err, 1e-10);		// prevent division by zero
+				const double denom = std::max<double>(err, 1e-10);		// prevent division by zero
 				double fac = safety * std::pow(denom, -0.2);	// exponent for 5th order method
 				fac = std::clamp(fac, fac_min, fac_max);		// limit step size change
 				dt = std::clamp(dt * fac, h_min, h_max);		// update step size
@@ -137,7 +137,7 @@ namespace integration {
 			}
 			else {
 				// reject
-				double denom = (std::isfinite(err) ? std::max(err, 1e-16) : 1e16);	// prevent division by zero & NaN
+				double denom = (std::isfinite(err) ? std::max<double>(err, 1e-16) : 1e16);	// prevent division by zero & NaN
 				double fac = safety * std::pow(denom, -0.2);							// exponent for 4th order method
 				fac = std::clamp(fac, fac_min, fac_max);
 				dt = std::clamp(dt * fac, h_min, h_max);

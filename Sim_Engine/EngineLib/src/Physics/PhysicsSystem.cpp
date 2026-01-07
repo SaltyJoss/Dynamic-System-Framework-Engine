@@ -19,6 +19,9 @@ namespace physics {
 	PhysicsSystem::PhysicsSystem() {
 		_ODE = std::make_unique<integration::ODE>();
 
+		_refSolver = std::make_unique<ReferenceSolver>();
+		_refSolver->setReferenceIntegrationMethod(ReferenceSolver::eReferenceIntegrator::DormandPrinceRK45);
+
 		LOG_INFO("PhysicsSystem initialised.");
 		D_INFO("Physics initialised");
 	}
@@ -37,6 +40,9 @@ namespace physics {
 
 		// Rotate object (uses angular velocity)
 		updateRotation(dt, obj);
+
+		// Update Reference Integrator States
+		updateRefRotation(dt, obj);
 
 		// Handle floor collision
 		//handleFloorCollision(dt, obj, 0.0f);
@@ -85,7 +91,7 @@ namespace physics {
 			return deriv;
 		};
 
-		// Euler integrate using your ODE helper
+		// perform integration step
 		VecX next = integrationMethod(x, 0.0, dt, f, method);
 
 		// write back to state
@@ -119,6 +125,66 @@ namespace physics {
 			sample.theta = s.theta;
 			sample.omega = s.angularVelocity;
 			_diagSamples.push_back(sample);
+		}
+	}
+
+	void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
+		if (!obj || !obj->getMesh()) return;
+		auto& rt = gRefTracks[obj];
+
+		if (!rt.init) {
+			// Initialize reference track
+			rt.x.resize(6);
+			rt.x(0) = obj->state.theta.x();
+			rt.x(1) = obj->state.theta.y();
+			rt.x(2) = obj->state.theta.z();
+			rt.x(3) = obj->state.angularVelocity.x();
+			rt.x(4) = obj->state.angularVelocity.y();
+			rt.x(5) = obj->state.angularVelocity.z();
+			rt.t = _t;
+			rt.dt = 1e-3; // initial step size
+			rt.init = true;
+		}
+
+		// Define derivative function
+		const double t_next = _t + dt;
+
+		auto f = [&](double t, const VecX& state) -> VecX {
+			VecX deriv(6);
+			// unpacking state vector (theta = angle, omega = angular velocity)
+			double theta_x = state(0);
+			double theta_y = state(1);
+			double theta_z = state(2);
+			double omega_x = state(3);
+			double omega_y = state(4);
+			double omega_z = state(5);
+			// derivative: dtheta/dt = omega
+			deriv(0) = omega_x;
+			deriv(1) = omega_y;
+			deriv(2) = omega_z;
+			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
+			deriv(3) = -(obj->state.damping) * omega_x;
+			deriv(4) = -(obj->state.damping) * omega_y;
+			deriv(5) = -(obj->state.damping) * omega_z;
+			return deriv;
+		};
+
+		// Perform adaptive step to reach t_next
+		while (rt.t < t_next) {
+			double dt = std::min(rt.dt, t_next - rt.t);
+			auto res = _refSolver->refStep(rt.x, rt.t, dt, f, 1e-6, 1e-9);
+			rt.x = res.x_next;
+			rt.t += res.dt_taken;
+			rt.dt = res.dt_sug;
+		}
+
+		// update ref diagnostics if running
+		if (_diagRunning) {
+			ReferenceSolver::RefIntegratorDiagSample samples;
+			samples.t = _t;
+			samples.theta = Vec3( rt.x(0), rt.x(1), rt.x(2) ); // angles
+			samples.omega = Vec3( rt.x(3), rt.x(4), rt.x(5) ); // angular velocities
+			_refDiagSamples.push_back(samples);
 		}
 	}
 
@@ -224,19 +290,6 @@ namespace physics {
 		}
 	}
 
-	// Reference integration method dispatcher
-	VecX PhysicsSystem::referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, eReferenceIntegrator method) {
-		method = eReferenceIntegrator::DormandPrinceRK45; // only one method for now
-
-		if (method == eReferenceIntegrator::DormandPrinceRK45) {
-			return _ODE->rk45Step(x, t, dt, f, rtol, atol);
-		}
-		else {
-			LOG_WARN("Unknown reference integration method: %s. Defaulting to Dormand-Prince RK45 Method", method);
-			return _ODE->rk45Step(x, t, dt, f, rtol, atol);
-		}
-	}
-
 // --------------------------------------------------
 //				Integration Analysis
 // --------------------------------------------------
@@ -249,15 +302,27 @@ namespace physics {
 		}
 
 		if (_diagRunning) return; // already running
+		
+		_diagSamples.clear();
+		_refDiagSamples.clear();
+		_t = 0.0;
+		
 		_diagRunning = true;
 		_diagObject = obj;
 		_diagResult = IntegratorDiagResult();
+		_refDiagResult = IntegratorDiagResult();
 	}
 
 	// Stop diagnostics and compute results using 
 	void PhysicsSystem::stopDiagnostics() {
 		if (!_diagRunning) return;
 		_diagRunning = false;
+
+		if (_refDiagSamples.empty()) {
+			_refDiagResult = IntegratorDiagResult();
+			D_WARN("Reference integrator diagnostics stopped");
+			return;
+		}
 
 		if (_diagSamples.empty()) {
 			_diagResult = IntegratorDiagResult();
@@ -282,13 +347,39 @@ namespace physics {
 		_diagResult.omegaNormStats = omegaStats; // Omega Stats are min, max, mean, rms of angular velocity norms over time
 		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, will use MSE and RMSE
 
+		// Reference Integrator Diagnostics
+		std::vector<double> refOmegaNorms;
+		refOmegaNorms.reserve(_refDiagSamples.size());
+		for (const auto& sample : _refDiagSamples) {
+			refOmegaNorms.push_back(sample.omega.norm());
+		}
+		integration::ErrorStats refOmegaStats = analyser.computeErrorStats(refOmegaNorms);
+
+		// Fill reference result struct
+		_refDiagResult.duration = _refDiagSamples.back().t;
+		_refDiagResult.omegaNormStats = refOmegaStats;
+		_refDiagResult.thetaNormStats = integration::ErrorStats();
+
+
+		// =============================
+
 		// Log summary
-		D_SUCCESS("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu", 
-			_diagSamples.size(), 
+		D_SUCCESS("Integrator diagnostics finished: \n ================================");
+
+		D_DEBUG("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu",
+			_diagSamples.size(),
 			_diagResult.omegaNormStats.minError,
 			_diagResult.omegaNormStats.maxError,
 			_diagResult.omegaNormStats.meanError,
 			_diagResult.omegaNormStats.rmsError
+		);
+
+		D_DEBUG("Reference integrator diagnostics: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %zu\n\t\t\t Max Error: %zu\n\t\t\t Mean Error: %zu\n\t\t\t RMS Error: %zu",
+			_refDiagSamples.size(),
+			_refDiagResult.omegaNormStats.minError,
+			_refDiagResult.omegaNormStats.maxError,
+			_refDiagResult.omegaNormStats.meanError,
+			_refDiagResult.omegaNormStats.rmsError
 		);
 	}
 

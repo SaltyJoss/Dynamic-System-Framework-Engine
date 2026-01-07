@@ -107,6 +107,7 @@
 #include <vector>
 
 #include "PhysicsState.h"
+#include "ReferenceSolver.h"
 #include "Scene/Object.h"
 #include "Platform/Logger.h"
 
@@ -122,9 +123,23 @@ namespace scene {
 
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
-		double t = 0.0;              // simulation time
+		double t = 0.0;   // simulation time
 		Vec3 theta;       // angles (rad)
 		Vec3 omega;       // angular velocity (rad/s)
+	};
+
+	struct ENGINE_API ErrorSample {
+		double t = 0.0;   // simulation time
+		Vec3 x;			  // integrator position
+		Vec3 x_ref;		  // reference position
+		Vec3 error;		  // error between integrator and reference
+	};
+
+	struct ENGINE_API RefTrack {
+		VecX x;
+		double t = 0.0;
+		double dt = 1e-3; // adaptive step size suggestion found, more research may show me a better default?
+		bool init = false;
 	};
 
 	struct ENGINE_API IntegratorDiagResult {
@@ -154,6 +169,7 @@ namespace physics {
 
 		// System-Updates
 		void updateRotation(double dt, scene::Object* obj);
+		void updateRefRotation(double dt, scene::Object* obj);
 		void updateTranslation(double dt, scene::Object* obj);
 
 		void applyForces(double dt, scene::Object* obj);
@@ -171,12 +187,8 @@ namespace physics {
 			RK4 = 4			// Fourth-Order Runge-Kutta 
 		};
 
-		enum class eReferenceIntegrator {
-			DormandPrinceRK45 = 0 // Dormand-Prince RK45 method for reference
-		};
-		
 		VecX integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, eIntegrationMethod method);
-		VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, eReferenceIntegrator method);
+		VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, ReferenceSolver::eReferenceIntegrator method);
 		
 		eIntegrationMethod method = eIntegrationMethod::Euler; // default method
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
@@ -196,8 +208,12 @@ namespace physics {
 		const IntegratorDiagResult& diagResult() const { return _diagResult; }
 		const std::vector<IntegratorDiagSample>& diagSamples() const { return _diagSamples; }
 
+
+
 	private:
 		std::unique_ptr<integration::ODE> _ODE;
+		std::unique_ptr<ReferenceSolver> _refSolver;
+
 		Vec3 _gravity = Vec3(0.0f, -9.81f, 0.0f);
 
 		// Integration analysis
@@ -206,10 +222,18 @@ namespace physics {
 		std::vector<integration::ErrorSample> _errorSamples;
 
 		bool _diagRunning = false;
-		scene::Object* _diagObject = nullptr;
+		bool _simRunning = false;
 
+		scene::Object* _diagObject = nullptr;
 		std::vector<IntegratorDiagSample> _diagSamples;
 		IntegratorDiagResult _diagResult;
+
+		scene::Object* _refDiagObject = nullptr;
+		std::vector<ReferenceSolver::RefIntegratorDiagSample> _refDiagSamples;
+		IntegratorDiagResult _refDiagResult;
+
+		// Track reference states for each object
+		std::unordered_map<scene::Object*, RefTrack> gRefTracks;
 
 		// Simulation parameters
 		double _dt = 1.0f / 120.0f; // ~120 FPS
