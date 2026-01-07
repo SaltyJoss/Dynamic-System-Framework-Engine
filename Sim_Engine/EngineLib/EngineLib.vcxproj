@@ -140,6 +140,11 @@
     <ClInclude Include="include\Assets\importObj.h" />
     <ClInclude Include="include\EngineCore.h" />
     <ClInclude Include="include\EngineLib\LogMacros.h" />
+    <ClInclude Include="include\Interpreter\CommandFactory.h" />
+    <ClInclude Include="include\Interpreter\ICommand.h" />
+    <ClInclude Include="include\Interpreter\IStoredProgram.h" />
+    <ClInclude Include="include\Interpreter\Parser.h" />
+    <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
     <ClInclude Include="include\Physics\ReferenceSolver.h" />
@@ -180,6 +185,9 @@
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
+    <ClCompile Include="src\Interpreter\Command.cpp" />
+    <ClCompile Include="src\Interpreter\Parser.cpp" />
+    <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

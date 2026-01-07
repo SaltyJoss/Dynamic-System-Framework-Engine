@@ -94,6 +94,15 @@
     <Filter Include="External\MathLib\Core">
       <UniqueIdentifier>{f6973194-a3e6-4912-a732-5d314ebe78d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter">
+      <UniqueIdentifier>{7348e3aa-9859-4cf9-99b8-96c72fc9dd0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands">
+      <UniqueIdentifier>{704d55d2-7b7a-4f20-90e3-0002922f0063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter">
+      <UniqueIdentifier>{e13709bd-e1f9-42fd-9999-6e05234baedd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -324,6 +333,21 @@
     <ClInclude Include="include\Physics\ReferenceSolver.h">
       <Filter>Header Files\include\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\StoredProgram.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Parser.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\CommandFactory.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\ICommand.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\IStoredProgram.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -436,6 +460,15 @@
     </ClCompile>
     <ClCompile Include="src\Scene\RenderPreset.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\StoredProgram.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Command.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Parser.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
