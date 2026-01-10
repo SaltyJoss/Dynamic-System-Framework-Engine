@@ -13,21 +13,22 @@ namespace interpreter {
 		int getPC() const { return _pc; }
 		// Set the program counter
 		void setPC(int pc) { _pc = pc; }
+
 		// Add instruction to the program
-		void addInstruction(ICommand cmd) { _instructions.push_back(cmd); }
+		void addInstruction(ICommand cmd);
 		// Get instruction at specified index
-		std::string getInstruction(int index) const { return _instructions.at(index); }
+		std::string getInstruction(int index) const;
 		// Get total number of stored instructions
-		int getInstructionCount() const { return static_cast<int>(_instructions.size()); }
+		int getInstructionCount() const;
 
 		// Control program execution
-		void run() { _isRunning = true; }
+		void run();
 		// Stop program execution
-		void stop() { _isRunning = false; }
+		void stop();
 		// Reset program to initial state
-		void reset() { _pc = 0; }
+		void reset();
 		// Clear all stored instructions
-		void clear() { _instructions.clear(); _pc = 0; }
+		void clear();
 
 		// Evaluate Expression
 		std::string evaluateExpression(const std::string& expr);

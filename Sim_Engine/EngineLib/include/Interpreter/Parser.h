@@ -11,14 +11,10 @@ namespace interpreter {
 	class ENGINE_API Parser {
 	public:
 		// Constructor
-		Parser();
+		Parser(std::string& code);
 
-		// Get the command name
-		std::string getCommandName() const { return commandName; }
-		// Get the command parameters
-		std::vector<std::string> getParameters() const { return parameters; }
 	private:
-		std::unique_ptr<IStoredProgram> storedProgram; // Associated stored program
+		std::unique_ptr<IStoredProgram> _program; // Associated stored program
 		
 		std::string rawCode;					// Raw code input
 		std::vector<std::string> lines;			// Lines of code
@@ -27,5 +23,8 @@ namespace interpreter {
 
 		std::string commandName;				// Name of the command
 		std::vector<std::string> parameters;	// Parameters of the command
+
+		void buildProgram();
+		void buildGenericCommand();
 	};
 } // namespace interpreter

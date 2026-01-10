@@ -2,7 +2,7 @@
 #include "Interpreter/CommandFactory.h"
 
 namespace language {
-	CommandFactory& CommandFactory::Instancse() {
+	CommandFactory& CommandFactory::Instance() {
 		static CommandFactory instance;
 		return instance;
 	}

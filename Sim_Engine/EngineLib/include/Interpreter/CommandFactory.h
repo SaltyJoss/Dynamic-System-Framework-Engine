@@ -13,7 +13,7 @@ namespace language {
 	class ENGINE_API CommandFactory {
 	public:
 		// Get the singleton instance of CommandFactory
-		static CommandFactory& Instancse();
+		static CommandFactory& Instance();
 
 		// Public API
 		using Creator = std::unique_ptr<ICommand>(*)(const ParserArgs&);
