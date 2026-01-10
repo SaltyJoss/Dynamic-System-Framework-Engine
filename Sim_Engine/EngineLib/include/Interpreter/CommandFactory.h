@@ -1,12 +1,9 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <memory>
-#include <string>
+#include "ICommand.h"
 #include <unordered_map>
 #include <functional>
-
-class ICommand;
 
 namespace commands {
 	// Type alias for command creator function
