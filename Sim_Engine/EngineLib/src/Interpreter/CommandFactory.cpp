@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Interpreter/CommandFactory.h"
 
-namespace language {
+namespace commands {
 	CommandFactory& CommandFactory::Instance() {
 		static CommandFactory instance;
 		return instance;
@@ -23,4 +23,4 @@ namespace language {
 	bool CommandFactory::hasCommand(const std::string& name) const {
 		return _registry.find(name) != _registry.end();
 	}
-} // namespace language
+} // namespace commands

@@ -106,6 +106,12 @@
     <Filter Include="Source Files\src\Interpreter\Commands">
       <UniqueIdentifier>{1cd57f48-118c-4603-ab0e-a9d45b9fdc17}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter\Parsing">
+      <UniqueIdentifier>{4f7bdb55-f58a-47de-808b-0b91b35253aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Interfaces">
+      <UniqueIdentifier>{bfeebd83-0444-4454-ac6f-670c94dd828d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -339,16 +345,31 @@
     <ClInclude Include="include\Interpreter\StoredProgram.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="include\Interpreter\Parser.h">
+      <Filter>Header Files\include\Interpreter\Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\ProgramData.h">
+      <Filter>Header Files\include\Interpreter\Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Command.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\IStoredProgram.h">
+      <Filter>Header Files\include\Interpreter\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\ICommand.h">
+      <Filter>Header Files\include\Interpreter\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandContext.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
     <ClInclude Include="include\Interpreter\CommandFactory.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\ICommand.h">
-      <Filter>Header Files\include\Interpreter</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Interpreter\IStoredProgram.h">
+    <ClInclude Include="include\Interpreter\RegisterCommand.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
   </ItemGroup>
@@ -477,6 +498,12 @@
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandContext.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
   </ItemGroup>

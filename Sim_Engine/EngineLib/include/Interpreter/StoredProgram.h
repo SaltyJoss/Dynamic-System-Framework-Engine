@@ -2,39 +2,50 @@
 
 #include "EngineCore.h"
 #include "IStoredProgram.h"
+#include "CommandFactory.h"
+#include "CommandContext.h"
 #include <string>
 #include <vector>
+
+using namespace commands;
 
 namespace interpreter {
 	// Class representing a stored program in the interpreter.
 	class ENGINE_API StoredProgram : IStoredProgram {
 	public:
-		// Get the current program counter
-		int getPC() const { return _pc; }
-		// Set the program counter
-		void setPC(int pc) { _pc = pc; }
+		// Constructor
+		StoredProgram(CommandFactory& factory, CommandContext& cntx);
 
-		// Add instruction to the program
-		void addInstruction(ICommand cmd);
-		// Get instruction at specified index
-		std::string getInstruction(int index) const;
-		// Get total number of stored instructions
-		int getInstructionCount() const;
-
-		// Control program execution
-		void run();
-		// Stop program execution
-		void stop();
+		// Load program data
+		void load(ProgramData program) override;
 		// Reset program to initial state
-		void reset();
+		void reset() override;
 		// Clear all stored instructions
-		void clear();
-
-		// Evaluate Expression
-		std::string evaluateExpression(const std::string& expr);
+		void clear() override;
+		// Start program execution
+		void start() override;
+		// Stop program execution
+		void stop() override;
+		// Puase program execution
+		void pause() override;
+		// Step the program by dt
+		void step(double dt) override;
+		// Get current program status
+		ProgramStatus status() const override;
 	private:
-		std::vector<std::string> _instructions; // Vector storing the instructions
-		int _pc = 0;                 // Current program counter
-		bool _isRunning = false;                 // Flag indicating if the program is running
+		// Bool for tracking if the program is running
+		bool _hasActiveCommand() const;
+		// Bool for tracking if the program has reached the end
+		bool _atEnd() const;
+		// Get the current instruction
+		const Instruction* _currentInstruction() const;
+		
+		// Method for handling faults (Not necessary yet, but WILL BE)
+		void fault(const std::string& message);
+		// Method for completing the program
+		void spawnNextCommand();
+		// Method for clearing the active command
+		void clearActiveCommand();
+
 	};
 } // namespace interpreter
