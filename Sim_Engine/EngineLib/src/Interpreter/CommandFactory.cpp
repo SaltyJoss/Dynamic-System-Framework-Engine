@@ -12,7 +12,7 @@ namespace commands {
 		return result.second; // returns true if insertion took place
 	}
 
-	std::unique_ptr<ICommand> CommandFactory::create(const std::string& name, const ParserArgs& args) const {
+	std::unique_ptr<ICommand> CommandFactory::create(const std::string& name, const std::vector<std::string>& args) const {
 		auto it = _registry.find(name);
 		if (it != _registry.end()) {
 			return (it->second)(args);
