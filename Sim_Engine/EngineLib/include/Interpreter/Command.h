@@ -18,8 +18,11 @@ namespace commands {
 		// Stop the command
 		void stop(CommandContext& cntx) override;
 	protected:
+		// Mark the command as failed with a message
 		void markFailed(const std::string& message);
+		// Mark the command as completed
 		void markCompleted();
-		bool started() const;
+		// Check if the command has started
+		bool hasStarted() const;
 	};
 } // namespace commands

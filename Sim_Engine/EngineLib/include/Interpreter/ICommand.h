@@ -38,9 +38,6 @@ namespace commands {
 
 	// ICommand interface
 	class ENGINE_API ICommand {
-		// Virtual destructor
-		virtual ~ICommand() = default;
-
 		// Get the command name
 		virtual std::string_view name() const = 0;
 		// Start the command

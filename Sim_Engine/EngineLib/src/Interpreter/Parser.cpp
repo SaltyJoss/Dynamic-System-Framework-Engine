@@ -3,17 +3,27 @@
 #include "Interpreter/IStoredProgram.h"
 
 namespace interpreter {
-	// Constructor
-	Parser::Parser(std::string& code) : rawCode(code) { // NOTE: need to look at how I want to call this? Maybe a wrapper is best??, StoredProgram has run, so aim to use that for actual running. Might be better to have a storedprogram argument - but for now keeping like this
-		_program = std::make_unique<IStoredProgram>();
+	ProgramData Parser::parse(std::string_view code) const {
 	}
 
-	void Parser::buildProgram() {
-		// Implementation for building the program from rawCode, not doing yet
+	ProgramData Parser::parseFile(const std::string& filename) const {
+		std::ifstream file(filename);
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file: " + filename);
+		}
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return parse(buffer.str());
 	}
 
-	void Parser::buildGenericCommand() {
-		// Implementation for building a generic command, not doing yet
+	bool Parser::isBlankOrComment(std::string_view line) {
+		std::string_view trimmed = line;
+		// Trim leading whitespace
+		while (!trimmed.empty() && std::isspace(trimmed.front())) {
+			trimmed.remove_prefix(1);
+		}
+		// Check if the line is empty or starts with a comment character
+		return trimmed.empty() || trimmed.front() == '#';
 	}
 
 } // namespace interpreter

@@ -112,6 +112,9 @@
     <Filter Include="Header Files\include\Interpreter\Interfaces">
       <UniqueIdentifier>{bfeebd83-0444-4454-ac6f-670c94dd828d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\src\Interpreter\Parser">
+      <UniqueIdentifier>{2164e45c-1bbd-48ec-abd7-aab492050216}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -363,14 +366,14 @@
     <ClInclude Include="include\Interpreter\ICommand.h">
       <Filter>Header Files\include\Interpreter\Interfaces</Filter>
     </ClInclude>
-    <ClInclude Include="CommandContext.h">
-      <Filter>Header Files\include\Interpreter</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\CommandFactory.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
     <ClInclude Include="include\Interpreter\RegisterCommand.h">
       <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\CommandContext.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -488,12 +491,6 @@
     <ClCompile Include="src\Interpreter\StoredProgram.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\Command.cpp">
-      <Filter>Source Files\src\Interpreter</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Interpreter\Parser.cpp">
-      <Filter>Source Files\src\Interpreter</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\CommandFactory.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
@@ -503,8 +500,14 @@
     <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="CommandContext.cpp">
-      <Filter>Source Files\src\Interpreter</Filter>
+    <ClCompile Include="src\Interpreter\Command.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Parser.cpp">
+      <Filter>Source Files\src\Interpreter\Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\CommandContext.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
