@@ -372,7 +372,7 @@
     <ClInclude Include="include\Interpreter\RegisterCommand.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\CommandContext.h">
+    <ClInclude Include="include\Interpreter\CommandContextMotion.h">
       <Filter>Header Files\include\Interpreter\Commands</Filter>
     </ClInclude>
   </ItemGroup>
@@ -506,7 +506,7 @@
     <ClCompile Include="src\Interpreter\Parser.cpp">
       <Filter>Source Files\src\Interpreter\Parser</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\CommandContext.cpp">
+    <ClCompile Include="src\Interpreter\CommandContextMotion.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
   </ItemGroup>

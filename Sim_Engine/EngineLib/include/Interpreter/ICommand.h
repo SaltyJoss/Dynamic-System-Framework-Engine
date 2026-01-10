@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include "CommandContext.h"
+#include "CommandContextMotion.h"
 #include <memory>
 #include <string>
 
@@ -41,11 +41,11 @@ namespace commands {
 		// Get the command name
 		virtual std::string_view name() const = 0;
 		// Start the command
-		virtual void start(CommandContext& cntx) = 0;
+		virtual void start(CommandContextMotion& cntx) = 0;
 		// Update the command
-		virtual CmdResult update(CommandContext& cntx, double dt) = 0;
+		virtual CmdResult update(CommandContextMotion& cntx, double dt) = 0;
 		// Stop the command
-		virtual void stop(CommandContext& cntx) = 0;
+		virtual void stop(CommandContextMotion& cntx) = 0;
 	};
 	
 } // namespace interpreter

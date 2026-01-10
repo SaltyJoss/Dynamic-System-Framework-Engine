@@ -3,7 +3,7 @@
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "CommandFactory.h"
-#include "CommandContext.h"
+#include "CommandContextMotion.h"
 #include <string>
 #include <vector>
 
@@ -14,7 +14,7 @@ namespace interpreter {
 	class ENGINE_API StoredProgram : IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram(CommandFactory& factory, CommandContext& cntx);
+		StoredProgram(CommandFactory& factory, CommandContextMotion& cntx);
 
 		// Load program data
 		void load(ProgramData program) override;
@@ -46,6 +46,5 @@ namespace interpreter {
 		void spawnNextCommand();
 		// Method for clearing the active command
 		void clearActiveCommand();
-
 	};
 } // namespace interpreter

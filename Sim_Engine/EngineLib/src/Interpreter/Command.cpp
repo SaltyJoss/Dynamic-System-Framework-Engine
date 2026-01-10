@@ -6,16 +6,16 @@ namespace commands {
 		return "GenericCommand"; // Placeholder name
 	}
 
-	void Command::start(CommandContext& cntx) {
+	void Command::start(CommandContextMotion& cntx) {
 		// Default implementation does nothing
 	}
 
-	CmdResult Command::update(CommandContext& cntx, double dt) {
+	CmdResult Command::update(CommandContextMotion& cntx, double dt) {
 		// Default implementation does nothing and returns NotStarted
 		return CmdResult{ CmdState::NotStarted, CmdSignalData{}, "" }; // Placeholder
 	}
 
-	void Command::stop(CommandContext& cntx) {
+	void Command::stop(CommandContextMotion& cntx) {
 		// Default implementation does nothing
 	}
 

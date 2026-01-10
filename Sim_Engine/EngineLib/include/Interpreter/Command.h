@@ -2,7 +2,7 @@
 
 #include "EngineCore.h"
 #include "ICommand.h"
-#include "CommandContext.h"
+#include "CommandContextMotion.h"
 
 namespace commands {
 	// Class representing a generic command
@@ -12,11 +12,11 @@ namespace commands {
 		std::string_view name() const override;
 
 		// Start the command
-		void start(CommandContext& cntx) override;
+		void start(CommandContextMotion& cntx) override;
 		// Update the command
-		CmdResult update(CommandContext& cntx, double dt) override;
+		CmdResult update(CommandContextMotion& cntx, double dt) override;
 		// Stop the command
-		void stop(CommandContext& cntx) override;
+		void stop(CommandContextMotion& cntx) override;
 	protected:
 		// Mark the command as failed with a message
 		void markFailed(const std::string& message);

@@ -2,8 +2,38 @@
 #include "Interpreter/Parser.h"
 #include "Interpreter/IStoredProgram.h"
 
+using namespace std;
+
 namespace interpreter {
-	ProgramData Parser::parse(std::string_view code) const {
+	ProgramData Parser::parse(std::string code) const {
+		ProgramData program;
+		std::istringstream ss(code);
+		std::string line;
+		size_t lineNumber = 0;
+
+		while (std::getline(ss, line)) {
+			if (line.empty() || line[0] == '#') {
+				continue; // Skip blank lines and comments
+			}
+
+			std::istringstream ls(line);
+			Instruction inst;
+
+			ls >> inst.name;
+			std::string arg;
+
+			while (ls >> arg) {
+				inst.args.push_back(arg);
+			}
+
+			// source location (minimal but valid)
+			inst.loc.line = lineNumber;
+			inst.loc.column = 1;
+
+			program.instructions.push_back(inst);
+			lineNumber++;
+		}
+		return program;
 	}
 
 	ProgramData Parser::parseFile(const std::string& filename) const {
@@ -17,13 +47,12 @@ namespace interpreter {
 	}
 
 	bool Parser::isBlankOrComment(std::string_view line) {
-		std::string_view trimmed = line;
-		// Trim leading whitespace
-		while (!trimmed.empty() && std::isspace(trimmed.front())) {
-			trimmed.remove_prefix(1);
+		for (char c : line) {
+			if (c == '#') return true;
+			if (!std::isspace(static_cast<unsigned char>(c)))
+				return false;
 		}
-		// Check if the line is empty or starts with a comment character
-		return trimmed.empty() || trimmed.front() == '#';
+		return true;
 	}
 
 } // namespace interpreter

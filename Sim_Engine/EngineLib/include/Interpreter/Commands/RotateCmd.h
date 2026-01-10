@@ -4,7 +4,7 @@
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include "Interpreter/Command.h"
-#include "Interpreter/CommandContext.h"
+#include "Interpreter/CommandContextMotion.h"
 
 using namespace mathlib;
 
@@ -12,14 +12,14 @@ namespace commands {
 	// Enum for rotation target type
 	enum class RotateTargetType {
 		AxisMask,
-		LinkIndex
+		linkName
 	};
 
 	// Struct for rotation target
 	struct RotateTarget {
 		RotateTargetType type = RotateTargetType::AxisMask;
 		AxisMask axisMask;
-		size_t linkIndex = 0;
+		std::string linkName = "";
 	};
 
 	// Class representing the ROTATE command
@@ -31,16 +31,19 @@ namespace commands {
 		// Rotation target
 		std::string_view name() const override;
 		// Start the command
-		void start(CommandContext& cntx) override;
+		void start(CommandContextMotion& cntx) override;
 		// Update the command
-		CmdResult update(CommandContext& cntx, double dt) override;
+		CmdResult update(CommandContextMotion& cntx, double dt) override;
 		// Stop the command
-		void stop(CommandContext& cntx) override;
+		void stop(CommandContextMotion& cntx) override;
 	private:
-		RotateTarget _target_{};
-		double omega_ = 0.0;      // Angular velocity (deg/s)
-		double angleDeg_ = 0.0;   // Total rotation angle (deg)
-		bool  started_ = false;    // Flag to indicate if rotation has started
+		RotateTarget _target{};
+		double _omega = 0.0;      // Angular velocity (deg/s)
+		double _angleDeg = 0.0;   // Total rotation angle (deg)
+		bool  _started = false;    // Flag to indicate if rotation has started
+
+		double _currentAngle = 0.0; // Current angle for rotation commands
+		double _totalRotated = 0.0; // Total rotated angle
 	};
 
 	// Free function to create a RotateCmd

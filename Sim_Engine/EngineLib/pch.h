@@ -16,6 +16,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <cctype>
 #include <iostream>
 #include <memory>
 #include <ctime>
