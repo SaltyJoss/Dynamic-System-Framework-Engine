@@ -186,7 +186,9 @@
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="src\Interpreter\Command.cpp" />
+    <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
+    <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>

@@ -2,11 +2,12 @@
 
 #include "EngineCore.h"
 #include "IStoredProgram.h"
+#include <memory>
 
 namespace interpreter {
 	class ENGINE_API ICommand {
 		// StoredProgram Instance
-		IStoredProgram program;
+		std::unique_ptr<IStoredProgram> program;
 
 		// check parameters
 		virtual bool checkParams(std::vector<std::string> params) = 0;

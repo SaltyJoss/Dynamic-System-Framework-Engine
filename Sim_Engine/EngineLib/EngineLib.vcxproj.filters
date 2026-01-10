@@ -103,6 +103,9 @@
     <Filter Include="Source Files\src\Interpreter">
       <UniqueIdentifier>{e13709bd-e1f9-42fd-9999-6e05234baedd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands">
+      <UniqueIdentifier>{1cd57f48-118c-4603-ab0e-a9d45b9fdc17}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -468,6 +471,12 @@
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
     <ClCompile Include="src\Interpreter\Parser.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\CommandFactory.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\RegisterCommand.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
   </ItemGroup>
