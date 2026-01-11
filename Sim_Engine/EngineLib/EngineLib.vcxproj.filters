@@ -94,6 +94,27 @@
     <Filter Include="External\MathLib\Core">
       <UniqueIdentifier>{f6973194-a3e6-4912-a732-5d314ebe78d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter">
+      <UniqueIdentifier>{7348e3aa-9859-4cf9-99b8-96c72fc9dd0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands">
+      <UniqueIdentifier>{704d55d2-7b7a-4f20-90e3-0002922f0063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter">
+      <UniqueIdentifier>{e13709bd-e1f9-42fd-9999-6e05234baedd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands">
+      <UniqueIdentifier>{1cd57f48-118c-4603-ab0e-a9d45b9fdc17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Parsing">
+      <UniqueIdentifier>{4f7bdb55-f58a-47de-808b-0b91b35253aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Interfaces">
+      <UniqueIdentifier>{bfeebd83-0444-4454-ac6f-670c94dd828d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Parser">
+      <UniqueIdentifier>{2164e45c-1bbd-48ec-abd7-aab492050216}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -324,6 +345,39 @@
     <ClInclude Include="include\Physics\ReferenceSolver.h">
       <Filter>Header Files\include\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\StoredProgram.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Parser.h">
+      <Filter>Header Files\include\Interpreter\Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\ProgramData.h">
+      <Filter>Header Files\include\Interpreter\Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Command.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\IStoredProgram.h">
+      <Filter>Header Files\include\Interpreter\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\ICommand.h">
+      <Filter>Header Files\include\Interpreter\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\CommandFactory.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\RegisterCommand.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\CommandContextMotion.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\CommandScriptEditor.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -435,6 +489,30 @@
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\RenderPreset.cpp">
+      <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\StoredProgram.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\CommandFactory.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\RegisterCommand.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Command.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Parser.cpp">
+      <Filter>Source Files\src\Interpreter\Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\CommandContextMotion.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\CommandScriptEditor.cpp">
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>

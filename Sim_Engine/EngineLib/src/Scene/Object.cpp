@@ -8,7 +8,6 @@ glm::mat4 scene::Transform::toMatrix() const
 {
     glm::mat4 model(1.0f);
 
-
     // translation
     model = glm::translate(model, position);
 

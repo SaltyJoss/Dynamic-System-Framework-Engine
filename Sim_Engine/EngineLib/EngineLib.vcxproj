@@ -140,6 +140,16 @@
     <ClInclude Include="include\Assets\importObj.h" />
     <ClInclude Include="include\EngineCore.h" />
     <ClInclude Include="include\EngineLib\LogMacros.h" />
+    <ClInclude Include="include\Interpreter\Command.h" />
+    <ClInclude Include="include\Interpreter\CommandContextMotion.h" />
+    <ClInclude Include="include\Interpreter\CommandFactory.h" />
+    <ClInclude Include="include\Interpreter\Commands\RotateCmd.h" />
+    <ClInclude Include="include\Interpreter\ICommand.h" />
+    <ClInclude Include="include\Interpreter\IStoredProgram.h" />
+    <ClInclude Include="include\Interpreter\Parser.h" />
+    <ClInclude Include="include\Interpreter\ProgramData.h" />
+    <ClInclude Include="include\Interpreter\RegisterCommand.h" />
+    <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
     <ClInclude Include="include\Physics\ReferenceSolver.h" />
@@ -165,6 +175,7 @@
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
+    <ClInclude Include="include\Scene\CommandScriptEditor.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
     <ClInclude Include="include\Scene\DebugPanel.h" />
     <ClInclude Include="include\Scene\Element.h" />
@@ -180,6 +191,13 @@
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
+    <ClCompile Include="src\Interpreter\Command.cpp" />
+    <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
+    <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Parser.cpp" />
+    <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
+    <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -260,6 +278,7 @@
     <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Robots\RobotLoader.cpp" />
     <ClCompile Include="src\Scene\Camera.cpp" />
+    <ClCompile Include="src\Scene\CommandScriptEditor.cpp" />
     <ClCompile Include="src\Scene\ControlPanel.cpp" />
     <ClCompile Include="src\Scene\DebugPanel.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />
