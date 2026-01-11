@@ -174,12 +174,13 @@ namespace gui {
 		}
 
 		ImGui::EndChild();
+		ImGui::PopStyleColor();
 	}
 
 	// examples of what I have planned, but very rough for now
 	void CommandScriptEditor::renderCmdInstructions() {
 		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
-		ImGui::Text("#Command Syntax Instructions:");
+		ImGui::Text("Command Syntax Instructions:");
 		ImGui::Separator();
 		ImGui::Text("1. MOVE <object_id> <x> <y> <z> ~ Move object to position (x, y, z)");
 		ImGui::Text("2. ROTATE <object_id>/<joint_id> <angle_x>,<angle_y>,<angle_z> ~ Rotate object by angles");
@@ -199,8 +200,8 @@ namespace gui {
 		const std::string filePath = _load.GetSelected().string();
 		_load.ClearSelected();
 
-		FILE* file = fopen(filePath.c_str(), "r");
-		if (!file) {
+		FILE* file = nullptr;
+		if (fopen_s(&file, filePath.c_str(), "r") != 0 || !file) {
 			LOG_ERROR("Failed to open script file: %s", filePath.c_str());
 			return false;
 		}
@@ -225,8 +226,8 @@ namespace gui {
 	}
 
 	bool CommandScriptEditor::trySaveScriptToFile(const std::string& filepath) {
-		FILE* file = fopen(filepath.c_str(), "w");
-		if (!file) {
+		FILE* file = nullptr;
+		if (fopen_s(&file, filepath.c_str(), "w") != 0 || !file) {
 			LOG_ERROR("Failed to open script file for writing: %s", filepath.c_str());
 			return false;
 		}
