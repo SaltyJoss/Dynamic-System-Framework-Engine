@@ -99,6 +99,7 @@ namespace gui {
 		ImGui::PopStyleColor();
 	}
 
+	// Callback to handle dynamic resizing of the text buffer
 	static int TextResizeCallback(ImGuiInputTextCallbackData* data) {
 		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
 			auto* str = static_cast<std::string*>(data->UserData);
@@ -115,7 +116,7 @@ namespace gui {
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
 		ImGui::BeginChild("ScriptEditor", ImVec2(0, -30), true, window_flags);
 
-		ImGui::Text("#Enter command script below:");
+		ImGui::Text("Enter command script below:");
 
 		ImGui::Separator();
 
@@ -177,19 +178,71 @@ namespace gui {
 		ImGui::PopStyleColor();
 	}
 
+	// Helper function to render inline colored text
+	static void TextInlineColored(const ImVec4& color, const char* text) {
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(color, "%s", text);
+	}
+
 	// examples of what I have planned, but very rough for now
 	void CommandScriptEditor::renderCmdInstructions() {
 		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
-		ImGui::Text("Command Syntax Instructions:");
 		ImGui::Separator();
-		ImGui::Text("1. MOVE <object_id> <x> <y> <z> ~ Move object to position (x, y, z)");
-		ImGui::Text("2. ROTATE <object_id>/<joint_id> <angle_x>,<angle_y>,<angle_z> ~ Rotate object by angles");
-		ImGui::Text("3. SCALE <object_id> <scale_x>,<scale_y>,<scale_z> ~ Scale object by factors");
-		ImGui::Text("4. WAIT <seconds> ~ Pause script execution for specified time");
-		ImGui::Text("5. SET_COLOR <object_id>/<robot_id> <r>,<g>,<b> ~ Set object color using RGB values");
-		ImGui::Text("6. RUN_TEST <object_id>/<robot_id> <test_name> ~ Play specified test on object OR robot");
-		ImGui::Text("7. SPAWN <object_type>/<robot_id> <x>,<y>,<z> ~ Spawn new object of type OR robot at position");
-		ImGui::Text("8. DELETE <object_id>/<robot_id> ~ Remove object or robot from scene");
+		ImGui::NewLine();
+
+		ImGui::Text("Format:");
+
+		ImGui::NewLine();
+		ImGui::Separator();
+
+		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
+		ImGui::TextColored(CMD_COL, "COMMAND ");
+		TextInlineColored(VEC_COL, "<identifier>/<axis> ");
+		TextInlineColored(ARG_COL, "<arg1> <arg2> ... ");
+		TextInlineColored(DESC_COL, "# Description");
+
+		ImGui::Separator();
+		ImGui::NewLine();
+
+		ImGui::Text("Commands:");
+
+		ImGui::NewLine();
+		ImGui::Separator();
+		
+		// Translate command with axes
+		ImGui::TextColored(CMD_COL, "TRANSLATE ");
+		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
+		TextInlineColored(ARG_COL, "<distance> <velocity> ");
+		TextInlineColored(DESC_COL, "# Translate object to position (x, y, z)");
+
+		ImGui::Separator();
+
+		// Rotate command with object/joint ID
+		ImGui::TextColored(CMD_COL, "ROTATE ");
+		TextInlineColored(VEC_COL, "<object_id>/<joint_id> ");
+		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
+
+		ImGui::Separator();
+
+		// Rotate command with axis
+		ImGui::TextColored(CMD_COL, "ROTATE ");
+		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
+		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
+
+		ImGui::Separator();
+
+		// Set Color command
+		ImGui::TextColored(CMD_COL, "SET_COLOR ");
+		TextInlineColored(VEC_COL, "<object_id>/<robot_id> ");
+		TextInlineColored(VEC_COL, "<r>,<g>,<b> ");
+		TextInlineColored(DESC_COL, "~ Set object color using RGB values");
+
+		ImGui::Separator();
+
+		// More commands to be added here... :)
+
 		ImGui::EndChild();
 	}
 

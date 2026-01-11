@@ -65,5 +65,12 @@ namespace gui {
 		std::unordered_set<int> selectedLines;
 		// Last clicked line index
 		int lastClickedLine = -1;
+
+		// Colours
+		const ImVec4 CMD_COL = ImVec4(0.95f, 0.85f, 0.25f, 1.0f); // yellow
+		const ImVec4 VEC_COL = ImVec4(0.40f, 0.65f, 0.95f, 1.0f); // blue
+		const ImVec4 ARG_COL = ImVec4(0.95f, 0.55f, 0.25f, 1.0f); // orange
+		const ImVec4 DESC_COL = ImVec4(0.60f, 0.60f, 0.60f, 1.0f); // grey
+
 	};
 }
