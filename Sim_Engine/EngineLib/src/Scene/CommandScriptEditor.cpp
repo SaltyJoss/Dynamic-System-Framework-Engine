@@ -10,6 +10,9 @@ namespace gui {
 		_script = std::vector<std::string>();
 		_isRunning = false;
 
+		// Preallocate script text buffer
+		_scriptText.reserve(8192);
+
 		_currentScriptPath = "Engine/assets/scripts";
 		_currentScriptFile = "<...>";
 
@@ -31,6 +34,7 @@ namespace gui {
 		if (ImGui::BeginMenu("Script")) {
 			if (ImGui::MenuItem("Load")) {
 				_load.Open();
+				tryLoadFromDialog();
 			}
 			if (ImGui::MenuItem("Save")) {
 				if (_currentScriptFile == "<...>") {
@@ -95,6 +99,15 @@ namespace gui {
 		ImGui::PopStyleColor();
 	}
 
+	static int TextResizeCallback(ImGuiInputTextCallbackData* data) {
+		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+			auto* str = static_cast<std::string*>(data->UserData);
+			str->resize(data->BufTextLen);
+			data->Buf = str->data();
+		}
+		return 0;
+	}
+
 	void CommandScriptEditor::renderEnvironment() {
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar
 			| ImGuiWindowFlags_AlwaysVerticalScrollbar;
@@ -106,18 +119,15 @@ namespace gui {
 
 		ImGui::Separator();
 
-		// Text buffer for InputTextMultiline
-		size_t buf = 8192;
-		// Allocate buffer
-		char* bufData = new char[buf];
-
-		ImGui::InputTextMultiline("##editor", bufData, buf, ImVec2(400, 300));
-
-		// Update _script vector from buffer
-		_script.push_back(std::string(bufData));
-
-		// Clear previous script
-		delete[] bufData;
+		ImGui::InputTextMultiline(
+			"##editor",
+			_scriptText.data(),
+			_scriptText.capacity() + 1,
+			ImVec2(-FLT_MIN, -FLT_MIN),
+			ImGuiInputTextFlags_CallbackResize,
+			TextResizeCallback,
+			&_scriptText
+		);
 
 		// Display script lines with selection
 		for (int i = 0; i < (int)_script.size(); ++i) {
@@ -195,16 +205,10 @@ namespace gui {
 			return false;
 		}
 
-		_script.clear();
+		_scriptText.clear();
 		char line[1024];
-
 		while (fgets(line, sizeof(line), file)) {
-			// Remove newline character
-			size_t len = strlen(line);
-			if (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
-				line[len - 1] = '\0';
-			}
-			_script.push_back(std::string(line));
+			_scriptText += line; // keep original newlines
 		}
 
 		fclose(file);
@@ -212,22 +216,27 @@ namespace gui {
 		_currentScriptFile = filePath;
 		_currentScriptPath = filePath.substr(0, filePath.find_last_of("/\\"));
 
+		_pendingSavePath = _currentScriptPath;
+
 		LOG_INFO("Command script loaded from file: %s", _currentScriptFile.c_str());
 		D_SUCCESS("Command script loaded from file: %s", _currentScriptFile.c_str());
 
 		return true;
 	}
 
-	bool CommandScriptEditor::trySaveScriptToFile(std::string& filepath) {
+	bool CommandScriptEditor::trySaveScriptToFile(const std::string& filepath) {
 		FILE* file = fopen(filepath.c_str(), "w");
 		if (!file) {
 			LOG_ERROR("Failed to open script file for writing: %s", filepath.c_str());
 			return false;
 		}
-		for (const auto& line : _script) {
-			fprintf(file, "%s\n", line.c_str());
-		}
+
+		fwrite(_scriptText.data(), 1, _scriptText.size(), file);
 		fclose(file);
+
+		LOG_INFO("Command script saved to file: %s", filepath.c_str());
+		D_SUCCESS("Command script saved to file: %s", filepath.c_str());
+
 		return true;
 	}
 
@@ -265,7 +274,7 @@ namespace gui {
 				std::string finalName = ensureExt(_pendingSaveName, ".scl");
 				std::string fullPath = _pendingSavePath;
 
-				if (fullPath.back() != '/' && fullPath.back() != '\\') {
+				if (!fullPath.empty() && fullPath.back() != '/' && fullPath.back() != '\\') {
 					fullPath += "/";
 				}
 
@@ -294,27 +303,5 @@ namespace gui {
 		}
 
 		return false;
-	}
-
-	void CommandScriptEditor::setScript(const std::string& script) {
-		_script.clear();
-		size_t start = 0;
-		size_t end = script.find('\n');
-		while (end != std::string::npos) {
-			_script.push_back(script.substr(start, end - start));
-			start = end + 1;
-			end = script.find('\n', start);
-		}
-		if (start < script.size()) {
-			_script.push_back(script.substr(start));
-		}
-	}
-
-	std::string CommandScriptEditor::getScript() const {
-		std::string result;
-		for (const auto& line : _script) {
-			result += line + "\n";
-		}
-		return result;
 	}
 }

@@ -20,9 +20,9 @@ namespace gui {
 
 		// Menu Render
 		void drawMenus();
-
 		// Main render function
 		void render();
+
 		// Renders the command script editor window
 		void renderEnvironment();
 		// Renders a command instruction syntax helper
@@ -31,14 +31,14 @@ namespace gui {
 		// Load command script from a file
 		bool tryLoadFromDialog();
 		// Save command script to the current file
-		bool trySaveScriptToFile(std::string& filepath);
+		bool trySaveScriptToFile(const std::string& filepath);
 		// Save command script via "Save As" dialog
 		bool saveAsPopup();
 
 		// Set the command script from a single string
-		void setScript(const std::string& script);
+		void setScript(const std::string& s) { _scriptText = s; }
 		// Get the current script as a single string
-		std::string getScript() const;
+		std::string getScript() const { return _scriptText; }
 
 	private:
 		// File browser for loading/saving scripts
@@ -53,8 +53,11 @@ namespace gui {
 		std::string _pendingSaveName = "Untitled.scl";
 		std::string _pendingSavePath = "Engine/assets/scripts";
 
-		// Command script content
+		// Command script contents as lines
 		std::vector<std::string> _script;
+		// Full script text
+		std::string _scriptText;
+
 		// Command script running state
 		bool _isRunning;
 
