@@ -471,7 +471,10 @@ namespace gui{
 			return;
 		}
 		auto it = _linkIndex.find(linkName);
-		
+		if (it == _linkIndex.end()) {
+			return;
+		}
+
 		int linkIdx = it->second;
 		// Find the joint that connects to this link
 		for (auto& joint : _robot.joints) {
