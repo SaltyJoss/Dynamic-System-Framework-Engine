@@ -110,7 +110,8 @@ namespace render {
 namespace gui { 
     class simManager; 
     class ControlPanel; 
-    class DebugPanel; 
+    class DebugPanel;
+	class CommandScriptEditor;
 }
 
 namespace window {
@@ -162,6 +163,7 @@ namespace window {
         std::unique_ptr<gui::simManager> _sim;
         std::unique_ptr<gui::ControlPanel> _controlPanel;
         std::unique_ptr<gui::DebugPanel> _debugPanel;
+		std::unique_ptr<gui::CommandScriptEditor> _cmdEditor;
 
         bool _isHovered = false;
         bool _mouseCaptured = false;

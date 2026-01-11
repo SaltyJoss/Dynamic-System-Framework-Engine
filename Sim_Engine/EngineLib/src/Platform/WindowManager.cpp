@@ -16,6 +16,7 @@
 #include "Scene/SimulationManager.h"
 #include "Scene/DebugPanel.h"
 #include "Scene/ControlPanel.h"
+#include "Scene/CommandScriptEditor.h"
 
 #include "Scene/Camera.h"
 #include "Scene/Light.h"
@@ -50,13 +51,15 @@ namespace window {
         _renderCntx->preRender();
         _GUICntx->preRender();
 
-        if (_sim)     _sim->render();
+        if (_sim)           _sim->render();
         if (_controlPanel)  _controlPanel->render(_sim.get());
 		if (_debugPanel)    _debugPanel->render();
+		if (_cmdEditor)     _cmdEditor->render();
 
 		// Menu Callback
         _GUICntx->setMenuCallback([this]() {
             _controlPanel->drawMenus(_sim.get());
+			_cmdEditor->drawMenus();
         });
 
         _GUICntx->postRender();
@@ -83,6 +86,7 @@ namespace window {
         _sim = std::make_unique<gui::simManager>();
         _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
+		_cmdEditor = std::make_unique<gui::CommandScriptEditor>();
 
         _controlPanel->setMeshLoadCallback([this](std::string path) {
                 _sim->loadMesh(path);
