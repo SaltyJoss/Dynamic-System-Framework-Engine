@@ -25,6 +25,66 @@ namespace commands {
 		return _omegaClamp;
 	}
 
+	// --- HELPER METHODS ---
+
+	inline glm::vec3 toGlm(const mathlib::Vec3& v) {
+		return glm::vec3(v.x(), v.y(), v.z());
+	}
+
+	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
+		const float x = dir.x();
+		const float y = dir.y();
+		const float z = dir.z();
+
+		const float length = std::sqrt(x * x + y * y + z * z);
+
+		if (length < 1e-6f) { return Vec3(0.0f, 0.0f, 0.0f); }
+
+		const float invLen = 1.0f / length;
+		return Vec3(x * invLen, y * invLen, z * invLen);
+	}
+
+
+	void CommandContextMotion::updateJointAngles(std::string linkName, double angleDeg, double vel) {
+		// Sets min and max angle limits for the joint
+		float minAngle = -360.0f; float maxAngle = 360.0f;
+
+		// Find the joint and apply limits
+		for (const auto& joint : _robot->joints) {
+			if (joint.child == linkName) {
+				if (joint.continuous) {
+					minAngle = -std::numeric_limits<float>::infinity();
+					maxAngle = std::numeric_limits<float>::infinity();
+					D_INFO("Joint %s is continuous.", linkName.c_str());
+				}
+				else {
+					minAngle = joint.minAngle;
+					maxAngle = joint.maxAngle;
+					D_INFO("Joint %s limits: [%.2f, %.2f]", linkName.c_str(), minAngle, maxAngle);
+				}
+
+				if (angleDeg < minAngle || angleDeg > maxAngle) {
+					D_FAIL("Angle %.2f out of limits [%.2f, %.2f] for joint %s.", angleDeg, minAngle, maxAngle, linkName.c_str());
+				}
+
+				float& angle = _jointAngles[linkName];
+				angle = static_cast<float>(angleDeg);
+				D_INFO("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), angle, static_cast<float>(angleDeg), static_cast<float>(vel));
+			}
+		}
+	}
+
+	void CommandContextMotion::applyJointAngles() {
+		if (!_robot) return;
+		for (auto& joint : _robot->joints) {
+			auto it = _jointAngles.find(joint.child);
+			if (it != _jointAngles.end()) {
+				joint.angle = it->second;
+				D_INFO("Applied angle %.2f to joint %s.", joint.angle, joint.child.c_str());
+			}
+		}
+	}
+
 	// --- ROTATION COMMAND METHODS ---
 	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
 		if (!_obj) {
@@ -112,17 +172,13 @@ namespace commands {
 		return OpResult::Success();
 	}
 
-	inline glm::vec3 toGlm(const mathlib::Vec3& v) {
-		return glm::vec3(v.x(), v.y(), v.z());
-	}
-
 	OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) {
 		if (!_obj) {
 			D_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 
-		Vec3 translation(0.0f);
+		Vec3 translation = Vec3::Zero();
 		if (axes.x) {
 			_obj->state.linearVelocity.x() = vel;
 			translation.x() = static_cast<float>(vel * dt);
@@ -136,7 +192,7 @@ namespace commands {
 			translation.z() = static_cast<float>(vel * dt);
 		}
 
-		_obj->transform.position += translation;
+		_obj->transform.position += toGlm(translation);
 		return OpResult::Success();
 	}
 
@@ -147,59 +203,19 @@ namespace commands {
 		return linkIndex < _robot->links.size();
 	}
 
-	// --- HELPER METHODS ---
-
-	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
-		const float x = dir.x();
-		const float y = dir.y();
-		const float z = dir.z();
-
-		const float length = std::sqrt(x * x + y * y + z * z);
-
-		if (length < 1e-6f) { return Vec3(0.0f, 0.0f, 0.0f); }
-
-		const float invLen = 1.0f / length;
-		return Vec3(x * invLen, y * invLen, z * invLen);
+	// --- PRIVATE METHODS ---
+	double CommandContextMotion::NormaliseOmega(double omega) const {
+		if (_omegaClamp > 0.0) {
+			if (omega > _omegaClamp) return _omegaClamp;
+			if (omega < -_omegaClamp) return -_omegaClamp;
+		}
+		return omega;
 	}
 
-
-	void CommandContextMotion::updateJointAngles(std::string linkName, double angleDeg, double vel) {
-		// Sets min and max angle limits for the joint
-		float minAngle = -360.0f; float maxAngle = 360.0f;
-
-		// Find the joint and apply limits
-		for (const auto& joint : _robot->joints) {
-			if (joint.child == linkName) {
-				if (joint.continuous) {
-					minAngle = -std::numeric_limits<float>::infinity();
-					maxAngle = std::numeric_limits<float>::infinity();
-					D_INFO("Joint %s is continuous.", linkName.c_str());
-				}
-				else {
-					minAngle = joint.minAngle;
-					maxAngle = joint.maxAngle;
-					D_INFO("Joint %s limits: [%.2f, %.2f]", linkName.c_str(), minAngle, maxAngle);
-				}
-
-				if (angleDeg < minAngle || angleDeg > maxAngle) {
-					D_FAIL("Angle %.2f out of limits [%.2f, %.2f] for joint %s.", angleDeg, minAngle, maxAngle, linkName.c_str());
-				}
-
-				float& angle = _jointAngles[linkName];
-				angle = static_cast<float>(angleDeg);
-				D_INFO("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), angle, static_cast<float>(angleDeg), static_cast<float>(vel));
-			}
+	double CommandContextMotion::convertOmegaToInternal(double omega) const {
+		if (_angularUnits == AngularUnits::DegPerSec) {
+			return omega * (PI / 180.0); // Convert degrees to radians
 		}
-	}
-
-	void CommandContextMotion::applyJointAngles() {
-		if (!_robot) return;
-		for (auto& joint : _robot->joints) {
-			auto it = _jointAngles.find(joint.child);
-			if (it != _jointAngles.end()) {
-				joint.angle = it->second;
-				D_INFO("Applied angle %.2f to joint %s.", joint.angle, joint.child.c_str());
-			}
-		}
+		return omega; // Already in radians
 	}
 } // namespace commands

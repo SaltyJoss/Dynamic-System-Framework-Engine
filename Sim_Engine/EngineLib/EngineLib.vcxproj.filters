@@ -375,6 +375,9 @@
     <ClInclude Include="include\Interpreter\CommandContextMotion.h">
       <Filter>Header Files\include\Interpreter\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="include\Scene\CommandScriptEditor.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -508,6 +511,9 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\CommandScriptEditor.cpp">
+      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

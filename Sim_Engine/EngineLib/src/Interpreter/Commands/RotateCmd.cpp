@@ -18,6 +18,20 @@ namespace commands {
 		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
 	}
 
+	static AxisMask parseAxisMask(const std::string_view axesStr) {
+		AxisMask mask{};
+		for (char c : axesStr) {
+			switch (c) {
+			case 'X': case 'x': mask.x = true; break;
+			case 'Y': case 'y': mask.y = true; break;
+			case 'Z': case 'z': mask.z = true; break;
+			default:
+				break;
+			}
+		}
+		return mask;
+	}
+
 	// Helper function to parse RotateTarget from string
 	// Expected formats: "AXIS:XYZ" or "JOINT:joint_name"
 	static std::optional<RotateTarget> parseRotateTarget(const std::string& arg) {
@@ -31,20 +45,6 @@ namespace commands {
 			return RotateTarget{ RotateTargetType::linkName, {}, linkName };
 		}
 		return std::nullopt;
-	}
-
-	static AxisMask parseAxisMask(const std::string_view axesStr) {
-		AxisMask mask{};
-		for (char c : axesStr) {
-			switch (c) {
-			case 'X': case 'x': mask.x = true; break;
-			case 'Y': case 'y': mask.y = true; break;
-			case 'Z': case 'z': mask.z = true; break;
-			default:
-				break;
-			}
-		}
-		return mask;
 	}
 
 	// Constructor
@@ -95,5 +95,40 @@ namespace commands {
 	// Stop the command
 	void RotateCmd::stop(CommandContextMotion& cntx) {
 		_started = false;
+	}
+
+	std::unique_ptr<ICommand> CreateRotateCmd(const std::vector<std::string>& args) {
+		if (args.size() < 3) {
+			D_FAIL("ROTATE command requires at least 3 arguments.");
+			return nullptr;
+		}
+		auto targetOpt = parseRotateTarget(args[0]);
+		if (!targetOpt.has_value()) {
+			D_FAIL("Invalid ROTATE target argument: %s", args[0].c_str());
+			return nullptr;
+		}
+		RotateTarget target = targetOpt.value();
+		auto omegaOpt = parseDouble(args[1]);
+		if (!omegaOpt.has_value()) {
+			D_FAIL("Invalid ROTATE omega argument: %s", args[1].c_str());
+			return nullptr;
+		}
+		double omega = omegaOpt.value();
+		auto startDegOpt = parseDouble(args[2]);
+		if (!startDegOpt.has_value()) {
+			D_FAIL("Invalid ROTATE start angle argument: %s", args[2].c_str());
+			return nullptr;
+		}
+		double startDeg = startDegOpt.value();
+		double endDeg = 0.0;
+		if (args.size() >= 4) {
+			auto endDegOpt = parseDouble(args[3]);
+			if (!endDegOpt.has_value()) {
+				D_FAIL("Invalid ROTATE end angle argument: %s", args[3].c_str());
+				return nullptr;
+			}
+			endDeg = endDegOpt.value();
+		}
+		return std::make_unique<RotateCmd>(target, omega, startDeg, endDeg);
 	}
 } // namespace commands

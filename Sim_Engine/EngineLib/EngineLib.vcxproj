@@ -175,6 +175,7 @@
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
+    <ClInclude Include="include\Scene\CommandScriptEditor.h" />
     <ClInclude Include="include\Scene\ControlPanel.h" />
     <ClInclude Include="include\Scene\DebugPanel.h" />
     <ClInclude Include="include\Scene\Element.h" />
@@ -277,6 +278,7 @@
     <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Robots\RobotLoader.cpp" />
     <ClCompile Include="src\Scene\Camera.cpp" />
+    <ClCompile Include="src\Scene\CommandScriptEditor.cpp" />
     <ClCompile Include="src\Scene\ControlPanel.cpp" />
     <ClCompile Include="src\Scene\DebugPanel.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />

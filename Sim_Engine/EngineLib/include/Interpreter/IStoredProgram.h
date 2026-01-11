@@ -11,7 +11,7 @@ namespace interpreter {
 		Empty,
 		Loaded,
 		Running,
-		Puased,
+		Paused,
 		Stopped,
 		Completed,
 		Faulted
@@ -25,6 +25,7 @@ namespace interpreter {
 
 	// IStoredProgram interface
 	class ENGINE_API IStoredProgram {
+	public:
 		// Virtual destructor
 		virtual ~IStoredProgram() = default;
 

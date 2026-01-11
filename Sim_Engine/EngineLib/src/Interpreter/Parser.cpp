@@ -9,10 +9,11 @@ namespace interpreter {
 		ProgramData program;
 		std::istringstream ss(code);
 		std::string line;
+
 		size_t lineNumber = 0;
 
 		while (std::getline(ss, line)) {
-			if (line.empty() || line[0] == '#') {
+			if (isBlankOrComment(line)) {
 				continue; // Skip blank lines and comments
 			}
 

@@ -5,6 +5,7 @@
 #include <core/Types.h>
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 
 #include "Physics/PhysicsSystem.h"
 #include "Robots/RobotModel.h"
