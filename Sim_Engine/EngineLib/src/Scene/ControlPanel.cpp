@@ -790,5 +790,4 @@ namespace gui {
 
 		ImGui::EndChild();
     }
-
 }
