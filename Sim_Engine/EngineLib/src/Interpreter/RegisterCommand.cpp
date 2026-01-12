@@ -4,6 +4,6 @@
 
 namespace commands {
 	void RegisterAllCommands(CommandFactory& factory) {
-		factory.registerCommand("ROTATE", &CreateRotateCmd);
+		factory.registerCommand("ROTATE", &CreateRotateCmd); // Register ROTATE command
 	}
 } // namespace language

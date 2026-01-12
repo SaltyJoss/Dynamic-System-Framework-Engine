@@ -14,7 +14,7 @@ namespace interpreter {
 	class ENGINE_API StoredProgram : IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram(CommandFactory& factory, CommandContextMotion& cntx);
+		StoredProgram() = default;
 
 		// Load program data
 		void load(ProgramData program) override;
@@ -34,11 +34,11 @@ namespace interpreter {
 		ProgramStatus status() const override;
 	private:
 		// Bool for tracking if the program is running
-		bool _hasActiveCommand() const;
+		bool hasActiveCommand() const;
 		// Bool for tracking if the program has reached the end
-		bool _atEnd() const;
+		bool atEnd() const;
 		// Get the current instruction
-		const Instruction* _currentInstruction() const;
+		const Instruction* getCurrentInstruction() const;
 		
 		// Method for handling faults (Not necessary yet, but WILL BE)
 		void fault(const std::string& message);
@@ -46,5 +46,7 @@ namespace interpreter {
 		void spawnNextCommand();
 		// Method for clearing the active command
 		void clearActiveCommand();
+
+		CmdResult updateState() override;
 	};
 } // namespace interpreter

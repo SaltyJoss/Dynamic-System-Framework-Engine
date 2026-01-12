@@ -47,6 +47,8 @@ namespace interpreter {
 		return parse(buffer.str());
 	}
 
+
+
 	bool Parser::isBlankOrComment(std::string_view line) {
 		for (char c : line) {
 			if (c == '#') return true;

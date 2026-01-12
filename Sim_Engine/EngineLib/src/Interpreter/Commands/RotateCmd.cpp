@@ -8,12 +8,12 @@ namespace commands {
 		auto first = s.data();
 		auto last = s.data() + s.size();
 
-		auto res = std::from_chars(first, last, out);
+		auto res = std::from_chars(first, last, out); // Format: COMMAND <identifier>/<axis> <first>, ...<args_n>..., <last> "# Description"
 		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
 		return out;
 	}
 
-	// Helper function to check if a string starts with a prefixomega_
+	// Helper function to check if a string starts with a prefix
 	static bool startsWith(const std::string& str, const std::string& prefix) {
 		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
 	}
@@ -47,18 +47,29 @@ namespace commands {
 		return std::nullopt;
 	}
 
-	// Constructor
-	RotateCmd::RotateCmd(RotateTarget target, double omega, double startDeg, double endDeg)
-		: _target(target), _omega(omega), _angleDeg(endDeg - startDeg), _started(false) {}
+	// --- RotateCmd Method Implementations ---
 
-	// Command name
-	std::string_view RotateCmd::name() const {
-		return "ROTATE";
+	void RotateCmd::markFailed(const std::string& message) {
+		setResult({ CmdState::Failed, {}, message });
+		// Implementation to mark the command as failed
 	}
 
-	// Start the command
-	void RotateCmd::start(CommandContextMotion& cntx) {
-		_started = true;
+	void RotateCmd::markCompleted() {
+		setResult({ CmdState::Completed, {}, "ROTATE ran" });
+		// Implementation to mark the command as completed
+	}
+
+	bool RotateCmd::hasStarted() const {
+		if (CmdState::Running) {
+			return true;
+		}
+		return false;
+	}
+
+	// Constructor
+	RotateCmd::RotateCmd(RotateTarget target, double omega, double startDeg, double endDeg)
+		: _target(target), _omega(omega), _angleDeg(endDeg - startDeg), _started(false) {
+		_result = { CmdState::NotStarted, {}, "" };
 	}
 
 	// Update the command
@@ -72,30 +83,42 @@ namespace commands {
 			auto result = cntx.rotateAxes(_target.axisMask, _omega, dt);
 			if (!result.ok) {
 				markFailed(result.message);
+				D_FAIL("RotateCmd failed to rotate axes: %s", result.message.c_str());
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
+
+			D_DEBUG("RotateCmd rotated axes (X:%d Y:%d Z:%d) by %.2f degrees this step.", 
+				_target.axisMask.x ? 1 : 0, 
+				_target.axisMask.y ? 1 : 0, 
+				_target.axisMask.z ? 1 : 0, 
+				rotationThisStep);
 		}
 		else if (_target.type == RotateTargetType::linkName) {
 			auto result = cntx.rotateJoint(_target.linkName, rotationThisStep, std::abs(_omega));
 			if (!result.ok) {
 				markFailed(result.message);
+				D_FAIL("RotateCmd failed to rotate joint %s: %s", _target.linkName.c_str(), result.message.c_str());
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
+
+			D_DEBUG("RotateCmd rotated joint %s by %.2f degrees this step.", 
+				_target.linkName.c_str(), 
+				rotationThisStep);
 		}
 		
 		_totalRotated += rotationThisStep;
 		if (std::abs(_totalRotated) >= std::abs(_angleDeg)) {
 			markCompleted();
+			D_SUCCESS("RotateCmd completed rotation of %.2f degrees.", _angleDeg);
 			return CmdResult{ CmdState::Completed, {}, "" };
 		}
+
+		D_INFO("RotateCmd total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
 
 		return CmdResult{ CmdState::Running, {}, "" };
 	}
 
-	// Stop the command
-	void RotateCmd::stop(CommandContextMotion& cntx) {
-		_started = false;
-	}
+	// --- Free Function to Create RotateCmd ---
 
 	std::unique_ptr<ICommand> CreateRotateCmd(const std::vector<std::string>& args) {
 		if (args.size() < 3) {
@@ -127,8 +150,19 @@ namespace commands {
 				D_FAIL("Invalid ROTATE end angle argument: %s", args[3].c_str());
 				return nullptr;
 			}
+
+			D_DEBUG("Parsed ROTATE end angle: %.2f", endDegOpt.value());
 			endDeg = endDegOpt.value();
 		}
+
+		D_INFO("Creating RotateCmd with target type %d, omega %.2f, startDeg %.2f, endDeg %.2f.",
+			static_cast<int>(target.type), omega, startDeg, endDeg);
 		return std::make_unique<RotateCmd>(target, omega, startDeg, endDeg);
 	}
 } // namespace commands
+
+// Examples of prefixes for startsWith method (ideas for now):
+// "ROTATE "
+// "SET_COLOR "
+// "TRANSLATE "
+// etc...

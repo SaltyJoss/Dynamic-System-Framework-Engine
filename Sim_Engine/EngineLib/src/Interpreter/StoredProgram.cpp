@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Interpreter/StoredProgram.h"
+#include "Interpreter/CommandContextMotion.h"
+
+#include "EngineLib/LogMacros.h"
 
 namespace interpreter {
-	StoredProgram::StoredProgram(CommandFactory& factory, CommandContextMotion& cntx) {
-	}
-
 	void StoredProgram::load(ProgramData program) {
 		// Not implemented yet
 	}
@@ -30,7 +30,7 @@ namespace interpreter {
 	}
 
 	void StoredProgram::step(double dt) {
-		// Not implemented yet
+		// Not implemented yet ~ REQUIRED for STEP, and RUN commands
 	}
 
 	ProgramStatus StoredProgram::status() const {

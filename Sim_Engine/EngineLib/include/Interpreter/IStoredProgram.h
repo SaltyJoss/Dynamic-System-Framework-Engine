@@ -19,8 +19,38 @@ namespace interpreter {
 
 	// Struct for program status
 	struct ProgramStatus {
-		ProgramState state;
-		size_t pc;
+		ProgramState state = ProgramState::Empty;
+		size_t pc = 0;
+	};
+
+	// Command states
+	enum CmdState {
+		NotStarted,
+		Running,
+		Completed,
+		Failed
+	};
+
+	// Command signals (not used yet, but will be)
+	enum CmdSignalType {
+		CmdSignal_None,
+		CmdSignal_Start,
+		CmdSignal_Stop,
+		CmdSignal_Pause,
+		CmdSignal_Resume,
+		CmdSignal_Jump
+	};
+
+	// Command signal data struct
+	struct CmdSignalData {
+		CmdSignalType signal = CmdSignal_None;
+		size_t jumpTarget = 0; // for jump signals
+	};
+	// Command result struct
+	struct CmdResult {
+		CmdState state = CmdState::NotStarted;
+		CmdSignalData signalData;
+		std::string message;
 	};
 
 	// IStoredProgram interface
@@ -45,5 +75,8 @@ namespace interpreter {
 		virtual void step(double dt) = 0;
 		// Get current program status
 		virtual ProgramStatus status() const = 0;
+
+		// Update the command state
+		virtual CmdResult updateState() = 0;
 	};
 } // namespace interpreter
