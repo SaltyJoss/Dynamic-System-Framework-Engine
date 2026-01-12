@@ -7,13 +7,15 @@
 #include <string>
 #include <unordered_map>
 
-#include "Physics/PhysicsSystem.h"
-#include "Robots/RobotModel.h"
-#include "Scene/Object.h"
+#include "Scene/SimulationManager.h"
 
 #include "Platform/Logger.h"
 
 using namespace mathlib;
+
+namespace scene {
+	class Object;
+}
 
 namespace commands {
 	// Struct for operation result
@@ -42,7 +44,7 @@ namespace commands {
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(physics::PhysicsSystem& phys, RobotModel& robot, scene::Object& obj);
+		CommandContextMotion(gui::simManager* sim);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -56,10 +58,12 @@ namespace commands {
 		// Gets the current omega clamp value
 		double getOmegaClamp() const;
 
-		RobotModel* getRobotModel() const { return _robot; }
+		gui::simManager* getSim() const { return _sim; }
 
 		// --- ROTATION COMMAND METHODS ---
 
+		// Rotates an object around specified axes at a given angular velocity
+		OpResult rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt);
 		// Rotates specified axes at a given angular velocity
 		OpResult rotateAxes(AxisMask axes, double omega, double dt);
 		// Rotates a joint by a specified angle at a given velocity
@@ -78,6 +82,7 @@ namespace commands {
 		bool hasLink(std::size_t linkIndex) const;
 
 	private:
+		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		RobotModel* _robot = nullptr;
 		scene::Object* _obj = nullptr;

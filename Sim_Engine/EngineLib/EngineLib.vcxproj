@@ -149,6 +149,7 @@
     <ClInclude Include="include\Interpreter\Parser.h" />
     <ClInclude Include="include\Interpreter\ProgramData.h" />
     <ClInclude Include="include\Interpreter\RegisterCommand.h" />
+    <ClInclude Include="include\Interpreter\RunWrapper.h" />
     <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
@@ -191,6 +192,7 @@
     <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
+    <ClCompile Include="include\Interpreter\RunWrapper.cpp" />
     <ClCompile Include="src\Interpreter\Command.cpp" />
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />

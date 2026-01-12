@@ -1,12 +1,13 @@
 #include "pch.h"
 #include <imgui.h>
 #include "Scene/CommandScriptEditor.h"
+#include "Interpreter/StoredProgram.h"
 #include <io.h>
 
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
-	CommandScriptEditor::CommandScriptEditor() {
+	CommandScriptEditor::CommandScriptEditor(gui::simManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
 		_script = std::vector<std::string>();
 		_isRunning = false;
 
@@ -63,11 +64,29 @@ namespace gui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
 		}
 
-		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
+		if (ImGui::Button("Run Script")) {
+			_isRunning = true;
+
+			LOG_INFO("Command script started");
+			D_INFO("Command script started");
+
+			if (!_isRunning && _program) {
+				_program->stop();
+				_program = nullptr;
+				_isRunning = !_isRunning;
+			}
+			if (_isRunning && !_program) {
+				_program = new interpreter::StoredProgram(_sim);
+				_parser = new interpreter::Parser(_program);
+				_wrapper = new interpreter::RunWrapper(_parser, _program);
+			}
+			_wrapper->runProgram(_scriptText);
+
 			_isRunning = !_isRunning;
 
-			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
-			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
+			LOG_INFO("Command script stopped");
+			D_INFO("Command script stopped");
+			
 		}
 
 		if (wasRunning) {
@@ -197,7 +216,7 @@ namespace gui {
 
 		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
 		ImGui::TextColored(CMD_COL, "COMMAND ");
-		TextInlineColored(VEC_COL, "<identifier>/<axis> ");
+		TextInlineColored(VEC_COL, "<identifier>");
 		TextInlineColored(ARG_COL, "<arg1> <arg2> ... ");
 		TextInlineColored(DESC_COL, "# Description");
 
@@ -219,8 +238,8 @@ namespace gui {
 
 		// Rotate command with object/joint ID
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<object_id>/<joint_id> ");
-		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(VEC_COL, "OBJ");
+		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
 
 		ImGui::Separator();
@@ -228,7 +247,15 @@ namespace gui {
 		// Rotate command with axis
 		ImGui::TextColored(CMD_COL, "ROTATE ");
 		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
-		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
+		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
+
+		ImGui::Separator();
+
+		// Rotate command with axis
+		ImGui::TextColored(CMD_COL, "ROTATE ");
+		TextInlineColored(VEC_COL, "<linkName>WS");
+		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
 
 		ImGui::Separator();

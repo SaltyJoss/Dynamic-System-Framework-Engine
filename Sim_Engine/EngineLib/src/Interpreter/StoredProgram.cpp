@@ -1,20 +1,34 @@
 #include "pch.h"
 #include "Interpreter/StoredProgram.h"
-#include "Interpreter/CommandContextMotion.h"
 
 #include "EngineLib/LogMacros.h"
 
 namespace interpreter {
+	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim) {
+		_commands = std::vector<commands::ICommand*>();
+	}
+
+	void StoredProgram::add(commands::ICommand* cmd) {
+		if (cmd == nullptr) {
+			D_FAIL("Attempted to add null command to StoredProgram.");
+			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
+		}
+
+		_commands.push_back(cmd);
+	}
+	
 	void StoredProgram::load(ProgramData program) {
 		// Not implemented yet
 	}
 
 	void StoredProgram::reset() {
-		// Not implemented yet
+		_currentLineNumber = 0;
+		PC = 0;
 	}
 
 	void StoredProgram::clear() {
-		// Not implemented yet
+		_currentLineNumber = 0;
+		PC = 0;
 	}
 
 	void StoredProgram::start() {
@@ -35,5 +49,33 @@ namespace interpreter {
 
 	ProgramStatus StoredProgram::status() const {
 		return ProgramStatus{};
+	}
+
+	bool StoredProgram::atEnd() const {
+		return PC >= _commands.size();
+	}
+
+	bool StoredProgram::commandsLeft() const {
+		return PC >= 0 && PC < _commands.size();
+	}
+
+	void StoredProgram::run() {
+		while (commandsLeft()) {
+			auto& cmd = _commands[PC];
+
+			int oldPC = PC;
+			commands::CommandContextMotion* cntx = new commands::CommandContextMotion(_sim);
+
+			cmd->setContext(*cntx);
+			cmd->execute();
+
+			if (PC == oldPC) {
+				PC++;
+			}
+		}
+	}
+
+	CmdResult StoredProgram::updateState() {
+		return CmdResult{};
 	}
 } // namespace interpreter

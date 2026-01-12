@@ -35,13 +35,17 @@ namespace commands {
 	// Helper function to parse RotateTarget from string
 	// Expected formats: "AXIS:XYZ" or "JOINT:joint_name"
 	static std::optional<RotateTarget> parseRotateTarget(const std::string& arg) {
+		if (startsWith(arg, "OBJ:")) {
+			// We are using current selected object, so the id is ignored.
+			return RotateTarget{ RotateTargetType::ObjID, {}, "" };
+		}
 		if (startsWith(arg, "AXIS:")) {
-			std::string axesStr = arg.substr(5); // Extract substring after "AXIS:"
+			std::string axesStr = arg.substr(5);
 			AxisMask mask = parseAxisMask(axesStr);
 			return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
 		}
-		else if (startsWith(arg, "JOINT:")) {
-			std::string linkName = arg.substr(6); // Extract substring after "JOINT:"
+		if (startsWith(arg, "JOINT:")) {
+			std::string linkName = arg.substr(6);
 			return RotateTarget{ RotateTargetType::linkName, {}, linkName };
 		}
 		return std::nullopt;
@@ -55,12 +59,12 @@ namespace commands {
 	}
 
 	void RotateCmd::markCompleted() {
-		setResult({ CmdState::Completed, {}, "ROTATE ran" });
+		setResult({ CmdState::Executed, {}, "ROTATE ran" });
 		// Implementation to mark the command as completed
 	}
 
 	bool RotateCmd::hasStarted() const {
-		if (CmdState::Running) {
+		if (CmdState::Executing) {
 			return true;
 		}
 		return false;
@@ -78,6 +82,9 @@ namespace commands {
 			markFailed("RotateCmd not started.");
 			return CmdResult{ CmdState::Failed, {}, "RotateCmd not started." };
 		}
+
+		cntx = *_cntx;
+
 		double rotationThisStep = _omega * dt;
 		if (_target.type == RotateTargetType::AxisMask) {
 			auto result = cntx.rotateAxes(_target.axisMask, _omega, dt);
@@ -93,7 +100,26 @@ namespace commands {
 				_target.axisMask.z ? 1 : 0, 
 				rotationThisStep);
 		}
-		else if (_target.type == RotateTargetType::linkName) {
+		else if (_target.type == RotateTargetType::ObjID) {
+			auto* obj = cntx.getSim()->getObject();
+			if (!obj) {
+				markFailed("No current object selected for OBJ rotation.");
+				D_FAIL("RotateCmd: OBJ target but no current object selected.");
+				return CmdResult{ CmdState::Failed, {}, "No current object selected." };
+			}
+
+			AxisMask mask = _target.axisMask;
+			if (!mask.x && !mask.y && !mask.z) mask.z = true;
+			auto result = cntx.rotateObject(obj, mask, _omega, dt);
+
+			if (!result.ok) {
+				markFailed(result.message);
+				D_FAIL("RotateCmd failed to rotate object: %s", result.message.c_str());
+				return CmdResult{ CmdState::Failed, {}, result.message };
+			}
+
+			D_DEBUG("RotateCmd rotated current object by %.2f degrees this step.", rotationThisStep);
+		} else if (_target.type == RotateTargetType::linkName) {
 			auto result = cntx.rotateJoint(_target.linkName, rotationThisStep, std::abs(_omega));
 			if (!result.ok) {
 				markFailed(result.message);
@@ -110,53 +136,67 @@ namespace commands {
 		if (std::abs(_totalRotated) >= std::abs(_angleDeg)) {
 			markCompleted();
 			D_SUCCESS("RotateCmd completed rotation of %.2f degrees.", _angleDeg);
-			return CmdResult{ CmdState::Completed, {}, "" };
+			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
 		D_INFO("RotateCmd total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
 
-		return CmdResult{ CmdState::Running, {}, "" };
+		return CmdResult{ CmdState::Executing, {}, "" };
+	}
+
+	void RotateCmd::execute() {
+		_started = true;
+		_result = { CmdState::Executing, {}, "ROTATE started" };
+
+		_cntx->rotateAxes(_target.axisMask, _omega, 0.0); // Initial call with dt=0 to set up rotation
+
+		D_INFO("RotateCmd execution started with omega: %.2f deg/s, angle: %.2f degrees.", _omega, _angleDeg);
 	}
 
 	// --- Free Function to Create RotateCmd ---
 
-	std::unique_ptr<ICommand> CreateRotateCmd(const std::vector<std::string>& args) {
-		if (args.size() < 3) {
-			D_FAIL("ROTATE command requires at least 3 arguments.");
+	std::unique_ptr<ICommand> CreateRotateCmd(const std::string& id, const std::vector<std::string>& args) {
+		// args: [omega, startDeg, endDeg?]
+		if (args.size() < 2) {
+			D_FAIL("ROTATE requires: <omega> <startDeg> [endDeg]");
 			return nullptr;
 		}
-		auto targetOpt = parseRotateTarget(args[0]);
+
+		auto targetOpt = parseRotateTarget(id);
 		if (!targetOpt.has_value()) {
-			D_FAIL("Invalid ROTATE target argument: %s", args[0].c_str());
+			D_FAIL("Invalid ROTATE target: %s (expected OBJ:<id>, AXIS:XYZ, or JOINT:<name>)", id.c_str());
 			return nullptr;
 		}
-		RotateTarget target = targetOpt.value();
-		auto omegaOpt = parseDouble(args[1]);
+		RotateTarget target = *targetOpt;
+
+		auto omegaOpt = parseDouble(args[0]);
 		if (!omegaOpt.has_value()) {
-			D_FAIL("Invalid ROTATE omega argument: %s", args[1].c_str());
+			D_FAIL("Invalid ROTATE omega argument: %s", args[0].c_str());
 			return nullptr;
 		}
-		double omega = omegaOpt.value();
-		auto startDegOpt = parseDouble(args[2]);
+
+		auto startDegOpt = parseDouble(args[1]);
 		if (!startDegOpt.has_value()) {
-			D_FAIL("Invalid ROTATE start angle argument: %s", args[2].c_str());
+			D_FAIL("Invalid ROTATE start angle argument: %s", args[1].c_str());
 			return nullptr;
 		}
-		double startDeg = startDegOpt.value();
-		double endDeg = 0.0;
-		if (args.size() >= 4) {
-			auto endDegOpt = parseDouble(args[3]);
+
+		double omega = *omegaOpt;
+		double startDeg = *startDegOpt;
+
+		double endDeg = startDeg; // default: no rotation span unless endDeg provided
+		if (args.size() >= 3) {
+			auto endDegOpt = parseDouble(args[2]);
 			if (!endDegOpt.has_value()) {
-				D_FAIL("Invalid ROTATE end angle argument: %s", args[3].c_str());
+				D_FAIL("Invalid ROTATE end angle argument: %s", args[2].c_str());
 				return nullptr;
 			}
-
-			D_DEBUG("Parsed ROTATE end angle: %.2f", endDegOpt.value());
-			endDeg = endDegOpt.value();
+			endDeg = *endDegOpt;
 		}
 
-		D_INFO("Creating RotateCmd with target type %d, omega %.2f, startDeg %.2f, endDeg %.2f.",
+		D_INFO("Creating RotateCmd targetType=%d omega=%.2f startDeg=%.2f endDeg=%.2f",
 			static_cast<int>(target.type), omega, startDeg, endDeg);
+
 		return std::make_unique<RotateCmd>(target, omega, startDeg, endDeg);
 	}
 } // namespace commands

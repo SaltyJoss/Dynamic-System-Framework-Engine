@@ -12,7 +12,8 @@ namespace commands {
 	// Enum for rotation target type
 	enum class RotateTargetType {
 		AxisMask,
-		linkName
+		linkName,
+		ObjID
 	};
 
 	// Struct for rotation target
@@ -20,6 +21,7 @@ namespace commands {
 		RotateTargetType type = RotateTargetType::AxisMask;
 		AxisMask axisMask;
 		std::string linkName = "";
+		std::string objID = "";
 	};
 
 	// Class representing the ROTATE command
@@ -30,11 +32,11 @@ namespace commands {
 
 		std::string_view getName() const { return "ROTATE"; }
 
+		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
+
 		CmdResult getResult() const { return _result; }
 		void setResult(const CmdResult& result) { _result = result; }
 
-		void validateParameters(const std::vector<std::string>& params) const override;
-		bool set(const std::vector<std::string>& params) override;
 		void execute() override;
 
 		CmdResult update(CommandContextMotion& cntx, double dt) override;
@@ -49,6 +51,7 @@ namespace commands {
 
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
+
 	protected:
 		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
@@ -59,5 +62,5 @@ namespace commands {
 	};
 
 	// Free function to create a RotateCmd
-	std::unique_ptr<ICommand> CreateRotateCmd(const std::vector<std::string>& args);
+	std::unique_ptr<ICommand> CreateRotateCmd(const std::string& id, const std::vector<std::string>& args);
 } // namespace commands

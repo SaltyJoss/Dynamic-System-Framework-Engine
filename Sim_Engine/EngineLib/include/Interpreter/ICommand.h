@@ -9,22 +9,23 @@
 namespace commands {
 	// ICommand interface
 	class ENGINE_API ICommand {
-		// Check parameters
-		virtual void validateParameters(const std::vector<std::string>& params) const = 0;
-		// Setup command with parameters
-		virtual bool set(const std::vector<std::string>& params) = 0;
+	public:
+		// Virtual destructor
+		virtual ~ICommand() = default;
+
+		// Set the command context
+		virtual void setContext(CommandContextMotion& cntx) = 0;
+		// Update command
+		virtual interpreter::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
 		// Execute command
 		virtual void execute() = 0;
 
-		// Update command
-		virtual CmdResult update(CommandContextMotion& cntx, double dt) = 0;
-
 		// Mark the command as failed with a message
-		virtual void markFailed(const std::string& message);
+		virtual void markFailed(const std::string& message) = 0;
 		// Mark the command as completed
-		virtual void markCompleted();
+		virtual void markCompleted() = 0;
 		// Check if the command has started
-		virtual bool hasStarted() const;
+		virtual bool hasStarted() const = 0;
 	};
 	
 } // namespace interpreter

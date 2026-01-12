@@ -2,24 +2,36 @@
 
 #include "EngineCore.h"
 #include "ProgramData.h"
+#include "IStoredProgram.h"
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Platform/Logger.h"
 
 namespace interpreter {
 	// Class representing a parsed command
 	class ENGINE_API Parser {
 	public:
-		ProgramData parse(std::string code) const;
-		ProgramData parseFile(const std::string& filename) const;
+		Parser(IStoredProgram* program);
+
+		void parse(std::string code);
 
 	private:
-		void buildCommand(const Instruction& inst);
-		void buildProgram(const ProgramData& program);
+		void tokenAndClassifyLine(const std::string& line, Command& outCmd);
+		void buildProgram();
+		void buildCommand(Command& cmd);
 
-		void lineHandler(const Instruction& inst);
-		void motionCommandHandler(const Instruction& inst);
+		void motionCommandHandler(const Command& cmd);
 
 		static bool isBlankOrComment(std::string_view line);
+
+		std::vector<std::string> split(const std::string& s, const std::vector<std::string>& delimiters);
+
+		IStoredProgram* _program = nullptr;
+
+		interpreter::Command& _currentCmd;
+		interpreter::ProgramData& _programData;
+		std::vector<std::string>& lines;
 	};
 } // namespace interpreter

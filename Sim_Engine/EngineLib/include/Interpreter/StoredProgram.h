@@ -2,8 +2,9 @@
 
 #include "EngineCore.h"
 #include "IStoredProgram.h"
-#include "CommandFactory.h"
-#include "CommandContextMotion.h"
+#include "ICommand.h"
+#include "Scene/SimulationManager.h"
+#include "Interpreter/CommandContextMotion.h"
 #include <string>
 #include <vector>
 
@@ -11,10 +12,13 @@ using namespace commands;
 
 namespace interpreter {
 	// Class representing a stored program in the interpreter.
-	class ENGINE_API StoredProgram : IStoredProgram {
+	class ENGINE_API StoredProgram : public IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram() = default;
+		StoredProgram(gui::simManager* sim);
+
+		// Add a command to the program
+		void add(commands::ICommand* cmd) override;
 
 		// Load program data
 		void load(ProgramData program) override;
@@ -32,21 +36,30 @@ namespace interpreter {
 		void step(double dt) override;
 		// Get current program status
 		ProgramStatus status() const override;
+		
+		// Run the program
+		void run() override;
+
+		// Get the current instruction
+		const Command* getCurrentInstruction() const;
+
+		// Get Current line number
+		int getCurrentLineNumber() const override { return _currentLineNumber; }
+		void setCurrentLineNumber(int lineNumber) { _currentLineNumber = lineNumber; }
+
 	private:
-		// Bool for tracking if the program is running
-		bool hasActiveCommand() const;
 		// Bool for tracking if the program has reached the end
 		bool atEnd() const;
-		// Get the current instruction
-		const Instruction* getCurrentInstruction() const;
-		
-		// Method for handling faults (Not necessary yet, but WILL BE)
-		void fault(const std::string& message);
-		// Method for completing the program
-		void spawnNextCommand();
-		// Method for clearing the active command
-		void clearActiveCommand();
+
+		// Bool for tracking if there are commands left to execute
+		bool commandsLeft() const;
 
 		CmdResult updateState() override;
+		int _currentLineNumber = 0;
+		int PC = 0; // Program Counter
+
+		std::vector<commands::ICommand*> _commands;
+
+		gui::simManager* _sim = nullptr;
 	};
 } // namespace interpreter

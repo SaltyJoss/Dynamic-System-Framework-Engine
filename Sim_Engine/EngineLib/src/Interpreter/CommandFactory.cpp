@@ -12,12 +12,13 @@ namespace commands {
 		return result.second; // returns true if insertion took place
 	}
 
-	std::unique_ptr<ICommand> CommandFactory::create(const std::string_view& name, const std::vector<std::string>& args) const {
+	ICommand* CommandFactory::create(const std::string_view& name, const std::string& id, const std::vector<std::string>& args) const {
+		// new logic to find and create command
 		auto it = _registry.find(std::string(name));
 		if (it != _registry.end()) {
-			return it->second(args);
+			return it->second(id, args);
 		}
-		return nullptr; // or throw an exception if preferred
+		return nullptr; // Command not found
 	}
 
 	bool CommandFactory::hasCommand(const std::string_view& name) const {

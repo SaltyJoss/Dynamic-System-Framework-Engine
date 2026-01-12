@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+namespace commands {
+	class ENGINE_API ICommand;
+}
+
 namespace interpreter {
 	// Enum representing the state of the program
 	enum ProgramState {
@@ -26,8 +30,8 @@ namespace interpreter {
 	// Command states
 	enum CmdState {
 		NotStarted,
-		Running,
-		Completed,
+		Executing,
+		Executed,
 		Failed
 	};
 
@@ -54,10 +58,13 @@ namespace interpreter {
 	};
 
 	// IStoredProgram interface
-	class ENGINE_API IStoredProgram {
+	class ENGINE_API IStoredProgram { 
 	public:
 		// Virtual destructor
 		virtual ~IStoredProgram() = default;
+
+		// Add a command to the program
+		virtual void add(commands::ICommand* cmd) = 0;
 
 		// Load program data
 		virtual void load(ProgramData program) = 0;
@@ -76,7 +83,14 @@ namespace interpreter {
 		// Get current program status
 		virtual ProgramStatus status() const = 0;
 
+		virtual void run() = 0;
+
 		// Update the command state
 		virtual CmdResult updateState() = 0;
+
+		// Get Current line number
+		virtual int getCurrentLineNumber() const = 0;
+		// Set Current line number
+		virtual void setCurrentLineNumber(int lineNumber) = 0;
 	};
 } // namespace interpreter

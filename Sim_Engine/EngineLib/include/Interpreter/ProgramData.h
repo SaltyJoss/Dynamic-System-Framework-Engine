@@ -13,19 +13,21 @@ namespace interpreter {
 	};
 
 	// Struct representing a single instruction
-	struct ENGINE_API Instruction {
-		std::string name;
-		std::vector<std::string> args;
-		SrcLocation loc;
+	struct ENGINE_API Command {
+		std::string rawLine;				// The original line of code
+		std::string cmdName;				// The command name
+		std::string identifier;				// The command identifier
+		std::string tokens;	// Vector of tokens/arguments
+		int lineNumber = 0;					// Line number in the source code
 	};
 
 	// Struct representing program data
 	struct ENGINE_API ProgramData {
-		std::vector<Instruction> instructions; // Vector storing the instructions
+		std::vector<Command> cmd; // Vector storing the instructions
 	};
 
 	// Methods for ProgramData
 	bool empty();
 	size_t size();
-	const Instruction& at(size_t index);
+	const Command& at(size_t index);
 } // namespace interpreter

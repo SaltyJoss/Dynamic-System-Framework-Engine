@@ -4,6 +4,7 @@
 
 namespace commands {
 	void RegisterAllCommands(CommandFactory& factory) {
-		factory.registerCommand("ROTATE", &CreateRotateCmd); // Register ROTATE command
+		factory.registerCommand("ROTATE", [](const std::string id, const std::vector<std::string>& args) -> ICommand* { return CreateRotateCmd(id, args).release(); });
+		// New commands later
 	}
 } // namespace language

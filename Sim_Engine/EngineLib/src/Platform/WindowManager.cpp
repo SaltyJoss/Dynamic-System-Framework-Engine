@@ -86,7 +86,7 @@ namespace window {
         _sim = std::make_unique<gui::simManager>();
         _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
-		_cmdEditor = std::make_unique<gui::CommandScriptEditor>();
+		_cmdEditor = std::make_unique<gui::CommandScriptEditor>(_sim.get());
 
         _controlPanel->setMeshLoadCallback([this](std::string path) {
                 _sim->loadMesh(path);

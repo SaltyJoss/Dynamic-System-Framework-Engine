@@ -10,30 +10,22 @@ namespace commands {
 	// Class representing a generic command
 	class ENGINE_API Command : public ICommand {
 	public:
-		// Check parameters
-		void validateParameters(const std::vector<std::string>& params) const override {
-			if (params.empty()) {
-				return false; // No parameters provided
-			}
-			return true; // Default implementation=
-		}
-		// Setup command with parameters
-		bool set(const std::vector<std::string>& params) override {
-			validateParameters(params);
-			return true; // Default implementation
-		}
-		// Execute command
-		void execute() override; // No base implementation
+		// Set the command context
+		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
 
 		CmdResult update(CommandContextMotion& cntx, double dt) override;
 
-	protected:
-		// Mark the command as failed with a message
-		void markFailed(const std::string& message);
-		// Mark the command as completed
-		void markCompleted();
-		// Check if the command has started
-		bool hasStarted() const;
+		// Execute command
+		void execute() override; // No base implementation
 
+		// Mark the command as failed with a message
+		void markFailed(const std::string& message) override;
+		// Mark the command as completed
+		void markCompleted() override;
+		// Check if the command has started
+		bool hasStarted() const override;
+
+	protected:
+		CommandContextMotion* _cntx = nullptr;
 	};
 } // namespace commands
