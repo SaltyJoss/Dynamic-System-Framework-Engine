@@ -1,12 +1,13 @@
 #include "pch.h"
 #include <imgui.h>
 #include "Scene/CommandScriptEditor.h"
+#include "Interpreter/StoredProgram.h"
 #include <io.h>
 
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
-	CommandScriptEditor::CommandScriptEditor() {
+	CommandScriptEditor::CommandScriptEditor(gui::simManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
 		_script = std::vector<std::string>();
 		_isRunning = false;
 
@@ -31,6 +32,8 @@ namespace gui {
 	}
 
 	void CommandScriptEditor::drawMenus() {
+		double dt = ImGui::GetIO().DeltaTime;
+
 		if (ImGui::BeginMenu("Script")) {
 			if (ImGui::MenuItem("Load")) {
 				_load.Open();
@@ -66,12 +69,52 @@ namespace gui {
 		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
 			_isRunning = !_isRunning;
 
+			if (!_isRunning) {
+				// stopping
+				if (_program) _program->stop();
+
+				LOG_INFO("Command script stopped.");
+				D_INFO("Command script stopped.");
+
+				_isRunning = false;
+			}
+			else {
+				delete _wrapper; _wrapper = nullptr;
+				delete _parser;  _parser = nullptr;
+				delete _program; _program = nullptr;
+
+				_program = new interpreter::StoredProgram(_sim);
+				_program->setDefaultObject(_sim->getObject());
+				_parser = new interpreter::Parser(_program);
+				_wrapper = new interpreter::RunWrapper(_parser, _program);
+
+				_wrapper->runProgram(_scriptText);
+
+				LOG_INFO("Command script started.");
+				D_INFO("Command script started.");
+			}
+
 			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 		}
 
 		if (wasRunning) {
 			ImGui::PopStyleColor(3);
+		}
+
+		if (_isRunning && _program) {
+			_program->step(dt);
+
+			if (_program->isStopped()) {
+				_isRunning = false;
+
+				delete _wrapper; _wrapper = nullptr;
+				delete _parser;  _parser = nullptr;
+				delete _program; _program = nullptr;
+
+				LOG_INFO("Command script completed.");
+				D_INFO("Command script completed.");
+			}
 		}
 	}
 
@@ -197,8 +240,8 @@ namespace gui {
 
 		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
 		ImGui::TextColored(CMD_COL, "COMMAND ");
-		TextInlineColored(VEC_COL, "<identifier>/<axis> ");
-		TextInlineColored(ARG_COL, "<arg1> <arg2> ... ");
+		TextInlineColored(VEC_COL, "<identifier>");
+		TextInlineColored(ARG_COL, "<arg1,arg2,arg3,...,arg_n>");
 		TextInlineColored(DESC_COL, "# Description");
 
 		ImGui::Separator();
@@ -211,7 +254,7 @@ namespace gui {
 		
 		// Translate command with axes
 		ImGui::TextColored(CMD_COL, "TRANSLATE ");
-		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
+		TextInlineColored(VEC_COL, "<x,y,z> ");
 		TextInlineColored(ARG_COL, "<distance> <velocity> ");
 		TextInlineColored(DESC_COL, "# Translate object to position (x, y, z)");
 
@@ -219,24 +262,32 @@ namespace gui {
 
 		// Rotate command with object/joint ID
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<object_id>/<joint_id> ");
-		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(VEC_COL, "OBJ: ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
 
 		ImGui::Separator();
 
 		// Rotate command with axis
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
-		TextInlineColored(ARG_COL, "<angle_deg> <velocity> ");
+		TextInlineColored(VEC_COL, "<x,y,z> ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
+		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
+
+		ImGui::Separator();
+
+		// Rotate command with axis
+		ImGui::TextColored(CMD_COL, "ROTATE ");
+		TextInlineColored(VEC_COL, "<linkName> ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
 
 		ImGui::Separator();
 
 		// Set Color command
 		ImGui::TextColored(CMD_COL, "SET_COLOR ");
-		TextInlineColored(VEC_COL, "<object_id>/<robot_id> ");
-		TextInlineColored(VEC_COL, "<r>,<g>,<b> ");
+		TextInlineColored(VEC_COL, "<identifier> ");
+		TextInlineColored(VEC_COL, "<r,g,b> ");
 		TextInlineColored(DESC_COL, "~ Set object color using RGB values");
 
 		ImGui::Separator();

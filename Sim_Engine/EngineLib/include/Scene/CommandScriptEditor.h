@@ -4,6 +4,9 @@
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include <unordered_set>
+#include "Scene/SimulationManager.h"
+
+#include "Interpreter/RunWrapper.h"
 
 #include <imgui.h>
 #include "Platform/imguiWidgets.h"
@@ -15,13 +18,16 @@
 namespace gui {
 	class ENGINE_API CommandScriptEditor {
 	public:
-		CommandScriptEditor();
+		CommandScriptEditor(gui::simManager* sims);
 		~CommandScriptEditor();
 
 		// Menu Render
 		void drawMenus();
 		// Main render function
 		void render();
+
+		// Run/Stop button handler
+		void runButtonHandler();
 
 		// Renders the command script editor window
 		void renderEnvironment();
@@ -41,6 +47,14 @@ namespace gui {
 		std::string getScript() const { return _scriptText; }
 
 	private:
+		// Simulation manager reference
+		gui::simManager* _sim;
+
+		// Interpreter components
+		interpreter::Parser* _parser;
+		interpreter::IStoredProgram* _program;
+		interpreter::RunWrapper* _wrapper;
+
 		// File browser for loading/saving scripts
 		ImGui::FileBrowser _load;
 		ImGui::FileBrowser _save;

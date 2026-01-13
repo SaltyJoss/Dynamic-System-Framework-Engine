@@ -378,6 +378,9 @@
     <ClInclude Include="include\Scene\CommandScriptEditor.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\RunWrapper.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -514,6 +517,9 @@
     </ClCompile>
     <ClCompile Include="src\Scene\CommandScriptEditor.cpp">
       <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="include\Interpreter\RunWrapper.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

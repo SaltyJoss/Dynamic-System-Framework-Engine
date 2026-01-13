@@ -12,7 +12,8 @@ namespace commands {
 	// Enum for rotation target type
 	enum class RotateTargetType {
 		AxisMask,
-		linkName
+		linkName,
+		ObjID
 	};
 
 	// Struct for rotation target
@@ -20,6 +21,7 @@ namespace commands {
 		RotateTargetType type = RotateTargetType::AxisMask;
 		AxisMask axisMask;
 		std::string linkName = "";
+		std::string objID = "";
 	};
 
 	// Class representing the ROTATE command
@@ -28,14 +30,16 @@ namespace commands {
 		// Constructor
 		RotateCmd(RotateTarget target, double omega, double startDeg = 0.0, double endDeg = 0.0);
 
-		// Rotation target
-		std::string_view name() const override;
-		// Start the command
-		void start(CommandContextMotion& cntx) override;
-		// Update the command
+		std::string_view getName() const { return "ROTATE"; }
+
+		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
+
+		CmdResult getResult() const { return _result; }
+		void setResult(const CmdResult& result) { _result = result; }
+
+		void execute() override;
+
 		CmdResult update(CommandContextMotion& cntx, double dt) override;
-		// Stop the command
-		void stop(CommandContextMotion& cntx) override;
 	private:
 		RotateTarget _target{};
 		double _omega = 0.0;      // Angular velocity (deg/s)
@@ -44,8 +48,19 @@ namespace commands {
 
 		double _currentAngle = 0.0; // Current angle for rotation commands
 		double _totalRotated = 0.0; // Total rotated angle
+
+		CmdResult _result = { CmdState::NotStarted, {}, "" };
+
+
+	protected:
+		// Mark the command as failed with a message
+		void markFailed(const std::string& message) override;
+		// Mark the command as completed
+		void markCompleted() override;
+		// Check if the command has started
+		bool hasStarted() const override;
 	};
 
 	// Free function to create a RotateCmd
-	std::unique_ptr<ICommand> CreateRotateCmd(const std::vector<std::string>& args);
+	std::unique_ptr<ICommand> CreateRotateCmd(const std::string& id, const std::vector<std::string>& args);
 } // namespace commands

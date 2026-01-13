@@ -4,8 +4,9 @@
 #include "EngineLib/LogMacros.h"
 
 namespace commands {
-	CommandContextMotion::CommandContextMotion(physics::PhysicsSystem& phys, RobotModel& robot, scene::Object& obj)
-		: _phys(&phys), _robot(&robot), _obj(&obj) {}
+	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::Object* obj)
+		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), 
+		_obj(obj), _defaultObj(obj), _angularUnits(AngularUnits::DegPerSec) { }
 
 	// --- GLOBAL STATE METHODS ---
 	
@@ -71,6 +72,8 @@ namespace commands {
 				angle = static_cast<float>(angleDeg);
 				D_INFO("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), angle, static_cast<float>(angleDeg), static_cast<float>(vel));
 			}
+
+
 		}
 	}
 
@@ -85,27 +88,74 @@ namespace commands {
 		}
 	}
 
+	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+		if (axes.x) s.angularVelocity.x() = 0.0;
+		if (axes.y) s.angularVelocity.y() = 0.0;
+		if (axes.z) s.angularVelocity.z() = 0.0;
+	}
+
+	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+		if (axes.x) s.linearVelocity.x() = 0.0;
+		if (axes.y) s.linearVelocity.y() = 0.0;
+		if (axes.z) s.linearVelocity.z() = 0.0;
+	}
+
 	// --- ROTATION COMMAND METHODS ---
+	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt) {
+		if (!obj || !obj->getMesh()) {
+			D_FAIL("No object provided for rotation.");
+			return OpResult::Failure("No object provided for rotation.");
+		}
+		auto& s = obj->state;
+		// Normalize omega based on current angular units
+		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
+		// Apply rotation to specified axes
+		if (axes.x) {
+			s.angularVelocity.x() = internalOmega;
+		}
+		if (axes.y) {
+			s.angularVelocity.y() = internalOmega;
+		}
+		if (axes.z) {
+			s.angularVelocity.z() = internalOmega;
+		}
+
+		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+			omega, (int)_angularUnits, internalOmega);
+
+		// return success
+		return OpResult::Success();
+	}
+
 	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
-		if (!_obj) {
+		if (!_obj || !_obj->getMesh()) {
 			D_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 
+		auto& s = _obj->state;
+
 		// Normalize omega based on current angular units
-		double internalOmega = convertOmegaToInternal(omega);
-		internalOmega = NormaliseOmega(internalOmega);
+		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
 
 		// Apply rotation to specified axes
 		if (axes.x) {
-			_obj->state.angularVelocity.x() = internalOmega;
+			s.angularVelocity.x() = internalOmega;
 		}
 		if (axes.y) {
-			_obj->state.angularVelocity.y() = internalOmega;
+			s.angularVelocity.y() = internalOmega;
 		}
 		if (axes.z) {
-			_obj->state.angularVelocity.z() = internalOmega;
+			s.angularVelocity.z() = internalOmega;
 		}
+
+
+		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+			omega, (int)_angularUnits, internalOmega);
 
 		// return success
 		return OpResult::Success();

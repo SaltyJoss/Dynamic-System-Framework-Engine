@@ -7,13 +7,14 @@
 #include <string>
 #include <unordered_map>
 
-#include "Physics/PhysicsSystem.h"
-#include "Robots/RobotModel.h"
-#include "Scene/Object.h"
+#include "Scene/SimulationManager.h"
 
 #include "Platform/Logger.h"
 
 using namespace mathlib;
+
+namespace scene { class Object; }
+namespace interpreter { class StoredProgram; }
 
 namespace commands {
 	// Struct for operation result
@@ -42,7 +43,7 @@ namespace commands {
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(physics::PhysicsSystem& phys, RobotModel& robot, scene::Object& obj);
+		CommandContextMotion(gui::simManager* sim, scene::Object* obj);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -56,10 +57,15 @@ namespace commands {
 		// Gets the current omega clamp value
 		double getOmegaClamp() const;
 
-		RobotModel* getRobotModel() const { return _robot; }
+		gui::simManager* getSim() const { return _sim; }
+		scene::Object* getDefaultObject() const { return _defaultObj; }
+		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
+
 
 		// --- ROTATION COMMAND METHODS ---
 
+		// Rotates an object around specified axes at a given angular velocity
+		OpResult rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt);
 		// Rotates specified axes at a given angular velocity
 		OpResult rotateAxes(AxisMask axes, double omega, double dt);
 		// Rotates a joint by a specified angle at a given velocity
@@ -77,12 +83,17 @@ namespace commands {
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
+		void stopRotation(scene::Object* obj, AxisMask axes);
+		void stopTranslation(scene::Object* obj, AxisMask axes);
+
 	private:
+		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		RobotModel* _robot = nullptr;
-		scene::Object* _obj = nullptr;
+		scene::Object* _obj = nullptr;			// current object for commands
+		scene::Object* _defaultObj = nullptr;	// default object for commands
 
-		AngularUnits _angularUnits = AngularUnits::RadPerSec;
+		AngularUnits _angularUnits = AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp
 
 		double NormaliseOmega(double omega) const;

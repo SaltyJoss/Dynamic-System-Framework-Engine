@@ -7,7 +7,7 @@
 
 namespace commands {
 	// Type alias for command creator function
-	using Creator = std::unique_ptr<ICommand>(*)(const std::vector<std::string>& args);
+	using Creator = std::function<ICommand* (const std::string id, const std::vector<std::string>& args)>;
 
 	// CommandFactory class for registering and creating commands
 	class ENGINE_API CommandFactory {
@@ -18,7 +18,7 @@ namespace commands {
 		// Public API
 		bool registerCommand(const std::string name, Creator creator);
 		// Create a command by name
-		std::unique_ptr<ICommand> create(const std::string_view& name, const std::vector<std::string>& args) const;
+		ICommand* create(const std::string_view& name, const std::string& id, const std::vector<std::string>& args) const;
 		// Check if a command is registered
 		bool hasCommand(const std::string_view& name) const;
 		// Get a list of registered command names

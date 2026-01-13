@@ -4,25 +4,28 @@
 #include "ICommand.h"
 #include "CommandContextMotion.h"
 
+using namespace interpreter;
+
 namespace commands {
 	// Class representing a generic command
 	class ENGINE_API Command : public ICommand {
 	public:
-		// Get the command name
-		std::string_view name() const override;
+		// Set the command context
+		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
 
-		// Start the command
-		void start(CommandContextMotion& cntx) override;
-		// Update the command
 		CmdResult update(CommandContextMotion& cntx, double dt) override;
-		// Stop the command
-		void stop(CommandContextMotion& cntx) override;
-	protected:
+
+		// Execute command
+		void execute() override; // No base implementation
+
 		// Mark the command as failed with a message
-		void markFailed(const std::string& message);
+		void markFailed(const std::string& message) override;
 		// Mark the command as completed
-		void markCompleted();
+		void markCompleted() override;
 		// Check if the command has started
-		bool hasStarted() const;
+		bool hasStarted() const override;
+
+	protected:
+		CommandContextMotion* _cntx = nullptr;
 	};
 } // namespace commands

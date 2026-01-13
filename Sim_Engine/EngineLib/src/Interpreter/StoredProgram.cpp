@@ -1,39 +1,102 @@
 #include "pch.h"
 #include "Interpreter/StoredProgram.h"
 
+#include "EngineLib/LogMacros.h"
+
 namespace interpreter {
-	StoredProgram::StoredProgram(CommandFactory& factory, CommandContextMotion& cntx) {
+	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), _cntx(sim, sim ? sim->getObject() : nullptr) {
+		_commands = std::vector<commands::ICommand*>();
 	}
 
+	void StoredProgram::add(commands::ICommand* cmd) {
+		if (cmd == nullptr) {
+			D_FAIL("Attempted to add null command to StoredProgram.");
+			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
+		}
+
+		_commands.push_back(cmd);
+	}
+	
 	void StoredProgram::load(ProgramData program) {
 		// Not implemented yet
 	}
 
+	// Reset the program to its initial state
 	void StoredProgram::reset() {
-		// Not implemented yet
+		_currentLineNumber = 0;
+		PC = 0;
 	}
 
+	// Clear all stored instructions
 	void StoredProgram::clear() {
-		// Not implemented yet
+		_currentLineNumber = 0;
+		PC = 0;
+		_commands.clear();
 	}
 
 	void StoredProgram::start() {
-		ProgramState state = ProgramState::Running;
+		_state = ProgramState::Running;
+		_stopRequested = false;
 	}
 
 	void StoredProgram::stop() {
-		ProgramState state = ProgramState::Stopped;
+		_state = ProgramState::Stopped;
+		_stopRequested = true;
+
+		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
+		if (obj) {
+			commands::AxisMask all{ true,true,true };
+			_cntx.stopRotation(obj, all);
+			_cntx.stopTranslation(obj, all);
+		}
 	}
 
 	void StoredProgram::pause() {
-		ProgramState state = ProgramState::Paused;
-	}
+		_state = ProgramState::Paused;
 
-	void StoredProgram::step(double dt) {
-		// Not implemented yet
+		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
+		if (obj) {
+			commands::AxisMask all{ true,true,true };
+			_cntx.stopRotation(obj, all);
+			_cntx.stopTranslation(obj, all);
+		}
 	}
 
 	ProgramStatus StoredProgram::status() const {
 		return ProgramStatus{};
+	}
+
+	bool StoredProgram::atEnd() const {
+		return PC >= static_cast<int>(_commands.size());
+	}
+
+	bool StoredProgram::commandsLeft() const {
+		return PC >= 0 && PC < static_cast<int>(_commands.size());
+	}
+
+	void StoredProgram::step(double dt) {
+		if (_state != ProgramState::Running) { return; }
+		if (_stopRequested) { _state = ProgramState::Stopped;  return; }
+		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
+	
+		_cntx.setDefaultObject(_sim ? _sim->getObject() : nullptr);
+
+		auto& cmd = _commands[PC];
+		cmd->setContext(_cntx);
+		if (!cmd->hasStarted()) {
+			cmd->execute();
+		}
+
+		auto r = cmd->update(_cntx, dt);
+		if (r.state == CmdState::Executed || r.state == CmdState::Failed) {
+			PC++;
+			if (!commandsLeft()) {
+				_state = ProgramState::Stopped;
+			}
+		}
+	}
+
+	CmdResult StoredProgram::updateState() {
+		return CmdResult{};
 	}
 } // namespace interpreter

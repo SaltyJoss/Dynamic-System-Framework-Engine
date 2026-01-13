@@ -2,8 +2,9 @@
 
 #include "EngineCore.h"
 #include "IStoredProgram.h"
-#include "CommandFactory.h"
-#include "CommandContextMotion.h"
+#include "ICommand.h"
+#include "Scene/SimulationManager.h"
+#include "Interpreter/CommandContextMotion.h"
 #include <string>
 #include <vector>
 
@@ -11,10 +12,13 @@ using namespace commands;
 
 namespace interpreter {
 	// Class representing a stored program in the interpreter.
-	class ENGINE_API StoredProgram : IStoredProgram {
+	class ENGINE_API StoredProgram : public IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram(CommandFactory& factory, CommandContextMotion& cntx);
+		StoredProgram(gui::simManager* sim);
+
+		// Add a command to the program
+		void add(commands::ICommand* cmd) override;
 
 		// Load program data
 		void load(ProgramData program) override;
@@ -32,19 +36,40 @@ namespace interpreter {
 		void step(double dt) override;
 		// Get current program status
 		ProgramStatus status() const override;
-	private:
-		// Bool for tracking if the program is running
-		bool _hasActiveCommand() const;
-		// Bool for tracking if the program has reached the end
-		bool _atEnd() const;
+
+		// State checkers
+		bool isRunning() const override { return _state == ProgramState::Running; }
+		bool isPaused() const override { return _state == ProgramState::Paused; }
+		bool isStopped() const override { return _state == ProgramState::Stopped; }
+
 		// Get the current instruction
-		const Instruction* _currentInstruction() const;
-		
-		// Method for handling faults (Not necessary yet, but WILL BE)
-		void fault(const std::string& message);
-		// Method for completing the program
-		void spawnNextCommand();
-		// Method for clearing the active command
-		void clearActiveCommand();
+		const Command* getCurrentInstruction() const;
+
+		// Get Current line number
+		int getCurrentLineNumber() const override { return _currentLineNumber; }
+		void setCurrentLineNumber(int lineNumber) { _currentLineNumber = lineNumber; }
+
+		// Set default object
+		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
+		scene::Object* defaultObject() const override { return _defaultObj; }
+
+	private:
+		// Bool for tracking if the program has reached the end
+		bool atEnd() const;
+		// Bool for tracking if there are commands left to execute
+		bool commandsLeft() const;
+
+		ProgramState _state = ProgramState::Stopped;
+		bool _stopRequested = false;
+
+		CmdResult updateState() override;
+		int _currentLineNumber = 0;
+		int PC = 0; // Program Counter
+
+		std::vector<commands::ICommand*> _commands;
+
+		gui::simManager* _sim = nullptr;
+		commands::CommandContextMotion _cntx;
+		scene::Object* _defaultObj = nullptr;
 	};
 } // namespace interpreter
