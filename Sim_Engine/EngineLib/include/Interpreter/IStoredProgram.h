@@ -87,7 +87,10 @@ namespace interpreter {
 		// Get current program status
 		virtual ProgramStatus status() const = 0;
 
-		virtual void run() = 0;
+		// State checkers
+		virtual bool isRunning() const = 0;
+		virtual bool isPaused() const = 0;
+		virtual bool isStopped() const = 0;
 
 		// Update the command state
 		virtual CmdResult updateState() = 0;

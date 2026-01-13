@@ -97,20 +97,14 @@ namespace interpreter {
 			if (line.empty() || line[0] == '#')
 				continue;
 
-			size_t spacePos = line.find(' ');
-
 			Command cmd;
-			cmd.rawLine = std::string(line);
-			cmd.lineNumber = _program->getCurrentLineNumber();
+			auto parts = split(std::string(line), { " " });
 
-			if (spacePos != std::string::npos) {
-				cmd.cmdName = std::string(line.substr(0, spacePos));
-				cmd.tokens = std::string(line.substr(spacePos + 1));
-			}
-			else {
-				cmd.cmdName = std::string(line);
-				cmd.tokens = "";
-			}
+			cmd.rawLine = std::string(line);
+			cmd.cmdName = parts.size() > 0 ? parts[0] : "";
+			cmd.identifier = parts.size() > 1 ? parts[1] : "";
+			cmd.tokens = parts.size() > 2 ? parts[2] : "";
+			cmd.lineNumber = _program->getCurrentLineNumber();
 
 			_programData.cmd.push_back(cmd);
 		}
@@ -120,6 +114,12 @@ namespace interpreter {
 		for (auto& cmd : _programData.cmd) {
 			if (cmd.cmdName.empty())
 				continue;
+
+			D_DEBUG("SCRIPT: %s \n\t| target=%s \n\t| args=%s", 
+				cmd.cmdName.c_str(),
+				cmd.identifier.c_str(),
+				cmd.tokens.c_str()
+			);
 
 			buildCommand(cmd);
 		}

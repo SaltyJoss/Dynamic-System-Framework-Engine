@@ -64,10 +64,7 @@ namespace commands {
 	}
 
 	bool RotateCmd::hasStarted() const {
-		if (CmdState::Executing) {
-			return true;
-		}
-		return false;
+		return _started;
 	}
 
 	// Constructor
@@ -85,7 +82,8 @@ namespace commands {
 
 		cntx = *_cntx;
 
-		double rotationThisStep = _omega * dt;
+		double rotationThisStepDeg = _omega * dt;
+		D_INFO("step: dt=%.4f omega=%.3f deg/s -> dtheta=%.4f deg", dt, _omega, rotationThisStepDeg);
 		if (_target.type == RotateTargetType::AxisMask) {
 			auto result = cntx.rotateAxes(_target.axisMask, _omega, dt);
 			if (!result.ok) {
@@ -98,7 +96,7 @@ namespace commands {
 				_target.axisMask.x ? 1 : 0, 
 				_target.axisMask.y ? 1 : 0, 
 				_target.axisMask.z ? 1 : 0, 
-				rotationThisStep);
+				rotationThisStepDeg);
 		}
 		else if (_target.type == RotateTargetType::ObjID) {
 			auto* obj = cntx.getDefaultObject();
@@ -118,9 +116,9 @@ namespace commands {
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
 
-			D_DEBUG("RotateCmd rotated current object by %.2f degrees this step.", rotationThisStep);
+			D_DEBUG("RotateCmd rotated current object by %.2f degrees this step.", rotationThisStepDeg);
 		} else if (_target.type == RotateTargetType::linkName) {
-			auto result = cntx.rotateJoint(_target.linkName, rotationThisStep, std::abs(_omega));
+			auto result = cntx.rotateJoint(_target.linkName, rotationThisStepDeg, std::abs(_omega));
 			if (!result.ok) {
 				markFailed(result.message);
 				D_FAIL("RotateCmd failed to rotate joint %s: %s", _target.linkName.c_str(), result.message.c_str());
@@ -129,11 +127,21 @@ namespace commands {
 
 			D_DEBUG("RotateCmd rotated joint %s by %.2f degrees this step.", 
 				_target.linkName.c_str(), 
-				rotationThisStep);
+				rotationThisStepDeg);
 		}
 		
-		_totalRotated += rotationThisStep;
+		_totalRotated += rotationThisStepDeg;
 		if (std::abs(_totalRotated) >= std::abs(_angleDeg)) {
+			AxisMask mask = _target.axisMask;
+			if (!mask.any()) mask.z = true;
+
+			if (_target.type == RotateTargetType::ObjID) {
+				cntx.stopRotation(cntx.getDefaultObject(), mask);
+			}
+			else if (_target.type == RotateTargetType::AxisMask) {
+				cntx.stopRotation(cntx.getDefaultObject(), mask); // since your rotateAxes affects _obj
+			}
+
 			markCompleted();
 			D_SUCCESS("RotateCmd completed rotation of %.2f degrees.", _angleDeg);
 			return CmdResult{ CmdState::Executed, {}, "" };

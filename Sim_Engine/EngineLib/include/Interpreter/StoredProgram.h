@@ -36,9 +36,11 @@ namespace interpreter {
 		void step(double dt) override;
 		// Get current program status
 		ProgramStatus status() const override;
-		
-		// Run the program
-		void run() override;
+
+		// State checkers
+		bool isRunning() const override { return _state == ProgramState::Running; }
+		bool isPaused() const override { return _state == ProgramState::Paused; }
+		bool isStopped() const override { return _state == ProgramState::Stopped; }
 
 		// Get the current instruction
 		const Command* getCurrentInstruction() const;
@@ -47,15 +49,18 @@ namespace interpreter {
 		int getCurrentLineNumber() const override { return _currentLineNumber; }
 		void setCurrentLineNumber(int lineNumber) { _currentLineNumber = lineNumber; }
 
+		// Set default object
 		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
 		scene::Object* defaultObject() const override { return _defaultObj; }
 
 	private:
 		// Bool for tracking if the program has reached the end
 		bool atEnd() const;
-
 		// Bool for tracking if there are commands left to execute
 		bool commandsLeft() const;
+
+		ProgramState _state = ProgramState::Stopped;
+		bool _stopRequested = false;
 
 		CmdResult updateState() override;
 		int _currentLineNumber = 0;
@@ -64,6 +69,7 @@ namespace interpreter {
 		std::vector<commands::ICommand*> _commands;
 
 		gui::simManager* _sim = nullptr;
+		commands::CommandContextMotion _cntx;
 		scene::Object* _defaultObj = nullptr;
 	};
 } // namespace interpreter

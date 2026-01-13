@@ -5,7 +5,8 @@
 
 namespace commands {
 	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::Object* obj)
-		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), _obj(obj), _defaultObj(obj) { }
+		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), 
+		_obj(obj), _defaultObj(obj), _angularUnits(AngularUnits::DegPerSec) { }
 
 	// --- GLOBAL STATE METHODS ---
 	
@@ -87,6 +88,22 @@ namespace commands {
 		}
 	}
 
+	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+		if (axes.x) s.angularVelocity.x() = 0.0;
+		if (axes.y) s.angularVelocity.y() = 0.0;
+		if (axes.z) s.angularVelocity.z() = 0.0;
+	}
+
+	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+		if (axes.x) s.linearVelocity.x() = 0.0;
+		if (axes.y) s.linearVelocity.y() = 0.0;
+		if (axes.z) s.linearVelocity.z() = 0.0;
+	}
+
 	// --- ROTATION COMMAND METHODS ---
 	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt) {
 		if (!obj || !obj->getMesh()) {
@@ -95,8 +112,7 @@ namespace commands {
 		}
 		auto& s = obj->state;
 		// Normalize omega based on current angular units
-		double internalOmega = convertOmegaToInternal(omega);
-		internalOmega = NormaliseOmega(internalOmega);
+		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
 		// Apply rotation to specified axes
 		if (axes.x) {
 			s.angularVelocity.x() = internalOmega;
@@ -107,6 +123,10 @@ namespace commands {
 		if (axes.z) {
 			s.angularVelocity.z() = internalOmega;
 		}
+
+		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+			omega, (int)_angularUnits, internalOmega);
+
 		// return success
 		return OpResult::Success();
 	}
@@ -120,8 +140,7 @@ namespace commands {
 		auto& s = _obj->state;
 
 		// Normalize omega based on current angular units
-		double internalOmega = convertOmegaToInternal(omega);
-		internalOmega = NormaliseOmega(internalOmega);
+		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
 
 		// Apply rotation to specified axes
 		if (axes.x) {
@@ -133,6 +152,10 @@ namespace commands {
 		if (axes.z) {
 			s.angularVelocity.z() = internalOmega;
 		}
+
+
+		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+			omega, (int)_angularUnits, internalOmega);
 
 		// return success
 		return OpResult::Success();

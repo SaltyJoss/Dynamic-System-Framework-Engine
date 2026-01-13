@@ -4,7 +4,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace interpreter {
-	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim) {
+	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), _cntx(sim, sim ? sim->getObject() : nullptr) {
 		_commands = std::vector<commands::ICommand*>();
 	}
 
@@ -25,7 +25,6 @@ namespace interpreter {
 	void StoredProgram::reset() {
 		_currentLineNumber = 0;
 		PC = 0;
-		_commands.clear();
 	}
 
 	// Clear all stored instructions
@@ -36,19 +35,31 @@ namespace interpreter {
 	}
 
 	void StoredProgram::start() {
-		ProgramState state = ProgramState::Running;
+		_state = ProgramState::Running;
+		_stopRequested = false;
 	}
 
 	void StoredProgram::stop() {
-		ProgramState state = ProgramState::Stopped;
+		_state = ProgramState::Stopped;
+		_stopRequested = true;
+
+		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
+		if (obj) {
+			commands::AxisMask all{ true,true,true };
+			_cntx.stopRotation(obj, all);
+			_cntx.stopTranslation(obj, all);
+		}
 	}
 
 	void StoredProgram::pause() {
-		ProgramState state = ProgramState::Paused;
-	}
+		_state = ProgramState::Paused;
 
-	void StoredProgram::step(double dt) {
-		// Not implemented yet ~ REQUIRED for STEP, and RUN commands
+		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
+		if (obj) {
+			commands::AxisMask all{ true,true,true };
+			_cntx.stopRotation(obj, all);
+			_cntx.stopTranslation(obj, all);
+		}
 	}
 
 	ProgramStatus StoredProgram::status() const {
@@ -56,32 +67,31 @@ namespace interpreter {
 	}
 
 	bool StoredProgram::atEnd() const {
-		return PC >= _commands.size();
+		return PC >= static_cast<int>(_commands.size());
 	}
 
 	bool StoredProgram::commandsLeft() const {
-		return PC >= 0 && PC < _commands.size();
+		return PC >= 0 && PC < static_cast<int>(_commands.size());
 	}
 
-	void StoredProgram::run() {
-		while (commandsLeft()) {
-			auto& cmd = _commands[PC];
+	void StoredProgram::step(double dt) {
+		if (_state != ProgramState::Running) { return; }
+		if (_stopRequested) { _state = ProgramState::Stopped;  return; }
+		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
+	
+		_cntx.setDefaultObject(_sim ? _sim->getObject() : nullptr);
 
-			int oldPC = PC;
-
-			scene::Object* sel = _sim ? _sim->getObject() : nullptr;
-			commands::CommandContextMotion cntx(_sim, sel);
-			cmd->setContext(cntx);
+		auto& cmd = _commands[PC];
+		cmd->setContext(_cntx);
+		if (!cmd->hasStarted()) {
 			cmd->execute();
+		}
 
-			double dt = 1.0 / 60.0;
-			for (int i = 0; i < 2000; ++i) {
-				auto r = cmd->update(cntx, dt);
-				if (r.state != CmdState::Executing) break;
-			}
-
-			if (PC == oldPC) {
-				PC++;
+		auto r = cmd->update(_cntx, dt);
+		if (r.state == CmdState::Executed || r.state == CmdState::Failed) {
+			PC++;
+			if (!commandsLeft()) {
+				_state = ProgramState::Stopped;
 			}
 		}
 	}

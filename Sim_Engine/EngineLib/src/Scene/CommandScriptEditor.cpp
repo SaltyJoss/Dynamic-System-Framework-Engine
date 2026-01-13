@@ -32,6 +32,8 @@ namespace gui {
 	}
 
 	void CommandScriptEditor::drawMenus() {
+		double dt = ImGui::GetIO().DeltaTime;
+
 		if (ImGui::BeginMenu("Script")) {
 			if (ImGui::MenuItem("Load")) {
 				_load.Open();
@@ -71,22 +73,20 @@ namespace gui {
 				// stopping
 				if (_program) _program->stop();
 
+				LOG_INFO("Command script stopped.");
+				D_INFO("Command script stopped.");
+
+				_isRunning = false;
+			}
+			else {
 				delete _wrapper; _wrapper = nullptr;
 				delete _parser;  _parser = nullptr;
 				delete _program; _program = nullptr;
 
-				LOG_INFO("Command script stopped.");
-				D_INFO("Command script stopped.");
-			}
-			else {
-				// starting
-				if (!_program) {
-					_program = new interpreter::StoredProgram(_sim);
-					_program->setDefaultObject(_sim->getObject());
-
-					_parser = new interpreter::Parser(_program);
-					_wrapper = new interpreter::RunWrapper(_parser, _program);
-				}
+				_program = new interpreter::StoredProgram(_sim);
+				_program->setDefaultObject(_sim->getObject());
+				_parser = new interpreter::Parser(_program);
+				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
 				_wrapper->runProgram(_scriptText);
 
@@ -100,6 +100,21 @@ namespace gui {
 
 		if (wasRunning) {
 			ImGui::PopStyleColor(3);
+		}
+
+		if (_isRunning && _program) {
+			_program->step(dt);
+
+			if (_program->isStopped()) {
+				_isRunning = false;
+
+				delete _wrapper; _wrapper = nullptr;
+				delete _parser;  _parser = nullptr;
+				delete _program; _program = nullptr;
+
+				LOG_INFO("Command script completed.");
+				D_INFO("Command script completed.");
+			}
 		}
 	}
 

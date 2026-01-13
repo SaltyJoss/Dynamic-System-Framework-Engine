@@ -8,7 +8,6 @@
 #include <unordered_map>
 
 #include "Scene/SimulationManager.h"
-#include "StoredProgram.h"
 
 #include "Platform/Logger.h"
 
@@ -60,6 +59,7 @@ namespace commands {
 
 		gui::simManager* getSim() const { return _sim; }
 		scene::Object* getDefaultObject() const { return _defaultObj; }
+		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
 
 
 		// --- ROTATION COMMAND METHODS ---
@@ -83,6 +83,9 @@ namespace commands {
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
+		void stopRotation(scene::Object* obj, AxisMask axes);
+		void stopTranslation(scene::Object* obj, AxisMask axes);
+
 	private:
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
@@ -90,7 +93,7 @@ namespace commands {
 		scene::Object* _obj = nullptr;			// current object for commands
 		scene::Object* _defaultObj = nullptr;	// default object for commands
 
-		AngularUnits _angularUnits = AngularUnits::RadPerSec;
+		AngularUnits _angularUnits = AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp
 
 		double NormaliseOmega(double omega) const;

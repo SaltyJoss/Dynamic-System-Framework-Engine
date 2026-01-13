@@ -15,11 +15,13 @@ namespace interpreter {
 		}
 	}
 	void RunWrapper::runProgram(const std::string& code) {
-		if (_parser == nullptr) {
+		if (!_program || !_parser) {
 			D_FAIL("RunWrapper has null Parser pointer.");
 			throw std::runtime_error("RunWrapper has null Parser pointer.");
 		}
+
+		_program->clear();
 		_parser->parse(code);
-		_program->run();
+		_program->start();
 	}
 } // namespace interpreter
