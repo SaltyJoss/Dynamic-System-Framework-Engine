@@ -47,6 +47,8 @@ namespace commands {
 
 
 	void CommandContextMotion::updateJointAngles(std::string linkName, double angleDeg, double vel) {
+		const RobotModel& robot = _sim->getRobotModel();
+
 		// Sets min and max angle limits for the joint
 		float minAngle = -360.0f; float maxAngle = 360.0f;
 
@@ -56,25 +58,30 @@ namespace commands {
 				if (joint.continuous) {
 					minAngle = -std::numeric_limits<float>::infinity();
 					maxAngle = std::numeric_limits<float>::infinity();
-					D_INFO("Joint %s is continuous.", linkName.c_str());
+					D_INFO_ONCE("Joint %s is continuous.", linkName.c_str());
 				}
 				else {
 					minAngle = joint.minAngle;
 					maxAngle = joint.maxAngle;
-					D_INFO("Joint %s limits: [%.2f, %.2f]", linkName.c_str(), minAngle, maxAngle);
+					D_INFO_ONCE("Joint %s limits: [%.2f, %.2f]", linkName.c_str(), minAngle, maxAngle);
 				}
 
 				if (angleDeg < minAngle || angleDeg > maxAngle) {
 					D_FAIL("Angle %.2f out of limits [%.2f, %.2f] for joint %s.", angleDeg, minAngle, maxAngle, linkName.c_str());
 				}
-
-				float& angle = _jointAngles[linkName];
-				angle = static_cast<float>(angleDeg);
-				D_INFO("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), angle, static_cast<float>(angleDeg), static_cast<float>(vel));
 			}
 
-
+			_currentLinkName = linkName; // store current link name
+			_currentAngle = static_cast<float>(angleDeg); // store current angle
+			_jointAngles[linkName] = static_cast<float>(angleDeg); // update joint angle
 		}
+
+		float& angle = _jointAngles[_currentLinkName];
+		_sim->setRobotLinkRotation(_currentLinkName, angle);
+
+		/*D_DEBUG("=============================");
+		D_DEBUG("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), _jointAngles[linkName], static_cast<float>(angleDeg), static_cast<float>(vel));
+		D_DEBUG("=============================");*/
 	}
 
 	void CommandContextMotion::applyJointAngles() {
@@ -83,9 +90,13 @@ namespace commands {
 			auto it = _jointAngles.find(joint.child);
 			if (it != _jointAngles.end()) {
 				joint.angle = it->second;
-				D_INFO("Applied angle %.2f to joint %s.", joint.angle, joint.child.c_str());
+				D_DEBUG_ONCE("Applied angle %.2f to joint %s.", joint.angle, joint.child.c_str());
 			}
 		}
+		/*
+		D_DEBUG("=============================");
+		D_DEBUG("Set rotation of link %s to angle %.2f.", _currentLinkName.c_str(), _currentAngle);
+		D_DEBUG("=============================");*/
 	}
 
 	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
@@ -154,8 +165,8 @@ namespace commands {
 		}
 
 
-		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
-			omega, (int)_angularUnits, internalOmega);
+		/*D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+			omega, (int)_angularUnits, internalOmega);*/
 
 		// return success
 		return OpResult::Success();
@@ -174,13 +185,13 @@ namespace commands {
 		for (auto& joint : _robot->joints) {
 			if (joint.child == linkName) {
 				_currentAngle = joint.angle; // get current angle
-				D_INFO("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
+				D_RUNTIME("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
 			}
 		}
 		float targetAngle = angleDeg;
 
-		updateJointAngles(linkName, angleDeg, vel);
-		applyJointAngles();
+		updateJointAngles(linkName, angleDeg, vel); // update joint angles
+		applyJointAngles(); // apply immediately - may be causing gitter issues?
 
 		return OpResult::Success();
 	}
@@ -198,7 +209,7 @@ namespace commands {
 		for (auto& joint : _robot->joints) {
 			if (joint.child == linkName) {
 				_currentAngle = joint.angle; // get current angle
-				D_INFO("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
+				D_RUNTIME("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
 			}
 		}
 

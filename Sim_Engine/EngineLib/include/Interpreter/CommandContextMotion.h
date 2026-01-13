@@ -107,6 +107,7 @@ namespace commands {
 		std::unordered_map<std::string, float> _jointAngles;
 
 		float _currentAngle = 0.0; // current angle for rotation commands
+		std::string _currentLinkName; // current link name for joint commands
 
 		double _dtheta = 0.0; // angle displacement
 		double _dt = 0.0; // time interval

@@ -44,8 +44,8 @@ namespace commands {
 			AxisMask mask = parseAxisMask(axesStr);
 			return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
 		}
-		if (startsWith(arg, "JOINT:")) {
-			std::string linkName = arg.substr(6);
+		if (startsWith(arg, "LINK:")) {
+			std::string linkName = arg.substr(5);
 			return RotateTarget{ RotateTargetType::linkName, {}, linkName };
 		}
 		return std::nullopt;
@@ -80,7 +80,7 @@ namespace commands {
 			return CmdResult{ CmdState::Failed, {}, "RotateCmd not started." };
 		}
 
-		cntx = *_cntx;
+		cntx = *_cntxMtn;
 
 		double rotationThisStepDeg = _omega * dt;
 		D_INFO("step: dt=%.4f omega=%.3f deg/s -> dtheta=%.4f deg", dt, _omega, rotationThisStepDeg);
@@ -147,7 +147,7 @@ namespace commands {
 			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
-		D_INFO("RotateCmd total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
+		D_RUNTIME("RotateCmd total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
 
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
@@ -156,7 +156,7 @@ namespace commands {
 		_started = true;
 		_result = { CmdState::Executing, {}, "ROTATE started" };
 
-		_cntx->rotateAxes(_target.axisMask, _omega, 0.0); // Initial call with dt=0 to set up rotation
+		_cntxMtn->rotateAxes(_target.axisMask, _omega, 0.0); // Initial call with dt=0 to set up rotation
 
 		D_INFO("RotateCmd execution started with omega: %.2f deg/s, angle: %.2f degrees.", _omega, _angleDeg);
 	}
@@ -166,13 +166,13 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateRotateCmd(const std::string& id, const std::vector<std::string>& args) {
 		// args: [omega, startDeg, endDeg?]
 		if (args.size() < 2) {
-			D_FAIL("ROTATE requires: <omega> <startDeg> [endDeg]");
+			D_FAIL("ROTATE requires: <omega>,<startDeg>,<endDeg>");
 			return nullptr;
 		}
 
 		auto targetOpt = parseRotateTarget(id);
 		if (!targetOpt.has_value()) {
-			D_FAIL("Invalid ROTATE target: %s (expected OBJ:<id>, AXIS:XYZ, or JOINT:<name>)", id.c_str());
+			D_FAIL("Invalid ROTATE target: %s (expected OBJ:<id>, AXIS:XYZ, or LINK:<name>)", id.c_str());
 			return nullptr;
 		}
 		RotateTarget target = *targetOpt;
@@ -211,6 +211,7 @@ namespace commands {
 
 // Examples of prefixes for startsWith method (ideas for now):
 // "ROTATE "
-// "SET_COLOR "
 // "TRANSLATE "
+// "SET "
+// "COLOUR "
 // etc...

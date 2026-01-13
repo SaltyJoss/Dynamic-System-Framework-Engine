@@ -1,0 +1,23 @@
+# load arm
+LOAD ARM:z1
+# Euler Method
+SET integrator euler
+# Begin Sim
+START
+ROTATE LINK:link01 10,0,20
+ROTATE LINK:link02 10,0,20
+ROTATE LINK:link03 10,0,20
+ROTATE LINK:link04 10,0,20
+# Finish Euler
+STOP
+# Runge-Kutta 4 Method
+SET integrator rk4
+# Begin Sim
+START
+ROTATE LINK:link01 10,0,20
+ROTATE LINK:link02 10,0,20
+ROTATE LINK:link03 10,0,20
+ROTATE LINK:link04 10,0,20
+# Finish RK4
+STOP
+

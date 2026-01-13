@@ -51,7 +51,6 @@ namespace commands {
 
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
-
 	protected:
 		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
