@@ -2,9 +2,12 @@
 
 #include "EngineCore.h"
 #include "IStoredProgram.h"
-#include "CommandContextMotion.h"
 #include <memory>
 #include <string>
+
+namespace commands {
+	class CommandContextMotion;
+}
 
 namespace commands {
 	// ICommand interface

@@ -4,8 +4,8 @@
 #include "EngineLib/LogMacros.h"
 
 namespace commands {
-	CommandContextMotion::CommandContextMotion(gui::simManager* sim)
-		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), _obj(nullptr) {}
+	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::Object* obj)
+		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), _obj(obj), _defaultObj(obj) { }
 
 	// --- GLOBAL STATE METHODS ---
 	

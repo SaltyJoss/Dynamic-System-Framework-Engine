@@ -147,9 +147,7 @@ namespace interpreter {
 			cmd.cmdName.c_str(),
 			cmd.identifier.c_str());
 
-		auto* command =
-			commands::CommandFactory::Instance()
-			.create(cmd.cmdName, cmd.identifier, argsTokens);
+		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, argsTokens);
 
 		if (command) {
 			_program->add(command);

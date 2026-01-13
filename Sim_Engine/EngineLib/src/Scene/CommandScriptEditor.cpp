@@ -64,29 +64,38 @@ namespace gui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
 		}
 
-		if (ImGui::Button("Run Script")) {
-			_isRunning = true;
-
-			LOG_INFO("Command script started");
-			D_INFO("Command script started");
-
-			if (!_isRunning && _program) {
-				_program->stop();
-				_program = nullptr;
-				_isRunning = !_isRunning;
-			}
-			if (_isRunning && !_program) {
-				_program = new interpreter::StoredProgram(_sim);
-				_parser = new interpreter::Parser(_program);
-				_wrapper = new interpreter::RunWrapper(_parser, _program);
-			}
-			_wrapper->runProgram(_scriptText);
-
+		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
 			_isRunning = !_isRunning;
 
-			LOG_INFO("Command script stopped");
-			D_INFO("Command script stopped");
-			
+			if (!_isRunning) {
+				// stopping
+				if (_program) _program->stop();
+
+				delete _wrapper; _wrapper = nullptr;
+				delete _parser;  _parser = nullptr;
+				delete _program; _program = nullptr;
+
+				LOG_INFO("Command script stopped.");
+				D_INFO("Command script stopped.");
+			}
+			else {
+				// starting
+				if (!_program) {
+					_program = new interpreter::StoredProgram(_sim);
+					_program->setDefaultObject(_sim->getObject());
+
+					_parser = new interpreter::Parser(_program);
+					_wrapper = new interpreter::RunWrapper(_parser, _program);
+				}
+
+				_wrapper->runProgram(_scriptText);
+
+				LOG_INFO("Command script started.");
+				D_INFO("Command script started.");
+			}
+
+			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
+			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 		}
 
 		if (wasRunning) {
@@ -217,7 +226,7 @@ namespace gui {
 		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
 		ImGui::TextColored(CMD_COL, "COMMAND ");
 		TextInlineColored(VEC_COL, "<identifier>");
-		TextInlineColored(ARG_COL, "<arg1> <arg2> ... ");
+		TextInlineColored(ARG_COL, "<arg1,arg2,arg3,...,arg_n>");
 		TextInlineColored(DESC_COL, "# Description");
 
 		ImGui::Separator();
@@ -230,7 +239,7 @@ namespace gui {
 		
 		// Translate command with axes
 		ImGui::TextColored(CMD_COL, "TRANSLATE ");
-		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
+		TextInlineColored(VEC_COL, "<x,y,z> ");
 		TextInlineColored(ARG_COL, "<distance> <velocity> ");
 		TextInlineColored(DESC_COL, "# Translate object to position (x, y, z)");
 
@@ -238,32 +247,32 @@ namespace gui {
 
 		// Rotate command with object/joint ID
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "OBJ");
-		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
+		TextInlineColored(VEC_COL, "OBJ: ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
 
 		ImGui::Separator();
 
 		// Rotate command with axis
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<x>,<y>,<z> ");
-		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
+		TextInlineColored(VEC_COL, "<x,y,z> ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
 
 		ImGui::Separator();
 
 		// Rotate command with axis
 		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<linkName>WS");
-		TextInlineColored(ARG_COL, "<omega>,<startDeg>,<endDeg>");
+		TextInlineColored(VEC_COL, "<linkName> ");
+		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
 		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
 
 		ImGui::Separator();
 
 		// Set Color command
 		ImGui::TextColored(CMD_COL, "SET_COLOR ");
-		TextInlineColored(VEC_COL, "<object_id>/<robot_id> ");
-		TextInlineColored(VEC_COL, "<r>,<g>,<b> ");
+		TextInlineColored(VEC_COL, "<identifier> ");
+		TextInlineColored(VEC_COL, "<r,g,b> ");
 		TextInlineColored(DESC_COL, "~ Set object color using RGB values");
 
 		ImGui::Separator();

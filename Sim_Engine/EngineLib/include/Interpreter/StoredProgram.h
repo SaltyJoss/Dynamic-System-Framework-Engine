@@ -47,6 +47,9 @@ namespace interpreter {
 		int getCurrentLineNumber() const override { return _currentLineNumber; }
 		void setCurrentLineNumber(int lineNumber) { _currentLineNumber = lineNumber; }
 
+		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
+		scene::Object* defaultObject() const override { return _defaultObj; }
+
 	private:
 		// Bool for tracking if the program has reached the end
 		bool atEnd() const;
@@ -61,5 +64,6 @@ namespace interpreter {
 		std::vector<commands::ICommand*> _commands;
 
 		gui::simManager* _sim = nullptr;
+		scene::Object* _defaultObj = nullptr;
 	};
 } // namespace interpreter

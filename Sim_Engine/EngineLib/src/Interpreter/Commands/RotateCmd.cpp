@@ -101,7 +101,7 @@ namespace commands {
 				rotationThisStep);
 		}
 		else if (_target.type == RotateTargetType::ObjID) {
-			auto* obj = cntx.getSim()->getObject();
+			auto* obj = cntx.getDefaultObject();
 			if (!obj) {
 				markFailed("No current object selected for OBJ rotation.");
 				D_FAIL("RotateCmd: OBJ target but no current object selected.");

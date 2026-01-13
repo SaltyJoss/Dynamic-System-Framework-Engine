@@ -8,14 +8,14 @@
 #include <unordered_map>
 
 #include "Scene/SimulationManager.h"
+#include "StoredProgram.h"
 
 #include "Platform/Logger.h"
 
 using namespace mathlib;
 
-namespace scene {
-	class Object;
-}
+namespace scene { class Object; }
+namespace interpreter { class StoredProgram; }
 
 namespace commands {
 	// Struct for operation result
@@ -44,7 +44,7 @@ namespace commands {
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(gui::simManager* sim);
+		CommandContextMotion(gui::simManager* sim, scene::Object* obj);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -59,6 +59,8 @@ namespace commands {
 		double getOmegaClamp() const;
 
 		gui::simManager* getSim() const { return _sim; }
+		scene::Object* getDefaultObject() const { return _defaultObj; }
+
 
 		// --- ROTATION COMMAND METHODS ---
 
@@ -85,7 +87,8 @@ namespace commands {
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		RobotModel* _robot = nullptr;
-		scene::Object* _obj = nullptr;
+		scene::Object* _obj = nullptr;			// current object for commands
+		scene::Object* _defaultObj = nullptr;	// default object for commands
 
 		AngularUnits _angularUnits = AngularUnits::RadPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp

@@ -9,6 +9,10 @@ namespace commands {
 	class ENGINE_API ICommand;
 }
 
+namespace scene {
+	class Object;
+}
+
 namespace interpreter {
 	// Enum representing the state of the program
 	enum ProgramState {
@@ -92,5 +96,10 @@ namespace interpreter {
 		virtual int getCurrentLineNumber() const = 0;
 		// Set Current line number
 		virtual void setCurrentLineNumber(int lineNumber) = 0;
+
+		// Set default object
+		virtual void setDefaultObject(scene::Object* obj) = 0;
+		// Get default object
+		virtual scene::Object* defaultObject() const = 0;
 	};
 } // namespace interpreter
