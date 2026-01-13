@@ -32,7 +32,7 @@ namespace commands {
 
 		std::string_view getName() const { return "ROTATE"; }
 
-		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
+		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
 
 		CmdResult getResult() const { return _result; }
 		void setResult(const CmdResult& result) { _result = result; }

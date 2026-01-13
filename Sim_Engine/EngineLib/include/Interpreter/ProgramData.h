@@ -17,7 +17,7 @@ namespace interpreter {
 		std::string rawLine;				// The original line of code
 		std::string cmdName;				// The command name
 		std::string identifier;				// The command identifier
-		std::string tokens;	// Vector of tokens/arguments
+		std::string tokens;					// The command arguments/tokens
 		int lineNumber = 0;					// Line number in the source code
 	};
 

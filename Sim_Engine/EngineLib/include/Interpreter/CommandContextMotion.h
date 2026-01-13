@@ -1,13 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
-#include <cstddef>
-#include <string>
-#include <unordered_map>
-
-#include "Scene/SimulationManager.h"
+#include "SimContext.h"
 
 #include "Platform/Logger.h"
 

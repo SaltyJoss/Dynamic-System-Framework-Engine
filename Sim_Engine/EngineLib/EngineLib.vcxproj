@@ -147,7 +147,6 @@
     <ClInclude Include="include\Interpreter\Commands\LoadCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
-    <ClInclude Include="include\Interpreter\Commands\TranslateCmd.h" />
     <ClInclude Include="include\Interpreter\ICommand.h" />
     <ClInclude Include="include\Interpreter\IStoredProgram.h" />
     <ClInclude Include="include\Interpreter\Parser.h" />
@@ -198,6 +197,7 @@
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="include\Interpreter\RunWrapper.cpp" />
+    <ClInclude Include="include\Interpreter\SimContext.h" />
     <ClCompile Include="src\Interpreter\Command.cpp" />
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
@@ -205,9 +205,9 @@
     <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp" />
-    <ClCompile Include="src\Interpreter\Commands\TranslateCmd.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
+    <ClCompile Include="src\Interpreter\SimContext.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />

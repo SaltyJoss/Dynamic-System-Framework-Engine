@@ -1,13 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
-#include <cstddef>
-#include <string>
-#include <unordered_map>
-
-#include "Scene/SimulationManager.h"
+#include "SimContext.h"
 
 #include "Platform/Logger.h"
 
@@ -36,19 +30,18 @@ namespace commands {
 		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
 
 		// setters for material properties
-		void setColour(const glm::vec3& color);
-		void setRoughness(float roughness);
-		void setMetallic(float metallic);
+		OpResult setColour(const glm::vec3& color);
+		OpResult setMetallic(float metallic);
 		
 		// loaders
-		void loadObject(const std::string& objectPath);
-		void loadRobot(const std::string& robotName);
-		void loadTexture(const std::string& texturePath);
+		OpResult loadObject(const std::string& objectPath);
+		OpResult loadRobot(const std::string& robotName);
+		OpResult loadTexture(const std::string& texturePath);
 		
 		// clearers
-		void clearObject();
-		void clearRobot();
-		void clearTexture();
+		OpResult clearObject();
+		OpResult clearRobot();
+		OpResult clearTexture();
 
 	private:
 		gui::simManager* _sim;		// simulation manager

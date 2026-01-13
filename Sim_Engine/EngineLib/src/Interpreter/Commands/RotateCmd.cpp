@@ -18,6 +18,7 @@ namespace commands {
 		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
 	}
 
+	// Helper function to parse AxisMask from string
 	static AxisMask parseAxisMask(const std::string_view axesStr) {
 		AxisMask mask{};
 		for (char c : axesStr) {
@@ -33,7 +34,7 @@ namespace commands {
 	}
 
 	// Helper function to parse RotateTarget from string
-	// Expected formats: "AXIS:XYZ" or "JOINT:joint_name"
+	// Formats: "AXIS:XYZ" or "Link:linkName"
 	static std::optional<RotateTarget> parseRotateTarget(const std::string& arg) {
 		if (startsWith(arg, "OBJ:")) {
 			// We are using current selected object, so the id is ignored.

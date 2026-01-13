@@ -5,13 +5,8 @@
 #include <string>
 #include <vector>
 
-namespace commands {
-	class ENGINE_API ICommand;
-}
-
-namespace scene {
-	class Object;
-}
+namespace commands { class ENGINE_API ICommand; }
+namespace scene { class Object;  }
 
 namespace interpreter {
 	// Enum representing the state of the program
@@ -62,7 +57,7 @@ namespace interpreter {
 	};
 
 	// Numerical integrator methods
-	enum IntegratorMethod {
+	enum class IntegratorMethod {
 		Euler,
 		Midpoint,
 		Heun,

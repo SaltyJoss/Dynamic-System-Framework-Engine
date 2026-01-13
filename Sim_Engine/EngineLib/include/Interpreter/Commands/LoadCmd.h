@@ -5,7 +5,6 @@
 #include <core/Types.h>
 #include "Interpreter/Command.h"
 #include "Interpreter/UIContext.h"
-#include <string>
 
 namespace commands {
 	// Enum for load target type
@@ -31,7 +30,7 @@ namespace commands {
 		std::string_view getName() const { return "LOAD"; }
 		// Set the command context
 		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
-		// Getters and Setters for Result
+
 		CmdResult getResult() const { return _result; }
 		void setResult(const CmdResult& result) { _result = result; }
 
@@ -41,6 +40,7 @@ namespace commands {
 	private:
 		LoadTarget _target{};
 		UIContext* _uiCntx = nullptr;
+
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:

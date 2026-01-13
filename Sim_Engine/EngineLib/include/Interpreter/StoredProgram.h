@@ -3,7 +3,6 @@
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "ICommand.h"
-#include "Scene/SimulationManager.h"
 #include "Interpreter/CommandContextMotion.h"
 #include <string>
 #include <vector>
