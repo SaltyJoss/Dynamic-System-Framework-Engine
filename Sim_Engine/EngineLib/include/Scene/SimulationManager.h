@@ -142,6 +142,7 @@ namespace gui {
 
 		// Robotic Arm System
         void loadRobot(const std::string& name);
+        void updateRobotKinematics(const glm::mat4& baseTransform);
         bool hasRobot() const { return _hasRobot; }
 		void setRobotLinkRotation(const std::string& linkName, float angle);
         void clearRobot();
@@ -246,7 +247,6 @@ namespace gui {
 
         void instantiateRobotLinks();
         void buildLinkIndex();
-        void updateRobotKinematics(const glm::mat4& baseTransform);
 
 
         // Editor & UI
