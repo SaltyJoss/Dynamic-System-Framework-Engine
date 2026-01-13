@@ -88,6 +88,12 @@ namespace interpreter {
 		}
 
 		auto r = cmd->update(_cntx, dt);
+
+		// <-- add this
+		if (_sim && _sim->hasRobot()) {
+			_sim->updateRobotKinematics(glm::mat4(1.0f)); 
+		}
+
 		if (r.state == CmdState::Executed || r.state == CmdState::Failed) {
 			PC++;
 			if (!commandsLeft()) {
