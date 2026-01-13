@@ -7,6 +7,7 @@
 
 namespace commands {
 	class CommandContextMotion;
+	class UIContext;
 }
 
 namespace commands {
@@ -16,8 +17,10 @@ namespace commands {
 		// Virtual destructor
 		virtual ~ICommand() = default;
 
-		// Set the command context
+		// Context setters
 		virtual void setContext(CommandContextMotion& cntx) = 0;
+		virtual void setContext(UIContext& cntx) = 0;
+
 		// Update command
 		virtual interpreter::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
 		// Execute command

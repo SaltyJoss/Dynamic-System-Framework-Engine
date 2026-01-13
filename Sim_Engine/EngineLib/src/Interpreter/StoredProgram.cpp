@@ -105,4 +105,26 @@ namespace interpreter {
 	CmdResult StoredProgram::updateState() {
 		return CmdResult{};
 	}
+
+	void StoredProgram::setIntegratorMethod(IntegratorMethod method) {
+		auto& _phys = _sim->getPhysicsSystem();
+		auto currentEnum = static_cast<physics::PhysicsSystem::eIntegrationMethod>(method);
+
+		static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
+		const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
+
+		for (int n = 0; n < IM_ARRAYSIZE(methodNames); ++n) {
+			if (methodNames[n] == currentMethod) {
+				auto updatedMethod = static_cast<physics::PhysicsSystem::eIntegrationMethod>(n);
+				_phys.setIntegrationMethod(updatedMethod);
+				_integratorMethod = method;
+				LOG_INFO("Integrator method set to: %s", methodNames[n]);
+				D_SUCCESS("Integrator method set to: %s", methodNames[n]);
+				break;
+			}
+		}
+	}
+	IntegratorMethod StoredProgram::getIntegratorMethod() const {
+		return _integratorMethod;
+	}
 } // namespace interpreter

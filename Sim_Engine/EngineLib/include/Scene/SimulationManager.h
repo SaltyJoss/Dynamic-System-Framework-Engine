@@ -130,6 +130,7 @@ namespace gui {
 		std::vector<std::unique_ptr<scene::Object>>& getObjects() { return _objects; }
         scene::Object* getObject() { return _selectedObject; }
         void setSelectedObject(scene::Object* obj) { _selectedObject = obj; }
+		void addObject(std::unique_ptr<scene::Object> obj) { _objects.push_back(std::move(obj)); } // Cache the unique_ptr
 
         void deleteObject(int index);
 

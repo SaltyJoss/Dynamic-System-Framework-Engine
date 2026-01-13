@@ -61,6 +61,15 @@ namespace interpreter {
 		std::string message;
 	};
 
+	// Numerical integrator methods
+	enum IntegratorMethod {
+		Euler,
+		Midpoint,
+		Heun,
+		Ralston,
+		RK4
+	};
+
 	// IStoredProgram interface
 	class ENGINE_API IStoredProgram { 
 	public:
@@ -104,5 +113,10 @@ namespace interpreter {
 		virtual void setDefaultObject(scene::Object* obj) = 0;
 		// Get default object
 		virtual scene::Object* defaultObject() const = 0;
+
+		// Set Integrator Method
+		virtual void setIntegratorMethod(IntegratorMethod method) = 0;
+		// Get Integrator Method
+		virtual IntegratorMethod getIntegratorMethod() const = 0;
 	};
 } // namespace interpreter
