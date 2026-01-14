@@ -11,16 +11,16 @@ namespace commands {
 	// Helper function to parse LoadTarget from string
 	// Expected formats: "OBJECT:path", "ROBOT:path", "TEXTURE:path"
 	static std::optional<LoadTarget> parseLoadTarget(const std::string& arg) {
-		if (startsWith(arg, "OBJECT:")) {
-			std::string path = arg.substr(7);
+		if (startsWith(arg, "obj,")) {
+			std::string path = arg.substr(4);
 			return LoadTarget{ LoadTargetType::Object, path };
 		}
-		if (startsWith(arg, "ROBOT:")) {
+		if (startsWith(arg, "robot,")) {
 			std::string path = arg.substr(6);
 			return LoadTarget{ LoadTargetType::Robot, path };
 		}
-		if (startsWith(arg, "TEXTURE:")) {
-			std::string path = arg.substr(8);
+		if (startsWith(arg, "tex,")) {
+			std::string path = arg.substr(4);
 			return LoadTarget{ LoadTargetType::Texture, path };
 		}
 		return std::nullopt;
@@ -68,7 +68,7 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::string& path) {
 		auto targetOpt = parseLoadTarget(path);
 		if (!targetOpt.has_value()) {
-			D_FAIL("LOAD requires: OBJECT:<path>, ROBOT:<name>, or TEXTURE:<path>");
+			D_FAIL("load command requires: obj,<path> OR robot,<name> OR tex,<path>");
 			return nullptr;
 		}
 		return std::make_unique<LoadCmd>(targetOpt.value(), targetOpt->path);

@@ -14,24 +14,26 @@ namespace interpreter {
 	class ENGINE_API Parser {
 	public:
 		Parser(IStoredProgram* program);
-
 		void parse(std::string code);
 
 	private:
-		void tokenAndClassifyLine(const std::string& line, Command& outCmd);
+		void tokeniseAndClassifyLine(const std::string& line);
 		void buildProgram();
 		void buildCommand(Command& cmd);
 
 		void motionCommandHandler(const Command& cmd);
 
 		static bool isBlankOrComment(std::string_view line);
+		static bool hasWhitespace(const std::string_view s);
+		static bool hasCommentInline(const std::string_view s);
 
-		std::vector<std::string> split(const std::string& s, const std::vector<std::string>& delimiters);
+		static std::vector<std::string> split(const std::string_view s, const std::string_view delimiters);
+		static std::string_view trim(std::string_view str);
 
 		IStoredProgram* _program = nullptr;
 
-		interpreter::Command& _currentCmd;
-		interpreter::ProgramData& _programData;
-		std::vector<std::string>& lines;
+		interpreter::Command _currentCmd;
+		interpreter::ProgramData _programData;
+		std::vector<std::string> lines;
 	};
 } // namespace interpreter

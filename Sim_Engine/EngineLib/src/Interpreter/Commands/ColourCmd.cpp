@@ -21,7 +21,7 @@ namespace commands {
 			return false;
 		}
 	}
-	// --- SetCmd Method Implementations ---
+	// --- ColourCmd Method Implementations ---
 	void SetCmd::markFailed(const std::string& message) {
 		setResult({ CmdState::Failed, {}, message });
 		// Implementation to mark the command as failed

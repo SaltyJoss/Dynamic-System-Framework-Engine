@@ -24,7 +24,7 @@ namespace gui {
 		_save.SetTitle("Save Command Script");
 		_save.SetDirectory(_currentScriptPath);
 		_save.SetTypeFilters({ ".txt", ".scl" });
-	}// .scl ([S]ystem [C]ommand [L]anguage), the MGRE scripting extension
+	}// .dsl ([Dynamical [S]ystems [L]anguage), a domain-specific language for defining constrained dynamical systems in MGRE
 
 	CommandScriptEditor::~CommandScriptEditor() {
 		_script.clear();

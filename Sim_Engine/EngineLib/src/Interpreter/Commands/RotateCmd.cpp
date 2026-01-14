@@ -36,19 +36,21 @@ namespace commands {
 	// Helper function to parse RotateTarget from string
 	// Formats: "AXIS:XYZ" or "Link:linkName"
 	static std::optional<RotateTarget> parseRotateTarget(const std::string& arg) {
-		if (startsWith(arg, "OBJ:")) {
-			// We are using current selected object, so the id is ignored.
-			return RotateTarget{ RotateTargetType::ObjID, {}, "" };
-		}
-		if (startsWith(arg, "AXIS:")) {
+		if (startsWith(arg, "{")) {
 			std::string axesStr = arg.substr(5);
 			AxisMask mask = parseAxisMask(axesStr);
 			return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
 		}
-		if (startsWith(arg, "LINK:")) {
+		if (startsWith(arg, "\"")) {
 			std::string linkName = arg.substr(5);
 			return RotateTarget{ RotateTargetType::linkName, {}, linkName };
 		}
+
+		if (startsWith(arg, "")) {
+			// We are using current selected object, so the id is ignored.
+			return RotateTarget{ RotateTargetType::ObjID, {}, "" };
+		}
+
 		return std::nullopt;
 	}
 
@@ -60,7 +62,7 @@ namespace commands {
 	}
 
 	void RotateCmd::markCompleted() {
-		setResult({ CmdState::Executed, {}, "ROTATE ran" });
+		setResult({ CmdState::Executed, {}, "rotate() ran successfully" });
 		// Implementation to mark the command as completed
 	}
 
@@ -77,8 +79,8 @@ namespace commands {
 	// Update the command
 	CmdResult RotateCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
-			markFailed("RotateCmd not started.");
-			return CmdResult{ CmdState::Failed, {}, "RotateCmd not started." };
+			markFailed("rotate() not started.");
+			return CmdResult{ CmdState::Failed, {}, "rotate() not started." };
 		}
 
 		cntx = *_cntxMtn;
@@ -89,11 +91,11 @@ namespace commands {
 			auto result = cntx.rotateAxes(_target.axisMask, _omega, dt);
 			if (!result.ok) {
 				markFailed(result.message);
-				D_FAIL("RotateCmd failed to rotate axes: %s", result.message.c_str());
+				D_FAIL("Failed to rotate axes: %s", result.message.c_str());
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
 
-			D_DEBUG("RotateCmd rotated axes (X:%d Y:%d Z:%d) by %.2f degrees this step.", 
+			D_DEBUG("Rotated axes (X:%d Y:%d Z:%d) by %.2f degrees this step.", 
 				_target.axisMask.x ? 1 : 0, 
 				_target.axisMask.y ? 1 : 0, 
 				_target.axisMask.z ? 1 : 0, 
@@ -102,8 +104,8 @@ namespace commands {
 		else if (_target.type == RotateTargetType::ObjID) {
 			auto* obj = cntx.getDefaultObject();
 			if (!obj) {
-				markFailed("No current object selected for OBJ rotation.");
-				D_FAIL("RotateCmd: OBJ target but no current object selected.");
+				markFailed("No current object selected for <objID> rotation.");
+				D_FAIL("rotate(<objID>,...) target but no current object selected.");
 				return CmdResult{ CmdState::Failed, {}, "No current object selected." };
 			}
 
@@ -113,20 +115,20 @@ namespace commands {
 
 			if (!result.ok) {
 				markFailed(result.message);
-				D_FAIL("RotateCmd failed to rotate object: %s", result.message.c_str());
+				D_FAIL("Failed to rotate object: %s", result.message.c_str());
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
 
-			D_DEBUG("RotateCmd rotated current object by %.2f degrees this step.", rotationThisStepDeg);
+			D_DEBUG("Rotated by % .2f degrees.", rotationThisStepDeg);
 		} else if (_target.type == RotateTargetType::linkName) {
 			auto result = cntx.rotateJoint(_target.linkName, rotationThisStepDeg, std::abs(_omega));
 			if (!result.ok) {
 				markFailed(result.message);
-				D_FAIL("RotateCmd failed to rotate joint %s: %s", _target.linkName.c_str(), result.message.c_str());
+				D_FAIL("Failed to rotate joint %s: %s", _target.linkName.c_str(), result.message.c_str());
 				return CmdResult{ CmdState::Failed, {}, result.message };
 			}
 
-			D_DEBUG("RotateCmd rotated joint %s by %.2f degrees this step.", 
+			D_DEBUG("Rotated joint %s by %.2f degrees this step.", 
 				_target.linkName.c_str(), 
 				rotationThisStepDeg);
 		}
@@ -144,18 +146,18 @@ namespace commands {
 			}
 
 			markCompleted();
-			D_SUCCESS("RotateCmd completed rotation of %.2f degrees.", _angleDeg);
+			D_SUCCESS("Completed rotation of %.2f degrees.", _angleDeg);
 			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
-		D_RUNTIME("RotateCmd total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
+		D_RUNTIME("Total rotated: %.2f / %.2f degrees.", _totalRotated, _angleDeg);
 
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
 	void RotateCmd::execute() {
 		_started = true;
-		_result = { CmdState::Executing, {}, "ROTATE started" };
+		_result = { CmdState::Executing, {}, "rotate() started" };
 
 		_cntxMtn->rotateAxes(_target.axisMask, _omega, 0.0); // Initial call with dt=0 to set up rotation
 
@@ -167,26 +169,26 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateRotateCmd(const std::string& id, const std::vector<std::string>& args) {
 		// args: [omega, startDeg, endDeg?]
 		if (args.size() < 2) {
-			D_FAIL("ROTATE requires: <omega>,<startDeg>,<endDeg>");
+			D_FAIL("Rotate Command requires: <omega>,<startDeg>,<endDeg>");
 			return nullptr;
 		}
 
 		auto targetOpt = parseRotateTarget(id);
 		if (!targetOpt.has_value()) {
-			D_FAIL("Invalid ROTATE target: %s (expected OBJ:<id>, AXIS:XYZ, or LINK:<name>)", id.c_str());
+			D_FAIL("Invalid ROTATE target: %s (expected <objID> OR <{x,y,z}> OR <\"name\">"), id.c_str());
 			return nullptr;
 		}
 		RotateTarget target = *targetOpt;
 
 		auto omegaOpt = parseDouble(args[0]);
 		if (!omegaOpt.has_value()) {
-			D_FAIL("Invalid ROTATE omega argument: %s", args[0].c_str());
+			D_FAIL("Invalid rotate() omega argument: %s", args[0].c_str());
 			return nullptr;
 		}
 
 		auto startDegOpt = parseDouble(args[1]);
 		if (!startDegOpt.has_value()) {
-			D_FAIL("Invalid ROTATE start angle argument: %s", args[1].c_str());
+			D_FAIL("Invalid rotate() start angle argument: %s", args[1].c_str());
 			return nullptr;
 		}
 
@@ -197,7 +199,7 @@ namespace commands {
 		if (args.size() >= 3) {
 			auto endDegOpt = parseDouble(args[2]);
 			if (!endDegOpt.has_value()) {
-				D_FAIL("Invalid ROTATE end angle argument: %s", args[2].c_str());
+				D_FAIL("Invalid rotate() end angle argument: %s", args[2].c_str());
 				return nullptr;
 			}
 			endDeg = *endDegOpt;

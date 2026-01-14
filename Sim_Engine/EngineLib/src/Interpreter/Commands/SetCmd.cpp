@@ -12,8 +12,8 @@ namespace commands {
 	// Helper function to parse LoadTarget from string
 	// Expected formats: "INTEGRATOR <method>"
 	static std::optional<SetTarget> parseType(const std::string& tokens) {
-		if (startsWith(tokens, "INTEGRATOR")) {
-			std::string methodStr = tokens.substr(10);
+		if (startsWith(tokens, "integrator,")) {
+			std::string methodStr = tokens.substr(11);
 			IntegratorMethod method;
 
 			// Determine the integrator method
@@ -25,7 +25,6 @@ namespace commands {
 					method = IntegratorMethod::Heun;
 					break;
 				case 'R': case 'r':
-
 					if (methodStr.size() > 1 && (methodStr[1] == 'K' || methodStr[1] == 'k')) {
 						method = IntegratorMethod::RK4;
 						break;
@@ -40,7 +39,7 @@ namespace commands {
 
 			return SetTarget{SetTargetType::IntegratorMethod, method};
 		}
-		if (startsWith(tokens, "FUNCTION")) {
+		if (startsWith(tokens, "func")) {
 			// Future implementation for function definition
 		}
 		return std::nullopt;
@@ -61,7 +60,7 @@ namespace commands {
 		// Implementation of the SET command execution
 		auto targetOpt = parseType(_args);
 		if (!targetOpt.has_value()) {
-			std::string errMsg = "Invalid SET argument: " + _args + " (expected INTEGRATOR <method>)";
+			std::string errMsg = "Invalid set( argument: " + _args + " (expected INTEGRATOR <method>)";
 			markFailed(errMsg);
 			D_FAIL("%s", errMsg.c_str());
 			return;
