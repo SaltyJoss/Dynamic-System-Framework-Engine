@@ -121,6 +121,12 @@
     <Filter Include="Source Files\src\Interpreter\Context">
       <UniqueIdentifier>{0520ccc8-d340-441e-bb09-35f98d2dbbac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter\Utils">
+      <UniqueIdentifier>{f58c43dc-a9b9-4907-ac4a-1d37d2f760fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Utils">
+      <UniqueIdentifier>{a9e4f471-fa74-46e2-8023-77c52aeb5a4d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -402,6 +408,9 @@
     <ClInclude Include="include\Interpreter\SimContext.h">
       <Filter>Header Files\include\Interpreter\Context</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Utils.h">
+      <Filter>Header Files\include\Interpreter\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -556,6 +565,9 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\SimContext.cpp">
       <Filter>Source Files\src\Interpreter\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Utils.cpp">
+      <Filter>Source Files\src\Interpreter\Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,0 +1,122 @@
+#include "pch.h"
+#include "Interpreter/Utils.h"
+
+#include "EngineLib/LogMacros.h"
+
+namespace utils {
+	// --- Handlers and Utilities ---
+
+	// Helper function to split a string_view by multiple delimiters
+	std::vector<std::string> split(const std::string_view s, const std::string_view delims) {
+		std::vector<std::string> out;
+
+		size_t start = 0;
+
+		auto push_token = [&](size_t a, size_t b) {
+			if (b > a) { out.emplace_back(s.substr(a, b - a)); }
+			};
+
+		for (size_t i = 0; i < s.size(); ++i) {
+			if (delims.find(s[i])) {
+				push_token(start, i);
+				start = i + 1;
+			}
+		}
+		push_token(start, s.size());
+		return out;
+	}
+
+	// Helper function to trim whitespace from both ends of a string_view
+	std::string_view trim(std::string_view str) {
+		size_t a = str.find_first_not_of(" \t\r");
+		if (a == std::string_view::npos) { return ""; } // All whitespace
+		size_t b = str.find_last_not_of(" \t\r");
+		return str.substr(a, b - a + 1);
+	}
+
+	// Helper function to convert a string to uppercase
+	std::string toLower(std::string_view str) {
+		std::string result;
+		result.reserve(str.size());
+		for (unsigned char c : str)
+			result.push_back((char)std::tolower(c));
+		return result;
+	}
+
+	// Helper function to convert a string to uppercase
+	std::string toUpper(std::string_view str) {
+		std::string result;
+		result.reserve(str.size());
+		for (unsigned char c : str)
+			result.push_back((char)std::toupper(c));
+		return result;
+	}
+
+	// Helper function to convert a string to lowercase in place
+	void ignoreCaseCompare(std::string& str) {
+		for (char& c : str) {
+			c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+		}
+	}
+
+	// Helper function to check if a string starts with a prefix
+	bool startsWith(const std::string& str, const std::string& prefix) {
+		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
+	}
+
+	// Helper function to parse number from string_view
+	template <typename T>
+	std::optional<T> parseNumber(const std::string_view s) {
+		T out = 0;
+		auto first = s.data();
+		auto last = s.data() + s.size();
+		auto res = std::from_chars(first, last, out);
+		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
+		return out;
+	}
+
+	bool isInteger(const std::string_view s) { return parseNumber<int>(s).has_value(); }
+	bool isFloat(const std::string_view s) { return parseNumber<float>(s).has_value(); }
+	bool isDouble(const std::string_view s) { return parseNumber<double>(s).has_value(); }
+	bool isBoolean(const std::string_view s) {
+		std::string lowerStr = utils::toLower(s);
+		return (lowerStr == "true" || lowerStr == "false" || lowerStr == "1" || lowerStr == "0");
+	}
+
+	// Helper function to convert string_view to integer
+	std::optional<bool> toBoolean(const std::string s) {
+		std::string_view lowerStr = utils::toLower(s);
+		if (lowerStr == "true" || lowerStr == "1") {
+			return true;
+		}
+		else if (lowerStr == "false" || lowerStr == "0") {
+			return false;
+		}
+		return std::nullopt;
+	}
+
+	// Helper function to convert hex string to RGB vector (wanted to make my own, so I did)
+	mathlib::Vec3 hexToRGB(const std::string& hex, mathlib::Vec3& rgbOut) {
+		if (hex.size() != 7 || hex[0] != '#') {
+			D_ERROR("Invalid hex colour format: %s", hex.c_str());
+			return mathlib::Vec3{ 0.f, 0.f, 0.f };
+		}
+		try {
+			int r = std::stoi(hex.substr(1, 2), nullptr, 16);
+			int g = std::stoi(hex.substr(3, 2), nullptr, 16);
+			int b = std::stoi(hex.substr(5, 2), nullptr, 16);
+			return mathlib::Vec3{ r / 255.0f, g / 255.0f, b / 255.0f };
+		}
+		catch (...) {
+			D_ERROR("Failed to convert hex to RGB: %s", hex.c_str());
+			return mathlib::Vec3{ 0.f, 0.f, 0.f };
+		}
+	}
+
+	// Helper function to convert RGB vector to hex string
+	std::string rgbToHex(const mathlib::Vec3& rgb) {
+		char hex[8];
+		std::snprintf(hex, sizeof(hex), "#%02X%02X%02X", static_cast<int>(rgb.x() * 255.0f), static_cast<int>(rgb.y() * 255.0f), static_cast<int>(rgb.z() * 255.0f));
+		return std::string(hex);
+	}
+}

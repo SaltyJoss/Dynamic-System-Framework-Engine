@@ -10,15 +10,7 @@ using namespace mathlib;
 namespace scene { class Object; }
 namespace interpreter { class StoredProgram; }
 
-namespace commands {
-	// Struct for operation result
-	struct OpResult {
-		bool ok = true;
-		std::string message;
-		static OpResult Success() { return { true, {} }; }
-		static OpResult Failure(const std::string& msg) { return OpResult{ false, msg }; }
-	};
-	
+namespace commands {	
 	class ENGINE_API UIContext {
 	public:
 		UIContext(gui::simManager* sim);

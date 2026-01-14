@@ -1,25 +1,25 @@
 #include "pch.h"
 #include "Interpreter/Commands/LoadCmd.h"
+#include "Interpreter/Utils.h"
+
 #include "EngineLib/LogMacros.h"
 
+using namespace utils;
+
 namespace commands {
-	// Helper function to check if a string starts with a prefix
-	static bool startsWith(const std::string& str, const std::string& prefix) {
-		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
-	}
 
 	// Helper function to parse LoadTarget from string
 	// Expected formats: "OBJECT:path", "ROBOT:path", "TEXTURE:path"
 	static std::optional<LoadTarget> parseLoadTarget(const std::string& arg) {
-		if (startsWith(arg, "obj,")) {
+		if (startsWith(arg, "obj")) {
 			std::string path = arg.substr(4);
 			return LoadTarget{ LoadTargetType::Object, path };
 		}
-		if (startsWith(arg, "robot,")) {
+		if (startsWith(arg, "robot")) {
 			std::string path = arg.substr(6);
 			return LoadTarget{ LoadTargetType::Robot, path };
 		}
-		if (startsWith(arg, "tex,")) {
+		if (startsWith(arg, "tex")) {
 			std::string path = arg.substr(4);
 			return LoadTarget{ LoadTargetType::Texture, path };
 		}

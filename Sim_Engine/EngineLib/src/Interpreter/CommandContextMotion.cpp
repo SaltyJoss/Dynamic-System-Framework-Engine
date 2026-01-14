@@ -45,6 +45,7 @@ namespace commands {
 		return Vec3(x * invLen, y * invLen, z * invLen);
 	}
 
+	// --- JOINT ANGLE METHODS ---
 
 	void CommandContextMotion::updateJointAngles(std::string linkName, double angleDeg, double vel) {
 		const RobotModel& robot = _sim->getRobotModel();
@@ -99,9 +100,14 @@ namespace commands {
 		D_DEBUG("=============================");*/
 	}
 
+	// --- STOP MOTION METHODS ---
+
 	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
 		if (!obj) return;
 		auto& s = obj->state;
+
+		angularVelocityPrev = s.angularVelocity; // store previous angular velocity
+
 		if (axes.x) s.angularVelocity.x() = 0.0;
 		if (axes.y) s.angularVelocity.y() = 0.0;
 		if (axes.z) s.angularVelocity.z() = 0.0;
@@ -110,6 +116,9 @@ namespace commands {
 	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
 		if (!obj) return;
 		auto& s = obj->state;
+
+		linearVelocityPrev = s.linearVelocity; // store previous linear velocity
+
 		if (axes.x) s.linearVelocity.x() = 0.0;
 		if (axes.y) s.linearVelocity.y() = 0.0;
 		if (axes.z) s.linearVelocity.z() = 0.0;
@@ -125,15 +134,9 @@ namespace commands {
 		// Normalize omega based on current angular units
 		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
 		// Apply rotation to specified axes
-		if (axes.x) {
-			s.angularVelocity.x() = internalOmega;
-		}
-		if (axes.y) {
-			s.angularVelocity.y() = internalOmega;
-		}
-		if (axes.z) {
-			s.angularVelocity.z() = internalOmega;
-		}
+		if (axes.x) { s.angularVelocity.x() = internalOmega; }
+		if (axes.y) { s.angularVelocity.y() = internalOmega; }
+		if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
 		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
 			omega, (int)_angularUnits, internalOmega);
@@ -152,17 +155,10 @@ namespace commands {
 
 		// Normalize omega based on current angular units
 		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
-
 		// Apply rotation to specified axes
-		if (axes.x) {
-			s.angularVelocity.x() = internalOmega;
-		}
-		if (axes.y) {
-			s.angularVelocity.y() = internalOmega;
-		}
-		if (axes.z) {
-			s.angularVelocity.z() = internalOmega;
-		}
+		if (axes.x) { s.angularVelocity.x() = internalOmega; }
+		if (axes.y) { s.angularVelocity.y() = internalOmega; }
+		if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
 
 		/*D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
@@ -265,18 +261,17 @@ namespace commands {
 	}
 
 	// --- PRIVATE METHODS ---
+
 	double CommandContextMotion::NormaliseOmega(double omega) const {
 		if (_omegaClamp > 0.0) {
-			if (omega > _omegaClamp) return _omegaClamp;
-			if (omega < -_omegaClamp) return -_omegaClamp;
+			if (omega > _omegaClamp) { return _omegaClamp; }
+			if (omega < -_omegaClamp) { return -_omegaClamp; }
 		}
 		return omega;
 	}
 
 	double CommandContextMotion::convertOmegaToInternal(double omega) const {
-		if (_angularUnits == AngularUnits::DegPerSec) {
-			return omega * (PI / 180.0); // Convert degrees to radians
-		}
-		return omega; // Already in radians
+		if (_angularUnits == AngularUnits::DegPerSec) { return omega * (PI / 180.0); } // Convert degrees to radians
+		return omega;
 	}
 } // namespace commands

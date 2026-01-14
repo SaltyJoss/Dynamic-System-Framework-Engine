@@ -155,6 +155,7 @@
     <ClInclude Include="include\Interpreter\RunWrapper.h" />
     <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Interpreter\UIContext.h" />
+    <ClInclude Include="include\Interpreter\Utils.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
     <ClInclude Include="include\Physics\ReferenceSolver.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="src\Interpreter\SimContext.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
+    <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

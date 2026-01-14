@@ -2,10 +2,12 @@
 #include "Interpreter/Parser.h"
 #include "Interpreter/RegisterCommand.h"
 #include "Interpreter/CommandFactory.h"
+#include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
 using namespace std;
+using namespace utils;
 
 namespace interpreter {
 
@@ -35,38 +37,11 @@ namespace interpreter {
 		_programData.cmd.clear();
 		lines.clear();
 		
-		tokeniseAndClassifyLine(code, _currentCmd);
+		tokeniseAndClassifyLine(code);
 		buildProgram();
 	}
 
-	// --- Handlers and Utilities ---
-
-	std::vector<std::string> Parser::split(const std::string_view s, const std::string_view delims) {
-		std::vector<std::string> out;
-
-		size_t start = 0;
-
-		auto push_token = [&](size_t a, size_t b) {
-			if (b > a) { out.emplace_back(s.substr(a, b - a)); }
-		};
-
-		for (size_t i = 0; i < s.size(); ++i) {
-			if (delims.find(s[i])) {
-				push_token(start, i);
-				start = i + 1;
-			}
-		}
-		push_token(start, s.size());
-
-		return out;
-	}
-
-	std::string_view Parser::trim(std::string_view str) {
-		size_t a = str.find_first_not_of(" \t\r");
-		if (a == std::string_view::npos) { return ""; } // All whitespace
-		size_t b = str.find_last_not_of(" \t\r");
-		return str.substr(a, b - a + 1);
-	}
+	// --- Handlers ---
 
 	bool Parser::isBlankOrComment(std::string_view line) {
 		line = trim(line);
@@ -85,11 +60,6 @@ namespace interpreter {
 			if (c == '#') { return true; }
 		}
 		return false;
-	}
-
-
-	void Parser::motionCommandHandler(const Command& cmd) {
-		// Implementation to handle a motion command
 	}
 
 	// --- Command and Program Builders ---

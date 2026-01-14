@@ -17,6 +17,12 @@ namespace interpreter {
 		void parse(std::string code);
 
 	private:
+		IStoredProgram* _program = nullptr;
+		interpreter::Command _currentCmd;
+		interpreter::ProgramData _programData;
+
+		std::vector<std::string> lines;
+
 		void tokeniseAndClassifyLine(const std::string& line);
 		void buildProgram();
 		void buildCommand(Command& cmd);
@@ -26,14 +32,5 @@ namespace interpreter {
 		static bool isBlankOrComment(std::string_view line);
 		static bool hasWhitespace(const std::string_view s);
 		static bool hasCommentInline(const std::string_view s);
-
-		static std::vector<std::string> split(const std::string_view s, const std::string_view delimiters);
-		static std::string_view trim(std::string_view str);
-
-		IStoredProgram* _program = nullptr;
-
-		interpreter::Command _currentCmd;
-		interpreter::ProgramData _programData;
-		std::vector<std::string> lines;
 	};
 } // namespace interpreter

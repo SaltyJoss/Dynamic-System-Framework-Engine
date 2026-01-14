@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Interpreter/Commands/RotateCmd.h"
+#include "Interpreter/Utils.h"
+
+using namespace utils;
 
 namespace commands {
 	// Helper function to parse double from string_view
@@ -11,11 +14,6 @@ namespace commands {
 		auto res = std::from_chars(first, last, out); // Format: COMMAND <identifier>/<axis> <first>, ...<args_n>..., <last> "# Description"
 		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
 		return out;
-	}
-
-	// Helper function to check if a string starts with a prefix
-	static bool startsWith(const std::string& str, const std::string& prefix) {
-		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
 	}
 
 	// Helper function to parse AxisMask from string
@@ -39,14 +37,13 @@ namespace commands {
 		if (startsWith(arg, "{")) {
 			std::string axesStr = arg.substr(5);
 			AxisMask mask = parseAxisMask(axesStr);
-			return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
+			return RotateTarget{ RotateTargetType::AxisMask, mask};
 		}
-		if (startsWith(arg, "\"")) {
-			std::string linkName = arg.substr(5);
-			return RotateTarget{ RotateTargetType::linkName, {}, linkName };
+		if (startsWith(arg, "link")) {
+			// Extract the link name from "link_n" new format, e.g., "link_arm" -> "link_arm" we want all of it including "link_"
+			return RotateTarget{ RotateTargetType::linkName, {}, arg };
 		}
-
-		if (startsWith(arg, "")) {
+		if (startsWith(arg, "obj")) {
 			// We are using current selected object, so the id is ignored.
 			return RotateTarget{ RotateTargetType::ObjID, {}, "" };
 		}
@@ -175,7 +172,7 @@ namespace commands {
 
 		auto targetOpt = parseRotateTarget(id);
 		if (!targetOpt.has_value()) {
-			D_FAIL("Invalid ROTATE target: %s (expected <objID> OR <{x,y,z}> OR <\"name\">"), id.c_str());
+			D_FAIL("Invalid ROTATE target: %s (expected <objID> OR <{x,y,z}> OR <\"name\">)", id.c_str());
 			return nullptr;
 		}
 		RotateTarget target = *targetOpt;
@@ -211,10 +208,3 @@ namespace commands {
 		return std::make_unique<RotateCmd>(target, omega, startDeg, endDeg);
 	}
 } // namespace commands
-
-// Examples of prefixes for startsWith method (ideas for now):
-// "ROTATE "
-// "TRANSLATE "
-// "SET "
-// "COLOUR "
-// etc...

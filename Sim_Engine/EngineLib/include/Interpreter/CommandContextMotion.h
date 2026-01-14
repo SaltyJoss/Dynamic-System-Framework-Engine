@@ -103,6 +103,9 @@ namespace commands {
 		float _currentAngle = 0.0; // current angle for rotation commands
 		std::string _currentLinkName; // current link name for joint commands
 
+		Vec3 angularVelocityPrev = Vec3::Zero();
+		Vec3 linearVelocityPrev = Vec3::Zero();
+
 		double _dtheta = 0.0; // angle displacement
 		double _dt = 0.0; // time interval
 		double _omega = 0.0; // angular velocity

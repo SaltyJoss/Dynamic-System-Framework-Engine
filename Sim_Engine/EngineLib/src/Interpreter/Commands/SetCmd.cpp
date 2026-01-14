@@ -1,14 +1,12 @@
 #include "pch.h"
 #include "Interpreter/Commands/SetCmd.h"
+#include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
-namespace commands {
-	// Helper function to check if a string starts with a prefix
-	static bool startsWith(const std::string& str, const std::string& prefix) {
-		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
-	}
+using namespace utils;
 
+namespace commands {
 	// Helper function to parse LoadTarget from string
 	// Expected formats: "INTEGRATOR <method>"
 	static std::optional<SetTarget> parseType(const std::string& tokens) {
@@ -72,5 +70,11 @@ namespace commands {
 	// --- Free Function to Create SetCmd ---
 	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::string& arg) {
 
+		if (arg.empty()) {
+			D_FAIL("SET command requires an argument.");
+			return nullptr;
+		}
+
+		return std::make_unique<SetCmd>(id, arg);
 	}
 } // namespace commands
