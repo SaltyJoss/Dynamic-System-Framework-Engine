@@ -227,75 +227,106 @@ namespace gui {
 		ImGui::TextColored(color, "%s", text);
 	}
 
-	// examples of what I have planned, but very rough for now
 	void CommandScriptEditor::renderCmdInstructions() {
-		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+		ImGui::BeginChild(
+			"CmdInstructions",
+			ImVec2(0, -30),
+			true,
+			ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar
+		);
+
 		ImGui::Separator();
 		ImGui::NewLine();
 
 		ImGui::Text("Format:");
-
 		ImGui::NewLine();
 		ImGui::Separator();
 
-		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
-		ImGui::TextColored(CMD_COL, "COMMAND ");
-		TextInlineColored(VEC_COL, "<identifier>");
-		TextInlineColored(ARG_COL, "<arg1,arg2,arg3,...,arg_n>");
-		TextInlineColored(DESC_COL, "# Description");
+		// New format: command(identifier, arg1, arg2, ...) # Description
+		ImGui::TextColored(CMD_COL, "command");
+		TextInlineColored(ARG_COL, "(identifier, arg1, arg2, ...)");
+		TextInlineColored(DESC_COL, " \'#\' Denotes the Description");
 
 		ImGui::Separator();
 		ImGui::NewLine();
 
-		ImGui::Text("Commands:");
-
+		ImGui::Text("Examples:");
 		ImGui::NewLine();
 		ImGui::Separator();
-		
-		// Translate command with axes
-		ImGui::TextColored(CMD_COL, "TRANSLATE ");
-		TextInlineColored(VEC_COL, "<x,y,z> ");
-		TextInlineColored(ARG_COL, "<distance> <velocity> ");
-		TextInlineColored(DESC_COL, "# Translate object to position (x, y, z)");
+
+		// --- TRANSLATE ---
+		// translate(obj, x, y, z, vel) or translate({x,y,z}, vel, dt) depending on your actual command design
+		ImGui::TextColored(CMD_COL, "translate");
+		TextInlineColored(ARG_COL, "(obj, ");
+		TextInlineColored(ARG_COL, "x, y, z, ");
+		TextInlineColored(ARG_COL, "distance, velocity)");
+		TextInlineColored(DESC_COL, " # Translate default object");
 
 		ImGui::Separator();
 
-		// Rotate command with object/joint ID
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "OBJ: ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
+		// --- ROTATE (axis mask) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "({x,y,z}, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate about axes (mask)");
 
 		ImGui::Separator();
 
-		// Rotate command with axis
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<x,y,z> ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
+		// --- ROTATE (default object) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "(obj, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate default object (mask defaults e.g. z)");
 
 		ImGui::Separator();
 
-		// Rotate command with axis
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<linkName> ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
+		// --- ROTATE (link/joint) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "(linkName, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate robot joint/link");
 
 		ImGui::Separator();
 
-		// Set Color command
-		ImGui::TextColored(CMD_COL, "SET_COLOR ");
-		TextInlineColored(VEC_COL, "<identifier> ");
-		TextInlineColored(VEC_COL, "<r,g,b> ");
-		TextInlineColored(DESC_COL, "~ Set object color using RGB values");
+		// --- SET (integrator) ---
+		ImGui::TextColored(CMD_COL, "set");
+		TextInlineColored(ARG_COL, "(integrator, euler|midpoint|heun|ralston|rk4)");
+		TextInlineColored(DESC_COL, " # Set integration method");
 
 		ImGui::Separator();
 
-		// More commands to be added here... :)
+		// --- COLOUR ---
+		ImGui::TextColored(CMD_COL, "colour");
+		TextInlineColored(ARG_COL, "(obj, r, g, b)");
+		TextInlineColored(DESC_COL, " # Set colour (RGB 0..1 or 0..255 depending on your design)");
+
+		ImGui::Separator();
+
+		// --- LOAD ---
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(obj, \"path/to/model.obj\")");
+		TextInlineColored(DESC_COL, " # Load object asset");
+
+		ImGui::Separator();
+
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(robot, \"RobotName\" | \"path/to/robot.json\")");
+		TextInlineColored(DESC_COL, " # Load robot model");
+
+		ImGui::Separator();
+
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(tex, \"path/to/texture.png\")");
+		TextInlineColored(DESC_COL, " # Load texture");
+
+		ImGui::Separator();
+
+		ImGui::NewLine();
+		ImGui::TextDisabled("Notes:");
+		ImGui::BulletText("Commands and identifiers are case-insensitive (parser lowercases).");
+		ImGui::BulletText("Strings can be quoted: \"...\" to allow spaces in paths.");
+		ImGui::BulletText("Inline comments use '#': rotate(obj, 30, 0, 90) # quarter turn");
 
 		ImGui::EndChild();
 	}
+
 
 	bool CommandScriptEditor::tryLoadFromDialog() {
 		_load.Display();
