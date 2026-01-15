@@ -34,13 +34,27 @@ namespace commands {
 	// Helper function to parse RotateTarget from string
 	// Formats: "AXIS:XYZ" or "Link:linkName"
 	static std::optional<RotateTarget> parseRotateTarget(const std::string& arg) {
-		if (startsWith(arg, "{")) {
-			std::string axesStr = arg.substr(5);
-			AxisMask mask = parseAxisMask(axesStr);
-			return RotateTarget{ RotateTargetType::AxisMask, mask};
-		}
 		if (startsWith(arg, "link")) { return RotateTarget{ RotateTargetType::linkName, {}, arg }; } // for this we ignore axis mask right now, assume boundary conditions
 		if (startsWith(arg, "obj")) { return RotateTarget{ RotateTargetType::ObjID, {}, "" }; } // may consider adding something like "obj.x", "obj.y", "obj.z", or "obj.xyz" later ~ could be better than "{x,y,z}"
+		if (!arg.empty() && arg.front() == '{' && arg.back() == '}') {
+			// Formats: "{x,y,z}" or "{xyz}" or "{x y z}", etc
+			std::string axesStr = arg.substr(1, arg.size() - 2); // remove braces
+			AxisMask mask = parseAxisMask(axesStr);
+
+			if (!mask.any()) {
+				D_WARN("No valid axes found in rotate target: %s. Defaulting to Z axis.", arg.c_str());
+				return std::nullopt;
+			}
+			return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
+		}
+		// Try parsing as axis mask directly: "xyz", "xy", "x", etc
+		else {
+			AxisMask mask = parseAxisMask(arg);
+			if (mask.any()) {
+				D_DEBUG("Parsed rotate target axis mask: X:%d Y:%d Z:%d", mask.x ? 1 : 0, mask.y ? 1 : 0, mask.z ? 1 : 0);
+				return RotateTarget{ RotateTargetType::AxisMask, mask, "" };
+			}
+		}
 
 		return std::nullopt;
 	}
@@ -73,8 +87,6 @@ namespace commands {
 			markFailed("rotate() not started.");
 			return CmdResult{ CmdState::Failed, {}, "rotate() not started." };
 		}
-
-		cntx = *_cntxMtn;
 
 		double rotationThisStepDeg = _omega * dt;
 		D_INFO("step: dt=%.4f omega=%.3f deg/s -> dtheta=%.4f deg", dt, _omega, rotationThisStepDeg);
@@ -132,8 +144,9 @@ namespace commands {
 			if (_target.type == RotateTargetType::ObjID) {
 				cntx.stopRotation(cntx.getDefaultObject(), mask);
 			}
-			else if (_target.type == RotateTargetType::AxisMask) {
-				cntx.stopRotation(cntx.getDefaultObject(), mask); // since your rotateAxes affects _obj
+			if (_target.type == RotateTargetType::AxisMask) {
+				auto* obj = cntx.getDefaultObject();
+				if (obj) cntx.stopRotation(obj, mask);
 			}
 
 			markCompleted();
