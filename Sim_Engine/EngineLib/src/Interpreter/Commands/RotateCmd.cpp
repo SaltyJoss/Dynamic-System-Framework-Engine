@@ -39,14 +39,8 @@ namespace commands {
 			AxisMask mask = parseAxisMask(axesStr);
 			return RotateTarget{ RotateTargetType::AxisMask, mask};
 		}
-		if (startsWith(arg, "link")) {
-			// Extract the link name from "link_n" new format, e.g., "link_arm" -> "link_arm" we want all of it including "link_"
-			return RotateTarget{ RotateTargetType::linkName, {}, arg };
-		}
-		if (startsWith(arg, "obj")) {
-			// We are using current selected object, so the id is ignored.
-			return RotateTarget{ RotateTargetType::ObjID, {}, "" };
-		}
+		if (startsWith(arg, "link")) { return RotateTarget{ RotateTargetType::linkName, {}, arg }; } // for this we ignore axis mask right now, assume boundary conditions
+		if (startsWith(arg, "obj")) { return RotateTarget{ RotateTargetType::ObjID, {}, "" }; } // may consider adding something like "obj.x", "obj.y", "obj.z", or "obj.xyz" later ~ could be better than "{x,y,z}"
 
 		return std::nullopt;
 	}

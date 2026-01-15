@@ -23,14 +23,13 @@ namespace interpreter {
 
 		std::vector<std::string> lines;
 
-		void tokeniseAndClassifyLine(const std::string& line);
+		void tokeniseAndClassifyCode(const std::string& code);
 		void buildProgram();
 		void buildCommand(Command& cmd);
 
 		void motionCommandHandler(const Command& cmd);
 
 		static bool isBlankOrComment(std::string_view line);
-		static bool hasWhitespace(const std::string_view s);
 		static bool hasCommentInline(const std::string_view s);
 	};
 } // namespace interpreter

@@ -12,14 +12,13 @@ using namespace utils;
 namespace interpreter {
 
 	// --- Constructor ---
-	Parser::Parser(IStoredProgram* program) : _currentCmd(*(new Command())), _programData(*(new ProgramData())), lines(*(new std::vector<std::string>())) {
+	Parser::Parser(IStoredProgram* program) : _program(program) {
 		static const bool interpreterInit = [] {
 			commands::RegisterAllCommands(commands::CommandFactory::Instance());
 			return true;
 		}();
 
-		_program = program;
-		if (_program == nullptr) {
+		if (!_program) {
 			D_FAIL("Parser initialized with null IStoredProgram pointer.");
 			throw std::invalid_argument("Parser initialized with null IStoredProgram pointer.");
 		}
@@ -37,24 +36,90 @@ namespace interpreter {
 		_programData.cmd.clear();
 		lines.clear();
 		
-		tokeniseAndClassifyLine(code);
+		tokeniseAndClassifyCode(code);
 		buildProgram();
 	}
 
 	// --- Handlers ---
 
+	// Determine if a command requires an identifier
+	static bool requiresIdentifier(std::string_view cmdName) {
+		// choose your DSL policy
+		// examples:
+		if (cmdName == "rotate") return true;
+		if (cmdName == "translate") return true;
+		if (cmdName == "load") return true;
+		if (cmdName == "set") return true;
+		if (cmdName == "step") return false;
+		if (cmdName == "pause") return false;
+		if (cmdName == "stop") return false;
+		if (cmdName == "colour") return true;
+		return true; // or false, your choice
+	}
+
+	// Splits a string into arguments, respecting quotes and nested braces/parentheses
+	static std::vector<std::string> splitArgs(const std::string_view s) {
+		std::vector<std::string> out;
+		std::string current;
+		current.reserve(s.size());
+
+		// State variables (not needed previously, but trying for this new syntax!)
+		char quote = 0;			// "" or ''
+		char braceDepth = 0;	// {}
+		char parenDepth = 0;	// ()
+
+		// Trim whitespace from current
+		auto trimInPlace = [](std::string& str) {
+			auto is_ws = [](unsigned char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }; // trim whitespace
+			size_t a = 0;
+			while (a < str.size() && is_ws(str[a])) { ++a; }
+			size_t b = str.size();
+			while (b > a && is_ws(str[b - 1])) { --b; }
+			str = str.substr(a, b - a);
+		};
+		
+		auto pushCurrent = [&]() {
+			trimInPlace(current);
+			if (!current.empty()) { out.push_back(current); }
+			current.clear();
+		};
+
+		for (size_t i = 0; i < s.size(); ++i) {
+			char c = s[i]; // current character
+
+			if (quote) {
+				if (quote && c == '\\' && i + 1 < s.size()) {
+					current.push_back(s[i + 1]);
+					++i;
+					continue;
+				}
+				if (c == quote) { quote = 0; continue; }
+
+				current.push_back(c);
+				continue;
+			}
+			
+			if (c == '"' || c == '\'') { quote = c; continue; }
+			if (c == '{') { ++braceDepth; current.push_back(c); continue; }
+			if (c == '}') { --braceDepth; current.push_back(c); continue; }
+			if (c == '(') { ++parenDepth; current.push_back(c); continue; }
+			if (c == ')') { --parenDepth; current.push_back(c); continue; }
+			if (c == ',' && braceDepth == 0 && parenDepth == 0) { pushCurrent(); continue; }
+
+			current.push_back(c);
+		}
+		pushCurrent();
+		return out;
+	}
+
+	// --- Line Analyzers ---
+
+	// Check if a line is blank or a comment
 	bool Parser::isBlankOrComment(std::string_view line) {
 		line = trim(line);
 		return line.empty() || line[0] == '#';
 	}
-
-	bool Parser::hasWhitespace(const std::string_view s) {
-		for (char c : s) {
-			if (c == ' ' || c == '\t') { return true; }
-		}
-		return false;
-	}
-
+	// Check if a line has an inline comment
 	bool Parser::hasCommentInline(const std::string_view s) {
 		for (char c : s) {
 			if (c == '#') { return true; }
@@ -64,7 +129,8 @@ namespace interpreter {
 
 	// --- Command and Program Builders ---
 
-	void Parser::tokeniseAndClassifyLine(const std::string& code) {
+	// Tokenise and classify code into commands
+	void Parser::tokeniseAndClassifyCode(const std::string& code) {
 		_program->setCurrentLineNumber(0);
 		
 		// Splits code into lines - right now I need to handle the different line endings
@@ -82,7 +148,6 @@ namespace interpreter {
 			start = end + 1;
 		}
 
-
 		for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
 			_program->setCurrentLineNumber(i + 1);
 			std::string_view line = lines[i];
@@ -92,27 +157,49 @@ namespace interpreter {
 				size_t commentPos = line.find('#');
 				line = line.substr(0, commentPos);
 			}
-
+			// NEW SYNTAX PARSING
 			{
 				Command cmd;
 				cmd.rawLine = std::string(line);
-
-				// Tokenize line on '(', ')', ',', and ' ' characters for new syntax!
-				auto parts = split(line, "(), ");
-				if (parts.size() < 2 || parts[0].empty() || parts[1].empty()) {
-					D_WARN("Invalid DSL syntax (line %d): %s",
-						_program->getCurrentLineNumber(),
-						cmd.rawLine.c_str());
-					goto next_line;
-				}
-				cmd.cmdName = parts[0];
-				cmd.identifier = parts[1];
-
-				for (size_t k = 2; k < parts.size(); ++k) {
-					if (!parts[k].empty()) { cmd.tokens.emplace_back(parts[k]); }
-				}
-
 				cmd.lineNumber = _program->getCurrentLineNumber();
+
+				// Find positions of '(' and ')'
+				size_t open = line.find('(');
+				size_t close = line.rfind(')');
+
+				// Validate positions
+				if (open == std::string_view::npos || close == std::string_view::npos || close < open) {
+					D_WARN("Invalid DSL syntax (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+					continue;
+				}
+
+				// Extract command name
+				cmd.cmdName = std::string(toLower(trim(line.substr(0, open))));
+				if (cmd.cmdName.empty()) {
+					D_WARN("Missing command name (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+					continue;
+				}
+
+				// Extract inside of parentheses
+				std::string_view inside = line.substr(open + 1, close - open - 1);
+				auto parts = splitArgs(inside);
+				
+				// Process parts based on whether an identifier is required
+				if (requiresIdentifier(cmd.cmdName)) {
+					if (parts.size() < 1) {
+						D_WARN("Command '%s' requires an identifier (line %d): %s", cmd.cmdName.c_str(), cmd.lineNumber, cmd.rawLine.c_str());
+						continue;
+					}
+					// first part is identifier
+					cmd.cmdName = std::string(toLower(parts[0]));
+					for (size_t j = 1; j < parts.size(); ++j) {
+						cmd.tokens.emplace_back(std::string(parts[j])); // remaining parts are tokens
+					}
+				} else { // no identifier required
+					cmd.identifier = std::string(toLower(parts[1]));
+					for (auto& a : parts) { cmd.tokens.emplace_back(std::string(a)); } // all parts are tokens
+				}
+				
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
 
@@ -139,6 +226,12 @@ namespace interpreter {
 	void Parser::buildCommand(Command& cmd) {
 		if (cmd.cmdName.empty() || cmd.identifier.empty()) {
 			D_WARN("Invalid command fields at line %d", cmd.lineNumber);
+			return;
+		}
+
+		// Prepare identifier and tokens
+		if (requiresIdentifier(cmd.cmdName) && cmd.identifier.empty()) {
+			D_FAIL("Command '%s' requires an identifier (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
 			return;
 		}
 
