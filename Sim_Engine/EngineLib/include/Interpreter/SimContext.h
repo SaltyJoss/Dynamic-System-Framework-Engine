@@ -10,6 +10,11 @@
 
 #include "Platform/Logger.h"
 
+namespace commands {
+	class CommandContextMotion;
+	class UIContext;
+}
+
 namespace gui {
 	class ENGINE_API SimContext {
 	public:

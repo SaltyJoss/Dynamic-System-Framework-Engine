@@ -2,6 +2,9 @@
 #include "Interpreter/UIContext.h"
 #include "EngineLib/LogMacros.h"
 
+using namespace mathlib;
+using namespace utils;
+
 namespace commands {
 	UIContext::UIContext(gui::simManager* sim) 
 		: _sim(sim), _robot(&sim->getRobotModel()), _obj(nullptr), _defaultObj(nullptr) { }

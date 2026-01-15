@@ -3,6 +3,9 @@
 
 #include "EngineLib/LogMacros.h"
 
+using namespace mathlib;
+using namespace utils;
+
 namespace commands {
 	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::Object* obj)
 		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), 

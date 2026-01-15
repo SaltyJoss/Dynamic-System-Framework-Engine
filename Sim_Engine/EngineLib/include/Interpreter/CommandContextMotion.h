@@ -6,9 +6,6 @@
 
 #include "Platform/Logger.h"
 
-using namespace mathlib;
-using namespace utils;
-
 namespace scene { class Object; }
 namespace interpreter { class IStoredProgram; }
 
@@ -21,9 +18,9 @@ namespace commands {
 		// --- GLOBAL STATE METHODS ---
 
 		// Sets the angular units for rotation commands
-		void setAngularUnits(AngularUnits units);
+		void setAngularUnits(utils::AngularUnits units);
 		// Gets the current angular units
-		AngularUnits getAngularUnits() const;
+		utils::AngularUnits getAngularUnits() const;
 
 		// Sets the maximum absolute angular velocity (omega) clamp
 		void setOmegaClamp(double maxAbsOmega);
@@ -38,26 +35,26 @@ namespace commands {
 		// --- ROTATION COMMAND METHODS ---
 
 		// Rotates an object around specified axes at a given angular velocity
-		OpResult rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt);
+		utils::OpResult rotateObject(scene::Object* obj, utils::AxisMask axes, double omega, double dt);
 		// Rotates specified axes at a given angular velocity
-		OpResult rotateAxes(AxisMask axes, double omega, double dt);
+		utils::OpResult rotateAxes(utils::AxisMask axes, double omega, double dt);
 		// Rotates a joint by a specified angle at a given velocity
-		OpResult rotateJoint(std::string linkName, double angleDeg, double vel);
+		utils::OpResult rotateJoint(std::string linkName, double angleDeg, double vel);
 		// Rotates a joint by a specified delta angle at a given velocity
-		OpResult rotationJointDelta(std::string linkName, double deltaDeg, double vel);
+		utils::OpResult rotationJointDelta(std::string linkName, double deltaDeg, double vel);
 
 		// --- TRANSLATION COMMAND METHODS ---
 
 		// Translates in world coordinates along a specified direction
-		OpResult translateWorld(const Vec3& direction, double distance, double vel);
+		utils::OpResult translateWorld(const Vec3& direction, double distance, double vel);
 		// Translates along specified axes at a given velocity
-		OpResult translateAxes(AxisMask axes, double vel, double dt);
+		utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt);
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
-		void stopRotation(scene::Object* obj, AxisMask axes);
-		void stopTranslation(scene::Object* obj, AxisMask axes);
+		void stopRotation(scene::Object* obj, utils::AxisMask axes);
+		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 	private:
 		gui::simManager* _sim = nullptr;
@@ -66,7 +63,7 @@ namespace commands {
 		scene::Object* _obj = nullptr;			// current object for commands
 		scene::Object* _defaultObj = nullptr;	// default object for commands
 
-		AngularUnits _angularUnits = AngularUnits::DegPerSec;
+		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp
 
 		double NormaliseOmega(double omega) const;

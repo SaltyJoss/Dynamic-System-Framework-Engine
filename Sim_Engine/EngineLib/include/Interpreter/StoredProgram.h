@@ -3,7 +3,7 @@
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "ICommand.h"
-#include "Interpreter/CommandContextMotion.h"
+#include "Interpreter/MainContext.h"
 #include <string>
 #include <vector>
 
@@ -58,7 +58,7 @@ namespace interpreter {
 
 	private:
 		gui::simManager* _sim = nullptr;
-		commands::CommandContextMotion _cntx;
+		commands::MainContext _cntx;
 		scene::Object* _defaultObj = nullptr;
 
 		// Bool for tracking if the program has reached the end

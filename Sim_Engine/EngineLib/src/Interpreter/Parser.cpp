@@ -44,8 +44,6 @@ namespace interpreter {
 
 	// Determine if a command requires an identifier
 	static bool requiresIdentifier(std::string_view cmdName) {
-		// choose your DSL policy
-		// examples:
 		if (cmdName == "rotate") return true;
 		if (cmdName == "translate") return true;
 		if (cmdName == "load") return true;
@@ -54,7 +52,7 @@ namespace interpreter {
 		if (cmdName == "pause") return false;
 		if (cmdName == "stop") return false;
 		if (cmdName == "colour") return true;
-		return true; // or false, your choice
+		return true;
 	}
 
 	// Splits a string into arguments, respecting quotes and nested braces/parentheses

@@ -52,6 +52,10 @@ namespace commands {
 		void setColour(const Colour& colour, BlockColour preset);
 		void setColour(const Colour& colour, const std::string& hex);
 
+		// Get & set program
+		interpreter::IStoredProgram* getProgram() const override { return _program; }
+		void setProgram(interpreter::IStoredProgram* program) override { _program = program; }
+
 	private:
 		std::string _id;
 		std::vector<std::string> _tokens;

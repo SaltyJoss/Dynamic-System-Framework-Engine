@@ -4,10 +4,8 @@
 #include "SimContext.h"
 #include "Interpreter/Utils.h"
 
-#include "Platform/Logger.h"
 
-using namespace mathlib;
-using namespace utils;
+#include "Platform/Logger.h"
 
 namespace scene { class Object; }
 namespace interpreter { class StoredProgram; }
@@ -24,18 +22,18 @@ namespace commands {
 		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
 
 		// setters for material properties
-		OpResult setColour(const glm::vec3& color);
-		OpResult setMetallic(float metallic);
+		utils::OpResult setColour(const glm::vec3& color);
+		utils::OpResult setMetallic(float metallic);
 		
 		// loaders
-		OpResult loadObject(const std::string& objectPath);
-		OpResult loadRobot(const std::string& robotName);
-		OpResult loadTexture(const std::string& texturePath);
+		utils::OpResult loadObject(const std::string& objectPath);
+		utils::OpResult loadRobot(const std::string& robotName);
+		utils::OpResult loadTexture(const std::string& texturePath);
 		
 		// clearers
-		OpResult clearObject();
-		OpResult clearRobot();
-		OpResult clearTexture();
+		utils::OpResult clearObject();
+		utils::OpResult clearRobot();
+		utils::OpResult clearTexture();
 
 	private:
 		gui::simManager* _sim;		// simulation manager

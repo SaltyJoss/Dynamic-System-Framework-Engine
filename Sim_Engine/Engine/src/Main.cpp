@@ -3,7 +3,7 @@
 #include <Application.h>
 
 int main() {
-    Application app("MGRE");
+    Application app("DSFE");
     app.run();
     return 0;
 }

@@ -56,8 +56,18 @@ namespace window {
 		if (_debugPanel)    _debugPanel->render();
 		if (_cmdEditor)     _cmdEditor->render();
 
+
 		// Menu Callback
         _GUICntx->setMenuCallback([this]() {
+
+            ImGuiStyle& style = ImGui::GetStyle();
+            // Vertical spacing between menu items
+            style.ItemSpacing = ImVec2(10.0f, 6.0f);
+            // Padding inside menus
+			style.WindowPadding = ImVec2(12.0f, 12.0f); // (left/right, top/bottom)
+            // Padding inside each menu item
+            style.FramePadding = ImVec2(8.0f, 4.0f);
+
             _controlPanel->drawMenus(_sim.get());
 			_cmdEditor->drawMenus();
         });

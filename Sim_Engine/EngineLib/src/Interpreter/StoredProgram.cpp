@@ -14,13 +14,15 @@ namespace interpreter {
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
 		}
 
-		cmd->setContext(_cntx);
+		cmd->setContext(_cntx.motion());
+		cmd->setContext(_cntx.ui());
+
 		cmd->setProgram(this);
 		_commands.push_back(cmd);
 	}
 	
 	void StoredProgram::load(ProgramData program) {
-		// Not implemented yet
+		// not implemented
 	}
 
 	// Reset the program to its initial state
@@ -48,8 +50,8 @@ namespace interpreter {
 		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
 		if (obj) {
 			utils::AxisMask all{ true,true,true };
-			_cntx.stopRotation(obj, all);
-			_cntx.stopTranslation(obj, all);
+			_cntx.motion().stopRotation(obj, all);
+			_cntx.motion().stopTranslation(obj, all);
 		}
 	}
 
@@ -59,8 +61,8 @@ namespace interpreter {
 		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
 		if (obj) {
 			utils::AxisMask all{ true,true,true };
-			_cntx.stopRotation(obj, all);
-			_cntx.stopTranslation(obj, all);
+			_cntx.motion().stopRotation(obj, all);
+			_cntx.motion().stopTranslation(obj, all);
 		}
 	}
 
@@ -84,23 +86,17 @@ namespace interpreter {
 		_cntx.setDefaultObject(_sim ? _sim->getObject() : nullptr);
 
 		auto& cmd = _commands[PC];
-		cmd->setContext(_cntx);
-		if (!cmd->hasStarted()) {
-			cmd->execute();
-		}
+		cmd->setContext(_cntx.motion());
+		cmd->setContext(_cntx.ui());
 
-		auto r = cmd->update(_cntx, dt);
+		if (!cmd->hasStarted()) { cmd->execute(); }
+		auto r = cmd->update(_cntx.motion(), dt);
 
-		// <-- add this
-		if (_sim && _sim->hasRobot()) {
-			_sim->updateRobotKinematics(glm::mat4(1.0f)); 
-		}
+		if (_sim && _sim->hasRobot()) { _sim->updateRobotKinematics(glm::mat4(1.0f)); }
 
 		if (r.state == CmdState::Executed || r.state == CmdState::Failed) {
 			PC++;
-			if (!commandsLeft()) {
-				_state = ProgramState::Stopped;
-			}
+			if (!commandsLeft()) { _state = ProgramState::Stopped; }
 		}
 	}
 

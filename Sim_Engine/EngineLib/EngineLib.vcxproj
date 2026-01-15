@@ -149,6 +149,7 @@
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
     <ClInclude Include="include\Interpreter\ICommand.h" />
     <ClInclude Include="include\Interpreter\IStoredProgram.h" />
+    <ClInclude Include="include\Interpreter\MainContext.h" />
     <ClInclude Include="include\Interpreter\Parser.h" />
     <ClInclude Include="include\Interpreter\ProgramData.h" />
     <ClInclude Include="include\Interpreter\RegisterCommand.h" />
