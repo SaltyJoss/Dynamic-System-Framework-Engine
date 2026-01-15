@@ -209,9 +209,7 @@ namespace commands {
 			endDeg = *endDegOpt;
 		}
 
-		D_INFO("Creating RotateCmd targetType=%d omega=%.2f startDeg=%.2f endDeg=%.2f",
-			static_cast<int>(target.type), omega, startDeg, endDeg);
-
+		D_INFO("Creating RotateCmd targetType=%d omega=%.2f startDeg=%.2f endDeg=%.2f", static_cast<int>(target.type), omega, startDeg, endDeg);
 		return std::make_unique<RotateCmd>(target, omega, startDeg, endDeg);
 	}
 } // namespace commands

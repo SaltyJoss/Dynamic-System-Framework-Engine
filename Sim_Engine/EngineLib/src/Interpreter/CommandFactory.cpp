@@ -16,7 +16,9 @@ namespace commands {
 		// new logic to find and create command
 		auto it = _registry.find(std::string(name));
 		if (it != _registry.end()) {
-			return it->second(id, args);
+			Creator creator = it->second;
+			std::unique_ptr<ICommand> cmdPtr = creator(id, args);
+			return cmdPtr.release(); // transfer ownership to caller
 		}
 		return nullptr; // Command not found
 	}

@@ -186,18 +186,16 @@ namespace interpreter {
 				
 				// Process parts based on whether an identifier is required
 				if (requiresIdentifier(cmd.cmdName)) {
-					if (parts.size() < 1) {
+					if (parts.empty()) {
 						D_WARN("Command '%s' requires an identifier (line %d): %s", cmd.cmdName.c_str(), cmd.lineNumber, cmd.rawLine.c_str());
 						continue;
 					}
 					// first part is identifier
-					cmd.cmdName = std::string(toLower(parts[0]));
-					for (size_t j = 1; j < parts.size(); ++j) {
-						cmd.tokens.emplace_back(std::string(parts[j])); // remaining parts are tokens
-					}
+					cmd.identifier = std::string(toLower(parts[0]));	// first part is identifier
+					cmd.tokens.assign(parts.begin() + 1, parts.end());	// remaining parts are tokens
 				} else { // no identifier required
-					cmd.identifier = std::string(toLower(parts[1]));
-					for (auto& a : parts) { cmd.tokens.emplace_back(std::string(a)); } // all parts are tokens
+					cmd.identifier.clear();
+					cmd.tokens = std::move(parts);
 				}
 				
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
