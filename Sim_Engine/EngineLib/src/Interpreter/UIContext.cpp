@@ -77,7 +77,7 @@ namespace commands {
 	OpResult UIContext::loadRobot(const std::string& robotName) {
 		if (!_sim) {
 			LOG_WARN("Simulation manager is null, cannot load robot.");
-			return;
+			return OpResult::Failure("Simulation manager is null.");
 		}
 		// Check if robot already loaded
 		auto it = _loadedRobots.find(robotName);

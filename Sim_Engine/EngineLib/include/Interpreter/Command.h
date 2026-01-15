@@ -27,7 +27,12 @@ namespace commands {
 		// Check if the command has started
 		bool hasStarted() const override;
 
+		interpreter::IStoredProgram* getProgram() const override { return _program; }
+		void setProgram(interpreter::IStoredProgram* program) override { _program = program; }
+
 	protected:
+		IStoredProgram* _program = nullptr;
+
 		CommandContextMotion* _cntxMtn = nullptr;
 		UIContext* _cntxUI = nullptr;
 	};

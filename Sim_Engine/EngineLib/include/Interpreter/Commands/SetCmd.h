@@ -19,14 +19,14 @@ namespace commands {
 
 	struct SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
-		interpreter::IntegratorMethod method = interpreter::IntegratorMethod::Euler; // Default method
+		IntegratorMethod method = IntegratorMethod::Euler; // Default method
 	};
 
 	// Class representing the SET command
 	class ENGINE_API SetCmd final : public Command {
 	public:
 		// Constructor
-		SetCmd(const std::string& id, const std::string& value);
+		SetCmd(const std::string& id, const std::vector<std::string>& tokens);
 		// Get the command name
 		std::string_view getName() const { return "SET"; }
 
@@ -41,7 +41,7 @@ namespace commands {
 		SetTarget _target{};
 
 		std::string _id;
-		std::string _args;
+		std::vector<std::string> _tokens;
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
@@ -54,5 +54,5 @@ namespace commands {
 	};
 
 	// --- Free Function to Create SetCmd ---
-	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::string& arg);
+	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::vector<std::string>& tokens);
 } // namespace commands

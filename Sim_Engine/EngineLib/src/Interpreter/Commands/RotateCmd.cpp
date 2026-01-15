@@ -101,7 +101,7 @@ namespace commands {
 		else if (_target.type == RotateTargetType::ObjID) {
 			auto* obj = cntx.getDefaultObject();
 			if (!obj) {
-				markFailed("No current object selected for <objID> rotation.");
+				markFailed("rotate(<objID>,...) target but no current object selected.");
 				D_FAIL("rotate(<objID>,...) target but no current object selected.");
 				return CmdResult{ CmdState::Failed, {}, "No current object selected." };
 			}

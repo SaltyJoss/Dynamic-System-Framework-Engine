@@ -24,14 +24,14 @@ namespace commands {
 	// Struct for colour mapping
 	struct Colour {
 		BlockColour col = BlockColour::Red;
-		Vec3 rgb = { 1.0, 0.0, 0.0 };
+		Vec3 rgb = { 1.0f, 0.0f, 0.0f };
 	};
 
 	// Class representing the SET command
-	class ENGINE_API SetCmd final : public Command {
+	class ENGINE_API ColourCmd final : public Command {
 	public:
 		// Constructor
-		SetCmd(const std::string& parameter, const std::string& value);
+		ColourCmd(const std::string& id, const std::vector<std::string>& tokens);
 		// Get the command name
 		std::string_view getName() const { return "COLOUR"; }
 		// Set the command context
@@ -53,9 +53,12 @@ namespace commands {
 		void setColour(const Colour& colour, const std::string& hex);
 
 	private:
-		Colour _col{ BlockColour::Red, _currentColRGB };
-		Vec3 _defaultColRGB = { 1.0, 0.0, 0.0 }; // Default to red
+		std::string _id;
+		std::vector<std::string> _tokens;
+
+		Vec3 _defaultColRGB = { 1.0f, 0.0f, 0.0f }; // Default to red
 		Vec3 _currentColRGB = _defaultColRGB;
+		Colour _col{ BlockColour::Red }; // Default to red
 
 		UIContext* _uiCntx = nullptr;
 
@@ -68,4 +71,7 @@ namespace commands {
 		// Check if the command has started
 		bool hasStarted() const override;
 	};
+
+	// Free function to create a ColourCmd
+	std::unique_ptr<ICommand> CreateColourCmd(const std::string& id, const std::vector<std::string>& tokens);
 } // namespace commands

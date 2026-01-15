@@ -7,25 +7,32 @@
 using namespace utils;
 
 namespace commands {
+	ColourCmd::ColourCmd(const std::string& id, const std::vector<std::string>& tokens)
+		: _id(id), _tokens(tokens) {
+		_result = { CmdState::NotStarted, {}, "" };
+	}
+
 	// --- ColourCmd Method Implementations ---
-	void SetCmd::markFailed(const std::string& message) {
+	void ColourCmd::markFailed(const std::string& message) {
 		setResult({ CmdState::Failed, {}, message });
 		// Implementation to mark the command as failed
 	}
-	void SetCmd::markCompleted() {
+	void ColourCmd::markCompleted() {
 		// Implementation to mark the command as completed
 	}
-	bool SetCmd::hasStarted() const {
+	bool ColourCmd::hasStarted() const {
 		return getResult().state != CmdState::NotStarted;
 	}
-	void SetCmd::execute() {
+	void ColourCmd::execute() {
 		if (_cntxUI == nullptr) {
-			markFailed("UI context is not set.");
+			std::string errMsg = "UI context is not set for colour() command";
+			markFailed(errMsg);
+			D_FAIL(errMsg.c_str());
 			return;
 		}
 	}
 
-	std::unique_ptr<ICommand> CreateColourCmd(const std::string& parameter, const std::string& value) {
-		return std::make_unique<SetCmd>(parameter, value);
+	std::unique_ptr<ICommand> CreateColourCmd(const std::string& id, const std::vector<std::string>& tokens) {
+		return std::make_unique<ColourCmd>(id, tokens);
 	}
 } // namespace commands

@@ -2,10 +2,12 @@
 
 #include "EngineCore.h"
 #include "SimContext.h"
+#include "Interpreter/Utils.h"
 
 #include "Platform/Logger.h"
 
 using namespace mathlib;
+using namespace utils;
 
 namespace scene { class Object; }
 namespace interpreter { class StoredProgram; }

@@ -24,12 +24,10 @@ namespace commands {
 	class ENGINE_API LoadCmd final : public Command {
 	public:
 		// Constructor
-		LoadCmd(LoadTarget target, const std::string& path);
+		LoadCmd(const std::string& id, const std::vector<std::string>& tokens);
 
 		// Get the command name
 		std::string_view getName() const { return "LOAD"; }
-		// Set the command context
-		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
 
 		CmdResult getResult() const { return _result; }
 		void setResult(const CmdResult& result) { _result = result; }
@@ -39,8 +37,6 @@ namespace commands {
 
 	private:
 		LoadTarget _target{};
-		UIContext* _uiCntx = nullptr;
-
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
@@ -53,5 +49,5 @@ namespace commands {
 	};
 
 	// --- Free Function to Create LoadCmd ---
-	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::string& path);
+	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::vector<std::string>& tokens);
 }

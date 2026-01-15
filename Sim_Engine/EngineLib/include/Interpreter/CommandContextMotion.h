@@ -2,38 +2,17 @@
 
 #include "EngineCore.h"
 #include "SimContext.h"
+#include "Interpreter/Utils.h"
 
 #include "Platform/Logger.h"
 
 using namespace mathlib;
+using namespace utils;
 
 namespace scene { class Object; }
-namespace interpreter { class StoredProgram; }
+namespace interpreter { class IStoredProgram; }
 
 namespace commands {
-	// Struct for operation result
-	struct OpResult {
-		bool ok = true;
-		std::string message;
-
-		static OpResult Success() { return { true, {} }; }
-		static OpResult Failure(const std::string& msg) { return OpResult{ false, msg }; }
-	};
-
-	// Struct for axis mask
-	struct AxisMask {
-		bool x = false;
-		bool y = false;
-		bool z = false;
-
-		bool any() const { return x || y || z; }
-	};
-
-	enum class AngularUnits {
-		DegPerSec,
-		RadPerSec
-	};
-
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:

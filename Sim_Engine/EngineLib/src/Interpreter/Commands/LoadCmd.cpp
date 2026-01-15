@@ -7,23 +7,24 @@
 using namespace utils;
 
 namespace commands {
+	// constructor
+	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
+		if (id == "obj") { _target.type = LoadTargetType::Object; }
+		else if (id == "robot") { _target.type = LoadTargetType::Robot; }
+		else if (id == "tex") { _target.type = LoadTargetType::Texture; }
+		else {
+			std::string errMsg = "Invalid load(<target>,...) identifier -> " + id;
+			markFailed(errMsg);
+			D_FAIL(errMsg.c_str());
+			return;
+		}
 
-	// Helper function to parse LoadTarget from string
-	// Expected formats: "OBJECT:path", "ROBOT:path", "TEXTURE:path"
-	static std::optional<LoadTarget> parseLoadTarget(const std::string& arg) {
-		if (startsWith(arg, "obj")) {
-			std::string path = arg.substr(4);
-			return LoadTarget{ LoadTargetType::Object, path };
+		if (tokens.empty()) {
+			std::string errMsg = "load() command requires a path argument.";
+			markFailed(errMsg);
+			D_FAIL(errMsg.c_str());
+			return;
 		}
-		if (startsWith(arg, "robot")) {
-			std::string path = arg.substr(6);
-			return LoadTarget{ LoadTargetType::Robot, path };
-		}
-		if (startsWith(arg, "tex")) {
-			std::string path = arg.substr(4);
-			return LoadTarget{ LoadTargetType::Texture, path };
-		}
-		return std::nullopt;
 	}
 
 	// --- LoadCmd Method Implementations ---
@@ -41,36 +42,26 @@ namespace commands {
 	}
 
 	void LoadCmd::execute() {
-		if (_uiCntx == nullptr) {
-			markFailed("UI context is not set.");
+		if (_cntxUI == nullptr) {
+			std::string errMsg = "UI context is not set for load() command";
+			markFailed(errMsg);
+			D_FAIL(errMsg.c_str());
 			return;
 		}
+
 		switch (_target.type) {
-		case LoadTargetType::Object:
-			_uiCntx->loadObject(_target.path);
-			markCompleted();
-			break;
-		case LoadTargetType::Robot:
-			_uiCntx->loadRobot(_target.path);
-			markCompleted();
-			break;
-		case LoadTargetType::Texture:
-			_uiCntx->loadTexture(_target.path);
-			markCompleted();
-			break;
-		default:
-			markFailed("Unknown load target type.");
-			break;
+		case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); markCompleted(); break;
+		case LoadTargetType::Robot:		_cntxUI->loadRobot(_target.path); markCompleted(); break;
+		case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); markCompleted(); break;
 		}
+
+		markCompleted();
+		D_SUCCESS("load() command executed successfully.");
 	}
 
 	// --- Free Function to Create LoadCmd ---
-	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::string& path) {
-		auto targetOpt = parseLoadTarget(path);
-		if (!targetOpt.has_value()) {
-			D_FAIL("load command requires: obj,<path> OR robot,<name> OR tex,<path>");
-			return nullptr;
-		}
-		return std::make_unique<LoadCmd>(targetOpt.value(), targetOpt->path);
+	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
+		if (tokens.empty()) return nullptr;
+		return std::make_unique<LoadCmd>(id, tokens);
 	}
 } // namespace commands

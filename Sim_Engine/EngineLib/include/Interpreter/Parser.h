@@ -18,8 +18,8 @@ namespace interpreter {
 
 	private:
 		IStoredProgram* _program = nullptr;
-		interpreter::Command _currentCmd;
-		interpreter::ProgramData _programData;
+		Command _currentCmd;
+		ProgramData _programData;
 
 		std::vector<std::string> lines;
 

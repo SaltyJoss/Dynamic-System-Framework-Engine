@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Interpreter/Commands/SetCmd.h"
+#include "Interpreter/IStoredProgram.h"
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
@@ -7,38 +8,24 @@
 using namespace utils;
 
 namespace commands {
+	// --- SetCmd Constructor ---
+	SetCmd::SetCmd(const std::string& id, const std::vector<std::string>& tokens)
+		: _id(id), _tokens(tokens) {
+		_result = { CmdState::NotStarted, {}, "" };
+	}
+
 	// Helper function to parse LoadTarget from string
-	// Expected formats: "INTEGRATOR <method>"
-	static std::optional<SetTarget> parseType(const std::string& tokens) {
+	// Expected formats: "set(integrator,<method>)"
+	static std::optional<IntegratorMethod> parseMethod(const std::string& tokens) {
 		if (startsWith(tokens, "integrator,")) {
-			std::string methodStr = tokens.substr(11);
-			IntegratorMethod method;
-
-			// Determine the integrator method
-			switch (methodStr[0]) {
-				case 'M': case 'm':
-					method = IntegratorMethod::Midpoint;
-					break;
-				case 'H': case 'h':
-					method = IntegratorMethod::Heun;
-					break;
-				case 'R': case 'r':
-					if (methodStr.size() > 1 && (methodStr[1] == 'K' || methodStr[1] == 'k')) {
-						method = IntegratorMethod::RK4;
-						break;
-					}
-					method = IntegratorMethod::Ralston;
-					break;
-				case 'E': case 'e':
-				default:
-					method = IntegratorMethod::Euler;
-					break;
-			}
-
-			return SetTarget{SetTargetType::IntegratorMethod, method};
-		}
-		if (startsWith(tokens, "func")) {
-			// Future implementation for function definition
+			std::string s = tokens.substr(11);
+			auto t = utils::toLower(s);
+			if (t == "euler")    return IntegratorMethod::Euler;
+			if (t == "midpoint") return IntegratorMethod::Midpoint;
+			if (t == "heun")     return IntegratorMethod::Heun;
+			if (t == "ralston")  return IntegratorMethod::Ralston;
+			if (t == "rk4")      return IntegratorMethod::RK4;
+			return std::nullopt;
 		}
 		return std::nullopt;
 	}
@@ -55,26 +42,37 @@ namespace commands {
 		return getResult().state != CmdState::NotStarted;
 	}
 	void SetCmd::execute() {
-		// Implementation of the SET command execution
-		auto targetOpt = parseType(_args);
-		if (!targetOpt.has_value()) {
-			std::string errMsg = "Invalid set( argument: " + _args + " (expected INTEGRATOR <method>)";
+		if (!getProgram()) {
+			std::string errMsg = "set() command has no program context.";
 			markFailed(errMsg);
 			D_FAIL("%s", errMsg.c_str());
 			return;
 		}
-		_target = *targetOpt;
+		if (_id == "integrator") {
+			if (_tokens.size() != 1) {
+				std::string errMsg = "set(integrator, <method>) expects exactly 1 argument.";
+				markFailed(errMsg);
+				D_FAIL("%s", errMsg.c_str());
+				return;
+			}
+			auto m = parseMethod(_tokens[0]);
+			if (!m) {
+				std::string errMsg = "Unknown integrator method: " + _tokens[0];
+				markFailed(errMsg);
+				D_FAIL("%s", errMsg.c_str());
+				return;
+			}
+			getProgram()->setIntegratorMethod(*m);
+			markCompleted();
+			D_SUCCESS("set() command executed: Integrator method set.");
+			return;
+		}
 
+		markFailed("Unknown SET target: " + _id);
 	}
 
 	// --- Free Function to Create SetCmd ---
-	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::string& arg) {
-
-		if (arg.empty()) {
-			D_FAIL("SET command requires an argument.");
-			return nullptr;
-		}
-
-		return std::make_unique<SetCmd>(id, arg);
+	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::vector<std::string>& tokens) {
+		return std::make_unique<SetCmd>(id, tokens);
 	}
 } // namespace commands

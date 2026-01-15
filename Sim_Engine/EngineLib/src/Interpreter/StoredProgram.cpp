@@ -14,6 +14,8 @@ namespace interpreter {
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
 		}
 
+		cmd->setContext(_cntx);
+		cmd->setProgram(this);
 		_commands.push_back(cmd);
 	}
 	
@@ -45,7 +47,7 @@ namespace interpreter {
 
 		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
 		if (obj) {
-			commands::AxisMask all{ true,true,true };
+			utils::AxisMask all{ true,true,true };
 			_cntx.stopRotation(obj, all);
 			_cntx.stopTranslation(obj, all);
 		}
@@ -56,7 +58,7 @@ namespace interpreter {
 
 		scene::Object* obj = _sim ? _sim->getObject() : nullptr;
 		if (obj) {
-			commands::AxisMask all{ true,true,true };
+			utils::AxisMask all{ true,true,true };
 			_cntx.stopRotation(obj, all);
 			_cntx.stopTranslation(obj, all);
 		}
@@ -107,21 +109,10 @@ namespace interpreter {
 	}
 
 	void StoredProgram::setIntegratorMethod(IntegratorMethod method) {
-		auto& _phys = _sim->getPhysicsSystem();
-		auto currentEnum = static_cast<physics::PhysicsSystem::eIntegrationMethod>(method);
-
-		static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
-		const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
-
-		for (int n = 0; n < IM_ARRAYSIZE(methodNames); ++n) {
-			if (methodNames[n] == currentMethod) {
-				auto updatedMethod = static_cast<physics::PhysicsSystem::eIntegrationMethod>(n);
-				_phys.setIntegrationMethod(updatedMethod);
-				_integratorMethod = method;
-				LOG_INFO("Integrator method set to: %s", methodNames[n]);
-				D_SUCCESS("Integrator method set to: %s", methodNames[n]);
-				break;
-			}
+		_integratorMethod = method;
+		if (_sim) {
+			auto& physics = _sim->getPhysicsSystem();
+			physics.setIntegrationMethod(static_cast<physics::PhysicsSystem::eIntegrationMethod>(method));
 		}
 	}
 	IntegratorMethod StoredProgram::getIntegratorMethod() const {

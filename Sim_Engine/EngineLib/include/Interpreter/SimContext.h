@@ -17,7 +17,6 @@ namespace gui {
 		~SimContext();
 		gui::simManager* getSimManager() const { return _sim; }
 
-
 	private:
 		gui::simManager* _sim;
 	};

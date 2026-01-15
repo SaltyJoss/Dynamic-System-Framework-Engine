@@ -64,6 +64,16 @@ namespace utils {
 		return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
 	}
 
+	// Helper function to check if a string ends with a suffix
+	bool endsWith(const std::string& str, const std::string& suffix) {
+		return str.size() >= suffix.size() && str.substr(str.size() - suffix.size()) == suffix;
+	}
+
+	// Helper function to check if a string contains a substring
+	bool contains(const std::string& str, const std::string& substr) {
+		return str.find(substr) != std::string::npos;
+	}
+
 	// Helper function to parse number from string_view
 	template <typename T>
 	std::optional<T> parseNumber(const std::string_view s) {

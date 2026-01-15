@@ -8,63 +8,9 @@
 namespace commands { class ENGINE_API ICommand; }
 namespace scene { class Object;  }
 
+using namespace program_data;
+
 namespace interpreter {
-	// Enum representing the state of the program
-	enum ProgramState {
-		Empty,
-		Loaded,
-		Running,
-		Paused,
-		Stopped,
-		Completed,
-		Faulted
-	};
-
-	// Struct for program status
-	struct ProgramStatus {
-		ProgramState state = ProgramState::Empty;
-		size_t pc = 0;
-	};
-
-	// Command states
-	enum CmdState {
-		NotStarted,
-		Executing,
-		Executed,
-		Failed
-	};
-
-	// Command signals (not used yet, but will be)
-	enum CmdSignalType {
-		CmdSignal_None,
-		CmdSignal_Start,
-		CmdSignal_Stop,
-		CmdSignal_Pause,
-		CmdSignal_Resume,
-		CmdSignal_Jump
-	};
-
-	// Command signal data struct
-	struct CmdSignalData {
-		CmdSignalType signal = CmdSignal_None;
-		size_t jumpTarget = 0; // for jump signals
-	};
-	// Command result struct
-	struct CmdResult {
-		CmdState state = CmdState::NotStarted;
-		CmdSignalData signalData;
-		std::string message;
-	};
-
-	// Numerical integrator methods
-	enum class IntegratorMethod {
-		Euler,
-		Midpoint,
-		Heun,
-		Ralston,
-		RK4
-	};
-
 	// IStoredProgram interface
 	class ENGINE_API IStoredProgram { 
 	public:
