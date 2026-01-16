@@ -67,7 +67,7 @@ struct RobotModel {
 		}
 		for (int i = 0; i < n; ++i) {
 			float a = static_cast<float>(q(i));
-			joints[i].angle = static_cast<float>(joints[i], a);
+			joints[i].angle = a;
 		}
 	}
 };

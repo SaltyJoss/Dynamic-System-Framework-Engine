@@ -78,7 +78,7 @@ namespace commands {
 
 	// Constructor
 	RotateCmd::RotateCmd(RotateTarget target, double omega, double startDeg, double endDeg)
-		: _target(target), _omega(omega), _angleDeg(endDeg - startDeg), _started(false) {
+		: _target(target), _omega(omega), _angleDeg(endDeg - startDeg), _started(false), _targetObjID(1) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
@@ -125,7 +125,7 @@ namespace commands {
 
 			D_DEBUG("Rotated by % .2f degrees.", rotationThisStepDeg);
 		} else if (_target.type == RotateTargetType::linkName) {
-			auto result = cntx.rotateJoint(_target.linkName, rotationThisStepDeg, std::abs(_omega));
+			auto result = cntx.rotationJointDelta(_target.linkName, rotationThisStepDeg, std::abs(_omega));
 			if (!result.ok) {
 				markFailed(result.message);
 				D_FAIL("Failed to rotate joint %s: %s", _target.linkName.c_str(), result.message.c_str());
