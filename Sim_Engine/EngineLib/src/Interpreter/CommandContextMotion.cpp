@@ -29,6 +29,10 @@ namespace commands {
 		return _omegaClamp;
 	}
 
+	scene::Object* CommandContextMotion::getObject(scene::ObjectID objID) const {
+		return _sim->getObjectByID(objID);
+	}
+
 	// --- HELPER METHODS ---
 
 	inline glm::vec3 toGlm(const mathlib::Vec3& v) {

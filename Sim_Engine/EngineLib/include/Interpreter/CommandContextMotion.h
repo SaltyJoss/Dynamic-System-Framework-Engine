@@ -29,6 +29,7 @@ namespace commands {
 
 		gui::simManager* getSim() const { return _sim; }
 		scene::Object* getDefaultObject() const { return _defaultObj; }
+		scene::Object* getObject(scene::ObjectID objID) const;
 		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
 
 

@@ -117,22 +117,22 @@ using namespace constants;
 using namespace mathlib;
 
 namespace scene {
-	class Mesh;
-	class Object;
+	class ENGINE_API Mesh;
+	class ENGINE_API Object;
 }
 
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
-		double t = 0.0;   // simulation time
-		Vec3 theta;       // angles (rad)
-		Vec3 omega;       // angular velocity (rad/s)
+		double t = 0.0; // simulation time
+		Quat q;			//
+		Vec3 omega;     // angular velocity (rad/s)
 	};
 
 	struct ENGINE_API ErrorSample {
-		double t = 0.0;   // simulation time
-		Vec3 x;			  // integrator position
-		Vec3 x_ref;		  // reference position
-		Vec3 error;		  // error between integrator and reference
+		double t = 0.0; // simulation time
+		Vec3 x;			// integrator position
+		Vec3 x_ref;		// reference position
+		Vec3 error;		// error between integrator and reference
 	};
 
 	struct ENGINE_API RefTrack {
@@ -140,6 +140,11 @@ namespace physics {
 		double t = 0.0;
 		double dt = 1e-3; // adaptive step size suggestion found, more research may show me a better default?
 		bool init = false;
+	};
+
+	enum class FrameType {
+		World,
+		Body
 	};
 
 	struct ENGINE_API IntegratorDiagResult {
@@ -164,12 +169,19 @@ namespace physics {
 		void setSimulationMode(eSimulationMode mode) { _simulationMode = mode; }
 		eSimulationMode getSimulationMode() const { return _simulationMode; }
 
+		void setFrameType(FrameType type) { _frame = type;  }
+		FrameType getFrameType() const { return _frame; }
+
 		// Simulation Control
 		void update(double dt, scene::Object* obj);
 
 		// System-Updates
-		void updateRotation(double dt, scene::Object* obj);
+		void updateRotation(double dt, scene::Object* obj); // I am going to leave for now, this is being replace by the new quaternion system right now
+		void updateRotationQuat(double dt, scene::Object* obj);
+
 		void updateRefRotation(double dt, scene::Object* obj);
+		void updateRefRotationQuat(double dt, scene::Object* obj);
+
 		void updateTranslation(double dt, scene::Object* obj);
 
 		void applyForces(double dt, scene::Object* obj);
@@ -216,6 +228,7 @@ namespace physics {
 
 		// Integration analysis
 		eSimulationMode _simulationMode = eSimulationMode::Normal;
+		FrameType _frame = FrameType::World;
 
 		std::vector<integration::ErrorSample> _errorSamples;
 

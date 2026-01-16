@@ -8,47 +8,15 @@
 // Summary:
 // ============================================
 // 
-// structs:
+// Structs & Enumerations:
 // --------------------------------------------
+// enum class ObjectCategory
+//    -> Enumeration for object categories (General, RobotLink).
+// AssetSource
+//		-> Represents the source of an asset with name and path.
 // Transform
 //      -> Represents the position, rotation, and scale of an object in 3D space.
 // --------------------------------------------
-// 
-// public:
-// --------------------------------------------
-// Object(std::shared_ptr<Mesh> mesh)
-//      -> Constructor that initializes the object with a given mesh.
-// Mesh* getMesh()
-//      -> Returns a pointer to the object's mesh.
-// const Mesh* getMesh() const
-//      -> Returns a const pointer to the object's mesh.
-// void update(shaders::Shader* shader) override
-//      -> Updates the object's mesh with the given shader.
-// void reset()
-//      -> Resets the object's transform and physics state to default values.
-// void onMouseWheel(double delta)
-//      -> Handles mouse wheel input to adjust the object's distance.
-// void onMouseMove(double x, double y, eInputButton button)
-//      -> Handles mouse movement input to adjust the object's rotation and position.
-// void setLastMousePos(const glm::vec2& pos)
-//      -> Sets the last mouse position for input handling.
-// glm::vec2 getLastMousePos() const
-//      -> Returns the last mouse position for input handling.
-// --------------------------------------------
-// 
-// private:
-// --------------------------------------------
-// std::shared_ptr<Mesh> _mesh
-// 		-> Shared pointer to the object's mesh.
-// glm::vec2 _lastMousePos{ 0.0f }
-// 		-> Last recorded mouse position for input handling.
-// --------------------------------------------
-// 
-// Internal State Variables:
-// --------------------------------------------
-// float _distance = 5.0f
-//      -> Distance factor used for mouse wheel input handling.
-// ---------------------------------------------
 //
 // Built upon code from:
 // ============================================
@@ -61,6 +29,7 @@
 
 #include "EngineCore.h"
 #include "Physics/PhysicsState.h"
+#include "Scene/ObjectID.h"
 #include "Scene/Element.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -76,14 +45,20 @@ extern ENGINE_API Debug gLog;
 namespace scene {
 	enum class ObjectCategory { General, RobotLink };
 
+	struct ENGINE_API AssetSource {
+		std::string filename;
+		std::string filepath;
+	};
+
 	// Represents the position, rotation, and scale of an object in 3D space.
-	struct Transform {
+	struct ENGINE_API Transform {
 		glm::vec3 position{ 0.0f };
 		glm::vec3 rotation{ 0.0f };
+		glm::quat rotQ{ 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
 
 		Transform()
-			: position(0.0f), rotation(0.0f), scale(0.01f, 0.01f, 0.01f) {
+			: position(0.0f), rotation(0.0f), rotQ{ 1.0f, 0.0f, 0.0f, 0.0f }, scale(0.01f, 0.01f, 0.01f) {
 		}
 
 		glm::mat4 toMatrix() const;
@@ -92,25 +67,36 @@ namespace scene {
 	// Represents a 3D object in the scene with a mesh, transform, and physics state.
 	class ENGINE_API Object : public Element {
 	public:
+		// Unique identifier for the object
+		ObjectID id = INVALID_OBJECT_ID;
+		std::string name;
+
+		// 3D Transform
 		Transform transform;
 		physics::PhysicsState state;
+
+		// Object Category & Asset Source
 		ObjectCategory category = ObjectCategory::General;
+		AssetSource source;
+
 
 		explicit Object(std::shared_ptr<Mesh> mesh)
 			: _mesh(std::move(mesh))
 		{
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec3(0.0f);
+			transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
 			transform.scale = glm::vec3(0.01f);
 
-			state.theta = Eigen::Vector3d::Zero();
-			state.linearVelocity = Eigen::Vector3d::Zero();
-			state.angularVelocity = Eigen::Vector3d::Zero();
+			state.theta = Vec3::Zero(); // soon to be removed
+			state.q = Quat(1.0, 0.0, 0.0, 0.0);
+			state.linearVelocity = Vec3::Zero();
+			state.angularVelocity = Vec3::Zero();
 			state.mass = 1.0;
 			state.damping = 0.0; // no damping by default (for now)
-			state.inertia = Eigen::Matrix3d::Identity();
-			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();
+			state.inertia = Mat3::Identity();
+			state.forces = Vec3::Zero();
+			state.torques = Vec3::Zero();
 		}
 
 		Mesh* getMesh() { return _mesh.get(); }
@@ -122,13 +108,14 @@ namespace scene {
 
 		void reset() {
 			transform.position = glm::vec3(0.0f);
-			transform.rotation = glm::vec3(0.0f);
+			transform.rotation = glm::vec4(0.0f);
 
-			state.theta = Eigen::Vector3d::Zero();
-			state.linearVelocity = Eigen::Vector3d::Zero();
-			state.angularVelocity = Eigen::Vector3d::Zero();
-			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();
+			state.theta = Vec3::Zero(); // soon to be removed
+			state.q = Quat(1.0, 0.0, 0.0, 0.0);
+			state.linearVelocity = Vec3::Zero();
+			state.angularVelocity = Vec3::Zero();
+			state.forces = Vec3::Zero();
+			state.torques = Vec3::Zero();
 		}
 
 		void onMouseWheel(double delta) { _distance += (float)delta * 0.5f; }

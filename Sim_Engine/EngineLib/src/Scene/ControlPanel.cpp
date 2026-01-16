@@ -421,18 +421,18 @@ namespace gui {
             // Linear Velocity Controls
             ImGui::Text("Linear Velocity:");
             double minVelocity = -100.0; double maxVelocity = 100.0;
-            ImGui::DragScalar("(x-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
-            ImGui::DragScalar("(y-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
-            ImGui::DragScalar("(z-axis)##2", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
+            ImGui::DragScalar("X##linVelX", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
+            ImGui::DragScalar("Y##linVelY", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
+            ImGui::DragScalar("Z##linVelZ", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
 
             ImGui::Separator();
 
             // Angular Velocity Controls
             ImGui::Text("Angular Velocity:");
             double minTorque = -100.0; double maxTorque = 100.0;
-            ImGui::DragScalar("(x-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
-            ImGui::DragScalar("(y-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
-            ImGui::DragScalar("(z-axis)##3", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
+            ImGui::DragScalar("X##angVelX", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
+            ImGui::DragScalar("Y##angVelY", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
+            ImGui::DragScalar("Z##angVelZ", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
 
             ImGui::Separator();
         }

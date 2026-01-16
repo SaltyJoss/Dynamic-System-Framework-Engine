@@ -51,6 +51,8 @@ namespace commands {
 		double _currentAngle = 0.0; // Current angle for rotation commands
 		double _totalRotated = 0.0; // Total rotated angle
 
+		scene::ObjectID _targetObjID; // Target object ID
+
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
