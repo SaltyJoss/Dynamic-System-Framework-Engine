@@ -190,14 +190,15 @@ namespace gui{
 			obj->name = m->getName().empty() ? "Object_" + std::to_string(obj->id) : m->getName();
 
 			// initialise physics state
-			obj->state.theta = Eigen::Vector3d::Zero();
-			obj->state.angularVelocity = Eigen::Vector3d::Zero();
-			obj->state.linearVelocity = Eigen::Vector3d::Zero();
+			obj->state.theta = Vec3::Zero();
+			obj->state.q = Quat(1.0, 0.0, 0.0, 0.0);
+			obj->state.angularVelocity = Vec3::Zero();
+			obj->state.linearVelocity = Vec3::Zero();
 			obj->state.mass = 1.0;
 			obj->state.damping = 0.0;
-			obj->state.inertia = Eigen::Matrix3d::Identity();
-			obj->state.forces = Eigen::Vector3d::Zero();
-			obj->state.torques = Eigen::Vector3d::Zero();
+			obj->state.inertia = Mat3::Identity();
+			obj->state.forces = Vec3::Zero();
+			obj->state.torques = Vec3::Zero();
 
 			_selectedObject = obj.get();
 			_objects.push_back(std::move(obj));
@@ -255,7 +256,6 @@ namespace gui{
 		GLint vp[4];
 		glGetIntegerv(GL_VIEWPORT, vp);
 		LOG_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
-		D_INFO_ONCE("Viewport = %d %d %d %d", vp[0], vp[1], vp[2], vp[3]);
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);

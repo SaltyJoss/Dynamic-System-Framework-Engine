@@ -16,6 +16,7 @@ namespace physics {
 		// public struct for reference model physical states (copied from physicalstate.h for now)
 		struct ENGINE_API RefPhysState {
 			Vec3 theta;
+			Quat q;
 			Vec3 linearVelocity;
 			Vec3 angularVelocity;
 
@@ -37,7 +38,7 @@ namespace physics {
 
 		struct ENGINE_API RefIntegratorDiagSample {
 			double t = 0.0;   // simulation time
-			Vec3 theta;       // angles (rad)
+			Quat q;       // angles (rad)
 			Vec3 omega;       // angular velocity (rad/s)
 		};
 

@@ -54,10 +54,11 @@ namespace scene {
 	struct ENGINE_API Transform {
 		glm::vec3 position{ 0.0f };
 		glm::vec3 rotation{ 0.0f };
+		glm::quat rotQ{ 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
 
 		Transform()
-			: position(0.0f), rotation(0.0f), scale(0.01f, 0.01f, 0.01f) {
+			: position(0.0f), rotation(0.0f), rotQ{ 1.0f, 0.0f, 0.0f, 0.0f }, scale(0.01f, 0.01f, 0.01f) {
 		}
 
 		glm::mat4 toMatrix() const;
@@ -84,16 +85,18 @@ namespace scene {
 		{
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec3(0.0f);
+			transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
 			transform.scale = glm::vec3(0.01f);
 
-			state.theta = Eigen::Vector3d::Zero();
-			state.linearVelocity = Eigen::Vector3d::Zero();
-			state.angularVelocity = Eigen::Vector3d::Zero();
+			state.theta = Vec3::Zero(); // soon to be removed
+			state.q = Quat(1.0, 0.0, 0.0, 0.0);
+			state.linearVelocity = Vec3::Zero();
+			state.angularVelocity = Vec3::Zero();
 			state.mass = 1.0;
 			state.damping = 0.0; // no damping by default (for now)
-			state.inertia = Eigen::Matrix3d::Identity();
-			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();
+			state.inertia = Mat3::Identity();
+			state.forces = Vec3::Zero();
+			state.torques = Vec3::Zero();
 		}
 
 		Mesh* getMesh() { return _mesh.get(); }
@@ -105,13 +108,14 @@ namespace scene {
 
 		void reset() {
 			transform.position = glm::vec3(0.0f);
-			transform.rotation = glm::vec3(0.0f);
+			transform.rotation = glm::vec4(0.0f);
 
-			state.theta = Eigen::Vector3d::Zero();
-			state.linearVelocity = Eigen::Vector3d::Zero();
-			state.angularVelocity = Eigen::Vector3d::Zero();
-			state.forces = Eigen::Vector3d::Zero();
-			state.torques = Eigen::Vector3d::Zero();
+			state.theta = Vec3::Zero(); // soon to be removed
+			state.q = Quat(1.0, 0.0, 0.0, 0.0);
+			state.linearVelocity = Vec3::Zero();
+			state.angularVelocity = Vec3::Zero();
+			state.forces = Vec3::Zero();
+			state.torques = Vec3::Zero();
 		}
 
 		void onMouseWheel(double delta) { _distance += (float)delta * 0.5f; }

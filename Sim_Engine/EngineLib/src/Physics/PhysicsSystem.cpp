@@ -39,10 +39,11 @@ namespace physics {
 		updateTranslation(dt, obj);
 
 		// Rotate object (uses angular velocity)
-		updateRotation(dt, obj);
+		//updateRotation(dt, obj);
+		updateRotationQuat(dt, obj);
 
 		// Update Reference Integrator States
-		updateRefRotation(dt, obj);
+		updateRefRotationQuat(dt, obj);
 
 		// Handle floor collision
 		//handleFloorCollision(dt, obj, 0.0f);
@@ -52,7 +53,7 @@ namespace physics {
 //				  PER-SYSTEM UPDATES
 // --------------------------------------------------
 	// Rotation update
-	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtn
+	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtion later
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
@@ -83,7 +84,7 @@ namespace physics {
 			deriv(1) = omega_y;
 			deriv(2) = omega_z;
 
-			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
+			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!) -> THIS DOES NOT ACCURATELY CALCULATE ROTATION IN 3D SPACE! 
 			deriv(3) = -(s.damping) * omega_x;
 			deriv(4) = -(s.damping) * omega_y;
 			deriv(5) = -(s.damping) * omega_z;
@@ -117,57 +118,128 @@ namespace physics {
 		obj->transform.rotation.x = static_cast<float>(s.theta.x());
 		obj->transform.rotation.y = static_cast<float>(s.theta.y());
 		obj->transform.rotation.z = static_cast<float>(s.theta.z());
+	}
+
+	// Updates an objects rotation using quaternions instead of Euler angles
+	void PhysicsSystem::updateRotationQuat(double dt, scene::Object* obj) {
+		if (!obj || !obj->getMesh()) return;
+
+		auto& s = obj->state;
+		
+		// State vectory [qw,qx,qy,qz,wx,wy,wz]
+		VecX x(7);
+		x(0) = s.q.w(); x(1) = s.q.x(); x(2) = s.q.y(); x(3) = s.q.z(); // quaternion angles
+		x(4) = s.angularVelocity.x(); x(5) = s.angularVelocity.y(); x(6) = s.angularVelocity.z(); // angular velocity
+
+		// World-Frame OR Body-Frame Angular Velocity
+		auto f = [&](double, const VecX& st) {
+			VecX d(7);
+			// dq = 1/2 * (0,w) * q -> world frame angular velocity
+			Quat _q(st(0), st(1), st(2), st(3));
+			Vec3 w(st(4), st(5), st(6));
+			Quat dq = (_frame == FrameType::World) ? Quat(0, w.x(), w.y(), w.z()) * _q : _q * Quat(0, w.x(), w.y(), w.z());
+			dq.coeffs() *= 0.5; // Eigen doesnt support scalar multiplication :(
+			d(0) = dq.w(); d(1) = dq.x(); d(2) = dq.y(); d(3) = dq.z();
+			d(4) = -s.damping * w.x(); d(5) = -s.damping * w.y(); d(6) = -s.damping * w.z();
+			return d;
+		};
+
+		VecX next = integrationMethod(x, 0.0, dt, f, method);
+		s.q = Quat(next(0), next(1), next(2), next(3)).normalized();
+		s.angularVelocity = Vec3(next(4), next(5), next(6));
+		obj->transform.rotQ = glm::quat((float)s.q.w(), (float)s.q.x(), (float)s.q.y(), (float)s.q.z());
 
 		// update diagnostics if running
 		if (_diagRunning && obj == _diagObject) {
 			IntegratorDiagSample sample;
 			sample.t = _t;
-			sample.theta = s.theta;
+			sample.q = s.q;
 			sample.omega = s.angularVelocity;
 			_diagSamples.push_back(sample);
 		}
 	}
 
-	void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
+	//void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
+	//	if (!obj || !obj->getMesh()) return;
+	//	auto& rt = gRefTracks[obj];
+
+	//	if (!rt.init) {
+	//		// Initialize reference track
+	//		rt.x.resize(6);
+	//		rt.x(0) = obj->state.theta.x();
+	//		rt.x(1) = obj->state.theta.y();
+	//		rt.x(2) = obj->state.theta.z();
+	//		rt.x(3) = obj->state.angularVelocity.x();
+	//		rt.x(4) = obj->state.angularVelocity.y();
+	//		rt.x(5) = obj->state.angularVelocity.z();
+	//		rt.t = _t;
+	//		rt.dt = 1e-3; // initial step size
+	//		rt.init = true;
+	//	}
+
+	//	// Define derivative function
+	//	const double t_next = _t + dt;
+
+	//	auto f = [&](double t, const VecX& state) -> VecX {
+	//		VecX deriv(6);
+	//		// unpacking state vector (theta = angle, omega = angular velocity)
+	//		double theta_x = state(0);
+	//		double theta_y = state(1);
+	//		double theta_z = state(2);
+	//		double omega_x = state(3);
+	//		double omega_y = state(4);
+	//		double omega_z = state(5);
+	//		// derivative: dtheta/dt = omega
+	//		deriv(0) = omega_x;
+	//		deriv(1) = omega_y;
+	//		deriv(2) = omega_z;
+	//		// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
+	//		deriv(3) = -(obj->state.damping) * omega_x;
+	//		deriv(4) = -(obj->state.damping) * omega_y;
+	//		deriv(5) = -(obj->state.damping) * omega_z;
+	//		return deriv;
+	//	};
+
+	//	// Perform adaptive step to reach t_next
+	//	while (rt.t < t_next) {
+	//		double dt = std::min(rt.dt, t_next - rt.t);
+	//		auto res = _refSolver->refStep(rt.x, rt.t, dt, f, 1e-6, 1e-9);
+	//		rt.x = res.x_next;
+	//		rt.t += res.dt_taken;
+	//		rt.dt = res.dt_sug;
+	//	}
+	//}
+
+	void PhysicsSystem::updateRefRotationQuat(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 		auto& rt = gRefTracks[obj];
 
+		// State vector [qw,qx,qy,qz,wx,wy,wz]
 		if (!rt.init) {
 			// Initialize reference track
-			rt.x.resize(6);
-			rt.x(0) = obj->state.theta.x();
-			rt.x(1) = obj->state.theta.y();
-			rt.x(2) = obj->state.theta.z();
-			rt.x(3) = obj->state.angularVelocity.x();
-			rt.x(4) = obj->state.angularVelocity.y();
-			rt.x(5) = obj->state.angularVelocity.z();
+			rt.x.resize(7);
+			rt.x(0) = obj->state.q.w(); rt.x(1) = obj->state.q.x(); rt.x(2) = obj->state.q.y(); rt.x(3) = obj->state.q.z(); // quaternion angles
+			rt.x(4) = obj->state.angularVelocity.x(); rt.x(5) = obj->state.angularVelocity.y(); rt.x(6) = obj->state.angularVelocity.z(); // angular velocity
 			rt.t = _t;
 			rt.dt = 1e-3; // initial step size
 			rt.init = true;
 		}
 
-		// Define derivative function
 		const double t_next = _t + dt;
 
-		auto f = [&](double t, const VecX& state) -> VecX {
-			VecX deriv(6);
-			// unpacking state vector (theta = angle, omega = angular velocity)
-			double theta_x = state(0);
-			double theta_y = state(1);
-			double theta_z = state(2);
-			double omega_x = state(3);
-			double omega_y = state(4);
-			double omega_z = state(5);
-			// derivative: dtheta/dt = omega
-			deriv(0) = omega_x;
-			deriv(1) = omega_y;
-			deriv(2) = omega_z;
-			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
-			deriv(3) = -(obj->state.damping) * omega_x;
-			deriv(4) = -(obj->state.damping) * omega_y;
-			deriv(5) = -(obj->state.damping) * omega_z;
-			return deriv;
+		// World-Frame Angular Velocity
+		auto f = [&](double, const VecX& st) {
+			VecX d(7);
+			// dq = 1/2 * (0,w) * q -> world frame angular velocity
+			Quat _q(st(0), st(1), st(2), st(3));
+			Vec3 w(st(4), st(5), st(6));
+			Quat dq = (_frame == FrameType::World) ? Quat(0, w.x(), w.y(), w.z()) * _q : _q * Quat(0, w.x(), w.y(), w.z());
+			dq.coeffs() *= 0.5; // Eigen doesnt support scalar multiplication :(
+			d(0) = dq.w(); d(1) = dq.x(); d(2) = dq.y(); d(3) = dq.z();
+			d(4) = -(obj->state.damping * w.x()); d(5) = -(obj->state.damping * w.y()); d(6) = -(obj->state.damping * w.z());
+			return d;
 		};
+
 
 		// Perform adaptive step to reach t_next
 		while (rt.t < t_next) {
@@ -182,8 +254,8 @@ namespace physics {
 		if (_diagRunning) {
 			ReferenceSolver::RefIntegratorDiagSample samples;
 			samples.t = rt.t;
-			samples.theta = Vec3( rt.x(0), rt.x(1), rt.x(2) ); // angles
-			samples.omega = Vec3( rt.x(3), rt.x(4), rt.x(5) ); // angular velocities
+			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // angles
+			samples.omega = Vec3(rt.x(4), rt.x(5), rt.x(6)); // angular velocities
 			_refDiagSamples.push_back(samples);
 
 			_t += dt; // advance global time
@@ -339,7 +411,6 @@ namespace physics {
 		for (const auto& sample : _diagSamples) {
 			omegaNorms.push_back(sample.omega.norm());
 		}
-
 		// Reference Integrator Diagnostics
 		std::vector<double> refOmegaNorms;
 		refOmegaNorms.reserve(_refDiagSamples.size());
