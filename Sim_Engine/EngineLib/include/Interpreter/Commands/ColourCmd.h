@@ -22,7 +22,7 @@ namespace commands {
 	};
 
 	// Struct for colour mapping
-	struct Colour {
+	struct ENGINE_API Colour {
 		BlockColour col = BlockColour::Red;
 		mathlib::Vec3 rgb = { 1.0f, 0.0f, 0.0f };
 	};
@@ -33,13 +33,16 @@ namespace commands {
 		// Constructor
 		ColourCmd(const std::string& id, const std::vector<std::string>& tokens);
 		// Get the command name
-		std::string_view getName() const { return "COLOUR"; }
+		std::string_view getName() const { return "colour"; }
 		// Set the command context
 		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
 
 		// Getters and Setters for Result
-		CmdResult getResult() const { return _result; }
-		void setResult(const CmdResult& result) { _result = result; }
+		program_data::CmdResult getResult() const { return _result; }
+		void setResult(const program_data::CmdResult& result) { _result = result; }
+
+		// Get current result
+		program_data::CmdResult currentResult() const override { return getResult(); }
 
 		// Execute the command
 		void execute() override;
@@ -62,7 +65,7 @@ namespace commands {
 
 		UIContext* _uiCntx = nullptr;
 
-		CmdResult _result = { CmdState::NotStarted, {}, "" };
+		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 	protected:
 		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;

@@ -29,6 +29,7 @@ namespace interpreter {
 	void Parser::parse(std::string code) {
 		if (code.empty()) {
 			D_WARN("Cannot parse empty code string.");
+			_program->stop();
 			return;
 		}
 
@@ -52,7 +53,7 @@ namespace interpreter {
 		if (cmdName == "pause") return false;
 		if (cmdName == "stop") return false;
 		if (cmdName == "colour") return true;
-		return true;
+		return false;
 	}
 
 	// Splits a string into arguments, respecting quotes and nested braces/parentheses
@@ -168,14 +169,16 @@ namespace interpreter {
 				// Validate positions
 				if (open == std::string_view::npos || close == std::string_view::npos || close < open) {
 					D_WARN("Invalid DSL syntax (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
-					continue;
+					_program->stop();
+					return;
 				}
 
 				// Extract command name
 				cmd.cmdName = std::string(toLower(trim(line.substr(0, open))));
 				if (cmd.cmdName.empty()) {
 					D_WARN("Missing command name (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
-					continue;
+					_program->stop();
+					return;
 				}
 
 				// Extract inside of parentheses
@@ -186,7 +189,8 @@ namespace interpreter {
 				if (requiresIdentifier(cmd.cmdName)) {
 					if (parts.empty()) {
 						D_WARN("Command '%s' requires an identifier (line %d): %s", cmd.cmdName.c_str(), cmd.lineNumber, cmd.rawLine.c_str());
-						continue;
+						_program->stop();
+						return;
 					}
 					// first part is identifier
 					cmd.identifier = std::string(toLower(parts[0]));	// first part is identifier
@@ -222,12 +226,14 @@ namespace interpreter {
 	void Parser::buildCommand(Command& cmd) {
 		if (cmd.cmdName.empty() || cmd.identifier.empty()) {
 			D_WARN("Invalid command fields at line %d", cmd.lineNumber);
+			_program->stop();
 			return;
 		}
 
 		// Prepare identifier and tokens
 		if (requiresIdentifier(cmd.cmdName) && cmd.identifier.empty()) {
 			D_FAIL("Command '%s' requires an identifier (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+			_program->stop();
 			return;
 		}
 
@@ -236,8 +242,11 @@ namespace interpreter {
 			cmd.identifier.c_str(),
 			(int)cmd.tokens.size());
 
-		auto* command =
-			commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
+		for (const auto& t : cmd.tokens) {
+			D_TRACE("Arg: %s", t.c_str());
+		}
+
+		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
 		if (command) {
 			_program->add(command);
@@ -245,6 +254,8 @@ namespace interpreter {
 		}
 		else {
 			D_FAIL("Failed to create command: %s()", cmd.cmdName.c_str());
+			_program->stop();
+			return;
 		}
 	}
 

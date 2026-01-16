@@ -15,7 +15,7 @@ namespace commands {
 	};
 
 	// Struct for load target
-	struct LoadTarget {
+	struct ENGINE_API LoadTarget {
 		LoadTargetType type = LoadTargetType::Object;
 		std::string path;
 	};
@@ -27,17 +27,21 @@ namespace commands {
 		LoadCmd(const std::string& id, const std::vector<std::string>& tokens);
 
 		// Get the command name
-		std::string_view getName() const { return "LOAD"; }
+		std::string_view getName() const { return "load"; }
 
-		CmdResult getResult() const { return _result; }
-		void setResult(const CmdResult& result) { _result = result; }
+		program_data::CmdResult getResult() const { return _result; }
+		void setResult(const program_data::CmdResult& result) { _result = result; }
+
+		// Get current result
+		program_data::CmdResult currentResult() const override { return getResult(); }
 
 		// Execute the command
 		void execute() override;
 
 	private:
 		LoadTarget _target{};
-		CmdResult _result = { CmdState::NotStarted, {}, "" };
+		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
+		std::string _path;
 
 	protected:
 		// Mark the command as failed with a message

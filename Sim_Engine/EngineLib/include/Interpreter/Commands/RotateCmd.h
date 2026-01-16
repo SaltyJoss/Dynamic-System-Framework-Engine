@@ -28,16 +28,20 @@ namespace commands {
 		// Constructor
 		RotateCmd(RotateTarget target, double omega, double startDeg = 0.0, double endDeg = 0.0);
 
-		std::string_view getName() const { return "ROTATE"; }
+		std::string_view getName() const { return "rotate"; }
 
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
 
-		CmdResult getResult() const { return _result; }
-		void setResult(const CmdResult& result) { _result = result; }
+		// Getters and setters for result
+		program_data::CmdResult getResult() const { return _result; }
+		void setResult(const program_data::CmdResult& result) { _result = result; }
+
+		// Get current result
+		program_data::CmdResult currentResult() const override { return getResult(); }
 
 		void execute() override;
 
-		CmdResult update(CommandContextMotion& cntx, double dt) override;
+		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 	private:
 		RotateTarget _target{};
 		double _omega = 0.0;      // Angular velocity (deg/s)

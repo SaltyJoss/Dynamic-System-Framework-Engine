@@ -15,12 +15,11 @@ namespace interpreter {
 	public:
 		// Constructor
 		StoredProgram(gui::simManager* sim);
+		~StoredProgram() override;
 
 		// Add a command to the program
 		void add(commands::ICommand* cmd) override;
 
-		// Load program data
-		void load(ProgramData program) override;
 		// Reset program to initial state
 		void reset() override;
 		// Clear all stored instructions
@@ -37,9 +36,12 @@ namespace interpreter {
 		ProgramStatus status() const override;
 
 		// State checkers
+		bool isEmpty() const override { return _commands.empty(); }	
 		bool isRunning() const override { return _state == ProgramState::Running; }
 		bool isPaused() const override { return _state == ProgramState::Paused; }
 		bool isStopped() const override { return _state == ProgramState::Stopped; }
+		bool isCompleted() const override { return _state == ProgramState::Completed; }
+		bool isFaulted() const override { return _state == ProgramState::Faulted; }
 
 		// Get the current instruction
 		const Command* getCurrentInstruction() const;

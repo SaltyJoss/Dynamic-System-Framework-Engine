@@ -25,6 +25,8 @@ namespace commands {
 			D_FAIL(errMsg.c_str());
 			return;
 		}
+
+		if (!tokens.empty()) { _path = tokens[0]; _target.path = tokens[0]; }
 	}
 
 	// --- LoadCmd Method Implementations ---
@@ -35,6 +37,7 @@ namespace commands {
 
 	void LoadCmd::markCompleted() {
 		// Implementation to mark the command as completed
+		setResult({ CmdState::Executed, {}, "load() ran successfully" });
 	}
 
 	bool LoadCmd::hasStarted() const {
@@ -50,9 +53,16 @@ namespace commands {
 		}
 
 		switch (_target.type) {
-		case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); markCompleted(); break;
-		case LoadTargetType::Robot:		_cntxUI->loadRobot(_target.path); markCompleted(); break;
-		case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); markCompleted(); break;
+		case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); break;
+		case LoadTargetType::Robot:		_cntxUI->loadRobot(_target.path); break;
+		case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); break;
+		default:
+			{
+				std::string errMsg = "Invalid load target type.";
+				markFailed(errMsg);
+				D_FAIL(errMsg.c_str());
+				return;
+			}
 		}
 
 		markCompleted();

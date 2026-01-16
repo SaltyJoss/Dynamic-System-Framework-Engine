@@ -17,7 +17,7 @@ namespace commands {
 		FunctionDefinitio
 	};
 
-	struct SetTarget {
+	struct ENGINE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
 		IntegratorMethod method = IntegratorMethod::Euler; // Default method
 	};
@@ -31,8 +31,11 @@ namespace commands {
 		std::string_view getName() const { return "SET"; }
 
 		// Getters and Setters for Result
-		CmdResult getResult() const { return _result; }
-		void setResult(const CmdResult& result) { _result = result; }
+		program_data::CmdResult getResult() const { return _result; }
+		void setResult(const program_data::CmdResult& result) { _result = result; }
+
+		// Get current result
+		program_data::CmdResult currentResult() const override { return getResult(); }
 
 		// Execute the command
 		void execute() override;
@@ -42,7 +45,7 @@ namespace commands {
 
 		std::string _id;
 		std::vector<std::string> _tokens;
-		CmdResult _result = { CmdState::NotStarted, {}, "" };
+		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
 		// Mark the command as failed with a message

@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace commands { class ENGINE_API ICommand; }
-namespace scene { class Object;  }
+namespace scene { class ENGINE_API Object;  }
 
 using namespace program_data;
 
@@ -20,8 +20,6 @@ namespace interpreter {
 		// Add a command to the program
 		virtual void add(commands::ICommand* cmd) = 0;
 
-		// Load program data
-		virtual void load(ProgramData program) = 0;
 		// Reset program to initial state
 		virtual void reset() = 0;
 		// Clear all stored instructions
@@ -38,9 +36,12 @@ namespace interpreter {
 		virtual ProgramStatus status() const = 0;
 
 		// State checkers
+		virtual bool isEmpty() const = 0;
 		virtual bool isRunning() const = 0;
 		virtual bool isPaused() const = 0;
 		virtual bool isStopped() const = 0;
+		virtual bool isCompleted() const = 0;
+		virtual bool isFaulted() const = 0;
 
 		// Update the command state
 		virtual CmdResult updateState() = 0;

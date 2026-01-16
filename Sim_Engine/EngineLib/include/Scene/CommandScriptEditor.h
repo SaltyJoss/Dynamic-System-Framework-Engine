@@ -51,25 +51,17 @@ namespace gui {
 		std::string _pendingSavePath = "Engine/assets/scripts";
 		bool _requestSaveAsPopup = false;
 
-		// Renders the command script editor window
 		void renderEnvironment();
-		// Renders a command instruction syntax helper
 		void renderCmdInstructions();
-
-		// Load command script from a file
+		void terminateScript(const char* reason, bool fault);
 		bool tryLoadFromDialog();
-		// Save command script to the current file
 		bool trySaveScriptToFile(const std::string& filepath);
-		// Save command script via "Save As" dialog
 		void renderSaveAsPopup();
-
-		// Set the command script from a single string
-		void setScript(const std::string& s) { _scriptText = s; }
-		// Get the current script as a single string
-		std::string getScript() const { return _scriptText; }
-
 		void beginEditorPanel(const char* id);
 		void endEditorPanel();
+
+		void setScript(const std::string& s) { _scriptText = s; }
+		std::string getScript() const { return _scriptText; }
 
 		// Command script contents as lines
 		std::vector<std::string> _script;

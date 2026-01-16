@@ -7,8 +7,8 @@
 
 #include "Platform/Logger.h"
 
-namespace scene { class Object; }
-namespace interpreter { class StoredProgram; }
+namespace scene { class ENGINE_API Object; }
+namespace interpreter { class ENGINE_API StoredProgram; }
 
 namespace commands {	
 	class ENGINE_API UIContext {

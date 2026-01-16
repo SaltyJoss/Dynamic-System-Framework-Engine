@@ -11,8 +11,8 @@
 #include "Platform/Logger.h"
 
 namespace commands {
-	class CommandContextMotion;
-	class UIContext;
+	class ENGINE_API CommandContextMotion;
+	class ENGINE_API UIContext;
 }
 
 namespace gui {

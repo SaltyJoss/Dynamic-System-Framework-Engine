@@ -104,6 +104,7 @@ namespace gui {
 			lastClickedLine = -1;
 
 			LOG_INFO("Command script loaded from file: %s", _currentScriptFile.c_str());
+			D_INFO("Command script loaded from file: %s", _currentScriptFile.c_str());
 		}
 
 		// Run/Stop button for the command script
@@ -118,14 +119,12 @@ namespace gui {
 
 		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
 			_isRunning = !_isRunning;
+			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
+			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 
 			if (!_isRunning) {
 				// stopping
 				if (_program) _program->stop();
-
-				LOG_INFO("Command script stopped.");
-				D_INFO("Command script stopped.");
-
 				_isRunning = false;
 			}
 			else {
@@ -143,13 +142,7 @@ namespace gui {
 				if (!code.empty() && code.back() == '\0') code.pop_back();
 
 				_wrapper->runProgram(_scriptText);
-
-				LOG_INFO("Command script started.");
-				D_INFO("Command script started.");
 			}
-
-			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
-			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 		}
 
 		if (wasRunning) {
@@ -157,19 +150,36 @@ namespace gui {
 		}
 
 		if (_isRunning && _program) {
-			_program->step(dt);
-
-			if (_program->isStopped()) {
-				_isRunning = false;
-
-				delete _wrapper; _wrapper = nullptr;
-				delete _parser;  _parser = nullptr;
-				delete _program; _program = nullptr;
-
-				LOG_INFO("Command script completed.");
-				D_INFO("Command script completed.");
+			if (!_program) {
+				terminateScript("Command script stopped -> program is null.", true);
+				return;
 			}
+			
+			interpreter::IStoredProgram* prog = _program; // need a snapshot in case of termination
+			prog->step(dt);
+
+			if (prog->isEmpty()) { terminateScript("Command script stopped -> program is empty.", true); return; }
+			if (prog->isFaulted()) { terminateScript("Command script stopped due to fault.", true); return; }
+			if (prog->isCompleted()) { terminateScript("Command script completed.", false); return; }
+			if (prog->isStopped() && !prog->isCompleted()) { terminateScript("Command script stopped.", true); return; }
 		}
+	}
+
+	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
+		_isRunning = false;
+
+		if (fault) {
+			LOG_WARN("%s", reason);
+			D_FAIL("%s", reason);
+		}
+		else {
+			LOG_INFO("%s", reason);
+			D_SUCCESS("%s", reason);
+		}
+
+		delete _wrapper; _wrapper = nullptr;
+		delete _parser;  _parser = nullptr;
+		delete _program; _program = nullptr;
 	}
 
 	void CommandScriptEditor::render() {
@@ -302,7 +312,9 @@ namespace gui {
 			return false;
 		}
 
-		fwrite(_scriptText.data(), 1, _scriptText.size(), file);
+		size_t n = _scriptText.size();
+		if (n > 0 && _scriptText.back() == '\0') n -= 1;
+		fwrite(_scriptText.data(), 1, n, file);
 		fclose(file);
 
 		LOG_INFO("Command script saved to file: %s", filepath.c_str());
@@ -325,9 +337,7 @@ namespace gui {
 
 		ImGui::Spacing();
 
-		if (ImGui::Button("Choose Folder...")) {
-			_save.Open();
-		}
+		if (ImGui::Button("Choose Folder...")) { _save.Open(); }
 
 		_save.Display();
 		if (_save.HasSelected()) {
@@ -344,9 +354,7 @@ namespace gui {
 			std::snprintf(filenameBuf, sizeof(filenameBuf), "%s", _pendingSaveName.c_str());
 		}
 
-		if (ImGui::InputText("Filename", filenameBuf, sizeof(filenameBuf))) {
-			_pendingSaveName = filenameBuf;
-		}
+		if (ImGui::InputText("Filename", filenameBuf, sizeof(filenameBuf))) { _pendingSaveName = filenameBuf; }
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -355,9 +363,9 @@ namespace gui {
 		if (ImGui::Button("Save")) {
 			std::string fullPath = _pendingSavePath;
 
-			if (!fullPath.empty() && fullPath.back() != '/' && fullPath.back() != '\\') {
-				fullPath += "/";
-			}
+			if (!fullPath.empty() && fullPath.back() != '/' && fullPath.back() != '\\') { fullPath += "/"; }
+
+			fullPath += _pendingSaveName;
 
 			if (trySaveScriptToFile(fullPath)) {
 				_currentScriptFile = fullPath;
@@ -367,19 +375,14 @@ namespace gui {
 
 				ImGui::CloseCurrentPopup();
 			}
-			else {
-				LOG_ERROR("Failed to save command script to file: %s", fullPath.c_str());
-			}
+			else { LOG_ERROR("Failed to save command script to file: %s", fullPath.c_str()); }
 		}
 
 		ImGui::SameLine();
-
-		if (ImGui::Button("Cancel")) {
-			ImGui::CloseCurrentPopup();
-		}
+		if (ImGui::Button("Cancel")) { ImGui::CloseCurrentPopup(); }
 
 		ImGui::EndPopup();
-		if (!ImGui::BeginPopupModal("Save Command Script", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) { ImGui::PopStyleVar(); return; }
+		ImGui::PopStyleVar();
 
 	}
 

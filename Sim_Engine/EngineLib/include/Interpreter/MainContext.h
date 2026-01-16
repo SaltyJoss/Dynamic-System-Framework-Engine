@@ -3,8 +3,8 @@
 #include "Interpreter/CommandContextMotion.h"
 #include "Interpreter/UIContext.h"
 
-namespace gui { class simManager; }
-namespace scene { class Object; }
+namespace gui { class ENGINE_API simManager; }
+namespace scene { class ENGINE_API Object; }
 
 namespace commands {
 	// Main context combining motion and UI contexts

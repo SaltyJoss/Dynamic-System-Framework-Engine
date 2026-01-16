@@ -6,8 +6,8 @@
 #include <string>
 
 namespace commands {
-	class CommandContextMotion;
-	class UIContext;
+	class ENGINE_API CommandContextMotion;
+	class ENGINE_API UIContext;
 
 	// ICommand interface
 	class ENGINE_API ICommand {
@@ -20,7 +20,11 @@ namespace commands {
 		virtual void setContext(UIContext& cntx) = 0;
 
 		// Update command
-		virtual CmdResult update(CommandContextMotion& cntx, double dt) = 0;
+		virtual program_data::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
+
+		// Get current result
+		virtual program_data::CmdResult currentResult() const = 0;
+
 		// Execute command
 		virtual void execute() = 0;
 

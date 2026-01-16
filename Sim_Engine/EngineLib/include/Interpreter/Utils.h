@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EngineCore.h"
 #include <core/Types.h>
 #include <string>
 #include <string_view>
@@ -8,7 +9,7 @@
 
 namespace utils {
 	// Struct for operation result
-	struct OpResult {
+	struct ENGINE_API OpResult {
 		bool ok = true;
 		std::string message;
 
@@ -17,7 +18,7 @@ namespace utils {
 	};
 
 	// Struct for axis mask
-	struct AxisMask {
+	struct ENGINE_API AxisMask {
 		bool x = false;
 		bool y = false;
 		bool z = false;

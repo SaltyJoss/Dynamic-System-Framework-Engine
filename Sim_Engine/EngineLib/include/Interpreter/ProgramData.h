@@ -42,7 +42,6 @@ namespace program_data {
 	// Enum representing the state of the program
 	enum ProgramState {
 		Empty,
-		Loaded,
 		Running,
 		Paused,
 		Stopped,
@@ -51,7 +50,7 @@ namespace program_data {
 	};
 
 	// Struct for program status
-	struct ProgramStatus {
+	struct ENGINE_API ProgramStatus{
 		ProgramState state = ProgramState::Empty;
 		size_t pc = 0;
 	};
@@ -75,12 +74,12 @@ namespace program_data {
 	};
 
 	// Command signal data struct
-	struct CmdSignalData {
+	struct ENGINE_API CmdSignalData {
 		CmdSignalType signal = CmdSignal_None;
 		size_t jumpTarget = 0; // for jump signals
 	};
 	// Command result struct
-	struct CmdResult {
+	struct ENGINE_API CmdResult {
 		CmdState state = CmdState::NotStarted;
 		CmdSignalData signalData;
 		std::string message;

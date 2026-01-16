@@ -16,10 +16,9 @@ namespace commands {
 	// --- ColourCmd Method Implementations ---
 	void ColourCmd::markFailed(const std::string& message) {
 		setResult({ CmdState::Failed, {}, message });
-		// Implementation to mark the command as failed
 	}
 	void ColourCmd::markCompleted() {
-		// Implementation to mark the command as completed
+		setResult({ CmdState::Executed, {}, "colour() ran successfully" });
 	}
 	bool ColourCmd::hasStarted() const {
 		return getResult().state != CmdState::NotStarted;
