@@ -11,7 +11,7 @@ namespace commands {
 	class ENGINE_API MainContext {
 	public:
         MainContext(gui::simManager* sim, scene::Object* defaultObj)
-            : _motion(sim, defaultObj) {}
+            : _motion(sim, defaultObj), _ui(sim, defaultObj) {}
 
         // Accessors
         commands::CommandContextMotion& motion() { return _motion; }

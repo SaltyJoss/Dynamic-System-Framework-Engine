@@ -24,7 +24,7 @@ namespace commands {
 	// Struct for colour mapping
 	struct Colour {
 		BlockColour col = BlockColour::Red;
-		Vec3 rgb = { 1.0f, 0.0f, 0.0f };
+		mathlib::Vec3 rgb = { 1.0f, 0.0f, 0.0f };
 	};
 
 	// Class representing the SET command
@@ -48,20 +48,16 @@ namespace commands {
 		Colour getColour(const std::string& parameter);
 
 		// Set colour using different methods
-		void setColour(const Colour& colour, const Vec3& rgb);
+		void setColour(const Colour& colour, const mathlib::Vec3& rgb);
 		void setColour(const Colour& colour, BlockColour preset);
 		void setColour(const Colour& colour, const std::string& hex);
-
-		// Get & set program
-		interpreter::IStoredProgram* getProgram() const override { return _program; }
-		void setProgram(interpreter::IStoredProgram* program) override { _program = program; }
 
 	private:
 		std::string _id;
 		std::vector<std::string> _tokens;
 
-		Vec3 _defaultColRGB = { 1.0f, 0.0f, 0.0f }; // Default to red
-		Vec3 _currentColRGB = _defaultColRGB;
+		mathlib::Vec3 _defaultColRGB = { 1.0, 0.0, 0.0 }; // Default to red
+		mathlib::Vec3 _currentColRGB = _defaultColRGB;
 		Colour _col{ BlockColour::Red }; // Default to red
 
 		UIContext* _uiCntx = nullptr;

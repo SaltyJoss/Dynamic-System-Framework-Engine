@@ -95,7 +95,7 @@ namespace utils {
 
 	// Helper function to convert string_view to integer
 	std::optional<bool> toBoolean(const std::string s) {
-		std::string_view lowerStr = utils::toLower(s);
+		std::string_view lowerStr = std::string(utils::toLower(s));
 		if (lowerStr == "true" || lowerStr == "1") {
 			return true;
 		}
@@ -106,7 +106,7 @@ namespace utils {
 	}
 
 	// Helper function to convert hex string to RGB vector (wanted to make my own, so I did)
-	mathlib::Vec3 hexToRGB(const std::string& hex, mathlib::Vec3& rgbOut) {
+	mathlib::Vec3 hexToRGB(const std::string& hex) {
 		if (hex.size() != 7 || hex[0] != '#') {
 			D_ERROR("Invalid hex colour format: %s", hex.c_str());
 			return mathlib::Vec3{ 0.f, 0.f, 0.f };

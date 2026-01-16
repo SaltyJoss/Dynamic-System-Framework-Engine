@@ -6,8 +6,6 @@
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
 
-using namespace mathlib;
-
 namespace commands {
 	// Enum for rotation target type
 	enum class RotateTargetType {
@@ -19,7 +17,7 @@ namespace commands {
 	// Struct for rotation target
 	struct RotateTarget {
 		RotateTargetType type = RotateTargetType::AxisMask;
-		AxisMask axisMask;
+		utils::AxisMask axisMask;
 		std::string linkName = "";
 		std::string objID = "";
 	};

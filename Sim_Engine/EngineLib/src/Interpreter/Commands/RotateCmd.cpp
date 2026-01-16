@@ -3,6 +3,7 @@
 #include "Interpreter/Utils.h"
 
 using namespace utils;
+using namespace mathlib;
 
 namespace commands {
 	// Helper function to parse double from string_view

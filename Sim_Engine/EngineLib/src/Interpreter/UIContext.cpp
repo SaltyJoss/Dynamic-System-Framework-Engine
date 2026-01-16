@@ -6,8 +6,8 @@ using namespace mathlib;
 using namespace utils;
 
 namespace commands {
-	UIContext::UIContext(gui::simManager* sim) 
-		: _sim(sim), _robot(&sim->getRobotModel()), _obj(nullptr), _defaultObj(nullptr) { }
+	UIContext::UIContext(gui::simManager* sim, scene::Object* obj)
+		: _sim(sim), _robot(&sim->getRobotModel()), _obj(obj), _defaultObj(obj) { }
 
 	//  Set the colour property of the current object
 	OpResult UIContext::setColour(const glm::vec3& color) {

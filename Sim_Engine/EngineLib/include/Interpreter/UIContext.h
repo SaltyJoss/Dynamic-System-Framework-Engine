@@ -13,7 +13,7 @@ namespace interpreter { class StoredProgram; }
 namespace commands {	
 	class ENGINE_API UIContext {
 	public:
-		UIContext(gui::simManager* sim);
+		UIContext(gui::simManager* sim, scene::Object* obj);
 
 		// Getters and Setters
 		gui::simManager* getSim() const { return _sim; }

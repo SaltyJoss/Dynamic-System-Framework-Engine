@@ -9,17 +9,11 @@ namespace commands {
 	class CommandContextMotion;
 	class UIContext;
 
-	enum class CommandDomain {
-		Runtime,   // physics / simulation
-		UI         // editor / tools
-	};
-
 	// ICommand interface
 	class ENGINE_API ICommand {
 	public:
 		// Virtual destructor
 		virtual ~ICommand() = default;
-		virtual CommandDomain domain() const = 0;
 
 		// Context setters
 		virtual void setContext(CommandContextMotion& cntx) = 0;
