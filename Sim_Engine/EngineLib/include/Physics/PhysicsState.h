@@ -22,7 +22,8 @@
 namespace physics {
 	// public struct for physical states
 	struct ENGINE_API PhysicsState {
-		Vec3 theta;
+		Vec3 theta; // Euler angles (radians) - moving over to quaternions
+		Quat q; // Orientation as quaternion
 		Vec3 linearVelocity;
 		Vec3 angularVelocity;
 
