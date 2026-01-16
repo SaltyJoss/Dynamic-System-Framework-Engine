@@ -15,6 +15,8 @@ namespace gui {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
         ImGui::Begin("Output", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
 
+        beginDebugPanel("Output Panel");
+
         if (ImGui::BeginTabBar("Debug Tabs")) {
             if (ImGui::BeginTabItem("Log")) {
                 renderLog();
@@ -27,6 +29,9 @@ namespace gui {
             }
             ImGui::EndTabBar();
         }
+
+        endDebugPanel();
+
         ImGui::End();
         ImGui::PopStyleColor();
     }
@@ -213,5 +218,18 @@ namespace gui {
             }
             ImGui::SetClipboardText(clip.c_str());
         }
+    }
+
+    void DebugPanel::beginDebugPanel(const char* id, ImVec2 size) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
+        ImGui::BeginChild(id, size, true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+    }
+
+    void DebugPanel::endDebugPanel() {
+        ImGui::EndChild();
+        ImGui::PopStyleVar(4);
     }
 }

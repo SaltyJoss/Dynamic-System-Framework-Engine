@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace interpreter {
+namespace program_data {
 	// Struct representing source location
 	struct ENGINE_API SrcLocation {
 		std::string filename; // Name of the source file
@@ -17,17 +17,71 @@ namespace interpreter {
 		std::string rawLine;				// The original line of code
 		std::string cmdName;				// The command name
 		std::string identifier;				// The command identifier
-		std::string tokens;	// Vector of tokens/arguments
+		std::vector<std::string> tokens;	// The command arguments/tokens
 		int lineNumber = 0;					// Line number in the source code
 	};
 
 	// Struct representing program data
 	struct ENGINE_API ProgramData {
 		std::vector<Command> cmd; // Vector storing the instructions
+
+		bool empty() const;
+		size_t size() const;
+		const Command& at(size_t i) const;
 	};
 
-	// Methods for ProgramData
-	bool empty();
-	size_t size();
-	const Command& at(size_t index);
+	// Numerical integrator methods
+	enum class IntegratorMethod {
+		Euler,
+		Midpoint,
+		Heun,
+		Ralston,
+		RK4
+	};
+
+	// Enum representing the state of the program
+	enum ProgramState {
+		Empty,
+		Running,
+		Paused,
+		Stopped,
+		Completed,
+		Faulted
+	};
+
+	// Struct for program status
+	struct ENGINE_API ProgramStatus{
+		ProgramState state = ProgramState::Empty;
+		size_t pc = 0;
+	};
+
+	// Command states
+	enum CmdState {
+		NotStarted,
+		Executing,
+		Executed,
+		Failed
+	};
+
+	// Command signals (not used yet, but will be)
+	enum CmdSignalType {
+		CmdSignal_None,
+		CmdSignal_Start,
+		CmdSignal_Stop,
+		CmdSignal_Pause,
+		CmdSignal_Resume,
+		CmdSignal_Jump
+	};
+
+	// Command signal data struct
+	struct ENGINE_API CmdSignalData {
+		CmdSignalType signal = CmdSignal_None;
+		size_t jumpTarget = 0; // for jump signals
+	};
+	// Command result struct
+	struct ENGINE_API CmdResult {
+		CmdState state = CmdState::NotStarted;
+		CmdSignalData signalData;
+		std::string message;
+	};
 } // namespace interpreter

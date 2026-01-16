@@ -44,9 +44,6 @@ namespace gui {
         _obj = _sim->getObject();
 
         if (ImGui::BeginMenu("File")) {
-
-            ImGui::Separator();
-
             if (ImGui::MenuItem("Save Layout")) {
                 ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
             }
@@ -61,12 +58,12 @@ namespace gui {
                 _sim->resetView();
                 LOG_INFO("Scene view reset to default position and orientation.");
             }
-            if (ImGui::MenuItem("Reset HDR")) {
-                _sim->resetHDRToPreset();
-            }
             if (ImGui::MenuItem("Properties")) {
                 // Placeholder for future properties dialog
             }
+            /*if (ImGui::MenuItem("Reset HDR")) {
+                _sim->resetHDRToPreset();
+            }*/
             ImGui::EndMenu();
         }
 
@@ -74,29 +71,12 @@ namespace gui {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
             if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
-            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+            //if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
 
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Render")) {
-
-
-            if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) {
-                l = render::LookPreset::Studio;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-            }
-            if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) {
-                l = render::LookPreset::Cinematic;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-            }
-
-            ImGui::Separator();
-
             if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) {
                 q = render::QualityPreset::Low;
                 _sim->applyRenderProfile(render::MakeSettings(l, q), l);
@@ -114,14 +94,29 @@ namespace gui {
                 _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
 
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) {
+                l = render::LookPreset::Studio;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            }
+            if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) {
+                l = render::LookPreset::Cinematic;
+                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
+                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            }
+
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Robotic Arms")) {
+        /*if (ImGui::BeginMenu("Robotic Arms")) {
             if (ImGui::MenuItem("Select Model")) {
                 _showRobotSelector = true;
             }
             ImGui::EndMenu();
-        }
+        }*/
         if (ImGui::BeginMenu("Shader"))
         {
             // Reload shader button
@@ -170,6 +165,10 @@ namespace gui {
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
         if (ImGui::BeginMenuBar()) {
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 8.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 4.0f));
+
             const bool wasRunning = simulationRunning; // snapshot
 
             if (wasRunning) {
@@ -218,8 +217,11 @@ namespace gui {
                     diagTime = 0.0f;
                 }
             }
+			ImGui::PopStyleVar(3);
             ImGui::EndMenuBar();
         }
+
+		beginControlPanel("ControlPanel"); // Begin Child Panel
 
         roboticArmSelector();
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
@@ -233,6 +235,8 @@ namespace gui {
         if (ImGui::CollapsingHeader("Display")) { displaySettings(); }
 
         sceneObjectsTable();
+
+		endControlPanel(); // End Child Panel
 
         ImGui::End();
         ImGui::PopStyleColor();
@@ -790,4 +794,35 @@ namespace gui {
 
 		ImGui::EndChild();
     }
+
+	// --- HELPER FUNCTIONS ---
+
+	// Begin Control Panel Helper
+    void ControlPanel::beginControlPanel(const char* id, ImVec2 size) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+
+        ImGui::BeginChild(id, size, true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+    }
+
+	// End Control Panel Helper
+    void ControlPanel::endControlPanel() {
+        ImGui::EndChild();
+        ImGui::PopStyleVar(4);
+    }
+
+	// Section Header Helper
+    static void SectionHeader(const char* title, const char* desc = nullptr) {
+        ImGui::Spacing();
+        ImGui::TextUnformatted(title);
+        if (desc) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", desc);
+        }
+        ImGui::Separator();
+        ImGui::Spacing();
+    }
+    
 }

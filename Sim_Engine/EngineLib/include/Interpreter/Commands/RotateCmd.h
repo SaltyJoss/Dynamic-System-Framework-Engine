@@ -6,8 +6,6 @@
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
 
-using namespace mathlib;
-
 namespace commands {
 	// Enum for rotation target type
 	enum class RotateTargetType {
@@ -19,7 +17,7 @@ namespace commands {
 	// Struct for rotation target
 	struct RotateTarget {
 		RotateTargetType type = RotateTargetType::AxisMask;
-		AxisMask axisMask;
+		utils::AxisMask axisMask;
 		std::string linkName = "";
 		std::string objID = "";
 	};
@@ -30,16 +28,20 @@ namespace commands {
 		// Constructor
 		RotateCmd(RotateTarget target, double omega, double startDeg = 0.0, double endDeg = 0.0);
 
-		std::string_view getName() const { return "ROTATE"; }
+		std::string_view getName() const { return "rotate"; }
 
-		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
+		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
 
-		CmdResult getResult() const { return _result; }
-		void setResult(const CmdResult& result) { _result = result; }
+		// Getters and setters for result
+		program_data::CmdResult getResult() const { return _result; }
+		void setResult(const program_data::CmdResult& result) { _result = result; }
+
+		// Get current result
+		program_data::CmdResult currentResult() const override { return getResult(); }
 
 		void execute() override;
 
-		CmdResult update(CommandContextMotion& cntx, double dt) override;
+		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 	private:
 		RotateTarget _target{};
 		double _omega = 0.0;      // Angular velocity (deg/s)
@@ -50,7 +52,6 @@ namespace commands {
 		double _totalRotated = 0.0; // Total rotated angle
 
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
-
 
 	protected:
 		// Mark the command as failed with a message

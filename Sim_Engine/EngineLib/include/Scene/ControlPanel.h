@@ -4,97 +4,6 @@
 //            File: ControlPanel.h
 //=============================================
 // GUI Control Panel for interacting with the simManager.
-// 
-// Summary:
-// ============================================
-// 
-// public:
-// --------------------------------------------
-// ControlPanel(simManager* sceneView)
-//      -> Constructor that initializes the ControlPanel with a reference to the simManager.
-// render(simManager* sceneView)
-//      -> Renders the control panel GUI scene.
-// setSimulationCallback(const std::function<void(bool)>& callback)
-//      -> Sets the callback function to be called when the simulation state changes.
-// setMeshLoadCallback(const std::function<void(const std::string&)>& callback)
-//      -> Sets the callback function to be called when a new mesh is loaded.
-// --------------------------------------------
-// 
-// private:
-// --------------------------------------------
-// void simulationProperties()
-//      -> Renders the simulation properties section of the control panel.
-// void cameraProperties()
-//      -> Renders the camera properties section of the control panel.
-// void objectProperties()
-// 	    -> Renders the object properties section of the control panel.
-// void linkProperties()
-//      -> Renders the link properties section of the control panel.
-// void displaySettings()
-//      -> Renders the display settings section of the control panel.
-// void stats()
-//      -> Renders the simulation statistics section of the control panel.
-// void roboticArmSelector()
-//      -> Renders the robotic arm selector section of the control panel.
-// void roboticCardDisplay(const char* name, const char* company)
-//      -> Renders a card for a robotic arm model in the selector.
-// void sceneObjectsTable()
-//      -> Renders the list of scene objects in the control panel.
-// --------------------------------------------
-// 
-// Internal State Variables:
-// --------------------------------------------
-// bool simulationRunning
-//      -> Indicates whether the simulation is currently running.
-// bool _showRobotSelector
-//      -> Indicates whether the robotic arm selector is visible.
-// bool _robotRequested
-// 	    -> Indicates whether a robotic arm has been requested for loading.
-// bool _hasRobot
-// 	    -> Indicates whether a robotic arm is currently loaded in the scene.
-// std::string _requestedRobot
-//      -> Stores the name of the requested robotic arm model.
-// float simulationSpeed
-//      -> Controls the speed of the simulation.
-// int povMode
-//      -> Controls the point-of-view mode of the camera.
-// float velocity
-//      -> Controls the velocity parameter for robotic arm links.
-// float torque
-//      -> Controls the torque parameter for robotic arm links.
-// float linkLength
-//      -> Controls the length parameter for robotic arm links.
-// float damping
-//      -> Controls the damping parameter for robotic arm links.
-// float position
-//      -> Controls the position parameter for robotic arm links
-// double PI
-// 	    -> Constant value for PI.
-// std::shared_ptr<scene::Mesh> _mesh
-//      -> Shared pointer to the mesh being manipulated.
-// scene::Light* _sunLight
-//      -> Pointer to the sun light in the scene.
-// scene::Object* _obj
-//      -> Pointer to the currently selected object in the scene.
-// ImGui::FileBrowser _meshLoad
-//      -> File browser for loading mesh files.
-// ImGui::FileBrowser _hdrLoad
-//      -> File browser for loading HDR environment files.
-// std::string _currentMeshFile
-//      -> Stores the name of the currently loaded mesh file.
-// std::string _currentHDRFile
-//      -> Stores the name of the currently loaded HDR file.
-// std::function<void(const std::string&)> meshLoadCallback
-// 	    -> Callback function to be called when a new mesh is loaded.
-// std::function<void(bool)> simCallback
-//      -> Callback function to be called when the simulation state changes.
-// simManager* _sim
-// 	    -> Pointer to the associated simManager.
-// simManager::ControlMode* _controlMode
-//      -> Pointer to the current control mode of the simManager.
-// Selection _selection
-//      -> Stores the current selection state in the control panel.
-//--------------------------------------------
 //
 // ============================================
 //              GitHub: SaltyJoss
@@ -162,6 +71,10 @@ namespace gui {
         void roboticCardDisplay(const char* name, const char* company);
 
         void sceneObjectsTable();
+
+		// Helper Methods
+        void beginControlPanel(const char* id, ImVec2 size = ImVec2(0, 0));
+		void endControlPanel();
   
         // Menu Button States
         bool _showRobotSelector = false;

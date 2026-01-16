@@ -19,28 +19,46 @@ namespace gui {
 
 		_load.SetTitle("Load Command Script");
 		_load.SetDirectory(_currentScriptPath);
-		_load.SetTypeFilters({ ".txt", ".scl" });
+		_load.SetTypeFilters({ ".dsl", ".txt" });
+		_load.SetCurrentTypeFilterIndex(1); // default to .dsl
 
 		_save.SetTitle("Save Command Script");
 		_save.SetDirectory(_currentScriptPath);
-		_save.SetTypeFilters({ ".txt", ".scl" });
-	}// .scl ([S]ystem [C]ommand [L]anguage), the MGRE scripting extension
+		_save.SetTypeFilters({ ".dsl", ".txt" });
+		_save.SetCurrentTypeFilterIndex(1); // default to .dsl
+	}// .dsl ([Dynamical [S]ystems [L]anguage), a domain-specific language for defining constrained dynamical systems in MGRE
 
+	// Destructor
 	CommandScriptEditor::~CommandScriptEditor() {
 		_script.clear();
 		_isRunning = false;
 	}
 
+	static int textResizeCallback(ImGuiInputTextCallbackData* data) {
+		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+			auto* str = static_cast<std::string*>(data->UserData);
+			str->resize(data->BufTextLen);
+			data->Buf = str->data();
+		}
+		return 0;
+	}
+
+	static std::string filenameOnly(const std::string& path) {
+		if (path.empty()) return "<...>";
+		return std::filesystem::path(path).filename().string();
+	}
+	
+	// Draw the menu items
 	void CommandScriptEditor::drawMenus() {
 		double dt = ImGui::GetIO().DeltaTime;
 
+		// File menu for loading/saving scripts
 		if (ImGui::BeginMenu("Script")) {
 			if (ImGui::MenuItem("Load")) {
 				_load.Open();
-				tryLoadFromDialog();
 			}
 			if (ImGui::MenuItem("Save")) {
-				if (_currentScriptFile == "<...>") {
+				if (_currentScriptFile == "Engine/assets/scripts") {
 					ImGui::OpenPopup("Save Command Script");
 				}
 				else {
@@ -49,12 +67,45 @@ namespace gui {
 				}
 			}
 			if (ImGui::MenuItem("Save As")) {
-				ImGui::OpenPopup("Save Command Script");
+				_pendingSavePath = _currentScriptPath;
+				_pendingSaveName = "unititledScript.dsl";
+				_requestSaveAsPopup = true;
 			}
+
 			ImGui::EndMenu();
 		}
 
-		saveAsPopup();
+		// AFTER menu closes
+		if (_requestSaveAsPopup) {
+			ImGui::OpenPopup("Save Command Script");
+			_requestSaveAsPopup = false;
+		}
+		const bool loadedThisFrame = tryLoadFromDialog();
+		renderSaveAsPopup();
+
+		if (loadedThisFrame) {
+			_script.clear();
+
+			std::string tmp;
+			tmp.reserve(_scriptText.size());
+
+			for (char c : _scriptText) {
+				if (c == '\0') break;
+				if (c == '\n') {
+					if (!tmp.empty() && tmp.back() == '\r') { tmp.pop_back(); }
+					_script.push_back(tmp);
+					tmp.clear();
+				}
+				else { tmp.push_back(c); }
+			}
+			if (!tmp.empty()) { _script.push_back(tmp); }
+
+			selectedLines.clear();
+			lastClickedLine = -1;
+
+			LOG_INFO("Command script loaded from file: %s", _currentScriptFile.c_str());
+			D_INFO("Command script loaded from file: %s", _currentScriptFile.c_str());
+		}
 
 		// Run/Stop button for the command script
 
@@ -68,14 +119,12 @@ namespace gui {
 
 		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
 			_isRunning = !_isRunning;
+			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
+			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 
 			if (!_isRunning) {
 				// stopping
 				if (_program) _program->stop();
-
-				LOG_INFO("Command script stopped.");
-				D_INFO("Command script stopped.");
-
 				_isRunning = false;
 			}
 			else {
@@ -88,14 +137,12 @@ namespace gui {
 				_parser = new interpreter::Parser(_program);
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
+				// Remove trailing null character if present
+				std::string code = _scriptText;
+				if (!code.empty() && code.back() == '\0') code.pop_back();
+
 				_wrapper->runProgram(_scriptText);
-
-				LOG_INFO("Command script started.");
-				D_INFO("Command script started.");
 			}
-
-			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
-			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
 		}
 
 		if (wasRunning) {
@@ -103,19 +150,36 @@ namespace gui {
 		}
 
 		if (_isRunning && _program) {
-			_program->step(dt);
-
-			if (_program->isStopped()) {
-				_isRunning = false;
-
-				delete _wrapper; _wrapper = nullptr;
-				delete _parser;  _parser = nullptr;
-				delete _program; _program = nullptr;
-
-				LOG_INFO("Command script completed.");
-				D_INFO("Command script completed.");
+			if (!_program) {
+				terminateScript("Command script stopped -> program is null.", true);
+				return;
 			}
+			
+			interpreter::IStoredProgram* prog = _program; // need a snapshot in case of termination
+			prog->step(dt);
+
+			if (prog->isEmpty()) { terminateScript("Command script stopped -> program is empty.", true); return; }
+			if (prog->isFaulted()) { terminateScript("Command script stopped due to fault.", true); return; }
+			if (prog->isCompleted()) { terminateScript("Command script completed.", false); return; }
+			if (prog->isStopped() && !prog->isCompleted()) { terminateScript("Command script stopped.", true); return; }
 		}
+	}
+
+	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
+		_isRunning = false;
+
+		if (fault) {
+			LOG_WARN("%s", reason);
+			D_FAIL("%s", reason);
+		}
+		else {
+			LOG_INFO("%s", reason);
+			D_SUCCESS("%s", reason);
+		}
+
+		delete _wrapper; _wrapper = nullptr;
+		delete _parser;  _parser = nullptr;
+		delete _program; _program = nullptr;
 	}
 
 	void CommandScriptEditor::render() {
@@ -124,6 +188,8 @@ namespace gui {
 
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
 		ImGui::Begin("Command Code Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
+
+		beginEditorPanel("ScriptEditorPanel");
 
 		if (ImGui::BeginTabBar("Debug Tabs")) {
 			if (ImGui::BeginTabItem("Code Editor")) {
@@ -138,163 +204,68 @@ namespace gui {
 			ImGui::EndTabBar();
 		}
 
+		endEditorPanel();
+
 		ImGui::End();
 		ImGui::PopStyleColor();
 	}
 
-	// Callback to handle dynamic resizing of the text buffer
-	static int TextResizeCallback(ImGuiInputTextCallbackData* data) {
-		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-			auto* str = static_cast<std::string*>(data->UserData);
-			str->resize(data->BufTextLen);
-			data->Buf = str->data();
-		}
-		return 0;
-	}
-
 	void CommandScriptEditor::renderEnvironment() {
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar
-			| ImGuiWindowFlags_AlwaysVerticalScrollbar;
+		const std::string fileLabel = filenameOnly(_currentScriptFile);
 
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
-		ImGui::BeginChild("ScriptEditor", ImVec2(0, -30), true, window_flags);
-
-		ImGui::Text("Enter command script below:");
+		// Header info
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Script:");
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", fileLabel.c_str());
 
 		ImGui::Separator();
+
+		const float statusH = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+		ImGui::BeginChild("EditorScroll", ImVec2(0, -statusH), false,
+			ImGuiWindowFlags_HorizontalScrollbar);
+
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
+		// Ensure _scriptText has at least 1 char so data() is valid for ImGui
+		if (_scriptText.empty()) _scriptText.push_back('\0');
+
+
+		ImGuiInputTextFlags flags =
+			ImGuiInputTextFlags_AllowTabInput |
+			ImGuiInputTextFlags_CallbackResize;
 
 		ImGui::InputTextMultiline(
 			"##editor",
 			_scriptText.data(),
-			_scriptText.capacity() + 1,
+			_scriptText.size() + 1,
 			ImVec2(-FLT_MIN, -FLT_MIN),
-			ImGuiInputTextFlags_CallbackResize,
-			TextResizeCallback,
+			flags,
+			textResizeCallback,
 			&_scriptText
 		);
 
-		// Display script lines with selection
-		for (int i = 0; i < (int)_script.size(); ++i) {
-			const auto& line = _script[i];
-			bool selected = selectedLines.count(i) > 0;
-			// Handle line selection
-			if (ImGui::Selectable(line.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
-				if (ImGui::GetIO().KeyShift && lastClickedLine != -1) {
-					// Range selection
-					int start = std::min(lastClickedLine, i);
-					int end = std::max(lastClickedLine, i);
-					for (int j = start; j <= end; ++j) {
-						selectedLines.insert(j);
-					}
-				}
-				else if (ImGui::GetIO().KeyCtrl) {
-					// Toggle selection
-					if (selected) {
-						selectedLines.erase(i);
-					}
-					else {
-						selectedLines.insert(i);
-					}
-					lastClickedLine = i;
-				}
-				else {
-					// Single selection
-					selectedLines.clear();
-					selectedLines.insert(i);
-					lastClickedLine = i;
-				}
-			}
-		}
-
-		// Copy selected lines to clipboard
-		if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
-			std::string clip;
-			for (int idx : selectedLines) {
-				if (idx >= 0 && idx < (int)_script.size()) {
-					clip += _script[idx] + "\n";
-				}
-			}
-			ImGui::SetClipboardText(clip.c_str());
-		}
-
-		ImGui::EndChild();
 		ImGui::PopStyleColor();
-	}
-
-	// Helper function to render inline colored text
-	static void TextInlineColored(const ImVec4& color, const char* text) {
-		ImGui::SameLine(0.0f, 0.0f);
-		ImGui::TextColored(color, "%s", text);
-	}
-
-	// examples of what I have planned, but very rough for now
-	void CommandScriptEditor::renderCmdInstructions() {
-		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
-		ImGui::Separator();
-		ImGui::NewLine();
-
-		ImGui::Text("Format:");
-
-		ImGui::NewLine();
-		ImGui::Separator();
-
-		// Format: COMMAND <identifier>/<axis> <args1> <args2> ... "~ Description"
-		ImGui::TextColored(CMD_COL, "COMMAND ");
-		TextInlineColored(VEC_COL, "<identifier>");
-		TextInlineColored(ARG_COL, "<arg1,arg2,arg3,...,arg_n>");
-		TextInlineColored(DESC_COL, "# Description");
-
-		ImGui::Separator();
-		ImGui::NewLine();
-
-		ImGui::Text("Commands:");
-
-		ImGui::NewLine();
-		ImGui::Separator();
-		
-		// Translate command with axes
-		ImGui::TextColored(CMD_COL, "TRANSLATE ");
-		TextInlineColored(VEC_COL, "<x,y,z> ");
-		TextInlineColored(ARG_COL, "<distance> <velocity> ");
-		TextInlineColored(DESC_COL, "# Translate object to position (x, y, z)");
-
-		ImGui::Separator();
-
-		// Rotate command with object/joint ID
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "OBJ: ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using a given name/ID");
-
-		ImGui::Separator();
-
-		// Rotate command with axis
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<x,y,z> ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
-
-		ImGui::Separator();
-
-		// Rotate command with axis
-		ImGui::TextColored(CMD_COL, "ROTATE ");
-		TextInlineColored(VEC_COL, "<linkName> ");
-		TextInlineColored(ARG_COL, "<omega,startDeg,endDeg>");
-		TextInlineColored(DESC_COL, "# Rotate object by angle (deg) using x, y, z axis");
-
-		ImGui::Separator();
-
-		// Set Color command
-		ImGui::TextColored(CMD_COL, "SET_COLOR ");
-		TextInlineColored(VEC_COL, "<identifier> ");
-		TextInlineColored(VEC_COL, "<r,g,b> ");
-		TextInlineColored(DESC_COL, "~ Set object color using RGB values");
-
-		ImGui::Separator();
-
-		// More commands to be added here... :)
-
 		ImGui::EndChild();
+
+		// Footer status
+		ImGui::Separator();
+
+		// Count lines
+		int lineCount = 0;
+		for (char c : _scriptText) {
+			if (c == '\0') break;
+			if (c == '\n') ++lineCount;
+		}
+		// If there's any content, lines = newlines + 1
+		if (!_scriptText.empty() && _scriptText[0] != '\0') ++lineCount;
+
+
+		// basic status: character count + quick hint
+		ImGui::TextDisabled("Lines: %d", lineCount);
+		ImGui::SameLine(); ImGui::TextDisabled(" | ");
+		ImGui::SameLine(); ImGui::TextDisabled("Chars: %d", (int)_scriptText.size());
+		ImGui::SameLine();  ImGui::TextDisabled("|");
+		ImGui::SameLine(); ImGui::TextDisabled("State: %s", _isRunning ? "Running" : "Idle");
 	}
 
 	bool CommandScriptEditor::tryLoadFromDialog() {
@@ -311,12 +282,17 @@ namespace gui {
 		}
 
 		_scriptText.clear();
-		char line[1024];
-		while (fgets(line, sizeof(line), file)) {
-			_scriptText += line; // keep original newlines
-		}
 
+		char lineBuf[1024];
+		while (fgets(lineBuf, sizeof(lineBuf), file)) {
+			_scriptText += lineBuf;
+		}
 		fclose(file);
+
+		// Ensure null-termination
+		if (_scriptText.empty() || _scriptText.back() != '\0') {
+			_scriptText.push_back('\0');
+		}
 
 		_currentScriptFile = filePath;
 		_currentScriptPath = filePath.substr(0, filePath.find_last_of("/\\"));
@@ -332,11 +308,13 @@ namespace gui {
 	bool CommandScriptEditor::trySaveScriptToFile(const std::string& filepath) {
 		FILE* file = nullptr;
 		if (fopen_s(&file, filepath.c_str(), "w") != 0 || !file) {
-			LOG_ERROR("Failed to open script file for writing: %s", filepath.c_str());
+			LOG_ERROR("Failed to save to script file for writing: %s", filepath.c_str());
 			return false;
 		}
 
-		fwrite(_scriptText.data(), 1, _scriptText.size(), file);
+		size_t n = _scriptText.size();
+		if (n > 0 && _scriptText.back() == '\0') n -= 1;
+		fwrite(_scriptText.data(), 1, n, file);
 		fclose(file);
 
 		LOG_INFO("Command script saved to file: %s", filepath.c_str());
@@ -345,68 +323,202 @@ namespace gui {
 		return true;
 	}
 
-	bool CommandScriptEditor::saveAsPopup() {
-		if (ImGui::BeginPopupModal("Save Command Script", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+	void CommandScriptEditor::renderSaveAsPopup() {
+		// Window Padding
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 12.0f));
 
-			ImGui::Text("Directory: ");
-			ImGui::SameLine();
-			ImGui::TextUnformatted(_pendingSavePath.c_str());
+		// Save As popup
+		if (!ImGui::BeginPopupModal("Save Command Script", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) { ImGui::PopStyleVar(); return; }
 
-			if (ImGui::Button("Choose Folder...")) {
-				_save.Open();
-			}
+		// Display current directory
+		ImGui::Text("Directory: ");
+		ImGui::SameLine();
+		ImGui::TextUnformatted(_pendingSavePath.c_str());
 
-			_save.Display();
-			if (_save.HasSelected()) {
-				_pendingSavePath = _save.GetSelected().string();
-				_save.ClearSelected();
-			}
+		ImGui::Spacing();
 
-			char buf[256];
-			std::snprintf(buf, sizeof(buf), "%s", _pendingSaveName.c_str());
-			if (ImGui::InputText("Filename", buf, sizeof(buf))) {
-				_pendingSaveName = buf;
-			}
+		if (ImGui::Button("Choose Folder...")) { _save.Open(); }
 
-			auto ensureExt = [](const std::string& name, const char* ext) {
-				if (name.size() < strlen(ext) || name.substr(name.size() - strlen(ext)) != ext) {
-					return name + ext;
-				}
-				return name; // already has extension
-			};
-
-			if (ImGui::Button("Save")) {
-				std::string finalName = ensureExt(_pendingSaveName, ".scl");
-				std::string fullPath = _pendingSavePath;
-
-				if (!fullPath.empty() && fullPath.back() != '/' && fullPath.back() != '\\') {
-					fullPath += "/";
-				}
-
-				fullPath += finalName;
-
-				if (trySaveScriptToFile(fullPath)) {
-					_currentScriptFile = fullPath;
-					_currentScriptPath = _pendingSavePath;
-					LOG_INFO("Command script saved to file: %s", _currentScriptFile.c_str());
-					D_SUCCESS("Command script saved to file: %s", _currentScriptFile.c_str());
-
-					ImGui::CloseCurrentPopup();
-				}
-				else {
-					LOG_ERROR("Failed to save command script to file: %s", fullPath.c_str());
-				}
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel")) {
-				ImGui::CloseCurrentPopup();
-			}
-
-			ImGui::EndPopup();
-			return true;
+		_save.Display();
+		if (_save.HasSelected()) {
+			_pendingSavePath = _save.GetSelected().string();
+			_save.ClearSelected();
 		}
 
-		return false;
+		ImGui::Spacing();
+
+		// Filename input
+		static char filenameBuf[256] = {};
+		if (_pendingSaveName.empty()) {
+			_pendingSaveName = "script.scl";
+			std::snprintf(filenameBuf, sizeof(filenameBuf), "%s", _pendingSaveName.c_str());
+		}
+
+		if (ImGui::InputText("Filename", filenameBuf, sizeof(filenameBuf))) { _pendingSaveName = filenameBuf; }
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (ImGui::Button("Save")) {
+			std::string fullPath = _pendingSavePath;
+
+			if (!fullPath.empty() && fullPath.back() != '/' && fullPath.back() != '\\') { fullPath += "/"; }
+
+			fullPath += _pendingSaveName;
+
+			if (trySaveScriptToFile(fullPath)) {
+				_currentScriptFile = fullPath;
+				_currentScriptPath = _pendingSavePath;
+				LOG_INFO("Command script saved to file: %s", _currentScriptFile.c_str());
+				D_SUCCESS("Command script saved to file: %s", _currentScriptFile.c_str());
+
+				ImGui::CloseCurrentPopup();
+			}
+			else { LOG_ERROR("Failed to save command script to file: %s", fullPath.c_str()); }
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel")) { ImGui::CloseCurrentPopup(); }
+
+		ImGui::EndPopup();
+		ImGui::PopStyleVar();
+
+	}
+
+	// Helper function to render inline colored text
+	static void TextInlineColored(const ImVec4& color, const char* text) {
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::TextColored(color, "%s", text);
+	}
+
+	void CommandScriptEditor::renderCmdInstructions() {
+		ImGui::BeginChild(
+			"CmdInstructions",
+			ImVec2(0, -30),
+			true,
+			ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar
+		);
+		ImGui::Spacing();
+
+		ImGui::SeparatorText("DSL Command Format:");
+		
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+
+		// New format: command(identifier, arg1, arg2, ...) # Description
+		ImGui::TextColored(CMD_COL, "command");
+		TextInlineColored(ARG_COL, "(identifier, arg1, arg2, ...)");
+		TextInlineColored(DESC_COL, " \'#\' Denotes a comment");
+
+		ImGui::Spacing();
+
+		ImGui::TextDisabled("Notes:");
+		ImGui::BulletText("Commands and identifiers are case-insensitive (parser lowercases).");
+		ImGui::BulletText("Strings can be quoted: \"...\" to allow spaces in paths.");
+		ImGui::BulletText("Inline comments use '#': rotate(obj, 30, 0, 90) # quarter turn");
+
+		ImGui::Spacing();
+		ImGui::SeparatorText("DSL Command List:");
+		ImGui::Spacing();
+
+		// --- TRANSLATE ---
+		// translate(obj, x, y, z, vel) or translate({x,y,z}, vel, dt) depending on your actual command design
+		ImGui::TextColored(CMD_COL, "translate");
+		TextInlineColored(ARG_COL, "(obj, ");
+		TextInlineColored(ARG_COL, "x, y, z, ");
+		TextInlineColored(ARG_COL, "distance, velocity)");
+		TextInlineColored(DESC_COL, " # Translate default object");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- ROTATE (axis mask) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "({x,y,z}, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate about axes (mask)");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- ROTATE (default object) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "(obj, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate default object (mask defaults e.g. z)");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- ROTATE (link/joint) ---
+		ImGui::TextColored(CMD_COL, "rotate");
+		TextInlineColored(ARG_COL, "(linkName, omega, startDeg, endDeg)");
+		TextInlineColored(DESC_COL, " # Rotate robot joint/link");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- SET (integrator) ---
+		ImGui::TextColored(CMD_COL, "set");
+		TextInlineColored(ARG_COL, "(integrator, euler|midpoint|heun|ralston|rk4)");
+		TextInlineColored(DESC_COL, " # Set integration method");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- COLOUR ---
+		ImGui::TextColored(CMD_COL, "colour");
+		TextInlineColored(ARG_COL, "(obj, r, g, b)");
+		TextInlineColored(DESC_COL, " # Set colour (RGB 0..1 or 0..255 depending on your design)");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- LOAD ---
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(obj, \"path/to/model.obj\")");
+		TextInlineColored(DESC_COL, " # Load object asset");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(robot, \"RobotName\" | \"path/to/robot.json\")");
+		TextInlineColored(DESC_COL, " # Load robot model");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::TextColored(CMD_COL, "load");
+		TextInlineColored(ARG_COL, "(tex, \"path/to/texture.png\")");
+		TextInlineColored(DESC_COL, " # Load texture");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::EndChild();
+	}
+
+	void CommandScriptEditor::beginEditorPanel(const char* id) {
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
+		ImGui::BeginChild(id, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+	}
+
+	void CommandScriptEditor::endEditorPanel() {
+		ImGui::EndChild();
+		ImGui::PopStyleVar(4);
 	}
 }

@@ -115,6 +115,18 @@
     <Filter Include="Source Files\src\Interpreter\Parser">
       <UniqueIdentifier>{2164e45c-1bbd-48ec-abd7-aab492050216}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter\Context">
+      <UniqueIdentifier>{b6fcb025-4480-451c-8d10-7fcc5d428f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Context">
+      <UniqueIdentifier>{0520ccc8-d340-441e-bb09-35f98d2dbbac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Utils">
+      <UniqueIdentifier>{f58c43dc-a9b9-4907-ac4a-1d37d2f760fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Utils">
+      <UniqueIdentifier>{a9e4f471-fa74-46e2-8023-77c52aeb5a4d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -357,9 +369,6 @@
     <ClInclude Include="include\Interpreter\ProgramData.h">
       <Filter>Header Files\include\Interpreter\Parsing</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\Command.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\IStoredProgram.h">
       <Filter>Header Files\include\Interpreter\Interfaces</Filter>
     </ClInclude>
@@ -372,14 +381,38 @@
     <ClInclude Include="include\Interpreter\RegisterCommand.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\CommandContextMotion.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="include\Scene\CommandScriptEditor.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Interpreter\RunWrapper.h">
       <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\CommandContextMotion.h">
+      <Filter>Header Files\include\Interpreter\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\UIContext.h">
+      <Filter>Header Files\include\Interpreter\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Command.h">
+      <Filter>Header Files\include\Interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\ColourCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\LoadCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SetCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\SimContext.h">
+      <Filter>Header Files\include\Interpreter\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Utils.h">
+      <Filter>Header Files\include\Interpreter\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\MainContext.h">
+      <Filter>Header Files\include\Interpreter\Context</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -506,20 +539,38 @@
     <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\Command.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\Parser.cpp">
       <Filter>Source Files\src\Interpreter\Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Interpreter\CommandContextMotion.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\CommandScriptEditor.cpp">
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="include\Interpreter\RunWrapper.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\CommandContextMotion.cpp">
+      <Filter>Source Files\src\Interpreter\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Command.cpp">
+      <Filter>Source Files\src\Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\UIContext.cpp">
+      <Filter>Source Files\src\Interpreter\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\ColourCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\SimContext.cpp">
+      <Filter>Source Files\src\Interpreter\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Utils.cpp">
+      <Filter>Source Files\src\Interpreter\Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

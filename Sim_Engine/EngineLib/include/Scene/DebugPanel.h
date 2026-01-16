@@ -5,64 +5,6 @@
 // =============================================
 // GUI Debug Panel for displaying logs and errors.
 //
-// Summary:
-// =============================================
-//
-// public:
-// --------------------------------------------
-// DebugPanel()
-//      -> Constructor for the DebugPanel class.
-// void render()
-//      -> Renders the debug panel GUI scene.
-// --------------------------------------------
-//
-// private:
-// --------------------------------------------
-// void renderLog()
-//      -> Renders the log section of the debug panel.
-// void renderErrorTable()
-//      -> Renders the error table section of the debug panel.
-// --------------------------------------------
-//
-// Internal State Variables:
-// --------------------------------------------
-// bool autoScroll
-//      -> Indicates whether auto-scrolling is enabled for the log.
-// std::vector<debugLogEntry> _entries
-//      -> Vector storing the log entries.
-// --------------------------------------------
-//
-// Colour keys for different log levels:
-// --------------------------------------------
-// const ImVec4 traceCol
-//		-> Grey
-// 		-> Colour for trace log entries.
-// const ImVec4 debugCol
-//		-> Light blue
-//      -> Colour for debug log entries.
-// const ImVec4 infoCol
-//		-> Blue
-//      -> Colour for info log entries.
-// const ImVec4 warnCol
-// 		-> Orange
-//      -> Colour for warning log entries.
-// const ImVec4 errorCol
-//		-> Red
-// 		-> Colour for error log entries.
-// const ImVec4 okCol
-//		-> Green
-//      -> Colour for success log entries.
-// const ImVec4 failCol
-// 		-> Dark red
-//      -> Colour for failure log entries.
-// const ImVec4 runtimeCol
-// 		-> Purple
-//      -> Colour for runtime log entries.
-// const ImVec4 outputCol
-// 		-> Light grey
-//      -> Colour for general output log entries.
-// --------------------------------------------
-//
 // ============================================
 //              GitHub: SaltyJoss
 // ============================================
@@ -83,6 +25,22 @@ namespace gui {
 		bool isError = false;
 	};
 
+	struct TerminalLine {
+		enum class Level { Info, Warn, Error, Debug };
+		Level level = Level::Info;
+		std::string text;
+	};
+
+	static ImVec4 LevelColor(TerminalLine::Level lvl) {
+		switch (lvl) {
+		case TerminalLine::Level::Info:  return ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
+		case TerminalLine::Level::Warn:  return ImVec4(0.95f, 0.85f, 0.40f, 1.0f);
+		case TerminalLine::Level::Error: return ImVec4(0.95f, 0.45f, 0.45f, 1.0f);
+		case TerminalLine::Level::Debug: return ImVec4(0.65f, 0.75f, 1.00f, 1.0f);
+		}
+		return ImVec4(1, 1, 1, 1);
+	}
+
 	class ENGINE_API DebugPanel {
 	public:
 		void render();
@@ -93,6 +51,9 @@ namespace gui {
 
 		void renderLog();
 		void renderErrorTable();
+
+		void beginDebugPanel(const char* id, ImVec2 size = ImVec2(0, 0));
+		void endDebugPanel();
 
 		std::unordered_set<int> selectedLines;
 		int lastClickedLine = -1;

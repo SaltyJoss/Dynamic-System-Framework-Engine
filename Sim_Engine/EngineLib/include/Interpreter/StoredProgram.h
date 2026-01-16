@@ -3,8 +3,7 @@
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "ICommand.h"
-#include "Scene/SimulationManager.h"
-#include "Interpreter/CommandContextMotion.h"
+#include "Interpreter/MainContext.h"
 #include <string>
 #include <vector>
 
@@ -16,12 +15,11 @@ namespace interpreter {
 	public:
 		// Constructor
 		StoredProgram(gui::simManager* sim);
+		~StoredProgram() override;
 
 		// Add a command to the program
 		void add(commands::ICommand* cmd) override;
 
-		// Load program data
-		void load(ProgramData program) override;
 		// Reset program to initial state
 		void reset() override;
 		// Clear all stored instructions
@@ -38,9 +36,12 @@ namespace interpreter {
 		ProgramStatus status() const override;
 
 		// State checkers
+		bool isEmpty() const override { return _commands.empty(); }	
 		bool isRunning() const override { return _state == ProgramState::Running; }
 		bool isPaused() const override { return _state == ProgramState::Paused; }
 		bool isStopped() const override { return _state == ProgramState::Stopped; }
+		bool isCompleted() const override { return _state == ProgramState::Completed; }
+		bool isFaulted() const override { return _state == ProgramState::Faulted; }
 
 		// Get the current instruction
 		const Command* getCurrentInstruction() const;
@@ -53,7 +54,15 @@ namespace interpreter {
 		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
 		scene::Object* defaultObject() const override { return _defaultObj; }
 
+		// Set & Get Integrator Method
+		void setIntegratorMethod(IntegratorMethod method) override;
+		IntegratorMethod getIntegratorMethod() const override;
+
 	private:
+		gui::simManager* _sim = nullptr;
+		commands::MainContext _cntx;
+		scene::Object* _defaultObj = nullptr;
+
 		// Bool for tracking if the program has reached the end
 		bool atEnd() const;
 		// Bool for tracking if there are commands left to execute
@@ -67,9 +76,6 @@ namespace interpreter {
 		int PC = 0; // Program Counter
 
 		std::vector<commands::ICommand*> _commands;
-
-		gui::simManager* _sim = nullptr;
-		commands::CommandContextMotion _cntx;
-		scene::Object* _defaultObj = nullptr;
+		IntegratorMethod _integratorMethod = IntegratorMethod::Euler; // Default integrator method
 	};
 } // namespace interpreter

@@ -2,7 +2,8 @@
 
 #include "EngineCore.h"
 #include "ICommand.h"
-#include "CommandContextMotion.h"
+#include "MainContext.h"
+#include "UIContext.h"
 
 using namespace interpreter;
 
@@ -11,9 +12,10 @@ namespace commands {
 	class ENGINE_API Command : public ICommand {
 	public:
 		// Set the command context
-		void setContext(CommandContextMotion& cntx) override { _cntx = &cntx; }
-
-		CmdResult update(CommandContextMotion& cntx, double dt) override;
+		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
+		void setContext(UIContext& cntx) override { _cntxUI = &cntx; }
+		
+		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 
 		// Execute command
 		void execute() override; // No base implementation
@@ -25,7 +27,13 @@ namespace commands {
 		// Check if the command has started
 		bool hasStarted() const override;
 
+		interpreter::IStoredProgram* getProgram() const override { return _program; }
+		void setProgram(interpreter::IStoredProgram* program) override { _program = program; }
+
 	protected:
-		CommandContextMotion* _cntx = nullptr;
+		IStoredProgram* _program = nullptr;
+
+		CommandContextMotion* _cntxMtn = nullptr;
+		UIContext* _cntxUI = nullptr;
 	};
 } // namespace commands

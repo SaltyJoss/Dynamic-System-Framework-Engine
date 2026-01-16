@@ -61,10 +61,7 @@ namespace render {
 
 		// Menu from control panel, moved here -> need to find a way to connect the two!
 		if (ImGui::BeginMenuBar()) {
-			if (_menuCallback) {
-				_menuCallback();
-			}
-
+			if (_menuCallback) { _menuCallback(); }
 			ImGui::EndMenuBar();
 		}
 

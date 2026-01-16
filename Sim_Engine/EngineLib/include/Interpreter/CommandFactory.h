@@ -7,7 +7,7 @@
 
 namespace commands {
 	// Type alias for command creator function
-	using Creator = std::function<ICommand* (const std::string id, const std::vector<std::string>& args)>;
+	using Creator = std::unique_ptr<commands::ICommand>(*)(const std::string&, const std::vector<std::string>&);
 
 	// CommandFactory class for registering and creating commands
 	class ENGINE_API CommandFactory {

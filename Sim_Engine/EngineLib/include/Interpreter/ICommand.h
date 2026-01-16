@@ -6,22 +6,30 @@
 #include <string>
 
 namespace commands {
-	class CommandContextMotion;
-}
+	class ENGINE_API CommandContextMotion;
+	class ENGINE_API UIContext;
 
-namespace commands {
 	// ICommand interface
 	class ENGINE_API ICommand {
 	public:
 		// Virtual destructor
 		virtual ~ICommand() = default;
 
-		// Set the command context
+		// Context setters
 		virtual void setContext(CommandContextMotion& cntx) = 0;
+		virtual void setContext(UIContext& cntx) = 0;
+
 		// Update command
-		virtual interpreter::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
+		virtual program_data::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
+
+		// Get current result
+		virtual program_data::CmdResult currentResult() const = 0;
+
 		// Execute command
 		virtual void execute() = 0;
+
+		virtual interpreter::IStoredProgram* getProgram() const = 0;
+		virtual void setProgram(interpreter::IStoredProgram* program) = 0;
 
 		// Mark the command as failed with a message
 		virtual void markFailed(const std::string& message) = 0;
