@@ -14,6 +14,7 @@
 #include <glm/gtx/euler_angles.hpp>  
 #include <imgui.h>
 
+#include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/MeshLoader.h"
@@ -184,6 +185,9 @@ namespace gui{
 		// For now: spawn one Object per submesh
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);
+			obj->id = _nextObjectID++;
+			obj->source.filename = filepath;
+			obj->name = m->getName().empty() ? "Object_" + std::to_string(obj->id) : m->getName();
 
 			// initialise physics state
 			obj->state.theta = Eigen::Vector3d::Zero();
@@ -227,6 +231,15 @@ namespace gui{
 		}
 
 		_objects.erase(_objects.begin() + index);
+	}
+
+	scene::Object* simManager::getObjectByID(scene::ObjectID id) {
+		for (auto& obj : _objects) {
+			if (obj && obj->id == id) {
+				return obj.get();
+			}
+		}
+		return nullptr;
 	}
 
 // --------------------------------------------------

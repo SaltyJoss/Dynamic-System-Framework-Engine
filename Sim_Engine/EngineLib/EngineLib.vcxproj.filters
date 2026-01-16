@@ -414,6 +414,9 @@
     <ClInclude Include="include\Interpreter\MainContext.h">
       <Filter>Header Files\include\Interpreter\Context</Filter>
     </ClInclude>
+    <ClInclude Include="include\Scene\ObjectID.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

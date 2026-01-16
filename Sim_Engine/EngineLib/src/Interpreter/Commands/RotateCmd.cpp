@@ -106,7 +106,7 @@ namespace commands {
 				rotationThisStepDeg);
 		}
 		else if (_target.type == RotateTargetType::ObjID) {
-			auto* obj = cntx.getDefaultObject();
+			auto* obj = cntx.getObject(_targetObjID);
 			if (!obj) {
 				markFailed("rotate(<objID>,...) target but no current object selected.");
 				D_FAIL("rotate(<objID>,...) target but no current object selected.");

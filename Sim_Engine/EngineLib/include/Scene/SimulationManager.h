@@ -20,11 +20,10 @@
 // ============================================
 
 #include "EngineCore.h"
-#include "Scene/Object.h"
+#include "Scene/ObjectID.h"
 #include "Rendering/ModelGroup.h"
-#include "Scene/Input.h"
-#include "FpsCounter.h"
 #include "Robots/RobotModel.h"
+#include "FpsCounter.h"
 #include "Platform/Logger.h"
 #include "Scene/RenderPreset.h"
 
@@ -127,13 +126,15 @@ namespace gui {
         void resize(int32_t width, int32_t height);
 
 		// Scene Objects Management
-		std::vector<std::unique_ptr<scene::Object>>& getObjects() { return _objects; }
-        scene::Object* getObject() { return _selectedObject; }
         void setSelectedObject(scene::Object* obj) { _selectedObject = obj; }
 		void addObject(std::unique_ptr<scene::Object> obj) { _objects.push_back(std::move(obj)); } // Cache the unique_ptr
-
         void deleteObject(int index);
 
+		// Scene Objects Lookup
+        std::vector<std::unique_ptr<scene::Object>>& getObjects() { return _objects; }
+        scene::Object* getObject() { return _selectedObject; }
+		scene::Object* getObjectByID(scene::ObjectID id);
+		scene::Object* getObjectByName(const std::string& name);
 
         // Physics
         void updatePhysics(double dt);
@@ -207,6 +208,11 @@ namespace gui {
         std::shared_ptr<scene::Mesh> _checkerPlane;
         std::shared_ptr<scene::Mesh> createCheckerPlane(float size = 50.0f);
 
+        scene::ObjectID _nextObjectID = 1; // Start IDs from 1
+        
+		// Name and ID mapping (for easy lookup)
+        std::unordered_map<std::string, scene::ObjectID> _nameToId;
+        std::unordered_map<scene::ObjectID, scene::Object*> _idToPtr;
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};

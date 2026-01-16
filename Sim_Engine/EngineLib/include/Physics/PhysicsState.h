@@ -6,37 +6,10 @@
 //=============================================
 // Struct encapsulating the physical state of an object in a physics simulation.
 // 
-// Summary:
-// ============================================
-// 
 // Structs:
 // --------------------------------------------
 // PhysicsState
 //    -> Represents the physical state of an object, including position, velocity, mass, inertia, and forces.
-// --------------------------------------------
-// 
-// Internal State Variables:
-// --------------------------------------------
-// Vec3 theta
-//      -> Orientation angle around a fixed axis (e.g., for 2D rotation).
-// Vec3 linearVelocity
-//      -> Velocity of the object's center of mass.
-// Vec3 angularVelocity
-//		-> Angular velocity vector for rotational motion.
-// double gravity
-// 		-> Gravitational acceleration (in m/s^2).
-// double mass
-//      -> Mass of the object (in kg).
-// double damping
-//      -> Damping coefficient for simulating energy loss (in kg/s).
-// Eigen::Matrix3d inertia
-//      -> Inertia tensor for rotational dynamics.
-// Vec3 forces
-//      -> Accumulated forces acting on the object.
-// Vec3 position
-//      -> Position of the object in world space.
-// Vec3 torques
-//      -> Accumulated torques acting on the object
 // --------------------------------------------
 // 
 // ============================================
@@ -133,7 +106,7 @@ namespace physics {
 * - Consider performance implications of hierarchical updates in the physics loop (DOCUMENT IT JOSS!!!!)
 * - Look into existing physics engines for articulated body dynamics for inspiration and best practices.
 * - Use existing 3rd Party ideas on hierarchical kinematics as reference -> e.g. ROS, Gazebo, Bullet Physics, MuJoCo, O.D.E., etc.
-* - Find other resources on robotic kinematics and dynamics to inform implementation.
+* - Find other resources on robotic kinematics and dynamics to improve understanding and implementation (I feel as though this text is really formal, need to make it scimmable)
 * 
 * Code ideas (rough syntax):
 * - Each link has a struct like:
