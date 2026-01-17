@@ -134,9 +134,7 @@ namespace scene {
 			else if (button == eInputButton::Left) {
 				delta *= 0.003f;
 				transform.position += glm::vec3(delta.x * _distance, -delta.y * _distance, 0.0f);
-
 			}
-
 		}
 
 		void setLastMousePos(const glm::vec2& pos) { _lastMousePos = pos; }

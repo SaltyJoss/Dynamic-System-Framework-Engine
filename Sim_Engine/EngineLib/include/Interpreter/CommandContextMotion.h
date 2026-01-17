@@ -6,14 +6,33 @@
 
 #include "Platform/Logger.h"
 
-namespace scene { class ENGINE_API Object; }
 namespace interpreter { class ENGINE_API StoredProgram; }
 
 namespace commands {
+	struct ENGINE_API ActiveRigidRot {
+		scene::Object* obj = nullptr;
+		mathlib::Vec3 axisUnit{ 0.0, 0.0, 0.0 };
+		mathlib::Quat qStart{ 1.0, 0.0, 0.0, 0.0 };
+		mathlib::Quat qTarget{ 1.0, 0.0, 0.0, 0.0 };
+		double maxOmega = 0.0;				// rad/s
+		double epsAngle = 0.5 * PI / 180;	// rad
+		bool active = false;
+	};
+
+	struct ENGINE_API ActiveJointRot {
+		std::string link;
+		double start = 0.0;
+		double target = 0.0;				// rad
+		double maxOmega = 0.0;				// rad/s
+		double epsAngle = 0.5 * PI / 180;	// rad
+		bool wrapShortest = true;
+		bool active = false;
+	};
+
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(gui::simManager* sim, scene::Object* obj);
+		CommandContextMotion(gui::simManager* sim, scene::ObjectID objID);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -28,10 +47,15 @@ namespace commands {
 		double getOmegaClamp() const;
 
 		gui::simManager* getSim() const { return _sim; }
-		scene::Object* getDefaultObject() const { return _defaultObj; }
-		scene::Object* getObject(scene::ObjectID objID) const;
-		void setDefaultObject(scene::Object* obj) { _defaultObj = obj;  _obj = obj; }
+		scene::ObjectID getDefaultObjectID() const { return _defaultObjID; }
+		scene::ObjectID getObjectID() const { return _objID; }
 
+		scene::Object* resolveObject(scene::ObjectID id) const;
+		scene::Object* resolveCurrentObject() const { return resolveObject(_objID); }
+		scene::Object* resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+
+		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
+		void setObjectID(scene::ObjectID id) { _objID = id; }
 
 		// --- ROTATION COMMAND METHODS ---
 
@@ -43,6 +67,12 @@ namespace commands {
 		utils::OpResult rotateJoint(std::string linkName, double angleDeg, double vel);
 		// Rotates a joint by a specified delta angle at a given velocity
 		utils::OpResult rotationJointDelta(std::string linkName, double deltaDeg, double vel);
+
+		utils::OpResult updateRigidRotateTo(double dt);
+		utils::OpResult updateJointRotateTo(double dt);
+
+		utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
+		utils::OpResult beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg);
 
 		// --- TRANSLATION COMMAND METHODS ---
 
@@ -57,23 +87,27 @@ namespace commands {
 		void stopRotation(scene::Object* obj, utils::AxisMask axes);
 		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
+
 	private:
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		RobotModel* _robot = nullptr;
-		scene::Object* _obj = nullptr;			// current object for commands
-		scene::Object* _defaultObj = nullptr;	// default object for commands
+		scene::ObjectID _objID = scene::INVALID_OBJECT_ID;
+		scene::ObjectID _defaultObjID = scene::INVALID_OBJECT_ID;
 
 		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp
+
+		ActiveRigidRot _rig;
+		ActiveJointRot _jnt;
 
 		double NormaliseOmega(double omega) const;
 		double convertOmegaToInternal(double omega) const;
 
 		Vec3 normaliseDirection(const Vec3& dir) const;
 
-		void updateJointAngles(std::string linkName, double angleDeg, double vel);
-		void applyJointAngles();
+		double getJointAngleRad(const std::string& link) const;
+		void setJointAngleRad(const std::string& link, double angleRad);
 
 		std::unordered_map<std::string, float> _jointAngles;
 

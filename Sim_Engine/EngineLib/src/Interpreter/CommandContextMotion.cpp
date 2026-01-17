@@ -7,37 +7,30 @@ using namespace mathlib;
 using namespace utils;
 
 namespace commands {
-	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::Object* obj)
-		: _sim(sim), _phys(&sim->getPhysicsSystem()), _robot(&sim->getRobotModel()), 
-		_obj(obj), _defaultObj(obj), _angularUnits(AngularUnits::DegPerSec) { }
+	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::ObjectID objID)
+		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? &sim->getRobotModel() : nullptr),
+		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
+	}
+
+	scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
+		if (!_sim) return nullptr;
+		if (id == scene::INVALID_OBJECT_ID) return nullptr;
+		return _sim->getObjectByID(id);
+	}
+
 
 	// --- GLOBAL STATE METHODS ---
 	
-	void CommandContextMotion::setAngularUnits(AngularUnits units) {
-		_angularUnits = units;
-	}
+	void CommandContextMotion::setAngularUnits(AngularUnits units) { _angularUnits = units; }
+	AngularUnits CommandContextMotion::getAngularUnits() const { return _angularUnits; }
 	
-	AngularUnits CommandContextMotion::getAngularUnits() const {
-		return _angularUnits;
-	}
-	
-	void CommandContextMotion::setOmegaClamp(double maxAbsOmega) {
-		_omegaClamp = maxAbsOmega;
-	}
-	
-	double CommandContextMotion::getOmegaClamp() const {
-		return _omegaClamp;
-	}
-
-	scene::Object* CommandContextMotion::getObject(scene::ObjectID objID) const {
-		return _sim->getObjectByID(objID);
-	}
+	void CommandContextMotion::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
+	double CommandContextMotion::getOmegaClamp() const { return _omegaClamp; }
 
 	// --- HELPER METHODS ---
 
-	inline glm::vec3 toGlm(const mathlib::Vec3& v) {
-		return glm::vec3(v.x(), v.y(), v.z());
-	}
+	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
+	inline glm::quat toGlm(const mathlib::Quat& q) { return glm::quat(q.w(), q.x(), q.y(), q.z()); }
 
 	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
 		const float x = dir.x();
@@ -52,59 +45,119 @@ namespace commands {
 		return Vec3(x * invLen, y * invLen, z * invLen);
 	}
 
-	// --- JOINT ANGLE METHODS ---
-
-	void CommandContextMotion::updateJointAngles(std::string linkName, double angleDeg, double vel) {
-		const RobotModel& robot = _sim->getRobotModel();
-
-		// Sets min and max angle limits for the joint
-		float minAngle = -360.0f; float maxAngle = 360.0f;
-
-		// Find the joint and apply limits
-		for (const auto& joint : _robot->joints) {
-			if (joint.child == linkName) {
-				if (joint.continuous) {
-					minAngle = -std::numeric_limits<float>::infinity();
-					maxAngle = std::numeric_limits<float>::infinity();
-					D_INFO_ONCE("Joint %s is continuous.", linkName.c_str());
-				}
-				else {
-					minAngle = joint.minAngle;
-					maxAngle = joint.maxAngle;
-					D_INFO_ONCE("Joint %s limits: [%.2f, %.2f]", linkName.c_str(), minAngle, maxAngle);
-				}
-
-				if (angleDeg < minAngle || angleDeg > maxAngle) {
-					D_FAIL("Angle %.2f out of limits [%.2f, %.2f] for joint %s.", angleDeg, minAngle, maxAngle, linkName.c_str());
-				}
-			}
-
-			_currentLinkName = linkName; // store current link name
-			_currentAngle = static_cast<float>(angleDeg); // store current angle
-			_jointAngles[linkName] = static_cast<float>(angleDeg); // update joint angle
+	double CommandContextMotion::getJointAngleRad(const std::string& link) const {
+		for (const auto& j : _robot->joints) {
+			if (j.child == link) { return j.angle; }
 		}
-
-		float& angle = _jointAngles[_currentLinkName];
-		_sim->setRobotLinkRotation(_currentLinkName, angle);
-
-		/*D_DEBUG("=============================");
-		D_DEBUG("Rotating joint %s from %.2f to %.2f at velocity %.2f deg/s.", linkName.c_str(), _jointAngles[linkName], static_cast<float>(angleDeg), static_cast<float>(vel));
-		D_DEBUG("=============================");*/
+		return 0.0; // or throw / assert
 	}
 
-	void CommandContextMotion::applyJointAngles() {
-		if (!_robot) return;
-		for (auto& joint : _robot->joints) {
-			auto it = _jointAngles.find(joint.child);
-			if (it != _jointAngles.end()) {
-				joint.angle = it->second;
-				D_DEBUG_ONCE("Applied angle %.2f to joint %s.", joint.angle, joint.child.c_str());
+	void CommandContextMotion::setJointAngleRad(const std::string& link, double angleRad) {
+		for (auto& j : _robot->joints) {
+			if (j.child == link) {
+				j.angle = angleRad;
+				_sim->setRobotLinkRotation(link, glm::degrees(angleRad));
+				return;
 			}
 		}
-		/*
-		D_DEBUG("=============================");
-		D_DEBUG("Set rotation of link %s to angle %.2f.", _currentLinkName.c_str(), _currentAngle);
-		D_DEBUG("=============================");*/
+	}
+
+	// --- JOINT ANGLE METHODS ---
+
+	utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
+		if (!_rig.active || !_rig.obj) { 
+			D_INFO("No active rigid rotation.");
+			return OpResult::Success();
+		}
+
+		auto& s = _rig.obj->state;
+
+		Quat q = s.q;
+		Quat q_err = _rig.qTarget * q.conjugate();
+		q_err.normalize();
+
+		if (q_err.w() < 0.0) { q_err.coeffs() *= -1.0; }
+
+		double angle = 2.0 * std::acos(glm::clamp((double)q_err.w(), -1.0, 1.0)); // [0,pi] clamp
+		
+		if (angle < _rig.epsAngle) {
+			s.angularVelocity = Vec3::Zero();
+			_rig.active = false;
+			return OpResult::Success();
+		}
+
+		Vec3 axis;
+		double sinHalf = std::sqrt(std::max(0.0, 1.0 - (double)q_err.w() * (double)q_err.w()));
+		axis = (sinHalf < 1e-8) ? _rig.axisUnit : Vec3(q_err.x(), q_err.y(), q_err.z()) / (float)sinHalf;
+
+		double omega = std::min(_rig.maxOmega, angle / std::max(dt, 1e-6)); // simple “arrive in <= 1 step” clamp
+		Vec3 w = (float)omega * axis.normalized();
+
+		s.angularVelocity = w;
+		return OpResult::Success();
+	}
+
+	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
+		if (!_jnt.active) {
+			D_INFO("No active joint rotation.");
+			return OpResult::Success();
+		}
+
+		double current = getJointAngleRad(_jnt.link);
+		double err = _jnt.target - current; // err = target - current
+
+		if (_jnt.wrapShortest) { err = wrapToPi((float)err); }
+
+		if (std::abs(err) < _jnt.epsAngle) {
+			setJointAngleRad(_jnt.link, _jnt.target);
+			_jnt.active = false;
+			return OpResult::Success();
+		}
+
+		double step = std::clamp(err, -_jnt.maxOmega * dt, _jnt.maxOmega * dt);
+		setJointAngleRad(_jnt.link, current + step);
+
+		return OpResult::Success();
+	}
+
+	utils::OpResult CommandContextMotion::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
+		if (!obj) return OpResult::Failure("beginRigidRotateTo -> null object.");
+		const double axisLen = axisUnit.norm();
+		if (axisLen < 1e-8) return OpResult::Failure("beginRigidRotateTo => axis is zero.");
+
+		axisUnit = axisUnit / axisLen;
+
+		auto& s = obj->state;
+
+		_rig.obj = obj;
+		_rig.axisUnit = axisUnit;
+		_rig.qStart = s.q;
+
+		const double angRad = angleDeg * (PI / 180.0);
+		Quat dq(std::cos(0.5 * angRad),
+			axisUnit.x() * std::sin(0.5 * angRad),
+			axisUnit.y() * std::sin(0.5 * angRad),
+			axisUnit.z() * std::sin(0.5 * angRad));
+
+		_rig.qTarget = (dq * _rig.qStart).normalized();
+		_rig.maxOmega = maxOmegaDegPerSec * (PI / 180.0); // rad/s
+		_rig.active = true;
+		return OpResult::Success();
+	}
+
+	utils::OpResult CommandContextMotion::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
+		if (!_robot) return OpResult::Failure("beginJointRotateTo -> no robot.");
+		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
+
+		const double current = getJointAngleRad(link);
+		const double target = angleDeg * (PI / 180.0);
+
+		_jnt.link = link;
+		_jnt.start = current;
+		_jnt.target = target;
+		_jnt.maxOmega = maxOmegaDegPerSec * (PI / 180.0);
+		_jnt.active = true;
+		return OpResult::Success();
 	}
 
 	// --- STOP MOTION METHODS ---
@@ -153,12 +206,12 @@ namespace commands {
 	}
 
 	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
-		if (!_obj || !_obj->getMesh()) {
+		scene::Object* obj = resolveCurrentObject();
+		if (!obj || !obj->getMesh()) {
 			D_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
-
-		auto& s = _obj->state;
+		auto& s = obj->state;
 
 		// Normalize omega based on current angular units
 		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
@@ -167,11 +220,6 @@ namespace commands {
 		if (axes.y) { s.angularVelocity.y() = internalOmega; }
 		if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
-
-		/*D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
-			omega, (int)_angularUnits, internalOmega);*/
-
-		// return success
 		return OpResult::Success();
 	}
 	
@@ -188,53 +236,52 @@ namespace commands {
 		if (!_robot) return OpResult::Failure("No robot model.");
 		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
-		float current = 0.0f;
-		bool found = false;
 		for (auto& j : _robot->joints) {
-			if (j.child == linkName) { current = j.angle; found = true; break; }
+			if (j.child == linkName) {
+				j.angle = (float)j.angle + glm::radians((float)deltaDeg);  // radians internal
+				_sim->setRobotLinkRotation(linkName, glm::degrees((float)j.angle));
+				return OpResult::Success();
+			}
 		}
-		if (!found) return OpResult::Failure("Joint not found for linkName.");
-
-		float next = current + static_cast<float>(deltaDeg);
-		_sim->setRobotLinkRotation(linkName, next); // <-- delta applied
-
-		return OpResult::Success();
+		return OpResult::Failure("Joint not found for linkName.");
 	}
 
 	// --- TRANSLATION COMMAND METHODS ---
 
 	OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double vel) {
-		if (!_obj) {
+		scene::Object* obj = resolveCurrentObject();
+		if (!obj) {
 			D_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 
 		const Vec3 translation = normaliseDirection(direction) * static_cast<float>(distance);
-		_obj->transform.position += toGlm(translation);
+		obj->transform.position += toGlm(translation);
 		return OpResult::Success();
 	}
 
 	OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) {
-		if (!_obj) {
+		scene::Object* obj = resolveCurrentObject();
+		if (!obj) {
 			D_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 
 		Vec3 translation = Vec3::Zero();
 		if (axes.x) {
-			_obj->state.linearVelocity.x() = vel;
+			obj->state.linearVelocity.x() = vel;
 			translation.x() = static_cast<float>(vel * dt);
 		}
 		if (axes.y) {
-			_obj->state.linearVelocity.y() = vel;
+			obj->state.linearVelocity.y() = vel;
 			translation.y() = static_cast<float>(vel * dt);
 		}
 		if (axes.z) {
-			_obj->state.linearVelocity.z() = vel;
+			obj->state.linearVelocity.z() = vel;
 			translation.z() = static_cast<float>(vel * dt);
 		}
 
-		_obj->transform.position += toGlm(translation);
+		obj->transform.position += toGlm(translation);
 		return OpResult::Success();
 	}
 

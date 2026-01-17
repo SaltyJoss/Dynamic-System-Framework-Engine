@@ -127,6 +127,18 @@
     <Filter Include="Source Files\src\Interpreter\Utils">
       <UniqueIdentifier>{a9e4f471-fa74-46e2-8023-77c52aeb5a4d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands\RigidBody">
+      <UniqueIdentifier>{6cd26ae9-ba3e-4516-a20a-4059ede85e11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands\Robotic">
+      <UniqueIdentifier>{c1f443c5-b400-4128-a9df-286d16d35b08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands\RigidBody">
+      <UniqueIdentifier>{a5703ff9-4c26-4efc-91ac-20736e327c1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands\Robotics">
+      <UniqueIdentifier>{b05652db-e87a-498f-b078-36b1d49c6699}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -360,9 +372,6 @@
     <ClInclude Include="include\Interpreter\StoredProgram.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\Commands\RotateCmd.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\Parser.h">
       <Filter>Header Files\include\Interpreter\Parsing</Filter>
     </ClInclude>
@@ -413,6 +422,21 @@
     </ClInclude>
     <ClInclude Include="include\Scene\ObjectID.h">
       <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateJointByCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\Robotic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateJointToCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\Robotic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateByCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\RigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\RotateToCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\RigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SpinCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\RigidBody</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -536,9 +560,6 @@
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\Parser.cpp">
       <Filter>Source Files\src\Interpreter\Parser</Filter>
     </ClCompile>
@@ -568,6 +589,21 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Utils.cpp">
       <Filter>Source Files\src\Interpreter\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateJointByCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\Robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateJointToCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\Robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateByCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\RigidBody</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\RotateToCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\RigidBody</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\RigidBody</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

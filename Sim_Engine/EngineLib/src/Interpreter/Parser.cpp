@@ -45,15 +45,15 @@ namespace interpreter {
 
 	// Determine if a command requires an identifier
 	static bool requiresIdentifier(std::string_view cmdName) {
-		if (cmdName == "rotate") return true;
-		if (cmdName == "translate") return true;
-		if (cmdName == "load") return true;
-		if (cmdName == "set") return true;
-		if (cmdName == "step") return false;
-		if (cmdName == "pause") return false;
-		if (cmdName == "stop") return false;
-		if (cmdName == "colour") return true;
-		return false;
+		std::string s = toLower(cmdName);
+		return	s == "spin"				||
+				s == "rotateby"			||
+				s == "rotateto"			||
+				s == "rotatejointby"	||
+				s == "rotatejointto"	||
+				s == "translate"		||
+				s == "set"				||
+				s == "load";
 	}
 
 	// Splits a string into arguments, respecting quotes and nested braces/parentheses

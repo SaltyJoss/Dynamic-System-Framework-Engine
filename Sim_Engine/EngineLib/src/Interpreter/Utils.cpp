@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Scene/ObjectID.h"
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
@@ -17,9 +18,9 @@ namespace utils {
 			};
 
 		for (size_t i = 0; i < s.size(); ++i) {
-			if (delims.find(s[i])) {
+			if (delims.find(s[i]) != std::string_view::npos) {
 				push_token(start, i);
-				start = i + 1;
+				start = i + 1;	
 			}
 		}
 		push_token(start, s.size());
@@ -128,5 +129,53 @@ namespace utils {
 		char hex[8];
 		std::snprintf(hex, sizeof(hex), "#%02X%02X%02X", static_cast<int>(rgb.x() * 255.0f), static_cast<int>(rgb.y() * 255.0f), static_cast<int>(rgb.z() * 255.0f));
 		return std::string(hex);
+	}
+
+	// Helper function to parse double from string_view
+	std::optional<double> utils::parseDouble(const std::string_view s) {
+		double out = 0.0;
+		auto first = s.data();
+		auto last = s.data() + s.size();
+
+		auto res = std::from_chars(first, last, out); // format: rotate(target, omega, startDeg, endDeg)
+		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
+		return out;
+	}
+
+	static std::string stripBraces(std::string s) {
+		if (!s.empty() && s.front() == '{' && s.back() == '}') return s.substr(1, s.size() - 2);
+		return s;
+	}
+
+
+	AxisMask utils::parseAxisMask(const std::string& args) {
+		std::string s = stripBraces(args);
+
+		AxisMask mask{}; // <-- start empty (no recursion - trust me this was a pain)
+		for (char c : s) {
+			switch (c) {
+			case 'X': case 'x': mask.x = true; break;
+			case 'Y': case 'y': mask.y = true; break;
+			case 'Z': case 'z': mask.z = true; break;
+			default: break;
+			}
+		}
+
+		if (!mask.any()) {
+			D_WARN("No valid axes found in axis mask: %s. Defaulting to Z axis.", s.c_str());
+			mask.z = true;
+		}
+		return mask;
+	}
+
+	bool utils::tryParseObjID(const std::string& s, scene::ObjectID& out) {
+		std::string_view v = s;
+		if (v.rfind("obj", 0) == 0) v.remove_prefix(3);
+
+		unsigned id = 0;
+		auto res = std::from_chars(v.data(), v.data() + v.size(), id);
+		if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) return false;
+		out = (scene::ObjectID)id;
+		return true;
 	}
 }

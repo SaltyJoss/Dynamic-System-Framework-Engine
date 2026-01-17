@@ -79,6 +79,15 @@ inline float wrapRad(float a) {
 	return a;
 }
 
+inline float wrapToPi(float a) {
+	const float PI = 3.14159265358979323846f;
+	const float TWO_PI = 2.0f * PI;
+
+	a = std::fmod(a + PI, TWO_PI);
+	if (a < 0.0f) a += TWO_PI;
+	return a - PI;
+}
+
 inline float clampJointAngle(const RobotJoint& joint, float angle) {
 	if (joint.continuous) {
 		return wrapRad(angle);

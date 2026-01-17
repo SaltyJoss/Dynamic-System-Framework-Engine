@@ -5,6 +5,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "Scene/ObjectID.h"
+
 #include "Platform/Logger.h"
 
 namespace utils {
@@ -53,4 +55,9 @@ namespace utils {
 	// --- Colour Utilities ---
 	mathlib::Vec3 hexToRGB(const std::string& hex);
 	std::string rgbToHex(const mathlib::Vec3& rgb);
+
+	// --- Command Utilities ---
+	std::optional<double> parseDouble(const std::string_view s);
+	AxisMask parseAxisMask(const std::string& s);
+	bool tryParseObjID(const std::string& s, scene::ObjectID& out);
 } // namespace commands
