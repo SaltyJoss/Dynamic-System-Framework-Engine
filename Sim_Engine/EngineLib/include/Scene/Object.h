@@ -99,8 +99,8 @@ namespace scene {
 			state.torques = Vec3::Zero();
 		}
 
-		Mesh* getMesh() { return _mesh.get(); }
-		const Mesh* getMesh() const { return _mesh.get(); }
+		Mesh* getMesh() { return _mesh.get(); }	// mutable version
+		const Mesh* getMesh() const { return _mesh.get(); } // const version
 
 		void update(shaders::Shader* shader) override {
 			if (_mesh) _mesh->update(shader);
@@ -145,6 +145,7 @@ namespace scene {
 	private:
 		std::shared_ptr<Mesh> _mesh;
 		glm::vec2 _lastMousePos{ 0.0f };
+		glm::vec3 albedo = glm::vec3(1.0f);
 		float _distance = 5.0f;
 	};
 }

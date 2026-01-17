@@ -396,9 +396,6 @@
     <ClInclude Include="include\Interpreter\Command.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\Commands\ColourCmd.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\Commands\LoadCmd.h">
       <Filter>Header Files\include\Interpreter\Commands</Filter>
     </ClInclude>
@@ -559,9 +556,6 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\UIContext.cpp">
       <Filter>Source Files\src\Interpreter\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Interpreter\Commands\ColourCmd.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>

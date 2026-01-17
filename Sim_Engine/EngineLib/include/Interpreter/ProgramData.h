@@ -1,6 +1,8 @@
 #pragma once
 
 #include "EngineCore.h"
+#include <MathLibAPI.h>
+#include <core/Types.h>
 #include <string>
 #include <vector>
 
@@ -37,6 +39,27 @@ namespace program_data {
 		Heun,
 		Ralston,
 		RK4
+	};
+
+	// Enum for preset colours
+	enum class BlockColour {
+		Red,
+		Green,
+		Blue,
+		Yellow,
+		Cyan,
+		Magenta,
+		White,
+		Grey,
+		DarkGrey,
+		Black,
+		Custom
+	};
+
+	// Struct for colour mapping
+	struct ENGINE_API Colour {
+		BlockColour col = BlockColour::Red;
+		mathlib::Vec3 rgb = { 1.0f, 0.0f, 0.0f };
 	};
 
 	// Enum representing the state of the program

@@ -41,7 +41,6 @@ namespace commands {
 			// Formats: "{x,y,z}" or "{xyz}" or "{x y z}", etc
 			std::string axesStr = arg.substr(1, arg.size() - 2); // remove braces
 			AxisMask mask = parseAxisMask(axesStr);
-
 			if (!mask.any()) {
 				D_WARN("No valid axes found in rotate target: %s. Defaulting to Z axis.", arg.c_str());
 				return std::nullopt;

@@ -4,6 +4,7 @@
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include "Interpreter/Command.h"
+#include "Interpreter/UIContext.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,21 +15,26 @@ namespace commands {
 
 	enum class SetTargetType {
 		IntegratorMethod,
-		FunctionDefinitio
+		Function,
+		Colour // not implemented yet
 	};
 
 	struct ENGINE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
 		IntegratorMethod method = IntegratorMethod::Euler; // Default method
+		// function WOULD go here, not done yet
+		Colour colour{ BlockColour::Red, mathlib::Vec3{ 1.0, 0.0, 0.0 } };
 	};
 
 	// Class representing the SET command
 	class ENGINE_API SetCmd final : public Command {
 	public:
 		// Constructor
-		SetCmd(const std::string& id, const std::vector<std::string>& tokens);
+		SetCmd(const std::string& id, const std::string& tokens);
 		// Get the command name
-		std::string_view getName() const { return "SET"; }
+		std::string_view getName() const { return "set"; }
+		// Set the command context
+		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
 
 		// Getters and Setters for Result
 		program_data::CmdResult getResult() const { return _result; }
@@ -37,6 +43,13 @@ namespace commands {
 		// Get current result
 		program_data::CmdResult currentResult() const override { return getResult(); }
 
+		// Get current method
+		IntegratorMethod getCurrentMethod() const { return _method; }
+
+		// Colour Setters
+		void setColour(const mathlib::Vec3& rgb);
+		void setColour(const std::string& hex);
+
 		// Execute the command
 		void execute() override;
 
@@ -44,7 +57,14 @@ namespace commands {
 		SetTarget _target{};
 
 		std::string _id;
-		std::vector<std::string> _tokens;
+		std::string _tokens;
+
+		IntegratorMethod _method = IntegratorMethod::Euler;		// Default - Euler
+		mathlib::Vec3 _colRGB = mathlib::Vec3{ 1.0, 0.0, 0.0 };	// Default - RED
+		Colour _col{ BlockColour::Red };
+
+		UIContext* _uiCntx = nullptr;
+
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:

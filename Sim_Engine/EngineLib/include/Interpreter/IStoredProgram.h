@@ -46,19 +46,21 @@ namespace interpreter {
 		// Update the command state
 		virtual CmdResult updateState() = 0;
 
-		// Get Current line number
-		virtual int getCurrentLineNumber() const = 0;
-		// Set Current line number
+		// Set & Get Current line number
 		virtual void setCurrentLineNumber(int lineNumber) = 0;
+		virtual int getCurrentLineNumber() const = 0;
 
-		// Set default object
+
+		// Set & Get Default Object
 		virtual void setDefaultObject(scene::Object* obj) = 0;
-		// Get default object
 		virtual scene::Object* defaultObject() const = 0;
 
-		// Set Integrator Method
+		// Set & Get Integrator Method
 		virtual void setIntegratorMethod(IntegratorMethod method) = 0;
-		// Get Integrator Method
 		virtual IntegratorMethod getIntegratorMethod() const = 0;
+
+		// Set & Get Colour
+		virtual void setColour(mathlib::Vec3 rgb) = 0;
+		virtual mathlib::Vec3 getColour() const = 0;
 	};
 } // namespace interpreter
