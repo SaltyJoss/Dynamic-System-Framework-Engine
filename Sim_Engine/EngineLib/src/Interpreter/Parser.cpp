@@ -153,7 +153,7 @@ namespace interpreter {
 
 			if (isBlankOrComment(line)) { continue; }
 			if (hasCommentInline(line)) {
-				size_t commentPos = line.find('#');
+				size_t commentPos = line.find('//');
 				line = line.substr(0, commentPos);
 			}
 			// NEW SYNTAX PARSING
@@ -199,7 +199,6 @@ namespace interpreter {
 					cmd.identifier.clear();
 					cmd.tokens = std::move(parts);
 				}
-				
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
 

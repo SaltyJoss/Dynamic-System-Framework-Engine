@@ -46,9 +46,9 @@ namespace interpreter {
 		// Get the current instruction
 		const Command* getCurrentInstruction() const;
 
-		// Get Current line number
+		// Set & Get Current line number
+		void setCurrentLineNumber(int lineNumber) override { _currentLineNumber = lineNumber; }
 		int getCurrentLineNumber() const override { return _currentLineNumber; }
-		void setCurrentLineNumber(int lineNumber) { _currentLineNumber = lineNumber; }
 
 		// Set default object
 		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
@@ -57,6 +57,10 @@ namespace interpreter {
 		// Set & Get Integrator Method
 		void setIntegratorMethod(IntegratorMethod method) override;
 		IntegratorMethod getIntegratorMethod() const override;
+
+		// Set & Get Colour
+		void setColour(mathlib::Vec3 rgb) override;
+		mathlib::Vec3 getColour() const override;
 
 	private:
 		gui::simManager* _sim = nullptr;
@@ -77,5 +81,6 @@ namespace interpreter {
 
 		std::vector<commands::ICommand*> _commands;
 		IntegratorMethod _integratorMethod = IntegratorMethod::Euler; // Default integrator method
+		mathlib::Vec3 _rgb = mathlib::Vec3{ 1.0f, 0.0f, 0.0f };
 	};
 } // namespace interpreter

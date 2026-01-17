@@ -30,19 +30,9 @@ namespace commands {
 	}
 
 	// --- LoadCmd Method Implementations ---
-	void LoadCmd::markFailed(const std::string& message) {
-		setResult({ CmdState::Failed, {}, message });
-		// Implementation to mark the command as failed
-	}
-
-	void LoadCmd::markCompleted() {
-		// Implementation to mark the command as completed
-		setResult({ CmdState::Executed, {}, "load() ran successfully" });
-	}
-
-	bool LoadCmd::hasStarted() const {
-		return getResult().state != CmdState::NotStarted;
-	}
+	void LoadCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
+	void LoadCmd::markCompleted() { setResult({ CmdState::Executed, {}, "load() ran successfully" }); }
+	bool LoadCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
 
 	void LoadCmd::execute() {
 		if (_cntxUI == nullptr) {

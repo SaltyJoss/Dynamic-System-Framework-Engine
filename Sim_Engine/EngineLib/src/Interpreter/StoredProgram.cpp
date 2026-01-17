@@ -12,6 +12,11 @@ namespace interpreter {
 		clear();
 	}
 
+	// Convert mathlib::Vec3 to glm::vec3
+	inline glm::vec3 toGlm(const mathlib::Vec3& v) {
+		return glm::vec3(v.x(), v.y(), v.z());
+	}
+
 	void StoredProgram::add(commands::ICommand* cmd) {
 		if (cmd == nullptr) {
 			D_FAIL("Attempted to add null command to StoredProgram.");
@@ -128,4 +133,15 @@ namespace interpreter {
 	}
 	// Get Integrator Method
 	IntegratorMethod StoredProgram::getIntegratorMethod() const { return _integratorMethod; }
+
+	// Set Colour
+	void StoredProgram::setColour(mathlib::Vec3 rgb) {
+		_rgb = rgb;
+		if (_sim) {
+			_sim->setLightColour(toGlm(rgb));
+			D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
+		}
+	}
+	// Get Colour
+	mathlib::Vec3 StoredProgram::getColour() const { return _rgb; }
 } // namespace interpreter

@@ -66,6 +66,7 @@ namespace gui {
         // Light & Skybox
         scene::Light* getLight() { return _light.get(); }
 		scene::Light* getSunLight() { return _sunLight.get(); }
+        void setLightColour(const glm::vec3& c);
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
@@ -114,6 +115,7 @@ namespace gui {
             PBR = 2
         };
 
+		shaders::Shader* getActiveShader() const { return currentShader; }
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
         void applyRenderSettings(const render::RenderSettings& s);
         void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
@@ -189,6 +191,8 @@ namespace gui {
         std::shared_ptr<shaders::Shader> _shaderPBR;
         std::unique_ptr<shaders::Shader> _worldGridShader;
         std::unique_ptr<shaders::Shader> _shadowShader;
+		std::unique_ptr<shaders::Shader> _currentShader;
+		shaders::Shader* currentShader = nullptr;
 		GLuint _worldGridVAO = 0;
 
 

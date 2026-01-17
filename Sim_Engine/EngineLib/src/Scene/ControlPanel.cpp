@@ -597,8 +597,8 @@ namespace gui {
 
         ImGui::BeginChild("robot_card", ImVec2(0, 42.5), true, ImGuiWindowFlags_None);
 
+        // Loads robot
         if (ImGui::Selectable(name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
-            // Load JSON + STLs here
             LOG_INFO("Selected robot: %s", name);
             _showRobotSelector = false;
 

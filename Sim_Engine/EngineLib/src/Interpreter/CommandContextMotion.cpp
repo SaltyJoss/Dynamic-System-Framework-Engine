@@ -176,49 +176,27 @@ namespace commands {
 	}
 	
 	OpResult CommandContextMotion::rotateJoint(std::string linkName, double angleDeg, double vel) {
-		if (!_robot) {
-			D_FAIL("No robot model associated with this context.");
-			return OpResult::Failure("No robot model associated with this context.");
-		}
-		if (linkName.empty()) {
-			D_FAIL("Joint name cannot be empty.");
-			return OpResult::Failure("Joint name cannot be empty.");
-		}
+		if (!_robot) return OpResult::Failure("No robot model.");
+		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
-		for (auto& joint : _robot->joints) {
-			if (joint.child == linkName) {
-				_currentAngle = joint.angle; // get current angle
-				D_RUNTIME("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
-			}
-		}
-		float targetAngle = angleDeg;
-
-		updateJointAngles(linkName, angleDeg, vel); // update joint angles
-		applyJointAngles(); // apply immediately - may be causing gitter issues?
-
+		// apply absolute
+		_sim->setRobotLinkRotation(linkName, static_cast<float>(angleDeg)); // <-- absolute
 		return OpResult::Success();
 	}
 
 	OpResult CommandContextMotion::rotationJointDelta(std::string linkName, double deltaDeg, double vel) {
-		if (!_robot) {
-			D_FAIL("No robot model associated with this context.");
-			return OpResult::Failure("No robot model associated with this context.");
-		}
-		if (linkName.empty()) {
-			D_FAIL("Joint name cannot be empty.");
-			return OpResult::Failure("Joint name cannot be empty.");
-		}
+		if (!_robot) return OpResult::Failure("No robot model.");
+		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
-		for (auto& joint : _robot->joints) {
-			if (joint.child == linkName) {
-				_currentAngle = joint.angle; // get current angle
-				D_RUNTIME("Current angle of joint %s: %.2f", linkName.c_str(), _currentAngle);
-			}
+		float current = 0.0f;
+		bool found = false;
+		for (auto& j : _robot->joints) {
+			if (j.child == linkName) { current = j.angle; found = true; break; }
 		}
+		if (!found) return OpResult::Failure("Joint not found for linkName.");
 
-		float targetAngle = _currentAngle + static_cast<float>(deltaDeg);
-		updateJointAngles(linkName, targetAngle, vel);
-		applyJointAngles();
+		float next = current + static_cast<float>(deltaDeg);
+		_sim->setRobotLinkRotation(linkName, next); // <-- delta applied
 
 		return OpResult::Success();
 	}

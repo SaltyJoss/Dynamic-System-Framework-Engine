@@ -143,7 +143,6 @@
     <ClInclude Include="include\Interpreter\Command.h" />
     <ClInclude Include="include\Interpreter\CommandContextMotion.h" />
     <ClInclude Include="include\Interpreter\CommandFactory.h" />
-    <ClInclude Include="include\Interpreter\Commands\ColourCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\LoadCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
@@ -204,7 +203,6 @@
     <ClCompile Include="src\Interpreter\Command.cpp" />
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
-    <ClCompile Include="src\Interpreter\Commands\ColourCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp" />

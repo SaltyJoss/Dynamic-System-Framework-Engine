@@ -65,6 +65,7 @@ namespace gui{
 		_shaderPBR = std::make_shared<shaders::Shader>();
 		_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
+		currentShader = _shaderLit.get();
 		_skybox = std::make_unique<render::SkyboxRenderer>();
 		
 		// Shader Types B
@@ -671,7 +672,7 @@ namespace gui{
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(_sunLight->getColour(), "albedo");
+				shader->setVec3(_light->getColour(), "albedo");
 				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
 				shader->setFlt1(1.0f, "lightIntensity");
@@ -679,14 +680,14 @@ namespace gui{
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(glm::vec3(0.75f), "albedo");
+				shader->setVec3(_light->getColour(), "albedo");
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 
-				shader->setVec3(glm::normalize(_sunLight->getDirection()), "lightDirection");
-				shader->setFlt1(_sunLight->getIntensity(), "lightIntensity");
-				shader->setVec3(_sunLight->getColour(), "lightColour");
+				shader->setVec3(glm::normalize(_light->getDirection()), "lightDirection");
+				shader->setFlt1(_light->getIntensity(), "lightIntensity");
+				shader->setVec3(_light->getColour(), "lightColour");
 				shader->setVec3(_camera->getPosition(), "camPos");
 
 				shader->setInt1(0, "irradianceMap");
@@ -706,6 +707,8 @@ namespace gui{
 				D_INFO_ONCE("RadianceMap = %u, Prefilter = %u, BRDF = %u", _ibl->getIrradianceMap(), _ibl->getPrefilterMap(), _ibl->getBRDFLUT());
 				break;
 			}
+
+			currentShader = shader; // for external access
 
 			int loc = glGetUniformLocation(shader->getProgramID(), "albedo");
 			LOG_INFO_ONCE("Lit Shader albedo uniform location = %d", loc);
@@ -917,6 +920,10 @@ namespace gui{
 
 		LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");
+	}
+
+	void simManager::setLightColour(const glm::vec3& colour) {
+		_light->_colour = colour;
 	}
 
 // --------------------------------------------------
