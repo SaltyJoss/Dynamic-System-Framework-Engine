@@ -4,14 +4,13 @@
 #include "Interpreter/UIContext.h"
 
 namespace gui { class ENGINE_API simManager; }
-namespace scene { class ENGINE_API Object; }
 
 namespace commands {
 	// Main context combining motion and UI contexts
 	class ENGINE_API MainContext {
 	public:
-        MainContext(gui::simManager* sim, scene::Object* defaultObj)
-            : _motion(sim, defaultObj), _ui(sim, defaultObj) {}
+        MainContext(gui::simManager* sim, scene::ObjectID objID)
+            : _motion(sim, objID), _ui(sim, objID) {}
 
         // Accessors
         commands::CommandContextMotion& motion() { return _motion; }
@@ -21,7 +20,10 @@ namespace commands {
         const commands::UIContext& ui() const { return _ui; }
 
         // Optional: convenience wiring if motion needs default object each tick
-        void setDefaultObject(scene::Object* obj) { _motion.setDefaultObject(obj); }
+        void setDefaultObject(scene::Object* obj) {
+            const scene::ObjectID id = obj ? obj->id : scene::INVALID_OBJECT_ID;
+            _motion.setDefaultObjectID(id);
+        }
 
     private:
         commands::CommandContextMotion _motion;
