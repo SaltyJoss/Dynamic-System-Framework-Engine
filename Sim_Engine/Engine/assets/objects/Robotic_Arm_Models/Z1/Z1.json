@@ -41,7 +41,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": -150.0,
                 "upper_limit": 150.0
             },
@@ -62,7 +62,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": 0.0,
                 "upper_limit": 180.0
             },
@@ -83,7 +83,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": -160.0,
                 "upper_limit": 0.0
             },
@@ -104,7 +104,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": -80.0,
                 "upper_limit": 80.0
             },
@@ -126,7 +126,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": -85.0,
                 "upper_limit": 85.0
             },
@@ -147,7 +147,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "max_velocity": 180.0,
+                "max_speed": 180.0,
                 "lower_limit": -160.0,
                 "upper_limit": 160.0
             },
