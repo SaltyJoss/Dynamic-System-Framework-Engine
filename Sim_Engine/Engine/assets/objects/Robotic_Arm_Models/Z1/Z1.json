@@ -1,5 +1,5 @@
 {
-    "scale": 100.0,
+    "scale": 1.0,
     "links": [
         {
             "name": "link00",
@@ -40,7 +40,10 @@
             "offset": [ 0, 0, 0.0585 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "continuous": true
+                "continuous": false,
+                "max_velocity": 180.0,
+                "lower_limit": -150.0,
+                "upper_limit": 150.0
             },
             "dh": {
                 "a": 0.0,
@@ -59,6 +62,7 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
+                "max_velocity": 180.0,
                 "lower_limit": 0.0,
                 "upper_limit": 180.0
             },
@@ -79,8 +83,9 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "lower_limit": -275.0,
-                "upper_limit": -2.0
+                "max_velocity": 180.0,
+                "lower_limit": -160.0,
+                "upper_limit": 0.0
             },
             "dh": {
                 "a": 0.35,
@@ -99,8 +104,9 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "lower_limit": -115.0,
-                "upper_limit": 95.0
+                "max_velocity": 180.0,
+                "lower_limit": -80.0,
+                "upper_limit": 80.0
             },
             "dh": {
                 "a": 0.218,
@@ -120,8 +126,9 @@
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
                 "continuous": false,
-                "lower_limit": -95.0,
-                "upper_limit": 95.0
+                "max_velocity": 180.0,
+                "lower_limit": -85.0,
+                "upper_limit": 85.0
             },
             "dh": {
                 "a": 0.07,
@@ -139,7 +146,10 @@
             "offset": [ 0.0492, 0, 0 ],
             "quat": [ 1, 0, 0, 0 ],
             "limit": {
-                "continuous": true
+                "continuous": false,
+                "max_velocity": 180.0,
+                "lower_limit": -160.0,
+                "upper_limit": 160.0
             },
             "dh": {
                 "a": 0.0492,
