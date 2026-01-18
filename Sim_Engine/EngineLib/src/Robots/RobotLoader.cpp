@@ -53,22 +53,35 @@ namespace robots {
 				jointData["offset"][1].get<float>(),
 				jointData["offset"][2].get<float>()
 			);
+
+			if (jointData.contains("quat") && jointData["quat"].is_array() && jointData["quat"].size() == 4) {
+				const auto& q = jointData["quat"];
+				joint.quat = glm::normalize(glm::quat(
+					q[0].get<float>(), // w
+					q[1].get<float>(), // x
+					q[2].get<float>(), // y
+					q[3].get<float>()  // z
+				));
+			}
+			else { joint.quat = glm::quat(1.0, 0.0, 0.0, 0.0); }
+
+			LOG_INFO("Joint %s quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), joint.quat.w, joint.quat.x, joint.quat.y, joint.quat.z);
 			
 			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
 
 			if (limits.contains("continuous")) { joint.continuous = limits["continuous"].get<bool>(); }
 			else { joint.continuous = false; }
+
+			if (limits.contains("max_speed") && limits["max_speed"].is_number()) { joint.maxSpeed = glm::radians(limits["max_speed"].get<float>()); }
+			else { joint.maxSpeed = glm::radians(180.0f); } // default 180 deg/s
 			
 			if (!joint.continuous) {
-				if (limits.contains("lower_limit") && limits["lower_limit"].is_number()) { joint.minAngle = limits["lower_limit"].get<float>(); }
-				if (limits.contains("upper_limit") && limits["upper_limit"].is_number()) { joint.maxAngle = limits["upper_limit"].get<float>(); }
+				if (limits.contains("lower_limit") && limits["lower_limit"].is_number()) { joint.minAngle = glm::radians(limits["lower_limit"].get<float>()); }
+				if (limits.contains("upper_limit") && limits["upper_limit"].is_number()) { joint.maxAngle = glm::radians(limits["upper_limit"].get<float>()); }
 			} else {
-				joint.minAngle = -360.0f;
-				joint.maxAngle = 360.0f;
+				joint.minAngle = glm::radians(-359.9f); // practically continuous, not full 360 to avoid singularity
+				joint.maxAngle = glm::radians(359.9f);	// practically continuous, not full 360 to avoid singularity
 			}
-
-			// joint.minAngle = glm::radians(joint.minAngle);
-			// joint.maxAngle = glm::radians(joint.maxAngle);
 
 			robot.joints.push_back(joint);
 
@@ -102,25 +115,14 @@ namespace robots {
 
 			robot.dhParams.push_back(dhp);
 
-			LOG_INFO("Joint: %s \n\t\t| Parent: %s, \n\t\t| Child: %s, \n\t\t| Continuous: %s, \n\t\t| Min: %.2f, \n\t\t| Max: %.2f",
-				joint.name.c_str(),
-				joint.parent.c_str(),
-				joint.child.c_str(),
-				joint.continuous ? "True" : "False",
-				joint.minAngle,
-				joint.maxAngle
-			);
-			D_SUCCESS("Joint: %s \n\t\t\t| Parent: %s\n\t\t\t| Child: %s, \n\t\t\t| Continuous: %s, \n\t\t\t| Min: %.2f, \n\t\t\t| Max: %.2f",
-				joint.name.c_str(),
-				joint.parent.c_str(),
-				joint.child.c_str(),
-				joint.continuous ? "True" : "False",
-				joint.minAngle,
-				joint.maxAngle
-			);
+			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
+				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.continuous ? "True" : "False", joint.maxSpeed, joint.minAngle, joint.maxAngle);
+			D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
+				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.continuous ? "True" : "False", joint.maxSpeed, joint.minAngle, joint.maxAngle);
 		}
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
+		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		return robot;
 	}
 }

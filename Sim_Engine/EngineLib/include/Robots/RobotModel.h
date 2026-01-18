@@ -21,27 +21,29 @@
 extern ENGINE_API Debug gLog;
 
 struct RobotLink {
-	std::string name;
-	std::string meshFile;
+	std::string name = "";
+	std::string meshFile = "";
 	scene::Object* attachedObject = nullptr;
 };
 
 struct RobotJoint {
-	std::string name;
-	std::string parent;
-	std::string child;
+	std::string name = "";
+	std::string parent = "";
+	std::string child = "";
 	
-	glm::vec3 axis;
-	glm::vec3 offset;
+	glm::vec3 axis{ 0.0, 0.0, 0.0 };
+	glm::vec3 offset{0.0, 0.0, 0.0};
+	glm::quat quat{1.0, 0.0, 0.0, 0.0}; // initial orientation
 	float angle = 0.0f;
 
-	float minAngle; // lower limit 
-	float maxAngle; // upper limit 
-	bool continuous; // true for base, false for limited joints
+	bool continuous = false; // true for base, false for limited joints
+	float maxSpeed = 1.0f; // radians per second
+	float minAngle = 0.0f; // lower limit 
+	float maxAngle = 0.0f; // upper limit 
 };
 
 struct RobotModel {
-	float scale = 1.0f;
+	float scale = 1.0f; // metres per unit
 	std::vector<RobotLink> links;
 	std::vector<RobotJoint> joints;
 
@@ -61,7 +63,7 @@ struct RobotModel {
 	void setJointVector(const VecX& q) {
 		const int n = static_cast<int>(joints.size());
 		if (q.size() != n) {
-			ERROR("Joint vector size mismatch: expected %d, got %d", n, q.size());
+			LOG_ERROR("Joint vector size mismatch: expected %d, got %d", n, q.size());
 			D_ERROR("Joint vector size mismatch: expected %d, got %d", n, q.size());
 			return;
 		}

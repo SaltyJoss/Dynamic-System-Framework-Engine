@@ -81,7 +81,7 @@ namespace gui{
 		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
 		_sunLight->_intensity = 1.0f;
 
-		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
+		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 60.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
 		_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 		glGenVertexArrays(1, &_worldGridVAO);
@@ -191,7 +191,6 @@ namespace gui{
 			obj->name = m->getName().empty() ? "Object_" + std::to_string(obj->id) : m->getName();
 
 			// initialise physics state
-			obj->state.theta = Vec3::Zero();
 			obj->state.q = Quat(1.0, 0.0, 0.0, 0.0);
 			obj->state.angularVelocity = Vec3::Zero();
 			obj->state.linearVelocity = Vec3::Zero();
@@ -385,15 +384,15 @@ namespace gui{
 				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
 		}
 
-		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
-			const auto& p = _robot.dhParams[i];
-			LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-				i, p.a, p.alpha, p.d, p.theta,
-				p.type == kinematics::JointType::Revolute ? "R" : "P");
-			D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-				i, p.a, p.alpha, p.d, p.theta,
-				p.type == kinematics::JointType::Revolute ? "R" : "P");
-		}
+		//for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
+		//	const auto& p = _robot.dhParams[i];
+		//	LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+		//		i, p.a, p.alpha, p.d, p.theta,
+		//		p.type == kinematics::JointType::Revolute ? "R" : "P");
+		//	D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+		//		i, p.a, p.alpha, p.d, p.theta,
+		//		p.type == kinematics::JointType::Revolute ? "R" : "P");
+		//}
 
 		instantiateRobotLinks();
 		buildLinkIndex();
@@ -406,14 +405,12 @@ namespace gui{
 	void simManager::instantiateRobotLinks() {
 		for (auto& link : _robot.links) {
 			auto objs = loadMeshReturn(link.meshFile);
-			if (objs.empty()) {
-				LOG_ERROR("Failed to load mesh for link %s", link.name.c_str());
-				D_ERROR("Failed to load mesh for link %s", link.name.c_str());
-				continue;
-			}
+			if (objs.empty()) { continue; }
+
 			scene::Object* obj = objs[0]; // assumes one object per link
-			obj->transform.scale = glm::vec3(1.0f);
+
 			obj->category = scene::ObjectCategory::RobotLink;
+			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
@@ -439,6 +436,12 @@ namespace gui{
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
+		glm::vec3 pBase = glm::vec3(world[_linkIndex["link00"]][3]);
+		glm::vec3 pEE = glm::vec3(world[_linkIndex["link06"]][3]);
+
+		float reach = glm::length(pEE - pBase);
+		LOG_INFO_ONCE("Reach link00->link06 origin = %.3f world units", reach);
+
 		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;
 
@@ -456,10 +459,10 @@ namespace gui{
 			int parent = _linkIndex[joint.parent];
 			int child = _linkIndex[joint.child];
 
-			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset * _robot.scale);
+			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset); // meters
 			glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
-
-			world[child] = world[parent] * T_offset * R_joint;
+			glm::mat4 R_align = glm::mat4_cast(joint.quat); // from JSON
+			world[child] = world[parent] * T_offset * R_align * R_joint;
 		}
 
 		// Update link object transforms
@@ -468,11 +471,8 @@ namespace gui{
 			auto* mesh = obj->getMesh();
 			if (!mesh) continue;
 
-			// Visual Scaling matrix
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(_robot.scale));
-
 			// FK-driven world matrix goes straight into the mesh
-			mesh->localTransform = world[i] * S;
+			mesh->localTransform = world[i];
 		}
 	}
 
@@ -493,7 +493,8 @@ namespace gui{
 		// Find the joint that connects to this link
 		for (auto& joint : _robot.joints) {
 			if (joint.child == linkName) {
-				joint.angle = glm::radians(angle); // store angle in radians
+				float a = glm::radians(angle); // stores angle in radians
+				joint.angle = clampJointAngle(joint, a); // clamp to joint limits
 				D_INFO_ONCE("%s -> %.2f degrees.", linkName.c_str(), angle);
 				return;
 			}
