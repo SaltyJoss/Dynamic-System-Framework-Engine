@@ -266,11 +266,7 @@ namespace gui{
 
 		glm::mat4 view = _camera->getViewMatrix();
 
-		if (_hasRobot) {
-			glm::mat4 base = glm::mat4(1.0f);
-			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
-			updateRobotKinematics(base);
-		}
+		if (_hasRobot) { updateRobotKinematics(_robotRootPose); }
 
 		if (skyboxEnabled) {
 			glDepthMask(GL_FALSE);
@@ -372,27 +368,34 @@ namespace gui{
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
 
+		_robotRootHome = glm::mat4(1.0f);
+		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootHome = glm::translate(_robotRootHome, glm::vec3(0.0f, 0.0f, 0.0f));
+
+		_robotRootPose = _robotRootHome;
+
+		_robotQHome = _robot.makeJointVector();
+		_robotHomeValid = true;
+
 		{
 			VecX q = _robot.makeJointVector();   // all angles at their defaults
 			kinematics::Forward_Kinematics fk;
 
 			mathlib::Pose T_ee = fk.FK(_robot.dhParams, q);
 
-			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f",
-				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
-			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f",
-				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
 		}
 
-		//for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
-		//	const auto& p = _robot.dhParams[i];
-		//	LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-		//		i, p.a, p.alpha, p.d, p.theta,
-		//		p.type == kinematics::JointType::Revolute ? "R" : "P");
-		//	D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-		//		i, p.a, p.alpha, p.d, p.theta,
-		//		p.type == kinematics::JointType::Revolute ? "R" : "P");
-		//}
+		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
+			const auto& p = _robot.dhParams[i];
+			LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+			D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
+				i, p.a, p.alpha, p.d, p.theta,
+				p.type == kinematics::JointType::Revolute ? "R" : "P");
+		}
 
 		instantiateRobotLinks();
 		buildLinkIndex();
@@ -501,6 +504,31 @@ namespace gui{
 		}
 		LOG_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 		D_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
+	}
+
+	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootPose = (T * R) * Align;
+	}
+
+	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootPose = (T * R) * Align;
+		_robotRootPose = _robotRootHome;
+	}
+
+	void simManager::resetRobot() {
+		if (!_hasRobot || !_robotHomeValid) { return; }
+		_robotRootPose = _robotRootHome;
+		_robot.setJointVector(_robotQHome);
+		D_INFO("Robot reset to home position.");
+		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+		updateRobotKinematics(_robotRootPose);
+		D_SUCCESS("Robot reset to home position.");
 	}
 
 	// Method to clear the current robot from the scene

@@ -149,6 +149,9 @@ namespace gui {
         void updateRobotKinematics(const glm::mat4& baseTransform);
         bool hasRobot() const { return _hasRobot; }
 		void setRobotLinkRotation(const std::string& linkName, float angle);
+        void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
+        void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+        void resetRobot();
         void clearRobot();
 
         RobotModel& getRobotModel() { return _robot; }
@@ -256,9 +259,16 @@ namespace gui {
         bool _hasRobot = false;
         std::unordered_map<std::string, int> _linkIndex;
 
+        // Robot placement in world space (meters)
+        glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose
+        glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose
+
+        // Robot joint configuration (radians)
+        VecX _robotQHome; // home/reset joint angles
+        bool _robotHomeValid = false;
+
         void instantiateRobotLinks();
         void buildLinkIndex();
-
 
         // Editor & UI
         gui::FpsCounter _fpsCounter;
@@ -267,7 +277,6 @@ namespace gui {
         bool skyboxEnabled = true;
         bool _firstMouse = true;
         bool _firstUpdate = true;
-
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };

@@ -87,7 +87,7 @@ namespace robots {
 
 			DH_Params dhp{};
 			// Load DH parameters if available
-			if (jointData.contains("dh_params")) {
+			if (jointData.contains("dh")) {
 				auto& dhData = jointData["dh"];
 
 				dhp.a = dhData["a"].get<double>();
@@ -112,6 +112,10 @@ namespace robots {
 				dhp.theta = 0.0;
 				dhp.type = JointType::Revolute;
 			}
+
+			LOG_INFO("DH Params for Joint %s: a=%.4f, alpha=%.4f, d=%.4f, theta=%.4f, type=%s",
+				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta,
+				dhp.type == JointType::Revolute ? "Revolute" : "Prismatic");
 
 			robot.dhParams.push_back(dhp);
 
