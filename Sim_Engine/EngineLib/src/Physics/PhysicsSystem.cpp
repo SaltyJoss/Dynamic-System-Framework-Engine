@@ -40,10 +40,10 @@ namespace physics {
 
 		// Rotate object (uses angular velocity)
 		//updateRotation(dt, obj);
-		updateRotationQuat(dt, obj);
+		updateRotation(dt, obj);
 
 		// Update Reference Integrator States
-		updateRefRotationQuat(dt, obj);
+		updateRefRotation(dt, obj);
 
 		// Handle floor collision
 		//handleFloorCollision(dt, obj, 0.0f);
@@ -52,76 +52,9 @@ namespace physics {
 // --------------------------------------------------
 //				  PER-SYSTEM UPDATES
 // --------------------------------------------------
-	// Rotation update
-	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {	// Euler angle vs Quaternion?? Make note for report, may try implelemtion later
-		if (!obj || !obj->getMesh()) return;
-
-		auto& s = obj->state;
-
-		// state vector: [theta_x, theta_y, theta_z, omega_x, omega_y, omega_z]
-		VecX x(6);
-		x(0) = s.theta.x();
-		x(1) = s.theta.y();
-		x(2) = s.theta.z();
-		x(3) = s.angularVelocity.x();
-		x(4) = s.angularVelocity.y();
-		x(5) = s.angularVelocity.z();
-
-		// define derivative function for RK2/RK4
-		auto f = [&](double t, const VecX& state) -> VecX {
-			VecX deriv(6);
-
-			// unpacking state vector (theta = angle, omega = angular velocity)
-			double theta_x = state(0);
-			double theta_y = state(1);
-			double theta_z = state(2);
-			double omega_x = state(3);
-			double omega_y = state(4);
-			double omega_z = state(5);
-
-			// derivative: dtheta/dt = omega
-			deriv(0) = omega_x;
-			deriv(1) = omega_y;
-			deriv(2) = omega_z;
-
-			// derivative: domega/dt = angular acceleration (damping is 0.0 by default!) -> THIS DOES NOT ACCURATELY CALCULATE ROTATION IN 3D SPACE! 
-			deriv(3) = -(s.damping) * omega_x;
-			deriv(4) = -(s.damping) * omega_y;
-			deriv(5) = -(s.damping) * omega_z;
-
-			return deriv;
-		};
-
-		// perform integration step
-		VecX next = integrationMethod(x, 0.0, dt, f, method);
-
-		// write back to state
-		s.theta.x() = next(0);
-		s.theta.y() = next(1);
-		s.theta.z() = next(2);
-		s.angularVelocity.x() = next(3);
-		s.angularVelocity.y() = next(4);
-		s.angularVelocity.z() = next(5);
-
-		// WRAP ANGLES INTO [-pi, pi] OR [0, 2pi]
-		auto wrapRad = [](double a) -> double {
-			a = fmod(a, TWO_PI_d);
-			if (a < 0.0) a += TWO_PI_d;
-			return a;
-		};
-
-		s.theta.x() = wrapRad(s.theta.x());
-		s.theta.y() = wrapRad(s.theta.y());
-		s.theta.z() = wrapRad(s.theta.z());
-
-		// sync to mesh (still radians!)
-		obj->transform.rotation.x = static_cast<float>(s.theta.x());
-		obj->transform.rotation.y = static_cast<float>(s.theta.y());
-		obj->transform.rotation.z = static_cast<float>(s.theta.z());
-	}
 
 	// Updates an objects rotation using quaternions instead of Euler angles
-	void PhysicsSystem::updateRotationQuat(double dt, scene::Object* obj) {
+	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 
 		auto& s = obj->state;
@@ -210,7 +143,7 @@ namespace physics {
 	//	}
 	//}
 
-	void PhysicsSystem::updateRefRotationQuat(double dt, scene::Object* obj) {
+	void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
 		auto& rt = gRefTracks[obj];
 

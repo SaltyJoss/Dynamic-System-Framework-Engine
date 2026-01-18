@@ -49,18 +49,15 @@ namespace scene {
 		_currentSpeed = glm::mix(_currentSpeed, _targetSpeed, 1.0f - expf(-_accel * dt));
 		float velocity = _currentSpeed * dt;
 
-		if (key == GLFW_KEY_W)
-			moveForward(velocity);
-		if (key == GLFW_KEY_S)
-			moveBackward(velocity);
-		if (key == GLFW_KEY_A)
-			moveLeft(velocity);
-		if (key == GLFW_KEY_D)
-			moveRight(velocity);
-		if (key == GLFW_KEY_SPACE)
-			moveUp(velocity);
-		if (key == GLFW_KEY_LEFT_SHIFT)
-			moveDown(velocity);
+		switch (key) {
+			case GLFW_KEY_W:			moveForward(velocity);	break;
+			case GLFW_KEY_S:			moveBackward(velocity); break;
+			case GLFW_KEY_A:			moveLeft(velocity);		break;
+			case GLFW_KEY_D:			moveRight(velocity);	break;
+			case GLFW_KEY_SPACE:		moveUp(velocity);		break;
+			case GLFW_KEY_LEFT_SHIFT:	moveDown(velocity);		break;
+		}
+
 		updateViewMatrix();
 	}
 
@@ -72,10 +69,8 @@ namespace scene {
 		_pitch += yoffset;
 
 		if (constrainPitch) {
-			if (_pitch > glm::radians(89.0f))
-				_pitch = glm::radians(89.0f);
-			if (_pitch < glm::radians(-89.0f))
-				_pitch = glm::radians(-89.0f);
+			if (_pitch > glm::radians(89.0f)) { _pitch = glm::radians(89.0f); }
+			if (_pitch < glm::radians(-89.0f)) { _pitch = glm::radians(-89.0f); }
 		}
 		updateViewMatrix();
 	}

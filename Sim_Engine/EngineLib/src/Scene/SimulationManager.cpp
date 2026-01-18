@@ -78,10 +78,10 @@ namespace gui{
 		_light = std::make_unique<scene::Light>();
 		_sunLight = std::make_unique<scene::Light>();
 		_sunLight->_isDirectional = true;
-		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
+		_sunLight->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
 		_sunLight->_intensity = 1.0f;
 
-		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 70.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
+		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
 		_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 		glGenVertexArrays(1, &_worldGridVAO);
@@ -191,7 +191,6 @@ namespace gui{
 			obj->name = m->getName().empty() ? "Object_" + std::to_string(obj->id) : m->getName();
 
 			// initialise physics state
-			obj->state.theta = Vec3::Zero();
 			obj->state.q = Quat(1.0, 0.0, 0.0, 0.0);
 			obj->state.angularVelocity = Vec3::Zero();
 			obj->state.linearVelocity = Vec3::Zero();
@@ -267,11 +266,7 @@ namespace gui{
 
 		glm::mat4 view = _camera->getViewMatrix();
 
-		if (_hasRobot) {
-			glm::mat4 base = glm::mat4(1.0f);
-			base = glm::rotate(glm::radians(-90.0f), glm::vec3(1, 0, 0)); // aligns base link vertically (REMEMBER TO USE IF ROBOT XYZ AXES DIFFERENTLY)
-			updateRobotKinematics(base);
-		}
+		if (_hasRobot) { updateRobotKinematics(_robotRootPose); }
 
 		if (skyboxEnabled) {
 			glDepthMask(GL_FALSE);
@@ -373,16 +368,23 @@ namespace gui{
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
 
+		_robotRootHome = glm::mat4(1.0f);
+		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootHome = glm::translate(_robotRootHome, glm::vec3(0.0f, 0.0f, 0.0f));
+
+		_robotRootPose = _robotRootHome;
+
+		_robotQHome = _robot.makeJointVector();
+		_robotHomeValid = true;
+
 		{
 			VecX q = _robot.makeJointVector();   // all angles at their defaults
 			kinematics::Forward_Kinematics fk;
 
 			mathlib::Pose T_ee = fk.FK(_robot.dhParams, q);
 
-			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f",
-				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
-			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f",
-				T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
+			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
 		}
 
 		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
@@ -406,14 +408,12 @@ namespace gui{
 	void simManager::instantiateRobotLinks() {
 		for (auto& link : _robot.links) {
 			auto objs = loadMeshReturn(link.meshFile);
-			if (objs.empty()) {
-				LOG_ERROR("Failed to load mesh for link %s", link.name.c_str());
-				D_ERROR("Failed to load mesh for link %s", link.name.c_str());
-				continue;
-			}
+			if (objs.empty()) { continue; }
+
 			scene::Object* obj = objs[0]; // assumes one object per link
-			obj->transform.scale = glm::vec3(1.0f);
+
 			obj->category = scene::ObjectCategory::RobotLink;
+			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated link: %s from %s", link.name.c_str(), link.meshFile.c_str());
@@ -439,6 +439,12 @@ namespace gui{
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
+		glm::vec3 pBase = glm::vec3(world[_linkIndex["link00"]][3]);
+		glm::vec3 pEE = glm::vec3(world[_linkIndex["link06"]][3]);
+
+		float reach = glm::length(pEE - pBase);
+		LOG_INFO_ONCE("Reach link00->link06 origin = %.3f world units", reach);
+
 		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
 		world[rootIdx] = baseTransform;
 
@@ -456,10 +462,10 @@ namespace gui{
 			int parent = _linkIndex[joint.parent];
 			int child = _linkIndex[joint.child];
 
-			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset * _robot.scale);
+			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset); // meters
 			glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
-
-			world[child] = world[parent] * T_offset * R_joint;
+			glm::mat4 R_align = glm::mat4_cast(joint.quat); // from JSON
+			world[child] = world[parent] * T_offset * R_align * R_joint;
 		}
 
 		// Update link object transforms
@@ -468,11 +474,8 @@ namespace gui{
 			auto* mesh = obj->getMesh();
 			if (!mesh) continue;
 
-			// Visual Scaling matrix
-			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(_robot.scale));
-
 			// FK-driven world matrix goes straight into the mesh
-			mesh->localTransform = world[i] * S;
+			mesh->localTransform = world[i];
 		}
 	}
 
@@ -493,13 +496,39 @@ namespace gui{
 		// Find the joint that connects to this link
 		for (auto& joint : _robot.joints) {
 			if (joint.child == linkName) {
-				joint.angle = glm::radians(angle); // store angle in radians
+				float a = glm::radians(angle); // stores angle in radians
+				joint.angle = clampJointAngle(joint, a); // clamp to joint limits
 				D_INFO_ONCE("%s -> %.2f degrees.", linkName.c_str(), angle);
 				return;
 			}
 		}
 		LOG_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 		D_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
+	}
+
+	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootPose = (T * R) * Align;
+	}
+
+	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootPose = (T * R) * Align;
+		_robotRootPose = _robotRootHome;
+	}
+
+	void simManager::resetRobot() {
+		if (!_hasRobot || !_robotHomeValid) { return; }
+		_robotRootPose = _robotRootHome;
+		_robot.setJointVector(_robotQHome);
+		D_INFO("Robot reset to home position.");
+		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+		updateRobotKinematics(_robotRootPose);
+		D_SUCCESS("Robot reset to home position.");
 	}
 
 	// Method to clear the current robot from the scene
@@ -922,52 +951,28 @@ namespace gui{
 		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 
-	void simManager::setLightColour(const glm::vec3& colour) {
-		_light->_colour = colour;
-	}
+	void simManager::setLightColour(const glm::vec3& colour) { _light->_colour = colour; }
 
 // --------------------------------------------------
 //					INPUT HANDLING
 // --------------------------------------------------
 	void gui::simManager::processMovementKey(int key, float delta) {
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->processKeyboard(key, delta);
-		}
-		else if (ctrlMode == ControlMode::Object && _mesh) {
-			// WILL ADD OBJECT MOVEMENT LATER
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->processKeyboard(key, delta); }
+		else if (ctrlMode == ControlMode::Object && _mesh) { /*idea is to add multiple angles to switch between!*/ }
 	}
 
 	void gui::simManager::handleContinuousMovement(GLFWwindow* window, float dt) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
-		float kspd = 2.5f * dt;
+		float kspd = 0.2f * dt; // base speed m/s
 
-		// Forward
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W)) {
-			processMovementKey(GLFW_KEY_W, kspd);
-		}
-		// Backward
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S)) {
-			processMovementKey(GLFW_KEY_S, kspd);
-		}
-		// Left
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A)) {
-			processMovementKey(GLFW_KEY_A, kspd);
-		}
-		// Right
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D)) {
-			processMovementKey(GLFW_KEY_D, kspd);
-		}
-		// Up
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) {
-			processMovementKey(GLFW_KEY_SPACE, kspd);
-		}
-		// Down
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
-			processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd);
-		}
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W))				{ processMovementKey(GLFW_KEY_W,			kspd); } 
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S))				{ processMovementKey(GLFW_KEY_S,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A))				{ processMovementKey(GLFW_KEY_A,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D))				{ processMovementKey(GLFW_KEY_D,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE))			{ processMovementKey(GLFW_KEY_SPACE,		kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT))	{ processMovementKey(GLFW_KEY_LEFT_SHIFT,	kspd); }
 	}
 
 	void gui::simManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
@@ -975,8 +980,7 @@ namespace gui{
 		if (!win || !win->isMouseCaptured()) return;
 
 		bool captured = false;
-		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window)))
-			captured = win->isMouseCaptured();
+		if (win == static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
 
 		if (!captured && !_isHovered) {
 			_lastMousePos = { (float)xpos, (float)ypos };
@@ -993,12 +997,8 @@ namespace gui{
 		double yoffset = _lastMousePos.y - ypos;
 		_lastMousePos = { (float)xpos, (float)ypos };
 
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->processMouseMovement((float)xoffset, (float)yoffset);
-		}
-		else if (ctrlMode == ControlMode::Object && _selectedObject) {
-			_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->processMouseMovement((float)xoffset, (float)yoffset); }
+		else if (ctrlMode == ControlMode::Object && _selectedObject) { _selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right); }
 	}
 
 	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
@@ -1012,20 +1012,16 @@ namespace gui{
 			return;
 		}
 
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->onMouseMove(x, y, button);
-		}
-		else if (ctrlMode == ControlMode::Object && _selectedObject) {
-			_selectedObject->onMouseMove(x, y, button);
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->onMouseMove(x, y, button); }
+		else if (ctrlMode == ControlMode::Object && _selectedObject) { _selectedObject->onMouseMove(x, y, button); }
 	}
 
 	void simManager::onMouseWheel(double delta) {
 		auto* obj = _selectedObject;
 		if (!_isHovered) return;
 
-		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (ctrlMode == ControlMode::Object && _mesh) obj->transform.position.z += (float)delta * 0.1f;
+		if (ctrlMode == ControlMode::Camera) { _camera->onMouseWheel(delta); }
+		else if (ctrlMode == ControlMode::Object && _mesh) { obj->transform.position.z += (float)delta * 0.25f; }
 	}
 
 	void gui::simManager::resetMouseDelta() { _firstMouse = true; }

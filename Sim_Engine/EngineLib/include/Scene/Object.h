@@ -88,7 +88,6 @@ namespace scene {
 			transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
 			transform.scale = glm::vec3(0.01f);
 
-			state.theta = Vec3::Zero(); // soon to be removed
 			state.q = Quat(1.0, 0.0, 0.0, 0.0);
 			state.linearVelocity = Vec3::Zero();
 			state.angularVelocity = Vec3::Zero();
@@ -110,7 +109,6 @@ namespace scene {
 			transform.position = glm::vec3(0.0f);
 			transform.rotation = glm::vec4(0.0f);
 
-			state.theta = Vec3::Zero(); // soon to be removed
 			state.q = Quat(1.0, 0.0, 0.0, 0.0);
 			state.linearVelocity = Vec3::Zero();
 			state.angularVelocity = Vec3::Zero();

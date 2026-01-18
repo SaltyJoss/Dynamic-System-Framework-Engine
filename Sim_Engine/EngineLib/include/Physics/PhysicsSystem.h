@@ -4,9 +4,6 @@
 //            File: PhysicsSystem.h
 //=============================================
 // Class responsible for managing the physics simulation system.
-//
-// Summary:
-// ============================================
 // 
 // structures & enumeratiors:
 // --------------------------------------------
@@ -18,78 +15,6 @@
 //      -> Enumeration for simulation modes (Normal, IntegrationAnalysis).
 // enum class eIntegrationMethod
 //      -> Enumeration of available numerical integration methods (Euler, Midpoint, Heun, Ralston, RK4).
-// --------------------------------------------
-//
-// public:
-// --------------------------------------------
-// PhysicsSystem()
-//      -> Constructor that initializes the physics system.
-// void update(double dt, scene::Object* obj)
-//      -> Updates the physics simulation for the given object over the time step dt.
-// void updateRotation(double dt, scene::Object* obj)
-//      -> Updates the rotation of the object based on its angular velocity.
-// void updateTranslation(double dt, scene::Object* obj)
-//      -> Updates the translation of the object based on its linear velocity.
-// void applyForces(double dt, scene::Object* obj)
-//      -> Applies forces to the object, updating its linear velocity.
-// void applyTorque(double dt, scene::Object* obj, const Vec3& torque)
-//      -> Applies torque to the object, updating its angular velocity.
-// void applyDamping(double dt, scene::Object* obj, float dampingFactor = 0.98f)
-//      -> Applies damping to the object's velocities to simulate energy loss.
-// void handleFloorCollision(double dt, scene::Object* obj, float floorY = 0.0f)
-//      -> Handles collision of the object with a floor at the specified Y position.
-// VectorXd integrationMethod(Eigen::VectorXd& x, double t, double dt, std::function<Eigen::VectorXd(double, const Eigen::VectorXd&)> f, eIntegrationMethod method)
-//      -> Performs a single integration step using the specified eIntegrationMethod (Euler, Midpoint, Heun, Ralston, RK4).
-// void setIntegrationMethod(eIntegrationMethod m)
-//      -> Sets the current integration method.
-// eIntegrationMethod getIntegrationMethod() const
-//      -> Returns the current integration method.
-// void setGravity(const Vec3& gravity)
-//      -> Sets the gravity vector for the physics simulation.
-// Vec3 getGravity()
-//      -> Returns the current gravity vector
-// void startDiagnostics(scene::Object* obj)
-//      -> Starts the integration diagnostics for the specified object.
-// void stopDiagnostics()
-//      -> Stops the integration diagnostics.
-// bool diagnosticsRunning() const
-// 		-> Returns whether diagnostics are currently running.
-// void setDiagnosticRunning(bool running)
-// 		-> Sets the diagnostics running state.
-// const IntegratorDiagResult& diagResult() const
-//      -> Returns the results of the integration diagnostics.
-// const std::vector<IntegratorDiagSample>& diagSamples() const
-//      -> Returns the samples collected during integration diagnostics.
-// --------------------------------------------
-//
-// private:
-// --------------------------------------------
-// std::unique_ptr<integration::ODE> _ODE
-//      -> Unique pointer to the ODE integrator.
-// constants::MathConstants _const
-//      -> Instance of mathematical constants.
-// Vec3 _gravity
-//      -> Gravity vector for the simulation.
-// eSimulationMode _simulationMode
-//      -> Current simulation mode (Normal, IntegrationAnalysis).
-// std::vector<integration::ErrorSample> _errorSamples
-//      -> Vector of error samples for integration analysis.
-// bool _diagRunning
-//	    -> Indicates whether diagnostics are currently running.
-// scene::Object* _diagObject
-//      -> Pointer to the object being diagnosed.
-// std::vector<IntegratorDiagSample> _diagSamples
-//      -> Vector of samples collected during diagnostics.
-// IntegratorDiagResult _diagResult
-//      -> Results of the integration diagnostics.
-// double _dt
-//      -> Time step for the simulation.
-// double _h
-//      -> Simulation parameter h.
-// double _t
-//      -> Simulation time variable.
-// double _logTimer
-//      -> Timer for logging purposes.
 // --------------------------------------------
 // 
 // ============================================
