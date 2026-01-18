@@ -6,7 +6,7 @@ in vec3 WorldPos;
 layout(location = 0) out vec4 FragColour;
 
 uniform float gGridMinPixelsBetweenCells = 2.0;
-uniform float gGridCellSize = 0.25;
+uniform float gGridCellSize = 0.1;
 uniform float gGridSize = 1000.0;
 
 uniform vec3 gCameraWorldPos;
