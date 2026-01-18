@@ -78,10 +78,10 @@ namespace gui{
 		_light = std::make_unique<scene::Light>();
 		_sunLight = std::make_unique<scene::Light>();
 		_sunLight->_isDirectional = true;
-		_sunLight->setDirection(glm::vec3(-1.0f, -0.3f, 0.2f));
+		_sunLight->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
 		_sunLight->_intensity = 1.0f;
 
-		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 2.0f, 5.0f), 60.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
+		_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, static_cast<float>(_size.x) / static_cast<float>(_size.y), 0.1f, 1000.0f);
 		_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 		glGenVertexArrays(1, &_worldGridVAO);
@@ -923,52 +923,28 @@ namespace gui{
 		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 
-	void simManager::setLightColour(const glm::vec3& colour) {
-		_light->_colour = colour;
-	}
+	void simManager::setLightColour(const glm::vec3& colour) { _light->_colour = colour; }
 
 // --------------------------------------------------
 //					INPUT HANDLING
 // --------------------------------------------------
 	void gui::simManager::processMovementKey(int key, float delta) {
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->processKeyboard(key, delta);
-		}
-		else if (ctrlMode == ControlMode::Object && _mesh) {
-			// WILL ADD OBJECT MOVEMENT LATER
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->processKeyboard(key, delta); }
+		else if (ctrlMode == ControlMode::Object && _mesh) { /*idea is to add multiple angles to switch between!*/ }
 	}
 
 	void gui::simManager::handleContinuousMovement(GLFWwindow* window, float dt) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
-		float kspd = 2.5f * dt;
+		float kspd = 0.2f * dt; // base speed m/s
 
-		// Forward
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W)) {
-			processMovementKey(GLFW_KEY_W, kspd);
-		}
-		// Backward
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S)) {
-			processMovementKey(GLFW_KEY_S, kspd);
-		}
-		// Left
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A)) {
-			processMovementKey(GLFW_KEY_A, kspd);
-		}
-		// Right
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D)) {
-			processMovementKey(GLFW_KEY_D, kspd);
-		}
-		// Up
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) {
-			processMovementKey(GLFW_KEY_SPACE, kspd);
-		}
-		// Down
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) {
-			processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd);
-		}
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W))				{ processMovementKey(GLFW_KEY_W,			kspd); } 
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S))				{ processMovementKey(GLFW_KEY_S,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A))				{ processMovementKey(GLFW_KEY_A,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D))				{ processMovementKey(GLFW_KEY_D,			kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE))			{ processMovementKey(GLFW_KEY_SPACE,		kspd); }
+		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT))	{ processMovementKey(GLFW_KEY_LEFT_SHIFT,	kspd); }
 	}
 
 	void gui::simManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
@@ -976,8 +952,7 @@ namespace gui{
 		if (!win || !win->isMouseCaptured()) return;
 
 		bool captured = false;
-		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window)))
-			captured = win->isMouseCaptured();
+		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
 
 		if (!captured && !_isHovered) {
 			_lastMousePos = { (float)xpos, (float)ypos };
@@ -994,12 +969,8 @@ namespace gui{
 		double yoffset = _lastMousePos.y - ypos;
 		_lastMousePos = { (float)xpos, (float)ypos };
 
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->processMouseMovement((float)xoffset, (float)yoffset);
-		}
-		else if (ctrlMode == ControlMode::Object && _selectedObject) {
-			_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->processMouseMovement((float)xoffset, (float)yoffset); }
+		else if (ctrlMode == ControlMode::Object && _selectedObject) { _selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right); }
 	}
 
 	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
@@ -1013,20 +984,16 @@ namespace gui{
 			return;
 		}
 
-		if (ctrlMode == ControlMode::Camera) {
-			_camera->onMouseMove(x, y, button);
-		}
-		else if (ctrlMode == ControlMode::Object && _selectedObject) {
-			_selectedObject->onMouseMove(x, y, button);
-		}
+		if (ctrlMode == ControlMode::Camera) { _camera->onMouseMove(x, y, button); }
+		else if (ctrlMode == ControlMode::Object && _selectedObject) { _selectedObject->onMouseMove(x, y, button); }
 	}
 
 	void simManager::onMouseWheel(double delta) {
 		auto* obj = _selectedObject;
 		if (!_isHovered) return;
 
-		if (ctrlMode == ControlMode::Camera) _camera->onMouseWheel(delta);
-		else if (ctrlMode == ControlMode::Object && _mesh) obj->transform.position.z += (float)delta * 0.1f;
+		if (ctrlMode == ControlMode::Camera) { _camera->onMouseWheel(delta); }
+		else if (ctrlMode == ControlMode::Object && _mesh) { obj->transform.position.z += (float)delta * 0.25f; }
 	}
 
 	void gui::simManager::resetMouseDelta() { _firstMouse = true; }
