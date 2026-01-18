@@ -87,6 +87,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateByCmd>(objID, axes, *deltaOpt, *omegaOpt);
+		return std::make_unique<RotateByCmd>(objID, axes, *omegaOpt, *deltaOpt);
 	}
 } // namespace commands
