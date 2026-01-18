@@ -952,7 +952,7 @@ namespace gui{
 		if (!win || !win->isMouseCaptured()) return;
 
 		bool captured = false;
-		if (auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
+		if (win == static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
 
 		if (!captured && !_isHovered) {
 			_lastMousePos = { (float)xpos, (float)ypos };
