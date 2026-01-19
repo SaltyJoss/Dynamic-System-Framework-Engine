@@ -11,7 +11,7 @@ namespace commands {
 	class ENGINE_API RotateJointToCmd final : public Command {
 	public:
 		// Constructor
-		RotateJointToCmd(const std::string& link, double maxOmegaDeg, double angleDeg);
+		RotateJointToCmd(std::string link, double maxOmegaDeg, double angleDeg);
 
 		std::string_view getName() const { return "rotateBy"; }
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
@@ -22,7 +22,6 @@ namespace commands {
 	private:
 		void execute() override;
 		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
-
 		std::string _link;
 		double _angleDeg; // angle relative to the start position
 		double _maxOmegaDeg;

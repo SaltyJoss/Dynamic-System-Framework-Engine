@@ -20,39 +20,37 @@
 // ============================================
 
 #include "EngineCore.h"
-#include "Scene/ObjectID.h"
-#include "Rendering/ModelGroup.h"
-#include "Robots/RobotModel.h"
-#include "FpsCounter.h"
-#include "Platform/Logger.h"
-#include "Scene/RenderPreset.h"
-
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
-extern ENGINE_API Debug gLog;
+#include "Scene/ObjectID.h"
+#include "Rendering/ModelGroup.h"
+#include "Scene/RenderPreset.h"
+#include "FpsCounter.h"
+
+#include "Platform/Logger.h"
 
 // Forward Declarations
 namespace render {
-    class OpenGLFrameBuffer;
-	class IBL;
+    class ENGINE_API OpenGLFrameBuffer;
+	class ENGINE_API IBL;
     class SkyboxRenderer;
 }
-namespace shaders {
-    class Shader;
-}
+namespace shaders { class ENGINE_API Shader; }
+
 namespace scene {
-    class Light;
-    class Camera;
-    class Input;
-    class Mesh;
-    class Object;
+    enum class eInputButton;
+    class ENGINE_API Light;
+    class ENGINE_API Camera;
+    class ENGINE_API Input;
+    class ENGINE_API Mesh;
+    class ENGINE_API Object;
 }
-namespace physics {
-    class PhysicsSystem;
-}
+
+namespace physics { class PhysicsSystem; }
+namespace robots { class ENGINE_API RobotSystem; }
 
 // I want to rename to more appropriate namespace later
 namespace gui {
@@ -63,9 +61,12 @@ namespace gui {
         simManager();
         ~simManager();
 
+		// OpenGL Initialisation
+        void initGL();
+
         // Light & Skybox
-        scene::Light* getLight() { return _light.get(); }
-		scene::Light* getSunLight() { return _sunLight.get(); }
+        scene::Light* getLight();
+        scene::Light* getSunLight();
         void setLightColour(const glm::vec3& c);
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
@@ -76,6 +77,8 @@ namespace gui {
         void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
+		void setSize(const glm::vec2& size) { _size = size; }
+		glm::vec2 getSize() const { return _size; }
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
 
@@ -83,7 +86,6 @@ namespace gui {
         glm::vec3 getBackgroundColour() const { return _backgroundColour; }
         float getBackgroundAlpha() const { return _backgroundAlpha; }
         float getPlaneHeight() const { return planeHeight; }
-
 
         // Control Modes & Camera
         enum class ControlMode {
@@ -99,15 +101,14 @@ namespace gui {
         scene::Camera* getCamera();
         void resetView();
 
-		void attachCameraToObject(scene::Object* obj);
+        void attachCameraToObject(scene::Object* obj);
         void detachCameraFromObject();
 
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
         std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);
-        void setMesh(std::shared_ptr<scene::Mesh> mesh) { _mesh = mesh; }
-
-        std::shared_ptr<scene::Mesh> getMesh() { return _mesh; }
+        void setMesh(std::shared_ptr<scene::Mesh> mesh);
+        std::shared_ptr<scene::Mesh> getMesh();
 
         enum class ShaderMode {
             Basic = 0,
@@ -115,7 +116,7 @@ namespace gui {
             PBR = 2
         };
 
-		shaders::Shader* getActiveShader() const { return currentShader; }
+        shaders::Shader* getActiveShader() const;
         ShaderMode currentShaderMode = ShaderMode::Lit;  // default
         void applyRenderSettings(const render::RenderSettings& s);
         void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
@@ -128,40 +129,33 @@ namespace gui {
         void resize(int32_t width, int32_t height);
 
 		// Scene Objects Management
-        void setSelectedObject(scene::Object* obj) { _selectedObject = obj; }
-		void addObject(std::unique_ptr<scene::Object> obj) { _objects.push_back(std::move(obj)); } // Cache the unique_ptr
+        void setSelectedObject(scene::Object* obj);
+        void addObject(std::unique_ptr<scene::Object> obj);
         void deleteObject(int index);
 
 		// Scene Objects Lookup
-        std::vector<std::unique_ptr<scene::Object>>& getObjects() { return _objects; }
-        scene::Object* getObject() { return _selectedObject; }
+        std::vector<std::unique_ptr<scene::Object>>& getObjects();
+        scene::Object* getObject();
 		scene::Object* getObjectByID(scene::ObjectID id);
 		scene::Object* getObjectByName(const std::string& name);
 
         // Physics
         void updatePhysics(double dt);
 		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
-		physics::PhysicsSystem& getPhysicsSystem() { return *_physics; } // mutable
-		const physics::PhysicsSystem& getPhysicsSystem() const { return *_physics; } // const
+        physics::PhysicsSystem& getPhysicsSystem();
+        const physics::PhysicsSystem& getPhysicsSystem() const;
 
-		// Robotic Arm System
+		// Robot System
         void loadRobot(const std::string& name);
-        void updateRobotKinematics(const glm::mat4& baseTransform);
-        bool hasRobot() const { return _hasRobot; }
-		void setRobotLinkRotation(const std::string& linkName, float angle);
+        void setRobotLinkRotation(const std::string& linkName, float angle);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
         void resetRobot();
         void clearRobot();
+        bool hasRobot() const;
 
-        RobotModel& getRobotModel() { return _robot; }
-
-		// Robot Focus Modes - NOT USED YET, KEEPING FOR IDEA I HAVE!
-        enum class robotFocusMode {
-            Base,
-            Link,
-            Joint
-		};
+        robots::RobotSystem* getRobotSystem();
+        const robots::RobotSystem* getRobotSystem() const;
 
 		// Input Handling
         void processMovementKey(int key, float delta);
@@ -182,40 +176,25 @@ namespace gui {
 		void oreintationGizmoRender(); // Not really sure what to call this yet so GizmoRender for now!
         glm::mat4 LightSpaceMatrix(float near, float far);
 
+        // Misc Settings
+        bool _glReady = false;
 
-        // Core Rendering State
-        std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
-        std::unique_ptr<render::OpenGLFrameBuffer> _postBuffer;
-        std::unique_ptr<shaders::Shader> _postShader;
-        GLuint _fullscreenVAO = 0;
+        glm::vec2 _size;
+        glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
+        float _backgroundAlpha = 1.0f;
+        float dt = 1.0f / 120.0f; // default to 120 fps
 
-        std::shared_ptr<shaders::Shader> _shaderBasic;
-        std::shared_ptr<shaders::Shader> _shaderLit;
-        std::shared_ptr<shaders::Shader> _shaderPBR;
-        std::unique_ptr<shaders::Shader> _worldGridShader;
-        std::unique_ptr<shaders::Shader> _shadowShader;
-		std::unique_ptr<shaders::Shader> _currentShader;
-		shaders::Shader* currentShader = nullptr;
-		GLuint _worldGridVAO = 0;
+        static constexpr float planeHeight = -2.5f;
+        float planeY = 2.5f;
+        glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
 
+		// Members
+        struct Impl;
+		std::unique_ptr<Impl> _impl;
 
-        // Scene Objects
-        std::unique_ptr<scene::Camera> _camera;
-        std::unique_ptr<scene::Light> _light;
-        std::unique_ptr<scene::Light> _sunLight;
-        scene::Object* _cameraFollowTarget = nullptr;
-		std::unique_ptr<AxisOrientator> _axisOrientator;
-
-
-        std::shared_ptr<scene::Mesh> _mesh;
-	    std::vector<std::unique_ptr<scene::Object>> _objects;
+		// Objects & Scene Management
         std::vector<ModelGroup> modelGroups;
-        scene::Object* _selectedObject = nullptr;
-
-        std::shared_ptr<scene::Mesh> _checkerPlane;
-        std::shared_ptr<scene::Mesh> createCheckerPlane(float size = 50.0f);
-
-        scene::ObjectID _nextObjectID = 1; // Start IDs from 1
+		scene::ObjectID _nextObjectID = scene::FIRST_VALID_OBJECT_ID; // Next available ObjectID
         
 		// Name and ID mapping (for easy lookup)
         std::unordered_map<std::string, scene::ObjectID> _nameToId;
@@ -227,48 +206,21 @@ namespace gui {
         glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
         bool _settingsValid = false;
 
-        std::unique_ptr<render::IBL> _ibl;
-        std::unique_ptr<render::SkyboxRenderer> _skybox;
-
         std::string _activeHDRPath;
 		bool _hdrUserOverride = false;
 
         // current selection
         int _currentShaderIndex = 1; // 1 = lit by default
 
-
 		// Shadow Mapping
         static constexpr int NUM_CASCADES = 2;
 
         bool _shadowsInit = false;
-        GLuint _cascadeFBO[NUM_CASCADES]{};
-        GLuint _cascadeDepth[NUM_CASCADES]{};
-        glm::mat4 _lightSpaceMatrixCascade[NUM_CASCADES];
 
         float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
 
         const unsigned int SHADOW_W = 8192;
         const unsigned int SHADOW_H = 8192;
-
-
-		// Physics System
-		std::unique_ptr<physics::PhysicsSystem> _physics;
-
-        // Robotic Arm System
-        RobotModel _robot;
-        bool _hasRobot = false;
-        std::unordered_map<std::string, int> _linkIndex;
-
-        // Robot placement in world space (meters)
-        glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose
-        glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose
-
-        // Robot joint configuration (radians)
-        VecX _robotQHome; // home/reset joint angles
-        bool _robotHomeValid = false;
-
-        void instantiateRobotLinks();
-        void buildLinkIndex();
 
         // Editor & UI
         gui::FpsCounter _fpsCounter;
@@ -280,16 +232,6 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
-
-		// Misc Settings
-        glm::vec2 _size;
-        glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
-        float _backgroundAlpha = 1.0f;
-		float dt = 1.0f / 120.0f; // default to 120 fps
-
-        static constexpr float planeHeight = -2.5f;
-        float planeY = planeHeight;
-        glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
     };
 }
 

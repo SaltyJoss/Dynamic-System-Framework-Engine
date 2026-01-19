@@ -1,18 +1,24 @@
 #include "pch.h"
 #include "Interpreter/UIContext.h"
 #include "EngineLib/LogMacros.h"
+#include "Scene/SimulationManager.h"
+#include "Physics/PhysicsSystem.h"
+#include "Robots/RobotSystem.h"
+#include "Scene/ObjectID.h"
+#include "Scene/Object.h"
+#include "Scene/Mesh.h"
 
 using namespace mathlib;
 using namespace utils;
 
 namespace commands {
 	UIContext::UIContext(gui::simManager* sim, scene::ObjectID objID)
-		: _sim(sim), _robot(sim ? &sim->getRobotModel() : nullptr), _objID(objID), _defaultObjID(objID) {
+		: _sim(sim), _robot(sim ? sim->getRobotSystem() : nullptr), _objID(objID), _defaultObjID(objID) {
 	}
 
 	scene::Object* UIContext::resolveObject() const {
 		if (!_sim) return nullptr;
-		if (_objID == scene::INVALID_OBJECT_ID) return nullptr;
+		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
 		return _sim->getObjectByID(_objID);
 	}
 
@@ -86,7 +92,7 @@ namespace commands {
 			LOG_WARN("Simulation manager is null, cannot clear object.");
 			return OpResult::Failure("Simulation manager is null.");
 		}
-		if (!_objID) {
+		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) {
 			LOG_WARN("No object selected to clear.");
 			return OpResult::Failure("No object selected.");
 		}
@@ -107,7 +113,7 @@ namespace commands {
 		size_t index = std::distance(objects.begin(), it);
 		_sim->deleteObject(static_cast<int>(index));
 
-		_objID = scene::INVALID_OBJECT_ID;
+		_objID = scene::ObjectID::INVALID_OBJECT_ID;
 		return OpResult::Success();
 	}
 
@@ -129,9 +135,9 @@ namespace commands {
 		// Load new robot model
 		_sim->loadRobot(robotName);
 
-		auto& newRobot = _sim->getRobotModel();
-		_loadedRobots[robotName] = &newRobot;
-		_robot = &newRobot;
+		robots::RobotSystem* newRobot = _sim->getRobotSystem();
+		_loadedRobots[robotName] = newRobot;
+		_robot = newRobot;
 		LOG_INFO("Loaded robot model: %s", robotName.c_str());
 		return OpResult::Success();
 	}

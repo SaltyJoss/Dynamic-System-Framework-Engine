@@ -411,7 +411,7 @@
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h">
       <Filter>Header Files\include\Interpreter\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\SimContext.h">
+    <ClInclude Include="include\Interpreter\SimFwd.h">
       <Filter>Header Files\include\Interpreter\Context</Filter>
     </ClInclude>
     <ClInclude Include="include\Interpreter\Utils.h">
@@ -437,6 +437,9 @@
     </ClInclude>
     <ClInclude Include="include\Interpreter\Commands\SpinCmd.h">
       <Filter>Header Files\include\Interpreter\Commands\RigidBody</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotSystem.h">
+      <Filter>Header Files\include\Robots</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -584,9 +587,6 @@
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\SimContext.cpp">
-      <Filter>Source Files\src\Interpreter\Context</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\Utils.cpp">
       <Filter>Source Files\src\Interpreter\Utils</Filter>
     </ClCompile>
@@ -604,6 +604,9 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands\RigidBody</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotSystem.cpp">
+      <Filter>Source Files\src\Robots</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

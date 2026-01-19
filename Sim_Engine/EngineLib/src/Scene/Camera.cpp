@@ -14,29 +14,7 @@
 namespace scene {
 
 	void Camera::update(shaders::Shader* shader) {
-		if (_following)
-		{
-			// convert Euler degrees from object into radians
-			float yaw = glm::radians(_targetRot.y);
-			float pitch = glm::radians(_targetRot.x);
-			float roll = glm::radians(_targetRot.z);
-
-			// object rotation matrix
-			glm::mat4 R = glm::yawPitchRoll(yaw, pitch, roll);
-
-			// rotate the camera offset so it stays fixed to the object’s orientation
-			glm::vec3 rotatedOffset = glm::vec3(R * glm::vec4(_followOffset, 0.0f));
-
-			// new camera position
-			_position = _targetPos + rotatedOffset;
-
-			// look at the object
-			_forward = glm::normalize(_targetPos - _position);
-			_right = glm::normalize(glm::cross(_forward, glm::vec3(0, 1, 0)));
-			_up = glm::cross(_right, _forward);
-
-			updateViewMatrix();
-		}
+		updateViewMatrix();
 
 		glm::mat4 model{ 1.0f };
 		shader->setMat4(model, "model");
@@ -125,32 +103,14 @@ namespace scene {
 		}
 	}
 
-	void Camera::moveForward(float velocity) {
-		_position += glm::normalize(_forward) * velocity;
-	}
+	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; }
+	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; }
+	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; }
+	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; }
+	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
+	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
 
-	void Camera::moveBackward(float velocity) {
-		_position -= glm::normalize(_forward) * velocity;
-	}
-
-	void Camera::moveLeft(float velocity) {
-		_position -= glm::normalize(_right) * velocity;
-	}
-
-	void Camera::moveRight(float velocity) {
-		_position += glm::normalize(_right) * velocity;
-	}
-
-	void Camera::moveUp(float velocity) {
-		_position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
-	}
-
-	void Camera::moveDown(float velocity) {
-		_position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity;
-	}
-
-	// Camera Follow
-	void Camera::startFollow(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& offset) {
+	void Camera::startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset) {
 		_following = true;
 		_targetPos = pos;
 		_targetRot = rot;
@@ -159,22 +119,21 @@ namespace scene {
 
 	void Camera::updateViewMatrix() {
 
-		if (_following)
-		{
-			glm::vec3 camPos = _targetPos + _followOffset;
+		if (_following) {
+			_position = _targetPos + (_targetRot * _followOffset);
+			const glm::vec3 up = _targetRot * glm::vec3(0.0f, 1.0f, 0.0f);
 
-			_position = camPos;
-			_viewMatrix = glm::lookAt(_position, _targetPos, glm::vec3(0, 1, 0));
+			_viewMatrix = glm::lookAt(_position, _targetPos, up);
 			return;
 		}
 
-		// derive direction from yaw/pitch
-		_forward.x = cosf(_yaw) * cosf(_pitch);
-		_forward.y = sinf(_pitch);
-		_forward.z = sinf(_yaw) * cosf(_pitch);
-		_forward = glm::normalize(_forward);
+		glm::vec3 f;
+		f.x = cosf(_yaw) * cosf(_pitch);
+		f.y = sinf(_pitch);
+		f.z = sinf(_yaw) * cosf(_pitch);
+		_forward = glm::normalize(f);
 
-		// recompute right and up
+		const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
 		_up = glm::normalize(glm::cross(_right, _forward));
 

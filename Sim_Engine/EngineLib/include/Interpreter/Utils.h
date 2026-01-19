@@ -1,11 +1,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <core/Types.h>
-#include <string>
-#include <string_view>
-#include <vector>
-#include "Scene/ObjectID.h"
+#include "SimFwd.h"
 
 #include "Platform/Logger.h"
 
@@ -14,9 +10,10 @@ namespace utils {
 	struct ENGINE_API OpResult {
 		bool ok = true;
 		std::string message;
+		bool done = false;
 
-		static OpResult Success() { return { true, {} }; }
-		static OpResult Failure(const std::string& msg) { return OpResult{ false, msg }; }
+		static OpResult Success(bool done=false) { return { true, {}, done}; }
+		static OpResult Failure(const std::string& msg) { return OpResult{ false, msg, false}; }
 	};
 
 	// Struct for axis mask

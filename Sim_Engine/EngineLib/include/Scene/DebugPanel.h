@@ -14,6 +14,8 @@
 #include "imgui.h"
 #include "Scene/SimulationManager.h"
 #include "Camera.h"
+#include <unordered_set>
+
 #include "Platform/Logger.h"
 
 extern ENGINE_API Debug gLog;

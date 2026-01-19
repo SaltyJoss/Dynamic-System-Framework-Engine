@@ -1,22 +1,23 @@
 #include "pch.h"
 #include "Interpreter/StoredProgram.h"
+#include "Scene/SimulationManager.h"
+#include "Physics/PhysicsSystem.h"
+#include "Robots/RobotSystem.h"
+#include "Scene/ObjectID.h"
+#include "Scene/Object.h"
 
 #include "EngineLib/LogMacros.h"
 
 namespace interpreter {
 	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
-		_cntx(sim, sim&& sim->getObject() ? sim->getObject()->id : scene::INVALID_OBJECT_ID) {
+		_cntx(sim, [&] { scene::Object* o = (sim ? sim->getObject() : nullptr); return o ? o->id : scene::ObjectID::INVALID_OBJECT_ID; }()) {
 		_commands = std::vector<commands::ICommand*>();
 	}
 
-	StoredProgram::~StoredProgram() {
-		clear();
-	}
+	StoredProgram::~StoredProgram() { clear(); }
 
 	// Convert mathlib::Vec3 to glm::vec3
-	inline glm::vec3 toGlm(const mathlib::Vec3& v) {
-		return glm::vec3(v.x(), v.y(), v.z());
-	}
+	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 
 	void StoredProgram::add(commands::ICommand* cmd) {
 		if (cmd == nullptr) {
@@ -62,7 +63,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->updateRobotKinematics(glm::mat4(1.0f)); }
+		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
 	}
 
 	void StoredProgram::pause() {
@@ -75,7 +76,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->updateRobotKinematics(glm::mat4(1.0f)); }
+		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
 	}
 
 	ProgramStatus StoredProgram::status() const { return ProgramStatus{}; }
@@ -89,8 +90,8 @@ namespace interpreter {
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 		
-		scene::Object* o = _sim ? _sim->getObject() : nullptr;
-		_cntx.motion().setDefaultObjectID(o ? o->id : scene::INVALID_OBJECT_ID);
+		scene::Object* o = _defaultObj ? _defaultObj : (_sim ? _sim->getObject() : nullptr);
+		_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
 
 		auto& cmd = _commands[PC];
 		cmd->setContext(_cntx.motion());

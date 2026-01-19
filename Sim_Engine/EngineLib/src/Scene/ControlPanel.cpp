@@ -7,7 +7,7 @@
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Scene/ControlPanel.h"
-#include "Robots/RobotModel.h"
+#include "Robots/RobotSystem.h"
 #include <imgui.h>
 #include <chrono>
 
@@ -456,29 +456,56 @@ namespace gui {
     }
 
     void ControlPanel::linkProperties() {
-        if (!_hasRobot) { return; }
+        if (!_hasRobot) return;
 
-        ImGui::Text("Link Controls");
-		ImGui::Separator();
-
-        // Rotate link01 around y axis, rotates all child links#
-        const RobotModel& robot = _sim->getRobotModel();
-		float minAngle = -360.0f; float maxAngle = 360.0f;
-
-        for (const auto& joint : robot.joints) {
-            if (joint.child == _currentLinkName) {
-                minAngle = joint.minAngle;
-                maxAngle = joint.maxAngle;
-                break;
-            }
+        robots::RobotSystem* robot = _sim->getRobotSystem();
+        if (!robot || !robot->hasRobot()) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No robot model loaded.");
+            ImGui::Separator();
+            return;
         }
 
-        float& angle = _linkAngles[_currentLinkName];
+        ImGui::Text("Link Controls");
+        ImGui::Separator();
 
-        ImGui::Text("Rotate %s", _currentLinkName.c_str());
-        ImGui::SliderFloat("Angle## (deg)", &angle, minAngle, maxAngle, "%.1f");
-		_sim->setRobotLinkRotation(_currentLinkName, angle);
-		ImGui::Separator();
+        const auto& links = robot->links();
+        if (links.empty()) {
+            ImGui::TextDisabled("Robot has no links.");
+            return;
+        }
+
+        // Build a combo list of link names
+        static int currentLinkIndex = 0;
+        currentLinkIndex = std::clamp(currentLinkIndex, 0, (int)links.size() - 1);
+
+        const char* preview = links[currentLinkIndex].name.c_str();
+        if (ImGui::BeginCombo("Link", preview)) {
+            for (int i = 0; i < (int)links.size(); ++i) {
+                bool selected = (i == currentLinkIndex);
+                if (ImGui::Selectable(links[i].name.c_str(), selected)) {
+                    currentLinkIndex = i;
+                    _currentLinkName = links[i].name;
+                }
+                if (selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (_currentLinkName.empty()) {
+            _currentLinkName = links[currentLinkIndex].name;
+        }
+
+        // Show + edit angle using RobotSystem API
+        float angleRad = 0.0f;
+        if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
+            ImGui::TextDisabled("No joint drives this link (likely base/root).");
+            return;
+        }
+
+        float angleDeg = glm::degrees(angleRad);
+        if (ImGui::SliderFloat("Angle (deg)", &angleDeg, -180.0f, 180.0f, "%.1f")) {
+            robot->setRobotLinkRotation(_currentLinkName, angleDeg);
+        }
     }
 
     void ControlPanel::stats() {
@@ -488,7 +515,7 @@ namespace gui {
         if (_obj && _obj->getMesh())
         {
             const glm::vec3& pos = _obj->transform.position;
-            const glm::vec3& rot = _obj->transform.rotation;
+            const glm::quat& rot = _obj->transform.rotQ;
 
             ImGui::Text("Plots");
 
@@ -525,10 +552,7 @@ namespace gui {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f",
-                    glm::degrees(rot.x),
-                    glm::degrees(rot.y),
-                    glm::degrees(rot.z));
+                
 
                 ImGui::EndTable();
             }            
@@ -643,103 +667,78 @@ namespace gui {
 
             // Robot section
             if (_hasRobot) {
-                RobotModel& robot = _sim->getRobotModel();
+                robots::RobotSystem* robotSys = _sim->getRobotSystem();
+                if (robotSys && robotSys->hasRobot()) {
 
-                bool robotSelected = (_selection.type == SelectionType::ROBOT);
+                    const auto& links = robotSys->links();
+                    const auto& joints = robotSys->joints();
 
-                // Robot Root Row
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
+                    // Root label
+                    std::string rootName = robotSys->robotName(); // or robotSys->robotName()
+                    if (rootName.empty()) rootName = "Robot";
 
-                ImGuiTreeNodeFlags rootFlags =
-                    ImGuiTreeNodeFlags_SpanAllColumns |
-                    ImGuiTreeNodeFlags_DefaultOpen;
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
 
-                bool openRoot = ImGui::TreeNodeEx("Z1", rootFlags);
+                    ImGuiTreeNodeFlags rootFlags =
+                        ImGuiTreeNodeFlags_SpanAllColumns |
+                        ImGuiTreeNodeFlags_DefaultOpen;
 
-                ImGui::TableSetColumnIndex(1);
-                ImGui::TextUnformatted("ROOT");
+                    bool openRoot = ImGui::TreeNodeEx(rootName.c_str(), rootFlags);
 
-                ImGui::TableSetColumnIndex(2);
-                if (ImGui::Button("Remove Robot")) {
-                    _sim->clearRobot();
-                    _hasRobot = false;
-                    LOG_INFO("%s removed from scene.", _requestedRobot.c_str());
-                    D_INFO("%s removed.", _requestedRobot.c_str());
-                }
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::TextUnformatted("ROOT");
 
-                if (openRoot)
-                {
-                    for (int i = 0; i < (int)robot.links.size(); ++i)
-                    {
-                        const auto& link = robot.links[i];
-
-                        auto* attachedObj = link.attachedObject;
-                        bool linkSelected = (_selection.type == SelectionType::LINK && _selection.index == i);
-
-                        // Determine parent link name
-                        const bool hasPrevJoint = (i > 0 && (i - 1) < (int)robot.joints.size());
-                        const auto* joint = hasPrevJoint ? &robot.joints[i - 1] : nullptr;
-
-                        std::string parentName;
-
-                        if (i == 0) {
-                            // Base link: parent is robot root
-                            parentName = _requestedRobot; // robot base name if first link (link00)
-                        }
-                        else if (hasPrevJoint) {
-                            // For link i, previous joint connects parent->child
-                            parentName = joint->parent; // parent link name
-                        }
-                        else {
-                            parentName = "?";
-                        }
-
-                        ImGui::TableNextRow();
-
-                        // Column 0 -> name
-                        ImGui::TableSetColumnIndex(0);
-                        ImGuiTreeNodeFlags leafFlags =
-                            ImGuiTreeNodeFlags_Leaf |
-                            ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                            ImGuiTreeNodeFlags_DrawLinesToNodes |
-                            ImGuiTreeNodeFlags_OpenOnArrow;
-
-                        if (linkSelected) {
-                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
-                        }
-
-                        ImGui::TreeNodeEx(link.name.c_str(), leafFlags);
-
-                        if (linkSelected) {
-                            ImGui::PopStyleColor();
-                        }
-
-                        if (ImGui::IsItemClicked() && attachedObj != nullptr) {
-                            _currentLinkName = link.name;
-                            _selection.type = SelectionType::LINK;
-                            _selection.index = i;
-                            _selection.source = SelectionSource::CONTROL_PANEL;
-                            _sim->setSelectedObject(attachedObj);
-                            LOG_INFO("Selected link: %s", link.name.c_str());
-
-                        }
-
-                        // Column 1 -> type
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::TextUnformatted("LINK");
-
-                        // Column 2 -> parent
-                        ImGui::TableSetColumnIndex(2);
-                        if (!parentName.empty())
-                            ImGui::TextUnformatted(parentName.c_str());
-                        else
-                            ImGui::TextDisabled("--");
+                    ImGui::TableSetColumnIndex(2);
+                    if (ImGui::Button("Remove Robot")) {
+                        _sim->clearRobot();
+                        _hasRobot = false;
                     }
 
-                    ImGui::TreePop();
+                    if (openRoot) {
+                        for (int i = 0; i < (int)links.size(); ++i) {
+                            const auto& link = links[i];
+                            scene::Object* attachedObj = link.attachedObject;
+
+                            // Parent name: find joint whose child == link.name
+                            std::string parentName = rootName;
+                            for (const auto& j : joints) {
+                                if (j.child == link.name) { parentName = j.parent; break; }
+                            }
+
+                            bool linkSelected = (_selection.type == SelectionType::LINK && _selection.index == i);
+
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+
+                            ImGuiTreeNodeFlags leafFlags =
+                                ImGuiTreeNodeFlags_Leaf |
+                                ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                ImGuiTreeNodeFlags_DrawLinesToNodes;
+
+                            if (linkSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
+                            ImGui::TreeNodeEx(link.name.c_str(), leafFlags);
+                            if (linkSelected) ImGui::PopStyleColor();
+
+                            if (ImGui::IsItemClicked() && attachedObj) {
+                                _currentLinkName = link.name;
+                                _selection.type = SelectionType::LINK;
+                                _selection.index = i;
+                                _selection.source = SelectionSource::CONTROL_PANEL;
+                                _sim->setSelectedObject(attachedObj);
+                            }
+
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::TextUnformatted("LINK");
+
+                            ImGui::TableSetColumnIndex(2);
+                            ImGui::TextUnformatted(parentName.c_str());
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    _currentObjectName = "Robot: " + rootName;
                 }
-                _currentObjectName = "Robot: " + _requestedRobot;
             }
 
             // General objects

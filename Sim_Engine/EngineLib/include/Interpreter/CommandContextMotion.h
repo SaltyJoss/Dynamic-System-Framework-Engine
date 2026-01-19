@@ -1,12 +1,10 @@
 #pragma once
 
 #include "EngineCore.h"
-#include "SimContext.h"
+#include "SimFwd.h"
 #include "Interpreter/Utils.h"
 
 #include "Platform/Logger.h"
-
-namespace interpreter { class ENGINE_API StoredProgram; }
 
 namespace commands {
 	struct ENGINE_API ActiveRigidRot {
@@ -14,17 +12,17 @@ namespace commands {
 		mathlib::Vec3 axisUnit{ 0.0, 0.0, 0.0 };
 		mathlib::Quat qStart{ 1.0, 0.0, 0.0, 0.0 };
 		mathlib::Quat qTarget{ 1.0, 0.0, 0.0, 0.0 };
-		double maxOmega = 0.0;				// rad/s
-		double epsAngle = 0.5 * PI / 180;	// rad
+		double maxOmega = 0.0; // rad/s
+		double epsAngle = 0.5 * constants::PI / 180; // rad
 		bool active = false;
 	};
 
 	struct ENGINE_API ActiveJointRot {
 		std::string link;
 		double start = 0.0;
-		double target = 0.0;				// rad
-		double maxOmega = 0.0;				// rad/s
-		double epsAngle = 0.5 * PI / 180;	// rad
+		double target = 0.0; // rad
+		double maxOmega = 0.0; // rad/s
+		double epsAngle = 0.5 * constants::PI / 180; // rad
 		bool wrapShortest = true;
 		bool active = false;
 	};
@@ -47,12 +45,12 @@ namespace commands {
 		double getOmegaClamp() const;
 
 		gui::simManager* getSim() const { return _sim; }
-		scene::ObjectID getDefaultObjectID() const { return _defaultObjID; }
-		scene::ObjectID getObjectID() const { return _objID; }
+		scene::ObjectID getDefaultObjectID() const;
+		scene::ObjectID getObjectID() const;
 
 		scene::Object* resolveObject(scene::ObjectID id) const;
-		scene::Object* resolveCurrentObject() const { return resolveObject(_objID); }
-		scene::Object* resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+		scene::Object* resolveCurrentObject() const;
+		scene::Object* resolveDefaultObject() const;
 
 		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
 		void setObjectID(scene::ObjectID id) { _objID = id; }
@@ -77,7 +75,7 @@ namespace commands {
 		// --- TRANSLATION COMMAND METHODS ---
 
 		// Translates in world coordinates along a specified direction
-		utils::OpResult translateWorld(const Vec3& direction, double distance, double vel);
+		utils::OpResult translateWorld(const mathlib::Vec3& direction, double distance, double vel);
 		// Translates along specified axes at a given velocity
 		utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt);
 
@@ -91,9 +89,9 @@ namespace commands {
 	private:
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
-		RobotModel* _robot = nullptr;
-		scene::ObjectID _objID = scene::INVALID_OBJECT_ID;
-		scene::ObjectID _defaultObjID = scene::INVALID_OBJECT_ID;
+		robots::RobotSystem* _robot = nullptr;
+		scene::ObjectID _objID;
+		scene::ObjectID _defaultObjID;
 
 		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp
@@ -104,7 +102,7 @@ namespace commands {
 		double NormaliseOmega(double omega) const;
 		double convertOmegaToInternal(double omega) const;
 
-		Vec3 normaliseDirection(const Vec3& dir) const;
+		mathlib::Vec3 normaliseDirection(const mathlib::Vec3& dir) const;
 
 		double getJointAngleRad(const std::string& link) const;
 		void setJointAngleRad(const std::string& link, double angleRad);
@@ -114,8 +112,8 @@ namespace commands {
 		float _currentAngle = 0.0; // current angle for rotation commands
 		std::string _currentLinkName; // current link name for joint commands
 
-		Vec3 angularVelocityPrev = Vec3::Zero();
-		Vec3 linearVelocityPrev = Vec3::Zero();
+		mathlib::Vec3 angularVelocityPrev = mathlib::Vec3::Zero();
+		mathlib::Vec3 linearVelocityPrev = mathlib::Vec3::Zero();
 
 		double _dtheta = 0.0; // angle displacement
 		double _dt = 0.0; // time interval

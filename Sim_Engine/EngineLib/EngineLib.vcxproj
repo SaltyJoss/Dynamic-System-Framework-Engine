@@ -183,6 +183,7 @@
     <ClInclude Include="include\Rendering\Texture.h" />
     <ClInclude Include="include\Robots\RobotLoader.h" />
     <ClInclude Include="include\Robots\RobotModel.h" />
+    <ClInclude Include="include\Robots\RobotSystem.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\CommandScriptEditor.h" />
@@ -203,7 +204,7 @@
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="include\Interpreter\RunWrapper.cpp" />
-    <ClInclude Include="include\Interpreter\SimContext.h" />
+    <ClInclude Include="include\Interpreter\SimFwd.h" />
     <ClCompile Include="src\Interpreter\Command.cpp" />
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
@@ -216,7 +217,6 @@
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
-    <ClCompile Include="src\Interpreter\SimContext.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Interpreter\Utils.cpp" />
@@ -310,6 +310,9 @@
     <ClCompile Include="src\Scene\RenderPreset.cpp" />
     <ClCompile Include="src\Scene\SimulationManager.cpp" />
     <ClCompile Include="src\Scene\Styles.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Robots\RobotSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

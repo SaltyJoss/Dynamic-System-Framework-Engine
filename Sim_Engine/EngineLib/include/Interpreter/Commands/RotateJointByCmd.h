@@ -10,7 +10,7 @@ namespace commands {
 	class ENGINE_API RotateJointByCmd final : public Command {
 	public:
 		// Constructor
-		RotateJointByCmd(const std::string& link, double omegaDeg, double deltaDeg);
+		RotateJointByCmd(std::string link, double omegaDeg, double deltaDeg);
 
 		std::string_view getName() const { return "rotateBy"; }
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
