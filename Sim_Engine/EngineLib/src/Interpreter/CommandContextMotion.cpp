@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Interpreter/CommandContextMotion.h"
+#include "Scene/SimulationManager.h"
+#include "Scene/ObjectID.h"
+#include "Robots/RobotSystem.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -8,19 +11,24 @@ using namespace utils;
 
 namespace commands {
 	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::ObjectID objID)
-		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? &sim->getRobotModel() : nullptr),
+		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
+	scene::ObjectID CommandContextMotion::getDefaultObjectID() const { return _defaultObjID; }
+	scene::ObjectID CommandContextMotion::getObjectID() const { return _objID; }
+
 	scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
 		if (!_sim) return nullptr;
-		if (id == scene::INVALID_OBJECT_ID) return nullptr;
+		if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
 		return _sim->getObjectByID(id);
 	}
 
+	scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
+	scene::Object* CommandContextMotion::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+
 
 	// --- GLOBAL STATE METHODS ---
-	
 	void CommandContextMotion::setAngularUnits(AngularUnits units) { _angularUnits = units; }
 	AngularUnits CommandContextMotion::getAngularUnits() const { return _angularUnits; }
 	
@@ -46,20 +54,15 @@ namespace commands {
 	}
 
 	double CommandContextMotion::getJointAngleRad(const std::string& link) const {
-		for (const auto& j : _robot->joints) {
-			if (j.child == link) { return j.angle; }
-		}
-		return 0.0; // or throw / assert
+		if (!_robot) return 0.0;
+		float a = 0.0f;
+		if (_robot->tryGetJointAngleRad(link, a)) return (double)a;
+		return 0.0;
 	}
 
 	void CommandContextMotion::setJointAngleRad(const std::string& link, double angleRad) {
-		for (auto& j : _robot->joints) {
-			if (j.child == link) {
-				j.angle = angleRad;
-				_sim->setRobotLinkRotation(link, glm::degrees(angleRad));
-				return;
-			}
-		}
+		if (!_robot) return;
+		_robot->trySetJointAngleRad(link, (float)angleRad);
 	}
 
 	// --- JOINT ANGLE METHODS ---
@@ -83,7 +86,7 @@ namespace commands {
 		if (angle < _rig.epsAngle) {
 			s.angularVelocity = Vec3::Zero();
 			_rig.active = false;
-			return OpResult::Success();
+			return OpResult::Success(true);
 		}
 
 		Vec3 axis;
@@ -94,30 +97,29 @@ namespace commands {
 		Vec3 w = (float)omega * axis.normalized();
 
 		s.angularVelocity = w;
-		return OpResult::Success();
+		return OpResult::Success(false);
 	}
 
 	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
 		if (!_jnt.active) {
-			D_INFO("No active joint rotation.");
-			return OpResult::Success();
+			return OpResult::Success(true);
 		}
 
 		double current = getJointAngleRad(_jnt.link);
 		double err = _jnt.target - current; // err = target - current
 
-		if (_jnt.wrapShortest) { err = wrapToPi((float)err); }
+		if (_jnt.wrapShortest) { err = robots::RobotSystem::wrapToPi((float)err); }
 
 		if (std::abs(err) < _jnt.epsAngle) {
 			setJointAngleRad(_jnt.link, _jnt.target);
 			_jnt.active = false;
-			return OpResult::Success();
+			return OpResult::Success(true);
 		}
 
 		double step = std::clamp(err, -_jnt.maxOmega * dt, _jnt.maxOmega * dt);
 		setJointAngleRad(_jnt.link, current + step);
 
-		return OpResult::Success();
+		return OpResult::Success(false);
 	}
 
 	utils::OpResult CommandContextMotion::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
@@ -142,7 +144,7 @@ namespace commands {
 		_rig.qTarget = (dq * _rig.qStart).normalized();
 		_rig.maxOmega = maxOmegaDegPerSec * (PI / 180.0); // rad/s
 		_rig.active = true;
-		return OpResult::Success();
+		return OpResult::Success(false);
 	}
 
 	utils::OpResult CommandContextMotion::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
@@ -157,9 +159,11 @@ namespace commands {
 		_jnt.target = target;
 		_jnt.maxOmega = maxOmegaDegPerSec * (PI / 180.0);
 		_jnt.active = true;
-		return OpResult::Success();
+		_jnt.wrapShortest = true;
+		_jnt.epsAngle = 0.25 * (PI / 180.0);
+		return OpResult::Success(false);
 	}
-
+		
 	// --- STOP MOTION METHODS ---
 
 	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
@@ -202,7 +206,7 @@ namespace commands {
 			omega, (int)_angularUnits, internalOmega);
 
 		// return success
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
@@ -220,11 +224,11 @@ namespace commands {
 		if (axes.y) { s.angularVelocity.y() = internalOmega; }
 		if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 	
 	OpResult CommandContextMotion::rotateJoint(std::string linkName, double angleDeg, double vel) {
-		if (!_robot) return OpResult::Failure("No robot model.");
+		if (!_robot) return OpResult::Failure("No robot model");
 		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
 		// apply absolute
@@ -236,14 +240,13 @@ namespace commands {
 		if (!_robot) return OpResult::Failure("No robot model.");
 		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
-		for (auto& j : _robot->joints) {
-			if (j.child == linkName) {
-				j.angle = (float)j.angle + glm::radians((float)deltaDeg);  // radians internal
-				_sim->setRobotLinkRotation(linkName, glm::degrees((float)j.angle));
-				return OpResult::Success();
-			}
-		}
-		return OpResult::Failure("Joint not found for linkName.");
+		float cur = 0.0f;
+		if (!_robot->tryGetJointAngleRad(linkName, cur))
+			return OpResult::Failure("Joint not found for linkName.");
+
+		cur = cur + glm::radians((float)deltaDeg);
+		_robot->trySetJointAngleRad(linkName, cur);
+		return OpResult::Success(true);
 	}
 
 	// --- TRANSLATION COMMAND METHODS ---
@@ -257,7 +260,7 @@ namespace commands {
 
 		const Vec3 translation = normaliseDirection(direction) * static_cast<float>(distance);
 		obj->transform.position += toGlm(translation);
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) {
@@ -282,14 +285,14 @@ namespace commands {
 		}
 
 		obj->transform.position += toGlm(translation);
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	// --- READ-ONLY ACCESSORS ---
 
 	bool CommandContextMotion::hasLink(std::size_t linkIndex) const {
 		if (!_robot) return false;
-		return linkIndex < _robot->links.size();
+		return _robot && linkIndex < _robot->links().size();
 	}
 
 	// --- PRIVATE METHODS ---

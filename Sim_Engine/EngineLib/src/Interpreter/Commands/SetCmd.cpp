@@ -6,6 +6,7 @@
 #include "EngineLib/LogMacros.h"
 
 using namespace utils;
+using namespace mathlib;
 
 namespace commands {
 	// Helper function to parse the integration method

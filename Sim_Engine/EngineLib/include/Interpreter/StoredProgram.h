@@ -7,8 +7,6 @@
 #include <string>
 #include <vector>
 
-using namespace commands;
-
 namespace interpreter {
 	// Class representing a stored program in the interpreter.
 	class ENGINE_API StoredProgram : public IStoredProgram {

@@ -2,6 +2,8 @@
 #include "Interpreter/Commands/SpinCmd.h"
 #include "Interpreter/Utils.h"
 
+#include "EngineLib/LogMacros.h"
+
 using namespace utils;
 using namespace mathlib;
 

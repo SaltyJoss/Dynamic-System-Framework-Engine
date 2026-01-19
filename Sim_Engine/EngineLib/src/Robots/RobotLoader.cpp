@@ -15,7 +15,7 @@ using kinematics::DH_Params;
 using kinematics::JointType;
 
 namespace robots {
-	RobotModel RobotLoader::loadFromJSON(const std::string& filepath) {
+	robots::RobotModel RobotLoader::loadFromJSON(const std::string& filepath) {
 		RobotModel robot;
 		LOG_INFO("Loading robot model from JSON: %s", filepath.c_str());
 
@@ -26,6 +26,7 @@ namespace robots {
 		}
 		json data = json::parse(file);
 
+		robot.name = data["name"].get<std::string>();
 		robot.scale = data["scale"].get<float>();
 
 		for (auto& linkData : data["links"]) {

@@ -94,6 +94,7 @@ namespace window {
 
         // UI + scene
         _sim = std::make_unique<gui::simManager>();
+		_sim->initGL();
         _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
 		_cmdEditor = std::make_unique<gui::CommandScriptEditor>(_sim.get());

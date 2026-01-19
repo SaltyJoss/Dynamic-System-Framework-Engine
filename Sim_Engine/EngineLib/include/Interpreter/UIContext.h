@@ -1,13 +1,11 @@
 #pragma once
 
 #include "EngineCore.h"
-#include "SimContext.h"
+#include "SimFwd.h"
 #include "Interpreter/Utils.h"
-
 
 #include "Platform/Logger.h"
 
-namespace scene { class ENGINE_API Object; }
 namespace interpreter { class ENGINE_API StoredProgram; }
 
 namespace commands {	
@@ -42,11 +40,11 @@ namespace commands {
 
 	private:
 		gui::simManager* _sim;		// simulation manager
-		RobotModel* _robot;			// current robot for commands
-		scene::ObjectID _objID = scene::INVALID_OBJECT_ID;
-		scene::ObjectID _defaultObjID = scene::INVALID_OBJECT_ID;
+		robots::RobotSystem* _robot; // current robot system
+		scene::ObjectID _objID;
+		scene::ObjectID _defaultObjID;
 
 		std::unordered_map<std::string, scene::ObjectID> _loadedObjects; // cache IDs, not pointers
-		std::unordered_map<std::string, RobotModel*> _loadedRobots;
+		std::unordered_map<std::string, robots::RobotSystem*> _loadedRobots;
 	};
 }// namespace commands

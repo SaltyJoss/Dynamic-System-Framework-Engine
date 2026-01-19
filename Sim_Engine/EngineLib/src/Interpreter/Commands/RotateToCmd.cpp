@@ -2,6 +2,8 @@
 #include "Interpreter/Commands/RotateToCmd.h"
 #include "Interpreter/Utils.h"
 
+#include "EngineLib/LogMacros.h"
+
 using namespace utils;
 using namespace mathlib;
 
@@ -19,8 +21,8 @@ namespace commands {
 
 	CmdResult RotateToCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
-			markFailed("rotateBy() not started.");
-			return CmdResult{ CmdState::Failed, {}, "rotateBy() not started." };
+			markFailed("rotateTo() not started.");
+			return CmdResult{ CmdState::Failed, {}, "rotateTo() not started." };
 		}
 
 		auto result = cntx.updateRigidRotateTo(dt);
@@ -33,7 +35,7 @@ namespace commands {
 		scene::Object* obj = cntx.resolveObject(_objID);
 		if (!obj) return { CmdState::Failed, {}, "rotateTo: object disappeared." };
 
-		if (obj->state.angularVelocity.norm() < 1e-6f) {
+		if (result.done) {
 			cntx.stopRotation(obj, _axes.any() ? _axes : utils::AxisMask{ false,false,true });
 			markCompleted();
 			return { CmdState::Executed, {}, "" };

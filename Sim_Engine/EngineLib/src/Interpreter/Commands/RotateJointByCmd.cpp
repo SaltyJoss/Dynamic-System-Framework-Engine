@@ -2,6 +2,8 @@
 #include "Interpreter/Commands/RotateJointByCmd.h"
 #include "Interpreter/Utils.h"
 
+#include "EngineLib/LogMacros.h"
+
 using namespace utils;
 using namespace mathlib;
 
@@ -11,7 +13,7 @@ namespace commands {
 	void RotateJointByCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateJointBy() ran successfully" }); }
 	bool RotateJointByCmd::hasStarted() const { return _started; }
 
-	RotateJointByCmd::RotateJointByCmd(const std::string& linkName, double omegaDegPerSec, double deltaDeg) 
+	RotateJointByCmd::RotateJointByCmd(std::string linkName, double omegaDegPerSec, double deltaDeg) 
 		: _link(std::move(linkName)), _omegaDeg(omegaDegPerSec), _deltaDeg(deltaDeg), _totalRotated(0.0), _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}

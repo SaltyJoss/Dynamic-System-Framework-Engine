@@ -1,9 +1,9 @@
 #pragma once
 
+#include "EngineCore.h"
+#include "SimFwd.h"
 #include "Interpreter/CommandContextMotion.h"
 #include "Interpreter/UIContext.h"
-
-namespace gui { class ENGINE_API simManager; }
 
 namespace commands {
 	// Main context combining motion and UI contexts
@@ -18,12 +18,6 @@ namespace commands {
 
         commands::UIContext& ui() { return _ui; }
         const commands::UIContext& ui() const { return _ui; }
-
-        // Optional: convenience wiring if motion needs default object each tick
-        void setDefaultObject(scene::Object* obj) {
-            const scene::ObjectID id = obj ? obj->id : scene::INVALID_OBJECT_ID;
-            _motion.setDefaultObjectID(id);
-        }
 
     private:
         commands::CommandContextMotion _motion;

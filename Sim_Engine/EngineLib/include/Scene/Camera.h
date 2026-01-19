@@ -14,8 +14,6 @@
 #include "Scene/Input.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
-
 namespace scene {
 	class ENGINE_API Camera : public Element
 	{
@@ -40,9 +38,9 @@ namespace scene {
 		glm::vec2 getCurrentPos2D() const { return _currentPos2D; }
 		glm::vec3 getPosition() const { return _position; }
 		glm::mat4 getViewProjection() const { return _projection * getViewMatrix(); }
-		glm::vec3 getUp() const { return glm::rotate(getDirection(), _up); }
-		glm::vec3 getRight() const { return glm::rotate(getDirection(), _right); }
-		glm::vec3 getForward() const { return glm::rotate(getDirection(), _forward); }
+		glm::vec3 getUp() const { return _up; }
+		glm::vec3 getRight() const { return _right; }
+		glm::vec3 getForward() const { return _forward; }
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
@@ -97,9 +95,9 @@ namespace scene {
 			_currentPos2D = pos2d;
 		}
 
-		void startFollow(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& offset);
+		void startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset);
 		void clearFollow() { _following = false; }
-		void setFollowTarget(const glm::vec3& pos, const glm::vec3& rot) { 
+		void setFollowTarget(const glm::vec3& pos, const glm::quat& rot) { 
 			_targetPos = pos;
 			_targetRot = rot;
 		}
@@ -145,7 +143,7 @@ namespace scene {
 		bool _following = false;
 		glm::vec3 _targetPos;
 		glm::vec3 _followOffset;
-		glm::vec3 _targetRot{ 0.0f, 0.0f, 0.0f };
+		glm::quat _targetRot{ 1.0f, 0.0f, 0.0f, 0.0f };
 
 		glm::mat4 _viewMatrix;
 		glm::mat4 _projection  = glm::mat4{ 1.0f };
