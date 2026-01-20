@@ -24,7 +24,7 @@ uniform sampler2D   albedoTex;
 // ------------------------------------------------------------
 // Lighting (single directional / distant light)
 // ------------------------------------------------------------
-uniform vec3 lightPosition;   // treated as position for now
+uniform vec3 lightDirection;
 uniform vec3 lightColour;
 uniform float lightIntensity;
 
@@ -106,58 +106,67 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 // Cascaded Shadow Mapping
 // ------------------------------------------------------------
 
-float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
+float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float dist)
 {
-    // Distance from camera to fragment
-    float currentDepth = length(worldPos - camPos);
-
-    // Choose cascade index based on distance
-    int cascadeIndex = (currentDepth > cascadeSplits[0]) ? 1 : 0;
-
-    // If beyond last cascade, no shadow
-    if (currentDepth > cascadeSplits[1])
-        return 0.0;
-
-    // Transform fragment position to light space for chosen cascade
     vec4 lightSpacePos = lightSpaceMatrix[cascadeIndex] * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-    projCoords = projCoords * 0.5 + 0.5; // NDC [-1,1] -> [0,1]
+    projCoords = projCoords * 0.5 + 0.5;
 
-    // Outside shadow map bounds -> no shadow
     if (projCoords.z > 1.0 ||
         projCoords.x < 0.0 || projCoords.x > 1.0 ||
         projCoords.y < 0.0 || projCoords.y > 1.0)
-    {
         return 0.0;
-    }
 
-    // Bias to reduce shadow acne
-    float bias = max(0.005 * (1.0 - dot(N, L)), 0.001);
+    float ndotl = max(dot(N, L), 0.0);
 
-    // PCF (5x5 kernel)
-    vec2 texelSize = 1.0 / textureSize(cascadeShadowMap[cascadeIndex], 0);
+    // --- PCF radius in texels ---
+    float baseRadius = (cascadeIndex == 0) ? 2.0 : 5.0;
+    
+    // near cascade = tighter, far cascade = wider
+    float radiusTexels = mix(baseRadius, baseRadius * 2.5, dist);
+    radiusTexels *= mix(1.0, 1.25, projCoords.z);
+
+    float slopeBias    = 0.0030 * (1.0 - ndotl);
+    float receiverBias = 0.0010 + 0.0015 * radiusTexels;   // tune this pair if needed
+    float bias         = slopeBias + receiverBias;
+
+    // PCF
+    vec2 texelSize = 1.0 / vec2(textureSize(cascadeShadowMap[cascadeIndex], 0));
+
     float sum = 0.0;
     int samples = 0;
 
     for (int x = -2; x <= 2; ++x)
+    for (int y = -2; y <= 2; ++y)
     {
-        for (int y = -2; y <= 2; ++y)
-        {
-            vec3 coord = vec3(
-                projCoords.xy + vec2(x, y) * texelSize,
-                projCoords.z - bias
-            );
-
-            float lit = texture(cascadeShadowMap[cascadeIndex], coord);
-            sum += lit;
-            samples++;
-        }
+        vec2 offset = vec2(x, y) * texelSize * radiusTexels;
+        float lit = texture(cascadeShadowMap[cascadeIndex], vec3(projCoords.xy + offset, projCoords.z - bias));
+        sum += lit;
+        samples++;
     }
 
-    float litFactor = sum / float(samples); // 1 = lit, 0 = shadowed
-    float shadowAmount = 1.0 - litFactor;      // 0 = lit, 1 = shadow
+    float litFactor = sum / float(samples);
+    return 1.0 - litFactor; // 0 lit, 1 shadow
+}
 
-    return shadowAmount;
+float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
+{
+    float d = length(worldPos - camPos);
+
+    // normalize distance into [0..1] over the whole shadow range
+    float dist01 = clamp(d / max(cascadeSplits[1], 0.0001), 0.0, 1.0);
+
+    if (d > cascadeSplits[1]) return 0.0;
+
+    // Blend region around split 0
+    float blendWidth = max(1.0, 0.15 * cascadeSplits[0]);
+    float t = smoothstep(cascadeSplits[0] - blendWidth,
+                         cascadeSplits[0] + blendWidth, d);
+
+    float s0 = shadowSingleCascade(0, worldPos, N, L, dist01);
+    float s1 = shadowSingleCascade(1, worldPos, N, L, dist01);
+
+    return mix(s0, s1, t);
 }
 
 // ------------------------------------------------------------
@@ -168,7 +177,7 @@ void main()
 {
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
-    vec3 L = normalize(lightPosition - WorldPos);
+    vec3 L = normalize(-lightDirection);
 
     float NdotL = max(dot(N, L), 0.0);
     float NdotV = max(dot(N, V), 0.0);
@@ -216,107 +225,11 @@ void main()
     vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
 
-    // combine
-    vec3 ambient = (diffuseIBL + specularIBL) * ao;
+    
+    float ambientShadow = mix(1.0, 0.5, shadow);
+    vec3 ambient = (kD * diffuseIBL + specularIBL) * ao * ambientShadow;
+    ambient *= 0.3;
     vec3 colour = ambient + Lo;
 
     FragColour = vec4(colour, 1.0);
 }
-
-
-// HAVING MASSIVE ISSUES WITH THIS PBR SHADER, SO IM TRYING DIFFERENT THINGS
-// I DO NOT UNDERSTAND WHY IT'S NOT WORKING - IT SHOULD BE FINE (i think)
-// I BELIVE THE PROBLEM IS WITH THE SHADOWS OR IBL TEXTURES NOT BEING BOUND PROPERLY
-// OR ITS WITH THE BRDF LUT OR PREFILTER MAP
-// 
-//// --- Basic vectors ---
-//vec3 N = normalize(Normal);
-//vec3 V = normalize(camPos - WorldPos);
-
-//// Light treated as positional; if you want directional, normalise lightDirection instead
-//vec3 L = normalize(lightPosition - WorldPos);
-//vec3 H = normalize(V + L);
-
-//float NdotL = max(dot(N, L), 0.0);
-//float NdotV = max(dot(N, V), 0.0);
-
-//// If light is behind the surface, we can early out on direct lighting
-//if (NdotL <= 0.0 || NdotV <= 0.0)
-//{
-//    // Still allow IBL to contribute some ambient
-//    vec3 baseColour = albedo;
-//    if (useTexture)
-//        baseColour *= texture(albedoTex, TexCoords).rgb;
-
-//    vec3 F0 = mix(vec3(0.04), baseColour, metallic);
-
-//    // IBL diffuse
-//    vec3 irradiance = texture(irradianceMap, N).rgb;
-//    vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
-
-//    // IBL specular
-//    vec3 R = reflect(-V, N);
-//    vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
-//    vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-//    vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
-//    vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
-
-//    vec3 colour = diffuseIBL + specularIBL;
-//    colour *= ao;
-
-//    FragColour = vec4(colour, 1.0);
-//    return;
-//}
-
-//// --- Material base colour, with optional albedo texture ---
-//vec3 baseColour = albedo;
-//if (useTexture)
-//    baseColour *= texture(albedoTex, TexCoords).rgb;
-
-//// --- Base reflectance F0 ---
-//vec3 F0 = mix(vec3(0.04), baseColour, metallic);
-
-//// --- Cook-Torrance BRDF for direct lighting ---
-//float NDF = DistributionGGX(N, H, roughness);
-//float G = GeometrySmith(N, V, L, roughness);
-//vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
-
-//vec3 kS = F;
-//vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
-
-//float denom = max(4.0 * NdotV * NdotL, 0.0001);
-//vec3  specular = (NDF * G * F) / denom;
-
-//vec3 radiance = lightColour * lightIntensity;
-
-//vec3 Lo = (kD * baseColour / PI + specular) * radiance * NdotL;
-
-//// --- Shadowing ---
-//float shadow = computeShadowCSM(WorldPos, N, L);
-//Lo *= (1.0 - shadow);
-
-//// --------------------------------------------------------
-//// Image-Based Lighting (IBL) ---------> I NEED TO GO TO WORK BUT IM PRETTY SURE THIS IS THE PROBLEM
-//// --------------------------------------------------------
-//vec3 irradiance = texture(irradianceMap, N).rgb;
-//vec3 diffuseIBL = irradiance * baseColour * (1.0 - metallic);
-
-//vec3 R = reflect(-V, N);
-//vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
-//vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-//vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
-//vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
-
-//vec3 ambient = (diffuseIBL + specularIBL) * ao;
-//// adds a small lambert-like fallback so it can't go to pure black
-//ambient += 0.05 * baseColour;
-
-//// --------------------------------------------------------
-//// Final colour
-//// --------------------------------------------------------
-//vec3 colour = ambient + Lo;
-
-//// colour = colour / (colour + vec3(1.0));
-//// colour = pow(colour, vec3(1.0/2.2));
-
-//FragColour = vec4(colour, 1.0);

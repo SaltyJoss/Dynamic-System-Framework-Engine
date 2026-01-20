@@ -15,7 +15,7 @@
 
 namespace gui {
     ControlPanel::ControlPanel(simManager* sceneView) :
-		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _sunLight(nullptr),
+		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -153,7 +153,7 @@ namespace gui {
         fov = _sim->getCamera()->getFOVRadians();
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
-        _sunLight = _sim->getSunLight();
+        _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
 
 		_phys = &_sim->getPhysicsSystem();

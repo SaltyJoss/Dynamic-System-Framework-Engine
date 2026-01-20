@@ -82,6 +82,9 @@ namespace scene {
 		Mesh* getMesh() { return _mesh.get(); }	// mutable version
 		const Mesh* getMesh() const { return _mesh.get(); } // const version
 
+		glm::vec3 getAlbedo() const { return albedo; }
+		void setAlbedo(const glm::vec3& color) { albedo = color; }
+
 		void update(shaders::Shader* shader) override;
 
 		void reset() {
@@ -103,7 +106,7 @@ namespace scene {
 	private:
 		std::shared_ptr<Mesh> _mesh;
 		glm::vec2 _lastMousePos{ 0.0f };
-		glm::vec3 albedo = glm::vec3(1.0f);
+		glm::vec3 albedo = glm::vec3(0.3f, 0.2f, 0.8f);
 		float _distance = 5.0f;
 	};
 }

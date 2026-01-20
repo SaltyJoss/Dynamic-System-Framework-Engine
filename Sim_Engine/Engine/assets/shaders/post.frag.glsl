@@ -6,8 +6,19 @@ out vec4 FragColour;
 uniform sampler2D hdrScene;
 uniform vec2 uRes;
 uniform float exposure = 1.0;
+uniform float whitePoint;
 
 vec3 tonemapReinhard(vec3 x) { return x / (x + vec3(1.0)); }
+
+vec3 tonemapACES(vec3 x)
+{
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return clamp((x*(a*x + b)) / (x*(c*x + d) + e), 0.0, 1.0);
+}
 
 // FXAA implementation
 vec3 fxaa(sampler2D tex, vec2 uv, vec2 res)
@@ -64,11 +75,14 @@ vec3 fxaa(sampler2D tex, vec2 uv, vec2 res)
 // Main fragment shader entry point
 void main()
 {
+    float exposureMul = exposure;
     vec3 col = fxaa(hdrScene, uv, uRes);
-    col *= exposure;
-    
-    col = tonemapReinhard(col);
 
+    col *= exposureMul;
+    col /= max(whitePoint, 1e-4);
+    
+    //col = tonemapReinhard(col);
+    col = tonemapACES(col);
     col = pow(col, vec3(1.0/2.2)); // Gamma to sRGB
     FragColour = vec4(col, 1.0);
 

@@ -66,7 +66,6 @@ namespace gui {
 
         // Light & Skybox
         scene::Light* getLight();
-        scene::Light* getSunLight();
         void setLightColour(const glm::vec3& c);
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }

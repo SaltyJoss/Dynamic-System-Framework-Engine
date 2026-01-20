@@ -45,7 +45,7 @@ namespace gui {
 
         simManager* _sim = nullptr;
         physics::PhysicsSystem* _phys;
-        scene::Light* _sunLight;
+        scene::Light* _light;
         scene::Object* _obj;
         ImGui::FileBrowser _meshLoad;
         ImGui::FileBrowser _hdrLoad;

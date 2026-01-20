@@ -72,7 +72,6 @@ namespace gui {
 		// Scene Objects
 		std::unique_ptr<scene::Camera> _camera;
 		std::unique_ptr<scene::Light> _light;
-		std::unique_ptr<scene::Light> _sunLight;
 		std::unique_ptr<AxisOrientator> _axisOrientator;
 
 		scene::Object* _selectedObject = nullptr;
@@ -122,10 +121,9 @@ namespace gui {
 			_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
 			_light = std::make_unique<scene::Light>();
-			_sunLight = std::make_unique<scene::Light>();
-			_sunLight->_isDirectional = true;
-			_sunLight->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
-			_sunLight->_intensity = 1.0f;
+			_light->_isDirectional = true;
+			_light->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
+			_light->_intensity = 1.0f;
 
 			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 1000.0f);
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
@@ -173,7 +171,6 @@ namespace gui {
 	//				    LIGHT & SKYBOX
 	// --------------------------------------------------
 	scene::Light* simManager::getLight() { return _impl->_light.get(); }
-	scene::Light* simManager::getSunLight() { return _impl->_sunLight.get(); }
 
 	void simManager::loadNewHDR(const std::string& path) {
 		LOG_INFO("Loading new HDR: %s", path.c_str());
@@ -367,6 +364,7 @@ namespace gui {
 		_impl->_postShader->use();
 		_impl->_postShader->setInt1(0, "hdrScene");
 		_impl->_postShader->setFlt1(_settingsCurrent.exposure, "exposure");
+		_impl->_postShader->setFlt1(_settingsCurrent.whitePoint, "whitePoint");
 		_impl->_postShader->setVec2(glm::vec2(_size.x, _size.y), "uRes");
 
 		glActiveTexture(GL_TEXTURE0);
@@ -463,10 +461,10 @@ namespace gui {
 			const int res = (i == 0) ? baseRes : (baseRes / 2); // 8192, 4096, 2048, 1024, 512, 256, 128
 
 			glBindTexture(GL_TEXTURE_2D, _impl->_cascadeDepth[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, res, res, 0, GL_RGBA, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, res, res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			const float border[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -497,25 +495,28 @@ namespace gui {
 		glDepthMask(GL_FALSE);
 
 		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
-		glDisable(GL_BLEND);
+		if (_settingsCurrent.msaaSamples > 1) { glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); }
+		else { glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE); }
 
-		glDisable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-0.2f, -0.2f);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		_impl->_worldGridShader->use();
 		_impl->_worldGridShader->setMat4(_impl->_camera->getViewProjection(), "gVP");
 		_impl->_worldGridShader->setVec3(_impl->_camera->getPosition(), "gCameraWorldPos");
+		_impl->_worldGridShader->setFlt1(1.4f, "gGridLineWidthPx");
+
+		_impl->_worldGridShader->setFlt1(_impl->_camera->getNear(), "uNear");
+		_impl->_worldGridShader->setFlt1(_impl->_camera->getFar(), "uFar");
+
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_BLEND);
 		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
 	}
 
 	void simManager::MeshRender() {
@@ -576,12 +577,12 @@ namespace gui {
 			{
 			case ShaderMode::Basic:
 				// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-				shader->setVec3(_impl->_light->getColour(), "colour");
+				shader->setVec3(obj->getAlbedo(), "albedo");
 				break;
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(_impl->_light->getColour(), "albedo");
+				shader->setVec3(obj->getAlbedo(), "albedo");
 				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
 				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
 				shader->setFlt1(1.0f, "lightIntensity");
@@ -589,13 +590,14 @@ namespace gui {
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(_impl->_light->getColour(), "albedo");
+				// (IMPORTANT) mesh_pbr.frag needs: albedo, metallic, roughness, ao, lightDirection, lightIntensity, lightColour, camPos
+				shader->setVec3(obj->getAlbedo(), "albedo");
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
 
 				shader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
-				shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
+				shader->setFlt1(1.0f, "lightIntensity");
 				shader->setVec3(_impl->_light->getColour(), "lightColour");
 				shader->setVec3(_impl->_camera->getPosition(), "camPos");
 
@@ -639,16 +641,22 @@ namespace gui {
 		cascadeNear[1] = cascadeFar[0];
 		cascadeFar[1] = nearPlane + _cascadeSplits[1] * (farPlane);
 
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(2.0f, 4.0f);
+
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			_impl->_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
+			// set viewport to shadow map size
 			int baseRes = _settingsCurrent.shadowMapRes;
 			int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
 			glViewport(0, 0, res, res);
 
+			// render to cascade FBO
 			glBindFramebuffer(GL_FRAMEBUFFER, _impl->_cascadeFBO[i]);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
+			// render scene from light's point of view
 			_impl->_shadowShader->use();
 			_impl->_shadowShader->setMat4(_impl->_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
 
@@ -663,6 +671,7 @@ namespace gui {
 			}
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	glm::mat4 simManager::LightSpaceMatrix(float nearPlane, float farPlane) {

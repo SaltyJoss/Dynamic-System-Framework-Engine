@@ -64,7 +64,7 @@ namespace render {
 			s.envIrradianceRes = 64;
 			s.msaaSamples = 8;
 			s.fxaa = false;
-			s.renderScale = 1.5f; // default is 1920x1080, so 1.5 = 2880x1620, 2.0 = 3840x2160
+			s.renderScale = 2.0f; // default is 1920x1080, so 1.5 = 2880x1620, 2.0 = 3840x2160
 			break;
 		}
 
@@ -72,11 +72,13 @@ namespace render {
 		switch (look) {
 		case LookPreset::Studio:
 			s.exposure = 1.0f;
+			s.whitePoint = 1.675f;
 			s.grid = true;
 			s.axisOrientator = true;
 			break;
 		case LookPreset::Cinematic:
 			s.exposure = 1.0f;
+			s.whitePoint = 1.75f;
 			s.grid = true;
 			s.axisOrientator = false;
 			break;

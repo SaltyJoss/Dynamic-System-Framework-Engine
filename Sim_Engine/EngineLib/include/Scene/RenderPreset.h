@@ -18,6 +18,7 @@ namespace render {
 		// Pipeline
 		bool hdr = true;
 		float exposure = 1.0f;
+		float whitePoint = 1.0f;
 
 		// Lighting
 		bool ibl = true;
