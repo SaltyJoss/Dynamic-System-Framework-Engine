@@ -69,14 +69,22 @@ namespace scene {
 			_intensity = 10.0f;
             _size = 25.0f;
         }
+        ~Light() {}
 
+		// Default light configurations
         struct DirectionalLight {
             glm::vec3 direction{ -1.0, -0.3f, 0.2f };
             glm::vec3 colour{ 1.0f, 0.98f, 0.95f };
             float intensity = 10.0f;
         };
 
-        ~Light() {}
+		// Point light configuration
+        struct PointLight {
+            glm::vec3 position{ 0.0f, 10.0f, 0.0f };
+            glm::vec3 colour{ 1.0f, 0.98f, 0.95f };
+            float intensity = 25.0f;
+            float size = 15.0f;
+        };
 
 		void setDirection(const glm::vec3& dir) { _direction = glm::normalize(dir); }
         void setIntensity(const float intsy) { _intensity = intsy; }
