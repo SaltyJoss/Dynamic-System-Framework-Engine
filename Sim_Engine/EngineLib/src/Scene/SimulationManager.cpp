@@ -125,7 +125,7 @@ namespace gui {
 			_light->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
 			_light->_intensity = 1.0f;
 
-			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 1000.0f);
+			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 5000.0f);
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 			glGenVertexArrays(1, &_worldGridVAO);
@@ -142,8 +142,9 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	simManager::simManager() : _size(3840, 2160), _backgroundColour(0.1f, 0.1f, 0.1f),
+	simManager::simManager() : _size(1920, 1080), _backgroundColour(0.0f, 0.0f, 0.0f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
+		_constSize = _size; // store initial size
 	}
 
 
@@ -154,7 +155,7 @@ namespace gui {
 		InitShadowResource(_settingsCurrent.shadowMapRes);
 		InitIBL();
 
-		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Medium);
+		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Ultra);
 		applyRenderProfile(s, render::LookPreset::Studio);
 	}
 
@@ -352,7 +353,7 @@ namespace gui {
 		MeshRender();
 
 		if (_settingsCurrent.grid) { WorldGridRender(); }
-		if (_settingsCurrent.axisOrientator) { _impl->_axisOrientator->render(view); }
+		if (_settingsCurrent.axisOrientator) { _impl->_axisOrientator->render(view, _settingsCurrent.renderScale); }
 
 		_impl->_frameBuffer->unbind();
 
@@ -375,6 +376,7 @@ namespace gui {
 		glBindVertexArray(0);
 
 		_impl->_postBuffer->unbind();
+
 
 		ImGui::Begin("Sim Engine", nullptr, ImGuiWindowFlags_NoTitleBar);
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
@@ -494,29 +496,39 @@ namespace gui {
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
 
-		glEnable(GL_MULTISAMPLE);
+		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
 
-		if (_settingsCurrent.msaaSamples > 1) { glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); }
-		else { glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE); }
+		if (msaa > 1) {
+			glDisable(GL_BLEND);
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			glEnable(GL_MULTISAMPLE);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(-0.2f, -0.2f);
+		}
+		else {
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			glDisable(GL_MULTISAMPLE);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		}
 
 		_impl->_worldGridShader->use();
 		_impl->_worldGridShader->setMat4(_impl->_camera->getViewProjection(), "gVP");
 		_impl->_worldGridShader->setVec3(_impl->_camera->getPosition(), "gCameraWorldPos");
-		_impl->_worldGridShader->setFlt1(1.4f, "gGridLineWidthPx");
-
-		_impl->_worldGridShader->setFlt1(_impl->_camera->getNear(), "uNear");
-		_impl->_worldGridShader->setFlt1(_impl->_camera->getFar(), "uFar");
+		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
 
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		glDisable(GL_BLEND);
+		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+		glDepthFunc(GL_LESS);
 	}
 
 	void simManager::MeshRender() {
@@ -813,7 +825,7 @@ namespace gui {
 		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
 
 		_impl->_frameBuffer->deleteBuffers();
-		_impl->_frameBuffer->createBuffers(vpW, vpH, msaa);
+		_impl->_frameBuffer->createBuffers(w, h, msaa);
 		
 		_impl->_postBuffer->deleteBuffers();
 		_impl->_postBuffer->createBuffers(vpW, vpH, 1);

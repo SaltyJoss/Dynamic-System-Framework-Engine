@@ -179,6 +179,7 @@ namespace gui {
         bool _glReady = false;
 
         glm::vec2 _size;
+		glm::vec2 _constSize; // To store initial size for aspect ratio resets, or graphics preset changes
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
         float _backgroundAlpha = 1.0f;
         float dt = 1.0f / 120.0f; // default to 120 fps
