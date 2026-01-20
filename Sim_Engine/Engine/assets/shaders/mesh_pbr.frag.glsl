@@ -225,8 +225,8 @@ void main()
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
 
     
-    float ambientShadow = mix(1.0, 0.5, shadow);
-    vec3 ambient = (kD * diffuseIBL + specularIBL) * ao * ambientShadow;
+    float contactShadow = smoothstep(0.0, 0.02, shadow);
+    vec3 ambient = (kD * diffuseIBL) * ao * (1.0 - 0.6 * contactShadow) + specularIBL * ao * 0.75;
     ambient *= 0.3;
     vec3 colour = ambient + Lo;
 

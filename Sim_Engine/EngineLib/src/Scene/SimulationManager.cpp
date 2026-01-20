@@ -122,8 +122,6 @@ namespace gui {
 
 			_light = std::make_unique<scene::Light>();
 			_light->_isDirectional = true;
-			_light->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
-			_light->_intensity = 1.0f;
 
 			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 5000.0f);
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
