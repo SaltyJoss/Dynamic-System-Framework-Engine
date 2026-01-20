@@ -67,6 +67,8 @@ namespace gui {
         void displaySettings();
         void stats();
 
+		void tempLightControls();
+
         void roboticArmSelector();
         void roboticCardDisplay(const char* name, const char* company);
 
@@ -86,7 +88,7 @@ namespace gui {
 
 		// Render Presets
         render::LookPreset l = render::LookPreset::Studio;
-        render::QualityPreset q = render::QualityPreset::Medium;
+        render::QualityPreset q = render::QualityPreset::Ultra;
         
 
         // Internal states

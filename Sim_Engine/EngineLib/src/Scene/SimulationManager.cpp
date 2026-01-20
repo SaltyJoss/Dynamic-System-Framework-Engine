@@ -595,9 +595,9 @@ namespace gui {
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
 				shader->setVec3(obj->getAlbedo(), "albedo");
-				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
-				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
-				shader->setFlt1(1.0f, "lightIntensity");
+				shader->setVec3(_impl->_light->getPosition(), "lightPosition");
+				shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
+				shader->setVec3(_impl->_light->getColour(), "lightColour");
 				shader->setVec3(_impl->_camera->getPosition(), "camPos");
 				break;
 
@@ -609,7 +609,7 @@ namespace gui {
 				shader->setFlt1(1.0f, "ao");
 
 				shader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
-				shader->setFlt1(1.0f, "lightIntensity");
+				shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
 				shader->setVec3(_impl->_light->getColour(), "lightColour");
 				shader->setVec3(_impl->_camera->getPosition(), "camPos");
 

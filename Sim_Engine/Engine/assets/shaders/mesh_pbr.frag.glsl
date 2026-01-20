@@ -182,9 +182,8 @@ void main()
     float NdotL = max(dot(N, L), 0.0);
     float NdotV = max(dot(N, V), 0.0);
 
-    if (NdotL <= 0.0 || NdotV <= 0.0) {
-        // tiny ambient so still see *something* on grazing angles
-        FragColour = vec4(0.05 * albedo, 1.0);
+    if (NdotV <= 0.0) {
+        FragColour = vec4(0.0, 0.0, 0.0, 1.0);
         return;
     }
 

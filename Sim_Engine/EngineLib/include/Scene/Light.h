@@ -62,11 +62,10 @@ namespace scene {
     public:
 
         Light() {
-            _direction = glm::vec3(-1.0f, -1.0f, -0.3f);
+            _direction = glm::vec3(-0.1f, -1.0f, -0.5f);
             _position = glm::vec3(-4.0f, 20.0f, 12.0f);
-            _colour = glm::vec3(1.0f, 0.98f, 0.95f);
-            _strength = 25.0f;
-			_intensity = 10.0f;
+            _colour = glm::vec3(1.0f, 0.98f, 0.98f);
+			_intensity = 1.2f;
             _size = 25.0f;
         }
         ~Light() {}
@@ -87,24 +86,27 @@ namespace scene {
         };
 
 		void setDirection(const glm::vec3& dir) { _direction = glm::normalize(dir); }
+		void setPosition(const glm::vec3& pos) { _position = pos; }
         void setIntensity(const float intsy) { _intensity = intsy; }
+		void setSize(const float size) { _size = size; }
 
         glm::vec3 getPosition() const { return _position; }
 		glm::vec3 getDirection() const { return _direction; }
+        float getIntensity() const { return _intensity; }
         glm::vec3 getColour() const { return _colour; }
-		float getIntensity() const { return _intensity; }    
 
         void update(shaders::Shader* shader) override {
             if (_isDirectional) {
                 glm::vec3 dir = glm::normalize(_direction);
                 shader->setVec3(dir, "lightDirection");
-                shader->setVec3(_colour, "lightColour");
                 shader->setFlt1(_intensity, "lightIntensity");
+                shader->setVec3(_colour, "lightColour");
+                shader->setFlt1(_size, "lightSize");
             }
             else {
                 shader->setVec3(_position, "lightPosition");
-                shader->setVec3(_colour, "lightColour");
                 shader->setFlt1(_intensity, "lightIntensity");
+                shader->setVec3(_colour, "lightColour");
                 shader->setFlt1(_size, "lightSize");
             }
         }
@@ -114,7 +116,6 @@ namespace scene {
         glm::vec3 _direction;
         glm::vec3 _colour;
 		glm::vec3 _position;
-		float _strength;
         float _intensity;
         float _size;
     };

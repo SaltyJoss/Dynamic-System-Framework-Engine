@@ -225,6 +225,7 @@ namespace gui {
 
         roboticArmSelector();
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
             linkProperties();
@@ -261,6 +262,26 @@ namespace gui {
 			D_SUCCESS("HDR loaded from file: %s", _currentHDRFile.c_str());
             _hdrLoad.ClearSelected();
         }
+    }
+
+    void ControlPanel::tempLightControls() {
+        if (!_light) return;
+        ImGui::SeparatorText("Light Settings:");
+        ImGui::Text("Intensity");
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::DragFloat("##intensity", &_light->_intensity, 0.1f, 0.0f, 100.0f, "%.1f");
+        ImGui::Text("Color"); 
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::ColorEdit3("##Colour", glm::value_ptr(_light->_colour)), ImGui::SameLine();
+		ImGui::Separator();
+		ImGui::Text("Direction");
+        ImGui::SetNextItemWidth(150.0f);
+		ImGui::DragFloat3("##direction", &_light->_direction.x, 0.1f, -1.0f, 1.0f, "%.2f");
+		ImGui::Separator();
+        ImGui::Text("Position");
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::DragFloat3("##position", &_light->_position.x, 0.1f, -100.0f, 100.0f, "%.1f");
+        ImGui::Separator();
     }
 
     void ControlPanel::simulationProperties() {
