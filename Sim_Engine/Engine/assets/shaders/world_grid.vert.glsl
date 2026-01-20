@@ -2,6 +2,7 @@
 
 out vec2 GridXZ;
 out vec3 WorldPos;
+out float vViewZ;
 
 uniform mat4 gVP = mat4(1.0);
 uniform float gGridSize = 1000.0;
@@ -32,4 +33,5 @@ void main()
 	gl_Position = gVP * vec4(vPos3, 1.0);
 	WorldPos = vPos3;
 	GridXZ = local.xz;
+    vViewZ = -gl_Position.z; // positive forward for a standard RH view where camera looks -Z
 }
