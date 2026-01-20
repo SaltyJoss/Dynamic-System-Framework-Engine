@@ -5,6 +5,9 @@
 # Created By: SaltyJxss
 # ---------------------------
 
+# Load Robotic Arm
+load(robot, Z1)
+
 # Wake / settle
 rotateJointBy(link01,  25,  10)
 rotateJointBy(link02,  25, -10)

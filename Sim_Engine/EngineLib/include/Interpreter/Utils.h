@@ -2,6 +2,7 @@
 
 #include "EngineCore.h"
 #include "SimFwd.h"
+#include <optional>
 
 #include "Platform/Logger.h"
 
