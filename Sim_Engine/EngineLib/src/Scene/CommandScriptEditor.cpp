@@ -9,7 +9,7 @@
 namespace gui {
 	CommandScriptEditor::CommandScriptEditor(gui::simManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
 		_script = std::vector<std::string>();
-		_isRunning = false;
+		_sim->setScriptRunning(false);
 
 		// Preallocate script text buffer
 		_scriptText.reserve(8192);
@@ -31,7 +31,7 @@ namespace gui {
 	// Destructor
 	CommandScriptEditor::~CommandScriptEditor() {
 		_script.clear();
-		_isRunning = false;
+		_sim->setScriptRunning(false);
 	}
 
 	static int textResizeCallback(ImGuiInputTextCallbackData* data) {
@@ -109,7 +109,7 @@ namespace gui {
 
 		// Run/Stop button for the command script
 
-		const bool wasRunning = _isRunning; // snapshot
+		const bool wasRunning = _sim->isScriptRunning(); // snapshot
 
 		if (wasRunning) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.80f, 0.15f, 0.15f, 1.0f));
@@ -117,15 +117,15 @@ namespace gui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
 		}
 
-		if (ImGui::Button(_isRunning ? "Stop Script" : "Run Script")) {
-			_isRunning = !_isRunning;
-			LOG_INFO("Command script %s.", _isRunning ? "started" : "stopped");
-			D_INFO("Command script %s.", _isRunning ? "started" : "stopped");
+		if (ImGui::Button(_sim->isScriptRunning() ? "Stop Script" : "Run Script")) {
+			_sim->setScriptRunning(!_sim->isScriptRunning());
+			LOG_INFO("Command script %s.", _sim->isScriptRunning() ? "started" : "stopped");
+			D_INFO("Command script %s.", _sim->isScriptRunning() ? "started" : "stopped");
 
-			if (!_isRunning) {
+			if (!_sim->isScriptRunning()) {
 				// stopping
 				if (_program) _program->stop();
-				_isRunning = false;
+				_sim->setScriptRunning(false);
 			}
 			else {
 				delete _wrapper; _wrapper = nullptr;
@@ -149,7 +149,7 @@ namespace gui {
 			ImGui::PopStyleColor(3);
 		}
 
-		if (_isRunning && _program) {
+		if (_sim->isScriptRunning() && _program) {
 			if (!_program) {
 				terminateScript("Command script stopped -> program is null.", true);
 				return;
@@ -166,7 +166,7 @@ namespace gui {
 	}
 
 	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
-		_isRunning = false;
+		_sim->setScriptRunning(false);
 
 		if (fault) {
 			LOG_WARN("%s", reason);
@@ -265,7 +265,7 @@ namespace gui {
 		ImGui::SameLine(); ImGui::TextDisabled(" | ");
 		ImGui::SameLine(); ImGui::TextDisabled("Chars: %d", (int)_scriptText.size());
 		ImGui::SameLine();  ImGui::TextDisabled("|");
-		ImGui::SameLine(); ImGui::TextDisabled("State: %s", _isRunning ? "Running" : "Idle");
+		ImGui::SameLine(); ImGui::TextDisabled("State: %s", _sim->isScriptRunning() ? "Running" : "Idle");
 	}
 
 	bool CommandScriptEditor::tryLoadFromDialog() {

@@ -48,9 +48,11 @@ namespace scene {
 
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
-		double t = 0.0; // simulation time
-		Quat q;			//
-		Vec3 omega;     // angular velocity (rad/s)
+		double t;
+		Quat q_method;	// integrator quaternion
+		Quat q_ref;		// reference quaternion
+		Vec3 omega;		// integrator angular velocity
+		double alpha;	// angle error
 	};
 
 	struct ENGINE_API ErrorSample {

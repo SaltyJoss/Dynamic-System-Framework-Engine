@@ -59,6 +59,14 @@ namespace interpreter {
 		virtual void setIntegratorMethod(IntegratorMethod method) = 0;
 		virtual IntegratorMethod getIntegratorMethod() const = 0;
 
+		// Set & Get Omega
+		virtual void setOmega(mathlib::Vec3 omega, utils::AngularUnits units) = 0;
+		virtual mathlib::Vec3 getOmega(utils::AngularUnits units) const = 0;
+
+		// Set & Get Fixed Dt
+		virtual void setFixedDt(double dt) = 0;
+		virtual double getFixedDt() const = 0;
+
 		// Set & Get Colour
 		virtual void setColour(mathlib::Vec3 rgb) = 0;
 		virtual mathlib::Vec3 getColour() const = 0;

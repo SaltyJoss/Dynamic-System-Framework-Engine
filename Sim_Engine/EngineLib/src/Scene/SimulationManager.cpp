@@ -110,7 +110,7 @@ namespace gui {
 			_shaderPBR = std::make_shared<shaders::Shader>();
 			_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
-			currentShader = _shaderLit.get();
+			currentShader = _shaderPBR.get();
 			_skybox = std::make_unique<render::SkyboxRenderer>();
 
 			// Shader Types B
@@ -142,7 +142,7 @@ namespace gui {
 
 	simManager::simManager() : _size(1920, 1080), _backgroundColour(0.0f, 0.0f, 0.0f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
-		_constSize = _size; // store initial size
+		_resSize = _size; // store initial size
 	}
 
 
@@ -153,8 +153,8 @@ namespace gui {
 		InitShadowResource(_settingsCurrent.shadowMapRes);
 		InitIBL();
 
-		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Ultra);
-		applyRenderProfile(s, render::LookPreset::Studio);
+		auto s = render::MakeSettings(render::ResolutionPreset::R_4K, render::QualityPreset::Ultra);
+		applyRenderProfile(s, render::ResolutionPreset::R_4K);
 	}
 
 	simManager::~simManager() {
@@ -317,9 +317,10 @@ namespace gui {
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
 	void simManager::render() {
-		updatePhysics(dt);
+		updatePhysics(_dt);
 		_fpsCounter.update();
 		if (_settingsCurrent.shadows) { ShadowPass(); }
+		//D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
 
 		_impl->_frameBuffer->bind();
 
@@ -425,6 +426,22 @@ namespace gui {
 		// Update each object's physics state
 		for (auto& obj : _impl->_objects) {
 			if (obj) { _impl->_physics->update(dt, obj.get()); }
+		}
+	}
+
+	void simManager::tick(double frame_dt) {
+		if (_scriptRunning) { stepFixed(frame_dt); }
+		else { updatePhysics(frame_dt); }
+
+		D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
+	}
+
+	void simManager::stepFixed(double frame_dt) {
+		_accum += frame_dt;
+		while (_accum >= _dt) {
+			updatePhysics(_dt);
+			_accum -= _dt;
+			_simTime += _dt;
 		}
 	}
 
@@ -751,23 +768,14 @@ namespace gui {
 		_impl->_skybox->render(projection, view);
 	}
 
-	std::string simManager::getDefaultHDR(render::LookPreset p) const {
-		switch (p) {
-			case render::LookPreset::Studio:
-				return "Engine/assets/hdr/default_white.hdr";
-			case render::LookPreset::Cinematic:
-				return "Engine/assets/hdr/cinematic_01_4k.hdr";
-		}
-		return "Engine/assets/hdr/default_white.hdr";
-	}	
+	std::string simManager::getDefaultHDR() const { return "Engine/assets/hdr/default_white.hdr"; }	
 
 	shaders::Shader* simManager::getActiveShader() const { return _impl->currentShader; }
-	void simManager::applyRenderSettings(const render::RenderSettings& s) { applyRenderProfile(s, _lookCurrent); }
+	void simManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
-	void simManager::applyRenderProfile(const render::RenderSettings& s, render::LookPreset l) {
+	void simManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {
 		const bool first = !_settingsValid;
 
-		const bool lookChanged = first || l != _lookCurrent;
 		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
 
 		const bool msaaChanged = first || (s.msaaSamples != _settingsCurrent.msaaSamples);
@@ -780,34 +788,13 @@ namespace gui {
 			D_INFO("Shadow settings changed -> shadow resources re-initialised.");
 		}
 
-		if (lookChanged && !_hdrUserOverride) {
-			const std::string hdr = getDefaultHDR(l);
-			if (hdr != _activeHDRPath) {
-				loadNewHDR_Preset(hdr);
-				LOG_INFO("Preset HDR applied -> %s", hdr.c_str());
-				D_INFO("Preset HDR applied -> %s", hdr.c_str());
-			}
-		}
-
 		_settingsCurrent = s;
-		_lookCurrent = l;
+		_resCurrent = r;
 
-		if (msaaChanged) {
-			rebuildRenderTargets();
-			LOG_INFO("MSAA setting changed -> render targets rebuilt.");
-			D_INFO("MSAA setting changed -> render targets rebuilt.");
-		}
+		if (msaaChanged || renderScaleChanged) { rebuildRenderTargets(); }
 
-		if (lookChanged) {
-			if (l == render::LookPreset::Studio) {
-				skyboxEnabled = false;
-				_clearColour = glm::vec3(0.97f);
-			}
-			else {
-				skyboxEnabled = true;
-				_clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
-			}
-		}
+		LOG_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f",  (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
+		D_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
 
 		_settingsValid = true;
 	}
@@ -826,7 +813,7 @@ namespace gui {
 		_impl->_frameBuffer->createBuffers(w, h, msaa);
 		
 		_impl->_postBuffer->deleteBuffers();
-		_impl->_postBuffer->createBuffers(vpW, vpH, 1);
+		_impl->_postBuffer->createBuffers(w, h, 1);
 
 		_impl->_camera->setAspect((float)vpW / (float)vpH);
 		
@@ -836,7 +823,7 @@ namespace gui {
 
 	void simManager::resetHDRToPreset() {
 		_hdrUserOverride = false;
-		const std::string hdr = getDefaultHDR(_lookCurrent);
+		const std::string hdr = getDefaultHDR();
 		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 

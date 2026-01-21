@@ -15,13 +15,17 @@ namespace commands {
 
 	enum class SetTargetType {
 		IntegratorMethod,
-		Function,
-		Colour // not implemented yet
+		Omega,
+		FixedDt,
+		Function,// not implemented yet
+		Colour
 	};
 
 	struct ENGINE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
 		IntegratorMethod method = IntegratorMethod::Euler; // Default method
+		mathlib::Vec3 omega{ 0.0, 0.0, 0.0 };
+		double fixedDt = 0.0;
 		// function WOULD go here, not done yet
 		Colour colour{ BlockColour::Red, mathlib::Vec3{ 1.0, 0.0, 0.0 } };
 	};
@@ -45,6 +49,10 @@ namespace commands {
 
 		// Get current method
 		IntegratorMethod getCurrentMethod() const { return _method; }
+
+		// Omega Setter
+		void setOmega(const mathlib::Vec3& omega, AngularUnits units);
+
 
 		// Colour Setters
 		void setColour(const mathlib::Vec3& rgb);

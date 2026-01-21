@@ -29,10 +29,12 @@ namespace utils {
 
 	// Helper function to trim whitespace from both ends of a string_view
 	std::string_view trim(std::string_view str) {
-		size_t a = str.find_first_not_of(" \t\r");
-		if (a == std::string_view::npos) { return ""; } // All whitespace
-		size_t b = str.find_last_not_of(" \t\r");
-		return str.substr(a, b - a + 1);
+		auto is_ws = [](unsigned char c) { return c == ' ' || c == '\t' || c == '\r'; }; // trim whitespace
+		size_t a = 0;
+		while (a < str.size() && is_ws(str[a])) { ++a; }
+		size_t b = str.size();
+		while (b > a && is_ws(str[b - 1])) { --b; }
+		str = str.substr(a, b - a);
 	}
 
 	// Helper function to convert a string to uppercase
@@ -132,7 +134,7 @@ namespace utils {
 	}
 
 	// Helper function to parse double from string_view
-	std::optional<double> utils::parseDouble(const std::string_view s) {
+	double utils::parseDouble(const std::string_view s) {
 		double out = 0.0;
 		auto first = s.data();
 		auto last = s.data() + s.size();
@@ -140,6 +142,38 @@ namespace utils {
 		auto res = std::from_chars(first, last, out); // format: rotate(target, omega, startDeg, endDeg)
 		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
 		return out;
+	}
+
+	float utils::parseFloat(const std::string s) {
+		float out = 0.0f;
+		auto first = s.data();
+		auto last = s.data() + s.size();
+
+		auto res = std::from_chars(first, last, out); // Format: COMMAND <identifier>/<axis> <first>, ...<args_n>..., <last> "# Description"
+		if (res.ec != std::errc{} || res.ptr != last) { return 0.0f; }
+		return out;
+	}
+
+	mathlib::Vec3 utils::parseVec3(const std::string& str) {
+		std::string s = stripBraces(str);
+		std::vector<std::string> vStr;
+		std::string cur;
+		cur.reserve(s.size());
+
+		auto pushCurrent = [&]() {
+			trim(cur);
+			if (!cur.empty()) { vStr.push_back(cur); }
+			cur.clear();
+		};
+
+		for (size_t i = 0; i < s.size(); ++i) {
+			char c = s[i];
+			if (c == ',') { pushCurrent(); continue; }
+			cur.push_back(c);
+		}
+		pushCurrent();
+
+		return mathlib::Vec3{ parseFloat(vStr[0]), parseFloat(vStr[1]), parseFloat(vStr[2]) };
 	}
 
 	static std::string stripBraces(std::string s) {

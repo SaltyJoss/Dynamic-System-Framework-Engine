@@ -86,7 +86,7 @@ namespace physics {
 		if (_diagRunning && obj == _diagObject) {
 			IntegratorDiagSample sample;
 			sample.t = _t;
-			sample.q = s.q;
+			sample.q_method = s.q;
 			sample.omega = s.angularVelocity;
 			_diagSamples.push_back(sample);
 		}
@@ -187,7 +187,7 @@ namespace physics {
 		if (_diagRunning) {
 			ReferenceSolver::RefIntegratorDiagSample samples;
 			samples.t = rt.t;
-			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // angles
+			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // quaternion angles
 			samples.omega = Vec3(rt.x(4), rt.x(5), rt.x(6)); // angular velocities
 			_refDiagSamples.push_back(samples);
 

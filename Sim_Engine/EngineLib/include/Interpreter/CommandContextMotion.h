@@ -55,6 +55,17 @@ namespace commands {
 		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
 		void setObjectID(scene::ObjectID id) { _objID = id; }
 
+		// --- PROCESS CONTROL METHODS ---
+
+		// Start and wait
+		void startMotion();
+		void waitSomeTime(double dt);
+	
+		// Stop Motion
+		void stopAllMotion(scene::Object* obj, utils::AxisMask axes);
+		void stopRotation(scene::Object* obj, utils::AxisMask axes);
+		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
+
 		// --- ROTATION COMMAND METHODS ---
 
 		// Rotates an object around specified axes at a given angular velocity
@@ -81,9 +92,6 @@ namespace commands {
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
-
-		void stopRotation(scene::Object* obj, utils::AxisMask axes);
-		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 
 	private:

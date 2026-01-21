@@ -55,7 +55,9 @@ namespace utils {
 	std::string rgbToHex(const mathlib::Vec3& rgb);
 
 	// --- Command Utilities ---
-	std::optional<double> parseDouble(const std::string_view s);
+	double parseDouble(const std::string_view s);
+	float parseFloat(const std::string s);
+	mathlib::Vec3 parseVec3(const std::string& str);
 	AxisMask parseAxisMask(const std::string& s);
 	bool tryParseObjID(const std::string& s, scene::ObjectID& out);
 } // namespace commands
