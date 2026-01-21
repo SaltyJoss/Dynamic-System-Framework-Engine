@@ -87,6 +87,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateToCmd>(objID, axes, *omegaOpt, *angleOpt);
+		return std::make_unique<RotateToCmd>(objID, axes, omegaOpt, angleOpt);
 	}
 } // namespace commands

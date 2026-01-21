@@ -31,7 +31,7 @@ namespace commands {
 		double _totalRotated = 0.0;
 		bool _started = false;
 
-		CmdResult _result = { CmdState::NotStarted, {}, "" };
+		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
 		void markFailed(const std::string& message) override;

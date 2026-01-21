@@ -3,7 +3,6 @@
 #include "EngineCore.h"
 #include "ICommand.h"
 #include "MainContext.h"
-#include "UIContext.h"
 
 using namespace interpreter;
 

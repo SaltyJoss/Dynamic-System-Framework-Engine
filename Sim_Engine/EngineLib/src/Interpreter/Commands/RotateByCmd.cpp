@@ -18,7 +18,6 @@ namespace commands {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
-
 	// Update the command
 	CmdResult RotateByCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
@@ -89,6 +88,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateByCmd>(objID, axes, *omegaOpt, *deltaOpt);
+		return std::make_unique<RotateByCmd>(objID, axes, omegaOpt, deltaOpt);
 	}
 } // namespace commands

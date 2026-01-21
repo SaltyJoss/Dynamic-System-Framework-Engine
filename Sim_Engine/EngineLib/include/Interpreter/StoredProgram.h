@@ -18,18 +18,22 @@ namespace interpreter {
 		// Add a command to the program
 		void add(commands::ICommand* cmd) override;
 
-		// Reset program to initial state
 		void reset() override;
-		// Clear all stored instructions
+
 		void clear() override;
-		// Start program execution
+
 		void start() override;
-		// Stop program execution
+		void startSim() override;
+
 		void stop() override;
-		// Puase program execution
+		void stopSim() override;
+
 		void pause() override;
+		void waitSim(double dt) override;
+
 		// Step the program by dt
 		void step(double dt) override;
+
 		// Get current program status
 		ProgramStatus status() const override;
 
@@ -55,6 +59,13 @@ namespace interpreter {
 		// Set & Get Integrator Method
 		void setIntegratorMethod(IntegratorMethod method) override;
 		IntegratorMethod getIntegratorMethod() const override;
+
+		// Set & Get Omega
+		void setOmega(mathlib::Vec3 omega, utils::AngularUnits units) override;
+
+		// Set & Get Fixed Dt
+		void setFixedDt(double dt) override;
+		double getFixedDt() const override;
 
 		// Set & Get Colour
 		void setColour(mathlib::Vec3 rgb) override;

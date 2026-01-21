@@ -67,6 +67,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateJointToCmd>(linkName, *omegaOpt, *angleOpt);
+		return std::make_unique<RotateJointToCmd>(linkName, omegaOpt, angleOpt);
 	}
 } // namespace commands

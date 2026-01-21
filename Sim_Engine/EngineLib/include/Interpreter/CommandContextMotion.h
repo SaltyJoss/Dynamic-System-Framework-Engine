@@ -44,6 +44,14 @@ namespace commands {
 		// Gets the current omega clamp value
 		double getOmegaClamp() const;
 
+		// Sets the angular velocity (omega) for the current object
+		utils::OpResult setOmega(const mathlib::Vec3& omega); // rad/s
+		utils::OpResult stopAllOmega(); // stops all angular velocity
+
+		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
+		utils::OpResult stopJointOmega(const std::string& childLink); // stops joint angular velocity
+
+		// --- HELPER METHODS ---
 		gui::simManager* getSim() const { return _sim; }
 		scene::ObjectID getDefaultObjectID() const;
 		scene::ObjectID getObjectID() const;
