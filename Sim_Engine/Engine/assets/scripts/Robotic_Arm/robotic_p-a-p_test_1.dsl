@@ -8,6 +8,8 @@
 # Load Robotic Arm
 load(robot, Z1)
 
+start()
+
 # Wake / settle
 rotateJointBy(link01,  25,  10)
 rotateJointBy(link02,  25, -10)
@@ -82,3 +84,5 @@ rotateJointBy(link06,  90, -70)
 rotateJointBy(link05,  60,  20)
 rotateJointBy(link06,  90,  35)
 rotateJointBy(link06,  90, -35)
+
+stop()
