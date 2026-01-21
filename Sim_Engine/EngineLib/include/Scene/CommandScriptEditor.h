@@ -68,9 +68,6 @@ namespace gui {
 		// Full script text
 		std::string _scriptText;
 
-		// Command script running state
-		bool _isRunning;
-
 		// For log selection
 		std::unordered_set<int> selectedLines;
 		// Last clicked line index

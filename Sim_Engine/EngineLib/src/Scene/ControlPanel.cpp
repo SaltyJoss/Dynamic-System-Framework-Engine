@@ -78,36 +78,58 @@ namespace gui {
 
         if (ImGui::BeginMenu("Render")) {
             if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::Low;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::Medium;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::High;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) {
+				_qualityChanged = true;
                 q = render::QualityPreset::Ultra;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) {
-                l = render::LookPreset::Studio;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            if (ImGui::MenuItem("1280x720", nullptr, r == render::ResolutionPreset::R_720p)) {
+                _resChanged = true;
+				r = render::ResolutionPreset::R_720p;
             }
-            if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) {
-                l = render::LookPreset::Cinematic;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            if (ImGui::MenuItem("1920x1080", nullptr, r == render::ResolutionPreset::R_1080p)) {
+				_resChanged = true;
+				r = render::ResolutionPreset::R_1080p;
+			}
+			if (ImGui::MenuItem("2560x1440", nullptr, r == render::ResolutionPreset::R_1440p)) {
+				_resChanged = true;
+                r = render::ResolutionPreset::R_1440p;
+			}
+			if (ImGui::MenuItem("3840x2160", nullptr, r == render::ResolutionPreset::R_4K)) {
+                _resChanged = true;
+				r = render::ResolutionPreset::R_4K;
+			}
+
+            if (_qualityChanged) {
+                _sim->applyRenderProfile(render::MakeSettings(r, q), r);
+				const render::RenderSettings s;
+				LOG_INFO("Render quality changed to %d", (int)q);
+                D_INFO("Render quality changed to %d", (int)q);
+                _qualityChanged = false;
             }
+
+            if (_resChanged) {
+                auto s = render::MakeSettings(r, q);
+                _sim->applyRenderProfile(s, r);
+                LOG_INFO("Render resolution preset changed to %dx%d", (int)(_sim->getSize().x * s.renderScale), (int)(_sim->getSize().y * s.renderScale));
+				D_INFO("Render resolution preset changed to %dx%d", (int)(_sim->getSize().x * s.renderScale), (int)(_sim->getSize().y * s.renderScale));
+
+                _resChanged = false;
+			}
+
 
             ImGui::EndMenu();
         }

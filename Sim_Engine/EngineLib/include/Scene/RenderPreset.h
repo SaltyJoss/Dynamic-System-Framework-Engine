@@ -11,7 +11,7 @@
 // =============================================
 
 namespace render {
-	enum class LookPreset{ Studio, Cinematic };
+	enum class ResolutionPreset { R_720p, R_1080p, R_1440p, R_4K };
 	enum class QualityPreset { Low, Medium, High, Ultra};
 
 	struct RenderSettings {
@@ -51,8 +51,8 @@ namespace render {
 		bool axisOrientator = true;
 
 		// Render-Specific
-		float renderScale = 1.0f; // 0.5 = half res, 0.75 = 3/4 res (default), 1.0 = native, 2.0 = double res
+		float renderScale = 1.25f; // 0.5 = half res, 0.75 = 3/4 res (default), 1.0 = native, 2.0 = double res
 	};
 
-	RenderSettings MakeSettings(LookPreset look, QualityPreset quality);
+	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset qual);
 }

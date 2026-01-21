@@ -87,9 +87,11 @@ namespace gui {
         bool scrollToBottom = false;
 
 		// Render Presets
-        render::LookPreset l = render::LookPreset::Studio;
+		render::ResolutionPreset r = render::ResolutionPreset::R_4K;
         render::QualityPreset q = render::QualityPreset::Ultra;
         
+		bool _qualityChanged = false;
+		bool _resChanged = false;
 
         // Internal states
         bool simulationRunning = false;
