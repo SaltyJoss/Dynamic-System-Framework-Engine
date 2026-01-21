@@ -9,6 +9,7 @@
 #include "Scene/Mesh.h"
 
 using namespace mathlib;
+using namespace constants;
 using namespace utils;
 
 namespace commands {

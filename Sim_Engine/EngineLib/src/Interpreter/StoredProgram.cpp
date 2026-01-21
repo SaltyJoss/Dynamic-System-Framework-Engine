@@ -150,7 +150,7 @@ namespace interpreter {
 		_integratorMethod = method;
 		if (_sim) {
 			auto& physics = _sim->getPhysicsSystem();
-			physics.setIntegrationMethod(static_cast<physics::PhysicsSystem::eIntegrationMethod>(method));
+			physics.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
 	// Get Integrator Method

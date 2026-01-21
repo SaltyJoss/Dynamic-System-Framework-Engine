@@ -132,7 +132,7 @@ namespace gui {
 			_mesh->init();
 
 			_physics = std::make_unique<physics::PhysicsSystem>();
-			_robotSystem = std::make_unique<robots::RobotSystem>( _objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
+			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
 		}
 	};
 
@@ -431,7 +431,10 @@ namespace gui {
 
 	void simManager::tick(double frame_dt) {
 		if (_scriptRunning) { stepFixed(frame_dt); }
-		else { updatePhysics(frame_dt); }
+		else { 
+			updatePhysics(frame_dt);
+			_impl->_robotSystem->step(frame_dt, _simTime);
+		}
 
 		D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
 	}
@@ -439,7 +442,11 @@ namespace gui {
 	void simManager::stepFixed(double frame_dt) {
 		_accum += frame_dt;
 		while (_accum >= _dt) {
+			// Updates RigidBody states
 			updatePhysics(_dt);
+			// Update Robot System
+			if (_impl->_robotSystem) { _impl->_robotSystem->step(_dt, _simTime); }
+			// Advanvce simulation time
 			_accum -= _dt;
 			_simTime += _dt;
 		}

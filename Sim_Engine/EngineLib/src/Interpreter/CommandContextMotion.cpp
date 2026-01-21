@@ -7,6 +7,7 @@
 #include "EngineLib/LogMacros.h"
 
 using namespace mathlib;
+using namespace constants;
 using namespace utils;
 
 namespace commands {
@@ -52,7 +53,7 @@ namespace commands {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		float omegaRadPerSec = (float)(omegaDegPerSec * (PI / 180.0));
 		if (_angularUnits == AngularUnits::DegPerSec) { omegaRadPerSec = (float)(omegaDegPerSec * (PI / 180.0)); }
-		_robot->trySetJointAngleRad(childLink, omegaRadPerSec);
+		_robot->trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
 

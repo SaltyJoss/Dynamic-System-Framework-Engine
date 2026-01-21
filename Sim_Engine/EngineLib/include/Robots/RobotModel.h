@@ -33,7 +33,9 @@ namespace robots {
 		glm::vec3 axis{ 0.0, 0.0, 0.0 };
 		glm::vec3 offset{ 0.0, 0.0, 0.0 };
 		glm::quat quat{ 1.0, 0.0, 0.0, 0.0 }; // initial orientation
-		float angle = 0.0f;
+		float angle = 0.0f; // current angle (radians)
+		float speed = 0.0f; // target speed (radians per second)
+		float omega = 0.0f; // angular velocity (radians per second)
 
 		bool continuous = false; // true for base, false for limited joints
 		float maxSpeed = 1.0f; // radians per second

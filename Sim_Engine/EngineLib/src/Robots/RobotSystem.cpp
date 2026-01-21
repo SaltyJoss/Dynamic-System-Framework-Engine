@@ -10,9 +10,14 @@
 
 #include "EngineLib/LogMacros.h"
 
+using namespace mathlib;
+using namespace constants;
+
 namespace robots {
 	RobotSystem::RobotSystem(std::vector<std::unique_ptr<scene::Object>>& objects, spawnFn meshLoader)
-		: _objects(objects), _loadMeshReturn(std::move(meshLoader)) {
+		: _integrator(std::make_unique<integration::IntegrationService>()), _refSolver(std::make_unique<integration::ReferenceSolver>()), 
+		  _curIntMethod(integration::eIntegrationMethod::Euler), _objects(objects), _loadMeshReturn(std::move(meshLoader)) {
+		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 
 	// Method to create Object instances for each robot link
@@ -39,6 +44,50 @@ namespace robots {
 			_linkIndex[_robot.links[i].name] = (int)i;
 		}
 	}
+
+	mathlib::VecX RobotSystem::packState() const {
+		const int n = static_cast<int>(_robot.joints.size());
+		mathlib::VecX x(2 * n);
+		for (int i = 0; i < n; ++i) {
+			x[i]	 = static_cast<double>(_robot.joints[i].angle);
+			x[i + n] = static_cast<double>(_robot.joints[i].omega);
+		}
+		return x;
+	}
+
+	void RobotSystem::unpackState(const mathlib::VecX& x) {
+		const int n = static_cast<int>(_robot.joints.size());
+		for (int i = 0; i < n; ++i) {
+			_robot.joints[i].angle = clampJointAngle(_robot.joints[i], static_cast<float>(x[i]));
+			_robot.joints[i].omega = static_cast<float>(x[i + n]);
+		}
+	}
+
+	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
+		const int n = static_cast<int>(_robot.joints.size());
+		mathlib::VecX dxdt(2 * n);
+		const double c = 2.0; // damping [1/s] -> placeholder for now
+
+		for (int i = 0; i < n; ++i) {
+			const double theta = x[i];
+			const double omega = x[i + n];
+
+			dxdt[i] = omega;			// dtheta/dt
+			dxdt[i + n] = -c * omega;	// domega/dt
+		}
+		return dxdt;
+	}
+
+	void RobotSystem::step(double dt, double simTime) {
+		if (!_hasRobot) return;
+		mathlib::VecX x = packState();
+
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
+		mathlib::VecX xNext = _integrator->stepODE(x, simTime, dt, f);
+		
+		unpackState(xNext);
+		updateRobotKinematics();
+	}	
 
 	// Method to load a robot model by name
 	void RobotSystem::loadRobot(const std::string& name) {
@@ -136,6 +185,7 @@ namespace robots {
 		}
 	}
 
+	// Method to get the angle of a specific robot joint
 	bool RobotSystem::tryGetJointAngleRad(const std::string& childLink, float& outAngle) const {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
@@ -148,6 +198,7 @@ namespace robots {
 		return false;
 	}
 
+	// Method to set the angle of a specific robot joint
 	bool RobotSystem::trySetJointAngleRad(const std::string& childLink, float angleRad) {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
@@ -159,6 +210,34 @@ namespace robots {
 		}
 		return false;
 	}
+
+	// Method to get the angular velocity of a specific robot joint
+	bool RobotSystem::tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const {
+		if (!_hasRobot) { return false; }
+		// Find joint child matching childLink
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				outOmega = joint.omega;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Method to set the angular velocity of a specific robot joint
+	bool RobotSystem::trySetJointOmegaRad(const std::string& childLink, float omegaRad) {
+		if (!_hasRobot) { return false; }
+		// Find joint child matching childLink
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.omega = omegaRad;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// --- Helper Methods ---
 
 	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
 		if (joint.continuous) { return wrapRad(angleRad); }
@@ -237,9 +316,8 @@ namespace robots {
 					std::remove_if(
 						_objects.begin(),
 						_objects.end(),
-						[&](const std::unique_ptr<scene::Object>& obj) {
-							return obj.get() == link.attachedObject;
-						}),
+						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == link.attachedObject; }
+					),
 					_objects.end()
 				);
 			}

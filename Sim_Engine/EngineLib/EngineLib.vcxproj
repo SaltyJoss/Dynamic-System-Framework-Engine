@@ -148,8 +148,12 @@
     <ClInclude Include="include\Interpreter\Commands\RotateJointByCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateJointToCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateToCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\SelectCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SpinCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\StartCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\StopCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\WaitCmd.h" />
     <ClInclude Include="include\Interpreter\ICommand.h" />
     <ClInclude Include="include\Interpreter\IStoredProgram.h" />
     <ClInclude Include="include\Interpreter\MainContext.h" />
@@ -160,9 +164,10 @@
     <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Interpreter\UIContext.h" />
     <ClInclude Include="include\Interpreter\Utils.h" />
+    <ClInclude Include="include\Numerics\IntegrationService.h" />
+    <ClInclude Include="include\Numerics\ReferenceSolver.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
-    <ClInclude Include="include\Physics\ReferenceSolver.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
@@ -213,13 +218,18 @@
     <ClCompile Include="src\Interpreter\Commands\RotateJointByCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateJointToCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateToCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\SelectCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\StartCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\StopCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\WaitCmd.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Interpreter\Utils.cpp" />
+    <ClCompile Include="src\Numerics\IntegrationService.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -326,23 +326,23 @@ namespace gui {
                 bool isSelected = (n == static_cast<int>(currentEnum));
 
                 if (ImGui::Selectable(methodNames[n], isSelected)) {
-                    auto updatedMethod = static_cast<physics::PhysicsSystem::eIntegrationMethod>(n);
+                    auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
                     phys.setIntegrationMethod(updatedMethod);
 
                     switch (updatedMethod) {
-                    case physics::PhysicsSystem::eIntegrationMethod::Euler:
+                    case integration::eIntegrationMethod::Euler:
                         D_INFO("Integrator set to Euler");
                         break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Midpoint:
+                    case integration::eIntegrationMethod::Midpoint:
                         D_INFO("Integrator set to RK2 (Midpoint)");
                         break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Heun:
+                    case integration::eIntegrationMethod::Heun:
                         D_INFO("Integrator set to RK2 (Heun)");
 						break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Ralston:
+                    case integration::eIntegrationMethod::Ralston:
                         D_INFO("Integrator set to RK2 (Ralston)");
 						break;
-                    case physics::PhysicsSystem::eIntegrationMethod::RK4:
+                    case integration::eIntegrationMethod::RK4:
                         D_INFO("Integrator set to RK4");
                         break;
                     default:

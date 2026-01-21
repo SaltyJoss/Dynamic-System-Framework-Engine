@@ -6,7 +6,7 @@
 #include <integrators/numerical_integrators.h>
 #include <integrators/IntegrationAnalysis.h>
 
-namespace physics {
+namespace integration {
 	class ENGINE_API ReferenceSolver {
 	public:
 		enum class eReferenceIntegrator {

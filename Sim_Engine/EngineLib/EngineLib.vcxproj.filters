@@ -139,6 +139,15 @@
     <Filter Include="Source Files\src\Interpreter\Commands\Robotics">
       <UniqueIdentifier>{b05652db-e87a-498f-b078-36b1d49c6699}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands\PrimaryFunc">
+      <UniqueIdentifier>{9a230325-a2bb-4060-98ac-bd431cec0a45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands\PrimaryFunc">
+      <UniqueIdentifier>{3c821d7c-0649-4022-ad25-ad4ff7465e13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Numerics">
+      <UniqueIdentifier>{41d57409-264d-454e-8dea-dbc123feee0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -366,9 +375,6 @@
     <ClInclude Include="include\Rendering\RenderPreeset.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="include\Physics\ReferenceSolver.h">
-      <Filter>Header Files\include\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\StoredProgram.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
@@ -405,12 +411,6 @@
     <ClInclude Include="include\Interpreter\Command.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
-    <ClInclude Include="include\Interpreter\Commands\LoadCmd.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Interpreter\Commands\SetCmd.h">
-      <Filter>Header Files\include\Interpreter\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\SimFwd.h">
       <Filter>Header Files\include\Interpreter\Context</Filter>
     </ClInclude>
@@ -440,6 +440,30 @@
     </ClInclude>
     <ClInclude Include="include\Robots\RobotSystem.h">
       <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SelectCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\WaitCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\StartCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\StopCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\LoadCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SetCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Numerics\IntegrationService.h">
+      <Filter>Header Files\include\Numerics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Numerics\ReferenceSolver.h">
+      <Filter>Header Files\include\Numerics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -581,12 +605,6 @@
     <ClCompile Include="src\Interpreter\UIContext.cpp">
       <Filter>Source Files\src\Interpreter\Context</Filter>
     </ClCompile>
-    <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp">
-      <Filter>Source Files\src\Interpreter\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\Utils.cpp">
       <Filter>Source Files\src\Interpreter\Utils</Filter>
     </ClCompile>
@@ -607,6 +625,27 @@
     </ClCompile>
     <ClCompile Include="src\Robots\RobotSystem.cpp">
       <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\StartCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\StopCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\WaitCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SelectCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Numerics\IntegrationService.cpp">
+      <Filter>Source Files\src\Numerics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,13 +1,15 @@
 #pragma once
 
 #include "EngineCore.h"
-
+#include "Robots/RobotModel.h"
+#include "Numerics/IntegrationService.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "Robots/RobotModel.h"
-
 namespace robots {
+	// Joint state structure
+    struct ENGINE_API JointState { double theta; double omega; };
+
 	class ENGINE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
@@ -22,6 +24,11 @@ namespace robots {
 
 		bool tryGetJointAngleRad(const std::string& childLink, float& outAngle) const;
 		bool trySetJointAngleRad(const std::string& childLink, float angleRad);
+
+        bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
+        bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
+
+		void step(double dt, double simTime);
 
         const std::vector<RobotLink>& links() const { return _robot.links; }
         const std::vector<RobotJoint>& joints() const { return _robot.joints; }
@@ -40,13 +47,22 @@ namespace robots {
         void resetRobot();
         void clearRobot();
 
-		RobotModel& getRobotModel() { return _robot; } // needed for now, may remove later
-
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
 
+        std::unique_ptr < integration::IntegrationService> _integrator;
+        std::unique_ptr<integration::ReferenceSolver> _refSolver;
+        integration::eIntegrationMethod _curIntMethod{};
+
 		std::vector<std::unique_ptr<scene::Object>>& _objects;
+
+        mathlib::VecX packState() const;
+		void unpackState(const mathlib::VecX& x);
+
+		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
+
+		double _simTime = 0.0;
 		spawnFn _loadMeshReturn;
 
         RobotModel _robot;

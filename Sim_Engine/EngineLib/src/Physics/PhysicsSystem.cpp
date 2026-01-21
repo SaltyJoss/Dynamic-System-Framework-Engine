@@ -16,14 +16,10 @@
 
 namespace physics {
 	// Constructor
-	PhysicsSystem::PhysicsSystem() {
-		_ODE = std::make_unique<integration::ODE>();
-
-		_refSolver = std::make_unique<ReferenceSolver>();
-		_refSolver->setReferenceIntegrationMethod(ReferenceSolver::eReferenceIntegrator::DormandPrinceRK45);
-
-		LOG_INFO("PhysicsSystem initialised.");
-		D_INFO("Physics initialised");
+	PhysicsSystem::PhysicsSystem() 
+		: _integrator(std::make_unique<integration::IntegrationService>()), _refSolver(std::make_unique<integration::ReferenceSolver>()), 
+		_curIntMethod(integration::eIntegrationMethod::Euler) {
+		if (!_integrator) { LOG_WARN("Physics got null IntegrationService*"); }
 	}
 
 
@@ -77,7 +73,8 @@ namespace physics {
 			return d;
 		};
 
-		VecX next = integrationMethod(x, 0.0, dt, f, method);
+		// Integrate to get next state
+		VecX next = _integrator->stepODE(x, 0.0, dt, f);
 		s.q = Quat(next(0), next(1), next(2), next(3)).normalized();
 		s.angularVelocity = Vec3(next(4), next(5), next(6));
 		obj->transform.rotQ = glm::quat((float)s.q.w(), (float)s.q.x(), (float)s.q.y(), (float)s.q.z());
@@ -185,7 +182,7 @@ namespace physics {
 
 		// update ref diagnostics if running
 		if (_diagRunning) {
-			ReferenceSolver::RefIntegratorDiagSample samples;
+			integration::ReferenceSolver::RefIntegratorDiagSample samples;
 			samples.t = rt.t;
 			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // quaternion angles
 			samples.omega = Vec3(rt.x(4), rt.x(5), rt.x(6)); // angular velocities
@@ -260,40 +257,6 @@ namespace physics {
 		// Dampen small bounces to zero
 		if (obj->transform.position.y < floorY + 0.1f && s.linearVelocity.y() < 0.1f) {
 			s.linearVelocity.y() = 0.0f; // stop small bounces
-		}
-	}
-
-// --------------------------------------------------
-//				   INTEGRATION (ODE)
-// --------------------------------------------------
-	// Integration method dispatcher
-	VecX PhysicsSystem::integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX &)> f, eIntegrationMethod method) {
-		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
-
-		if (!f) {
-			// If no function provided, assume constant derivative (dxdt)
-			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x + dxdt * dt;
-		}
-
-		if (method == eIntegrationMethod::Euler) {
-			return _ODE->eulerStep(x, dxdt, dt);
-		}
-		else if (method == eIntegrationMethod::Midpoint) {
-			return _ODE->midpointStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::Heun) {
-			return _ODE->heunStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::Ralston) {
-			return _ODE->ralstonStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::RK4) {
-			return _ODE->rk4Step(x, t, dt, f);
-		}
-		else {
-			LOG_WARN("Unknown integration method: %s. Defaulting to Euler Method (simplest)", method);
-			return _ODE->eulerStep(x, dxdt, dt);
 		}
 	}
 
