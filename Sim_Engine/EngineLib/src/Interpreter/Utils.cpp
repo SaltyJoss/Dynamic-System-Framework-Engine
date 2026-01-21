@@ -4,6 +4,9 @@
 
 #include "EngineLib/LogMacros.h"
 
+using namespace mathlib;
+using namespace constants;
+
 namespace utils {
 	// --- Handlers and Utilities ---
 
@@ -35,6 +38,7 @@ namespace utils {
 		size_t b = str.size();
 		while (b > a && is_ws(str[b - 1])) { --b; }
 		str = str.substr(a, b - a);
+		return str;
 	}
 
 	// Helper function to convert a string to uppercase
@@ -54,6 +58,12 @@ namespace utils {
 			result.push_back((char)std::toupper(c));
 		return result;
 	}
+
+	std::string stripBraces(std::string s) {
+		if (!s.empty() && s.front() == '{' && s.back() == '}') return s.substr(1, s.size() - 2);
+		return s;
+	}
+
 
 	// Helper function to convert a string to lowercase in place
 	void ignoreCaseCompare(std::string& str) {
@@ -92,13 +102,13 @@ namespace utils {
 	bool isFloat(const std::string_view s) { return parseNumber<float>(s).has_value(); }
 	bool isDouble(const std::string_view s) { return parseNumber<double>(s).has_value(); }
 	bool isBoolean(const std::string_view s) {
-		std::string lowerStr = utils::toLower(s);
+		std::string lowerStr = toLower(s);
 		return (lowerStr == "true" || lowerStr == "false" || lowerStr == "1" || lowerStr == "0");
 	}
 
 	// Helper function to convert string_view to integer
 	std::optional<bool> toBoolean(const std::string s) {
-		std::string_view lowerStr = std::string(utils::toLower(s));
+		std::string_view lowerStr = std::string(toLower(s));
 		if (lowerStr == "true" || lowerStr == "1") {
 			return true;
 		}
@@ -140,7 +150,7 @@ namespace utils {
 		auto last = s.data() + s.size();
 
 		auto res = std::from_chars(first, last, out); // format: rotate(target, omega, startDeg, endDeg)
-		if (res.ec != std::errc{} || res.ptr != last) { return std::nullopt; }
+		if (res.ec != std::errc{} || res.ptr != last) { return 0.0; }
 		return out;
 	}
 
@@ -176,11 +186,6 @@ namespace utils {
 		return mathlib::Vec3{ parseFloat(vStr[0]), parseFloat(vStr[1]), parseFloat(vStr[2]) };
 	}
 
-	static std::string stripBraces(std::string s) {
-		if (!s.empty() && s.front() == '{' && s.back() == '}') return s.substr(1, s.size() - 2);
-		return s;
-	}
-
 
 	AxisMask utils::parseAxisMask(const std::string& args) {
 		std::string s = stripBraces(args);
@@ -211,5 +216,24 @@ namespace utils {
 		if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) return false;
 		out = (scene::ObjectID)id;
 		return true;
+	}
+
+	// --- Unit Conversion Utilities ---
+	double degToRad(double degrees) { return degrees * ( PI_d / 180.0); }
+	mathlib::Vec3 degToRad(mathlib::Vec3& degrees) {
+		return mathlib::Vec3{
+			degrees.x() * (PI_d / 180.0),
+			degrees.y() * (PI_d / 180.0),
+			degrees.z() * (PI_d / 180.0)
+		};
+	}
+
+	double radiansToDegrees(double radians) { return radians * (180.0 / PI_d); }
+	mathlib::Vec3 radiansToDegrees(mathlib::Vec3& radians) {
+		return mathlib::Vec3{
+			radians.x() * (180.0 / PI_d),
+			radians.y() * (180.0 / PI_d),
+			radians.z() * (180.0 / PI_d)
+		};
 	}
 }

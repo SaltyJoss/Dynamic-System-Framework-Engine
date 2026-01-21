@@ -41,6 +41,14 @@ namespace commands {
 		// Selectors (selectCmd)
 		utils::OpResult selectObject(scene::ObjectID id);
 
+		// Primary Commands
+		utils::OpResult startSim();
+		utils::OpResult stopSim();
+		utils::OpResult waitSim();
+		utils::OpResult resetSim();
+		utils::OpResult logSimData(const std::string& logPath);
+		utils::OpResult deleteObject(scene::ObjectID id);
+
 	private:
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;

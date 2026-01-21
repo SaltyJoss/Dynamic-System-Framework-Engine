@@ -38,6 +38,7 @@
 
 #include "Rendering/ShaderUtil.h"
 #include "Platform/Logger.h"
+#include "EngineLib/LogMacros.h"
 
 namespace scene {
 	enum class eInputButton;
@@ -45,6 +46,51 @@ namespace scene {
 	class ENGINE_API Mesh;
 
 	enum class ObjectCategory { General, RobotLink };
+
+	//struct ENGINE_API ObjLookup {
+	//	std::unordered_map<std::string, scene::Object*> objMap;
+
+	//	void incrementObjectID(scene::ObjectID& id) { id = static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
+	//	void resetObjectID(scene::ObjectID& id) { id = scene::ObjectID::INVALID_OBJECT_ID; }
+
+	//	void addObject(scene::Object* obj) { if (obj) { objMap[obj->name] = obj; } }
+	//	void addObject(const std::string& name, scene::Object* obj) { if (obj) { objMap[name.c_str()] = obj; } }
+	//	void removeObject(const std::string& name) { objMap.erase(name); }
+	//	void clear() { objMap.clear(); }
+
+	//	void updateObjectName(const std::string& oldName, const std::string& newName) {
+	//		auto it = objMap.find(oldName);
+	//		if (it != objMap.end()) {
+	//			scene::Object* obj = it->second;
+	//			objMap.erase(it);
+	//			objMap[newName] = obj;
+	//		}
+	//	}
+
+	//	scene::Object* getObjectByName(const std::string& name) {
+	//		auto it = objMap.find(name);
+	//		if (it != objMap.end()) { return it->second; }
+	//		return nullptr;
+	//	}
+
+	//	scene::Object* getObjectByID(scene::ObjectID id) {
+	//		for (const auto& pair : objMap) { if (pair.second && pair.second->id == id) { return pair.second; } }
+	//		return nullptr;
+	//	}
+
+	//	std::string getNameByObject(scene::Object* obj) {
+	//		for (const auto& pair : objMap) { if (pair.second == obj) { return pair.first; } }
+	//		return "";
+	//	}
+
+	//	void logAllObjects() {
+	//		for (const auto& pair : objMap) {
+	//			if (pair.second) { D_INFO("Object Name: %s, ID: %u", pair.first.c_str(), static_cast<std::uint32_t>(pair.second->id)); }
+	//		}
+	//	}
+
+	//	void logObjectCount() { D_INFO("Total Objects in ObjLookup: %zu", objMap.size()); }
+	//};
 
 	struct ENGINE_API AssetSource {
 		std::string filename;

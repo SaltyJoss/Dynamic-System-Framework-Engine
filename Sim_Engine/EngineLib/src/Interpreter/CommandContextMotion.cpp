@@ -27,13 +27,36 @@ namespace commands {
 	scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
 	scene::Object* CommandContextMotion::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
 
-
 	// --- GLOBAL STATE METHODS ---
 	void CommandContextMotion::setAngularUnits(AngularUnits units) { _angularUnits = units; }
 	AngularUnits CommandContextMotion::getAngularUnits() const { return _angularUnits; }
 	
 	void CommandContextMotion::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
 	double CommandContextMotion::getOmegaClamp() const { return _omegaClamp; }
+
+	utils::OpResult CommandContextMotion::setOmega(const Vec3& omega) {
+		scene::Object* obj = resolveCurrentObject();
+		if (!obj) { return OpResult::Failure("No object selected."); }
+		Vec3 w = omega;
+		if (_angularUnits == AngularUnits::DegPerSec) { w *= (float)(PI / 180.0); }
+		if (_omegaClamp > 0.0) {
+			w.x() = (float)std::clamp((double)w.x(), -_omegaClamp, _omegaClamp);
+			w.y() = (float)std::clamp((double)w.y(), -_omegaClamp, _omegaClamp);
+			w.z() = (float)std::clamp((double)w.z(), -_omegaClamp, _omegaClamp);
+		}
+		obj->state.angularVelocity = w;
+		return OpResult::Success(true);
+	}
+
+	utils::OpResult CommandContextMotion::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		float omegaRadPerSec = (float)(omegaDegPerSec * (PI / 180.0));
+		if (_angularUnits == AngularUnits::DegPerSec) { omegaRadPerSec = (float)(omegaDegPerSec * (PI / 180.0)); }
+		_robot->trySetJointAngleRad(childLink, omegaRadPerSec);
+		return OpResult::Success(true);
+	}
+
+	utils::OpResult CommandContextMotion::stopAllOmega() { return setOmega(mathlib::Vec3(0, 0, 0)); }
 
 	// --- HELPER METHODS ---
 

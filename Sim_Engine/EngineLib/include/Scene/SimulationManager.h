@@ -168,8 +168,16 @@ namespace gui {
         void resetMouseDelta();
         
 		// Extra
-		float getFixedDeltaTime() const { return _dt; }
-		void setFixedDeltaTime(float deltaTime) { _dt = deltaTime; }
+		double getFixedDeltaTime() const { return _dt; }
+		void setFixedDeltaTime(double dt) { _dt = dt; }
+
+		bool isSimRunning() const { return _simRunning; }
+        void startSimulation() { _simRunning = true; }
+        void stopSimulation() { _simRunning = false; }
+
+		double getSimTime() const { return _simTime; }
+		void setSimTime(double t) const { t = _simTime; }
+		void incrementSimTime(double dt) { _simTime += dt; }
 
 		bool isScriptRunning() const { return _scriptRunning; }
 		void setScriptRunning(bool running) { _scriptRunning = running; }
@@ -193,11 +201,12 @@ namespace gui {
 		glm::vec2 _resSize; // To store current size for render target rebuilds
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
         float _backgroundAlpha = 1.0f;
+
         double _dt = 1.0f / 180.0f;
         double _fixedDt = 1.0f / 180.0f;
 		double _accum = 0.0;
 		double _simTime = 0.0;
-
+		bool _simRunning = false;
 
         static constexpr float planeHeight = -2.5f;
         float planeY = 2.5f;

@@ -36,6 +36,7 @@ namespace utils {
 	std::string_view trim(std::string_view str);
 	std::string toLower(std::string_view str);
 	std::string toUpper(std::string_view str);
+	std::string stripBraces(std::string s);
 	void ignoreCaseCompare(std::string& str);
 	bool startsWith(const std::string& str, const std::string& prefix);
 	bool endsWith(const std::string& str, const std::string& suffix);
@@ -60,4 +61,11 @@ namespace utils {
 	mathlib::Vec3 parseVec3(const std::string& str);
 	AxisMask parseAxisMask(const std::string& s);
 	bool tryParseObjID(const std::string& s, scene::ObjectID& out);
+
+	// --- Unit Conversion Utilities ---
+	double degToRad(double degrees);
+	mathlib::Vec3 degToRad(mathlib::Vec3& degrees);
+
+	double radToDeg(double radians);
+	mathlib::Vec3 radToDeg(mathlib::Vec3& radians);
 } // namespace commands

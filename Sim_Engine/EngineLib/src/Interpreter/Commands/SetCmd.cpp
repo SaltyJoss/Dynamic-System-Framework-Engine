@@ -9,11 +9,6 @@ using namespace utils;
 using namespace mathlib;
 
 namespace commands {
-	SetCmd::SetCmd(const std::string& id, const std::string& tokens)
-		: _method(IntegratorMethod::Euler) {
-		_uiCntx = nullptr;
-	}
-
 	// Helper function to parse the integration method
 	static IntegratorMethod parseMethod(const std::string& s) {
 		if (s == "euler")    return IntegratorMethod::Euler;
@@ -158,7 +153,7 @@ namespace commands {
 
 	// --- Free Function to Create SetCmd ---
 	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (tokens.size() != 1) { D_FAIL("set(integrator, <method>) expects exactly 1 argument.");}
+		if (tokens.size() != 1) { D_FAIL("set(id, <val>) expects exactly 1 argument."); }
 		return std::make_unique<SetCmd>(id, tokens[0]);
 	}
 } // namespace commands

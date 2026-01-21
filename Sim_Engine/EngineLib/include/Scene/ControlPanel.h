@@ -123,7 +123,6 @@ namespace gui {
         float position = 0.0f;
 
 		// Time tracking for simulation updates
-        double finalTime = 0.0f;
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
         std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();
     };

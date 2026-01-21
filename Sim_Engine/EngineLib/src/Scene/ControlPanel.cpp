@@ -191,31 +191,15 @@ namespace gui {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 8.0f));
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 4.0f));
 
-            const bool wasRunning = simulationRunning; // snapshot
-
-            if (wasRunning) {
-                ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.80f, 0.15f, 0.15f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.20f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
-            }
+            const bool wasRunning = _sim->isSimRunning(); // snapshot
 
             // Simulation Start/Stop Button
-            if (ImGui::Button(wasRunning ? "Terminate" : "Run")) {
-                simulationRunning = !simulationRunning;
+            if (_sim->isSimRunning()) {
+				if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
 
-				if (wasRunning && !simulationRunning) {
-                    // Stopping simulation
-                    simTime = 0.0f;
-                }
-
-				// Logs 
-                LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
-                D_RUNTIME("Simulation %s", simulationRunning ? "started" : "stopped");
+                LOG_INFO("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+                D_RUNTIME("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
             }
-
-            if (wasRunning) {
-                ImGui::PopStyleColor(3);
-			}
 
             // Diagnostic Start/Stop Button
             if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
@@ -223,7 +207,7 @@ namespace gui {
                 LOG_INFO("Diagnostics %s", diagRunning ? "started" : "stopped");
                 D_RUNTIME("Diagnostics %s", diagRunning ? "started" : "stopped");
 
-                if (diagRunning) { 
+                if (_sim->isSimRunning()) {
                     _phys->startDiagnostics(_obj); 
 
                     if (!_phys->diagnosticsRunning()) {
@@ -247,13 +231,13 @@ namespace gui {
 
         roboticArmSelector();
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-		if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
             linkProperties();
             objectProperties();
             stats();
         }
+        if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
         if (ImGui::CollapsingHeader("Display")) { displaySettings(); }
 
@@ -373,26 +357,24 @@ namespace gui {
         }
 
         ImGui::NewLine();
-
-		// Deals with simulation time tracking using chrono
-        if (simulationRunning) {
+			
+  		// Deals with simulation time tracking using chrono
+        if (_sim->isSimRunning()) {
             auto now = std::chrono::high_resolution_clock::now();
             double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
             simLastUpdateTime = now;
-            simTime += static_cast<float>(deltaSeconds);
+            _sim->incrementSimTime(deltaSeconds);
 
             ImGui::Text("Elapsed Time...");
-            ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
+            ImGui::Text("Simulation Time: %.3f / %.3f seconds", _sim->getSimTime(), simLength);
 
-            if (simTime >= simLength) {
-                simulationRunning = false;
-                simTime = 0.0f;
+            if (_sim->getSimTime() >= simLength) {
+                _sim->stopSimulation();
+				_sim->setSimTime(0.0f);
                 D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
             }
         }
-        else {
-            simLastUpdateTime = std::chrono::high_resolution_clock::now();
-        }
+        else { simLastUpdateTime = std::chrono::high_resolution_clock::now(); }
 
         if (diagRunning) {
 			// Update diagnostic time
@@ -410,14 +392,17 @@ namespace gui {
                 _phys->stopDiagnostics();
                 D_RUNTIME("Diagnostic run time: %.3f seconds", diagLength);
 			}
-		} else {
-            diagLastUpdateTime = std::chrono::high_resolution_clock::now();
-        }
+		} else { diagLastUpdateTime = std::chrono::high_resolution_clock::now(); }
 		ImGui::Separator();
 
     }
 
     void ControlPanel::objectProperties() {
+        if (_sim->isSimRunning()) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
+            ImGui::Separator();
+            return;
+		}
         if (!_obj) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
@@ -552,11 +537,10 @@ namespace gui {
     }
 
     void ControlPanel::stats() {
-        if (!_obj) { return; }
+        if (!_obj && !_hasRobot) { return; }
 
         ImGui::SeparatorText("Simulation Statistics");
-        if (_obj && _obj->getMesh())
-        {
+        if (_obj && _obj->getMesh()) {
             const glm::vec3& pos = _obj->transform.position;
             const glm::quat& rot = _obj->transform.rotQ;
 
@@ -576,29 +560,52 @@ namespace gui {
                 // Plot Outputs
                 ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), (int)linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
                 ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), (int)angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+
+                ImGui::Separator();
             }
 
-            ImGui::Separator();
+            if (_hasRobot) {
+                robots::RobotSystem* robot = _sim->getRobotSystem();
+                if (robot) {
+                    ImGui::Separator();
+                    ImGui::Text("Robot Joint Angles:");
+                    ImGui::Separator();
+                    const auto& joints = robot->joints();
+                    for (const auto& joint : joints) {
+                        float angleDeg = glm::degrees(joint.angle);
+                        ImGui::Text("%s: %.2f deg", joint.name.c_str(), angleDeg);
+
+                        // Plot Outputs specific to robotic arm
+						ImGui::Text("Joint Angle History - %s", joint.name.c_str());
+                        static std::vector<float> jointAngleHistory;
+                        jointAngleHistory.push_back(angleDeg);
+                        if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
+						ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
+                    }
+                }
+            }
 
             ImGui::Text("Telemetry");
 			ImGui::Separator();
 
-            // Position block
-            if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV))
-            {
-                // Position
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
-                ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
+            if (_hasRobot) {
+                // Position block
+                if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV)) {
+                    // Position
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
+                    ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
 
-                // Rotation
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
-                ImGui::TableSetColumnIndex(1);
-                
+                    glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot));
 
-                ImGui::EndTable();
-            }            
+                    // Rotation
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
+                    ImGui::TableSetColumnIndex(1); ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f", eulerDeg.x, eulerDeg.y, eulerDeg.z);
+
+                    ImGui::EndTable();
+                }
+            }       
         }
     }
 
@@ -611,25 +618,27 @@ namespace gui {
         if (*_controlMode == simManager::ControlMode::Object) { _sim->attachCameraToObject(_obj); }
         else { _sim->detachCameraFromObject(); }
 
-        ImGui::SeparatorText("Light Controls");
-
-        // Kept for future use with star light simulation (NOT NEEDED PURELY VISUAL)
-
-        ImGui::SeparatorText("Object Appearance");
-        if (!_mesh) {
-            ImGui::Text("No mesh loaded!");
-            LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
-        }
+        //ImGui::SeparatorText("Object Appearance");
+        //if (!_mesh) {
+        //    ImGui::Text("No mesh loaded!");
+        //    LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
+        //}
     }
 
     void ControlPanel::displaySettings() {
+		if (_sim->isSimRunning()) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit display settings while simulation is running.");
+            ImGui::Separator();
+            return;
+        }
+
         ImGui::SeparatorText("Display Settings");
 
-        bool enabled = _sim->isSkyboxEnabled();
-        if (ImGui::Checkbox("Enable Skybox", &enabled)) {
-            _sim->setSkyboxEnabled(enabled);
-            LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
-        }
+        //bool enabled = _sim->isSkyboxEnabled();
+        //if (ImGui::Checkbox("Enable Skybox", &enabled)) {
+        //    _sim->setSkyboxEnabled(enabled);
+        //    LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
+        //}
 
         static float fovDeg = 70.0f;
 

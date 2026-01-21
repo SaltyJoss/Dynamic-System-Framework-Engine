@@ -50,10 +50,6 @@ namespace commands {
 		// Get current method
 		IntegratorMethod getCurrentMethod() const { return _method; }
 
-		// Omega Setter
-		void setOmega(const mathlib::Vec3& omega, AngularUnits units);
-
-
 		// Colour Setters
 		void setColour(const mathlib::Vec3& rgb);
 		void setColour(const std::string& hex);

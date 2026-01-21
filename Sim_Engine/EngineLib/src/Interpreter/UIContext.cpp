@@ -63,10 +63,7 @@ namespace commands {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 
-		auto mesh = obj->getMesh();
-		if (!mesh) return OpResult::Failure("Object has no mesh.");
-
-		mesh->_colour = color;
+		obj->setAlbedo(color);
 		return OpResult::Success();
 	}
 
@@ -78,7 +75,7 @@ namespace commands {
 		auto mesh = obj->getMesh();
 		if (!mesh) return OpResult::Failure("Object has no mesh.");
 
-		mesh->_metallic = metallic;
+		mesh->setMetallic(metallic);
 		return OpResult::Success();
 	}
 
@@ -205,5 +202,23 @@ namespace commands {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");
+	}
+
+	// --- OBJECT SELECTION METHOD ---
+	OpResult UIContext::selectObject(scene::ObjectID id) {
+		scene::Object* obj = resolveObject(id);
+		if (!obj) return OpResult::Failure("Object ID not found.");
+		_objID = id;
+		return OpResult::Success();
+	}
+
+	// --- PRIMARY SIMULATION COMMANDS ---
+	OpResult UIContext::startSim() {
+		if (!_sim) {
+			LOG_WARN("Simulation manager is null, cannot start simulation.");
+			return OpResult::Failure("Simulation manager is null.");
+		}
+		_sim->startSimulation();
+		return OpResult::Success();
 	}
 } // namespace commands
