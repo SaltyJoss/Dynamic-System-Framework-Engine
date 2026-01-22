@@ -68,12 +68,15 @@ namespace robots {
 			RobotLink link;
 			link.name = linkData.value("name", "");
 
+			link.visual.meshFile = linkData.value("mesh", ""); // legacy field for mesh
+
 			// visual
 			if (linkData.contains("visual")) {
 				auto& v = linkData["visual"];
 				link.visual.meshFile = v.value("mesh", "");
 				if (v.contains("origin_xyz")) { link.visual.origin_xyz = glm::vec3(v["origin_xyz"][0], v["origin_xyz"][1], v["origin_xyz"][2]); }
 				if (v.contains("origin_rpy")) { link.visual.origin_rpy = glm::vec3(v["origin_rpy"][0], v["origin_rpy"][1], v["origin_rpy"][2]); }
+				if (v.contains("mesh")) { link.visual.meshFile = v.value("mesh", link.visual.meshFile); }
 			}
 
 			// collisions
@@ -138,11 +141,12 @@ namespace robots {
 			// origin
 			if (jointData.contains("origin")) {
 				auto& o = jointData["origin"];
-				joint.origin_xyz = glm::vec3(o["xyz"][0], o["xyz"][1], o["xyz"][2]);
-
-				glm::vec3 rpy_deg(0.0f);
-				if (o.contains("rpy_deg")) { rpy_deg = glm::vec3(o["rpy_deg"][0], o["rpy_deg"][1], o["rpy_deg"][2]); }
-				joint.origin_q = rpy_deg;
+				if (o.contains("origin_xyz")) { joint.origin_xyz = glm::vec3(o["origin_xyz"][0], o["origin_xyz"][1], o["origin_xyz"][2]); }
+				if (o.contains("origin_rpy")) {
+					glm::vec3 rpy = glm::vec3(o["origin_rpy"][0], o["origin_rpy"][1], o["origin_rpy"][2]);
+					// convert rpy -> quat (use your existing helper, don’t store vec3 into quat)
+					joint.origin_q = 
+				}
 			}
 
 			// axis
@@ -155,21 +159,18 @@ namespace robots {
 			// limits
 			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
 
-			if (jointData.contains("limits")) {
-				if (limits.contains("continuous")) { joint.limits.continuous = limits["continuous"].get<bool>(); }
-				else { joint.limits.continuous = false; }
-
-				if (limits.contains("velocity") && limits["velocity"].is_number()) { joint.limits.maxOmegaRad_s = limits["velocity"].get<float>(); }
-				else { joint.limits.maxOmegaRad_s = glm::radians(180.0f); } // default 180 deg/s
-
+			if (!limits.is_null()) {
+				joint.limits.continuous = limits.value("continuous", false);
+				joint.limits.maxOmegaRad_s = limits.value("velocity", joint.limits.maxOmegaRad_s);
 				if (!joint.limits.continuous) {
-					if (limits.contains("lower_limit") && limits["lower_limit"].is_number()) { joint.limits.minAngle = limits["lower_limit"].get<float>(); }
-					if (limits.contains("upper_limit") && limits["upper_limit"].is_number()) { joint.limits.maxAngle = limits["upper_limit"].get<float>(); }
+					joint.limits.minAngle = limits.value("lower", joint.limits.minAngle);
+					joint.limits.maxAngle = limits.value("upper", joint.limits.maxAngle);
 				}
 				else {
-					joint.limits.minAngle = glm::radians(-359.9f); // practically continuous, not full 360 to avoid singularity
-					joint.limits.maxAngle = glm::radians(359.9f);	// practically continuous, not full 360 to avoid singularity
+					joint.limits.minAngle = glm::radians(-359.9f);	// practically continuous
+					joint.limits.maxAngle = glm::radians(359.9f);	// practically continuous
 				}
+				// Need to add effort, but for now will ignore to test this first!
 			}
 
 			// dynamics

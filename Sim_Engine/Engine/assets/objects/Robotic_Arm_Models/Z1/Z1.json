@@ -100,7 +100,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.0,
                 "alpha": 0.0,
                 "d": 0.0585,
@@ -138,7 +138,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.0,
                 "alpha": 0.0,
                 "d": 0.045,
@@ -176,7 +176,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.35,
                 "alpha": 0.0,
                 "d": 0.0,
@@ -214,7 +214,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.218,
                 "alpha": 0.0,
                 "d": 0.057,
@@ -252,7 +252,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.07,
                 "alpha": 0.0,
                 "d": 0.0,
@@ -291,7 +291,7 @@
                 "maxOmega": 3.1415
             },
 
-            "dh_optional": {
+            "dh": {
                 "a": 0.0492,
                 "alpha": 0.0,
                 "d": 0.0,
