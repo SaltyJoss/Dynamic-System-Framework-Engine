@@ -24,7 +24,7 @@ namespace robots {
 		std::string meshFile = "";
 		scene::Object* attachedObject = nullptr;
 
-		glm::mat4 meshFix = glm::mat4(1.0f); // visual correction
+		glm::mat4 dhToMeshFix = glm::mat4(1.0f); // visual correction
 	};
 
 	struct RobotJoint {
@@ -62,9 +62,7 @@ namespace robots {
 		VecX makeJointVector() const {
 			const int n = static_cast<int>(joints.size());
 			VecX q(n);
-			for (int i = 0; i < n; ++i) {
-				q(i) = static_cast<double>(joints[i].angle);
-			}
+			for (int i = 0; i < n; ++i) { q(i) = static_cast<double>(joints[i].angle); }
 			return q;
 		}
 

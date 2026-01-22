@@ -5,6 +5,8 @@
 #include "Scene/Object.h"
 #include "Scene/Mesh.h"
 
+#include <stack>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <kinematics/Forward_Kinematics.h>
 
@@ -51,6 +53,47 @@ namespace robots {
 			for (int c = 0; c < 4; ++c) { M[c][r] = static_cast<float>(T(r, c)); }
 		}
 		return M;
+	}
+
+	static std::vector<glm::mat4> computeVisualZeroWorld(const RobotModel& robot, const std::unordered_map<std::string, int>& linkIndx, const glm::mat4& rootPose) {
+		std::vector<glm::mat4> world(robot.links.size(), glm::mat4(1.0f));
+
+		int rootIndx = linkIndx.at("link00"); // assume first link is root (follows my convention)
+		world[rootIndx] = rootPose;
+
+		// Build parent -> list of outgoing joints
+		std::unordered_map<std::string, std::vector<const RobotJoint*>> children;
+		children.reserve(robot.joints.size());
+		for (const auto& j : robot.joints)
+			children[j.parent].push_back(&j);
+
+		// DFS (or BFS)
+		std::stack<std::string> st;
+		st.push("link00");
+		world[linkIndx.at("link00")] = rootPose;
+
+		while (!st.empty()) {
+			std::string parentName = st.top(); st.pop();
+			int parentIdx = linkIndx.at(parentName);
+
+			auto it = children.find(parentName);
+			if (it == children.end()) continue;
+
+			for (const RobotJoint* jp : it->second) {
+				const RobotJoint& joint = *jp;
+				int childIdx = linkIndx.at(joint.child);
+
+				glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset);
+				glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
+				glm::mat4 R_align = glm::mat4_cast(joint.quat);
+
+				world[childIdx] = world[parentIdx] * T_offset * R_align * R_joint;
+
+				st.push(joint.child);
+			}
+		}
+
+		return world;
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
@@ -170,31 +213,43 @@ namespace robots {
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 
-		{
-			VecX q = _robot.makeJointVector();   // all angles at their defaults
-			kinematics::Forward_Kinematics fk;
-
-			mathlib::Pose T_ee = fk.FK(_robot.dhParams, q);
-
-			LOG_INFO("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
-			D_DEBUG("FK zero config EE: x=%.4f y=%.4f z=%.4f", T_ee(0, 3), T_ee(1, 3), T_ee(2, 3));
-		}
-
-		for (std::size_t i = 0; i < _robot.dhParams.size(); ++i) {
-			const auto& p = _robot.dhParams[i];
-			LOG_INFO("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-				i, p.a, p.alpha, p.d, p.theta,
-				p.type == kinematics::JointType::Revolute ? "R" : "P");
-			D_DEBUG("DH[%zu]: a=%.4f alpha=%.4f d=%.4f theta=%.4f type=%s",
-				i, p.a, p.alpha, p.d, p.theta,
-				p.type == kinematics::JointType::Revolute ? "R" : "P");
-		}
-
 		instantiateRobotLinks();
 		buildLinkIndex();
 
+		// Update kinematics to reflect initial state
+		VecX q0 = _robot.makeJointVector();   // all angles at their defaults
+		kinematics::Forward_Kinematics fk;
+		std::vector<mathlib::Pose> TdH0 = fk.linkTransforms(_robot.dhParams, q0);
+
+		// visual zero configuration world transforms
+		std::vector<glm::mat4>  Wvis0 = computeVisualZeroWorld(_robot, _linkIndex, _robotRootPose);
+
+		// Build Fix_i
+		int rootIndx = _linkIndex["link00"]; // my JSON convention
+		_robot.links[rootIndx].dhToMeshFix = glm::inverse(_robotRootPose) * Wvis0[rootIndx];
+
+		for (int i = 0; i < static_cast<int>(TdH0.size()); ++i) {
+			const int linkNumber = i + 1; // link00, link01, ...
+
+			const std::string linkName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
+			auto it = _linkIndex.find(linkName);
+
+			if (it == _linkIndex.end()) { continue; }
+			const int linkIndx = it->second;
+
+			glm::mat4 Tdh0 = poseToGlm(TdH0[i]);
+			glm::mat4 Wdh0 = _robotRootPose * Tdh0;
+			glm::mat4 Wv0 = Wvis0[linkIndx];
+
+			_robot.links[linkIndx].dhToMeshFix = glm::inverse(Wdh0) * Wv0; // Fix_i = (T0_i)^-1 * Wv0
+		}
+
+		updateRobotKinematics();
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
 		D_SUCCESS("Loaded robot model -> %s", name.c_str());
+
+		LOG_INFO("links=%zu joints=%zu dhParams=%zu TdH0=%zu",
+			_robot.links.size(), _robot.joints.size(), _robot.dhParams.size(), TdH0.size());
 	}
 
 	// Method to reset the robot to its home position
@@ -204,7 +259,6 @@ namespace robots {
 		_robot.setJointVector(_robotQHome);
 
 		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
-
 
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
@@ -245,29 +299,69 @@ namespace robots {
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
 
-		// Get current joint angles as Eigen vector
 		VecX q = _robot.makeJointVector();
+
+		//for (size_t i = 0; i < _robot.joints.size(); ++i) { LOG_INFO("joints[%zu] name=%s angleRad=%.6f", i, _robot.joints[i].name.c_str(), _robot.joints[i].angle); }
+		//LOG_INFO("q = [%.6f %.6f %.6f %.6f %.6f %.6f]", q[0], q[1], q[2], q[3], q[4], q[5]);
 
 		kinematics::Forward_Kinematics fk;
 		std::vector<mathlib::Pose> TdH = fk.linkTransforms(_robot.dhParams, q);
 
-		// World transforms for each link
+		auto worldDir = [](const glm::mat4& M, const glm::vec3& v) {
+			return glm::normalize(glm::vec3(M * glm::vec4(v, 0.0f)));
+			};
+
+		auto zAxisFrom = [](const glm::mat4& M) {
+			// GLM is column-major: M[2] is the 3rd column = local Z axis in world
+			return glm::normalize(glm::vec3(M[2]));
+			};
+
+		// Build T0_prev for each joint.
+		// Standard DH: joint i rotates about z_{i-1}, so use the PREVIOUS frame.
+		// For i=0 (joint01), z_{0} is base Z, so use root pose.
+		for (int i = 0; i < (int)_robot.joints.size(); ++i) {
+			glm::mat4 T0_prev = (i == 0) ? _robotRootPose : (_robotRootPose * poseToGlm(TdH[i - 1]));
+
+			glm::vec3 axis_dh_world = zAxisFrom(T0_prev);
+
+			glm::vec3 axis_json_local = glm::normalize(_robot.joints[i].axis); // from JSON
+			glm::vec3 axis_json_world = worldDir(_robotRootPose, axis_json_local);
+
+			float dot = glm::dot(axis_dh_world, axis_json_world);
+
+			LOG_INFO("joint%02d axis: dh=(%.3f %.3f %.3f) json=(%.3f %.3f %.3f) dot=%.3f",
+				i + 1,
+				axis_dh_world.x, axis_dh_world.y, axis_dh_world.z,
+				axis_json_world.x, axis_json_world.y, axis_json_world.z,
+				dot);
+		}
+
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
-		int rootIndx = _linkIndex["link00"];  // All robotic arms have link00 as root link (my JSON convention)
+		int rootIndx = _linkIndex["link00"];
 		world[rootIndx] = _robotRootPose;
 
+		// link00 (base)
+		{
+			auto* obj = _robot.links[rootIndx].attachedObject;
+			if (obj && obj->getMesh()) {
+				obj->getMesh()->localTransform = world[rootIndx];
+			}
+		}
 
+		// link01, link02, ...
 		for (int i = 0; i < static_cast<int>(TdH.size()); ++i) {
-			const int linkNumber = i + 1; // link01, link02, ...
-			const std::string childName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
-			auto it = _linkIndex.find(childName);
-			if (it == _linkIndex.end()) { continue; }
-			const int childIndx = it->second;
+			const int linkNumber = i + 1; // link00, link01, ...
+			const std::string linkName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
+
+			auto it = _linkIndex.find(linkName);
+			if (it == _linkIndex.end()) continue;
+			int linkIndx = it->second;
+			//LOG_INFO("TdH[%d] -> linkNumber=%d linkName=%s linkIndx=%d", i, linkNumber, linkName.c_str(), linkIndx);
 
 			glm::mat4 T0_i = poseToGlm(TdH[i]);
-			glm::mat4 meshFix = _robot.links[childIndx].meshFix;
+			//LOG_INFO("TdH[%d] translation = (%.4f %.4f %.4f)", i, T0_i[3][0], T0_i[3][1], T0_i[3][2]);
 
-			world[childIndx] = world[rootIndx] * T0_i * meshFix;
+			world[linkIndx] = _robotRootPose * T0_i * _robot.links[linkIndx].dhToMeshFix;
 		}
 
 		for (size_t i = 0; i < _robot.links.size(); i++) {
@@ -275,24 +369,7 @@ namespace robots {
 			if (!obj) { continue; }
 			auto* mesh = obj->getMesh();
 			if (!mesh) { continue; }
-
 			mesh->localTransform = world[i];
-		}
-
-
-		{
-			// Find end-effector link index
-			const int eeLinkNumber = static_cast<int>(TdH.size()); // link0n
-			const std::string eeName = (eeLinkNumber < 10) ? ("link0" + std::to_string(eeLinkNumber)) : ("link" + std::to_string(eeLinkNumber));
-			auto itEE = _linkIndex.find(eeName);
-			// Calculate and log robot reach
-			if (itEE != _linkIndex.end()) {
-				const int eeIndx = itEE->second;
-				glm::vec3 p_Base = glm::vec3(world[rootIndx][3]); // position of base link
-				glm::vec3 p_EE = glm::vec3(world[eeIndx][3]);     // position of end-effector link
-				float reach = glm::length(p_EE - p_Base);
-				LOG_INFO_ONCE("Robot reach: %.4f metres", reach);
-			}
 		}
 	}
 

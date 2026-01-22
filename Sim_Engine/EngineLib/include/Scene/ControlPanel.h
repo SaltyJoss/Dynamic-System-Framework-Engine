@@ -63,7 +63,7 @@ namespace gui {
         void simulationProperties();
         void cameraProperties();
         void objectProperties();
-        void linkProperties();
+        void jointProperties();
         void displaySettings();
         void stats();
 
@@ -95,6 +95,7 @@ namespace gui {
 
         // Internal states
         bool simulationRunning = false;
+		bool _jointSelected = false;
 		bool diagRunning = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
@@ -102,6 +103,7 @@ namespace gui {
         std::string _requestedRobot;
         std::string _currentObjectName;
         std::string _currentLinkName;
+		std::string _currentJointName;
         std::string _lastLinkName;
 
         std::unordered_map<std::string, float> _linkAngles;

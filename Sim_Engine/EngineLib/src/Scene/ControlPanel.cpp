@@ -197,8 +197,8 @@ namespace gui {
             if (_sim->isSimRunning()) {
 				if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
 
-                LOG_INFO("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
-                D_RUNTIME("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+                LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+                D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
             }
 
             // Diagnostic Start/Stop Button
@@ -233,7 +233,7 @@ namespace gui {
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
-            linkProperties();
+            jointProperties();
             objectProperties();
             stats();
         }
@@ -483,7 +483,7 @@ namespace gui {
         }
     }
 
-    void ControlPanel::linkProperties() {
+    void ControlPanel::jointProperties() {
         if (!_hasRobot) return;
 
         robots::RobotSystem* robot = _sim->getRobotSystem();
@@ -493,45 +493,67 @@ namespace gui {
             return;
         }
 
-        ImGui::Text("Link Controls");
+        ImGui::Text("Joint Controls");
         ImGui::Separator();
 
         const auto& links = robot->links();
+        const auto& joints = robot->joints();
+
         if (links.empty()) {
             ImGui::TextDisabled("Robot has no links.");
             return;
         }
 
         // Build a combo list of link names
-        static int currentLinkIndex = 0;
-        currentLinkIndex = std::clamp(currentLinkIndex, 0, (int)links.size() - 1);
+        static int currentJointIndex = 0;
+		currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size());
 
-        const char* preview = links[currentLinkIndex].name.c_str();
-        if (ImGui::BeginCombo("Link", preview)) {
-            for (int i = 0; i < (int)links.size(); ++i) {
-                bool selected = (i == currentLinkIndex);
-                if (ImGui::Selectable(links[i].name.c_str(), selected)) {
-                    currentLinkIndex = i;
-                    _currentLinkName = links[i].name;
+        // These are UI-facing in degrees (because your JSON limits are in degrees conceptually)
+        static float minAngleDeg = -180.0f;
+        static float maxAngleDeg = 180.0f;
+
+		const char* preview = _currentJointName.empty() ? "Select Joint" : _currentJointName.c_str();
+		// Update min/max angle based on selected link's joint
+        if (ImGui::BeginCombo("Joint", preview)) {
+            for (int i = 0; i < (int)joints.size(); ++i) {
+                const bool selected = (i == currentJointIndex);
+                if (ImGui::Selectable(joints[i].name.c_str(), selected)) {
+                    currentJointIndex = i;
+                    _currentLinkName = joints[i].child;
+                    _currentJointName = joints[i].name;
+
+					if (currentJointIndex > -1) {
+                        minAngleDeg = glm::degrees(joints[i].minAngle);
+                        maxAngleDeg = glm::degrees(joints[i].maxAngle);
+                    }
+                    else {
+                        minAngleDeg = 0.0f;
+						maxAngleDeg = 0.0f;
+                    }
                 }
-                if (selected) ImGui::SetItemDefaultFocus();
-            }
+                if (selected) { ImGui::SetItemDefaultFocus(); }
+			}
             ImGui::EndCombo();
         }
 
-        if (_currentLinkName.empty()) {
-            _currentLinkName = links[currentLinkIndex].name;
+        int jointIndx = 0;
+        for (const auto& joint : joints) {
+            if (joint.name == _currentJointName) { break; }
+            jointIndx++;
         }
 
         // Show + edit angle using RobotSystem API
-        float angleRad = 0.0f;
+        float angleRad= 0.0f;
         if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
-            ImGui::TextDisabled("No joint drives this link (likely base/root).");
-            return;
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Failed to get joint angle for link: %s", _currentLinkName.c_str());
+			return;
+        } else {
+            ImGui::Text("Driven by joint: %s", joints[jointIndx].name.c_str());
+            ImGui::Text("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
         }
 
         float angleDeg = glm::degrees(angleRad);
-        if (ImGui::SliderFloat("Angle (deg)", &angleDeg, -180.0f, 180.0f, "%.1f")) {
+        if (ImGui::SliderFloat("Angle (deg)", &angleDeg, minAngleDeg, maxAngleDeg, "%.1f")) {
             robot->setRobotLinkRotation(_currentLinkName, angleDeg);
         }
     }
@@ -694,157 +716,223 @@ namespace gui {
 	}
 
 	// Scene Objects List
-    void ControlPanel::sceneObjectsTable() {
-        ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
+	void ControlPanel::sceneObjectsTable() {
+		ImGui::BeginChild("SceneObjectsTable", ImVec2(0, 250), true, ImGuiWindowFlags_None);
 
-        auto& objs = _sim->getObjects();          // get reference to scene objects
-        int indexToDelete = -1;
+		auto& objs = _sim->getObjects();          // get reference to scene objects
+		int indexToDelete = -1;
 
-        ImGui::Text("Scene Table");
-        ImGui::Separator();
+		ImGui::Text("Scene Table");
+		ImGui::Separator();
 
-        ImGuiTableFlags tableFlags =
-            ImGuiTableFlags_BordersV |
-            ImGuiTableFlags_BordersOuterH |
-            ImGuiTableFlags_Resizable |
-            ImGuiTableFlags_RowBg |
-            ImGuiTableFlags_NoBordersInBody;
+		ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_BordersV |
+			ImGuiTableFlags_BordersOuterH |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_NoBordersInBody;
 
-        if (ImGui::BeginTable("SceneTable", 3, tableFlags))
-        {
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableSetupColumn("Parent / Action");
-            ImGui::TableHeadersRow();
+		if (ImGui::BeginTable("SceneTable", 3, tableFlags)) {
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Child / Action");
+			ImGui::TableHeadersRow();
 
-            // Robot section
-            if (_hasRobot) {
-                robots::RobotSystem* robotSys = _sim->getRobotSystem();
-                if (robotSys && robotSys->hasRobot()) {
+			float rowH = 20.0f;
 
-                    const auto& links = robotSys->links();
-                    const auto& joints = robotSys->joints();
+			// Robot section
+			if (_hasRobot) {
+				robots::RobotSystem* robotSys = _sim->getRobotSystem();
+				if (robotSys && robotSys->hasRobot()) {
+					bool selected = false;
 
-                    // Root label
-                    std::string rootName = robotSys->robotName(); // or robotSys->robotName()
-                    if (rootName.empty()) rootName = "Robot";
+					const auto& links = robotSys->links();
+					const auto& joints = robotSys->joints();
 
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
+					// Root label
+					std::string rootName = robotSys->robotName(); // or robotSys->robotName()
+					if (rootName.empty()) rootName = "Robot";
 
-                    ImGuiTreeNodeFlags rootFlags =
-                        ImGuiTreeNodeFlags_SpanAllColumns |
-                        ImGuiTreeNodeFlags_DefaultOpen;
+					ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+					ImGui::TableSetColumnIndex(0);
 
-                    bool openRoot = ImGui::TreeNodeEx(rootName.c_str(), rootFlags);
+					ImGuiTreeNodeFlags rootFlags =
+						ImGuiTreeNodeFlags_SpanAllColumns |
+						ImGuiTreeNodeFlags_OpenOnArrow;
 
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::TextUnformatted("ROOT");
+					bool openRoot = ImGui::TreeNodeEx(rootName.c_str(), rootFlags);
 
-                    ImGui::TableSetColumnIndex(2);
-                    if (ImGui::Button("Remove Robot")) {
-                        _sim->clearRobot();
-                        _hasRobot = false;
-                    }
+					bool rowHovered = ImGui::IsItemHovered();
+					if (rowHovered) { ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_HeaderHovered)); }
 
-                    if (openRoot) {
-                        for (int i = 0; i < (int)links.size(); ++i) {
-                            const auto& link = links[i];
-                            scene::Object* attachedObj = link.attachedObject;
+					// Column 1: centered "ROOT"
+					ImGui::TableSetColumnIndex(1);
+					{
+						const char* txt = "ROOT";
+						float columnWidth = ImGui::GetColumnWidth();
+						float textWidth = ImGui::CalcTextSize(txt).x;
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+						ImGui::TextUnformatted(txt);
+					}
 
-                            // Parent name: find joint whose child == link.name
-                            std::string parentName = rootName;
-                            for (const auto& j : joints) {
-                                if (j.child == link.name) { parentName = j.parent; break; }
-                            }
+					// Column 2: centered Remove button
+					ImGui::TableSetColumnIndex(2);
+					{
+						float columnWidth = ImGui::GetColumnWidth();
+						float buttonWidth = 80.0f;
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - buttonWidth) * 0.5f);
 
-                            bool linkSelected = (_selection.type == SelectionType::LINK && _selection.index == i);
+						if (ImGui::Button(("Remove##robot_" + rootName).c_str(), ImVec2(buttonWidth, 0))) {
+							_sim->clearRobot();
+							_hasRobot = false;
+						}
+					}
 
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
+					if (openRoot) {
+						for (int i = 0; i < (int)joints.size(); ++i) {
+							auto& joint = joints[i];
+							scene::Object* attachedObj = nullptr;
+							rowH = 10.0f;
 
-                            ImGuiTreeNodeFlags leafFlags =
-                                ImGuiTreeNodeFlags_Leaf |
-                                ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                                ImGuiTreeNodeFlags_DrawLinesToNodes;
+							// Find attached object for this joint's child link
+							for (auto& l : links) { if (l.name == joint.child) { attachedObj = l.attachedObject; break; } }
 
-                            if (linkSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
-                            ImGui::TreeNodeEx(link.name.c_str(), leafFlags);
-                            if (linkSelected) ImGui::PopStyleColor();
+							bool jointSelected = (_selection.type == SelectionType::JOINT && _selection.index == i);
 
-                            if (ImGui::IsItemClicked() && attachedObj) {
-                                _currentLinkName = link.name;
-                                _selection.type = SelectionType::LINK;
-                                _selection.index = i;
-                                _selection.source = SelectionSource::CONTROL_PANEL;
-                                _sim->setSelectedObject(attachedObj);
-                            }
+							ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+							ImGui::TableSetColumnIndex(0);
 
-                            ImGui::TableSetColumnIndex(1);
-                            ImGui::TextUnformatted("LINK");
+							ImGui::PushID(i);
 
-                            ImGui::TableSetColumnIndex(2);
-                            ImGui::TextUnformatted(parentName.c_str());
-                        }
-                        ImGui::TreePop();
-                    }
+							bool rowClicked = ImGui::Selectable("##joint_row", jointSelected,
+								ImGuiSelectableFlags_SpanAllColumns, ImVec2(0.0f, rowH)
+							);
 
-                    _currentObjectName = "Robot: " + rootName;
-                }
-            }
+							rowHovered = ImGui::IsItemHovered();
+							if (rowHovered) { ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_HeaderHovered)); }
 
-            // General objects
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Separator();
-            ImGui::TextUnformatted("General Objects");
+							ImGui::SameLine(0.0f, 6.0f);
 
-            ImGui::TableSetColumnIndex(1);
-            ImGui::TextDisabled("OBJECT");
+							ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf
+								| ImGuiTreeNodeFlags_NoTreePushOnOpen
+								| ImGuiTreeNodeFlags_NoAutoOpenOnLog
+								| ImGuiTreeNodeFlags_SpanAllColumns
+								| ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-            ImGui::TableSetColumnIndex(2);
-            ImGui::TextDisabled("Actions");
+							ImGui::TreeNodeEx("##leaf", leafFlags);
 
-            // General Object Loop
-            for (int i = 0; i < objs.size(); i++) {
-                auto* obj = objs[i].get();
+							// Center joint name *within column 0*
+							{
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(joint.name.c_str()).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+							}
 
-                bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
+							ImGui::SameLine();
+
+							if (jointSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
+							ImGui::TextUnformatted(joint.name.c_str());
+							if (jointSelected) ImGui::PopStyleColor();
+
+							if (rowClicked) {
+								_currentJointName = joint.name;
+								_selection.type = SelectionType::JOINT;
+								_selection.index = i;
+								_selection.source = SelectionSource::CONTROL_PANEL;
+								if (attachedObj) { _sim->setSelectedObject(attachedObj); }
+							}
+
+							ImGui::PopID();
+
+							// Column 1: centered "Joint"
+							ImGui::TableSetColumnIndex(1);
+							{
+								const char* txt = "Joint";
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(txt).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+								ImGui::TextUnformatted(txt);
+							}
+
+							// Column 2: centered child link name
+							ImGui::TableSetColumnIndex(2);
+							{
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(joint.child.c_str()).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+								ImGui::TextUnformatted(joint.child.c_str());
+							}
+						}
+						ImGui::TreePop();
+					}
+					_currentObjectName = "Robot: " + rootName;
+				}
+			}
+
+			// General objects
+			rowH = 20.0f;
+			ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::TextUnformatted("Objects");
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::TextDisabled("Obj");
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::TextDisabled("Actions");
+
+			// General Object Loop
+			for (int i = 0; i < objs.size(); i++) {
+				auto* obj = objs[i].get();
+				rowH = 10.0f;
+				bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
 
 				if (obj->category != scene::ObjectCategory::General) { continue; } // skip non-general objects
 
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                std::string label = "Object " + std::to_string(i);
+				ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+				ImGui::TableSetColumnIndex(0);
+				std::string label = "Object " + std::to_string(i);
 
-                if (ImGui::Selectable(label.c_str(), isSelected)) {
-                    _currentObjectName = label;
-                    _selection.type = SelectionType::OBJECT;
-                    _selection.index = i;
-                    _selection.source = SelectionSource::CONTROL_PANEL;
-                    _sim->setSelectedObject(obj); // fine to keep for inspector
-                    LOG_INFO("Selected Object: %s", label.c_str());
-                }
+				if (ImGui::Selectable(label.c_str(), isSelected)) {
+					_currentObjectName = label;
+					_selection.type = SelectionType::OBJECT;
+					_selection.index = i;
+					_selection.source = SelectionSource::CONTROL_PANEL;
+					_sim->setSelectedObject(obj); // fine to keep for inspector
+					LOG_INFO("Selected Object: %s", label.c_str());
+				}
 
-                ImGui::TableSetColumnIndex(1);
-                ImGui::TextUnformatted("OBJECT");
+				// Column 1: centered "OBJECT"
+				ImGui::TableSetColumnIndex(1);
+				{
+					const char* txt = "OBJECT";
+					float columnWidth = ImGui::GetColumnWidth();
+					float textWidth = ImGui::CalcTextSize(txt).x;
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+					ImGui::TextUnformatted(txt);
+				}
 
-                ImGui::TableSetColumnIndex(2);
-                if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
-                    indexToDelete = i;
-                }
-            }
+				// Column 2: centered Delete button
+				ImGui::TableSetColumnIndex(2);
+				{
+					float columnWidth = ImGui::GetColumnWidth();
+					float buttonWidth = 80.0f;
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - buttonWidth) * 0.5f);
+					if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) { indexToDelete = i; }
+				}
+			}
 
             ImGui::EndTable();
-        }
+		}
 
-        if (indexToDelete != -1) {
-            _sim->deleteObject(indexToDelete);
-            LOG_INFO("Deleted object at index %d", indexToDelete);
-        }
-
+		if (indexToDelete != -1) {
+			_sim->deleteObject(indexToDelete);
+			LOG_INFO("Deleted object at index %d", indexToDelete);
+		}
 		ImGui::EndChild();
-    }
+	}
+
 
 	// --- HELPER FUNCTIONS ---
 

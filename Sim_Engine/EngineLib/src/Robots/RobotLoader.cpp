@@ -94,16 +94,13 @@ namespace robots {
 			);
 
 			// Load initial orientation quaternion
-			{
-				glm::quat qFix = parseQuaternion(jointData);
-				if (RobotLink* childLink = findLink(robot.links, joint.child)) { childLink->meshFix = glm::mat4_cast(qFix); }
-				LOG_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), qFix.w, qFix.x, qFix.y, qFix.z);
-				D_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), qFix.w, qFix.x, qFix.y, qFix.z);
-			}
+			joint.quat = parseQuaternion(jointData);
 			
 			// Load joint limits
 			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
-			joint.continuous = jointData.value("type", "revolute") == "continuous";
+
+			if (limits.contains("continuous")) { joint.continuous = limits["continuous"].get<bool>(); }
+			else { joint.continuous = false; }
 
 			if (limits.contains("max_speed") && limits["max_speed"].is_number()) { joint.maxOmega = glm::radians(limits["max_speed"].get<float>()); }
 			else { joint.maxOmega = glm::radians(180.0f); } // default 180 deg/s
@@ -139,16 +136,21 @@ namespace robots {
 
 			robot.dhParams.push_back(dhp);
 
+	
+			
+			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
+				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.continuous ? "True" : "False", joint.maxOmega, joint.minAngle, joint.maxAngle);
+			LOG_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), joint.quat.w, joint.quat.x, joint.quat.y, joint.quat.z);
 			LOG_INFO("DH Params for Joint %s: a=%.4f, alpha=%.4f, d=%.4f, theta=%.4f, type=%s",
 				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta,
 				dhp.type == JointType::Revolute ? "revolute" : "prismatic");
 
-			
-
-			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.continuous ? "True" : "False", joint.maxOmega, joint.minAngle, joint.maxAngle);
 			D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
 				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.continuous ? "True" : "False", joint.maxOmega, joint.minAngle, joint.maxAngle);
+			D_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), joint.quat.w, joint.quat.x, joint.quat.y, joint.quat.z);
+			D_INFO("DH Params for Joint %s: a=%.4f, alpha=%.4f, d=%.4f, theta=%.4f, type=%s",
+				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta,
+				dhp.type == JointType::Revolute ? "revolute" : "prismatic");
 		}
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

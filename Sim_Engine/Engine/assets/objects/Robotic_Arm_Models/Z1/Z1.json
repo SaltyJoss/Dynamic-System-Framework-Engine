@@ -34,7 +34,7 @@
 
     "joints": [
         {
-            "name": "joint1",
+            "name": "joint01",
             "parent": "link00",
             "child": "link01",
             "axis": [ 0, 0, 1 ],
@@ -55,7 +55,7 @@
             }
         },
         {
-            "name": "joint2",
+            "name": "joint02",
             "parent": "link01",
             "child": "link02",
             "axis": [ 0, 1, 0 ],
@@ -76,7 +76,7 @@
             }
         },
         {
-            "name": "joint3",
+            "name": "joint03",
             "parent": "link02",
             "child": "link03",
             "axis": [ 0, 1, 0 ],
@@ -97,7 +97,7 @@
             }
         },
         {
-            "name": "joint4",
+            "name": "joint04",
             "parent": "link03",
             "child": "link04",
             "axis": [ 0, 1, 0 ],
@@ -119,7 +119,7 @@
         },
 
         {
-            "name": "joint5",
+            "name": "joint05",
             "parent": "link04",
             "child": "link05",
             "axis": [ 0, 0, 1 ],
@@ -140,7 +140,7 @@
             }
         },
         {
-            "name": "joint6",
+            "name": "joint06",
             "parent": "link05",
             "child": "link06",
             "axis": [ 1, 0, 0 ],
