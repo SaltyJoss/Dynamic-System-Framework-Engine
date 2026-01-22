@@ -24,7 +24,12 @@ namespace robots {
 		std::string meshFile = "";
 		scene::Object* attachedObject = nullptr;
 
-		glm::mat4 dhToMeshFix = glm::mat4(1.0f); // visual correction
+		// VISUAL-ONLY transform
+		glm::vec3 visual_origin_xyz{ 0.0f, 0.0f, 0.0f };
+		glm::quat visual_origin_rpy{ 1.0, 0.0, 0.0, 0.0 };
+
+		// FINAL correction applied ONLY at render time (mesh frame -> link frame)
+		glm::mat4 meshToLink = glm::mat4(1.0f);
 	};
 
 	struct RobotJoint {
@@ -32,22 +37,27 @@ namespace robots {
 		std::string parent = "";
 		std::string child = "";
 
-		glm::vec3 axis{ 0.0, 0.0, 0.0 };
-		glm::vec3 offset{ 0.0, 0.0, 0.0 };
-		glm::quat quat{ 1.0, 0.0, 0.0, 0.0 }; // initial orientation
+		// URDF joint frame (parent → joint)
+		glm::vec3 joint_origin_xyz{ 0.0f, 0.0f, 0.0f };
+		glm::quat joint_origin_rpy{ 1.0, 0.0, 0.0, 0.0 };
 
-		bool continuous = false; // true for base, false for limited joints
-		float minAngle = 0.0f; // lower limit 
-		float maxAngle = 0.0f; // upper limit 
+		// Axis expressed IN JOINT FRAME
+		glm::vec3 joint_axis{ 0.0f, 0.0f, 1.0f };
 
-		float angle = 0.0f; // current angle (rad)
-		float omega = 0.0f; // angular velocity (rad/s)
+		// --- State ---
+		float position = 0.0f;   // rad
+		float omega = 0.0f;   // rad/s
 
-		float thetaRef = 0.0f; // reference angle (rad)
-		float maxOmega = 1.0f; // max |omega| (rad/s)
+		// --- Limits ---
+		bool continuous = false;
+		float minAngle = 0.0f; // rad
+		float maxAngle = 0.0f; // rad
+		float maxOmega = 1.0f; // rad/s
 
-		float k_p = 25.0f; // position gain (rad/s^2)
-		float k_d = 8.0f;  // velocity gain (rad/s^2)
+		// --- Control ---
+		float targetPosition = 0.0f;
+		float k_p = 25.0f;
+		float k_d = 8.0f;
 	};
 
 	struct RobotModel {
@@ -56,7 +66,8 @@ namespace robots {
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
 
-		std::vector<kinematics::DH_Params> dhParams; // optional DH parameters for kinematics
+		// Never used for scene hierarchy
+		std::vector<kinematics::DH_Params> dhParams;
 
 		// Create an Eigen vector of joint angles
 		VecX makeJointVector() const {
