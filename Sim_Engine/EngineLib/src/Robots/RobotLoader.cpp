@@ -39,6 +39,20 @@ namespace robots {
 		return glm::quat(1.0, 0.0, 0.0, 0.0);
 	}
 
+	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
+	static glm::quat rpyRadToQuat(const glm::vec3& rpyRad)
+	{
+		const float roll = rpyRad.x;
+		const float pitch = rpyRad.y;
+		const float yaw = rpyRad.z;
+
+		const glm::quat qx = glm::angleAxis(roll, glm::vec3(1, 0, 0));
+		const glm::quat qy = glm::angleAxis(pitch, glm::vec3(0, 1, 0));
+		const glm::quat qz = glm::angleAxis(yaw, glm::vec3(0, 0, 1));
+
+		return glm::normalize(qz * qy * qx);
+	}
+
 	// Parse DH joint type from string
 	static JointType parseDHType(const std::string& s) {
 		std::string t = s;
@@ -88,18 +102,15 @@ namespace robots {
 					if (c.contains("origin_rpy")) { s.origin_rpy = glm::vec3(c["origin_rpy"][0], c["origin_rpy"][1], c["origin_rpy"][2]); }
 
 					if (s.type == "cylinder") {
-						// JSON: { "radius": ..., "length": ... }
 						s.size.x = c.value("radius", 0.0f);  // radius
 						s.size.y = c.value("length", 0.0f);  // length
 					}
 					else if (s.type == "box") {
-						// If you later define box as: "size": [x,y,z]
 						if (c.contains("size") && c["size"].is_array() && c["size"].size() == 3) {
 							s.size = glm::vec3(c["size"][0].get<float>(), c["size"][1].get<float>(), c["size"][2].get<float>());
 						}
 					}
 					else if (s.type == "mesh") { s.meshFile = c.value("mesh", ""); }
-
 					link.collisions.push_back(s);
 				}
 			}
@@ -144,8 +155,7 @@ namespace robots {
 				if (o.contains("origin_xyz")) { joint.origin_xyz = glm::vec3(o["origin_xyz"][0], o["origin_xyz"][1], o["origin_xyz"][2]); }
 				if (o.contains("origin_rpy")) {
 					glm::vec3 rpy = glm::vec3(o["origin_rpy"][0], o["origin_rpy"][1], o["origin_rpy"][2]);
-					// convert rpy -> quat (use your existing helper, don’t store vec3 into quat)
-					joint.origin_q = 
+					joint.origin_q = rpyRadToQuat(rpy);
 				}
 			}
 
@@ -159,7 +169,7 @@ namespace robots {
 			// limits
 			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
 
-			if (!limits.is_null()) {
+			if (jointData.contains("limits")) {
 				joint.limits.continuous = limits.value("continuous", false);
 				joint.limits.maxOmegaRad_s = limits.value("velocity", joint.limits.maxOmegaRad_s);
 				if (!joint.limits.continuous) {
@@ -170,7 +180,7 @@ namespace robots {
 					joint.limits.minAngle = glm::radians(-359.9f);	// practically continuous
 					joint.limits.maxAngle = glm::radians(359.9f);	// practically continuous
 				}
-				// Need to add effort, but for now will ignore to test this first!
+				// Need to add effort, but for now imma ignore to test this first!
 			}
 
 			// dynamics
@@ -184,7 +194,6 @@ namespace robots {
 
 			// Load DH parameters (kinematics)
 			DH_Params dhp{};
-			// Load DH parameters if available
 			if (jointData.contains("dh")) {
 				auto& dhData = jointData["dh"];
 
