@@ -14,11 +14,14 @@ using namespace mathlib;
 using namespace constants;
 
 namespace robots {
+	// Constructor
 	RobotSystem::RobotSystem(std::vector<std::unique_ptr<scene::Object>>& objects, spawnFn meshLoader)
 		: _integrator(std::make_unique<integration::IntegrationService>()), _refSolver(std::make_unique<integration::ReferenceSolver>()), 
 		  _curIntMethod(integration::eIntegrationMethod::Euler), _objects(objects), _loadMeshReturn(std::move(meshLoader)) {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
+
+	// --- ROBOT STATE INTEGRATION METHODS ---
 
 	// Method to create Object instances for each robot link
 	void RobotSystem::instantiateRobotLinks() {
@@ -45,6 +48,7 @@ namespace robots {
 		}
 	}
 
+	// Method to pack robot joint states into a state vector
 	mathlib::VecX RobotSystem::packState() const {
 		const int n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX x(2 * n);
@@ -54,15 +58,25 @@ namespace robots {
 		}
 		return x;
 	}
-
+	
+	// Method to unpack state vector into robot joints
 	void RobotSystem::unpackState(const mathlib::VecX& x) {
 		const int n = static_cast<int>(_robot.joints.size());
 		for (int i = 0; i < n; ++i) {
-			_robot.joints[i].angle = clampJointAngle(_robot.joints[i], static_cast<float>(x[i]));
-			_robot.joints[i].omega = static_cast<float>(x[i + n]);
+			float theta = static_cast<float>(x[i]);
+			float omega = static_cast<float>(x[i + n]);
+
+			theta = clampJointAngle(_robot.joints[i], theta);
+
+			float wMax = std::abs(_robot.joints[i].maxOmega); // max |omega|
+			if (wMax > 0.0f) { omega = glm::clamp(omega, -wMax, wMax); }
+
+			_robot.joints[i].angle = theta;
+			_robot.joints[i].omega = omega;
 		}
 	}
 
+	// Derivative function for ODE integration
 	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
 		const int n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dxdt(2 * n);
@@ -72,22 +86,37 @@ namespace robots {
 			const double theta = x[i];
 			const double omega = x[i + n];
 
-			dxdt[i] = omega;			// dtheta/dt
-			dxdt[i + n] = -c * omega;	// domega/dt
+			const RobotJoint& joint = _robot.joints[i];
+			double thetaRef = static_cast<double>(joint.thetaRef);
+			double err = thetaRef - theta;
+
+			if (joint.continuous) { err = robots::RobotSystem::wrapToPi(static_cast<float>(err)); } // wrap error for continuous joints
+
+			dxdt[i] = omega; // dtheta/dt = omega
+
+			// omega' = k_p * err - k_d * omega - c * omega -> PD control with damping
+			const double k_p = static_cast<double>(joint.k_p);
+			const double k_d = static_cast<double>(joint.k_d);
+			double domega_dt = k_p * err - k_d * omega - c * omega;
+
+			dxdt[i + n] = domega_dt;
 		}
 		return dxdt;
 	}
 
+	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
 		mathlib::VecX x = packState();
 
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
-		mathlib::VecX xNext = _integrator->stepODE(x, simTime, dt, f);
+		mathlib::VecX xNext = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 		
 		unpackState(xNext);
 		updateRobotKinematics();
-	}	
+	}
+
+	// --- ROBOT LOADING AND RESET METHODS ---
 
 	// Method to load a robot model by name
 	void RobotSystem::loadRobot(const std::string& name) {
@@ -136,6 +165,50 @@ namespace robots {
 		D_SUCCESS("Loaded robot model -> %s", name.c_str());
 	}
 
+	// Method to reset the robot to its home position
+	void RobotSystem::resetRobot() {
+		if (!_hasRobot || !_robotHomeValid) { return; }
+		_robotRootPose = _robotRootHome;
+		_robot.setJointVector(_robotQHome);
+
+		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+
+
+		updateRobotKinematics();
+		D_INFO("Robot reset to home position.");
+		D_SUCCESS("Robot reset to home position.");
+	}
+
+	// Method to clear the current robot from the scene
+	void RobotSystem::clearRobot() {
+		if (!_hasRobot) return;
+
+		// Remove robot objects from _objects
+		for (auto& link : _robot.links) {
+			if (link.attachedObject) {
+				// find and erase matching object
+				_objects.erase(
+					std::remove_if(
+						_objects.begin(),
+						_objects.end(),
+						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == link.attachedObject; }
+					),
+					_objects.end()
+				);
+			}
+		}
+
+		_robot.links.clear();
+		_robot.joints.clear();
+		_linkIndex.clear();
+		_hasRobot = false;
+
+		LOG_INFO("Old robot model removed");
+		D_WARN("Old robot model removed");
+	}
+
+	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
+
 	// Method to update robot link transforms based on joint angles (NEEDS TO BE REVISED BASED ON ROBOT STRUCTURE)
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
@@ -143,46 +216,55 @@ namespace robots {
 		// Get current joint angles as Eigen vector
 		VecX q = _robot.makeJointVector();
 
+		kinematics::Forward_Kinematics fk;
+		std::vector<mathlib::Pose> TdH = fk.linkTransforms(_robot.dhParams, q);
+
 		// World transforms for each link
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+		int rootIndx = _linkIndex["link00"];  // All robotic arms have link00 as root link (my JSON convention)
+		world[rootIndx] = _robotRootPose;
 
-		glm::vec3 pBase = glm::vec3(world[_linkIndex["link00"]][3]);
-		glm::vec3 pEE = glm::vec3(world[_linkIndex["link06"]][3]);
 
-		float reach = glm::length(pEE - pBase);
-		LOG_INFO_ONCE("Reach link00->link06 origin = %.3f world units", reach);
+		for (int i = 0; i < static_cast<int>(TdH.size()); ++i) {
+			const int linkNumber = i + 1; // link01, link02, ...
+			const std::string childName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
+			auto it = _linkIndex.find(childName);
+			if (it == _linkIndex.end()) { continue; }
 
-		int rootIdx = _linkIndex["link00"];  // Z1 root link (base static link)
-		world[rootIdx] = _robotRootPose;
+			const int childIndx = it->second;
 
-		// Sort joints in parent-to-child order
-		std::vector<RobotJoint> sorted = _robot.joints;
+			glm::mat4 T0_i = glm::mat4(1.0f);
+			glm::mat4 meshFix(1.0f);
 
-		std::sort(sorted.begin(), sorted.end(),
-			[&](const RobotJoint& a, const RobotJoint& b) {
-				int a_parent_indx = _linkIndex[a.parent];
-				int b_parent_indx = _linkIndex[b.parent];
-				return a_parent_indx < b_parent_indx;
-			});
-
-		for (auto& joint : sorted) {
-			int parent = _linkIndex[joint.parent];
-			int child = _linkIndex[joint.child];
-
-			glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset); // meters
-			glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
-			glm::mat4 R_align = glm::mat4_cast(joint.quat); // from JSON
-			world[child] = world[parent] * T_offset * R_align * R_joint;
+			world[childIndx] = world[rootIndx] * T0_i * meshFix;
 		}
 
-		// Update link object transforms
 		for (size_t i = 0; i < _robot.links.size(); i++) {
 			auto* obj = _robot.links[i].attachedObject;
+			if (!obj) { continue; }
 			auto* mesh = obj->getMesh();
-			if (!mesh) continue;
+			if (!mesh) { continue; }
 
 			mesh->localTransform = world[i];
 		}
+
+
+		{
+			// Find end-effector link index
+			const int eeLinkNumber = static_cast<int>(TdH.size()); // link0n
+			const std::string eeName = (eeLinkNumber < 10) ? ("link0" + std::to_string(eeLinkNumber)) : ("link" + std::to_string(eeLinkNumber));
+			auto itEE = _linkIndex.find(eeName);
+			// Calculate and log robot reach
+			if (itEE != _linkIndex.find(eeName)) {
+				const int eeIndx = itEE->second;
+				glm::vec3 p_Base = glm::vec3(world[rootIndx][3]); // position of base link
+				glm::vec3 p_EE = glm::vec3(world[eeIndx][3]);     // position of end-effector link
+				float reach = glm::length(p_EE - p_Base);
+				LOG_INFO_ONCE("Robot reach: %.4f metres", reach);
+			}
+		}
+
+
 	}
 
 	// Method to get the angle of a specific robot joint
@@ -237,24 +319,35 @@ namespace robots {
 		return false;
 	}
 
-	// --- Helper Methods ---
-
-	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
-		if (joint.continuous) { return wrapRad(angleRad); }
-		else { return glm::clamp(angleRad, joint.minAngle, joint.maxAngle); }
+	// Method to set the target angle (reference) of a specific robot joint in degrees
+	bool RobotSystem::trySetJointTargetDeg(const std::string& childLink, float targetDeg) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float targetRad = glm::radians(targetDeg);
+				if (joint.continuous) { targetRad = wrapRad(targetRad); }
+				else { targetRad = glm::clamp(targetRad, joint.minAngle, joint.maxAngle); }
+				joint.thetaRef = targetRad; // clamp to joint limits
+				return true;
+			}
+		}
+		return false;
 	}
 
-	float RobotSystem::wrapToPi(float angleRad) {
-		angleRad = std::fmod(angleRad + PI, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
-		return angleRad - PI;
+	// Method to set the maximum angular velocity of a specific robot joint in degrees
+	bool RobotSystem::trySetJointOmegeMaxDeg(const std::string& childLink, float maxOmegaDeg) {
+		if (!_hasRobot) { return false; }
+		float maxOmegaRad = glm::radians(maxOmegaDeg);
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.maxOmega = std::abs(maxOmegaRad); // |omega[max]|
+				return true;
+			}
+		}
+		return false;
 	}
 
-	float RobotSystem::wrapRad(float angleRad) {
-		angleRad = fmod(angleRad, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
-		return angleRad;
-	}
+	// --- ROBOT LINK AND ROOT POSE METHODS ---
 
 	// Method to set the rotation angle of a specific robot link angle in degrees
 	void RobotSystem::setRobotLinkRotation(const std::string& linkName, float angle) {
@@ -276,6 +369,7 @@ namespace robots {
 		D_WARN_ONCE("No joint found for link %s to set rotation.", linkName.c_str());
 	}
 
+	// Method to set the robot root pose in world coordinates
 	void RobotSystem::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
 		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
 		glm::mat4 R = glm::mat4_cast(rot);
@@ -283,6 +377,7 @@ namespace robots {
 		_robotRootPose = (T * R) * Align;
 	}
 
+	// Method to set the robot root home pose in world coordinates
 	void RobotSystem::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
 		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
 		glm::mat4 R = glm::mat4_cast(rot);
@@ -291,44 +386,34 @@ namespace robots {
 		_robotRootPose = _robotRootHome;
 	}
 
-	void RobotSystem::resetRobot() {
-		if (!_hasRobot || !_robotHomeValid) { return; }
-		_robotRootPose = _robotRootHome;
-		_robot.setJointVector(_robotQHome);
-		
-		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+	// --- UTILITY METHODS ---
 
-
-		updateRobotKinematics();
-		D_INFO("Robot reset to home position.");
-		D_SUCCESS("Robot reset to home position.");
+	// Method to clamp a joint angle to its limits
+	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
+		if (joint.continuous) { return wrapRad(angleRad); }
+		else { return glm::clamp(angleRad, joint.minAngle, joint.maxAngle); }
 	}
 
-	// Method to clear the current robot from the scene
-	void RobotSystem::clearRobot() {
-		if (!_hasRobot) return;
+	// Method to wrap an angle in radians to the range [-pi, pi]
+	float RobotSystem::wrapToPi(float angleRad) {
+		angleRad = std::fmod(angleRad + PI, TWO_PI);
+		if (angleRad < 0.0f) angleRad += TWO_PI;
+		return angleRad - PI;
+	}
 
-		// Remove robot objects from _objects
-		for (auto& link : _robot.links) {
-			if (link.attachedObject) {
-				// find and erase matching object
-				_objects.erase(
-					std::remove_if(
-						_objects.begin(),
-						_objects.end(),
-						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == link.attachedObject; }
-					),
-					_objects.end()
-				);
-			}
+	// Method to wrap an angle in radians to the range [0, 2pi]
+	float RobotSystem::wrapRad(float angleRad) {
+		angleRad = fmod(angleRad, TWO_PI);
+		if (angleRad < 0.0f) angleRad += TWO_PI;
+		return angleRad;
+	}
+
+	// --- static methods ---
+	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
+		glm::mat4 M(1.0f);
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < 4; ++j) { M[i][j] = static_cast<float>(T(j, i)); }
 		}
-
-		_robot.links.clear();
-		_robot.joints.clear();
-		_linkIndex.clear();
-		_hasRobot = false;
-
-		LOG_INFO("Old robot model removed");
-		D_WARN("Old robot model removed");
+		return M;
 	}
 } // namespace robot

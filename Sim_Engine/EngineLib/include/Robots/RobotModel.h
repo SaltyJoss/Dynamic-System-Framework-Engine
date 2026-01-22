@@ -23,6 +23,8 @@ namespace robots {
 		std::string name = "";
 		std::string meshFile = "";
 		scene::Object* attachedObject = nullptr;
+
+		glm::quat meshFix = glm::quat{ 1.0, 0.0, 0.0, 0.0 }; // visual correction
 	};
 
 	struct RobotJoint {
@@ -33,14 +35,19 @@ namespace robots {
 		glm::vec3 axis{ 0.0, 0.0, 0.0 };
 		glm::vec3 offset{ 0.0, 0.0, 0.0 };
 		glm::quat quat{ 1.0, 0.0, 0.0, 0.0 }; // initial orientation
-		float angle = 0.0f; // current angle (radians)
-		float speed = 0.0f; // target speed (radians per second)
-		float omega = 0.0f; // angular velocity (radians per second)
 
 		bool continuous = false; // true for base, false for limited joints
-		float maxSpeed = 1.0f; // radians per second
 		float minAngle = 0.0f; // lower limit 
 		float maxAngle = 0.0f; // upper limit 
+
+		float angle = 0.0f; // current angle (rad)
+		float omega = 0.0f; // angular velocity (rad/s)
+
+		float thetaRef = 0.0f; // reference angle (rad)
+		float maxOmega = 1.0f; // max |omega| (rad/s)
+
+		float k_p = 25.0f; // position gain (rad/s^2)
+		float k_d = 8.0f;  // velocity gain (rad/s^2)
 	};
 
 	struct RobotModel {

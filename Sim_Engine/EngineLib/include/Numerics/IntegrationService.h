@@ -25,7 +25,7 @@ namespace integration {
 		// Constructor 
 		IntegrationService();
 
-		mathlib::VecX stepODE(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
+		mathlib::VecX stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
 		mathlib::VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }

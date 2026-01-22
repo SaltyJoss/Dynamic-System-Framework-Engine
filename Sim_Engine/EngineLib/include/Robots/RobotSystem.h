@@ -16,11 +16,20 @@ namespace robots {
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
 
-        // Robotic Arm System
-        void loadRobot(const std::string& name);
-        void updateRobotKinematics();
 
+        // ---- Accessors ---
+
+        const std::vector<RobotLink>& links() const { return _robot.links; }
+        const std::vector<RobotJoint>& joints() const { return _robot.joints; }
+        std::size_t linkCount() const { return _robot.links.size(); }
+
+        bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
+        const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }
+
+		// ---- Joint State Methods ---
+
+        void updateRobotKinematics();
 
 		bool tryGetJointAngleRad(const std::string& childLink, float& outAngle) const;
 		bool trySetJointAngleRad(const std::string& childLink, float angleRad);
@@ -28,24 +37,26 @@ namespace robots {
         bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
 
+		bool trySetJointTargetDeg(const std::string& childLink, float targetDeg);
+		bool trySetJointOmegeMaxDeg(const std::string& childLink, float maxOmegaDeg);
+
 		void step(double dt, double simTime);
 
-        const std::vector<RobotLink>& links() const { return _robot.links; }
-        const std::vector<RobotJoint>& joints() const { return _robot.joints; }
-        std::size_t linkCount() const { return _robot.links.size(); }
+        void loadRobot(const std::string& name);
+        void resetRobot();
+        void clearRobot();
 
-        static float clampJointAngle(const RobotJoint& joint, float angleRad);
-        static float wrapToPi(float angleRad);
-        static float wrapRad(float angleRad);
-
-        bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
-		const std::string& robotName() const { return _robot.name; } // placeholder for now
+        // --- ROBOT LINK AND ROOT POSE METHODS ---
 
         void setRobotLinkRotation(const std::string& linkName, float angle);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
-        void resetRobot();
-        void clearRobot();
+
+        // --- UTILITY METHODS ---
+
+        static float clampJointAngle(const RobotJoint& joint, float angleRad);
+        static float wrapToPi(float angleRad);
+        static float wrapRad(float angleRad);
 
 	private:
         void instantiateRobotLinks();
