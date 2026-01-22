@@ -76,11 +76,13 @@
             "parent": "link00",
             "child": "link01",
 
-            "origin_xyz": [ 0.0, 0.0, 0.0585 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ 0.0, 0.0, 0.0585 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
             "axis": [ 0.0, 0.0, 1.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": -2.61799387799,
                 "upper": 2.61799387799,
@@ -112,11 +114,13 @@
             "parent": "link01",
             "child": "link02",
 
-            "origin_xyz": [ 0.0, 0.0, 0.045 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ 0.0, 0.0, 0.045 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
             "axis": [ 0.0, 1.0, 0.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": 0.0,
                 "upper": 2.96705972839,
@@ -148,11 +152,13 @@
             "parent": "link02",
             "child": "link03",
 
-            "origin_xyz": [ -0.35, 0.0, 0.0 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ -0.35, 0.0, 0.0 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
             "axis": [ 0.0, 1.0, 0.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": -2.87979326579,
                 "upper": 0.0,
@@ -184,11 +190,13 @@
             "parent": "link03",
             "child": "link04",
 
-            "origin_xyz": [ 0.218, 0.0, 0.057 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ 0.218, 0.0, 0.057 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
             "axis": [ 0.0, 1.0, 0.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": -1.51843644924,
                 "upper": 1.51843644924,
@@ -220,11 +228,13 @@
             "parent": "link04",
             "child": "link05",
 
-            "origin_xyz": [ 0.07, 0.0, 0.0 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ 0.07, 0.0, 0.0 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
             "axis": [ 0.0, 0.0, 1.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": -1.34390352404,
                 "upper": 1.34390352404,
@@ -256,11 +266,14 @@
             "parent": "link05",
             "child": "link06",
 
-            "origin_xyz": [ 0.0492, 0.0, 0.0 ],
-            "origin_rpy": [ 0.0, 0.0, 0.0 ],
+            "origin": {
+                "origin_xyz": [ 0.0492, 0.0, 0.0 ],
+                "origin_rpy": [ 0.0, 0.0, 0.0 ]
+            },
+
             "axis": [ 1.0, 0.0, 0.0 ],
 
-            "limit": {
+            "limits": {
                 "continuous": false,
                 "lower": -2.79252680319,
                 "upper": 2.79252680319,
