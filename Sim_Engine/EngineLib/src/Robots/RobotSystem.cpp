@@ -27,8 +27,8 @@ namespace robots {
 
 	// Method to clamp a joint angle to its limits
 	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
-		if (joint.continuous) { return wrapRad(angleRad); }
-		else { return glm::clamp(angleRad, joint.minAngle, joint.maxAngle); }
+		if (joint.limits.continuous) { return wrapRad(angleRad); }
+		else { return glm::clamp(angleRad, joint.limits.minAngle, joint.limits.maxAngle); }
 	}
 
 	// Method to wrap an angle in radians to the range [-pi, pi]
@@ -74,21 +74,21 @@ namespace robots {
 
 		while (!st.empty()) {
 			std::string parentName = st.top(); st.pop();
-			int parentIdx = linkIndx.at(parentName);
+			int parentIndx = linkIndx.at(parentName);
 
 			auto it = children.find(parentName);
 			if (it == children.end()) continue;
 
 			for (const RobotJoint* jp : it->second) {
 				const RobotJoint& joint = *jp;
-				int childIdx = linkIndx.at(joint.child);
+				int childIndx = linkIndx.at(joint.child);
 
-				glm::mat4 T_offset = glm::translate(glm::mat4(1.0f), joint.offset);
-				glm::mat4 R_joint = glm::rotate(glm::mat4(1.0f), joint.angle, glm::normalize(joint.axis));
-				glm::mat4 R_align = glm::mat4_cast(joint.quat);
+				glm::mat4 T = glm::translate(glm::mat4(1.0f), joint.origin_xyz);
+				glm::mat4 R = glm::mat4_cast(joint.origin_q);
+				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), joint.angleRad, glm::normalize(joint.axis));
 
-				world[childIdx] = world[parentIdx] * T_offset * R_align * R_joint;
-
+				world[childIndx] = world[parentIndx] * T * R * Rq;
+			
 				st.push(joint.child);
 			}
 		}
@@ -101,7 +101,7 @@ namespace robots {
 	// Method to create Object instances for each robot link
 	void RobotSystem::instantiateRobotLinks() {
 		for (auto& link : _robot.links) {
-			auto objs = _loadMeshReturn(link.meshFile);
+			auto objs = _loadMeshReturn(link.visual.meshFile);
 			if (objs.empty()) { continue; }
 
 			scene::Object* obj = objs[0];
@@ -128,8 +128,8 @@ namespace robots {
 		const int n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX x(2 * n);
 		for (int i = 0; i < n; ++i) {
-			x[i]	 = static_cast<double>(_robot.joints[i].angle);
-			x[i + n] = static_cast<double>(_robot.joints[i].omega);
+			x[i]	 = static_cast<double>(_robot.joints[i].angleRad);
+			x[i + n] = static_cast<double>(_robot.joints[i].omegaRad_s);
 		}
 		return x;
 	}
@@ -143,11 +143,11 @@ namespace robots {
 
 			theta = clampJointAngle(_robot.joints[i], theta);
 
-			float wMax = std::abs(_robot.joints[i].maxOmega); // max |omega|
+			float wMax = std::abs(_robot.joints[i].limits.maxOmegaRad_s); // max |omega|
 			if (wMax > 0.0f) { omega = glm::clamp(omega, -wMax, wMax); }
 
-			_robot.joints[i].angle = theta;
-			_robot.joints[i].omega = omega;
+			_robot.joints[i].angleRad = theta;
+			_robot.joints[i].omegaRad_s = omega;
 		}
 	}
 
@@ -162,10 +162,10 @@ namespace robots {
 			const double omega = x[i + n];
 
 			const RobotJoint& joint = _robot.joints[i];
-			double thetaRef = static_cast<double>(joint.thetaRef);
+			double thetaRef = static_cast<double>(joint.thetaRefRad);
 			double err = thetaRef - theta;
 
-			if (joint.continuous) { err = robots::RobotSystem::wrapToPi(static_cast<float>(err)); } // wrap error for continuous joints
+			if (joint.limits.continuous) { err = robots::RobotSystem::wrapToPi(static_cast<float>(err)); } // wrap error for continuous joints
 
 			dxdt[i] = omega; // dtheta/dt = omega
 
@@ -322,18 +322,17 @@ namespace robots {
 		for (int i = 0; i < (int)_robot.joints.size(); ++i) {
 			glm::mat4 T0_prev = (i == 0) ? _robotRootPose : (_robotRootPose * poseToGlm(TdH[i - 1]));
 
+			glm::vec3 axis_joint = glm::normalize(_robot.joints[i].axis);
+			glm::vec3 axis_world = glm::normalize(glm::vec3(glm::mat4_cast(_robot.joints[i].origin_q) * glm::vec4(axis_joint, 0.0f)));
+
 			glm::vec3 axis_dh_world = zAxisFrom(T0_prev);
-
-			glm::vec3 axis_json_local = glm::normalize(_robot.joints[i].axis); // from JSON
-			glm::vec3 axis_json_world = worldDir(_robotRootPose, axis_json_local);
-
-			float dot = glm::dot(axis_dh_world, axis_json_world);
+			float dot = glm::dot(axis_dh_world, axis_world);
 
 			LOG_INFO("joint%02d axis: dh=(%.3f %.3f %.3f) json=(%.3f %.3f %.3f) dot=%.3f",
 				i + 1,
 				axis_dh_world.x, axis_dh_world.y, axis_dh_world.z,
-				axis_json_world.x, axis_json_world.y, axis_json_world.z,
-				dot);
+				axis_world.x, axis_world.y, axis_world.z, dot
+			);
 		}
 
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
@@ -349,19 +348,17 @@ namespace robots {
 		}
 
 		// link01, link02, ...
-		for (int i = 0; i < static_cast<int>(TdH.size()); ++i) {
-			const int linkNumber = i + 1; // link00, link01, ...
-			const std::string linkName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
+		for (int i = 0; i < static_cast<int>(_robot.joints.size()); ++i) {
+			const std::string& linkName = _robot.joints[i].child;
 
 			auto it = _linkIndex.find(linkName);
 			if (it == _linkIndex.end()) continue;
 			int linkIndx = it->second;
-			//LOG_INFO("TdH[%d] -> linkNumber=%d linkName=%s linkIndx=%d", i, linkNumber, linkName.c_str(), linkIndx);
 
 			glm::mat4 T0_i = poseToGlm(TdH[i]);
-			//LOG_INFO("TdH[%d] translation = (%.4f %.4f %.4f)", i, T0_i[3][0], T0_i[3][1], T0_i[3][2]);
+			glm::mat4 meshFix = glm::mat4_cast(_robot.links[linkIndx].dhToMeshFix);
 
-			world[linkIndx] = _robotRootPose * T0_i * _robot.links[linkIndx].dhToMeshFix;
+			world[linkIndx] = _robotRootPose * T0_i * meshFix;
 		}
 
 		for (size_t i = 0; i < _robot.links.size(); i++) {
@@ -379,7 +376,7 @@ namespace robots {
 		// Find joint child matching childLink
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				outAngle = joint.angle;
+				outAngle = joint.angleRad;
 				return true;
 			}
 		}
@@ -392,7 +389,7 @@ namespace robots {
 		// Find joint child matching childLink
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				joint.angle = clampJointAngle(joint, angleRad); // clamp to joint limits
+				joint.angleRad = clampJointAngle(joint, angleRad); // clamp to joint limits
 				return true;
 			}
 		}
@@ -405,7 +402,7 @@ namespace robots {
 		// Find joint child matching childLink
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				outOmega = joint.omega;
+				outOmega = joint.omegaRad_s;
 				return true;
 			}
 		}
@@ -418,7 +415,7 @@ namespace robots {
 		// Find joint child matching childLink
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				joint.omega = omegaRad;
+				joint.omegaRad_s = omegaRad;
 				return true;
 			}
 		}
@@ -431,9 +428,9 @@ namespace robots {
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
 				float targetRad = glm::radians(targetDeg);
-				if (joint.continuous) { targetRad = wrapRad(targetRad); }
-				else { targetRad = glm::clamp(targetRad, joint.minAngle, joint.maxAngle); }
-				joint.thetaRef = targetRad; // clamp to joint limits
+				if (joint.limits.continuous) { targetRad = wrapRad(targetRad); }
+				else { targetRad = glm::clamp(targetRad, joint.limits.minAngle, joint.limits.maxAngle); }
+				joint.thetaRefRad = targetRad; // clamp to joint limits
 				return true;
 			}
 		}
@@ -446,7 +443,7 @@ namespace robots {
 		float maxOmegaRad = glm::radians(maxOmegaDeg);
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				joint.maxOmega = std::abs(maxOmegaRad); // |omega[max]|
+				joint.limits.maxOmegaRad_s = std::abs(maxOmegaRad); // |omega[max]|
 				return true;
 			}
 		}
@@ -466,7 +463,7 @@ namespace robots {
 		for (auto& joint : _robot.joints) {
 			if (joint.child == linkName) {
 				float a = glm::radians(angle); // stores angle in radians
-				joint.angle = clampJointAngle(joint, a); // clamp to joint limits
+				joint.angleRad = clampJointAngle(joint, a); // clamp to joint limits
 				D_INFO_ONCE("%s -> %.2f degrees.", linkName.c_str(), angle);
 				return;
 			}

@@ -523,8 +523,8 @@ namespace gui {
                     _currentJointName = joints[i].name;
 
 					if (currentJointIndex > -1) {
-                        minAngleDeg = glm::degrees(joints[i].minAngle);
-                        maxAngleDeg = glm::degrees(joints[i].maxAngle);
+                        minAngleDeg = glm::degrees(joints[i].limits.minAngle);
+                        maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
                     }
                     else {
                         minAngleDeg = 0.0f;
@@ -594,7 +594,7 @@ namespace gui {
                     ImGui::Separator();
                     const auto& joints = robot->joints();
                     for (const auto& joint : joints) {
-                        float angleDeg = glm::degrees(joint.angle);
+                        float angleDeg = glm::degrees(joint.angleRad);
                         ImGui::Text("%s: %.2f deg", joint.name.c_str(), angleDeg);
 
                         // Plot Outputs specific to robotic arm

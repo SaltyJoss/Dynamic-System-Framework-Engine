@@ -167,14 +167,14 @@ namespace robots {
 			));
 
 			// limits
-			json limits = jointData.contains("limit") ? jointData["limit"] : json::object();
+			json limits = jointData.contains("limits") ? jointData["limits"] : json::object();
 
 			if (jointData.contains("limits")) {
 				joint.limits.continuous = limits.value("continuous", false);
 				joint.limits.maxOmegaRad_s = limits.value("velocity", joint.limits.maxOmegaRad_s);
 				if (!joint.limits.continuous) {
-					joint.limits.minAngle = limits.value("lower", joint.limits.minAngle);
-					joint.limits.maxAngle = limits.value("upper", joint.limits.maxAngle);
+					if (limits.contains("lower") && limits["lower"].is_number()) { joint.limits.minAngle = limits["lower"].get<float>(); }
+					if (limits.contains("upper") && limits["upper"].is_number()) { joint.limits.maxAngle = limits["upper"].get<float>(); }
 				}
 				else {
 					joint.limits.minAngle = glm::radians(-359.9f);	// practically continuous
@@ -196,11 +196,18 @@ namespace robots {
 			DH_Params dhp{};
 			if (jointData.contains("dh")) {
 				auto& dhData = jointData["dh"];
-
-				dhp.a	  = dhData["a"].get<double>();
-				dhp.alpha = dhData["alpha"].get<double>();
-				dhp.d	  = dhData["d"].get<double>();
-				dhp.theta = dhData["theta"].get<double>();
+				// a
+				if (dhData.contains("a") && dhData["a"].is_number()) { dhp.a = dhData["a"].get<double>(); }
+				else { dhp.a = 0.0; }
+				// alpha
+				if (dhData.contains("alpha") && dhData["alpha"].is_number()) { dhp.alpha = dhData["alpha"].get<double>(); }
+				else { dhp.alpha = 0.0; }
+				// d
+				if (dhData.contains("d") && dhData["d"].is_number()) { dhp.d = dhData["d"].get<double>(); }
+				else { dhp.d = 0.0; }
+				// theta
+				if (dhData.contains("theta") && dhData["theta"].is_number()) { dhp.theta = dhData["theta"].get<double>(); }
+				else { dhp.theta = 0.0; }
 
 				std::string typeStr = dhData.value("type", "revolute");
 				dhp.type = parseDHType(typeStr);
