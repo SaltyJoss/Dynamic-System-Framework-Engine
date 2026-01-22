@@ -21,6 +21,38 @@ namespace robots {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 
+	// --- HELPER METHODS ---
+
+	// Method to clamp a joint angle to its limits
+	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
+		if (joint.continuous) { return wrapRad(angleRad); }
+		else { return glm::clamp(angleRad, joint.minAngle, joint.maxAngle); }
+	}
+
+	// Method to wrap an angle in radians to the range [-pi, pi]
+	float RobotSystem::wrapToPi(float angleRad) {
+		angleRad = std::fmod(angleRad + PI, TWO_PI);
+		if (angleRad < 0.0f) angleRad += TWO_PI;
+		return angleRad - PI;
+	}
+
+	// Method to wrap an angle in radians to the range [0, 2pi]
+	float RobotSystem::wrapRad(float angleRad) {
+		angleRad = fmod(angleRad, TWO_PI);
+		if (angleRad < 0.0f) angleRad += TWO_PI;
+		return angleRad;
+	}
+
+
+	// Convert mathlib::Pose to glm::mat4
+	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
+		glm::mat4 M(1.0f);
+		for (int r = 0; r < 4; ++r) {
+			for (int c = 0; c < 4; ++c) { M[c][r] = static_cast<float>(T(r, c)); }
+		}
+		return M;
+	}
+
 	// --- ROBOT STATE INTEGRATION METHODS ---
 
 	// Method to create Object instances for each robot link
@@ -230,11 +262,10 @@ namespace robots {
 			const std::string childName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
 			auto it = _linkIndex.find(childName);
 			if (it == _linkIndex.end()) { continue; }
-
 			const int childIndx = it->second;
 
-			glm::mat4 T0_i = glm::mat4(1.0f);
-			glm::mat4 meshFix(1.0f);
+			glm::mat4 T0_i = poseToGlm(TdH[i]);
+			glm::mat4 meshFix = _robot.links[childIndx].meshFix;
 
 			world[childIndx] = world[rootIndx] * T0_i * meshFix;
 		}
@@ -255,7 +286,7 @@ namespace robots {
 			const std::string eeName = (eeLinkNumber < 10) ? ("link0" + std::to_string(eeLinkNumber)) : ("link" + std::to_string(eeLinkNumber));
 			auto itEE = _linkIndex.find(eeName);
 			// Calculate and log robot reach
-			if (itEE != _linkIndex.find(eeName)) {
+			if (itEE != _linkIndex.end()) {
 				const int eeIndx = itEE->second;
 				glm::vec3 p_Base = glm::vec3(world[rootIndx][3]); // position of base link
 				glm::vec3 p_EE = glm::vec3(world[eeIndx][3]);     // position of end-effector link
@@ -263,8 +294,6 @@ namespace robots {
 				LOG_INFO_ONCE("Robot reach: %.4f metres", reach);
 			}
 		}
-
-
 	}
 
 	// Method to get the angle of a specific robot joint
@@ -384,36 +413,5 @@ namespace robots {
 		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
 		_robotRootPose = (T * R) * Align;
 		_robotRootPose = _robotRootHome;
-	}
-
-	// --- UTILITY METHODS ---
-
-	// Method to clamp a joint angle to its limits
-	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
-		if (joint.continuous) { return wrapRad(angleRad); }
-		else { return glm::clamp(angleRad, joint.minAngle, joint.maxAngle); }
-	}
-
-	// Method to wrap an angle in radians to the range [-pi, pi]
-	float RobotSystem::wrapToPi(float angleRad) {
-		angleRad = std::fmod(angleRad + PI, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
-		return angleRad - PI;
-	}
-
-	// Method to wrap an angle in radians to the range [0, 2pi]
-	float RobotSystem::wrapRad(float angleRad) {
-		angleRad = fmod(angleRad, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
-		return angleRad;
-	}
-
-	// --- static methods ---
-	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
-		glm::mat4 M(1.0f);
-		for (int i = 0; i < 4; ++i) {
-			for (int j = 0; j < 4; ++j) { M[i][j] = static_cast<float>(T(j, i)); }
-		}
-		return M;
 	}
 } // namespace robot

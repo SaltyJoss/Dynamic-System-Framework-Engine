@@ -24,7 +24,7 @@ namespace robots {
 		std::string meshFile = "";
 		scene::Object* attachedObject = nullptr;
 
-		glm::quat meshFix = glm::quat{ 1.0, 0.0, 0.0, 0.0 }; // visual correction
+		glm::mat4 meshFix = glm::mat4(1.0f); // visual correction
 	};
 
 	struct RobotJoint {

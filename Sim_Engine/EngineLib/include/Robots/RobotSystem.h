@@ -16,6 +16,11 @@ namespace robots {
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
 
+        // --- UTILITY METHODS ---
+
+        static float clampJointAngle(const RobotJoint& joint, float angleRad);
+        static float wrapToPi(float angleRad);
+        static float wrapRad(float angleRad);
 
         // ---- Accessors ---
 
@@ -51,12 +56,6 @@ namespace robots {
         void setRobotLinkRotation(const std::string& linkName, float angle);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
-
-        // --- UTILITY METHODS ---
-
-        static float clampJointAngle(const RobotJoint& joint, float angleRad);
-        static float wrapToPi(float angleRad);
-        static float wrapRad(float angleRad);
 
 	private:
         void instantiateRobotLinks();

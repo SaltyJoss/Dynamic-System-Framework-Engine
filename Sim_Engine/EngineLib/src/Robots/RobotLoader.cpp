@@ -96,7 +96,7 @@ namespace robots {
 			// Load initial orientation quaternion
 			{
 				glm::quat qFix = parseQuaternion(jointData);
-				if (RobotLink* childLink = findLink(robot.links, joint.child)) { childLink->meshFix = qFix; }
+				if (RobotLink* childLink = findLink(robot.links, joint.child)) { childLink->meshFix = glm::mat4_cast(qFix); }
 				LOG_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), qFix.w, qFix.x, qFix.y, qFix.z);
 				D_INFO("Joint %s mesh fix quat = (w=%.3f x=%.3f y=%.3f z=%.3f)", joint.name.c_str(), qFix.w, qFix.x, qFix.y, qFix.z);
 			}
