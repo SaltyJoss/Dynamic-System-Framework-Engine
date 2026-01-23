@@ -133,12 +133,7 @@ namespace gui {
 
             ImGui::EndMenu();
         }
-        /*if (ImGui::BeginMenu("Robotic Arms")) {
-            if (ImGui::MenuItem("Select Model")) {
-                _showRobotSelector = true;
-            }
-            ImGui::EndMenu();
-        }*/
+
         if (ImGui::BeginMenu("Shader"))
         {
             // Reload shader button
@@ -204,6 +199,7 @@ namespace gui {
             simulationProperties();
             jointProperties();
             objectProperties();
+			if (_openStats) { stats(); }
         }
         if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
@@ -321,9 +317,7 @@ namespace gui {
             ImGui::EndCombo();
         }
 
-        ImGui::NewLine();
-			
-  		// Deals with simulation time tracking using chrono
+        // Deals with simulation time tracking using chrono
         if (_sim->isSimRunning()) {
             auto now = std::chrono::high_resolution_clock::now();
             double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
@@ -335,35 +329,24 @@ namespace gui {
 
             if (_sim->getSimTime() >= simLength) {
                 _sim->stopSimulation();
-				_sim->setSimTime(0.0f);
+                _sim->setSimTime(0.0f);
                 D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
             }
         }
         else { simLastUpdateTime = std::chrono::high_resolution_clock::now(); }
 
-        if (diagRunning) {
-			// Update diagnostic time
-            auto now = std::chrono::high_resolution_clock::now();
-            double deltaSeconds = std::chrono::duration<double>(now - diagLastUpdateTime).count();
-            diagLastUpdateTime = now;
-            diagTime += static_cast<float>(deltaSeconds);
-
-            if (diagTime >= diagLength) {
-                diagRunning = false;
-                diagTime = 0.0f;
-                _phys->stopDiagnostics();
-                D_RUNTIME("Diagnostic run time: %.3f seconds", diagLength);
-			}
-		} else { diagLastUpdateTime = std::chrono::high_resolution_clock::now(); }
+		ImGui::Separator();
     }
 
     void ControlPanel::objectProperties() {
         if (_sim->isSimRunning()) {
+            ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
             ImGui::Separator();
             return;
 		}
         if (!_obj) {
+            ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
             return;
@@ -389,6 +372,7 @@ namespace gui {
 
 
         // Mass Controls
+
         ImGui::Text("Mass:");
         ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
 
@@ -452,6 +436,8 @@ namespace gui {
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
         }
+
+		ImGui::Separator();
     }
 
     void ControlPanel::jointProperties() {
@@ -467,6 +453,7 @@ namespace gui {
         const auto& joints = robot->joints();
         if (joints.empty()) {
             ImGui::TextDisabled("Robot has no joints.");
+            ImGui::Separator();
             return;
         }
 
@@ -485,6 +472,7 @@ namespace gui {
         }
 
         const char* preview = _currentJointName.c_str();
+        ImGui::SetNextItemWidth(150.0f);
         if (ImGui::BeginCombo("Joint", preview)) {
             for (int i = 0; i < (int)joints.size(); ++i) {
                 const bool selected = (i == currentJointIndex);
@@ -503,16 +491,14 @@ namespace gui {
 
         float angleRad = 0.0f;
         if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1),
-                "Failed to get joint angle for link: %s", _currentLinkName.c_str());
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Failed to get joint angle for link: %s", _currentLinkName.c_str());
             return;
         }
 
-        ImGui::Text("Driven by joint: %s", joints[currentJointIndex].name.c_str());
-        ImGui::Text("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
+        ImGui::TextDisabled("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
 
         float angleDeg = glm::degrees(angleRad);
-        if (ImGui::SliderFloat("Angle (deg)", &angleDeg, minAngleDeg, maxAngleDeg, "%.1f")) {
+        if (ImGui::DragFloat("Angle (deg)", &angleDeg, 0.1f, minAngleDeg, maxAngleDeg)) {
             // strongly prefer radians API:
             robot->trySetJointAngleRad(_currentLinkName, glm::radians(angleDeg));
         }
@@ -523,13 +509,12 @@ namespace gui {
 			D_INFO("Reset Joint %s", joints[currentJointIndex].name.c_str());
         }
 
-		if (ImGui::Checkbox("Enable Joint Statistics", &_jointStats)) {
-            stats();
-        }
+		ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::Checkbox("Enable Statistics", &_openStats)) { D_INFO("Statistics %s.", _openStats ? "enabled" : "disabled"); }
     }
 
     void ControlPanel::stats() {
-        if (!_obj && !_hasRobot) { return; }
+        if (!_openStats && !_obj && !_hasRobot) { return; }
 
         ImGui::SeparatorText("Simulation Statistics");
         if (_obj && _obj->getMesh()) {
@@ -579,25 +564,22 @@ namespace gui {
 
             ImGui::Text("Telemetry");
 			ImGui::Separator();
+            // Position block
+			if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV)) {
+				// Position
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
+				ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
 
-            if (_hasRobot) {
-                // Position block
-                if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV)) {
-                    // Position
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z); 
+				glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot)); // convert quaternion to Euler angles in degrees
 
-					glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot)); // convert quaternion to Euler angles in degrees
+				// Rotation
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
+				ImGui::TableSetColumnIndex(1); ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f", eulerDeg.x, eulerDeg.y, eulerDeg.z);
 
-                    // Rotation
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
-                    ImGui::TableSetColumnIndex(1); ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f", eulerDeg.x, eulerDeg.y, eulerDeg.z);
-
-                    ImGui::EndTable();
-                }
-            }       
+				ImGui::EndTable();
+			}
         }
     }
 

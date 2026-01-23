@@ -99,7 +99,7 @@ namespace gui {
 		bool diagRunning = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
-		bool _jointStats = false;
+		bool _openStats = false;
 
         std::string _requestedRobot;
         std::string _currentObjectName;
