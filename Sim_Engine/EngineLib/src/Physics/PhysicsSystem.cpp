@@ -16,14 +16,10 @@
 
 namespace physics {
 	// Constructor
-	PhysicsSystem::PhysicsSystem() {
-		_ODE = std::make_unique<integration::ODE>();
-
-		_refSolver = std::make_unique<ReferenceSolver>();
-		_refSolver->setReferenceIntegrationMethod(ReferenceSolver::eReferenceIntegrator::DormandPrinceRK45);
-
-		LOG_INFO("PhysicsSystem initialised.");
-		D_INFO("Physics initialised");
+	PhysicsSystem::PhysicsSystem() 
+		: _integrator(std::make_unique<integration::IntegrationService>()), _refSolver(std::make_unique<integration::ReferenceSolver>()), 
+		_curIntMethod(integration::eIntegrationMethod::Euler) {
+		if (!_integrator) { LOG_WARN("Physics got null IntegrationService*"); }
 	}
 
 
@@ -77,7 +73,8 @@ namespace physics {
 			return d;
 		};
 
-		VecX next = integrationMethod(x, 0.0, dt, f, method);
+		// Integrate to get next state
+		VecX next = _integrator->stepODE(_curIntMethod, x, 0.0, dt, f);
 		s.q = Quat(next(0), next(1), next(2), next(3)).normalized();
 		s.angularVelocity = Vec3(next(4), next(5), next(6));
 		obj->transform.rotQ = glm::quat((float)s.q.w(), (float)s.q.x(), (float)s.q.y(), (float)s.q.z());
@@ -86,62 +83,11 @@ namespace physics {
 		if (_diagRunning && obj == _diagObject) {
 			IntegratorDiagSample sample;
 			sample.t = _t;
-			sample.q = s.q;
+			sample.q_method = s.q;
 			sample.omega = s.angularVelocity;
 			_diagSamples.push_back(sample);
 		}
 	}
-
-	//void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
-	//	if (!obj || !obj->getMesh()) return;
-	//	auto& rt = gRefTracks[obj];
-
-	//	if (!rt.init) {
-	//		// Initialize reference track
-	//		rt.x.resize(6);
-	//		rt.x(0) = obj->state.theta.x();
-	//		rt.x(1) = obj->state.theta.y();
-	//		rt.x(2) = obj->state.theta.z();
-	//		rt.x(3) = obj->state.angularVelocity.x();
-	//		rt.x(4) = obj->state.angularVelocity.y();
-	//		rt.x(5) = obj->state.angularVelocity.z();
-	//		rt.t = _t;
-	//		rt.dt = 1e-3; // initial step size
-	//		rt.init = true;
-	//	}
-
-	//	// Define derivative function
-	//	const double t_next = _t + dt;
-
-	//	auto f = [&](double t, const VecX& state) -> VecX {
-	//		VecX deriv(6);
-	//		// unpacking state vector (theta = angle, omega = angular velocity)
-	//		double theta_x = state(0);
-	//		double theta_y = state(1);
-	//		double theta_z = state(2);
-	//		double omega_x = state(3);
-	//		double omega_y = state(4);
-	//		double omega_z = state(5);
-	//		// derivative: dtheta/dt = omega
-	//		deriv(0) = omega_x;
-	//		deriv(1) = omega_y;
-	//		deriv(2) = omega_z;
-	//		// derivative: domega/dt = angular acceleration (damping is 0.0 by default!)
-	//		deriv(3) = -(obj->state.damping) * omega_x;
-	//		deriv(4) = -(obj->state.damping) * omega_y;
-	//		deriv(5) = -(obj->state.damping) * omega_z;
-	//		return deriv;
-	//	};
-
-	//	// Perform adaptive step to reach t_next
-	//	while (rt.t < t_next) {
-	//		double dt = std::min(rt.dt, t_next - rt.t);
-	//		auto res = _refSolver->refStep(rt.x, rt.t, dt, f, 1e-6, 1e-9);
-	//		rt.x = res.x_next;
-	//		rt.t += res.dt_taken;
-	//		rt.dt = res.dt_sug;
-	//	}
-	//}
 
 	void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
 		if (!obj || !obj->getMesh()) return;
@@ -185,9 +131,9 @@ namespace physics {
 
 		// update ref diagnostics if running
 		if (_diagRunning) {
-			ReferenceSolver::RefIntegratorDiagSample samples;
+			integration::ReferenceSolver::RefIntegratorDiagSample samples;
 			samples.t = rt.t;
-			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // angles
+			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // quaternion angles
 			samples.omega = Vec3(rt.x(4), rt.x(5), rt.x(6)); // angular velocities
 			_refDiagSamples.push_back(samples);
 
@@ -260,40 +206,6 @@ namespace physics {
 		// Dampen small bounces to zero
 		if (obj->transform.position.y < floorY + 0.1f && s.linearVelocity.y() < 0.1f) {
 			s.linearVelocity.y() = 0.0f; // stop small bounces
-		}
-	}
-
-// --------------------------------------------------
-//				   INTEGRATION (ODE)
-// --------------------------------------------------
-	// Integration method dispatcher
-	VecX PhysicsSystem::integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX &)> f, eIntegrationMethod method) {
-		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
-
-		if (!f) {
-			// If no function provided, assume constant derivative (dxdt)
-			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x + dxdt * dt;
-		}
-
-		if (method == eIntegrationMethod::Euler) {
-			return _ODE->eulerStep(x, dxdt, dt);
-		}
-		else if (method == eIntegrationMethod::Midpoint) {
-			return _ODE->midpointStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::Heun) {
-			return _ODE->heunStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::Ralston) {
-			return _ODE->ralstonStep(x, t, dt, f);
-		}
-		else if (method == eIntegrationMethod::RK4) {
-			return _ODE->rk4Step(x, t, dt, f);
-		}
-		else {
-			LOG_WARN("Unknown integration method: %s. Defaulting to Euler Method (simplest)", method);
-			return _ODE->eulerStep(x, dxdt, dt);
 		}
 	}
 

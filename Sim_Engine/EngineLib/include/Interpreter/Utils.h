@@ -2,6 +2,7 @@
 
 #include "EngineCore.h"
 #include "SimFwd.h"
+#include <optional>
 
 #include "Platform/Logger.h"
 
@@ -35,6 +36,7 @@ namespace utils {
 	std::string_view trim(std::string_view str);
 	std::string toLower(std::string_view str);
 	std::string toUpper(std::string_view str);
+	std::string stripBraces(std::string s);
 	void ignoreCaseCompare(std::string& str);
 	bool startsWith(const std::string& str, const std::string& prefix);
 	bool endsWith(const std::string& str, const std::string& suffix);
@@ -54,7 +56,16 @@ namespace utils {
 	std::string rgbToHex(const mathlib::Vec3& rgb);
 
 	// --- Command Utilities ---
-	std::optional<double> parseDouble(const std::string_view s);
+	double parseDouble(const std::string_view s);
+	float parseFloat(const std::string s);
+	mathlib::Vec3 parseVec3(const std::string& str);
 	AxisMask parseAxisMask(const std::string& s);
 	bool tryParseObjID(const std::string& s, scene::ObjectID& out);
+
+	// --- Unit Conversion Utilities ---
+	double degToRad(double degrees);
+	mathlib::Vec3 degToRad(mathlib::Vec3& degrees);
+
+	double radToDeg(double radians);
+	mathlib::Vec3 radToDeg(mathlib::Vec3& radians);
 } // namespace commands

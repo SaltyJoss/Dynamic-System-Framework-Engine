@@ -9,41 +9,74 @@
 #include "Scene/Mesh.h"
 
 using namespace mathlib;
+using namespace constants;
 using namespace utils;
 
 namespace commands {
 	UIContext::UIContext(gui::simManager* sim, scene::ObjectID objID)
-		: _sim(sim), _robot(sim ? sim->getRobotSystem() : nullptr), _objID(objID), _defaultObjID(objID) {
+		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
+		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
-	scene::Object* UIContext::resolveObject() const {
+	scene::ObjectID UIContext::getDefaultObjectID() const { return _defaultObjID; }
+	scene::ObjectID UIContext::getObjectID() const { return _objID; }
+
+	scene::Object* UIContext::resolveObject(scene::ObjectID id) const {
 		if (!_sim) return nullptr;
-		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
-		return _sim->getObjectByID(_objID);
+		if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
+		return _sim->getObjectByID(id);
 	}
 
+	scene::Object* UIContext::resolveCurrentObject() const { return resolveObject(_objID); }
+	scene::Object* UIContext::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+
+	OpResult UIContext::setOmega(const mathlib::Vec3& omega, AngularUnits units) {
+		scene::Object* obj = resolveCurrentObject();
+		if (!obj) return OpResult::Failure("No object selected.");
+
+		Vec3 w = omega;
+		if (units == AngularUnits::DegPerSec) { w *= (float)(PI / 180.0); }
+		if (_omegaClamp > 0.0) {
+			w.x() = (float)std::clamp((double)w.x(), -_omegaClamp, _omegaClamp);
+			w.y() = (float)std::clamp((double)w.y(), -_omegaClamp, _omegaClamp);
+			w.z() = (float)std::clamp((double)w.z(), -_omegaClamp, _omegaClamp);
+		}
+		
+		obj->state.angularVelocity = w;
+		return OpResult::Success(true);
+	}
+
+	OpResult UIContext::setFixedDt(double dt) {
+		if (!_phys) {
+			LOG_WARN("Physics system is null, cannot set fixed dt.");
+			return OpResult::Failure("Physics system is null.");
+		}
+		if (dt <= 0.0) {
+			LOG_WARN("Invalid fixed dt value: %f", dt);
+			return OpResult::Failure("Fixed dt must be positive.");
+		}
+		_sim->setFixedDeltaTime(dt);
+		return OpResult::Success(true);
+	}
 
 	//  Set the colour property of the current object
 	OpResult UIContext::setColour(const glm::vec3& color) {
-		scene::Object* obj = resolveObject();
+		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 
-		auto mesh = obj->getMesh();
-		if (!mesh) return OpResult::Failure("Object has no mesh.");
-
-		mesh->_colour = color;
+		obj->setAlbedo(color);
 		return OpResult::Success();
 	}
 
 	//  Set the metallic property of the current object
 	OpResult UIContext::setMetallic(float metallic) {
-		scene::Object* obj = resolveObject();
+		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 
 		auto mesh = obj->getMesh();
 		if (!mesh) return OpResult::Failure("Object has no mesh.");
 
-		mesh->_metallic = metallic;
+		mesh->setMetallic(metallic);
 		return OpResult::Success();
 	}
 
@@ -97,7 +130,7 @@ namespace commands {
 			return OpResult::Failure("No object selected.");
 		}
 
-		scene::Object* obj = resolveObject();
+		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("Selected object ID not found.");
 
 		// Finds the index of the current object
@@ -161,14 +194,32 @@ namespace commands {
 	// (Texture loading/clearing not implemented yet)
 
 	OpResult UIContext::loadTexture(const std::string& texturePath) {
-		scene::Object* obj = resolveObject();
+		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");
 	}
 
 	OpResult UIContext::clearTexture() {
-		scene::Object* obj = resolveObject();
+		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");
+	}
+
+	// --- OBJECT SELECTION METHOD ---
+	OpResult UIContext::selectObject(scene::ObjectID id) {
+		scene::Object* obj = resolveObject(id);
+		if (!obj) return OpResult::Failure("Object ID not found.");
+		_objID = id;
+		return OpResult::Success();
+	}
+
+	// --- PRIMARY SIMULATION COMMANDS ---
+	OpResult UIContext::startSim() {
+		if (!_sim) {
+			LOG_WARN("Simulation manager is null, cannot start simulation.");
+			return OpResult::Failure("Simulation manager is null.");
+		}
+		_sim->startSimulation();
+		return OpResult::Success();
 	}
 } // namespace commands

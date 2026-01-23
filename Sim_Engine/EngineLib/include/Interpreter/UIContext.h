@@ -13,36 +13,51 @@ namespace commands {
 	public:
 		UIContext(gui::simManager* sim, scene::ObjectID obj);
 
-		// Getters and Setters
 		gui::simManager* getSim() const { return _sim; }
+		scene::ObjectID getDefaultObjectID() const;
+		scene::ObjectID getObjectID() const;
 
-		scene::ObjectID getObjectID() const { return _objID; }
-		void setObjectID(scene::ObjectID id) { _objID = id; }
+		scene::Object* resolveObject(scene::ObjectID id) const;
+		scene::Object* resolveCurrentObject() const;
+		scene::Object* resolveDefaultObject() const;
 
-		scene::ObjectID getDefaultObjectID() const { return _defaultObjID; }
-		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
+		// Setters (setCmd)
+		utils::OpResult setOmega(const mathlib::Vec3& omega, utils::AngularUnits units);
+		utils::OpResult setFixedDt(double dt);
 
-		scene::Object* resolveObject() const;
-
-		// setters for material properties
 		utils::OpResult setColour(const glm::vec3& color);
 		utils::OpResult setMetallic(float metallic);
 		
-		// loaders
+		// Loaders (loadCmd)
 		utils::OpResult loadObject(const std::string& objectPath);
 		utils::OpResult loadRobot(const std::string& robotName);
 		utils::OpResult loadTexture(const std::string& texturePath);
 		
-		// clearers
+		// Clearers (clearCmd)
 		utils::OpResult clearObject();
 		utils::OpResult clearRobot();
 		utils::OpResult clearTexture();
 
+		// Selectors (selectCmd)
+		utils::OpResult selectObject(scene::ObjectID id);
+
+		// Primary Commands
+		utils::OpResult startSim();
+		utils::OpResult stopSim();
+		utils::OpResult waitSim();
+		utils::OpResult resetSim();
+		utils::OpResult logSimData(const std::string& logPath);
+		utils::OpResult deleteObject(scene::ObjectID id);
+
 	private:
-		gui::simManager* _sim;		// simulation manager
-		robots::RobotSystem* _robot; // current robot system
+		gui::simManager* _sim = nullptr;
+		physics::PhysicsSystem* _phys = nullptr;
+		robots::RobotSystem* _robot = nullptr;
 		scene::ObjectID _objID;
 		scene::ObjectID _defaultObjID;
+
+		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
+		double _omegaClamp = 0.0; // Default: no clamp
 
 		std::unordered_map<std::string, scene::ObjectID> _loadedObjects; // cache IDs, not pointers
 		std::unordered_map<std::string, robots::RobotSystem*> _loadedRobots;

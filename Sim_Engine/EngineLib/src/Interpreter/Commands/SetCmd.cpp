@@ -40,47 +40,9 @@ namespace commands {
 		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
 	}
 
-	static float parseFloat(const std::string s) {
-		float out = 0.0f;
-		auto first = s.data();
-		auto last = s.data() + s.size();
-
-		auto res = std::from_chars(first, last, out); // Format: COMMAND <identifier>/<axis> <first>, ...<args_n>..., <last> "# Description"
-		if (res.ec != std::errc{} || res.ptr != last) { return 0.0f; }
-		return out;
-	}
-
 	static Colour parseColourRGB(const std::string& str) {
 		if (!str.empty() && str.front() == '{' && str.back() == '}') {
-			std::string s = str.substr(1, str.size() - 2); // remove braces
-			std::vector<std::string> rgbStr;
-			std::string cur;
-			cur.reserve(s.size());
-
-			// trim whitespace!
-			auto trim = [](std::string& str) {
-				auto is_ws = [](unsigned char c) { return c == ' ' || c == '\t'; }; // trim whitespace
-				size_t a = 0;
-				while (a < str.size() && is_ws(str[a])) { ++a; }
-				size_t b = str.size();
-				while (b > a && is_ws(str[b - 1])) { --b; }
-				str = str.substr(a, b - a);
-			};
-
-			auto pushCurrent = [&]() {
-				trim(cur);
-				if (!cur.empty()) { rgbStr.push_back(cur); }
-				cur.clear();
-			};
-
-			for (size_t i = 0; i < s.size(); ++i) {
-				char c = s[i];
-				if (c == ',') { pushCurrent(); continue; }
-				cur.push_back(c);
-			}
-			pushCurrent();
-
-			Vec3 rgb = Vec3{ parseFloat(rgbStr[0]), parseFloat(rgbStr[1]), parseFloat(rgbStr[2]) };
+			Vec3 rgb = utils::parseVec3(str);
 			return Colour{ BlockColour::Custom, rgb };
 		}
 		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
@@ -94,6 +56,8 @@ namespace commands {
 		}
 		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
 	}
+
+	// --- SetCmd Method Implementations ---
 
 	// Get colour from parameter
 	void SetCmd::setColour(const mathlib::Vec3& rgb) {
@@ -109,6 +73,20 @@ namespace commands {
 	// Expected formats: "set(integrator,<method>)", "set(colour,<RGB>)", "set(colour,<hex>)"
 	static std::optional<SetTarget> parseSetTarget(const std::string& id, const std::string& token) {
 		if (startsWith(toLower(id), "integrator")) { std::string s = toLower(token); return SetTarget{ SetTargetType::IntegratorMethod, parseMethod(s) }; }
+		if (startsWith(toLower(id), "dt")) { std::string s = token; return SetTarget{ SetTargetType::FixedDt, {}, {}, utils::parseDouble(s) }; }
+		if (startsWith(toLower(id), "omega")) { 
+			std::string s = toLower(token); 
+
+			AxisMask m = utils::parseAxisMask(s);
+			if (!m.any()) { return std::nullopt; }
+
+			Vec3 w = Vec3{ m.x ? utils::parseFloat(s) : 0.0f,
+						   m.y ? utils::parseFloat(s) : 0.0f,
+						   m.z ? utils::parseFloat(s) : 0.0f 
+			};
+
+			return SetTarget{ SetTargetType::Omega, {}, w }; 
+		}
 		if (startsWith(toLower(id), "colour")) { 
 			std::string s = token; 
 			Colour c;
@@ -116,7 +94,7 @@ namespace commands {
 			else if (s.starts_with('{')) { c = parseColourRGB(s); }
 			else { c = parseColourBlock(toLower(s)); }
 
-			return SetTarget{ SetTargetType::Colour, {}, c};
+			return SetTarget{ SetTargetType::Colour, {}, {}, {}, c };
 		}
 		return std::nullopt;
 	}
@@ -139,25 +117,32 @@ namespace commands {
 			D_FAIL("%s", errMsg.c_str());
 			return;
 		}
-		if (_id == "integrator") {
-			auto m = parseSetTarget(_id, _tokens);
-			if (!m) {
-				D_FAIL("Unknown integrator method : %s", _tokens);
-				return;
-			}
 
-			getProgram()->setIntegratorMethod(m->method);
+		if (_id == "integrator") {
+			auto t = parseSetTarget(_id, _tokens);
+			if (!t) { markFailed("Invalid integrator method"); return; }
+			getProgram()->setIntegratorMethod(t->method);
 			markCompleted();
 			D_SUCCESS("set() command executed: Integrator method set.");
 			return;
 		}
+		if (_id == "omega") {
+			auto t = parseSetTarget(_id, _tokens);
+			if (!t) { markFailed("Invalid omega"); return; }
+			getProgram()->setOmega(t->omega, AngularUnits::DegPerSec);
+			markCompleted();
+			return;
+		}
+		if (_id == "dt") {
+			auto t = parseSetTarget(_id, _tokens);
+			if (!t) { markFailed("Invalid fixed_dt"); return; }
+			getProgram()->setFixedDt(t->fixedDt);
+			markCompleted();
+			return;
+		}
 		if (_id == "colour") {
 			auto t = parseSetTarget(_id, _tokens);
-			if (!t) {
-				markFailed("Invalid colour");
-				return;
-			}
-
+			if (!t) { markFailed("Invalid colour"); return; }
 			getProgram()->setColour(t->colour.rgb);
 			markCompleted();
 			return;
@@ -168,7 +153,7 @@ namespace commands {
 
 	// --- Free Function to Create SetCmd ---
 	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (tokens.size() != 1) { D_FAIL("set(integrator, <method>) expects exactly 1 argument.");}
+		if (tokens.size() != 1) { D_FAIL("set(id, <val>) expects exactly 1 argument."); }
 		return std::make_unique<SetCmd>(id, tokens[0]);
 	}
 } // namespace commands

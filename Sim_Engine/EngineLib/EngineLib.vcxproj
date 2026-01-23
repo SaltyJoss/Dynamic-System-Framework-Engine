@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -86,7 +86,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -132,6 +132,7 @@
     <ClInclude Include="..\External\MathLib\include\kinematics\Jacobian.h" />
     <ClInclude Include="..\External\MathLib\include\kinematics\Trajectory.h" />
     <ClInclude Include="..\External\MathLib\include\kinematics\Transform_Utils.h" />
+    <ClInclude Include="..\External\MathLib\include\kinematics\URDF_Types.h" />
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />
     <ClInclude Include="..\External\stb\stb_image.h" />
     <ClInclude Include="framework.h" />
@@ -148,8 +149,12 @@
     <ClInclude Include="include\Interpreter\Commands\RotateJointByCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateJointToCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateToCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\SelectCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SpinCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\StartCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\StopCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\WaitCmd.h" />
     <ClInclude Include="include\Interpreter\ICommand.h" />
     <ClInclude Include="include\Interpreter\IStoredProgram.h" />
     <ClInclude Include="include\Interpreter\MainContext.h" />
@@ -160,9 +165,10 @@
     <ClInclude Include="include\Interpreter\StoredProgram.h" />
     <ClInclude Include="include\Interpreter\UIContext.h" />
     <ClInclude Include="include\Interpreter\Utils.h" />
+    <ClInclude Include="include\Numerics\IntegrationService.h" />
+    <ClInclude Include="include\Numerics\ReferenceSolver.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
-    <ClInclude Include="include\Physics\ReferenceSolver.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
@@ -213,13 +219,18 @@
     <ClCompile Include="src\Interpreter\Commands\RotateJointByCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateJointToCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateToCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\SelectCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\StartCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\StopCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\WaitCmd.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
     <ClCompile Include="src\Interpreter\StoredProgram.cpp" />
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Interpreter\Utils.cpp" />
+    <ClCompile Include="src\Numerics\IntegrationService.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

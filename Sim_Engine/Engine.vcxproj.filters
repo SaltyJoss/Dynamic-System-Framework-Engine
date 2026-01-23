@@ -28,24 +28,15 @@
     <Filter Include="Resource Files\shaders\Post">
       <UniqueIdentifier>{e26424c3-6dd6-41e9-9493-6aa36e9e79b7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\Shadows">
+      <UniqueIdentifier>{cb91ff31-a8ba-4a0e-8dd6-1802e145e36f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\WorldGrid">
+      <UniqueIdentifier>{de23fb45-02ed-4a6f-9244-c7b22d4c385a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="Engine\assets\shaders\shadow_depth.frag.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="Engine\assets\shaders\shadow_depth.vert.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="Engine\assets\shaders\vs_pbr.vert.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="Engine\assets\shaders\world_grid.frag.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="Engine\assets\shaders\world_grid.vert.glsl">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="Engine\assets\shaders\skybox_render.frag.glsl">
@@ -89,6 +80,21 @@
     </None>
     <None Include="Engine\assets\shaders\post.frag.glsl">
       <Filter>Resource Files\shaders\Post</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\shadow_depth.frag.glsl">
+      <Filter>Resource Files\shaders\Shadows</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\shadow_depth.vert.glsl">
+      <Filter>Resource Files\shaders\Shadows</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\vs_pbr.vert.glsl">
+      <Filter>Resource Files\shaders\basic</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\world_grid.frag.glsl">
+      <Filter>Resource Files\shaders\WorldGrid</Filter>
+    </None>
+    <None Include="Engine\assets\shaders\world_grid.vert.glsl">
+      <Filter>Resource Files\shaders\WorldGrid</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

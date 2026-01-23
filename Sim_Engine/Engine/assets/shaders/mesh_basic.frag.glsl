@@ -14,7 +14,7 @@ void main()
 }
 
 /*
-BREAKDOWN FOR MY OWN SANITY (tutorials linked with resources, gpt helped compile info):
+BREAKDOWN (Because this is not main shader):
 
 Purpose:
 --------
@@ -35,7 +35,7 @@ What it does:
 - No lighting, no PBR, no shadows, no textures.
 - Always visible.
 
-When to use:
+When I plan to use:
 ------------
 - meshes disappear under PBR
 - transforms look incorrect
@@ -43,6 +43,5 @@ When to use:
 - IBL or LUT not bound
 - debugging axes and robot FK
 
-Switching back to this shader is step 0 whenever
-visual debugging is needed.
+Switching back to is for visual debugging only (not for final renders)
 */

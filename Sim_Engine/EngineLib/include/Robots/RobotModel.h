@@ -19,10 +19,60 @@
 #include "EngineLib/LogMacros.h"
 
 namespace robots {
+	// --- Robot Model Kinematic Models ---
+	enum class eKinematicsModel { URDF, DH };
+
+	// --- Robot Model Links ---
+
+	struct Inertia { float ixx = 0, ixy = 0, ixz = 0, iyy = 0, iyz = 0, izz = 0; };
+
+	struct Inertial {
+		float mass = 0.0f;
+		glm::vec3 com_xyz{ 0,0,0 };
+		Inertia inertia{};
+	};
+
+	struct CollisionShape {
+		std::string type;
+		glm::vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+
+		glm::vec3 origin_xyz{ 0,0,0 };
+		glm::vec3 origin_rpy{ 0,0,0 };
+
+		std::string meshFile;	// Z1 provided STLs for collision meshes, dont use yet
+	};
+
+	struct Visual {
+		std::string meshFile;
+		glm::vec3 origin_xyz{ 0,0,0 };
+		glm::vec3 origin_rpy{ 0,0,0 };
+	};
+
 	struct RobotLink {
-		std::string name = "";
-		std::string meshFile = "";
+		std::string name;
+		Visual visual{};
+		std::vector<CollisionShape> collisions;
+		Inertial inertial{};
+
+		// render-only correction (optional)
+		glm::mat4 dhToMeshFix = glm::mat4(1.0f);
+
 		scene::Object* attachedObject = nullptr;
+	};
+
+	// --- Robot Model Joints ---
+
+	struct JointLimit {
+		bool continuous = false;
+		float minAngle = 0.0f;
+		float maxAngle = 0.0f;
+		float maxOmegaRad_s = glm::radians(180.0f);
+		float maxEffort = 0.0f; // max torque/force
+	};
+
+	struct JointDynamics {
+		float damping = 0.0f;
+		float friction = 0.0f;
 	};
 
 	struct RobotJoint {
@@ -30,32 +80,55 @@ namespace robots {
 		std::string parent = "";
 		std::string child = "";
 
-		glm::vec3 axis{ 0.0, 0.0, 0.0 };
-		glm::vec3 offset{ 0.0, 0.0, 0.0 };
-		glm::quat quat{ 1.0, 0.0, 0.0, 0.0 }; // initial orientation
-		float angle = 0.0f;
+		// NEW (in parent link local space)
+		glm::vec3 axisParent = glm::vec3(0, 0, 1);
+		glm::vec3 pivotParent = glm::vec3(0, 0, 0);
 
-		bool continuous = false; // true for base, false for limited joints
-		float maxSpeed = 1.0f; // radians per second
-		float minAngle = 0.0f; // lower limit 
-		float maxAngle = 0.0f; // upper limit 
+		// URDF joint frame (parent → joint)
+		glm::vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
+		glm::vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
+		glm::quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
+
+		// Axis expressed IN JOINT FRAME
+		glm::vec3 axis{ 0.0f, 0.0f, 1.0f };
+
+		// --- Limits ---
+		JointLimit limits;
+		JointDynamics dynamics;
+
+		// --- State ---
+		float angleRad = 0.0f;	// rad
+		float omegaRad_s = 0.0f;// rad/s
+		float torque = 0.0f;	// Nm or N
+
+		// --- Control ---
+		float thetaRefRad = 0.0f;
+		float k_p = 25.0f;
+		float k_d = 8.0f;
+
+		// --- Precomputed transforms ---
+		glm::mat4 jointToChildRest = glm::mat4(1.0f);
+		glm::mat4 parentToJoint = glm::mat4(1.0f);
 	};
 
+	// --- Robot Model ---
+
 	struct RobotModel {
-		std::string name = "UnnamedRobot";	
-		float scale = 1.0f; // metres per unit
+		std::string name = "UnnamedRobot";
+		float scale = 1.0f;
+
+		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
 
-		std::vector<kinematics::DH_Params> dhParams; // optional DH parameters for kinematics
+		std::vector<kinematics::DH_Params> dhParams;
 
 		// Create an Eigen vector of joint angles
 		VecX makeJointVector() const {
 			const int n = static_cast<int>(joints.size());
+			LOG_INFO_ONCE("Making joint vector of size %d", n);
 			VecX q(n);
-			for (int i = 0; i < n; ++i) {
-				q(i) = static_cast<double>(joints[i].angle);
-			}
+			for (int i = 0; i < n; ++i) { q(i) = static_cast<double>(joints[i].angleRad); }
 			return q;
 		}
 
@@ -69,7 +142,7 @@ namespace robots {
 			}
 			for (int i = 0; i < n; ++i) {
 				float a = static_cast<float>(q(i));
-				joints[i].angle = a;
+				joints[i].angleRad = a;
 			}
 		}
 	};

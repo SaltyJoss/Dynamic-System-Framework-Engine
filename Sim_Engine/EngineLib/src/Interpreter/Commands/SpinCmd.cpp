@@ -81,6 +81,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<SpinCmd>(objID, axes, *omegaOpt, *durOpt);
+		return std::make_unique<SpinCmd>(objID, axes, omegaOpt, durOpt);
 	}
 } // namespace commands

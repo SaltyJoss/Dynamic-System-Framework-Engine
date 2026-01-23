@@ -53,6 +53,7 @@ namespace interpreter {
 				s == "rotatejointto"	||
 				s == "translate"		||
 				s == "set"				||
+				s == "select" 			||
 				s == "load";
 	}
 
@@ -223,7 +224,7 @@ namespace interpreter {
 	}
 
 	void Parser::buildCommand(Command& cmd) {
-		if (cmd.cmdName.empty() || cmd.identifier.empty()) {
+		if (cmd.cmdName.empty()) {
 			D_WARN("Invalid command fields at line %d", cmd.lineNumber);
 			_program->stop();
 			return;
@@ -236,14 +237,18 @@ namespace interpreter {
 			return;
 		}
 
+		if (!commands::CommandFactory::Instance().hasCommand(cmd.cmdName)) {
+			D_FAIL("Unknown command: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+			_program->stop();
+			return;
+		}
+
 		D_DEBUG("Command: %s Identifier: %s Args: %d",
 			cmd.cmdName.c_str(),
-			cmd.identifier.c_str(),
-			(int)cmd.tokens.size());
+			cmd.identifier.c_str() ? "Empty" : nullptr,
+			(int)cmd.tokens.size() ? 0 : nullptr);
 
-		for (const auto& t : cmd.tokens) {
-			D_TRACE("Arg: %s", t.c_str());
-		}
+		for (const auto& t : cmd.tokens) { D_TRACE("Arg: %s", t.c_str()); }
 
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 

@@ -44,6 +44,14 @@ namespace commands {
 		// Gets the current omega clamp value
 		double getOmegaClamp() const;
 
+		// Sets the angular velocity (omega) for the current object
+		utils::OpResult setOmega(const mathlib::Vec3& omega); // rad/s
+		utils::OpResult stopAllOmega(); // stops all angular velocity
+
+		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
+		utils::OpResult stopJointOmega(const std::string& childLink); // stops joint angular velocity
+
+		// --- HELPER METHODS ---
 		gui::simManager* getSim() const { return _sim; }
 		scene::ObjectID getDefaultObjectID() const;
 		scene::ObjectID getObjectID() const;
@@ -54,6 +62,17 @@ namespace commands {
 
 		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
 		void setObjectID(scene::ObjectID id) { _objID = id; }
+
+		// --- PROCESS CONTROL METHODS ---
+
+		// Start and wait
+		void startMotion();
+		void waitSomeTime(double dt);
+	
+		// Stop Motion
+		void stopAllMotion(scene::Object* obj, utils::AxisMask axes);
+		void stopRotation(scene::Object* obj, utils::AxisMask axes);
+		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 		// --- ROTATION COMMAND METHODS ---
 
@@ -81,9 +100,6 @@ namespace commands {
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
-
-		void stopRotation(scene::Object* obj, utils::AxisMask axes);
-		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 
 	private:

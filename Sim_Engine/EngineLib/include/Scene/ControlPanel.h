@@ -45,7 +45,7 @@ namespace gui {
 
         simManager* _sim = nullptr;
         physics::PhysicsSystem* _phys;
-        scene::Light* _sunLight;
+        scene::Light* _light;
         scene::Object* _obj;
         ImGui::FileBrowser _meshLoad;
         ImGui::FileBrowser _hdrLoad;
@@ -63,9 +63,11 @@ namespace gui {
         void simulationProperties();
         void cameraProperties();
         void objectProperties();
-        void linkProperties();
+        void jointProperties();
         void displaySettings();
         void stats();
+
+		void tempLightControls();
 
         void roboticArmSelector();
         void roboticCardDisplay(const char* name, const char* company);
@@ -85,19 +87,24 @@ namespace gui {
         bool scrollToBottom = false;
 
 		// Render Presets
-        render::LookPreset l = render::LookPreset::Studio;
-        render::QualityPreset q = render::QualityPreset::Medium;
+		render::ResolutionPreset r = render::ResolutionPreset::R_4K;
+        render::QualityPreset q = render::QualityPreset::Ultra;
         
+		bool _qualityChanged = false;
+		bool _resChanged = false;
 
         // Internal states
         bool simulationRunning = false;
+		bool _jointSelected = false;
 		bool diagRunning = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
+		bool _openStats = false;
 
         std::string _requestedRobot;
         std::string _currentObjectName;
         std::string _currentLinkName;
+		std::string _currentJointName;
         std::string _lastLinkName;
 
         std::unordered_map<std::string, float> _linkAngles;
@@ -119,7 +126,6 @@ namespace gui {
         float position = 0.0f;
 
 		// Time tracking for simulation updates
-        double finalTime = 0.0f;
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
         std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();
     };

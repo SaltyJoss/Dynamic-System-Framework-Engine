@@ -147,6 +147,7 @@ namespace gui {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
+		// cant be bothered with a full shader fragmenet and vertex, so I internally define them here
         const char* vertexShaderSrc = R"(
             #version 460 core
             layout(location = 0) in vec3 aPos;
@@ -193,7 +194,7 @@ namespace gui {
         g_Initialised = true;
     }
 
-    void AxisOrientator::render(const glm::mat4& viewMatrix) {
+    void AxisOrientator::render(const glm::mat4& viewMatrix, float scale) {
         if (!g_Initialised) init();
 
         // 1) Use current viewport (whatever FBO / window is bound)
@@ -202,7 +203,7 @@ namespace gui {
         int fbWidth = prevViewport[2];
         int fbHeight = prevViewport[3];
 
-        const int orientatorSize = 150; // pixels
+		const int orientatorSize = std::max(1, (int)std::lround(125 * scale)); // pixels, scaled accordingly
         const int margin = 10;
 
         int x = margin;

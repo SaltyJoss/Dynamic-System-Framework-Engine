@@ -15,7 +15,7 @@
 
 namespace gui {
     ControlPanel::ControlPanel(simManager* sceneView) :
-		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _sunLight(nullptr),
+		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -78,45 +78,62 @@ namespace gui {
 
         if (ImGui::BeginMenu("Render")) {
             if (ImGui::MenuItem("Quality: Low", nullptr, q == render::QualityPreset::Low)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::Low;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: Medium", nullptr, q == render::QualityPreset::Medium)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::Medium;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: High", nullptr, q == render::QualityPreset::High)) {
+                _qualityChanged = true;
                 q = render::QualityPreset::High;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
             if (ImGui::MenuItem("Quality: Ultra", nullptr, q == render::QualityPreset::Ultra)) {
+				_qualityChanged = true;
                 q = render::QualityPreset::Ultra;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
             }
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Look: Studio", nullptr, l == render::LookPreset::Studio)) {
-                l = render::LookPreset::Studio;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            if (ImGui::MenuItem("1280x720", nullptr, r == render::ResolutionPreset::R_720p)) {
+                _resChanged = true;
+				r = render::ResolutionPreset::R_720p;
             }
-            if (ImGui::MenuItem("Look: Cinematic", nullptr, l == render::LookPreset::Cinematic)) {
-                l = render::LookPreset::Cinematic;
-                _sim->applyRenderProfile(render::MakeSettings(l, q), l);
-                LOG_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
-                D_INFO("Render settings applied: LookPreset=%d, QualityPreset=%d", static_cast<int>(l), static_cast<int>(q));
+            if (ImGui::MenuItem("1920x1080", nullptr, r == render::ResolutionPreset::R_1080p)) {
+				_resChanged = true;
+				r = render::ResolutionPreset::R_1080p;
+			}
+			if (ImGui::MenuItem("2560x1440", nullptr, r == render::ResolutionPreset::R_1440p)) {
+				_resChanged = true;
+                r = render::ResolutionPreset::R_1440p;
+			}
+			if (ImGui::MenuItem("3840x2160", nullptr, r == render::ResolutionPreset::R_4K)) {
+                _resChanged = true;
+				r = render::ResolutionPreset::R_4K;
+			}
+
+            if (_qualityChanged) {
+                _sim->applyRenderProfile(render::MakeSettings(r, q), r);
+				const render::RenderSettings s;
+				LOG_INFO("Render quality changed to %d", (int)q);
+                D_INFO("Render quality changed to %d", (int)q);
+                _qualityChanged = false;
             }
+
+            if (_resChanged) {
+                auto s = render::MakeSettings(r, q);
+                _sim->applyRenderProfile(s, r);
+                LOG_INFO("Render resolution preset changed to %dx%d", (int)(_sim->getSize().x * s.renderScale), (int)(_sim->getSize().y * s.renderScale));
+				D_INFO("Render resolution preset changed to %dx%d", (int)(_sim->getSize().x * s.renderScale), (int)(_sim->getSize().y * s.renderScale));
+
+                _resChanged = false;
+			}
+
 
             ImGui::EndMenu();
         }
-        /*if (ImGui::BeginMenu("Robotic Arms")) {
-            if (ImGui::MenuItem("Select Model")) {
-                _showRobotSelector = true;
-            }
-            ImGui::EndMenu();
-        }*/
+
         if (ImGui::BeginMenu("Shader"))
         {
             // Reload shader button
@@ -153,7 +170,7 @@ namespace gui {
         fov = _sim->getCamera()->getFOVRadians();
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
-        _sunLight = _sim->getSunLight();
+        _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
 
 		_phys = &_sim->getPhysicsSystem();
@@ -164,61 +181,14 @@ namespace gui {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
-        if (ImGui::BeginMenuBar()) {
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 8.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 4.0f));
+        const bool wasRunning = _sim->isSimRunning(); // snapshot
 
-            const bool wasRunning = simulationRunning; // snapshot
+        // Simulation Start/Stop Button
+        if (_sim->isSimRunning()) {
+		    if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
 
-            if (wasRunning) {
-                ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.80f, 0.15f, 0.15f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90f, 0.20f, 0.20f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
-            }
-
-            // Simulation Start/Stop Button
-            if (ImGui::Button(wasRunning ? "Terminate" : "Run")) {
-                simulationRunning = !simulationRunning;
-
-				if (wasRunning && !simulationRunning) {
-                    // Stopping simulation
-                    simTime = 0.0f;
-                }
-
-				// Logs 
-                LOG_INFO("Simulation %s", simulationRunning ? "started" : "stopped");
-                D_RUNTIME("Simulation %s", simulationRunning ? "started" : "stopped");
-            }
-
-            if (wasRunning) {
-                ImGui::PopStyleColor(3);
-			}
-
-            // Diagnostic Start/Stop Button
-            if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
-                diagRunning = !diagRunning;
-                LOG_INFO("Diagnostics %s", diagRunning ? "started" : "stopped");
-                D_RUNTIME("Diagnostics %s", diagRunning ? "started" : "stopped");
-
-                if (diagRunning) { 
-                    _phys->startDiagnostics(_obj); 
-
-                    if (!_phys->diagnosticsRunning()) {
-                        diagRunning = false;
-                        LOG_WARN("Diagnostics terminated");
-                        D_FAIL("Diagnostics terminated");
-                    }
-                }
-                else {
-                    _phys->stopDiagnostics();
-                    diagRunning = false;
-                    D_RUNTIME("Diagnostic run time: %.3f seconds", diagTime);
-                    diagTime = 0.0f;
-                }
-            }
-			ImGui::PopStyleVar(3);
-            ImGui::EndMenuBar();
+                LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+                D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
         }
 
 		beginControlPanel("ControlPanel"); // Begin Child Panel
@@ -227,10 +197,11 @@ namespace gui {
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
-            linkProperties();
+            jointProperties();
             objectProperties();
-            stats();
+			if (_openStats) { stats(); }
         }
+        if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
         if (ImGui::CollapsingHeader("Display")) { displaySettings(); }
 
@@ -263,26 +234,43 @@ namespace gui {
         }
     }
 
+    void ControlPanel::tempLightControls() {
+        if (!_light) return;
+        ImGui::SeparatorText("Light Settings:");
+        ImGui::Text("Intensity");
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::DragFloat("##intensity", &_light->_intensity, 0.1f, 0.0f, 100.0f, "%.1f");
+        ImGui::Text("Color"); 
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::ColorEdit3("##Colour", glm::value_ptr(_light->_colour)), ImGui::SameLine();
+		ImGui::Separator();
+		ImGui::Text("Direction");
+        ImGui::SetNextItemWidth(150.0f);
+		ImGui::DragFloat3("##direction", &_light->_direction.x, 0.1f, -1.0f, 1.0f, "%.2f");
+		ImGui::Separator();
+        ImGui::Text("Position");
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::DragFloat3("##position", &_light->_position.x, 0.1f, -100.0f, 100.0f, "%.1f");
+        ImGui::Separator();
+    }
+
     void ControlPanel::simulationProperties() {
         ImGui::Text("Setup");
         ImGui::Separator();
 
 		ImGui::Text("Simulation Length:");
-		ImGui::SameLine();
-		ImGui::Text("           Diagnostic Length:");
 
         float step = 0.001f;
         float stepFast = 0.01f;
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
 
-		ImGui::SameLine();
+        if (!_hasRobot) {
+            ImGui::SetNextItemWidth(150.0f);
+            ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+        }
 
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##diag", ImGuiDataType_Float, &diagLength, &step, &stepFast, "%.3f");
         ImGui::Text("Delta Time (dt)");
         ImGui::SetNextItemWidth(150.0f);
-		ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
+        ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
 
 		ImGui::NewLine();
 
@@ -299,23 +287,23 @@ namespace gui {
                 bool isSelected = (n == static_cast<int>(currentEnum));
 
                 if (ImGui::Selectable(methodNames[n], isSelected)) {
-                    auto updatedMethod = static_cast<physics::PhysicsSystem::eIntegrationMethod>(n);
+                    auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
                     phys.setIntegrationMethod(updatedMethod);
 
                     switch (updatedMethod) {
-                    case physics::PhysicsSystem::eIntegrationMethod::Euler:
+                    case integration::eIntegrationMethod::Euler:
                         D_INFO("Integrator set to Euler");
                         break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Midpoint:
+                    case integration::eIntegrationMethod::Midpoint:
                         D_INFO("Integrator set to RK2 (Midpoint)");
                         break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Heun:
+                    case integration::eIntegrationMethod::Heun:
                         D_INFO("Integrator set to RK2 (Heun)");
 						break;
-                    case physics::PhysicsSystem::eIntegrationMethod::Ralston:
+                    case integration::eIntegrationMethod::Ralston:
                         D_INFO("Integrator set to RK2 (Ralston)");
 						break;
-                    case physics::PhysicsSystem::eIntegrationMethod::RK4:
+                    case integration::eIntegrationMethod::RK4:
                         D_INFO("Integrator set to RK4");
                         break;
                     default:
@@ -329,53 +317,36 @@ namespace gui {
             ImGui::EndCombo();
         }
 
-        ImGui::NewLine();
-
-		// Deals with simulation time tracking using chrono
-        if (simulationRunning) {
+        // Deals with simulation time tracking using chrono
+        if (_sim->isSimRunning()) {
             auto now = std::chrono::high_resolution_clock::now();
             double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
             simLastUpdateTime = now;
-            simTime += static_cast<float>(deltaSeconds);
+            _sim->incrementSimTime(deltaSeconds);
 
-            ImGui::Text("Elapsed Time...");
-            ImGui::Text("Simulation Time: %.3f / %.3f seconds", simTime, simLength);
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Simulation Running...");
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->getSimTime());
 
-            if (simTime >= simLength) {
-                simulationRunning = false;
-                simTime = 0.0f;
+            if (_sim->getSimTime() >= simLength) {
+                _sim->stopSimulation();
+                _sim->setSimTime(0.0f);
                 D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
             }
         }
-        else {
-            simLastUpdateTime = std::chrono::high_resolution_clock::now();
-        }
+        else { simLastUpdateTime = std::chrono::high_resolution_clock::now(); }
 
-        if (diagRunning) {
-			// Update diagnostic time
-            auto now = std::chrono::high_resolution_clock::now();
-            double deltaSeconds = std::chrono::duration<double>(now - diagLastUpdateTime).count();
-            diagLastUpdateTime = now;
-            diagTime += static_cast<float>(deltaSeconds);
-
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostics Running...");
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
-
-            if (diagTime >= diagLength) {
-                diagRunning = false;
-                diagTime = 0.0f;
-                _phys->stopDiagnostics();
-                D_RUNTIME("Diagnostic run time: %.3f seconds", diagLength);
-			}
-		} else {
-            diagLastUpdateTime = std::chrono::high_resolution_clock::now();
-        }
 		ImGui::Separator();
-
     }
 
     void ControlPanel::objectProperties() {
+        if (_sim->isSimRunning()) {
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
+            ImGui::Separator();
+            return;
+		}
         if (!_obj) {
+            ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
             return;
@@ -391,19 +362,24 @@ namespace gui {
 
         ImGui::Separator();
 
-		// Mass Controls
-        ImGui::Text("Mass:");
         double minMass = 0.25; double maxMass = 100.0;
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+        double minDamping = 0.0; double maxDamping = 1.0;
 
-		ImGui::Separator();
+        if (_hasRobot) {
+            for (const auto& link : _sim->getRobotSystem()->links()) { if (link.name == _obj->name) { minMass = link.inertial.mass; maxMass = link.inertial.mass; } }
+			for (const auto& joint : _sim->getRobotSystem()->joints()) { if (joint.child == _obj->name) { maxDamping = joint.dynamics.damping; } }
+        }
 
-		// Damping Controls
-        ImGui::Text("Damping Coefficient");
-		double minDamping = 0.0; double maxDamping = 1.0;
-		ImGui::SetNextItemWidth(150.0f);
-		ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
+
+        // Mass Controls
+
+        ImGui::Text("Mass:");
+        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+
+        ImGui::Separator();
+
+        ImGui::Text("Damping:");
+        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
 
         ImGui::Separator();
 
@@ -436,6 +412,10 @@ namespace gui {
 
             ImGui::Separator();
         }
+        if (_hasRobot) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Note: Some object properties are locked for individual robot joints and links.");
+            ImGui::Separator();
+		}
 
         ImGui::Text("Reset Object:");
         // Reset Object Button
@@ -445,17 +425,22 @@ namespace gui {
                 return;
 			}
 
-            if (_hasRobot && _obj->category == scene::ObjectCategory::General) {
-                LOG_WARN("Cannot reset individual robot links. Please reset the entire robot model.");
-                return;
+            if (_hasRobot) {
+				_sim->getRobotSystem()->resetRobot();
+                LOG_INFO("Robot reset to initial position and orientation.");
+                D_INFO("Reset Robot");
+				return;
 			}
+
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
         }
+
+		ImGui::Separator();
     }
 
-    void ControlPanel::linkProperties() {
+    void ControlPanel::jointProperties() {
         if (!_hasRobot) return;
 
         robots::RobotSystem* robot = _sim->getRobotSystem();
@@ -465,55 +450,74 @@ namespace gui {
             return;
         }
 
-        ImGui::Text("Link Controls");
-        ImGui::Separator();
-
-        const auto& links = robot->links();
-        if (links.empty()) {
-            ImGui::TextDisabled("Robot has no links.");
+        const auto& joints = robot->joints();
+        if (joints.empty()) {
+            ImGui::TextDisabled("Robot has no joints.");
+            ImGui::Separator();
             return;
         }
 
-        // Build a combo list of link names
-        static int currentLinkIndex = 0;
-        currentLinkIndex = std::clamp(currentLinkIndex, 0, (int)links.size() - 1);
+        static int currentJointIndex = 0;
+        currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
 
-        const char* preview = links[currentLinkIndex].name.c_str();
-        if (ImGui::BeginCombo("Link", preview)) {
-            for (int i = 0; i < (int)links.size(); ++i) {
-                bool selected = (i == currentLinkIndex);
-                if (ImGui::Selectable(links[i].name.c_str(), selected)) {
-                    currentLinkIndex = i;
-                    _currentLinkName = links[i].name;
+        static float minAngleDeg = -180.0f;
+        static float maxAngleDeg = 180.0f;
+
+        // Auto-select first joint if nothing selected yet
+        if (_currentJointName.empty()) {
+            _currentJointName = joints[currentJointIndex].name;
+            _currentLinkName = joints[currentJointIndex].child;
+            minAngleDeg = glm::degrees(joints[currentJointIndex].limits.minAngle);
+            maxAngleDeg = glm::degrees(joints[currentJointIndex].limits.maxAngle);
+        }
+
+        const char* preview = _currentJointName.c_str();
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::BeginCombo("Joint", preview)) {
+            for (int i = 0; i < (int)joints.size(); ++i) {
+                const bool selected = (i == currentJointIndex);
+                if (ImGui::Selectable(joints[i].name.c_str(), selected)) {
+                    currentJointIndex = i;
+                    _currentJointName = joints[i].name;
+                    _currentLinkName = joints[i].child;
+
+                    minAngleDeg = glm::degrees(joints[i].limits.minAngle);
+                    maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
                 }
                 if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
 
-        if (_currentLinkName.empty()) {
-            _currentLinkName = links[currentLinkIndex].name;
-        }
-
-        // Show + edit angle using RobotSystem API
         float angleRad = 0.0f;
         if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
-            ImGui::TextDisabled("No joint drives this link (likely base/root).");
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Failed to get joint angle for link: %s", _currentLinkName.c_str());
             return;
         }
 
+        ImGui::TextDisabled("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
+
         float angleDeg = glm::degrees(angleRad);
-        if (ImGui::SliderFloat("Angle (deg)", &angleDeg, -180.0f, 180.0f, "%.1f")) {
-            robot->setRobotLinkRotation(_currentLinkName, angleDeg);
+        if (ImGui::DragFloat("Angle (deg)", &angleDeg, 0.1f, minAngleDeg, maxAngleDeg)) {
+            // strongly prefer radians API:
+            robot->trySetJointAngleRad(_currentLinkName, glm::radians(angleDeg));
         }
+
+        if (ImGui::Button("Reset Joint")) {
+			robot->trySetJointAngleRad(_currentLinkName, 0.0f);
+            LOG_INFO("Joint %s reset to 0 degrees.", joints[currentJointIndex].name.c_str());
+			D_INFO("Reset Joint %s", joints[currentJointIndex].name.c_str());
+        }
+
+		ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::Checkbox("Enable Statistics", &_openStats)) { D_INFO("Statistics %s.", _openStats ? "enabled" : "disabled"); }
     }
 
     void ControlPanel::stats() {
-        if (!_obj) { return; }
+        if (!_openStats && !_obj && !_hasRobot) { return; }
 
         ImGui::SeparatorText("Simulation Statistics");
-        if (_obj && _obj->getMesh())
-        {
+        if (_obj && _obj->getMesh()) {
             const glm::vec3& pos = _obj->transform.position;
             const glm::quat& rot = _obj->transform.rotQ;
 
@@ -533,29 +537,49 @@ namespace gui {
                 // Plot Outputs
                 ImGui::PlotLines("Linear Velocity Magnitude", linVelHistory.data(), (int)linVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
                 ImGui::PlotLines("Angular Velocity Magnitude", angVelHistory.data(), (int)angVelHistory.size(), 0, nullptr, 0.0f, 50.0f, ImVec2(0, 25));
+
+                ImGui::Separator();
             }
 
-            ImGui::Separator();
+            if (_hasRobot) {
+                robots::RobotSystem* robot = _sim->getRobotSystem();
+                if (robot) {
+                    ImGui::Separator();
+                    ImGui::Text("Robot Joint Angles:");
+                    ImGui::Separator();
+                    const auto& joints = robot->joints();
+                    for (const auto& joint : joints) {
+                        float angleDeg = glm::degrees(joint.angleRad);
+                        ImGui::Text("%s: %.2f deg", joint.name.c_str(), angleDeg);
+
+                        // Plot Outputs specific to robotic arm
+						ImGui::Text("Joint Angle History - %s", joint.name.c_str());
+                        static std::vector<float> jointAngleHistory;
+                        jointAngleHistory.push_back(angleDeg);
+                        if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
+						ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
+                    }
+                }
+            }
 
             ImGui::Text("Telemetry");
 			ImGui::Separator();
-
             // Position block
-            if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV))
-            {
-                // Position
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
-                ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
+			if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV)) {
+				// Position
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
+				ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
 
-                // Rotation
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
-                ImGui::TableSetColumnIndex(1);
-                
+				glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot)); // convert quaternion to Euler angles in degrees
 
-                ImGui::EndTable();
-            }            
+				// Rotation
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
+				ImGui::TableSetColumnIndex(1); ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f", eulerDeg.x, eulerDeg.y, eulerDeg.z);
+
+				ImGui::EndTable();
+			}
         }
     }
 
@@ -568,25 +592,27 @@ namespace gui {
         if (*_controlMode == simManager::ControlMode::Object) { _sim->attachCameraToObject(_obj); }
         else { _sim->detachCameraFromObject(); }
 
-        ImGui::SeparatorText("Light Controls");
-
-        // Kept for future use with star light simulation (NOT NEEDED PURELY VISUAL)
-
-        ImGui::SeparatorText("Object Appearance");
-        if (!_mesh) {
-            ImGui::Text("No mesh loaded!");
-            LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
-        }
+        //ImGui::SeparatorText("Object Appearance");
+        //if (!_mesh) {
+        //    ImGui::Text("No mesh loaded!");
+        //    LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
+        //}
     }
 
     void ControlPanel::displaySettings() {
+		if (_sim->isSimRunning()) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit display settings while simulation is running.");
+            ImGui::Separator();
+            return;
+        }
+
         ImGui::SeparatorText("Display Settings");
 
-        bool enabled = _sim->isSkyboxEnabled();
-        if (ImGui::Checkbox("Enable Skybox", &enabled)) {
-            _sim->setSkyboxEnabled(enabled);
-            LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
-        }
+        //bool enabled = _sim->isSkyboxEnabled();
+        //if (ImGui::Checkbox("Enable Skybox", &enabled)) {
+        //    _sim->setSkyboxEnabled(enabled);
+        //    LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
+        //}
 
         static float fovDeg = 70.0f;
 
@@ -642,157 +668,223 @@ namespace gui {
 	}
 
 	// Scene Objects List
-    void ControlPanel::sceneObjectsTable() {
-        ImGui::BeginChild("SceneObjectsChild", ImVec2(0, 250), true);
+	void ControlPanel::sceneObjectsTable() {
+		ImGui::BeginChild("SceneObjectsTable", ImVec2(0, 250), true, ImGuiWindowFlags_None);
 
-        auto& objs = _sim->getObjects();          // get reference to scene objects
-        int indexToDelete = -1;
+		auto& objs = _sim->getObjects();          // get reference to scene objects
+		int indexToDelete = -1;
 
-        ImGui::Text("Scene Table");
-        ImGui::Separator();
+		ImGui::Text("Scene Table");
+		ImGui::Separator();
 
-        ImGuiTableFlags tableFlags =
-            ImGuiTableFlags_BordersV |
-            ImGuiTableFlags_BordersOuterH |
-            ImGuiTableFlags_Resizable |
-            ImGuiTableFlags_RowBg |
-            ImGuiTableFlags_NoBordersInBody;
+		ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_BordersV |
+			ImGuiTableFlags_BordersOuterH |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_NoBordersInBody;
 
-        if (ImGui::BeginTable("SceneTable", 3, tableFlags))
-        {
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableSetupColumn("Parent / Action");
-            ImGui::TableHeadersRow();
+		if (ImGui::BeginTable("SceneTable", 3, tableFlags)) {
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Child / Action");
+			ImGui::TableHeadersRow();
 
-            // Robot section
-            if (_hasRobot) {
-                robots::RobotSystem* robotSys = _sim->getRobotSystem();
-                if (robotSys && robotSys->hasRobot()) {
+			float rowH = 20.0f;
 
-                    const auto& links = robotSys->links();
-                    const auto& joints = robotSys->joints();
+			// Robot section
+			if (_hasRobot) {
+				robots::RobotSystem* robotSys = _sim->getRobotSystem();
+				if (robotSys && robotSys->hasRobot()) {
+					bool selected = false;
 
-                    // Root label
-                    std::string rootName = robotSys->robotName(); // or robotSys->robotName()
-                    if (rootName.empty()) rootName = "Robot";
+					const auto& links = robotSys->links();
+					const auto& joints = robotSys->joints();
 
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
+					// Root label
+					std::string rootName = robotSys->robotName(); // or robotSys->robotName()
+					if (rootName.empty()) rootName = "Robot";
 
-                    ImGuiTreeNodeFlags rootFlags =
-                        ImGuiTreeNodeFlags_SpanAllColumns |
-                        ImGuiTreeNodeFlags_DefaultOpen;
+					ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+					ImGui::TableSetColumnIndex(0);
 
-                    bool openRoot = ImGui::TreeNodeEx(rootName.c_str(), rootFlags);
+					ImGuiTreeNodeFlags rootFlags =
+						ImGuiTreeNodeFlags_SpanAllColumns |
+						ImGuiTreeNodeFlags_OpenOnArrow;
 
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::TextUnformatted("ROOT");
+					bool openRoot = ImGui::TreeNodeEx(rootName.c_str(), rootFlags);
 
-                    ImGui::TableSetColumnIndex(2);
-                    if (ImGui::Button("Remove Robot")) {
-                        _sim->clearRobot();
-                        _hasRobot = false;
-                    }
+					bool rowHovered = ImGui::IsItemHovered();
+					if (rowHovered) { ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_HeaderHovered)); }
 
-                    if (openRoot) {
-                        for (int i = 0; i < (int)links.size(); ++i) {
-                            const auto& link = links[i];
-                            scene::Object* attachedObj = link.attachedObject;
+					// Column 1: centered "ROOT"
+					ImGui::TableSetColumnIndex(1);
+					{
+						const char* txt = "ROOT";
+						float columnWidth = ImGui::GetColumnWidth();
+						float textWidth = ImGui::CalcTextSize(txt).x;
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+						ImGui::TextUnformatted(txt);
+					}
 
-                            // Parent name: find joint whose child == link.name
-                            std::string parentName = rootName;
-                            for (const auto& j : joints) {
-                                if (j.child == link.name) { parentName = j.parent; break; }
-                            }
+					// Column 2: centered Remove button
+					ImGui::TableSetColumnIndex(2);
+					{
+						float columnWidth = ImGui::GetColumnWidth();
+						float buttonWidth = 80.0f;
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - buttonWidth) * 0.5f);
 
-                            bool linkSelected = (_selection.type == SelectionType::LINK && _selection.index == i);
+						if (ImGui::Button(("Remove##robot_" + rootName).c_str(), ImVec2(buttonWidth, 0))) {
+							_sim->clearRobot();
+							_hasRobot = false;
+						}
+					}
 
-                            ImGui::TableNextRow();
-                            ImGui::TableSetColumnIndex(0);
+					if (openRoot) {
+						for (int i = 0; i < (int)joints.size(); ++i) {
+							auto& joint = joints[i];
+							scene::Object* attachedObj = nullptr;
+							rowH = 10.0f;
 
-                            ImGuiTreeNodeFlags leafFlags =
-                                ImGuiTreeNodeFlags_Leaf |
-                                ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                                ImGuiTreeNodeFlags_DrawLinesToNodes;
+							// Find attached object for this joint's child link
+							for (auto& l : links) { if (l.name == joint.child) { attachedObj = l.attachedObject; break; } }
 
-                            if (linkSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
-                            ImGui::TreeNodeEx(link.name.c_str(), leafFlags);
-                            if (linkSelected) ImGui::PopStyleColor();
+							bool jointSelected = (_selection.type == SelectionType::JOINT && _selection.index == i);
 
-                            if (ImGui::IsItemClicked() && attachedObj) {
-                                _currentLinkName = link.name;
-                                _selection.type = SelectionType::LINK;
-                                _selection.index = i;
-                                _selection.source = SelectionSource::CONTROL_PANEL;
-                                _sim->setSelectedObject(attachedObj);
-                            }
+							ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+							ImGui::TableSetColumnIndex(0);
 
-                            ImGui::TableSetColumnIndex(1);
-                            ImGui::TextUnformatted("LINK");
+							ImGui::PushID(i);
 
-                            ImGui::TableSetColumnIndex(2);
-                            ImGui::TextUnformatted(parentName.c_str());
-                        }
-                        ImGui::TreePop();
-                    }
+							bool rowClicked = ImGui::Selectable("##joint_row", jointSelected,
+								ImGuiSelectableFlags_SpanAllColumns, ImVec2(0.0f, rowH)
+							);
 
-                    _currentObjectName = "Robot: " + rootName;
-                }
-            }
+							rowHovered = ImGui::IsItemHovered();
+							if (rowHovered) { ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_HeaderHovered)); }
 
-            // General objects
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Separator();
-            ImGui::TextUnformatted("General Objects");
+							ImGui::SameLine(0.0f, 6.0f);
 
-            ImGui::TableSetColumnIndex(1);
-            ImGui::TextDisabled("OBJECT");
+							ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf
+								| ImGuiTreeNodeFlags_NoTreePushOnOpen
+								| ImGuiTreeNodeFlags_NoAutoOpenOnLog
+								| ImGuiTreeNodeFlags_SpanAllColumns
+								| ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-            ImGui::TableSetColumnIndex(2);
-            ImGui::TextDisabled("Actions");
+							ImGui::TreeNodeEx("##leaf", leafFlags);
 
-            // General Object Loop
-            for (int i = 0; i < objs.size(); i++) {
-                auto* obj = objs[i].get();
+							// Center joint name *within column 0*
+							{
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(joint.name.c_str()).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+							}
 
-                bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
+							ImGui::SameLine();
+
+							if (jointSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
+							ImGui::TextUnformatted(joint.name.c_str());
+							if (jointSelected) ImGui::PopStyleColor();
+
+							if (rowClicked) {
+								_currentJointName = joint.name;
+								_selection.type = SelectionType::JOINT;
+								_selection.index = i;
+								_selection.source = SelectionSource::CONTROL_PANEL;
+								if (attachedObj) { _sim->setSelectedObject(attachedObj); }
+							}
+
+							ImGui::PopID();
+
+							// Column 1: centered "Joint"
+							ImGui::TableSetColumnIndex(1);
+							{
+								const char* txt = "Joint";
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(txt).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+								ImGui::TextUnformatted(txt);
+							}
+
+							// Column 2: centered child link name
+							ImGui::TableSetColumnIndex(2);
+							{
+								float columnWidth = ImGui::GetColumnWidth();
+								float textWidth = ImGui::CalcTextSize(joint.child.c_str()).x;
+								ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+								ImGui::TextUnformatted(joint.child.c_str());
+							}
+						}
+						ImGui::TreePop();
+					}
+					_currentObjectName = "Robot: " + rootName;
+				}
+			}
+
+			// General objects
+			rowH = 20.0f;
+			ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::TextUnformatted("Objects");
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::TextDisabled("Obj");
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::TextDisabled("Actions");
+
+			// General Object Loop
+			for (int i = 0; i < objs.size(); i++) {
+				auto* obj = objs[i].get();
+				rowH = 10.0f;
+				bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
 
 				if (obj->category != scene::ObjectCategory::General) { continue; } // skip non-general objects
 
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                std::string label = "Object " + std::to_string(i);
+				ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
+				ImGui::TableSetColumnIndex(0);
+				std::string label = "Object " + std::to_string(i);
 
-                if (ImGui::Selectable(label.c_str(), isSelected)) {
-                    _currentObjectName = label;
-                    _selection.type = SelectionType::OBJECT;
-                    _selection.index = i;
-                    _selection.source = SelectionSource::CONTROL_PANEL;
-                    _sim->setSelectedObject(obj); // fine to keep for inspector
-                    LOG_INFO("Selected Object: %s", label.c_str());
-                }
+				if (ImGui::Selectable(label.c_str(), isSelected)) {
+					_currentObjectName = label;
+					_selection.type = SelectionType::OBJECT;
+					_selection.index = i;
+					_selection.source = SelectionSource::CONTROL_PANEL;
+					_sim->setSelectedObject(obj); // fine to keep for inspector
+					LOG_INFO("Selected Object: %s", label.c_str());
+				}
 
-                ImGui::TableSetColumnIndex(1);
-                ImGui::TextUnformatted("OBJECT");
+				// Column 1: centered "OBJECT"
+				ImGui::TableSetColumnIndex(1);
+				{
+					const char* txt = "OBJECT";
+					float columnWidth = ImGui::GetColumnWidth();
+					float textWidth = ImGui::CalcTextSize(txt).x;
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+					ImGui::TextUnformatted(txt);
+				}
 
-                ImGui::TableSetColumnIndex(2);
-                if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
-                    indexToDelete = i;
-                }
-            }
+				// Column 2: centered Delete button
+				ImGui::TableSetColumnIndex(2);
+				{
+					float columnWidth = ImGui::GetColumnWidth();
+					float buttonWidth = 80.0f;
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - buttonWidth) * 0.5f);
+					if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) { indexToDelete = i; }
+				}
+			}
 
             ImGui::EndTable();
-        }
+		}
 
-        if (indexToDelete != -1) {
-            _sim->deleteObject(indexToDelete);
-            LOG_INFO("Deleted object at index %d", indexToDelete);
-        }
-
+		if (indexToDelete != -1) {
+			_sim->deleteObject(indexToDelete);
+			LOG_INFO("Deleted object at index %d", indexToDelete);
+		}
 		ImGui::EndChild();
-    }
+	}
+
 
 	// --- HELPER FUNCTIONS ---
 

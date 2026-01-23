@@ -2,6 +2,7 @@
 
 #include "EngineCore.h"
 #include "ProgramData.h"
+#include "Interpreter/Utils.h"
 #include <string>
 #include <vector>
 
@@ -22,14 +23,25 @@ namespace interpreter {
 
 		// Reset program to initial state
 		virtual void reset() = 0;
+
 		// Clear all stored instructions
 		virtual void clear() = 0;
+
 		// Start program execution
 		virtual void start() = 0;
+		// Start simulation
+		virtual void startSim() = 0;
+
 		// Stop program execution
 		virtual void stop() = 0;
+		// Stop simulation
+		virtual void stopSim() = 0;
+
 		// Puase program execution
 		virtual void pause() = 0;
+		// Wait for simulation to run for dt seconds
+		virtual void waitSim(double dt) = 0;
+
 		// Step the program by dt
 		virtual void step(double dt) = 0;
 		// Get current program status
@@ -58,6 +70,13 @@ namespace interpreter {
 		// Set & Get Integrator Method
 		virtual void setIntegratorMethod(IntegratorMethod method) = 0;
 		virtual IntegratorMethod getIntegratorMethod() const = 0;
+
+		// Set & Get Omega
+		virtual void setOmega(mathlib::Vec3 omega, utils::AngularUnits units) = 0;
+
+		// Set & Get Fixed Dt
+		virtual void setFixedDt(double dt) = 0;
+		virtual double getFixedDt() const = 0;
 
 		// Set & Get Colour
 		virtual void setColour(mathlib::Vec3 rgb) = 0;

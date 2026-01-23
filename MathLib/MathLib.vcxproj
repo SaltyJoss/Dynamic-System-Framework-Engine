@@ -46,6 +46,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin-int\$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
@@ -84,8 +85,8 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)MathLib\include;$(SolutionDir)MathLib;$(SolutionDir)External\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\MathLib\MathLib\include;$(SolutionDir)..\MathLib\MathLib;$(SolutionDir)..\MathLib\External\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
@@ -119,6 +120,7 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClInclude Include="MathLib\include\kinematics\Jacobian.h" />
     <ClInclude Include="MathLib\include\kinematics\Trajectory.h" />
     <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h" />
+    <ClInclude Include="MathLib\include\kinematics\URDF_Types.h" />
     <ClInclude Include="MathLib\include\MathLibAPI.h" />
     <ClInclude Include="MathLib\pch.h" />
   </ItemGroup>

@@ -52,9 +52,20 @@ namespace interpreter {
 		_stopRequested = false;
 	}
 
+	void StoredProgram::startSim() {
+		if (_state != ProgramState::Running) { start(); }
+		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
+	}
+
 	void StoredProgram::stop() {
 		_state = ProgramState::Stopped;
 		_stopRequested = true;
+
+		stopSim(); // Also stop simulation, if running
+	}
+
+	void StoredProgram::stopSim() {
+		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
 
 		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
 		if (obj) {
@@ -77,6 +88,17 @@ namespace interpreter {
 		}
 
 		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
+	}
+
+	void StoredProgram::waitSim(double dt) {
+		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
+		double elapsed = 0.0;
+		const double stepDt = _sim ? _sim->getFixedDeltaTime() : static_cast<double>(1.0 / 120.0);
+		while (elapsed < dt) {
+			if (_sim) { _sim->updatePhysics(stepDt); }
+			elapsed += stepDt;
+		}
+		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
 	}
 
 	ProgramStatus StoredProgram::status() const { return ProgramStatus{}; }
@@ -128,11 +150,25 @@ namespace interpreter {
 		_integratorMethod = method;
 		if (_sim) {
 			auto& physics = _sim->getPhysicsSystem();
-			physics.setIntegrationMethod(static_cast<physics::PhysicsSystem::eIntegrationMethod>(method));
+			physics.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
 	// Get Integrator Method
 	IntegratorMethod StoredProgram::getIntegratorMethod() const { return _integratorMethod; }
+
+	// Set Omega
+	void StoredProgram::setOmega(mathlib::Vec3 omega, utils::AngularUnits units) {
+		_cntx.motion().setAngularUnits(units);
+		_cntx.motion().setOmega(omega);
+	}
+
+	// Set Fixed Dt
+	void StoredProgram::setFixedDt(double dt) { if (_sim) { _sim->setFixedDeltaTime(dt); } }
+	// Get Fixed Dt
+	double StoredProgram::getFixedDt() const {
+		if (_sim) { return _sim->getFixedDeltaTime(); }
+		return 0.0;
+	}
 
 	// Set Colour
 	void StoredProgram::setColour(mathlib::Vec3 rgb) {

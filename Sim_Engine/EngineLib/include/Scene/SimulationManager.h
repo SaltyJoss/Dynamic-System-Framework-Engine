@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "Scene/ObjectID.h"
 #include "Rendering/ModelGroup.h"
+#include "Scene/ObjectID.h"
 #include "Scene/RenderPreset.h"
 #include "FpsCounter.h"
 
@@ -66,7 +66,6 @@ namespace gui {
 
         // Light & Skybox
         scene::Light* getLight();
-        scene::Light* getSunLight();
         void setLightColour(const glm::vec3& c);
 
         bool isSkyboxEnabled() const { return skyboxEnabled; }
@@ -82,7 +81,7 @@ namespace gui {
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
 
-		std::string getDefaultHDR(render::LookPreset p) const;
+		std::string getDefaultHDR() const;
         glm::vec3 getBackgroundColour() const { return _backgroundColour; }
         float getBackgroundAlpha() const { return _backgroundAlpha; }
         float getPlaneHeight() const { return planeHeight; }
@@ -117,9 +116,9 @@ namespace gui {
         };
 
         shaders::Shader* getActiveShader() const;
-        ShaderMode currentShaderMode = ShaderMode::Lit;  // default
-        void applyRenderSettings(const render::RenderSettings& s);
-        void applyRenderProfile(const render::RenderSettings& s, render::LookPreset l);
+        ShaderMode currentShaderMode = ShaderMode::PBR;  // default
+        void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
+        void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
         void rebuildRenderTargets();
 		void resetHDRToPreset();
         void reloadAllShaders();
@@ -141,6 +140,9 @@ namespace gui {
 
         // Physics
         void updatePhysics(double dt);
+        void tick(double frame_dt);
+		void stepFixed(double frame_dt);
+
 		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
         physics::PhysicsSystem& getPhysicsSystem();
         const physics::PhysicsSystem& getPhysicsSystem() const;
@@ -164,6 +166,21 @@ namespace gui {
         void onMouseMove(double x, double y, scene::eInputButton button);
         void onMouseWheel(double delta);
         void resetMouseDelta();
+        
+		// Extra
+		double getFixedDeltaTime() const { return _dt; }
+		void setFixedDeltaTime(double dt) { _dt = dt; }
+
+		bool isSimRunning() const { return _simRunning; }
+        void startSimulation() { _simRunning = true; }
+        void stopSimulation() { _simRunning = false; }
+
+		double getSimTime() const { return _simTime; }
+		void setSimTime(double t) const { t = _simTime; }
+		void incrementSimTime(double dt) { _simTime += dt; }
+
+		bool isScriptRunning() const { return _scriptRunning; }
+		void setScriptRunning(bool running) { _scriptRunning = running; }
 
     private:       
 		// Rendering Pipeline Methods
@@ -178,17 +195,24 @@ namespace gui {
 
         // Misc Settings
         bool _glReady = false;
+        bool _scriptRunning = false;
 
         glm::vec2 _size;
+		glm::vec2 _resSize; // To store current size for render target rebuilds
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
         float _backgroundAlpha = 1.0f;
-        float dt = 1.0f / 120.0f; // default to 120 fps
+
+        double _dt = 1.0f / 180.0f;
+        double _fixedDt = 1.0f / 180.0f;
+		double _accum = 0.0;
+		double _simTime = 0.0;
+		bool _simRunning = false;
 
         static constexpr float planeHeight = -2.5f;
         float planeY = 2.5f;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
 
-		// Members
+		// Rendering Pipeline Resources
         struct Impl;
 		std::unique_ptr<Impl> _impl;
 
@@ -202,25 +226,19 @@ namespace gui {
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};
-		render::LookPreset _lookCurrent = render::LookPreset::Studio;
+		render::ResolutionPreset _resCurrent = render::ResolutionPreset::R_1080p;
         glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
-        bool _settingsValid = false;
-
         std::string _activeHDRPath;
-		bool _hdrUserOverride = false;
 
-        // current selection
-        int _currentShaderIndex = 1; // 1 = lit by default
-
-		// Shadow Mapping
         static constexpr int NUM_CASCADES = 2;
-
-        bool _shadowsInit = false;
-
         float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
-
         const unsigned int SHADOW_W = 8192;
         const unsigned int SHADOW_H = 8192;
+        int _currentShaderIndex = 2; // 2 = PBR by default (atm)
+
+        bool _settingsValid = false;
+        bool _shadowsInit = false;
+        bool _hdrUserOverride = false;
 
         // Editor & UI
         gui::FpsCounter _fpsCounter;

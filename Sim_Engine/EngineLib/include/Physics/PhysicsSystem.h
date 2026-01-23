@@ -22,24 +22,16 @@
 // ============================================
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
-#include <integrators/numerical_integrators.h>
-#include <integrators/IntegrationAnalysis.h>
+#include "Numerics/IntegrationService.h"
+#include "Numerics/ReferenceSolver.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "PhysicsState.h"
-#include "ReferenceSolver.h"
 #include "Scene/Object.h"
 #include "Platform/Logger.h"
-
-extern ENGINE_API Debug gLog;
-using namespace integration;
-using namespace constants;
-using namespace mathlib;
 
 namespace scene {
 	class ENGINE_API Mesh;
@@ -48,9 +40,11 @@ namespace scene {
 
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
-		double t = 0.0; // simulation time
-		Quat q;			//
-		Vec3 omega;     // angular velocity (rad/s)
+		double t;
+		Quat q_method;	// integrator quaternion
+		Quat q_ref;		// reference quaternion
+		Vec3 omega;		// integrator angular velocity
+		double alpha;	// angle error
 	};
 
 	struct ENGINE_API ErrorSample {
@@ -94,6 +88,9 @@ namespace physics {
 		void setSimulationMode(eSimulationMode mode) { _simulationMode = mode; }
 		eSimulationMode getSimulationMode() const { return _simulationMode; }
 
+		void setIntegrationMethod(integration::eIntegrationMethod method) { _integrator->setIntegrationMethod(method); }
+		integration::eIntegrationMethod getIntegrationMethod() const { return _integrator->getIntegrationMethod(); }
+
 		void setFrameType(FrameType type) { _frame = type;  }
 		FrameType getFrameType() const { return _frame; }
 
@@ -101,11 +98,8 @@ namespace physics {
 		void update(double dt, scene::Object* obj);
 
 		// System-Updates
-		void updateRotation(double dt, scene::Object* obj); // I am going to leave for now, this is being replace by the new quaternion system right now
-		void updateRotationQuat(double dt, scene::Object* obj);
-
+		void updateRotation(double dt, scene::Object* obj);
 		void updateRefRotation(double dt, scene::Object* obj);
-		void updateRefRotationQuat(double dt, scene::Object* obj);
 
 		void updateTranslation(double dt, scene::Object* obj);
 
@@ -114,22 +108,6 @@ namespace physics {
 		void applyDamping(double dt, scene::Object* obj, float dampingCoefficient);
 
 		void handleFloorCollision(double dt, scene::Object* obj, float floorY = 0.0f);
-
-		// Integrator Methods
-		enum class eIntegrationMethod {
-			Euler = 0,		// First-Order Euler Method
-			Midpoint = 1,	// Second-Order Runge-Kutta (Midpoint)
-			Heun = 2,		// Second-Order Runge-Kutta (Heun)
-			Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
-			RK4 = 4			// Fourth-Order Runge-Kutta 
-		};
-
-		VecX integrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, eIntegrationMethod method);
-		VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol, ReferenceSolver::eReferenceIntegrator method);
-		
-		eIntegrationMethod method = eIntegrationMethod::Euler; // default method
-		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
-		eIntegrationMethod getIntegrationMethod() const { return method; }
 
 		// Config
 		void setGravity(const Vec3& gravity) { _gravity = gravity; }
@@ -146,10 +124,11 @@ namespace physics {
 		const std::vector<IntegratorDiagSample>& diagSamples() const { return _diagSamples; }
 
 	private:
-		std::unique_ptr<integration::ODE> _ODE;
-		std::unique_ptr<ReferenceSolver> _refSolver;
+		std::unique_ptr<integration::IntegrationService> _integrator;
+		std::unique_ptr<integration::ReferenceSolver> _refSolver;
+		integration::eIntegrationMethod _curIntMethod{};
 
-		Vec3 _gravity = Vec3(0.0f, -9.81f, 0.0f);
+		mathlib::Vec3 _gravity = mathlib::Vec3(0.0f, -9.81f, 0.0f);
 
 		// Integration analysis
 		eSimulationMode _simulationMode = eSimulationMode::Normal;
@@ -165,11 +144,13 @@ namespace physics {
 		IntegratorDiagResult _diagResult;
 
 		scene::Object* _refDiagObject = nullptr;
-		std::vector<ReferenceSolver::RefIntegratorDiagSample> _refDiagSamples;
+		std::vector<integration::ReferenceSolver::RefIntegratorDiagSample> _refDiagSamples;
 		IntegratorDiagResult _refDiagResult;
 
 		// Track reference states for each object
 		std::unordered_map<scene::Object*, RefTrack> gRefTracks;
+
+		integration::eIntegrationMethod method = integration::eIntegrationMethod::Euler; // default method
 
 		// Simulation parameters
 		double _dt = 1.0f / 120.0f; // ~120 FPS

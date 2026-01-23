@@ -47,7 +47,7 @@ namespace gui {
 	class ENGINE_API AxisOrientator
 	{
 	public:
-		void render(const glm::mat4& viewMatrix);
+		void render(const glm::mat4& viewMatrix, float scale);
 
 	private:
 		void init();

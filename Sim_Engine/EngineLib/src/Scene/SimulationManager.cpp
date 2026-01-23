@@ -72,7 +72,6 @@ namespace gui {
 		// Scene Objects
 		std::unique_ptr<scene::Camera> _camera;
 		std::unique_ptr<scene::Light> _light;
-		std::unique_ptr<scene::Light> _sunLight;
 		std::unique_ptr<AxisOrientator> _axisOrientator;
 
 		scene::Object* _selectedObject = nullptr;
@@ -111,7 +110,7 @@ namespace gui {
 			_shaderPBR = std::make_shared<shaders::Shader>();
 			_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
 
-			currentShader = _shaderLit.get();
+			currentShader = _shaderPBR.get();
 			_skybox = std::make_unique<render::SkyboxRenderer>();
 
 			// Shader Types B
@@ -122,12 +121,9 @@ namespace gui {
 			_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
 
 			_light = std::make_unique<scene::Light>();
-			_sunLight = std::make_unique<scene::Light>();
-			_sunLight->_isDirectional = true;
-			_sunLight->setDirection(glm::vec3(-2.5f, 5.0f, 1.0f));
-			_sunLight->_intensity = 1.0f;
+			_light->_isDirectional = true;
 
-			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 1000.0f);
+			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._size.x / (float)owner._size.y, 0.1f, 5000.0f);
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 			glGenVertexArrays(1, &_worldGridVAO);
@@ -136,7 +132,7 @@ namespace gui {
 			_mesh->init();
 
 			_physics = std::make_unique<physics::PhysicsSystem>();
-			_robotSystem = std::make_unique<robots::RobotSystem>( _objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
+			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
 		}
 	};
 
@@ -144,8 +140,9 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	simManager::simManager() : _size(3840, 2160), _backgroundColour(0.1f, 0.1f, 0.1f),
+	simManager::simManager() : _size(1920, 1080), _backgroundColour(0.0f, 0.0f, 0.0f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
+		_resSize = _size; // store initial size
 	}
 
 
@@ -156,8 +153,8 @@ namespace gui {
 		InitShadowResource(_settingsCurrent.shadowMapRes);
 		InitIBL();
 
-		auto s = render::MakeSettings(render::LookPreset::Studio, render::QualityPreset::Medium);
-		applyRenderProfile(s, render::LookPreset::Studio);
+		auto s = render::MakeSettings(render::ResolutionPreset::R_4K, render::QualityPreset::Ultra);
+		applyRenderProfile(s, render::ResolutionPreset::R_4K);
 	}
 
 	simManager::~simManager() {
@@ -173,7 +170,6 @@ namespace gui {
 	//				    LIGHT & SKYBOX
 	// --------------------------------------------------
 	scene::Light* simManager::getLight() { return _impl->_light.get(); }
-	scene::Light* simManager::getSunLight() { return _impl->_sunLight.get(); }
 
 	void simManager::loadNewHDR(const std::string& path) {
 		LOG_INFO("Loading new HDR: %s", path.c_str());
@@ -321,9 +317,10 @@ namespace gui {
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
 	void simManager::render() {
-		updatePhysics(dt);
+		updatePhysics(_dt);
 		_fpsCounter.update();
 		if (_settingsCurrent.shadows) { ShadowPass(); }
+		//D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
 
 		_impl->_frameBuffer->bind();
 
@@ -355,7 +352,7 @@ namespace gui {
 		MeshRender();
 
 		if (_settingsCurrent.grid) { WorldGridRender(); }
-		if (_settingsCurrent.axisOrientator) { _impl->_axisOrientator->render(view); }
+		if (_settingsCurrent.axisOrientator) { _impl->_axisOrientator->render(view, _settingsCurrent.renderScale); }
 
 		_impl->_frameBuffer->unbind();
 
@@ -367,6 +364,7 @@ namespace gui {
 		_impl->_postShader->use();
 		_impl->_postShader->setInt1(0, "hdrScene");
 		_impl->_postShader->setFlt1(_settingsCurrent.exposure, "exposure");
+		_impl->_postShader->setFlt1(_settingsCurrent.whitePoint, "whitePoint");
 		_impl->_postShader->setVec2(glm::vec2(_size.x, _size.y), "uRes");
 
 		glActiveTexture(GL_TEXTURE0);
@@ -377,6 +375,7 @@ namespace gui {
 		glBindVertexArray(0);
 
 		_impl->_postBuffer->unbind();
+
 
 		ImGui::Begin("Sim Engine", nullptr, ImGuiWindowFlags_NoTitleBar);
 		_isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
@@ -430,6 +429,29 @@ namespace gui {
 		}
 	}
 
+	void simManager::tick(double frame_dt) {
+		if (_scriptRunning) { stepFixed(frame_dt); }
+		else { 
+			updatePhysics(frame_dt);
+			_impl->_robotSystem->step(frame_dt, _simTime);
+		}
+
+		D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
+	}
+
+	void simManager::stepFixed(double frame_dt) {
+		_accum += frame_dt;
+		while (_accum >= _dt) {
+			// Updates RigidBody states
+			updatePhysics(_dt);
+			// Update Robot System
+			if (_impl->_robotSystem) { _impl->_robotSystem->step(_dt, _simTime); }
+			// Advanvce simulation time
+			_accum -= _dt;
+			_simTime += _dt;
+		}
+	}
+
 	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
 	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
 
@@ -463,10 +485,10 @@ namespace gui {
 			const int res = (i == 0) ? baseRes : (baseRes / 2); // 8192, 4096, 2048, 1024, 512, 256, 128
 
 			glBindTexture(GL_TEXTURE_2D, _impl->_cascadeDepth[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, res, res, 0, GL_RGBA, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, res, res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			const float border[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -496,17 +518,28 @@ namespace gui {
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
 
-		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
 
-		glDisable(GL_BLEND);
+		if (msaa > 1) {
+			glDisable(GL_BLEND);
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			glEnable(GL_MULTISAMPLE);
 
-		glDisable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-0.2f, -0.2f);
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(-0.2f, -0.2f);
+		}
+		else {
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			glDisable(GL_MULTISAMPLE);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		}
 
 		_impl->_worldGridShader->use();
 		_impl->_worldGridShader->setMat4(_impl->_camera->getViewProjection(), "gVP");
 		_impl->_worldGridShader->setVec3(_impl->_camera->getPosition(), "gCameraWorldPos");
+		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
+
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -514,7 +547,9 @@ namespace gui {
 
 		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
 		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 	}
 
@@ -576,20 +611,21 @@ namespace gui {
 			{
 			case ShaderMode::Basic:
 				// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-				shader->setVec3(_impl->_light->getColour(), "colour");
+				shader->setVec3(obj->getAlbedo(), "albedo");
 				break;
 
 			case ShaderMode::Lit:
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-				shader->setVec3(_impl->_light->getColour(), "albedo");
-				shader->setVec3(glm::vec3(-4.0f, 20.0f, 12.0f), "lightPosition");
-				shader->setVec3(glm::vec3(1.0f, 0.95f, 0.9f), "lightColour");
-				shader->setFlt1(1.0f, "lightIntensity");
+				shader->setVec3(obj->getAlbedo(), "albedo");
+				shader->setVec3(_impl->_light->getPosition(), "lightPosition");
+				shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
+				shader->setVec3(_impl->_light->getColour(), "lightColour");
 				shader->setVec3(_impl->_camera->getPosition(), "camPos");
 				break;
 
 			case ShaderMode::PBR:
-				shader->setVec3(_impl->_light->getColour(), "albedo");
+				// (IMPORTANT) mesh_pbr.frag needs: albedo, metallic, roughness, ao, lightDirection, lightIntensity, lightColour, camPos
+				shader->setVec3(obj->getAlbedo(), "albedo");
 				shader->setFlt1(0.0f, "metallic");
 				shader->setFlt1(0.5f, "roughness");
 				shader->setFlt1(1.0f, "ao");
@@ -639,16 +675,22 @@ namespace gui {
 		cascadeNear[1] = cascadeFar[0];
 		cascadeFar[1] = nearPlane + _cascadeSplits[1] * (farPlane);
 
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(2.0f, 4.0f);
+
 		for (int i = 0; i < NUM_CASCADES; i++) {
 			_impl->_lightSpaceMatrixCascade[i] = LightSpaceMatrix(cascadeNear[i], cascadeFar[i]);
 
+			// set viewport to shadow map size
 			int baseRes = _settingsCurrent.shadowMapRes;
 			int res = (i == 0) ? baseRes : (baseRes / 2); // 4096, 2048, 1024, 512, 256, 128
 			glViewport(0, 0, res, res);
 
+			// render to cascade FBO
 			glBindFramebuffer(GL_FRAMEBUFFER, _impl->_cascadeFBO[i]);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
+			// render scene from light's point of view
 			_impl->_shadowShader->use();
 			_impl->_shadowShader->setMat4(_impl->_lightSpaceMatrixCascade[i], "lightSpaceMatrix");
 
@@ -663,6 +705,7 @@ namespace gui {
 			}
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	glm::mat4 simManager::LightSpaceMatrix(float nearPlane, float farPlane) {
@@ -732,23 +775,14 @@ namespace gui {
 		_impl->_skybox->render(projection, view);
 	}
 
-	std::string simManager::getDefaultHDR(render::LookPreset p) const {
-		switch (p) {
-			case render::LookPreset::Studio:
-				return "Engine/assets/hdr/default_white.hdr";
-			case render::LookPreset::Cinematic:
-				return "Engine/assets/hdr/cinematic_01_4k.hdr";
-		}
-		return "Engine/assets/hdr/default_white.hdr";
-	}	
+	std::string simManager::getDefaultHDR() const { return "Engine/assets/hdr/default_white.hdr"; }	
 
 	shaders::Shader* simManager::getActiveShader() const { return _impl->currentShader; }
-	void simManager::applyRenderSettings(const render::RenderSettings& s) { applyRenderProfile(s, _lookCurrent); }
+	void simManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
-	void simManager::applyRenderProfile(const render::RenderSettings& s, render::LookPreset l) {
+	void simManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {
 		const bool first = !_settingsValid;
 
-		const bool lookChanged = first || l != _lookCurrent;
 		const bool shadowResChanged = first || s.shadowMapRes != _settingsCurrent.shadowMapRes;
 
 		const bool msaaChanged = first || (s.msaaSamples != _settingsCurrent.msaaSamples);
@@ -761,34 +795,13 @@ namespace gui {
 			D_INFO("Shadow settings changed -> shadow resources re-initialised.");
 		}
 
-		if (lookChanged && !_hdrUserOverride) {
-			const std::string hdr = getDefaultHDR(l);
-			if (hdr != _activeHDRPath) {
-				loadNewHDR_Preset(hdr);
-				LOG_INFO("Preset HDR applied -> %s", hdr.c_str());
-				D_INFO("Preset HDR applied -> %s", hdr.c_str());
-			}
-		}
-
 		_settingsCurrent = s;
-		_lookCurrent = l;
+		_resCurrent = r;
 
-		if (msaaChanged) {
-			rebuildRenderTargets();
-			LOG_INFO("MSAA setting changed -> render targets rebuilt.");
-			D_INFO("MSAA setting changed -> render targets rebuilt.");
-		}
+		if (msaaChanged || renderScaleChanged) { rebuildRenderTargets(); }
 
-		if (lookChanged) {
-			if (l == render::LookPreset::Studio) {
-				skyboxEnabled = false;
-				_clearColour = glm::vec3(0.97f);
-			}
-			else {
-				skyboxEnabled = true;
-				_clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
-			}
-		}
+		LOG_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f",  (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
+		D_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
 
 		_settingsValid = true;
 	}
@@ -804,10 +817,10 @@ namespace gui {
 		const int msaa = std::max(1, _settingsCurrent.msaaSamples);
 
 		_impl->_frameBuffer->deleteBuffers();
-		_impl->_frameBuffer->createBuffers(vpW, vpH, msaa);
+		_impl->_frameBuffer->createBuffers(w, h, msaa);
 		
 		_impl->_postBuffer->deleteBuffers();
-		_impl->_postBuffer->createBuffers(vpW, vpH, 1);
+		_impl->_postBuffer->createBuffers(w, h, 1);
 
 		_impl->_camera->setAspect((float)vpW / (float)vpH);
 		
@@ -817,7 +830,7 @@ namespace gui {
 
 	void simManager::resetHDRToPreset() {
 		_hdrUserOverride = false;
-		const std::string hdr = getDefaultHDR(_lookCurrent);
+		const std::string hdr = getDefaultHDR();
 		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 
