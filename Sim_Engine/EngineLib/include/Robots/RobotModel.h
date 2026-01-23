@@ -19,6 +19,9 @@
 #include "EngineLib/LogMacros.h"
 
 namespace robots {
+	// --- Robot Model Kinematic Models ---
+	enum class eKinematicsModel { URDF, DH };
+
 	// --- Robot Model Links ---
 
 	struct Inertia { float ixx = 0, ixy = 0, ixz = 0, iyy = 0, iyz = 0, izz = 0; };
@@ -31,13 +34,12 @@ namespace robots {
 
 	struct CollisionShape {
 		std::string type;
+		glm::vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+
 		glm::vec3 origin_xyz{ 0,0,0 };
 		glm::vec3 origin_rpy{ 0,0,0 };
 
-		// cylinder: size = [radius, length, 0]
-		// box:      size = [x, y, z]
-		glm::vec3 size{ 0,0,0 };
-		std::string meshFile;
+		std::string meshFile;	// Z1 provided STLs for collision meshes, dont use yet
 	};
 
 	struct Visual {
@@ -65,6 +67,7 @@ namespace robots {
 		float minAngle = 0.0f;
 		float maxAngle = 0.0f;
 		float maxOmegaRad_s = glm::radians(180.0f);
+		float maxEffort = 0.0f; // max torque/force
 	};
 
 	struct JointDynamics {
@@ -96,6 +99,7 @@ namespace robots {
 		// --- State ---
 		float angleRad = 0.0f;	// rad
 		float omegaRad_s = 0.0f;// rad/s
+		float torque = 0.0f;	// Nm or N
 
 		// --- Control ---
 		float thetaRefRad = 0.0f;
@@ -112,10 +116,11 @@ namespace robots {
 	struct RobotModel {
 		std::string name = "UnnamedRobot";
 		float scale = 1.0f;
+
+		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
 
-		// Optional DH for kinematics ONLY
 		std::vector<kinematics::DH_Params> dhParams;
 
 		// Create an Eigen vector of joint angles
