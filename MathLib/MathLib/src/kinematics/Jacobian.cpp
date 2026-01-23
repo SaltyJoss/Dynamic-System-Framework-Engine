@@ -8,21 +8,30 @@ namespace kinematics {
 		size_t n = dh_p.size();	// Number of joints
 		MatX J = MatX::Zero(6, n);	// Initialize Jacobian matrix
 
-		std::vector<Pose> transforms = Forward_Kinematics().linkTransforms(dh_p, q);	// Get link transformations
+		auto T_list = Forward_Kinematics().linkTransforms_DH(dh_p, q);	// Get link transformations
 
-		Pose T_end = transforms.back();	// End-effector transformation
+		Pose T_end = T_list.back();			// End-effector transformation
 		Vec3 p_end = T_end.block<3, 1>(0, 3);	// End-effector position
-		Vec3 z_prev = Vec3::UnitZ();	// Initial z-axis
-		Vec3 p_prev = Vec3::Zero();	// Initial position
+
+		Vec3 z_base = Vec3::UnitZ();	// Initial z-axis
+		Vec3 p_base = Vec3::Zero();		// Initial position
 
 		for (size_t i = 0; i < n; ++i) {
-			Vec3 z_i = transforms[i].block<3, 1>(0, 2);	// z-axis of current joint
-			Vec3 p_i = transforms[i].block<3, 1>(0, 3);	// position of current joint
-			if (dh_p[i].type == JointType::Revolute) {
+			Vec3 z_i, p_i;
+
+			if (i == 0) {
+				z_i = z_base;
+				p_i = p_base;
+			}
+			else {
+				z_i = T_list[i - 1].block<3, 1>(0, 2);  // z_{i-1}
+				p_i = T_list[i - 1].block<3, 1>(0, 3);  // p_{i-1}
+			}
+			if (dh_p[i].type == JointType_DH::Revolute) {
 				J.block<3, 1>(0, i) = z_i.cross(p_end - p_i);	// Linear velocity part
 				J.block<3, 1>(3, i) = z_i;						// Angular velocity part
 			}
-			else if (dh_p[i].type == JointType::Prismatic) {
+			else if (dh_p[i].type == JointType_DH::Prismatic) {
 				J.block<3, 1>(0, i) = z_i;						// Linear velocity part
 				J.block<3, 1>(3, i) = Vec3::Zero();			// Angular velocity part
 			}

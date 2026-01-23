@@ -203,8 +203,7 @@ namespace gui {
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
             jointProperties();
-            objectProperties();s
-            stats();
+            objectProperties();
         }
         if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
         if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
@@ -265,9 +264,10 @@ namespace gui {
 
 		ImGui::Text("Simulation Length:");
 
+        float step = 0.001f;
+        float stepFast = 0.01f;
+
         if (!_hasRobot) {
-            float step = 0.001f;
-            float stepFast = 0.01f;
             ImGui::SetNextItemWidth(150.0f);
             ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
         }
@@ -330,8 +330,8 @@ namespace gui {
             simLastUpdateTime = now;
             _sim->incrementSimTime(deltaSeconds);
 
-            ImGui::Text("Elapsed Time...");
-            ImGui::Text("Simulation Time: %.3f / %.3f seconds", _sim->getSimTime(), simLength);
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Simulation Running...");
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->getSimTime());
 
             if (_sim->getSimTime() >= simLength) {
                 _sim->stopSimulation();
@@ -348,9 +348,6 @@ namespace gui {
             diagLastUpdateTime = now;
             diagTime += static_cast<float>(deltaSeconds);
 
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostics Running...");
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Diagnostic Time: %.3f seconds", diagTime);
-
             if (diagTime >= diagLength) {
                 diagRunning = false;
                 diagTime = 0.0f;
@@ -358,8 +355,6 @@ namespace gui {
                 D_RUNTIME("Diagnostic run time: %.3f seconds", diagLength);
 			}
 		} else { diagLastUpdateTime = std::chrono::high_resolution_clock::now(); }
-		ImGui::Separator();
-
     }
 
     void ControlPanel::objectProperties() {
@@ -384,19 +379,23 @@ namespace gui {
 
         ImGui::Separator();
 
-		// Mass Controls
-        ImGui::Text("Mass:");
         double minMass = 0.25; double maxMass = 100.0;
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+        double minDamping = 0.0; double maxDamping = 1.0;
 
-		ImGui::Separator();
+        if (_hasRobot) {
+            for (const auto& link : _sim->getRobotSystem()->links()) { if (link.name == _obj->name) { minMass = link.inertial.mass; maxMass = link.inertial.mass; } }
+			for (const auto& joint : _sim->getRobotSystem()->joints()) { if (joint.child == _obj->name) { maxDamping = joint.dynamics.damping; } }
+        }
 
-		// Damping Controls
-        ImGui::Text("Damping Coefficient");
-		double minDamping = 0.0; double maxDamping = 1.0;
-		ImGui::SetNextItemWidth(150.0f);
-		ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
+
+        // Mass Controls
+        ImGui::Text("Mass:");
+        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+
+        ImGui::Separator();
+
+        ImGui::Text("Damping:");
+        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
 
         ImGui::Separator();
 
@@ -429,6 +428,10 @@ namespace gui {
 
             ImGui::Separator();
         }
+        if (_hasRobot) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Note: Some object properties are locked for individual robot joints and links.");
+            ImGui::Separator();
+		}
 
         ImGui::Text("Reset Object:");
         // Reset Object Button
@@ -438,10 +441,13 @@ namespace gui {
                 return;
 			}
 
-            if (_hasRobot && _obj->category == scene::ObjectCategory::General) {
-                LOG_WARN("Cannot reset individual robot links. Please reset the entire robot model.");
-                return;
+            if (_hasRobot) {
+				_sim->getRobotSystem()->resetRobot();
+                LOG_INFO("Robot reset to initial position and orientation.");
+                D_INFO("Reset Robot");
+				return;
 			}
+
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
@@ -510,6 +516,16 @@ namespace gui {
             // strongly prefer radians API:
             robot->trySetJointAngleRad(_currentLinkName, glm::radians(angleDeg));
         }
+
+        if (ImGui::Button("Reset Joint")) {
+			robot->trySetJointAngleRad(_currentLinkName, 0.0f);
+            LOG_INFO("Joint %s reset to 0 degrees.", joints[currentJointIndex].name.c_str());
+			D_INFO("Reset Joint %s", joints[currentJointIndex].name.c_str());
+        }
+
+		if (ImGui::Checkbox("Enable Joint Statistics", &_jointStats)) {
+            stats();
+        }
     }
 
     void ControlPanel::stats() {
@@ -570,9 +586,9 @@ namespace gui {
                     // Position
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
-                    ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
+					ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z); 
 
-                    glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot));
+					glm::vec3 eulerDeg = glm::degrees(glm::eulerAngles(rot)); // convert quaternion to Euler angles in degrees
 
                     // Rotation
                     ImGui::TableNextRow();
