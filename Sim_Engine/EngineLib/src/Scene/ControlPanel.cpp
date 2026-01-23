@@ -319,11 +319,6 @@ namespace gui {
 
         // Deals with simulation time tracking using chrono
         if (_sim->isSimRunning()) {
-            auto now = std::chrono::high_resolution_clock::now();
-            double deltaSeconds = std::chrono::duration<double>(now - simLastUpdateTime).count();
-            simLastUpdateTime = now;
-            _sim->incrementSimTime(deltaSeconds);
-
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Simulation Running...");
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->getSimTime());
 
@@ -333,7 +328,6 @@ namespace gui {
                 D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
             }
         }
-        else { simLastUpdateTime = std::chrono::high_resolution_clock::now(); }
 
 		ImGui::Separator();
     }

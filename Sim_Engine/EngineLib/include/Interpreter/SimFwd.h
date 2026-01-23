@@ -18,5 +18,4 @@ namespace scene {
 
 namespace gui { class ENGINE_API simManager; }
 namespace robots { class ENGINE_API RobotSystem; }
-namespace robots { struct ENGINE_API RobotModel; }	
 namespace physics { class ENGINE_API PhysicsSystem; }

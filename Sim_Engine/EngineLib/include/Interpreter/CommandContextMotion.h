@@ -52,9 +52,13 @@ namespace commands {
 		utils::OpResult stopJointOmega(const std::string& childLink); // stops joint angular velocity
 
 		// --- HELPER METHODS ---
-		gui::simManager* getSim() const { return _sim; }
-		scene::ObjectID getDefaultObjectID() const;
-		scene::ObjectID getObjectID() const;
+
+
+
+		gui::simManager* Sim() const { return _sim; }
+		robots::RobotSystem* Robot() const { return _robot; }
+		scene::ObjectID DefaultObjectID() const;
+		scene::ObjectID ObjectID() const;
 
 		scene::Object* resolveObject(scene::ObjectID id) const;
 		scene::Object* resolveCurrentObject() const;
@@ -80,10 +84,10 @@ namespace commands {
 		utils::OpResult rotateObject(scene::Object* obj, utils::AxisMask axes, double omega, double dt);
 		// Rotates specified axes at a given angular velocity
 		utils::OpResult rotateAxes(utils::AxisMask axes, double omega, double dt);
-		// Rotates a joint by a specified angle at a given velocity
-		utils::OpResult rotateJoint(std::string linkName, double angleDeg, double vel);
-		// Rotates a joint by a specified delta angle at a given velocity
-		utils::OpResult rotationJointDelta(std::string linkName, double deltaDeg, double vel);
+
+		utils::OpResult setJointTargetRad(const std::string& link, double thetaTargetRad);
+		utils::OpResult setJointTargetDeltaRad(const std::string& link, double deltaRad);
+		utils::OpResult setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s);
 
 		utils::OpResult updateRigidRotateTo(double dt);
 		utils::OpResult updateJointRotateTo(double dt);
@@ -121,7 +125,6 @@ namespace commands {
 		mathlib::Vec3 normaliseDirection(const mathlib::Vec3& dir) const;
 
 		double getJointAngleRad(const std::string& link) const;
-		void setJointAngleRad(const std::string& link, double angleRad);
 
 		std::unordered_map<std::string, float> _jointAngles;
 

@@ -42,10 +42,12 @@ namespace robots {
         bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
 
-		bool trySetJointTargetDeg(const std::string& childLink, float targetDeg);
-		bool trySetJointOmegaMaxDeg(const std::string& childLink, float maxOmegaDeg);
+		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
+		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
+		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
 
-		bool isJointAtTarget(const std::string& childLink, float tolDeg) const;
+		bool isJointAtTargetRad(const std::string& childLink, float tolRad) const;
+		bool isJointAtTargetDeg(const std::string& childLink, float tolDeg) const;
 
 		void step(double dt, double simTime);
 
@@ -58,6 +60,11 @@ namespace robots {
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+
+		// --- GET AND SET INTEGRATION METHOD ---
+
+        integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
+		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
 	private:
         void instantiateRobotLinks();

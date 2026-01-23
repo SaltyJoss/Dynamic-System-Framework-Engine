@@ -418,46 +418,66 @@ namespace robots {
 		return false;
 	}
 
-	// Method to set the target angle (reference) of a specific robot joint in degrees
-	bool RobotSystem::trySetJointTargetDeg(const std::string& childLink, float targetDeg) {
+	// Method to set the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, float targetRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				float targetRad = glm::radians(targetDeg);
 				if (joint.limits.continuous) { targetRad = wrapRad(targetRad); }
-				else { targetRad = glm::clamp(targetRad, joint.limits.minAngle, joint.limits.maxAngle); }
-				joint.thetaRefRad = targetRad; // clamp to joint limits
+				else { joint.thetaRefRad = clampJointAngle(joint, targetRad); } // clamp to joint limits
+				joint.thetaRefRad = targetRad;
 				return true;
 			}
 		}
 		return false;
 	}
 
-	// Method to set the maximum angular velocity of a specific robot joint in degrees
-	bool RobotSystem::trySetJointOmegaMaxDeg(const std::string& childLink, float maxOmegaDeg) {
+	//	Method to set the maximum angular velocity of a specific robot joint in radians
+	bool RobotSystem::trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad) {
 		if (!_hasRobot) { return false; }
-		float maxOmegaRad = glm::radians(maxOmegaDeg);
+		if (maxOmegaRad <= 0.0f) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				joint.limits.maxOmegaRad_s = std::abs(maxOmegaRad); // |omega[max]|
+				joint.limits.maxOmegaRad_s = maxOmegaRad;
 				return true;
 			}
 		}
 		return false;
 	}
 
-	bool RobotSystem::isJointAtTarget(const std::string& childLink, float tolDeg) const {
+	// Method to increment the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::tryAddJointTargetRad(const std::string& childLink, float deltaRad) {
 		if (!_hasRobot) { return false; }
-		float tolRad = glm::radians(tolDeg);
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float t = joint.thetaRefRad + deltaRad;
+				if (joint.limits.continuous) { t = wrapRad(t); }
+				else { t = glm::clamp(t, joint.limits.minAngle, joint.limits.maxAngle); }
+				joint.thetaRefRad = t; // clamp to joint limits
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Method to check if a specific robot joint is at its target angle within a tolerance (radians)
+	bool RobotSystem::isJointAtTargetRad(const std::string& childLink, float tolRad) const {
+		if (!_hasRobot) { return false; }
+		if (tolRad < 0.0f) { tolRad = -tolRad; }
+
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				float err = std::abs(joint.thetaRefRad - joint.angleRad);
+				float err = joint.thetaRefRad - joint.angleRad;
 				if (joint.limits.continuous) { err = std::abs(wrapToPi(err)); }
+				err = std::abs(err);
 				return err <= tolRad;
 			}
 		}
 		return false;
 	}
+
+	// Method to check if a specific robot joint is at its target angle within a tolerance (degrees)
+	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, float tolDeg) const { return isJointAtTargetRad(childLink, glm::radians(tolDeg)); }
 
 	// --- ROBOT LINK AND ROOT POSE METHODS ---
 

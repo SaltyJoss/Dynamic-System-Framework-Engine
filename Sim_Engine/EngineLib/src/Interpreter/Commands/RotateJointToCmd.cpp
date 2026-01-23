@@ -1,10 +1,13 @@
 #include "pch.h"
 #include "Interpreter/Commands/RotateJointToCmd.h"
+#include "Scene/SimulationManager.h"
+#include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
 using namespace utils;
+using namespace constants;
 using namespace mathlib;
 
 namespace commands {
@@ -22,32 +25,32 @@ namespace commands {
 		if (!_started){
 			_started = true;
 
-			auto start = cntx.beginJointRotateTo(_link, _maxOmegaDeg, _angleDeg);
-			if (!start.ok) {
-				markFailed(start.message);
-				return { CmdState::Failed, {}, start.message };
-			}
+			auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaDeg * (constants::PI / 180.0));
+			if (!r1.ok) { markFailed(r1.message); D_FAIL("Failed to set max omega for link '%s' -> %s", _link.c_str(), r1.message.c_str()); return CmdResult{ CmdState::Failed, {}, r1.message }; }
+
+			auto r2 = cntx.setJointTargetRad(_link, _angleDeg * (constants::PI / 180.0));
+			if (!r2.ok) { markFailed(r2.message); D_FAIL("Failed to set target angle for link '%s' -> %s", _link.c_str(), r2.message.c_str()); return CmdResult{ CmdState::Failed, {}, r2.message }; }
 
 			D_INFO("Starting rotateJointTo() on link '%s' to angle %.2f deg at max omega %.2f deg/s", _link.c_str(), _angleDeg, _maxOmegaDeg);
+			return CmdResult{ CmdState::Executing, {}, "rotateJointTo() started" };
 		}
 
-		auto result = cntx.updateJointRotateTo(dt);
-		if (!result.ok) {
-			markFailed(result.message);
-			D_FAIL("Failed to update rotateJointTo -> %s", result.message.c_str());
-			return CmdResult{ CmdState::Failed, {}, result.message };
+		auto* robot = cntx.Robot();
+		if (!robot) {
+			markFailed("No robot loaded."); D_FAIL("rotateJointTo() failed: no robot loaded.");
+			return CmdResult{ CmdState::Failed, {}, "No robot loaded." };
 		}
 
-		if (result.done) {
-			markCompleted();
-			return CmdResult{ CmdState::Executed, {}, "rotateJointTo() completed successfully" };
+		constexpr float tolDeg = 0.25f;	
+		if (robot->isJointAtTargetDeg(_link, tolDeg)) {
+			markCompleted(); D_SUCCESS("Completed rotateJointTo() on link '%s' to angle %.2f deg", _link.c_str(), _angleDeg);
+			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
 	void RotateJointToCmd::execute() {
-		_started = true;
 		setResult({ CmdState::Executing, {}, "rotateJointTo() started" });
 	}
 

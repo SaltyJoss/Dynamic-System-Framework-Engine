@@ -16,8 +16,8 @@ namespace commands {
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
-	scene::ObjectID CommandContextMotion::getDefaultObjectID() const { return _defaultObjID; }
-	scene::ObjectID CommandContextMotion::getObjectID() const { return _objID; }
+	scene::ObjectID CommandContextMotion::DefaultObjectID() const { return _defaultObjID; }
+	scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
 
 	scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
 		if (!_sim) return nullptr;
@@ -84,11 +84,6 @@ namespace commands {
 		return 0.0;
 	}
 
-	void CommandContextMotion::setJointAngleRad(const std::string& link, double angleRad) {
-		if (!_robot) return;
-		_robot->trySetJointAngleRad(link, (float)angleRad);
-	}
-
 	// --- JOINT ANGLE METHODS ---
 
 	utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
@@ -125,23 +120,11 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
-		if (!_jnt.active) {
-			return OpResult::Success(true);
-		}
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (!_jnt.active) { return OpResult::Success(true); }
 
-		double current = getJointAngleRad(_jnt.link);
-		double err = _jnt.target - current; // err = target - current
-
-		if (_jnt.wrapShortest) { err = robots::RobotSystem::wrapToPi((float)err); }
-
-		if (std::abs(err) < _jnt.epsAngle) {
-			setJointAngleRad(_jnt.link, _jnt.target);
-			_jnt.active = false;
-			return OpResult::Success(true);
-		}
-
-		double step = std::clamp(err, -_jnt.maxOmega * dt, _jnt.maxOmega * dt);
-		setJointAngleRad(_jnt.link, current + step);
+		const bool done = _robot->isJointAtTargetRad(_jnt.link, (float)_jnt.epsAngle);
+		if (done) { _jnt.active = false; return OpResult::Success(true); }
 
 		return OpResult::Success(false);
 	}
@@ -177,6 +160,13 @@ namespace commands {
 
 		const double current = getJointAngleRad(link);
 		const double target = angleDeg * (PI / 180.0);
+		const double maxOmega = maxOmegaDegPerSec * (PI / 180.0);
+
+		auto r1 = setJointMaxOmegaRad(link, maxOmega);
+		if (!r1.ok) { return r1; }
+
+		auto r2 = setJointTargetRad(link, target);
+		if (!r2.ok) { return r2; }
 
 		_jnt.link = link;
 		_jnt.start = current;
@@ -185,6 +175,7 @@ namespace commands {
 		_jnt.active = true;
 		_jnt.wrapShortest = true;
 		_jnt.epsAngle = 0.25 * (PI / 180.0);
+
 		return OpResult::Success(false);
 	}
 		
@@ -250,26 +241,23 @@ namespace commands {
 
 		return OpResult::Success(true);
 	}
-	
-	OpResult CommandContextMotion::rotateJoint(std::string linkName, double angleDeg, double vel) {
-		if (!_robot) return OpResult::Failure("No robot model");
-		if (linkName.empty()) return OpResult::Failure("Empty link name.");
 
-		// apply absolute
-		_sim->setRobotLinkRotation(linkName, static_cast<float>(angleDeg)); // <-- absolute
-		return OpResult::Success();
+	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); }
+		return OpResult::Success(true);
 	}
-
-	OpResult CommandContextMotion::rotationJointDelta(std::string linkName, double deltaDeg, double vel) {
-		if (!_robot) return OpResult::Failure("No robot model.");
-		if (linkName.empty()) return OpResult::Failure("Empty link name.");
-
-		float cur = 0.0f;
-		if (!_robot->tryGetJointAngleRad(linkName, cur))
-			return OpResult::Failure("Joint not found for linkName.");
-
-		cur = cur + glm::radians((float)deltaDeg);
-		_robot->trySetJointAngleRad(linkName, cur);
+	utils::OpResult CommandContextMotion::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		float currentRad = 0.0f;
+		if (!_robot->tryGetJointAngleRad(link, currentRad)) { return OpResult::Failure("Failed to get joint angle -> Joint not found."); }
+		const float targetRad = static_cast<double>(currentRad) + deltaRad;
+		return setJointTargetRad(link, targetRad);
+	}
+	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
+		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); }
 		return OpResult::Success(true);
 	}
 
