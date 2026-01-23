@@ -127,6 +127,7 @@ namespace robots {
 		_linkIndex.clear();
 		for (size_t i = 0; i < _robot.links.size(); i++) {
 			_linkIndex[_robot.links[i].name] = (int)i;
+			LOG_INFO("Link %zu: %s -> index %d", i, _robot.links[i].name.c_str(), (int)i);
 		}
 	}
 
@@ -205,16 +206,13 @@ namespace robots {
 		clearRobot();
 
 		std::string jsonPath = "Engine/assets/Objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
-
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
-
 		_loadedName = name;
 
 		_robotRootHome = glm::mat4(1.0f);
 		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), glm::vec3(1, 0, 0));
 		_robotRootHome = glm::translate(_robotRootHome, glm::vec3(0.0f, 0.0f, 0.0f));
-
 		_robotRootPose = _robotRootHome;
 
 		_robotQHome = _robot.makeJointVector();
@@ -223,43 +221,9 @@ namespace robots {
 		instantiateRobotLinks();
 		buildLinkIndex();
 
-		// Update kinematics to reflect initial state
-		VecX q0 = _robot.makeJointVector();   // all angles at their defaults
-		kinematics::Forward_Kinematics fk;
-		std::vector<mathlib::Pose> TdH0 = fk.linkTransforms(_robot.dhParams, q0);
-
-		// visual zero configuration world transforms
-		std::vector<glm::mat4>  Wvis0 = computeVisualZeroWorld(_robot, _linkIndex, _robotRootPose);
-
-		// Build Fix_i
-		int rootIndx = _linkIndex["link00"]; // my JSON convention
-		_robot.links[rootIndx].dhToMeshFix = glm::inverse(_robotRootPose) * Wvis0[rootIndx];
-
-		for (int i = 0; i < static_cast<int>(TdH0.size()); ++i) {
-			const int linkNumber = i + 1; // link00, link01, ...
-
-			const std::string linkName = (linkNumber < 10) ? ("link0" + std::to_string(linkNumber)) : ("link" + std::to_string(linkNumber));
-			auto it = _linkIndex.find(linkName);
-			if (it == _linkIndex.end()) { continue; }
-			
-			const int linkIndx = it->second;
-
-			glm::mat4 Tdh0 = poseToGlm(TdH0[i]);
-			glm::mat4 Wdh0 = _robotRootPose * Tdh0;
-			glm::mat4 Wv0 = Wvis0[linkIndx];
-
-			_robot.links[linkIndx].dhToMeshFix = glm::inverse(Wdh0) * Wv0; // Fix_i = (T0_i)^-1 * Wv0
-		}
-
-		int root = _linkIndex.at("link00");
-		_bindLocal0[root] = _bindWorld0[root]; // root local = world
-
 		updateRobotKinematics();
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
 		D_SUCCESS("Loaded robot model -> %s", name.c_str());
-
-		LOG_INFO("links=%zu joints=%zu dhParams=%zu TdH0=%zu",
-			_robot.links.size(), _robot.joints.size(), _robot.dhParams.size(), TdH0.size());
 	}
 
 	// Method to reset the robot to its home position
@@ -303,25 +267,44 @@ namespace robots {
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
 
 	void RobotSystem::updateRobotKinematics() {
-		if (!_hasRobot) { return; }
+		if (!_hasRobot) return;
 
-		const int nLinks = (int)_robot.links.size();
-		std::vector<glm::mat4> world(nLinks, glm::mat4(1.0f));
+		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+		int rootIdx = _linkIndex.at("link00");
+		world[rootIdx] = _robotRootPose;
 
-		int rootIndx = _linkIndex.at("link00"); // assume first link is root (follows my convention)
-		world[rootIndx] = _robotRootPose;
+		// parent -> children joints
+		std::unordered_map<std::string, std::vector<const RobotJoint*>> children;
+		children.reserve(_robot.joints.size());
+		for (const auto& j : _robot.joints) children[j.parent].push_back(&j);
 
-		for (const auto& j : _robot.joints) {
-			int p = _linkIndex.at(j.parent);
-			int c = _linkIndex.at(j.child);
+		std::stack<std::string> st;
+		st.push("link00");
 
-			glm::vec3 axis = glm::normalize(j.axisParent);
-			glm::mat4 Rq = rotAboutPivot(j.pivotParent, axis, j.angleRad);
+		while (!st.empty()) {
+			std::string parentName = st.top(); st.pop();
+			int pIdx = _linkIndex.at(parentName);
 
-			world[c] = world[p] * Rq * _bindLocal0[c];
+			auto it = children.find(parentName);
+			if (it == children.end()) continue;
+
+			for (const RobotJoint* jp : it->second) {
+				const RobotJoint& j = *jp;
+				int cIdx = _linkIndex.at(j.child);
+
+				glm::mat4 T = glm::translate(glm::mat4(1.0f), j.origin_xyz);
+				glm::mat4 R0 = glm::mat4_cast(j.origin_q);
+
+				// axis_frame == "joint" means axis is in the joint frame AFTER origin rotation
+				glm::vec3 axisWrtParent = glm::normalize(glm::vec3(R0 * glm::vec4(j.axis, 0.0f)));
+				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), j.angleRad, axisWrtParent);
+				world[cIdx] = world[pIdx] * T * R0 * Rq;
+
+				st.push(j.child);
+			}
 		}
 
-		for (int i = 0; i < nLinks; ++i) {
+		for (int i = 0; i < (int)_robot.links.size(); ++i) {
 			if (auto* obj = _robot.links[i].attachedObject) {
 				if (auto* mesh = obj->getMesh()) { mesh->localTransform = world[i]; }
 			}

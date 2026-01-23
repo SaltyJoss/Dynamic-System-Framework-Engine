@@ -186,45 +186,14 @@ namespace gui {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
 
-        if (ImGui::BeginMenuBar()) {
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 8.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 4.0f));
+        const bool wasRunning = _sim->isSimRunning(); // snapshot
 
-            const bool wasRunning = _sim->isSimRunning(); // snapshot
-
-            // Simulation Start/Stop Button
-            if (_sim->isSimRunning()) {
-				if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
+        // Simulation Start/Stop Button
+        if (_sim->isSimRunning()) {
+		    if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
 
                 LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
                 D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
-            }
-
-            // Diagnostic Start/Stop Button
-            if (ImGui::Button(diagRunning ? "Stop" : "Start")) {
-                diagRunning = !diagRunning;
-                LOG_INFO("Diagnostics %s", diagRunning ? "started" : "stopped");
-                D_RUNTIME("Diagnostics %s", diagRunning ? "started" : "stopped");
-
-                if (_sim->isSimRunning()) {
-                    _phys->startDiagnostics(_obj); 
-
-                    if (!_phys->diagnosticsRunning()) {
-                        diagRunning = false;
-                        LOG_WARN("Diagnostics terminated");
-                        D_FAIL("Diagnostics terminated");
-                    }
-                }
-                else {
-                    _phys->stopDiagnostics();
-                    diagRunning = false;
-                    D_RUNTIME("Diagnostic run time: %.3f seconds", diagTime);
-                    diagTime = 0.0f;
-                }
-            }
-			ImGui::PopStyleVar(3);
-            ImGui::EndMenuBar();
         }
 
 		beginControlPanel("ControlPanel"); // Begin Child Panel
@@ -234,7 +203,7 @@ namespace gui {
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
             jointProperties();
-            objectProperties();
+            objectProperties();s
             stats();
         }
         if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
@@ -295,21 +264,17 @@ namespace gui {
         ImGui::Separator();
 
 		ImGui::Text("Simulation Length:");
-		ImGui::SameLine();
-		ImGui::Text("           Diagnostic Length:");
 
-        float step = 0.001f;
-        float stepFast = 0.01f;
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+        if (!_hasRobot) {
+            float step = 0.001f;
+            float stepFast = 0.01f;
+            ImGui::SetNextItemWidth(150.0f);
+            ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
+        }
 
-		ImGui::SameLine();
-
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##diag", ImGuiDataType_Float, &diagLength, &step, &stepFast, "%.3f");
         ImGui::Text("Delta Time (dt)");
         ImGui::SetNextItemWidth(150.0f);
-		ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
+        ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
 
 		ImGui::NewLine();
 
