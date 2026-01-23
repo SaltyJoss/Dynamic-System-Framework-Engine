@@ -43,7 +43,9 @@ namespace robots {
         bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
 
 		bool trySetJointTargetDeg(const std::string& childLink, float targetDeg);
-		bool trySetJointOmegeMaxDeg(const std::string& childLink, float maxOmegaDeg);
+		bool trySetJointOmegaMaxDeg(const std::string& childLink, float maxOmegaDeg);
+
+		bool isJointAtTarget(const std::string& childLink, float tolDeg) const;
 
 		void step(double dt, double simTime);
 
@@ -69,8 +71,8 @@ namespace robots {
 
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
-
 		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
+		void enforceJointLimits(RobotJoint& j);
 
 		double _simTime = 0.0;
 		spawnFn _loadMeshReturn;
