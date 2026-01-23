@@ -126,6 +126,9 @@
     <ClInclude Include="MathLib\include\core\constants.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="MathLib\include\kinematics\URDF_Types.h">
+      <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MathLib\src\integrators\Integration.cpp">

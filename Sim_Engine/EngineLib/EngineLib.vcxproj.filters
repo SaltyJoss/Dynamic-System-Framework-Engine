@@ -465,6 +465,9 @@
     <ClInclude Include="include\Numerics\ReferenceSolver.h">
       <Filter>Header Files\include\Numerics</Filter>
     </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\kinematics\URDF_Types.h">
+      <Filter>External\MathLib\Kinematics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

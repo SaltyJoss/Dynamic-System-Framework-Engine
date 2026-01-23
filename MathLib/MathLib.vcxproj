@@ -120,6 +120,7 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClInclude Include="MathLib\include\kinematics\Jacobian.h" />
     <ClInclude Include="MathLib\include\kinematics\Trajectory.h" />
     <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h" />
+    <ClInclude Include="MathLib\include\kinematics\URDF_Types.h" />
     <ClInclude Include="MathLib\include\MathLibAPI.h" />
     <ClInclude Include="MathLib\pch.h" />
   </ItemGroup>

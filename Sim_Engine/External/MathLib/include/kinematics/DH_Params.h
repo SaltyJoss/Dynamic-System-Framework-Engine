@@ -6,7 +6,7 @@
 using namespace mathlib;
 
 namespace kinematics {
-	enum class JointType {
+	enum class JointType_DH {
 		Revolute,	// Revolute joints are represented by rotation about an axis
 		Prismatic	// Prismatic joints are represented by translation along an axis
 	};
@@ -19,7 +19,7 @@ namespace kinematics {
 		double alpha;  // Link twist
 		double d;      // Link offset
 		double theta;  // Joint angle
-		JointType type; // Joint type (Revolute or Prismatic)
+		JointType_DH type; // Joint type (Revolute or Prismatic)
 	};
 
 	class DH {
@@ -39,9 +39,7 @@ namespace kinematics {
 		/// <returns>
 		///   <c>true</c> if [is joint revolute] [the specified p]; otherwise, <c>false</c>.
 		/// </returns>
-		bool isJointRevolute(const DH_Params& p) const {
-			return p.type == JointType::Revolute;
-		}
+		bool isJointRevolute(const DH_Params& p) const { return p.type == JointType_DH::Revolute; }
 		
 		/// <summary>
 		/// Determines whether the specified joint p is prismatic.
@@ -50,8 +48,6 @@ namespace kinematics {
 		/// <returns>
 		///   <c>true</c> if [is joint prismatic] [the specified p]; otherwise, <c>false</c>.
 		/// </returns>
-		bool isJointPrismatic(const DH_Params& p) const {
-			return p.type == JointType::Prismatic;
-		}
+		bool isJointPrismatic(const DH_Params& p) const { return p.type == JointType_DH::Prismatic; }
 	};
 }

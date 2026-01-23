@@ -11,8 +11,8 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+using kinematics::JointType_DH;
 using kinematics::DH_Params;
-using kinematics::JointType;
 
 namespace robots {
 	// --- Static Helper Functions ---
@@ -54,11 +54,11 @@ namespace robots {
 	}
 
 	// Parse DH joint type from string
-	static JointType parseDHType(const std::string& s) {
+	static JointType_DH parseDHType(const std::string& s) {
 		std::string t = s;
 		for (char& c : t) { c = static_cast<char>(std::tolower((unsigned char)c)); }
-		if (t == "revolute" || t == "r") { return JointType::Revolute; }
-		return JointType::Prismatic;
+		if (t == "revolute" || t == "r") { return JointType_DH::Revolute; }
+		return JointType_DH::Prismatic;
 	}
 
 	// --- RobotLoader Implementation ---
@@ -216,7 +216,7 @@ namespace robots {
 
 			} else {
 				LOG_WARN("Joint %s missing 'dh' block; using zero DH", joint.name.c_str());
-				dhp.a = 0.0; dhp.alpha = 0.0; dhp.d = 0.0; dhp.theta = 0.0; dhp.type = JointType::Revolute;
+				dhp.a = 0.0; dhp.alpha = 0.0; dhp.d = 0.0; dhp.theta = 0.0; dhp.type = JointType_DH::Revolute;
 			}
 
 			robot.dhParams.push_back(dhp);
@@ -226,14 +226,12 @@ namespace robots {
 			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
 				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxOmegaRad_s, joint.limits.minAngle, joint.limits.maxAngle);
 			LOG_INFO("DH Params for Joint %s: a=%.4f, alpha=%.4f, d=%.4f, theta=%.4f, type=%s",
-				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta,
-				dhp.type == JointType::Revolute ? "revolute" : "prismatic");
+				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta, dhp.type == JointType_DH::Revolute ? "revolute" : "prismatic");
 
 			D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
 				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxOmegaRad_s, joint.limits.minAngle, joint.limits.maxAngle);
 			D_INFO("DH Params for Joint %s: a=%.4f, alpha=%.4f, d=%.4f, theta=%.4f, type=%s",
-				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta,
-				dhp.type == JointType::Revolute ? "revolute" : "prismatic");
+				joint.name.c_str(), dhp.a, dhp.alpha, dhp.d, dhp.theta, dhp.type == JointType_DH::Revolute ? "revolute" : "prismatic");
 		}
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
