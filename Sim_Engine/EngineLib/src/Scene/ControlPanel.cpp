@@ -493,68 +493,57 @@ namespace gui {
             return;
         }
 
-        ImGui::Text("Joint Controls");
-        ImGui::Separator();
-
-        const auto& links = robot->links();
         const auto& joints = robot->joints();
-
-        if (links.empty()) {
-            ImGui::TextDisabled("Robot has no links.");
+        if (joints.empty()) {
+            ImGui::TextDisabled("Robot has no joints.");
             return;
         }
 
-        // Build a combo list of link names
         static int currentJointIndex = 0;
-		currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size());
+        currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
 
-        // These are UI-facing in degrees (because your JSON limits are in degrees conceptually)
         static float minAngleDeg = -180.0f;
         static float maxAngleDeg = 180.0f;
 
-		const char* preview = _currentJointName.empty() ? "Select Joint" : _currentJointName.c_str();
-		// Update min/max angle based on selected link's joint
+        // Auto-select first joint if nothing selected yet
+        if (_currentJointName.empty()) {
+            _currentJointName = joints[currentJointIndex].name;
+            _currentLinkName = joints[currentJointIndex].child;
+            minAngleDeg = glm::degrees(joints[currentJointIndex].limits.minAngle);
+            maxAngleDeg = glm::degrees(joints[currentJointIndex].limits.maxAngle);
+        }
+
+        const char* preview = _currentJointName.c_str();
         if (ImGui::BeginCombo("Joint", preview)) {
             for (int i = 0; i < (int)joints.size(); ++i) {
                 const bool selected = (i == currentJointIndex);
                 if (ImGui::Selectable(joints[i].name.c_str(), selected)) {
                     currentJointIndex = i;
-                    _currentLinkName = joints[i].child;
                     _currentJointName = joints[i].name;
+                    _currentLinkName = joints[i].child;
 
-					if (currentJointIndex > -1) {
-                        minAngleDeg = glm::degrees(joints[i].limits.minAngle);
-                        maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
-                    }
-                    else {
-                        minAngleDeg = 0.0f;
-						maxAngleDeg = 0.0f;
-                    }
+                    minAngleDeg = glm::degrees(joints[i].limits.minAngle);
+                    maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
                 }
-                if (selected) { ImGui::SetItemDefaultFocus(); }
-			}
+                if (selected) ImGui::SetItemDefaultFocus();
+            }
             ImGui::EndCombo();
         }
 
-        int jointIndx = 0;
-        for (const auto& joint : joints) {
-            if (joint.name == _currentJointName) { break; }
-            jointIndx++;
+        float angleRad = 0.0f;
+        if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1),
+                "Failed to get joint angle for link: %s", _currentLinkName.c_str());
+            return;
         }
 
-        // Show + edit angle using RobotSystem API
-        float angleRad= 0.0f;
-        if (!robot->tryGetJointAngleRad(_currentLinkName, angleRad)) {
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Failed to get joint angle for link: %s", _currentLinkName.c_str());
-			return;
-        } else {
-            ImGui::Text("Driven by joint: %s", joints[jointIndx].name.c_str());
-            ImGui::Text("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
-        }
+        ImGui::Text("Driven by joint: %s", joints[currentJointIndex].name.c_str());
+        ImGui::Text("Limits: [%.1f°, %.1f°]", minAngleDeg, maxAngleDeg);
 
         float angleDeg = glm::degrees(angleRad);
         if (ImGui::SliderFloat("Angle (deg)", &angleDeg, minAngleDeg, maxAngleDeg, "%.1f")) {
-            robot->setRobotLinkRotation(_currentLinkName, angleDeg);
+            // strongly prefer radians API:
+            robot->trySetJointAngleRad(_currentLinkName, glm::radians(angleDeg));
         }
     }
 

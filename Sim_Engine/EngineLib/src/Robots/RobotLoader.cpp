@@ -131,10 +131,11 @@ namespace robots {
 				}
 			}
 
-			// render fix (optional)
+			// render fix
 			if (linkData.contains("render_fix") && linkData["render_fix"].contains("dh_to_mesh_quat")) {
 				auto& q = linkData["render_fix"]["dh_to_mesh_quat"];
-				link.dhToMeshFix = glm::normalize(glm::quat(q[0], q[1], q[2], q[3]));
+				glm::quat rot = glm::normalize(glm::quat(q[0], q[1], q[2], q[3])); // (w,x,y,z)
+				link.dhToMeshFix = glm::mat4_cast(rot);
 			}
 
 			robot.links.push_back(link);
@@ -155,6 +156,7 @@ namespace robots {
 				if (o.contains("origin_xyz")) { joint.origin_xyz = glm::vec3(o["origin_xyz"][0], o["origin_xyz"][1], o["origin_xyz"][2]); }
 				if (o.contains("origin_rpy")) {
 					glm::vec3 rpy = glm::vec3(o["origin_rpy"][0], o["origin_rpy"][1], o["origin_rpy"][2]);
+					joint.origin_rpy = rpy;
 					joint.origin_q = rpyRadToQuat(rpy);
 				}
 			}
@@ -206,7 +208,7 @@ namespace robots {
 				if (dhData.contains("d") && dhData["d"].is_number()) { dhp.d = dhData["d"].get<double>(); }
 				else { dhp.d = 0.0; }
 				// theta
-				if (dhData.contains("theta") && dhData["theta"].is_number()) { dhp.theta = dhData["theta"].get<double>(); }
+				if (dhData.contains("theta0") && dhData["theta0"].is_number()) { dhp.theta = dhData["theta0"].get<double>(); }
 				else { dhp.theta = 0.0; }
 
 				std::string typeStr = dhData.value("type", "revolute");

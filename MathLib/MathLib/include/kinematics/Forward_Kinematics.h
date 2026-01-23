@@ -3,6 +3,7 @@
 #include "MathLibAPI.h"
 #include "core/Types.h"
 #include "kinematics/DH_Params.h"
+#include <iostream>
 #include <cmath>
 #include <cassert>
 
@@ -53,8 +54,17 @@ namespace kinematics {
 				T = T * A; // accumulate
 			}
 
+
 			return T;  // end-effector pose
 		}
+		
+		/// <summary>
+		/// Compute the transformation matrices for each link in the kinematic chain
+		/// </summary>
+		/// <param name="dh_p">Denavit-Hartenberg parameters for each joint</param>
+		/// <param name="q">Joint variables (angles for revolute joints, displacements for prismatic joints)</param>
+		/// <returns>Vector of transformation matrices for each link</returns>
+		std::vector<Pose> linkTransforms(const std::vector<DH_Params>& dh_p, const VecX& q) { return linkTransforms(dh_p, q, Pose::Identity()); }
 
 		/// <summary>
 		/// Compute the transformation matrices for each link in the kinematic chain
@@ -62,11 +72,11 @@ namespace kinematics {
 		/// <param name="dh_p">Denavit-Hartenberg parameters for each joint</param>
 		/// <param name="q">Joint variables (angles for revolute joints, displacements for prismatic joints)</param>
 		/// <returns>Vector of transformation matrices for each link</returns>
-		std::vector<Pose> linkTransforms(const std::vector<DH_Params>& dh_p, const VecX& q) {
+		std::vector<Pose> linkTransforms(const std::vector<DH_Params>& dh_p, const VecX& q, const Pose& T_base) {
 			std::vector<Pose> transforms;
 			transforms.reserve(dh_p.size());   // avoid reallocs
 
-			Pose T = Pose::Identity();
+			Pose T = T_base;   // Initialize as identity
 
 			const std::size_t n = dh_p.size();
 			assert(static_cast<std::size_t>(q.size()) >= n);
@@ -100,6 +110,12 @@ namespace kinematics {
 
 				T = T * A;
 				transforms.push_back(T);    // store current link transform
+
+				// Debug info for each link
+				std::string debugStr = "Link " + std::to_string(i) +
+					": a=" + std::to_string(a) +
+					", d=" + std::to_string(d) +
+					", theta=" + std::to_string(theta);
 			}
 
 			return transforms;

@@ -53,7 +53,7 @@ namespace robots {
 
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
-        void setRobotLinkRotation(const std::string& linkName, float angle);
+        bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
@@ -84,6 +84,9 @@ namespace robots {
 
         glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
 		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
+
+        std::vector<glm::mat4> _bindWorld0;  // size = links.size()
+		std::vector<glm::mat4> _bindLocal0;  // size = links.size()
 
 		VecX _robotQHome; // home/reset joint angles (radians)
         bool _robotHomeValid = false;

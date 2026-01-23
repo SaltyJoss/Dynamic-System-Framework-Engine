@@ -53,7 +53,7 @@ namespace robots {
 		Inertial inertial{};
 
 		// render-only correction (optional)
-		glm::quat dhToMeshFix{ 1,0,0,0 };
+		glm::mat4 dhToMeshFix = glm::mat4(1.0f);
 
 		scene::Object* attachedObject = nullptr;
 	};
@@ -77,8 +77,13 @@ namespace robots {
 		std::string parent = "";
 		std::string child = "";
 
+		// NEW (in parent link local space)
+		glm::vec3 axisParent = glm::vec3(0, 0, 1);
+		glm::vec3 pivotParent = glm::vec3(0, 0, 0);
+
 		// URDF joint frame (parent → joint)
 		glm::vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
+		glm::vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
 		glm::quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
@@ -96,6 +101,10 @@ namespace robots {
 		float thetaRefRad = 0.0f;
 		float k_p = 25.0f;
 		float k_d = 8.0f;
+
+		// --- Precomputed transforms ---
+		glm::mat4 jointToChildRest = glm::mat4(1.0f);
+		glm::mat4 parentToJoint = glm::mat4(1.0f);
 	};
 
 	// --- Robot Model ---
@@ -112,6 +121,7 @@ namespace robots {
 		// Create an Eigen vector of joint angles
 		VecX makeJointVector() const {
 			const int n = static_cast<int>(joints.size());
+			LOG_INFO_ONCE("Making joint vector of size %d", n);
 			VecX q(n);
 			for (int i = 0; i < n; ++i) { q(i) = static_cast<double>(joints[i].angleRad); }
 			return q;
