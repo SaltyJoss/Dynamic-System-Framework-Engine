@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Interpreter/Commands/RotateJointByCmd.h"
+#include "Scene/SimulationManager.h"
+#include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
@@ -21,23 +23,27 @@ namespace commands {
 
 	program_data::CmdResult RotateJointByCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
-			markFailed("rotateJointBy() not started.");
-			return CmdResult{ CmdState::Failed, {}, "rotateJointBy() not started." };
+			_started = true;
+
+			auto r1 = cntx.setJointMaxOmegaRad(_link, degToRad(_omegaDeg));
+			if (!r1.ok) { markFailed(r1.message); D_FAIL("Failed to set max omega for link '%s' -> %s", _link.c_str(), r1.message.c_str()); 
+			return CmdResult{ CmdState::Failed, {}, r1.message }; }
+
+			auto r2 = cntx.setJointTargetDeltaRad(_link, degToRad(_deltaDeg));
+			if (!r2.ok) { markFailed(r2.message); D_FAIL("Failed to set target delta for link '%s' -> %s", _link.c_str(), r2.message.c_str()); return CmdResult{ CmdState::Failed, {}, r2.message }; }
+
+			D_INFO("Starting rotateJointTo() on link '%s' to delta %.2f deg at max omega %.2f deg/s", _link.c_str(), _deltaDeg, _omegaDeg);
+			return CmdResult{ CmdState::Executing, {}, "rotateJointTo() started" };
 		}
 
-		const double stepDeg = _omegaDeg * dt;
-
-		auto result = cntx.rotationJointDelta(_link, stepDeg, std::abs(_omegaDeg));
-		if (!result.ok) {
-			markFailed(result.message);
-			D_FAIL("Failed to rotate link %s -> %s", _link.c_str(), result.message.c_str());
-			return CmdResult{ CmdState::Failed, {}, result.message };
+		auto* robot = cntx.Robot();
+		if (!robot) {
+			markFailed("No robot loaded."); D_FAIL("rotateJointTo() failed: no robot loaded.");
+			return CmdResult{ CmdState::Failed, {}, "No robot loaded." };
 		}
 
-		_totalRotated += stepDeg;
-		if (std::abs(_totalRotated) >= std::abs(_deltaDeg)) {
-			markCompleted();
-			D_SUCCESS("Completed rotation of %.2f degrees.", _deltaDeg);
+		if (cntx.Robot()->isJointAtTargetDeg(_link, 0.25f)) {
+			markCompleted(); D_SUCCESS("Completed rotateJointBy() on link '%s' by delta %.2f deg", _link.c_str(), _deltaDeg);
 			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
@@ -45,7 +51,6 @@ namespace commands {
 	}
 
 	void RotateJointByCmd::execute() {
-		_started = true;
 		_totalRotated = 0.0;
 		setResult({ CmdState::Executing, {}, "rotateJointBy() started" });
 	}

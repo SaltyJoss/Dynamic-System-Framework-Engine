@@ -123,11 +123,13 @@ namespace gui {
 			D_INFO("Command script %s.", _sim->isScriptRunning() ? "started" : "stopped");
 
 			if (!_sim->isScriptRunning()) {
-				// stopping
 				if (_program) _program->stop();
+				_sim->setActiveProgram(nullptr);
+				_sim->stopSimulation();
 				_sim->setScriptRunning(false);
 			}
 			else {
+				_sim->setActiveProgram(nullptr);
 				delete _wrapper; _wrapper = nullptr;
 				delete _parser;  _parser = nullptr;
 				delete _program; _program = nullptr;
@@ -137,6 +139,9 @@ namespace gui {
 				_parser = new interpreter::Parser(_program);
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
+				_sim->setActiveProgram(_program);
+				_sim->setScriptRunning(true);
+
 				// Remove trailing null character if present
 				std::string code = _scriptText;
 				if (!code.empty() && code.back() == '\0') code.pop_back();
@@ -145,18 +150,11 @@ namespace gui {
 			}
 		}
 
-		if (wasRunning) {
-			ImGui::PopStyleColor(3);
-		}
+		if (wasRunning) { ImGui::PopStyleColor(3); }
 
-		if (_sim->isScriptRunning() && _program) {
-			if (!_program) {
-				terminateScript("Command script stopped -> program is null.", true);
-				return;
-			}
-			
-			interpreter::IStoredProgram* prog = _program; // need a snapshot in case of termination
-			prog->step(dt);
+		if (_sim->isScriptRunning()) {
+			auto* prog = _sim->activeProgram();
+			if (!prog) { terminateScript("Command script stopped -> active program is null.", true); return; }
 
 			if (prog->isEmpty()) { terminateScript("Command script stopped -> program is empty.", true); return; }
 			if (prog->isFaulted()) { terminateScript("Command script stopped due to fault.", true); return; }
@@ -166,16 +164,12 @@ namespace gui {
 	}
 
 	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
+		_sim->setActiveProgram(nullptr);
+		_sim->stopSimulation();
 		_sim->setScriptRunning(false);
 
-		if (fault) {
-			LOG_WARN("%s", reason);
-			D_FAIL("%s", reason);
-		}
-		else {
-			LOG_INFO("%s", reason);
-			D_SUCCESS("%s", reason);
-		}
+		if (fault) { LOG_WARN("%s", reason); D_FAIL("%s", reason); }
+		else { LOG_INFO("%s", reason); D_SUCCESS("%s", reason); }
 
 		delete _wrapper; _wrapper = nullptr;
 		delete _parser;  _parser = nullptr;

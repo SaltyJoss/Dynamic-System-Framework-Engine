@@ -65,7 +65,8 @@ namespace interpreter {
 	}
 
 	void StoredProgram::stopSim() {
-		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
+		if (!_sim) { return; }
+		if (_sim->isSimRunning()) { _sim->stopSimulation(); }
 
 		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
 		if (obj) {
@@ -74,7 +75,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
+		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	void StoredProgram::pause() {
@@ -87,7 +88,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
+		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	void StoredProgram::waitSim(double dt) {
@@ -106,12 +107,16 @@ namespace interpreter {
 	bool StoredProgram::commandsLeft() const { return PC >= 0 && PC < static_cast<int>(_commands.size()); }
 
 	void StoredProgram::step(double dt) {
+		//LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
+
+
+		if (_state == ProgramState::Paused) { return; }
 		if (_state == ProgramState::Stopped || _state == ProgramState::Completed || _state == ProgramState::Faulted) { return; }
 		if (_state != ProgramState::Running) { start(); }
 		if (_stopRequested) { stop(); return; }
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
-		
+
 		scene::Object* o = _defaultObj ? _defaultObj : (_sim ? _sim->getObject() : nullptr);
 		_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
 
@@ -119,8 +124,14 @@ namespace interpreter {
 		cmd->setContext(_cntx.motion());
 		cmd->setContext(_cntx.ui());
 
-		if (!cmd->hasStarted()) { cmd->execute(); }
+		//D_DEBUG(
+		//	"CMD %s | hasStarted=%d | state=%d",
+		//	typeid(*cmd).name(),
+		//	cmd->hasStarted(),
+		//	(int)cmd->currentResult().state
+		//);
 
+		if (!cmd->hasStarted()) { cmd->execute(); }
 
 		// Check current result
 		CmdResult r0 = cmd->currentResult();
@@ -141,16 +152,19 @@ namespace interpreter {
 		}
 	}
 
-	CmdResult StoredProgram::updateState() {
-		return CmdResult{};
-	}
+	CmdResult StoredProgram::updateState() { return CmdResult{}; }
 
 	// Set Integrator Method
 	void StoredProgram::setIntegratorMethod(IntegratorMethod method) {
 		_integratorMethod = method;
 		if (_sim) {
-			auto& physics = _sim->getPhysicsSystem();
-			physics.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
+			if (_sim->hasRobot()) {
+				robots::RobotSystem* robot = _sim->getRobotSystem();
+				if (robot) { robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method)); }
+			}
+
+			physics::PhysicsSystem& phys = _sim->getPhysicsSystem();
+			phys.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
 	// Get Integrator Method

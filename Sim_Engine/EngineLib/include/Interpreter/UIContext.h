@@ -13,9 +13,10 @@ namespace commands {
 	public:
 		UIContext(gui::simManager* sim, scene::ObjectID obj);
 
-		gui::simManager* getSim() const { return _sim; }
-		scene::ObjectID getDefaultObjectID() const;
-		scene::ObjectID getObjectID() const;
+		gui::simManager* Sim() const { return _sim; }
+		robots::RobotSystem* Robot() const { return _robot; }
+		scene::ObjectID DefaultObjectID() const;
+		scene::ObjectID ObjectID() const;
 
 		scene::Object* resolveObject(scene::ObjectID id) const;
 		scene::Object* resolveCurrentObject() const;

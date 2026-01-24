@@ -26,6 +26,8 @@
 #include "Robots/RobotModel.h"
 #include "Robots/RobotSystem.h"
 
+#include "Interpreter/IStoredProgram.h"
+
 #include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/OpenGLBufferManager.h"
@@ -317,10 +319,9 @@ namespace gui {
 //				RENDERING ENTRY POINTS
 // --------------------------------------------------
 	void simManager::render() {
-		updatePhysics(_dt);
+		tick(ImGui::GetIO().DeltaTime);
 		_fpsCounter.update();
 		if (_settingsCurrent.shadows) { ShadowPass(); }
-		//D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
 
 		_impl->_frameBuffer->bind();
 
@@ -429,29 +430,48 @@ namespace gui {
 		}
 	}
 
-	void simManager::tick(double frame_dt) {
-		if (_scriptRunning) { stepFixed(frame_dt); }
-		else { 
-			updatePhysics(frame_dt);
-			_impl->_robotSystem->step(frame_dt, _simTime);
-		}
-
-		D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
-	}
-
 	void simManager::stepFixed(double frame_dt) {
+		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
 		_accum += frame_dt;
 		while (_accum >= _dt) {
-			// Updates RigidBody states
-			updatePhysics(_dt);
-			// Update Robot System
-			if (_impl->_robotSystem) { _impl->_robotSystem->step(_dt, _simTime); }
-			// Advanvce simulation time
-			_accum -= _dt;
+
 			_simTime += _dt;
+
+			if (_scriptRunning && _activeProgram) { 
+				_activeProgram->step(_dt);
+				if (_activeProgram->isCompleted() || _activeProgram->isStopped() || _activeProgram->isFaulted()) {
+					_scriptRunning = false; _activeProgram = nullptr; D_DEBUG("Program execution completed.");
+				}
+			}
+
+			if (_simRunning) {
+				updatePhysics(_dt);
+				if (hasRobot()) { _impl->_robotSystem->step(_dt, _simTime); }
+			}
+
+			_accum -= _dt;
 		}
+
+		//D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
 	}
 
+	void simManager::startSimulation() {
+		_simTime = 0.0;
+		_simRunning = true;
+		D_INFO("startSimulation() simRunning=%d", (int)_simRunning);
+		D_INFO("startSimulation() simTime=%.6f", _simTime);
+
+	}
+
+	void simManager::stopSimulation() {
+		_simRunning = false;
+		D_INFO("stopSimulation() simTime before reset=%.6f", _simTime);
+		_simTime = 0.0; // reset sim time
+		D_INFO("stopSimulation() _simRunning=%d", (int)_simRunning);
+		D_INFO("stopSimulation() simTim after resete=%.6f", _simTime);
+	}
+
+	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
 	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
 	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
 

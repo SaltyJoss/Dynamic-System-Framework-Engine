@@ -13,13 +13,11 @@ namespace integration {
 	// --------------------------------------------------
 		// Integration method dispatcher
 	VecX IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
-		VecX dxdt = f(t, x); // compute derivative at current state (for Euler, but may revise euler function to do this inhouse, depends on efficiency honestly)
-
 		if (!f) {
-			// If no function provided, assume constant derivative (dxdt)
 			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x + dxdt * dt;
+			return x; // could also throw an error here, but feel this is better
 		}
+		VecX dxdt = f(t, x);
 
 		if (m == eIntegrationMethod::Euler)			{ return _ODE->eulerStep(x, dxdt, dt); }
 		else if (m == eIntegrationMethod::Midpoint) { return _ODE->midpointStep(x, t, dt, f); }

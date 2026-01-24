@@ -18,8 +18,8 @@ namespace commands {
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
-	scene::ObjectID UIContext::getDefaultObjectID() const { return _defaultObjID; }
-	scene::ObjectID UIContext::getObjectID() const { return _objID; }
+	scene::ObjectID UIContext::DefaultObjectID() const { return _defaultObjID; }
+	scene::ObjectID UIContext::ObjectID() const { return _objID; }
 
 	scene::Object* UIContext::resolveObject(scene::ObjectID id) const {
 		if (!_sim) return nullptr;
@@ -47,14 +47,8 @@ namespace commands {
 	}
 
 	OpResult UIContext::setFixedDt(double dt) {
-		if (!_phys) {
-			LOG_WARN("Physics system is null, cannot set fixed dt.");
-			return OpResult::Failure("Physics system is null.");
-		}
-		if (dt <= 0.0) {
-			LOG_WARN("Invalid fixed dt value: %f", dt);
-			return OpResult::Failure("Fixed dt must be positive.");
-		}
+		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (dt <= 0.0) { return OpResult::Failure("Fixed dt must be positive."); }
 		_sim->setFixedDeltaTime(dt);
 		return OpResult::Success(true);
 	}
@@ -83,111 +77,60 @@ namespace commands {
 	// --- OBJECT LOAD AND CLEAR METHODS ---
 
 	OpResult UIContext::loadObject(const std::string& objectPath) {
-		if (!_sim) {
-			LOG_WARN("Simulation manager is null, cannot load object.");
-			return OpResult::Failure("Simulation manager is null.");
-		}
+		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (objectPath.empty()) { return OpResult::Failure("Object path is empty."); }
 
-		if (objectPath.empty()) {
-			LOG_WARN("Empty object path provided -> %s", objectPath);
-			return OpResult::Failure("Object path is empty.");
-		}
+		auto spawned = _sim->loadMeshReturn(objectPath);
+		if (spawned.empty() || !spawned[0]) { return OpResult::Failure("No objects loaded from specified path."); }
 
-		// Check if object already loaded (if so assigns new name)
-		auto it = _loadedObjects.find(objectPath);
-		if (it != _loadedObjects.end()) {
-			_objID = it->second;
-			LOG_INFO("Object already loaded from path: %s", objectPath.c_str());
-			return OpResult::Success();
-		}
-
-		// Load new mesh from file
-		_sim->loadMesh(objectPath);
-		auto& objects = _sim->getObjects();
-		if (objects.empty()) {
-			LOG_WARN("No objects loaded from path: %s", objectPath.c_str());
-			return OpResult::Failure("No objects loaded from the specified path.");
-		}
-
-		scene::Object* obj = objects.back().get();
-		if (!obj) return OpResult::Failure("Loaded object is null.");
-
-		_objID = obj->id;
+		_objID = spawned[0]->id;
 		_loadedObjects[objectPath] = _objID;
-
-		LOG_INFO("Loaded object from path: %s", objectPath.c_str());
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	// Removes the current object based on its index
 	OpResult UIContext::clearObject() {
-		if (!_sim) {
-			LOG_WARN("Simulation manager is null, cannot clear object.");
-			return OpResult::Failure("Simulation manager is null.");
-		}
-		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) {
-			LOG_WARN("No object selected to clear.");
-			return OpResult::Failure("No object selected.");
-		}
-
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj) return OpResult::Failure("Selected object ID not found.");
+		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) { return OpResult::Failure("No object selected."); }
 
 		// Finds the index of the current object
 		auto& objects = _sim->getObjects();
 		auto it = std::find_if(objects.begin(), objects.end(), [this](const std::unique_ptr<scene::Object>& o) { return o && o->id == _objID; });
 
-		// If found, delete the objects
-		if (it == objects.end()) {
-			LOG_WARN("Selected object not found in simulation manager.");
-			return OpResult::Failure("Selected object not found.");
+		if (it == objects.end()) { return OpResult::Failure("Selected object ID not found."); }
+
+		const int index = std::distance(objects.begin(), it);
+		const scene::ObjectID deletedId = _objID;
+
+		_sim->deleteObject(index);
+
+		// Clear context IDs safely
+		_objID = scene::ObjectID::INVALID_OBJECT_ID;
+		if (_defaultObjID == deletedId) {
+			_defaultObjID = scene::ObjectID::INVALID_OBJECT_ID;
 		}
 
-		size_t index = std::distance(objects.begin(), it);
-		_sim->deleteObject(static_cast<int>(index));
-
-		_objID = scene::ObjectID::INVALID_OBJECT_ID;
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	// --- ROBOT LOAD AND CLEAR METHODS ---
 
 	OpResult UIContext::loadRobot(const std::string& robotName) {
-		if (!_sim) {
-			LOG_WARN("Simulation manager is null, cannot load robot.");
-			return OpResult::Failure("Simulation manager is null.");
-		}
-		// Check if robot already loaded
-		auto it = _loadedRobots.find(robotName);
-		if (it != _loadedRobots.end()) {
-			_robot = it->second;
-			LOG_INFO("Robot already loaded: %s", robotName.c_str());
-			return OpResult::Failure("Robot already loaded.");
-		}
+		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
 
-		// Load new robot model
 		_sim->loadRobot(robotName);
-
-		robots::RobotSystem* newRobot = _sim->getRobotSystem();
-		_loadedRobots[robotName] = newRobot;
-		_robot = newRobot;
-		LOG_INFO("Loaded robot model: %s", robotName.c_str());
-		return OpResult::Success();
+		_robot = _sim->getRobotSystem();
+		if (!_robot) return OpResult::Failure("Robot system is null after load.");
+		return OpResult::Success(true);
 	}
 
 	OpResult UIContext::clearRobot() {
-		if (!_sim) {
-			LOG_WARN("Simulation manager is null, cannot clear robot.");
-			return OpResult::Failure("Simulation manager is null.");
-		}
-		if (!_robot) {
-			LOG_WARN("No robot loaded to clear.");
-			return OpResult::Failure("No robot loaded.");
-		}
+		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
 
 		_robot = nullptr;
 		_sim->clearRobot();
-		return OpResult::Success();
+		return OpResult::Success(true);
 	}
 
 	// --- TEXTURE LOAD AND CLEAR METHODS ---

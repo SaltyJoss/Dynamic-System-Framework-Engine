@@ -8,6 +8,7 @@
 #include <stack>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 
 #include "EngineLib/LogMacros.h"
@@ -61,7 +62,7 @@ namespace robots {
 		return T * R * Ti;
 	}
 
-	// Method to compute the world transforms of all robot links at zero joint angles
+	// Method to compute the world transforms of all robot links at zero joint angles (Not needed nor used currently)
 	static std::vector<glm::mat4> computeVisualZeroWorld(const RobotModel& robot, const std::unordered_map<std::string, int>& linkIndx, const glm::mat4& rootPose) {
 		std::vector<glm::mat4> world(robot.links.size(), glm::mat4(1.0f));
 
@@ -162,40 +163,100 @@ namespace robots {
 	// Derivative function for ODE integration
 	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
 		const int n = static_cast<int>(_robot.joints.size());
-		mathlib::VecX dxdt(2 * n);
+		mathlib::VecX dx(2 * n);
 		const double c = 2.0; // damping [1/s] -> placeholder for now
 
 		for (int i = 0; i < n; ++i) {
 			const double theta = x[i];
 			const double omega = x[i + n];
 
+			// Targets and gains
 			const RobotJoint& joint = _robot.joints[i];
-			double thetaRef = static_cast<double>(joint.thetaRefRad);
-			double err = thetaRef - theta;
-
-			if (joint.limits.continuous) { err = robots::RobotSystem::wrapToPi(static_cast<float>(err)); } // wrap error for continuous joints
-
-			dxdt[i] = omega; // dtheta/dt = omega
-
-			// omega' = k_p * err - k_d * omega - c * omega -> PD control with damping
+			const double thetaRef = static_cast<double>(joint.thetaRefRad);
 			const double k_p = static_cast<double>(joint.k_p);
 			const double k_d = static_cast<double>(joint.k_d);
-			double domega_dt = k_p * err - k_d * omega - c * omega;
 
-			dxdt[i + n] = domega_dt;
+			// Error
+			double err = thetaRef - theta;
+
+			// PD 
+			double tau = k_p * err - k_d * omega; // control torque
+
+			// Passive dynamics
+			const double damping = static_cast<double>(joint.dynamics.damping);
+			const double friction = static_cast<double>(joint.dynamics.friction);
+
+			tau -= damping * omega;
+			
+			// Friction model
+			const double v_eps = 1e-2; // small velocity threshold
+			if (std::abs(omega) > v_eps) { tau -= friction * sgn(omega); } // Coulomb friction
+			else { tau -= friction * (omega / v_eps); } // linear region near zero
+
+			// Effort clamp
+			if (joint.limits.maxEffort > 0.0f) {
+				const double e = static_cast<double>(joint.limits.maxEffort);
+				if (tau > e) { tau = e; }
+				if (tau < -e) { tau = -e; }
+			}
+
+			// Effective inertia (assumed 1.0 as placeholder, I aim to extend this later)
+			const double I_eff = 1.0;	// TODO: per joint effective inertia
+			double alpha = tau / I_eff; // angular acceleration
+
+			// Omega clamp
+			const double wMax = static_cast<double>(joint.limits.maxOmegaRad_s);
+			if (wMax > 0.0) {
+				if ((omega >= wMax && alpha > 0.0) || (omega <= -wMax && alpha < 0.0)) { alpha = 0.0; }
+			}
+
+			dx[i] = omega;		// dtheta/dt = omega
+			dx[i + n] = alpha;	// domega/dt = alpha
+
+			if (i == 2) {
+				LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
+					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+			}
+
 		}
-		return dxdt;
+		return dx;
+	}
+
+	// Method to enforce joint limits after integration
+	void RobotSystem::enforceJointLimits(RobotJoint& j) {
+		if (j.limits.continuous) { return; }
+
+		const float lo = j.limits.minAngle;
+		const float hi = j.limits.maxAngle;
+
+		if (j.angleRad < lo) { j.angleRad = lo; if (j.omegaRad_s < 0.0f) { j.omegaRad_s = 0.0f; }}
+		if (j.angleRad > hi) { j.angleRad = hi; if (j.omegaRad_s > 0.0f) { j.omegaRad_s = 0.0f; }}
 	}
 
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
-		mathlib::VecX x = packState();
 
+		_simTime = simTime;
+
+		// Pack current state
+		mathlib::VecX x = packState(); // current state vector
+
+		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
-		mathlib::VecX xNext = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 		
-		unpackState(xNext);
+		// Unpack new state
+		unpackState(x_Next);
+
+		// Enforce joint limits
+		for (auto& j : _robot.joints) {
+			const float wMax = j.limits.maxOmegaRad_s;
+			if (wMax > 0.0f) { j.omegaRad_s = glm::clamp(j.omegaRad_s, -wMax, wMax); }
+			enforceJointLimits(j);
+		}
+
+		// Update kinematics
 		updateRobotKinematics();
 	}
 
@@ -205,7 +266,7 @@ namespace robots {
 	void RobotSystem::loadRobot(const std::string& name) {
 		clearRobot();
 
-		std::string jsonPath = "Engine/assets/Objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
+		std::string jsonPath = "Engine/assets/objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
 		_loadedName = name;
@@ -221,7 +282,8 @@ namespace robots {
 		instantiateRobotLinks();
 		buildLinkIndex();
 
-		updateRobotKinematics();
+		resetRobot();
+
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
 		D_SUCCESS("Loaded robot model -> %s", name.c_str());
 	}
@@ -232,7 +294,10 @@ namespace robots {
 		_robotRootPose = _robotRootHome;
 		_robot.setJointVector(_robotQHome);
 
-		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+		for (auto& joint : _robot.joints) {
+			joint.omegaRad_s = 0.0f;
+			joint.thetaRefRad = joint.angleRad;
+		}
 
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
@@ -262,6 +327,14 @@ namespace robots {
 
 		LOG_INFO("Old robot model removed");
 		D_WARN("Old robot model removed");
+	}
+
+	void RobotSystem::stopAll() {
+		if (!_hasRobot) return;
+		for (auto& joint : _robot.joints) {
+			joint.omegaRad_s = 0.0f;
+			joint.thetaRefRad = joint.angleRad;
+		}
 	}
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
@@ -363,32 +436,86 @@ namespace robots {
 		return false;
 	}
 
-	// Method to set the target angle (reference) of a specific robot joint in degrees
-	bool RobotSystem::trySetJointTargetDeg(const std::string& childLink, float targetDeg) {
+	// Method to set the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, float targetRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				float targetRad = glm::radians(targetDeg);
-				if (joint.limits.continuous) { targetRad = wrapRad(targetRad); }
-				else { targetRad = glm::clamp(targetRad, joint.limits.minAngle, joint.limits.maxAngle); }
-				joint.thetaRefRad = targetRad; // clamp to joint limits
+				if (joint.limits.continuous) { joint.thetaRefRad = wrapRad(targetRad); }
+				else { joint.thetaRefRad = clampJointAngle(joint, targetRad); } // clamp to joint 
 				return true;
 			}
 		}
 		return false;
 	}
 
-	// Method to set the maximum angular velocity of a specific robot joint in degrees
-	bool RobotSystem::trySetJointOmegeMaxDeg(const std::string& childLink, float maxOmegaDeg) {
+	//	Method to set the maximum angular velocity of a specific robot joint in radians
+	bool RobotSystem::trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad) {
 		if (!_hasRobot) { return false; }
-		float maxOmegaRad = glm::radians(maxOmegaDeg);
+		if (maxOmegaRad <= 0.0f) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				joint.limits.maxOmegaRad_s = std::abs(maxOmegaRad); // |omega[max]|
+				joint.limits.maxOmegaRad_s = maxOmegaRad;
 				return true;
 			}
 		}
 		return false;
+	}
+
+	// Method to increment the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::tryAddJointTargetRad(const std::string& childLink, float deltaRad) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float t = joint.thetaRefRad + deltaRad;
+				if (joint.limits.continuous) { t = wrapRad(t); }
+				else { t = glm::clamp(t, joint.limits.minAngle, joint.limits.maxAngle); }
+				joint.thetaRefRad = t; // clamp to joint limits
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Method to check if a specific robot joint is at its target angle within a tolerance (radians)
+	bool RobotSystem::isJointAtTargetRad(const std::string& childLink, float tolRad) const {
+		if (!_hasRobot) { return false; }
+		if (tolRad < 0.0f) { tolRad = -tolRad; }
+
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float err = joint.thetaRefRad - joint.angleRad;
+				if (joint.limits.continuous) { err = wrapToPi(err); }
+				err = std::abs(err);
+				return err <= tolRad;
+			}
+		}
+		return false;
+	}
+
+	// Method to check if a specific robot joint is at its target angle within a tolerance (degrees)
+	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, float tolDeg) const { 
+		return isJointAtTargetRad(childLink, glm::radians(tolDeg)); 
+	}
+
+	// Method to check if a specific robot joint is near a target angle within a tolerance (radians)
+	bool RobotSystem::isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const {
+		if (!_hasRobot) { return false; }
+		tolRad = std::abs(tolRad);
+
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float err = targetRad - joint.angleRad;
+				if (joint.limits.continuous) { err = wrapToPi(err); }
+				return std::abs(err) <= tolRad;
+			}
+		}
+		return false;
+	}
+
+	// Method to check if a specific robot joint is near a target angle within a tolerance (degrees)
+	bool RobotSystem::isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const { 
+		return isJointNearAngleRad(childLink, glm::radians(targetDeg), glm::radians(tolDeg));
 	}
 
 	// --- ROBOT LINK AND ROOT POSE METHODS ---

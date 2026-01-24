@@ -243,12 +243,12 @@ namespace interpreter {
 			return;
 		}
 
-		D_DEBUG("Command: %s Identifier: %s Args: %d",
-			cmd.cmdName.c_str(),
-			cmd.identifier.c_str() ? "Empty" : nullptr,
-			(int)cmd.tokens.size() ? 0 : nullptr);
+		//D_DEBUG("Command: %s Identifier: %s Args: %d",
+		//	cmd.cmdName.c_str(),
+		//	cmd.identifier.c_str() ? "Empty" : nullptr,
+		//	(int)cmd.tokens.size() ? 0 : nullptr);
 
-		for (const auto& t : cmd.tokens) { D_TRACE("Arg: %s", t.c_str()); }
+		//for (const auto& t : cmd.tokens) { D_TRACE("Arg: %s", t.c_str()); }
 
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 

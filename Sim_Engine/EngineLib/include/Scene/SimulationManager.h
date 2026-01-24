@@ -49,7 +49,8 @@ namespace scene {
     class ENGINE_API Object;
 }
 
-namespace physics { class PhysicsSystem; }
+namespace interpreter { class ENGINE_API IStoredProgram; }
+namespace physics { class ENGINE_API PhysicsSystem; }
 namespace robots { class ENGINE_API RobotSystem; }
 
 // I want to rename to more appropriate namespace later
@@ -142,6 +143,7 @@ namespace gui {
         void updatePhysics(double dt);
         void tick(double frame_dt);
 		void stepFixed(double frame_dt);
+		bool hasPhysics() const;
 
 		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
         physics::PhysicsSystem& getPhysicsSystem();
@@ -172,15 +174,18 @@ namespace gui {
 		void setFixedDeltaTime(double dt) { _dt = dt; }
 
 		bool isSimRunning() const { return _simRunning; }
-        void startSimulation() { _simRunning = true; }
-        void stopSimulation() { _simRunning = false; }
+        void startSimulation();
+        void stopSimulation();
 
 		double getSimTime() const { return _simTime; }
-		void setSimTime(double t) const { t = _simTime; }
+		void setSimTime(double t) { _simTime = t; }
 		void incrementSimTime(double dt) { _simTime += dt; }
 
 		bool isScriptRunning() const { return _scriptRunning; }
 		void setScriptRunning(bool running) { _scriptRunning = running; }
+
+        void setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
+        interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
 
     private:       
 		// Rendering Pipeline Methods
@@ -224,12 +229,14 @@ namespace gui {
         std::unordered_map<std::string, scene::ObjectID> _nameToId;
         std::unordered_map<scene::ObjectID, scene::Object*> _idToPtr;
 
+		// Active Script Program
+        interpreter::IStoredProgram* _activeProgram = nullptr;
+
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};
 		render::ResolutionPreset _resCurrent = render::ResolutionPreset::R_1080p;
         glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
         std::string _activeHDRPath;
-
         static constexpr int NUM_CASCADES = 2;
         float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
         const unsigned int SHADOW_W = 8192;
@@ -252,32 +259,3 @@ namespace gui {
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
 }
-
-
-// NOTES:
-// NEED TO MANAGE SHADER RESOURCES (RELOAD ON DEMAND)
-// NEED TO MANAGE MESH RESOURCES (RELOAD ON DEMAND)
-// NEED TO MANAGE TEXTURE RESOURCES (RELOAD ON DEMAND)
-// MAYBE A RESOURCE MANAGER CLASS TO HANDLE ALL OF THE ABOVE?
-// MAYBE SPLIT SCENEVIEW INTO RENDERER AND SCENE MANAGER CLASSES?????? *Not sure though*
-//
-// TODO:
-// - Look for decrepated methods and variables to clean up.
-// - Consider splitting simManager into smaller, more focused classes if it becomes too large.
-// - Explore my initial idea of central scene (efficitly this), then optional 4 sub-views for different camera angles (top, side, front, perspective), static in relation to the robotic arm (like CAD or modelling software), each allows either focus on the entire robot for all 4 angles, or focus on a specific link/joint for all 4 angles. This would be useful for debugging and visualizing the robot's configuration from multiple perspectives simultaneously (Plus user may need this for precise joint adjustments and understanding spatial relationships between links).
-// 
-// simManager name replacement ideas (Given its current main function of rendering and managing the simulations 3D scene):
-// - SceneRenderer
-// - SceneManager
-// - SimulationView
-// - SimulationRenderer
-// - SimulationViewport
-// - sim3DView
-// - sim3DRenderer
-// - sim3DManager
-// - RenderManager3D
-// - simSceneManager
-// - simSceneRenderer
-// * Some of these were generate with github copilot *
-//
-// END OF FILE
