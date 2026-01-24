@@ -84,10 +84,9 @@ namespace commands {
         // --- Progress / completion ---
         _elapsed += dt;
 
-        // Tunables (these are the “feel” knobs)
-        const double tolPosRad = degToRad(0.25); // 0.25 deg
-        const double tolOmegaRad = degToRad(0.20); // 0.20 deg/s
-        const double settleSec = 0.10;           // must be stable for 100ms
+        const double tolPosRad = degToRad(0.25);    // 0.25 deg
+        const double tolOmegaRad = degToRad(0.20);  // 0.20 deg/s
+		const double settleSec = 0.10;              // must be stable for 100ms - i need to tune this more
 
         float theta = 0.0f;
         float omega = 0.0f;
