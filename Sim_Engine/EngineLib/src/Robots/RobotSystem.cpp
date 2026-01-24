@@ -189,7 +189,7 @@ namespace robots {
 			tau -= damping * omega;
 			
 			// Friction model
-			const double v_eps = 1e-4; // small velocity threshold
+			const double v_eps = 1e-2; // small velocity threshold
 			if (std::abs(omega) > v_eps) { tau -= friction * sgn(omega); } // Coulomb friction
 			else { tau -= friction * (omega / v_eps); } // linear region near zero
 
@@ -212,6 +212,12 @@ namespace robots {
 
 			dx[i] = omega;		// dtheta/dt = omega
 			dx[i + n] = alpha;	// domega/dt = alpha
+
+			if (i == 2) {
+				LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
+					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+			}
+
 		}
 		return dx;
 	}
@@ -260,7 +266,7 @@ namespace robots {
 	void RobotSystem::loadRobot(const std::string& name) {
 		clearRobot();
 
-		std::string jsonPath = "Engine/assets/Objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
+		std::string jsonPath = "Engine/assets/objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
 		_hasRobot = true;
 		_loadedName = name;
@@ -276,7 +282,8 @@ namespace robots {
 		instantiateRobotLinks();
 		buildLinkIndex();
 
-		updateRobotKinematics();
+		resetRobot();
+
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
 		D_SUCCESS("Loaded robot model -> %s", name.c_str());
 	}
@@ -287,7 +294,10 @@ namespace robots {
 		_robotRootPose = _robotRootHome;
 		_robot.setJointVector(_robotQHome);
 
-		for (auto& joint : _robot.joints) { /*I shall be adding state reset here :)*/ }
+		for (auto& joint : _robot.joints) {
+			joint.omegaRad_s = 0.0f;
+			joint.thetaRefRad = joint.angleRad;
+		}
 
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
@@ -317,6 +327,14 @@ namespace robots {
 
 		LOG_INFO("Old robot model removed");
 		D_WARN("Old robot model removed");
+	}
+
+	void RobotSystem::stopAll() {
+		if (!_hasRobot) return;
+		for (auto& joint : _robot.joints) {
+			joint.omegaRad_s = 0.0f;
+			joint.thetaRefRad = joint.angleRad;
+		}
 	}
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
@@ -423,9 +441,8 @@ namespace robots {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				if (joint.limits.continuous) { targetRad = wrapRad(targetRad); }
-				else { joint.thetaRefRad = clampJointAngle(joint, targetRad); } // clamp to joint limits
-				joint.thetaRefRad = targetRad;
+				if (joint.limits.continuous) { joint.thetaRefRad = wrapRad(targetRad); }
+				else { joint.thetaRefRad = clampJointAngle(joint, targetRad); } // clamp to joint 
 				return true;
 			}
 		}
@@ -468,7 +485,7 @@ namespace robots {
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
 				float err = joint.thetaRefRad - joint.angleRad;
-				if (joint.limits.continuous) { err = std::abs(wrapToPi(err)); }
+				if (joint.limits.continuous) { err = wrapToPi(err); }
 				err = std::abs(err);
 				return err <= tolRad;
 			}
@@ -477,7 +494,29 @@ namespace robots {
 	}
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (degrees)
-	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, float tolDeg) const { return isJointAtTargetRad(childLink, glm::radians(tolDeg)); }
+	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, float tolDeg) const { 
+		return isJointAtTargetRad(childLink, glm::radians(tolDeg)); 
+	}
+
+	// Method to check if a specific robot joint is near a target angle within a tolerance (radians)
+	bool RobotSystem::isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const {
+		if (!_hasRobot) { return false; }
+		tolRad = std::abs(tolRad);
+
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				float err = targetRad - joint.angleRad;
+				if (joint.limits.continuous) { err = wrapToPi(err); }
+				return std::abs(err) <= tolRad;
+			}
+		}
+		return false;
+	}
+
+	// Method to check if a specific robot joint is near a target angle within a tolerance (degrees)
+	bool RobotSystem::isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const { 
+		return isJointNearAngleRad(childLink, glm::radians(targetDeg), glm::radians(tolDeg));
+	}
 
 	// --- ROBOT LINK AND ROOT POSE METHODS ---
 

@@ -49,11 +49,19 @@ namespace robots {
 		bool isJointAtTargetRad(const std::string& childLink, float tolRad) const;
 		bool isJointAtTargetDeg(const std::string& childLink, float tolDeg) const;
 
+		bool isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const;
+        bool isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const;
+
+		// --- SIMULATION STEP METHOD ---
+
 		void step(double dt, double simTime);
+
+		// --- ROBOT LOADING AND RESET METHODS ---
 
         void loadRobot(const std::string& name);
         void resetRobot();
         void clearRobot();
+        void stopAll();
 
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 

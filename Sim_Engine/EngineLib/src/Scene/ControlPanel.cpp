@@ -322,10 +322,10 @@ namespace gui {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Simulation Running...");
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->getSimTime());
 
-            if (_sim->getSimTime() >= simLength) {
-                _sim->stopSimulation();
-                _sim->setSimTime(0.0f);
-                D_RUNTIME("Total elapsed time : % .1f seconds.", simLength);
+			// make sure to stop sim when commands are finished
+            if (!_sim->isSimRunning()) {
+                ImGui::Text("Simulation Stopped.");
+                ImGui::Text("Elapsed Time: %.3f", _sim->getSimTime());
             }
         }
 

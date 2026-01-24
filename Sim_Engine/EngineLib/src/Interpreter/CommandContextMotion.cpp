@@ -149,7 +149,7 @@ namespace commands {
 			axisUnit.z() * std::sin(0.5 * angRad));
 
 		_rig.qTarget = (dq * _rig.qStart).normalized();
-		_rig.maxOmega = maxOmegaDegPerSec * (PI / 180.0); // rad/s
+		_rig.maxOmega = degToRad(maxOmegaDegPerSec);
 		_rig.active = true;
 		return OpResult::Success(false);
 	}

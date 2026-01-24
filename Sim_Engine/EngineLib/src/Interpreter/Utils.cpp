@@ -228,8 +228,8 @@ namespace utils {
 		};
 	}
 
-	double radiansToDegrees(double radians) { return radians * (180.0 / PI_d); }
-	mathlib::Vec3 radiansToDegrees(mathlib::Vec3& radians) {
+	double radToDeg(double radians) { return radians * (180.0 / PI_d); }
+	mathlib::Vec3 radToDeg(mathlib::Vec3& radians) {
 		return mathlib::Vec3{
 			radians.x() * (180.0 / PI_d),
 			radians.y() * (180.0 / PI_d),

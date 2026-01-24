@@ -125,6 +125,7 @@ namespace gui {
 			if (!_sim->isScriptRunning()) {
 				if (_program) _program->stop();
 				_sim->setActiveProgram(nullptr);
+				_sim->stopSimulation();
 				_sim->setScriptRunning(false);
 			}
 			else {
@@ -164,6 +165,7 @@ namespace gui {
 
 	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
 		_sim->setActiveProgram(nullptr);
+		_sim->stopSimulation();
 		_sim->setScriptRunning(false);
 
 		if (fault) { LOG_WARN("%s", reason); D_FAIL("%s", reason); }

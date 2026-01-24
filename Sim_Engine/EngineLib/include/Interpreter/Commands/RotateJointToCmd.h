@@ -25,7 +25,17 @@ namespace commands {
 		std::string _link;
 		double _angleDeg; // angle relative to the start position
 		double _maxOmegaDeg;
+		
 		bool _started = false;
+		double _elapsed = 0.0;
+		double _timeoutSec = 10.0;
+
+		double _targetRad = 0.0;
+		double _maxOmegaRad = 0.0;
+
+		double _settleT = 0.0;
+		double _noProgressT = 0.0;
+		double _bestAbsErr = 0.0;
 
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 

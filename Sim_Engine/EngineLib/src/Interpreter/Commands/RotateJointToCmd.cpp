@@ -22,37 +22,124 @@ namespace commands {
 	}
 
 	program_data::CmdResult RotateJointToCmd::update(CommandContextMotion& cntx, double dt) {
-		if (!_started){
-			_started = true;
-
-			auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaDeg * (constants::PI / 180.0));
-			if (!r1.ok) { markFailed(r1.message); D_FAIL("Failed to set max omega for link '%s' -> %s", _link.c_str(), r1.message.c_str()); return CmdResult{ CmdState::Failed, {}, r1.message }; }
-
-			auto r2 = cntx.setJointTargetRad(_link, _angleDeg * (constants::PI / 180.0));
-			if (!r2.ok) { markFailed(r2.message); D_FAIL("Failed to set target angle for link '%s' -> %s", _link.c_str(), r2.message.c_str()); return CmdResult{ CmdState::Failed, {}, r2.message }; }
-
-			D_INFO("Starting rotateJointTo() on link '%s' to angle %.2f deg at max omega %.2f deg/s", _link.c_str(), _angleDeg, _maxOmegaDeg);
-			return CmdResult{ CmdState::Executing, {}, "rotateJointTo() started" };
-		}
-
 		auto* robot = cntx.Robot();
-		if (!robot) {
-			markFailed("No robot loaded."); D_FAIL("rotateJointTo() failed: no robot loaded.");
-			return CmdResult{ CmdState::Failed, {}, "No robot loaded." };
-		}
+        // Defensive dt: avoid giant dt spikes causing weird timing/logic.
+        if (dt < 0.0) dt = 0.0;
+        if (dt > 0.05) dt = 0.05; // cap at 50ms (tweak as you like) -> best 
 
-		constexpr float tolDeg = 0.25f;	
-		if (robot->isJointAtTargetDeg(_link, tolDeg)) {
-			markCompleted(); D_SUCCESS("Completed rotateJointTo() on link '%s' to angle %.2f deg", _link.c_str(), _angleDeg);
-			return CmdResult{ CmdState::Executed, {}, "" };
-		}
+        // --- One-time setup ---
+        if (!_started) {
+            _started = true;
+            _elapsed = 0.0;
+            _settleT = 0.0;
+            _noProgressT = 0.0;
+            _bestAbsErr = std::numeric_limits<double>::infinity();
 
-		return CmdResult{ CmdState::Executing, {}, "" };
-	}
+            // Convert inputs
+            _targetRad = degToRad(_angleDeg);
+            _maxOmegaRad = degToRad(std::abs(_maxOmegaDeg)); // treat negative omega as magnitude
 
-	void RotateJointToCmd::execute() {
-		setResult({ CmdState::Executing, {}, "rotateJointTo() started" });
-	}
+            // Sanity clamp on max omega (avoid division by zero & "infinite timeout")
+            const double minOmegaRad = degToRad(0.5); // 0.5 deg/s minimum meaningful speed
+            if (_maxOmegaRad < minOmegaRad) {
+                markFailed("rotateJointTo: maxOmega too small.");
+                D_FAIL("rotateJointTo(): maxOmega too small (%.3f deg/s) on '%s'", _maxOmegaDeg, _link.c_str());
+                return { CmdState::Failed, {}, "rotateJointTo: maxOmega too small." };
+            }
+
+            // Apply to robot
+            auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaRad);
+            if (!r1.ok) {
+                markFailed(r1.message);
+                D_FAIL("Failed to set max omega for '%s' -> %s", _link.c_str(), r1.message.c_str());
+                return { CmdState::Failed, {}, r1.message };
+            }
+
+            auto r2 = cntx.setJointTargetRad(_link, _targetRad);
+            if (!r2.ok) {
+                markFailed(r2.message);
+                D_FAIL("Failed to set target for '%s' -> %s", _link.c_str(), r2.message.c_str());
+                return { CmdState::Failed, {}, r2.message };
+            }
+
+            // Compute an informed timeout
+            float theta0 = 0.0f;
+            if (!robot->tryGetJointAngleRad(_link, theta0)) {
+                markFailed("rotateJointTo: joint not found (angle).");
+                D_FAIL("rotateJointTo: joint not found (angle) for '%s'", _link.c_str());
+                return { CmdState::Failed, {}, "rotateJointTo: joint not found (angle)." };
+            }
+
+            const double delta = std::abs(_targetRad - (double)theta0);
+            const double Tmin = delta / _maxOmegaRad;
+
+            // Margin: allow settling + controller dynamics.
+            _timeoutSec = std::clamp(3.0 * Tmin + 0.5, 2.0, 60.0);
+
+            D_INFO("rotateJointTo start: link='%s' target=%.2f deg maxOmega=%.2f deg/s Tmin=%.2fs timeout=%.2fs", _link.c_str(), _angleDeg, _maxOmegaDeg, Tmin, _timeoutSec);
+
+            return { CmdState::Executing, {}, "rotateJointTo started" };
+        }
+
+        // --- Progress / completion ---
+        _elapsed += dt;
+
+        // Tunables (these are the “feel” knobs)
+        const double tolPosRad = degToRad(0.25); // 0.25 deg
+        const double tolOmegaRad = degToRad(0.20); // 0.20 deg/s
+        const double settleSec = 0.10;           // must be stable for 100ms
+
+        float theta = 0.0f;
+        float omega = 0.0f;
+
+        const bool gotTheta = robot->tryGetJointAngleRad(_link, theta);
+        const bool gotOmega = robot->tryGetJointOmegaRad(_link, omega);
+
+        if (!gotTheta) {
+            markFailed("rotateJointTo: joint not found (angle).");
+            D_FAIL("rotateJointTo: joint not found (angle) for '%s'", _link.c_str());
+            return { CmdState::Failed, {}, "rotateJointTo: joint not found (angle)." };
+        }
+        if (!gotOmega) { omega = 0.0f; }
+
+        const double errRad = _targetRad - (double)theta;
+        const double absErr = std::abs(errRad);
+        const double absOm = std::abs((double)omega);
+
+        if (absErr + 1e-9 < _bestAbsErr) { _bestAbsErr = absErr; _noProgressT = 0.0; }
+        else { _noProgressT += dt; }
+
+        const bool posOK = absErr <= tolPosRad;
+        const bool omegaOK = absOm <= tolOmegaRad;
+
+        if (posOK && omegaOK) {
+            _settleT += dt;
+            if (_settleT >= settleSec) {
+                markCompleted();
+                D_SUCCESS("rotateJointTo done: '%s' err=%.6f rad (%.3f deg) omega=%.6f rad/s t=%.3fs", _link.c_str(), errRad, errRad * 180.0 / PI, (double)omega, _elapsed);
+                return { CmdState::Executed, {}, "" };
+            }
+        }
+        else { _settleT = 0.0; }
+
+        // Stuck watchdog: error not improving for too long
+        if (_noProgressT >= 3.0) {
+            markFailed("rotateJointTo stuck (no progress).");
+            D_FAIL("rotateJointTo stuck: '%s' err=%.6f rad omega=%.6f rad/s t=%.3fs bestErr=%.6f", _link.c_str(), errRad, (double)omega, _elapsed, _bestAbsErr);
+            return { CmdState::Failed, {}, "rotateJointTo stuck (no progress)." };
+        }
+
+        // Timeout
+        if (_elapsed >= _timeoutSec) {
+            markFailed("rotateJointTo timed out.");
+            D_FAIL("rotateJointTo timeout: '%s' err=%.6f rad (%.3f deg) omega=%.6f rad/s t=%.3fs timeout=%.2fs", _link.c_str(), errRad, errRad * 180.0 / PI, (double)omega, _elapsed, _timeoutSec);
+            return { CmdState::Executed, {}, "rotateJointTo timed out." };
+        }
+
+        return { CmdState::Executing, {}, "" };
+    }
+
+	void RotateJointToCmd::execute() { setResult({ CmdState::Executing, {}, "rotateJointTo() started" }); }
 
 	std::unique_ptr<ICommand> CreateRotateJointToCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateJointTo(<linkName>, <omegaDeg>, <angleDeg>)

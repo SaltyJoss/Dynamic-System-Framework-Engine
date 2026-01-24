@@ -65,7 +65,8 @@ namespace interpreter {
 	}
 
 	void StoredProgram::stopSim() {
-		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
+		if (!_sim) { return; }
+		if (_sim->isSimRunning()) { _sim->stopSimulation(); }
 
 		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
 		if (obj) {
@@ -74,7 +75,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
+		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	void StoredProgram::pause() {
@@ -87,7 +88,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim && _sim->hasRobot()) { _sim->getRobotSystem()->updateRobotKinematics(); }
+		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	void StoredProgram::waitSim(double dt) {
@@ -123,12 +124,12 @@ namespace interpreter {
 		cmd->setContext(_cntx.motion());
 		cmd->setContext(_cntx.ui());
 
-		D_DEBUG(
-			"CMD %s | hasStarted=%d | state=%d",
-			typeid(*cmd).name(),
-			cmd->hasStarted(),
-			(int)cmd->currentResult().state
-		);
+		//D_DEBUG(
+		//	"CMD %s | hasStarted=%d | state=%d",
+		//	typeid(*cmd).name(),
+		//	cmd->hasStarted(),
+		//	(int)cmd->currentResult().state
+		//);
 
 		if (!cmd->hasStarted()) { cmd->execute(); }
 

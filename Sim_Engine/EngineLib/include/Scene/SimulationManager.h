@@ -174,8 +174,8 @@ namespace gui {
 		void setFixedDeltaTime(double dt) { _dt = dt; }
 
 		bool isSimRunning() const { return _simRunning; }
-        void startSimulation() { _simRunning = true; }
-        void stopSimulation() { _simRunning = false; }
+        void startSimulation();
+        void stopSimulation();
 
 		double getSimTime() const { return _simTime; }
 		void setSimTime(double t) { _simTime = t; }
