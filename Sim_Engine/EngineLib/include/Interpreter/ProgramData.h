@@ -22,6 +22,11 @@ namespace program_data {
 		std::string identifier;				// The command identifier
 		std::vector<std::string> tokens;	// The command arguments/tokens
 		int lineNumber = 0;					// Line number in the source code
+
+		// For parallel blocks
+		bool isParallelBlock = false;
+		double timeoutSec = 0.0;
+		std::vector<Command> inner;
 	};
 
 	// Struct representing program data

@@ -2,6 +2,7 @@
 #include "Interpreter/Parser.h"
 #include "Interpreter/RegisterCommand.h"
 #include "Interpreter/CommandFactory.h"
+#include "Interpreter/Commands/ParallelGroupCmd.h"
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
@@ -10,41 +11,10 @@ using namespace std;
 using namespace utils;
 
 namespace interpreter {
-
-	// --- Constructor ---
-	Parser::Parser(IStoredProgram* program) : _program(program) {
-		static const bool interpreterInit = [] {
-			commands::RegisterAllCommands(commands::CommandFactory::Instance());
-			return true;
-		}();
-
-		if (!_program) {
-			D_FAIL("Parser initialized with null IStoredProgram pointer.");
-			throw std::invalid_argument("Parser initialized with null IStoredProgram pointer.");
-		}
-	}
-
-	// --- Parsing Methods ---
-
-	void Parser::parse(std::string code) {
-		if (code.empty()) {
-			D_WARN("Cannot parse empty code string.");
-			_program->stop();
-			return;
-		}
-
-		_program->clear();
-		_programData.cmd.clear();
-		lines.clear();
-		
-		tokeniseAndClassifyCode(code);
-		buildProgram();
-	}
-
 	// --- Handlers ---
 
 	// Determine if a command requires an identifier
-	static bool requiresIdentifier(std::string_view cmdName) {
+	bool Parser::requiresIdentifier(std::string_view cmdName) {
 		std::string s = toLower(cmdName);
 		return	s == "spin"				||
 				s == "rotateby"			||
@@ -55,6 +25,14 @@ namespace interpreter {
 				s == "set"				||
 				s == "select" 			||
 				s == "load";
+	}
+
+	// Check if a string is a valid identifier
+	bool Parser::matchIdentifier(const std::string& s) {
+		if (s.empty()) return false;
+		if (!isalpha(s[0]) && s[0] != '_') { return false; }
+		for (char c : s) { if (!isalnum(c) && c != '_') return false; }
+		return true;
 	}
 
 	// Splits a string into arguments, respecting quotes and nested braces/parentheses
@@ -114,20 +92,43 @@ namespace interpreter {
 
 	// --- Line Analyzers ---
 
-	// Check if a line is blank or a comment
-	bool Parser::isBlankOrComment(std::string_view line) {
-		line = trim(line);
-		return line.empty() || line[0] == '#';
-	}
-	// Check if a line has an inline comment
-	bool Parser::hasCommentInline(const std::string_view s) {
-		for (char c : s) {
-			if (c == '#') { return true; }
-		}
-		return false;
+	// Check if a string starts with a specific word (case-insensitive)
+	static bool startsWithWord(std::string_view s, std::string_view word) {
+		s = utils::trim(s);
+		if (s.size() < word.size()) return false;
+		if (utils::toLower(s.substr(0, word.size())) != word) return false;
+		// next char must be whitespace, '(' or '{' or end
+		if (s.size() == word.size()) return true;
+		char c = s[word.size()];
+		return c == ' ' || c == '\t' || c == '(' || c == '{';
 	}
 
-	// --- Command and Program Builders ---
+	// Parse timeout value from a parallel(...) line
+	static double parseParallelTimeoutFromLine(std::string_view line, double def = 0.0) {
+		line = utils::trim(line);
+		// expecting "parallel(...)" or "parallel"
+		auto open = line.find('(');
+		if (open == std::string_view::npos) return def;
+		auto close = line.find(')', open);
+		if (close == std::string_view::npos) return def;
+
+		auto inside = utils::trim(line.substr(open + 1, close - open - 1));
+		if (inside.empty()) return def;
+
+		// stod needs std::string
+		try { return std::stod(std::string(inside)); }
+		catch (...) { return def; }
+	}
+
+	// Check if a line is blank or a comment
+	static bool isBlankOrComment(std::string_view line) {
+		line = trim(line);
+		return line.empty() || line[0] == '#';
+	}// Check if a line has an inline comment
+	static bool hasCommentInline(const std::string_view s) {
+		for (char c : s) { if (c == '#') { return true; } }
+		return false;
+	}
 
 	// Tokenise and classify code into commands
 	void Parser::tokeniseAndClassifyCode(const std::string& code) {
@@ -148,16 +149,126 @@ namespace interpreter {
 			start = end + 1;
 		}
 
-		for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
+		for (int i = 0; i < (int)lines.size(); ++i) {
 			_program->setCurrentLineNumber(i + 1);
 			std::string_view line = lines[i];
 
-			if (isBlankOrComment(line)) { continue; }
+			if (isBlankOrComment(line)) continue;
+
 			if (hasCommentInline(line)) {
-				size_t commentPos = line.find('//');
+				size_t commentPos = line.find('#');
 				line = line.substr(0, commentPos);
 			}
-			// NEW SYNTAX PARSING
+			line = trim(line);
+			if (line.empty()) continue;
+
+			// ---- PARALLEL BLOCK ----
+			if (startsWithWord(line, "parallel")) {
+				// parse timeout from "parallel(2.0)"
+				double timeoutSec = parseParallelTimeoutFromLine(line, 0.0);
+
+				// ensure '{' exists on this line or the next nonblank line
+				bool hasLBrace = (line.find('{') != std::string_view::npos);
+
+				// If '{' not on same line, scan forward to find it
+				while (!hasLBrace) {
+					int j = i + 1;
+					while (j < (int)lines.size() && (isBlankOrComment(lines[j]) || trim(lines[j]).empty())) j++;
+					if (j >= (int)lines.size()) { D_FAIL("parallel missing '{'"); _program->stop(); return; }
+					i = j; // advance outer index to brace line
+					_program->setCurrentLineNumber(i + 1);
+					auto braceLine = trim(lines[i]);
+					if (hasCommentInline(braceLine)) braceLine = trim(braceLine.substr(0, braceLine.find('#')));
+					hasLBrace = (braceLine.find('{') != std::string_view::npos);
+					if (!hasLBrace) { D_FAIL("parallel missing '{'"); _program->stop(); return; }
+				}
+
+				std::vector<std::unique_ptr<commands::ICommand>> inner;
+				int braceDepth = 1;
+
+				// consume subsequent lines until matching '}'
+				while (++i < (int)lines.size()) {
+					_program->setCurrentLineNumber(i + 1);
+					std::string_view innerLine = lines[i];
+
+					if (isBlankOrComment(innerLine)) continue;
+					if (hasCommentInline(innerLine)) {
+						size_t commentPos = innerLine.find('#');
+						innerLine = innerLine.substr(0, commentPos);
+					}
+					innerLine = trim(innerLine);
+					if (innerLine.empty()) continue;
+
+					// update brace depth
+					if (innerLine.find('{') != std::string_view::npos) braceDepth++;
+					if (innerLine.find('}') != std::string_view::npos) {
+						braceDepth--;
+						if (braceDepth == 0) break; // end of parallel block
+						continue;
+					}
+
+					// parse inner command line
+					program_data::Command cmd;
+					cmd.rawLine = std::string(innerLine);
+					cmd.lineNumber = _program->getCurrentLineNumber();
+
+					size_t open = innerLine.find('(');
+					size_t close = innerLine.rfind(')');
+
+					if (open == std::string_view::npos || close == std::string_view::npos || close < open) {
+						D_FAIL("Invalid DSL syntax in parallel block (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+						_program->stop(); return;
+					}
+
+					// extract command name
+					cmd.cmdName = std::string(toLower(trim(innerLine.substr(0, open))));
+					std::string_view inside = innerLine.substr(open + 1, close - open - 1);
+					auto parts = splitArgs(inside);
+
+					if (requiresIdentifier(cmd.cmdName)) {
+						if (parts.empty()) {
+							D_FAIL("Command '%s' requires identifier inside parallel (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+							_program->stop(); return;
+						}
+						cmd.identifier = std::string(toLower(parts[0]));
+						cmd.tokens.assign(parts.begin() + 1, parts.end());
+					}
+					else {
+						cmd.identifier.clear();
+						cmd.tokens = std::move(parts);
+					}
+
+					// build runtime ICommand for inner command
+					if (!commands::CommandFactory::Instance().hasCommand(cmd.cmdName)) {
+						D_FAIL("Unknown command in parallel: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+						_program->stop(); return;
+					}
+
+					// create the command
+					commands::ICommand* raw = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
+					if (!raw) {
+						D_FAIL("Failed to create inner command in parallel: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+						_program->stop(); return;
+					}
+
+					inner.emplace_back(raw);
+				}
+
+				if (braceDepth != 0) {
+					D_FAIL("parallel block missing closing '}'");
+					_program->stop(); return;
+				}
+
+				program_data::Command par;
+				par.cmdName = "parallel";
+				par.rawLine = std::string(line);
+				par.lineNumber = _program->getCurrentLineNumber();
+				par.isParallelBlock = true;
+				par.timeoutSec = timeoutSec;
+
+				_programData.cmd.push_back(std::move(par));
+				continue;
+			}
 			{
 				Command cmd;
 				cmd.rawLine = std::string(line);
@@ -203,21 +314,33 @@ namespace interpreter {
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
 
-		next_line:
+			next_line:
 			continue;
 		}
 	}
 
+	// --- Command and Program Builders ---
+
 	void Parser::buildProgram() {
 		for (auto& cmd : _programData.cmd) {
-			if (cmd.cmdName.empty())
-				continue;
+			if (cmd.cmdName.empty()) { continue; }
+			if (cmd.isParallelBlock) {
+				// Build parallel command
+				std::vector<std::unique_ptr<commands::ICommand>> innerCmds;
+				for (auto& innerCmdData : cmd.inner) {
+					commands::ICommand* raw = commands::CommandFactory::Instance().create(innerCmdData.cmdName, innerCmdData.identifier, innerCmdData.tokens);
+					if (!raw) {
+						LOG_INFO("Creating inner command in parallel: %s", innerCmdData.cmdName.c_str());
+						D_FAIL("Failed to create inner command in parallel: %s (line %d)", innerCmdData.cmdName.c_str(), innerCmdData.lineNumber);
+						_program->stop(); return;
+					}
+					innerCmds.emplace_back(raw);
+				}
 
-			D_DEBUG("SCRIPT: %s \n\t| target=%s \n\t| args=%d", 
-				cmd.cmdName.c_str(),
-				cmd.identifier.c_str(),
-				cmd.tokens.size()
-			);
+				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec);
+				_program->add(std::move(group));
+				continue;
+			}
 
 			buildCommand(cmd);
 		}
@@ -243,16 +366,16 @@ namespace interpreter {
 			return;
 		}
 
-		//D_DEBUG("Command: %s Identifier: %s Args: %d",
-		//	cmd.cmdName.c_str(),
-		//	cmd.identifier.c_str() ? "Empty" : nullptr,
-		//	(int)cmd.tokens.size() ? 0 : nullptr);
-
-		//for (const auto& t : cmd.tokens) { D_TRACE("Arg: %s", t.c_str()); }
-
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
 		if (command) {
+
+			D_DEBUG("SCRIPT: %s \n\t| target=%s \n\t| args=%d",
+				cmd.cmdName.c_str(),
+				cmd.identifier.c_str(),
+				cmd.tokens.size()
+			);
+
 			_program->add(command);
 			D_INFO("Added command: %s()", cmd.cmdName.c_str());
 		}
@@ -263,9 +386,35 @@ namespace interpreter {
 		}
 	}
 
-} // namespace interpreter
+	// --- Constructor ---
+	Parser::Parser(IStoredProgram* program) : _program(program) {
+		static const bool interpreterInit = [] {
+			commands::RegisterAllCommands(commands::CommandFactory::Instance());
+			return true;
+			}();
 
-// OLD SYNTAX: "ROTATE <objID>/<axis> <omega>,<startDeg>,<endDeg>"
-// NEW SYNTAX: "rotate(<identifier>, <omega>,<startDeg>,<endDeg>"
-// identifier could be <objID> or <{x,y,z}> or <"name">, for objects, axes, or robots respectively
+		if (!_program) {
+			D_FAIL("Parser initialized with null IStoredProgram pointer.");
+			throw std::invalid_argument("Parser initialized with null IStoredProgram pointer.");
+		}
+	}
+
+	// --- Parsing Methods ---
+
+	void Parser::parse(std::string code) {
+		if (code.empty()) {
+			D_WARN("Cannot parse empty code string.");
+			_program->stop();
+			return;
+		}
+
+		_program->clear();
+		_programData.cmd.clear();
+		lines.clear();
+
+		tokeniseAndClassifyCode(code);
+		buildProgram();
+	}
+
+} // namespace interpreter
 

@@ -145,6 +145,7 @@
     <ClInclude Include="include\Interpreter\CommandContextMotion.h" />
     <ClInclude Include="include\Interpreter\CommandFactory.h" />
     <ClInclude Include="include\Interpreter\Commands\LoadCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\ParallelGroupCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateByCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateJointByCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateJointToCmd.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="include\Interpreter\RegisterCommand.h" />
     <ClInclude Include="include\Interpreter\RunWrapper.h" />
     <ClInclude Include="include\Interpreter\StoredProgram.h" />
+    <ClInclude Include="include\Interpreter\Token.h" />
     <ClInclude Include="include\Interpreter\UIContext.h" />
     <ClInclude Include="include\Interpreter\Utils.h" />
     <ClInclude Include="include\Numerics\IntegrationService.h" />
@@ -215,6 +217,7 @@
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />
     <ClCompile Include="src\Interpreter\Commands\LoadCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\ParallelGroupCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateByCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateJointByCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateJointToCmd.cpp" />
