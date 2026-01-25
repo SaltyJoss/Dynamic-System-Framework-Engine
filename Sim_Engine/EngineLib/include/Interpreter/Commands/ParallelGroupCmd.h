@@ -24,6 +24,8 @@ namespace commands {
 		CmdResult currentResult() const override { return _result; }
 
 	private:
+		void execute() override;
+
 		Policy _policy;
 		std::vector<std::unique_ptr<ICommand>> _cmds;
 		bool _started = false;

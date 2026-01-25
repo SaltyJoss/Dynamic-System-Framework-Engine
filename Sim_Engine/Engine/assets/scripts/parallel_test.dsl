@@ -1,10 +1,13 @@
 load(robot, Z1)
+
+wait(2)
+
 start()
 
 parallel(2.0) {
-  rotateJointTo(link01, 160,  35)
-  rotateJointTo(link02, 160, -20)
-  rotateJointTo(link03, 160, -30)
+  rotateJointBy(link01, 50, 100)
+		rotateJointBy(link03, 37.5, -90)
+  rotateJointBy(link02, 35, 100)
 }
 
 stop()

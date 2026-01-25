@@ -183,7 +183,8 @@ namespace interpreter {
 					if (!hasLBrace) { D_FAIL("parallel missing '{'"); _program->stop(); return; }
 				}
 
-				std::vector<std::unique_ptr<commands::ICommand>> inner;
+				// inner commands
+				std::vector<program_data::Command> innerCmds;
 				int braceDepth = 1;
 
 				// consume subsequent lines until matching '}'
@@ -200,12 +201,9 @@ namespace interpreter {
 					if (innerLine.empty()) continue;
 
 					// update brace depth
-					if (innerLine.find('{') != std::string_view::npos) braceDepth++;
-					if (innerLine.find('}') != std::string_view::npos) {
-						braceDepth--;
-						if (braceDepth == 0) break; // end of parallel block
-						continue;
-					}
+					std::string_view t = innerLine;
+					if (t == "{") { braceDepth++; continue; }
+					if (t == "}") { braceDepth--; if (braceDepth == 0) break; continue; }
 
 					// parse inner command line
 					program_data::Command cmd;
@@ -238,25 +236,14 @@ namespace interpreter {
 						cmd.tokens = std::move(parts);
 					}
 
-					// build runtime ICommand for inner command
-					if (!commands::CommandFactory::Instance().hasCommand(cmd.cmdName)) {
-						D_FAIL("Unknown command in parallel: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
-						_program->stop(); return;
-					}
-
-					// create the command
-					commands::ICommand* raw = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
-					if (!raw) {
-						D_FAIL("Failed to create inner command in parallel: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
-						_program->stop(); return;
-					}
-
-					inner.emplace_back(raw);
+					cmd.isParallelBlock = false;		 // not a parallel block
+					innerCmds.push_back(std::move(cmd)); // store inner command
 				}
 
 				if (braceDepth != 0) {
 					D_FAIL("parallel block missing closing '}'");
-					_program->stop(); return;
+					_program->stop(); 
+					return;
 				}
 
 				program_data::Command par;
@@ -265,6 +252,7 @@ namespace interpreter {
 				par.lineNumber = _program->getCurrentLineNumber();
 				par.isParallelBlock = true;
 				par.timeoutSec = timeoutSec;
+				par.inner = std::move(innerCmds);
 
 				_programData.cmd.push_back(std::move(par));
 				continue;
@@ -325,19 +313,19 @@ namespace interpreter {
 		for (auto& cmd : _programData.cmd) {
 			if (cmd.cmdName.empty()) { continue; }
 			if (cmd.isParallelBlock) {
-				// Build parallel command
+				// Build inner commands vector
 				std::vector<std::unique_ptr<commands::ICommand>> innerCmds;
+				innerCmds.reserve(cmd.inner.size());
+
+				// Build inner commands
 				for (auto& innerCmdData : cmd.inner) {
 					commands::ICommand* raw = commands::CommandFactory::Instance().create(innerCmdData.cmdName, innerCmdData.identifier, innerCmdData.tokens);
-					if (!raw) {
-						LOG_INFO("Creating inner command in parallel: %s", innerCmdData.cmdName.c_str());
-						D_FAIL("Failed to create inner command in parallel: %s (line %d)", innerCmdData.cmdName.c_str(), innerCmdData.lineNumber);
-						_program->stop(); return;
-					}
+					if (!raw) { _program->stop(); return; }
 					innerCmds.emplace_back(raw);
 				}
 
-				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec);
+				// Create ParallelGroupCmd
+				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
 				continue;
 			}

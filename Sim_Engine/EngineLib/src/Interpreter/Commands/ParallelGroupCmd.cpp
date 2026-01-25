@@ -26,37 +26,44 @@ namespace commands {
 
 		for (auto& cmd : _cmds) {
 			if (!cmd) { continue; }
-
+			if (!cmd->hasStarted()) { cmd->execute(); }
 			CmdResult r = cmd->update(cntx, dt);
 
-			switch (r.state) {
-				case CmdState::Executed: executed++; break;
-				case CmdState::Failed: failed++; break;
-				case CmdState::Executing:
-				default: running++; break;
-			}
+			if (r.state == CmdState::Executed) { executed++; }
+			else if (r.state == CmdState::Failed) { failed++; }
+			else { running++; }
 		}
 
-		// Check for timeout
+		// Timeout handling 
 		if (_timeoutSec > 0.0 && _elapsed >= _timeoutSec) {
-			D_WARN("parallel timed out after %.3fs (executed=%d failed=%d running=%d)", _elapsed, executed, failed, running);
-			if (cntx.Robot()) { cntx.Robot()->stopAll(); }
-			_result = { CmdState::Failed, {}, "ParallelGroupCmd: Timeout reached (soft-finish)" };
+			D_WARN("parallel timed out after %.3fs", _elapsed);
+
+			// “soft finish”
+			if (cntx.Robot()) cntx.Robot()->stopAll();
+
+			// treats timeout as Executed - ill keep for now, may explore different timeout policies later
+			_result = { CmdState::Executed, {}, "parallel: timeout (soft-finish)" };
 			return _result;
 		}
-		
-		// Evaluate based on policy
-		if (_policy == Policy::Any) { // Policy::Any
-			if (failed > 0) { _result = { CmdState::Failed, {}, "ParallelGroupCmd: At least one command failed" }; return _result; } 
-			else if (running == 0) { _result = { CmdState::Executed, {}, "" }; return _result; }
-			_result = { CmdState::Executing, {}, "" };
-			return _result;
-		} else { // Policy::All
-			if (executed > 0) { _result = { CmdState::Executed, {}, "" }; return _result; } 
-			else if (running == 0 && failed == (int)_cmds.size()) { _result = { CmdState::Failed, {}, "ParallelGroupCmd: At least one command failed" }; return _result; }
+
+		if (_policy == Policy::All) { // Policy::All
+			if (failed > 0) { _result = { CmdState::Failed, {}, "parallel: child failed" }; return _result; }
+			if (executed == (int)_cmds.size()) { _result = { CmdState::Executed, {}, "" }; return _result; }
 			_result = { CmdState::Executing, {}, "" };
 			return _result;
 		}
+		else { // Policy::Any
+			if (executed > 0) { _result = { CmdState::Executed, {}, "" }; return _result; }
+			if (failed == (int)_cmds.size()) { _result = { CmdState::Failed, {}, "parallel: all children failed" }; return _result; }
+			_result = { CmdState::Executing, {}, "" }; 
+			return _result;
+		}
+	}
+
+	void ParallelGroupCmd::execute() {
+		_started = false;
+		_elapsed = 0.0;
+		_result = { CmdState::Executing, {}, "" };
 	}
 
 } // namespace commands
