@@ -11,7 +11,6 @@
 namespace interpreter {
 	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
 		_cntx(sim, [&] { scene::Object* o = (sim ? sim->getObject() : nullptr); return o ? o->id : scene::ObjectID::INVALID_OBJECT_ID; }()) {
-		_commands = std::vector<commands::ICommand*>();
 	}
 
 	StoredProgram::~StoredProgram() { clear(); }
@@ -19,7 +18,7 @@ namespace interpreter {
 	// Convert mathlib::Vec3 to glm::vec3
 	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 
-	void StoredProgram::add(commands::ICommand* cmd) {
+	void StoredProgram::add(std::unique_ptr<commands::ICommand> cmd) {
 		if (cmd == nullptr) {
 			D_FAIL("Attempted to add null command to StoredProgram.");
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
@@ -27,9 +26,19 @@ namespace interpreter {
 
 		cmd->setContext(_cntx.motion());
 		cmd->setContext(_cntx.ui());
-
 		cmd->setProgram(this);
-		_commands.push_back(cmd);
+		_commands.push_back(std::move(cmd));
+	}
+
+	void StoredProgram::add(commands::ICommand* cmd) {
+		if (cmd == nullptr) {
+			D_FAIL("Attempted to add null command to StoredProgram.");
+			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
+		}
+		cmd->setContext(_cntx.motion());
+		cmd->setContext(_cntx.ui());
+		cmd->setProgram(this);
+		_commands.emplace_back(cmd);
 	}
 
 	void StoredProgram::reset() {
@@ -39,7 +48,7 @@ namespace interpreter {
 
 	// Clear all stored instructions
 	void StoredProgram::clear() {
-		for (auto* c : _commands) { delete c; }
+		for (auto& cmd : _commands) { if (cmd) { cmd->setProgram(nullptr); } } // Clear program reference from commands
 		_commands.clear();
 		_currentLineNumber = 0;
 		PC = 0;

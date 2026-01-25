@@ -468,6 +468,12 @@
     <ClInclude Include="..\External\MathLib\include\kinematics\URDF_Types.h">
       <Filter>External\MathLib\Kinematics</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\ParallelGroupCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Token.h">
+      <Filter>Header Files\include\Interpreter\Parsing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -649,6 +655,9 @@
     </ClCompile>
     <ClCompile Include="src\Numerics\IntegrationService.cpp">
       <Filter>Source Files\src\Numerics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\ParallelGroupCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

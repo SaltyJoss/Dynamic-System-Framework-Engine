@@ -15,7 +15,15 @@ namespace interpreter {
 		StoredProgram(gui::simManager* sim);
 		~StoredProgram() override;
 
-		// Add a command to the program
+		// Delete copy constructor and assignment operator to prevent copies
+		StoredProgram(const StoredProgram&) = delete;
+		StoredProgram& operator=(const StoredProgram&) = delete;
+
+		// Delete move constructor and assignment operator to prevent moves
+		StoredProgram(StoredProgram&&) = delete;
+		StoredProgram& operator=(StoredProgram&&) = delete;
+
+		void add(std::unique_ptr<commands::ICommand> cmd) override;
 		void add(commands::ICommand* cmd) override;
 
 		void reset() override;
@@ -88,7 +96,8 @@ namespace interpreter {
 		int _currentLineNumber = 0;
 		int PC = 0; // Program Counter
 
-		std::vector<commands::ICommand*> _commands;
+		std::vector<std::unique_ptr<commands::ICommand>> _commands;
+
 		IntegratorMethod _integratorMethod = IntegratorMethod::Euler; // Default integrator method
 		mathlib::Vec3 _rgb = mathlib::Vec3{ 1.0f, 0.0f, 0.0f };
 	};

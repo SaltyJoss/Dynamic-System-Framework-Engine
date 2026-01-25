@@ -19,6 +19,7 @@ namespace interpreter {
 		virtual ~IStoredProgram() = default;
 
 		// Add a command to the program
+		virtual void add(std::unique_ptr<commands::ICommand> cmd) = 0;
 		virtual void add(commands::ICommand* cmd) = 0;
 
 		// Reset program to initial state
