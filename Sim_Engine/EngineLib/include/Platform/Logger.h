@@ -62,11 +62,19 @@
 #include <sstream>
 
 enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
+enum class simLogLevel { Error, Fail, Success, Runtime, Rotate, Translate };
+enum class LogType { General, Simulation };
 
 struct LogEntry {
 	LogLevel level = LogLevel::Info;
     std::string type;
     std::string message;
+};
+
+struct ENGINE_API simEntry {
+    simLogLevel level = simLogLevel::Runtime;
+    std::string type;
+	std::string message;
 };
 
 class ENGINE_API Debug {
@@ -107,6 +115,7 @@ public:
     }
 
     const std::vector<LogEntry>& Entries() const { return _entries; }
+	const std::vector<simEntry>& SimEntries() const { return _simEntries; }
 
 	// General logging functions
     void logError(const char* type, const char* format, ...) {
@@ -142,9 +151,22 @@ public:
         LogEntry e;
         e.level = level;
         e.message = buffer;
-
         _entries.push_back(std::move(e));
     }
+
+    void simLog(simLogLevel level, const char* format, ...) {
+        char buffer[1024];
+
+        va_list args;
+        va_start(args, format);
+        std::vsnprintf(buffer, sizeof(buffer), format, args);
+        va_end(args);
+
+        simEntry e;
+        e.level = level;
+        e.message = buffer;
+        _simEntries.push_back(std::move(e));
+	}
 
     void clear() {
         std::lock_guard<std::mutex> lock(_mutex);
@@ -155,6 +177,7 @@ private:
     std::mutex _mutex;
     std::ofstream _file;
     std::vector<LogEntry> _entries;
+	std::vector<simEntry> _simEntries;
 
 	// Centralised logging function for global logs outputted to file and console
     void logCentral(const char* level, const char* type, const char* format, va_list args) {
@@ -183,4 +206,5 @@ private:
 
 // Global logger instance
 extern ENGINE_API Debug gLog;
+
 

@@ -213,11 +213,10 @@ namespace robots {
 			dx[i] = omega;		// dtheta/dt = omega
 			dx[i + n] = alpha;	// domega/dt = alpha
 
-			if (i == 2) {
-				LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
-					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
-			}
-
+			LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
+				theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+			SIM_ROTATE("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
+				theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
 		}
 		return dx;
 	}

@@ -116,6 +116,10 @@ namespace commands {
 		Vec3 w = (float)omega * axis.normalized();
 
 		s.angularVelocity = w;
+
+		SIM_ROTATE("Updating rigid rotate to object id=%d angleErr=%.3f rad omega=%.3f rad/s axis=(%.3f, %.3f, %.3f)",
+			(int)_rig.obj->id, angle, omega, axis.x(), axis.y(), axis.z());
+
 		return OpResult::Success(false);
 	}
 
@@ -125,6 +129,8 @@ namespace commands {
 
 		const bool done = _robot->isJointAtTargetRad(_jnt.link, (float)_jnt.epsAngle);
 		if (done) { _jnt.active = false; return OpResult::Success(true); }
+
+		SIM_ROTATE("Updating joint rotate to link='%s'", _jnt.link.c_str());
 
 		return OpResult::Success(false);
 	}
@@ -151,6 +157,10 @@ namespace commands {
 		_rig.qTarget = (dq * _rig.qStart).normalized();
 		_rig.maxOmega = degToRad(maxOmegaDegPerSec);
 		_rig.active = true;
+
+		SIM_ROTATE("Begin rigid rotate to object id=%d axis=(%.3f, %.3f, %.3f) angle=%.3f deg maxOmega=%.3f deg/s",
+			(int)obj->id, axisUnit.x(), axisUnit.y(), axisUnit.z(), angleDeg, maxOmegaDegPerSec);
+
 		return OpResult::Success(false);
 	}
 
@@ -175,6 +185,9 @@ namespace commands {
 		_jnt.active = true;
 		_jnt.wrapShortest = true;
 		_jnt.epsAngle = 0.25 * (PI / 180.0);
+
+		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s",
+			link.c_str(), current, target, maxOmega);
 
 		return OpResult::Success(false);
 	}
@@ -206,7 +219,7 @@ namespace commands {
 	// --- ROTATION COMMAND METHODS ---
 	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt) {
 		if (!obj || !obj->getMesh()) {
-			D_FAIL("No object provided for rotation.");
+			SIM_FAIL("No object provided for rotation.");
 			return OpResult::Failure("No object provided for rotation.");
 		}
 		auto& s = obj->state;
@@ -217,7 +230,7 @@ namespace commands {
 		if (axes.y) { s.angularVelocity.y() = internalOmega; }
 		if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
-		D_INFO("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
+		SIM_ROTATE("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f",
 			omega, (int)_angularUnits, internalOmega);
 
 		// return success
@@ -227,7 +240,7 @@ namespace commands {
 	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj || !obj->getMesh()) {
-			D_FAIL("No object associated with this context.");
+			SIM_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 		auto& s = obj->state;
@@ -266,7 +279,7 @@ namespace commands {
 	OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double vel) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) {
-			D_FAIL("No object associated with this context.");
+			SIM_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 
@@ -278,7 +291,7 @@ namespace commands {
 	OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) {
-			D_FAIL("No object associated with this context.");
+			SIM_FAIL("No object associated with this context.");
 			return OpResult::Failure("No object associated with this context.");
 		}
 

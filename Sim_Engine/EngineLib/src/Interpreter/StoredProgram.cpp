@@ -12,12 +12,12 @@ namespace interpreter {
 	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
 		_cntx(sim, [&] { scene::Object* o = (sim ? sim->getObject() : nullptr); return o ? o->id : scene::ObjectID::INVALID_OBJECT_ID; }()) {
 	}
-
 	StoredProgram::~StoredProgram() { clear(); }
 
 	// Convert mathlib::Vec3 to glm::vec3
 	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 
+	// Add a command to the program
 	void StoredProgram::add(std::unique_ptr<commands::ICommand> cmd) {
 		if (cmd == nullptr) {
 			D_FAIL("Attempted to add null command to StoredProgram.");
@@ -30,6 +30,7 @@ namespace interpreter {
 		_commands.push_back(std::move(cmd));
 	}
 
+	// Add a command to the program
 	void StoredProgram::add(commands::ICommand* cmd) {
 		if (cmd == nullptr) {
 			D_FAIL("Attempted to add null command to StoredProgram.");
@@ -41,6 +42,7 @@ namespace interpreter {
 		_commands.emplace_back(cmd);
 	}
 
+	// Reset program to initial state
 	void StoredProgram::reset() {
 		_currentLineNumber = 0;
 		PC = 0;
@@ -56,23 +58,27 @@ namespace interpreter {
 		_stopRequested = false;
 	}
 
+	// Start program execution
 	void StoredProgram::start() {
 		_state = ProgramState::Running;
 		_stopRequested = false;
 	}
 
+	// Start simulation
 	void StoredProgram::startSim() {
 		if (_state != ProgramState::Running) { start(); }
 		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
 	}
 
+	// Stop program execution
 	void StoredProgram::stop() {
 		_state = ProgramState::Stopped;
 		_stopRequested = true;
 
 		stopSim(); // Also stop simulation, if running
 	}
-
+	
+	// Stop simulation
 	void StoredProgram::stopSim() {
 		if (!_sim) { return; }
 		if (_sim->isSimRunning()) { _sim->stopSimulation(); }
@@ -87,6 +93,7 @@ namespace interpreter {
 		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
+	// Pause program execution
 	void StoredProgram::pause() {
 		_state = ProgramState::Paused;
 
@@ -100,6 +107,7 @@ namespace interpreter {
 		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
+	// Wait for simulation to run for dt seconds
 	void StoredProgram::waitSim(double dt) {
 		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
 		double elapsed = 0.0;
@@ -111,10 +119,14 @@ namespace interpreter {
 		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
 	}
 
+	// Get current program status
 	ProgramStatus StoredProgram::status() const { return ProgramStatus{}; }
+	// Bool for tracking if the program has reached the end
 	bool StoredProgram::atEnd() const { return PC >= static_cast<int>(_commands.size()); }
+	// Bool for tracking if there are commands left to execute
 	bool StoredProgram::commandsLeft() const { return PC >= 0 && PC < static_cast<int>(_commands.size()); }
 
+	// Step through the program by dt seconds
 	void StoredProgram::step(double dt) {
 		//LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
 
@@ -132,13 +144,6 @@ namespace interpreter {
 		auto& cmd = _commands[PC];
 		cmd->setContext(_cntx.motion());
 		cmd->setContext(_cntx.ui());
-
-		//D_DEBUG(
-		//	"CMD %s | hasStarted=%d | state=%d",
-		//	typeid(*cmd).name(),
-		//	cmd->hasStarted(),
-		//	(int)cmd->currentResult().state
-		//);
 
 		if (!cmd->hasStarted()) { cmd->execute(); }
 
@@ -201,6 +206,7 @@ namespace interpreter {
 			D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
 		}
 	}
+
 	// Get Colour
 	mathlib::Vec3 StoredProgram::getColour() const { return _rgb; }
 } // namespace interpreter

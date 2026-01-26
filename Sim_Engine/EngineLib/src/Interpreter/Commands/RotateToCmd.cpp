@@ -28,7 +28,7 @@ namespace commands {
 		auto result = cntx.updateRigidRotateTo(dt);
 		if (!result.ok) {
 			markFailed(result.message);
-			D_FAIL("Failed to update rotateTo -> %s", result.message.c_str());
+			SIM_FAIL("Failed to update rotateTo -> %s", result.message.c_str());
 			return CmdResult{ CmdState::Failed, {}, result.message };
 		}
 
@@ -59,7 +59,7 @@ namespace commands {
 		auto result = _cntxMtn->beginRigidRotateTo(obj, axis, _maxOmegaDeg, _angleDeg);
 		if (!result.ok) {
 			markFailed(result.message);
-			D_FAIL("Failed to start rotateTo -> %s", result.message.c_str());
+			SIM_FAIL("Failed to start rotateTo -> %s", result.message.c_str());
 			return;
 		}
 	}
@@ -67,13 +67,13 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateRotateToCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateTo(<objID>, <axes>, <omegaDeg>, <angleDeg>)
 		if (args.size() != 3) {
-			D_FAIL("rotateTo command expects 3 args: <axes>, <omegaDeg>, <angleDeg>, got %zu.", args.size());
+			SIM_FAIL("rotateTo command expects 3 args: <axes>, <omegaDeg>, <angleDeg>, got %zu.", args.size());
 			return nullptr;
 		}
 
 		scene::ObjectID objID{};
 		if (!tryParseObjID(id, objID)) {
-			D_FAIL("rotateTo command requires a valid object ID as the first argument.");
+			SIM_FAIL("rotateTo command requires a valid object ID as the first argument.");
 			return nullptr;
 		}
 
@@ -83,7 +83,7 @@ namespace commands {
 		auto omegaOpt = parseDouble(args[1]);
 		auto angleOpt = parseDouble(args[2]);
 		if (!omegaOpt || !angleOpt) {
-			D_FAIL("rotateTo command requires numeric omega and angle.");
+			SIM_FAIL("rotateTo command requires numeric omega and angle.");
 			return nullptr;
 		}
 
