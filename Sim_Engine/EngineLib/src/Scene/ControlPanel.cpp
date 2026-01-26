@@ -621,7 +621,7 @@ namespace gui {
     void ControlPanel::roboticArmSelector() {
         if (!_showRobotSelector) return;
 
-        ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
+        ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_NoDocking);
 
         ImGui::Text("Select a robotic arm model:");
         ImGui::Separator();
@@ -639,7 +639,7 @@ namespace gui {
     void ControlPanel::roboticCardDisplay(const char* name, const char* company) {
         ImGui::PushID(name);
 
-        ImGui::BeginChild("robot_card", ImVec2(0, 42.5), true, ImGuiWindowFlags_None);
+        ImGui::BeginChild("robot_card", ImVec2(0, 55), true, ImGuiWindowFlags_NoScrollbar);
 
         // Loads robot
         if (ImGui::Selectable(name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
@@ -653,7 +653,7 @@ namespace gui {
 			_hasRobot = true;
         }
 
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", company);
+        ImGui::TextDisabled("Company: %s", company);
 
         ImGui::EndChild();
         ImGui::Spacing();

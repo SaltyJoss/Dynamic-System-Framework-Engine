@@ -53,10 +53,14 @@ namespace gui {
 
 		void renderEnvironment();
 		void renderCmdInstructions();
+
 		void terminateScript(const char* reason, bool fault);
+
 		bool tryLoadFromDialog();
 		bool trySaveScriptToFile(const std::string& filepath);
+
 		void renderSaveAsPopup();
+
 		void beginEditorPanel(const char* id);
 		void endEditorPanel();
 

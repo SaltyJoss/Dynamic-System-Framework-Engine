@@ -114,7 +114,10 @@ public:
         return inst;
     }
 
+    std::vector<LogEntry>& Entries() { return _entries; }
     const std::vector<LogEntry>& Entries() const { return _entries; }
+
+    std::vector<simEntry>& SimEntries() { return _simEntries; }
 	const std::vector<simEntry>& SimEntries() const { return _simEntries; }
 
 	// General logging functions
@@ -172,6 +175,8 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         _entries.clear();
     }
+
+    void clearSimLog() { _simEntries.clear(); }
 
 private:
     std::mutex _mutex;

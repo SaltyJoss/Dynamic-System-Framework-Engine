@@ -46,7 +46,7 @@ namespace gui {
 	class ENGINE_API DebugPanel {
 	public:
 		void render();
-		void clearSimLog() { _simEnteries.clear(); simSelectedLines.clear(); }
+		void clearSimLog() { gLog.Instance().clearSimLog(); simSelectedLines.clear(); }
 
 	private:
 		bool autoScroll = true;
