@@ -474,6 +474,9 @@
     <ClInclude Include="include\Interpreter\Token.h">
       <Filter>Header Files\include\Interpreter\Parsing</Filter>
     </ClInclude>
+    <ClInclude Include="include\Robots\TrajectoryManager.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -658,6 +661,9 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\ParallelGroupCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\TrajectoryManager.cpp">
+      <Filter>Source Files\src\Robots</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

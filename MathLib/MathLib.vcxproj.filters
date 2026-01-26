@@ -111,9 +111,6 @@
     <ClInclude Include="MathLib\include\kinematics\Jacobian.h">
       <Filter>Header Files\include\kinematics</Filter>
     </ClInclude>
-    <ClInclude Include="MathLib\include\kinematics\Trajectory.h">
-      <Filter>Header Files\include\kinematics</Filter>
-    </ClInclude>
     <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h">
       <Filter>Header Files\include\kinematics</Filter>
     </ClInclude>
@@ -128,6 +125,21 @@
     </ClInclude>
     <ClInclude Include="MathLib\include\kinematics\URDF_Types.h">
       <Filter>Header Files\include\kinematics</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\TrajectoryTypes.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\TrapezoidTrajectory.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\SinusoidalTrajectory.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\MultisineTrajectory.h">
+      <Filter>Header Files\include\control</Filter>
+    </ClInclude>
+    <ClInclude Include="MathLib\include\control\IJointTrajectory.h">
+      <Filter>Header Files\include\control</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -159,9 +171,6 @@
       <Filter>Source Files\src\kinematics</Filter>
     </ClCompile>
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp">
-      <Filter>Source Files\src\kinematics</Filter>
-    </ClCompile>
-    <ClCompile Include="MathLib\src\kinematics\Trajectory.cpp">
       <Filter>Source Files\src\kinematics</Filter>
     </ClCompile>
     <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp">

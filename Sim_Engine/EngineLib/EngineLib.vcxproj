@@ -192,6 +192,7 @@
     <ClInclude Include="include\Robots\RobotLoader.h" />
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Robots\RobotSystem.h" />
+    <ClInclude Include="include\Robots\TrajectoryManager.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\CommandScriptEditor.h" />
@@ -234,6 +235,7 @@
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Numerics\IntegrationService.cpp" />
+    <ClCompile Include="src\Robots\TrajectoryManager.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

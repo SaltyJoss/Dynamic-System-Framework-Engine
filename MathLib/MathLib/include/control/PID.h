@@ -32,5 +32,5 @@ namespace control {
 	/// <param name="error">The current error signal.</param>
 	/// <param name="dt">The time step since the last update.</param>
 	/// <param name="out_u">The computed control output.</param>
-	void MATHLIB_API PID_Update(const PID_Gains& gains, PID_State& state, const VecX& error, double dt, VecX& out_u);
-}
+	void MATHLIB_API PID(const PID_Gains& gains, PID_State& state, const VecX& error, double dt, VecX& out_u);
+} // namespace control

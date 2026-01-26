@@ -103,8 +103,13 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
   <ItemGroup>
     <ClInclude Include="MathLib\framework.h" />
     <ClInclude Include="MathLib\include\control\Error.h" />
+    <ClInclude Include="MathLib\include\control\IJointTrajectory.h" />
     <ClInclude Include="MathLib\include\control\Metrics.h" />
+    <ClInclude Include="MathLib\include\control\MultisineTrajectory.h" />
     <ClInclude Include="MathLib\include\control\PID.h" />
+    <ClInclude Include="MathLib\include\control\SinusoidalTrajectory.h" />
+    <ClInclude Include="MathLib\include\control\TrajectoryTypes.h" />
+    <ClInclude Include="MathLib\include\control\TrapezoidTrajectory.h" />
     <ClInclude Include="MathLib\include\core\constants.h" />
     <ClInclude Include="MathLib\include\core\Types.h" />
     <ClInclude Include="MathLib\include\core\Utils.h" />
@@ -118,7 +123,6 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClInclude Include="MathLib\include\kinematics\DH_Params.h" />
     <ClInclude Include="MathLib\include\kinematics\Forward_Kinematics.h" />
     <ClInclude Include="MathLib\include\kinematics\Jacobian.h" />
-    <ClInclude Include="MathLib\include\kinematics\Trajectory.h" />
     <ClInclude Include="MathLib\include\kinematics\Transform_Utils.h" />
     <ClInclude Include="MathLib\include\kinematics\URDF_Types.h" />
     <ClInclude Include="MathLib\include\MathLibAPI.h" />
@@ -140,7 +144,6 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp" />
     <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp" />
-    <ClCompile Include="MathLib\src\kinematics\Trajectory.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
