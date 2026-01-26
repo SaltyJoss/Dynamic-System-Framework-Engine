@@ -88,22 +88,18 @@ namespace commands {
 
 	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-
 		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { 
 			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
 		}
-
 		return OpResult::Success(true);
 	}
 
 	utils::OpResult CommandContextMotion::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-
 		float refRad = 0.0f;
 		if (!_robot->tryGetJointTargetRad(link, refRad)) { 
 			return OpResult::Failure("Failed to get joint angle -> Joint not found."); 
 		}
-
 		const double targetRad = (double)refRad + deltaRad;
 		return setJointTargetRad(link, targetRad);
 	}
@@ -111,11 +107,27 @@ namespace commands {
 	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-
 		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
 		}
+		return OpResult::Success(true);
+	}
 
+	// Sets the reference angular velocity for a joint (rad/s)
+	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double omegaRefRad_s) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (!_robot->trySetJointOmegaRefRad(link, (float)omegaRefRad_s)) { 
+			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
+		}
+		return OpResult::Success(true);
+	}
+
+	// Sets the reference angular acceleration for a joint (rad/s^2)
+	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double alphaRefRad_s2) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (!_robot->trySetJointAlphaRefRad(link, (float)alphaRefRad_s2)) { 
+			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
+		}
 		return OpResult::Success(true);
 	}
 

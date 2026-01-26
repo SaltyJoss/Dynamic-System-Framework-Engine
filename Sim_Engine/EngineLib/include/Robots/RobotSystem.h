@@ -60,6 +60,11 @@ namespace robots {
 		bool isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const;
         bool isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const;
 
+		bool trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad);
+		bool trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad);
+
+		bool tryZeroJointRefDerivatives();
+
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);

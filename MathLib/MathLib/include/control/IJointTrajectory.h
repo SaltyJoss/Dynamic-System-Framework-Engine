@@ -7,7 +7,7 @@ using namespace mathlib;
 
 namespace control {
 	// Joint Trajectory Interface
-	class MATHLIB_API IJointTrajectory {
+	class IJointTrajectory {
 	public:
 		virtual ~IJointTrajectory() = default;
 

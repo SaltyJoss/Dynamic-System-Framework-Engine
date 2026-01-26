@@ -21,6 +21,7 @@ namespace interpreter {
 				s == "rotateto"			||
 				s == "rotatejointby"	||
 				s == "rotatejointto"	||
+				s == "trajset"			||
 				s == "translate"		||
 				s == "set"				||
 				s == "select" 			||

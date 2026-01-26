@@ -6,7 +6,7 @@
 using namespace mathlib;
 
 namespace control {
-	class MATHLIB_API TrapezoidTrajectory : public IJointTrajectory {
+	class TrapezoidTrajectory : public IJointTrajectory {
 	public:
 		TrapezoidTrajectory(double t0, double q0, double q1, double vMax, double aMax)
 			: _t0(t0), _q0(q0), _q1(q1), _vMax(std::abs(vMax)), _aMax(std::abs(aMax)) {

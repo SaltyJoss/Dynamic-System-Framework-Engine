@@ -148,6 +148,12 @@
     <Filter Include="Source Files\src\Numerics">
       <UniqueIdentifier>{41d57409-264d-454e-8dea-dbc123feee0b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\src\Interpreter\Commands\Trajectory">
+      <UniqueIdentifier>{dce4fb01-c98d-46e6-9da5-193139ff6e6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\Interpreter\Commands\Trajectory">
+      <UniqueIdentifier>{c56ddd3d-5655-4a69-a207-e2cd8ee31eb6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -477,6 +483,27 @@
     <ClInclude Include="include\Robots\TrajectoryManager.h">
       <Filter>Header Files\include\Robots</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\TrajSetCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\Trajectory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\TrajClearCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\Trajectory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\MultisineTrajectory.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\IJointTrajectory.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\SinusoidalTrajectory.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\TrajectoryTypes.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\External\MathLib\include\control\TrapezoidTrajectory.h">
+      <Filter>External\MathLib\Control</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -664,6 +691,12 @@
     </ClCompile>
     <ClCompile Include="src\Robots\TrajectoryManager.cpp">
       <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\TrajClearCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\Trajectory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\TrajSetCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\Trajectory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

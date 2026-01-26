@@ -127,17 +127,27 @@ namespace robots {
 			const double theta = x[i];
 			const double omega = x[i + n];
 
-			// Targets and gains
+			// Current joint
 			const RobotJoint& joint = _robot.joints[i];
+
+			// Reference angles, velocities, and accelerations
 			const double thetaRef = static_cast<double>(joint.thetaRefRad);
+			const double omegaRef = static_cast<double>(joint.omegaRefRad_s);
+			const double alphaRef = static_cast<double>(joint.alphaRefRad_s2);
+
+			// PD gains
 			const double k_p = static_cast<double>(joint.k_p);
 			const double k_d = static_cast<double>(joint.k_d);
 
-			// Error
-			double err = thetaRef - theta;
+			// Errors
+			const double err   = thetaRef - theta;
+			const double err_d = omegaRef - omega;
 
-			// PD 
-			double tau = k_p * err - k_d * omega; // control torque
+			// Effective inertia
+			const double I_eff = 1.0; // TODO: per joint effective inertia (will sort once trajectory tracking is in)
+
+			// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
+			double tau = I_eff * alphaRef + k_p * err + k_d * err_d; // control torque
 
 			// Passive dynamics
 			const double damping = static_cast<double>(joint.dynamics.damping);
@@ -157,8 +167,7 @@ namespace robots {
 				if (tau < -e) { tau = -e; }
 			}
 
-			// Effective inertia (assumed 1.0 as placeholder, I aim to extend this later)
-			const double I_eff = 1.0;	// TODO: per joint effective inertia
+			// Angular acceleration
 			double alpha = tau / I_eff; // angular acceleration
 
 			// Omega clamp
@@ -177,6 +186,7 @@ namespace robots {
 			if (lastLogTime < 0.0 || (t - lastLogTime) >= LOG_PERIOD) {
 				SIM_ROTATE("theta = % .4f ref = % .4f err = % .4f omega = % .6f kp = % .2f kd = % .2f fric = % .4f damp = % .4f tau = % .4f",
 					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+				SIM_RUNTIME("ref q=%.3f qd=%.3f qdd=%.3f", thetaRef, omegaRef, alphaRef); // log reference trajectory
 				lastLogTime = t;
 			}
 		}
@@ -258,6 +268,9 @@ namespace robots {
 		for (auto& joint : _robot.joints) {
 			joint.omegaRad_s = 0.0f;
 			joint.thetaRefRad = joint.angleRad;
+			joint.omegaRefRad_s = 0.0f;
+			joint.alphaRefRad_s2 = 0.0f;
+
 		}
 
 		updateRobotKinematics();
@@ -446,6 +459,41 @@ namespace robots {
 				joint.thetaRefRad = t; // clamp to joint limits
 				return true;
 			}
+		}
+		return false;
+	}
+
+	// Method to set the reference angular velocity of a specific robot joint in radians
+	bool RobotSystem::trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.omegaRefRad_s = omegaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Method to set the reference angular acceleration of a specific robot joint in radians
+	bool RobotSystem::trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.alphaRefRad_s2 = alphaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	// Method to zero the reference derivatives (velocity and acceleration) of a specific robot joint
+	bool RobotSystem::tryZeroJointRefDerivatives() {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			joint.omegaRefRad_s = 0.0f;
+			joint.alphaRefRad_s2 = 0.0f;
+			return true;
 		}
 		return false;
 	}

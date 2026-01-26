@@ -97,14 +97,17 @@ namespace robots {
 		JointDynamics dynamics;
 
 		// --- State ---
-		float angleRad = 0.0f;	// rad
-		float omegaRad_s = 0.0f;// rad/s
-		float torque = 0.0f;	// Nm or N
+		float angleRad = 0.0f;	 // rad
+		float omegaRad_s = 0.0f; // rad/s
+		float torque = 0.0f;	 // Nm or N
 
 		// --- Control ---
-		float thetaRefRad = 0.0f;
-		float k_p = 25.0f;
-		float k_d = 8.0f;
+		float thetaRefRad = 0.0f;	 // rad
+		float omegaRefRad_s = 0.0f;  // rad/s
+		float alphaRefRad_s2 = 0.0f; // rad/s^2
+		float k_p = 25.0f;	// position gain
+		float k_i = 0.0f;	// integral gain (not used)
+		float k_d = 8.0f;	// velocity gain
 
 		// --- Precomputed transforms ---
 		glm::mat4 jointToChildRest = glm::mat4(1.0f);

@@ -9,13 +9,13 @@ using namespace constants;
 
 namespace control {
 	// Structure to define a sine wave component
-	struct MATHLIB_API SineComponent {
+	struct SineComponent {
 		double amp = 0.0;      // rad
 		double freqHz = 0.0;   // Hz
 		double phaseRad = 0.0; // rad
 	};
 
-	class MATHLIB_API MultisineTrajectory : public IJointTrajectory {
+	class MultisineTrajectory : public IJointTrajectory {
 	public:
 		MultisineTrajectory(double t0, double tf, double q0, const std::vector<SineComponent> comps)
 			: _t0(t0), _tf(tf), _q0(q0), _comps(std::move(comps)) {}

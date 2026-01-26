@@ -88,6 +88,8 @@ namespace commands {
 		utils::OpResult setJointTargetRad(const std::string& link, double thetaTargetRad);
 		utils::OpResult setJointTargetDeltaRad(const std::string& link, double deltaRad);
 		utils::OpResult setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s);
+		utils::OpResult setJointOmegaRefRad(const std::string& link, double omegaRefRad_s);
+		utils::OpResult setJointAlphaRefRad(const std::string& link, double alphaRefRad_s2);
 
 		utils::OpResult updateRigidRotateTo(double dt);
 		utils::OpResult updateJointRotateTo(double dt);

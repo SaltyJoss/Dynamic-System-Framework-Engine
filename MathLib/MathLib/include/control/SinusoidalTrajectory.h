@@ -8,7 +8,7 @@ using namespace mathlib;
 using namespace constants;
 
 namespace control {
-	class MATHLIB_API SinusoidalTrajectory : public IJointTrajectory {
+	class SinusoidalTrajectory : public IJointTrajectory {
 	public:
 		SinusoidalTrajectory(double t0, double tf, double q0, double amp, double freqHz, double phaseRad = 0.0)
 		: _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
