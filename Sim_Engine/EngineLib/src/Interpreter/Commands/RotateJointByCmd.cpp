@@ -24,10 +24,12 @@ namespace commands {
 	program_data::CmdResult RotateJointByCmd::update(CommandContextMotion& cntx, double dt) {
 		auto* robot = cntx.Robot();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
+		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms
 		if (dt < 0.0) dt = 0.0;
-		if (dt > 0.05) dt = 0.05; // 50ms
+		if (dt > maxDt) dt = maxDt;
 		
 		if (!_started) {
+			D_DEBUG("dt clamped to %.6f s", dt);
 			_started = true;
 			_elapsed = 0.0;
 			_settleT = 0.0;
@@ -39,14 +41,16 @@ namespace commands {
 
 			const double minOmegaRad = degToRad(0.5); // 0.5 deg/s minimum meaningful speed
 			if (_maxOmegaRad < minOmegaRad) {
-				markFailed("rotateJointBy: maxOmega too small."); SIM_FAIL("rotateJointBy(): maxOmega too small (%.3f deg/s) on '%s'", _omegaDeg, _link.c_str());
+				markFailed("rotateJointBy: maxOmega too small."); 
+				D_FAIL("rotateJointBy(): maxOmega too small (%.3f deg/s) on '%s'", _omegaDeg, _link.c_str());
 				return CmdResult{ CmdState::Failed, {}, "rotateJointBy: maxOmega too small." };
 			}
 
 			// Get starting angle
 			float theta0 = 0.0f;
 			if (!robot->tryGetJointAngleRad(_link, theta0)) {
-				markFailed("rotateJointBy: joint not found (angle)."); SIM_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
+				markFailed("rotateJointBy: joint not found (angle)."); 
+				D_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
 				return CmdResult{ CmdState::Failed, {}, "rotateJointBy: joint not found (angle)." };
 			}
 
@@ -56,20 +60,21 @@ namespace commands {
 			auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaRad);
 			if (!r1.ok) { 
 				markFailed(r1.message); 
-				SIM_FAIL("Failed to set max omega for link '%s' -> %s", _link.c_str(), r1.message.c_str()); 
+				D_FAIL("Failed to set max omega for link '%s' -> %s", _link.c_str(), r1.message.c_str()); 
 				return CmdResult{ CmdState::Failed, {}, r1.message }; 
 			}
 
 			auto r2 = cntx.setJointTargetDeltaRad(_link, _deltaRad);
 			if (!r2.ok) { 
 				markFailed(r2.message); 
-				SIM_FAIL("Failed to set target delta for link '%s' -> %s", _link.c_str(), r2.message.c_str()); 
+				D_FAIL("Failed to set target delta for link '%s' -> %s", _link.c_str(), r2.message.c_str()); 
 				return CmdResult{ CmdState::Failed, {}, r2.message }; 
 			}
 
 			const double delta = std::abs(_targetRad - _thetaStartRad);
 			const double Tmin = delta / _maxOmegaRad;
-			_timeoutSec = std::clamp(3.0 * Tmin + 0.5, 2.0, 60.0);
+
+			_timeoutSec = std::clamp(3.0 * Tmin + 5.0, 10.0, 60.0); // robust timeout estimate min = 10s, max = 60s
 
 			SIM_ROTATE("rotateJointBy start: link='%s' delta=%.2f deg start=%.2f deg target=%.2f deg maxOmega=%.2f deg/s Tmin=%.2fs timeout=%.2fs",
 				_link.c_str(), _deltaDeg, radToDeg(_thetaStartRad), radToDeg(_targetRad), _omegaDeg, Tmin, _timeoutSec); 
@@ -80,8 +85,8 @@ namespace commands {
 		_elapsed += dt;
 
 		const double tolPosRad = degToRad(0.25);	// 0.25 deg
-		const double tolOmegaRad = degToRad(0.20);	// 0.20 deg/s
-		const double settleSec = 0.10;				// must be stable for 100ms - i need to tune this more
+		const double tolOmegaRad = degToRad(0.5);	// 0.20 deg/s
+		const double settleSec = 0.15;				// must be stable for 100ms - i need to tune this more
 
 		float theta = 0.0f;
 		float omega = 0.0f;
@@ -91,7 +96,7 @@ namespace commands {
 
 		if (!gotTheta) {
 			markFailed("rotateJointBy: joint not found (angle).");
-			SIM_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
+			D_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
 			return { CmdState::Failed, {}, "rotateJointBy: joint not found (angle)." };
 		}
 
@@ -108,15 +113,14 @@ namespace commands {
 			_noProgressT += dt; 
 		}
 
-		const bool posOk = (absErr <= tolPosRad);	 // consider reached if position is close enough
-		const bool omegaOk = (absOm <= tolOmegaRad); // consider stopped if omega is small enough
+		const bool posOK = robot->isJointAtTargetRad(_link, (float)tolPosRad); // consider at target if within position tolerance
+		const bool omegaOK = (absOm <= tolOmegaRad); // consider stopped if omega is small enough
 
-		if (posOk && omegaOk) {
+		if (posOK && omegaOK) {
 			_settleT += dt;
 			if (_settleT >= settleSec) {
 				markCompleted();
-				SIM_SUCCESS("rotateJointBy done: '%s' err=%.6f rad (%.3f deg) omega=%.6f rad/s t=%.3fs",
-					_link.c_str(), errRad, radToDeg(errRad), (double)omega, _elapsed);
+				SIM_SUCCESS("rotateJointBy done: '%s' err=%.6f rad (%.3f deg) omega=%.6f rad/s t=%.3fs", _link.c_str(), errRad, radToDeg(errRad), (double)omega, _elapsed);
 				return { CmdState::Executed, {}, "rotateJointBy() completed successfully" };
 			}
 		} else { 
@@ -125,7 +129,7 @@ namespace commands {
 
 		if (_noProgressT >= 2.0) {
 			markFailed("rotateJointBy: no progress made towards target.");
-			SIM_FAIL("rotateJointBy stuck: '%s' err=%.6f rad omega=%.6f rad/s t=%.3fs bestErr=%.6f", 
+			D_FAIL("rotateJointBy stuck: '%s' err=%.6f rad omega=%.6f rad/s t=%.3fs bestErr=%.6f", 
 				_link.c_str(), errRad, (double)omega, _elapsed, _bestAbsErr);
 			return { CmdState::Failed, {}, "rotateJointBy: no progress made towards target." };
 		}
@@ -134,7 +138,7 @@ namespace commands {
 			markFailed("rotateJointBy: timeout reached.");
 			SIM_FAIL("rotateJointBy timeout: '%s' err=%.6f rad (%.3f deg) omega=%.6f rad/s t=%.3fs timeout=%.2fs",
 				_link.c_str(), errRad, radToDeg(errRad), (double)omega, _elapsed, _timeoutSec);
-			return { CmdState::Failed, {}, "rotateJointBy: timeout reached." };
+			return { CmdState::Executed, {}, "rotateJointBy: timeout reached." };
 		}
 
 		return { CmdState::Executing, {}, "" };

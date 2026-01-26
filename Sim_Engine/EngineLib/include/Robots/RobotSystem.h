@@ -16,7 +16,7 @@ namespace robots {
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
 
-        // --- UTILITY METHODS ---
+        // --- Utility Methods ---
 
         static float clampJointAngle(const RobotJoint& joint, float angleRad);
         static float wrapToPi(float angleRad);
@@ -42,7 +42,9 @@ namespace robots {
         bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
 
+		bool tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
+
 		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
 		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
 

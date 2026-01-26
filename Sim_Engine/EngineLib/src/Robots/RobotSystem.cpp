@@ -440,6 +440,18 @@ namespace robots {
 		return false;
 	}
 
+	// Method to get the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const {
+		if (!_hasRobot) { return false; }
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				outTargetRad = joint.thetaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Method to set the target angle (reference) of a specific robot joint in radians
 	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, float targetRad) {
 		if (!_hasRobot) { return false; }

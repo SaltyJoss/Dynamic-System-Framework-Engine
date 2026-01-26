@@ -86,8 +86,83 @@ namespace commands {
 
 	// --- JOINT ANGLE METHODS ---
 
+	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+
+		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { 
+			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
+		}
+
+		return OpResult::Success(true);
+	}
+
+	utils::OpResult CommandContextMotion::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+
+		float refRad = 0.0f;
+		if (!_robot->tryGetJointTargetRad(link, refRad)) { 
+			return OpResult::Failure("Failed to get joint angle -> Joint not found."); 
+		}
+
+		const double targetRad = (double)refRad + deltaRad;
+		return setJointTargetRad(link, targetRad);
+	}
+
+	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
+
+		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { 
+			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
+		}
+
+		return OpResult::Success(true);
+	}
+
+	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
+		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		if (!_jnt.active) { return OpResult::Success(true); }
+
+		const bool done = _robot->isJointAtTargetRad(_jnt.link, (float)_jnt.epsAngle);
+		if (done) { _jnt.active = false; return OpResult::Success(true); }
+
+		SIM_ROTATE("Updating joint rotate to link='%s'", _jnt.link.c_str());
+
+		return OpResult::Success(false);
+	}
+
+	utils::OpResult CommandContextMotion::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
+		if (!_robot) return OpResult::Failure("beginJointRotateTo -> no robot.");
+		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
+
+		const double current = getJointAngleRad(link);
+		const double target = degToRad(angleDeg);
+		const double maxOmega = degToRad(maxOmegaDegPerSec);
+
+		auto r1 = setJointMaxOmegaRad(link, maxOmega);
+		if (!r1.ok) { return r1; }
+
+		auto r2 = setJointTargetRad(link, target);
+		if (!r2.ok) { return r2; }
+
+		_jnt.link = link;
+		_jnt.start = current;
+		_jnt.target = target;
+		_jnt.maxOmega = maxOmega;
+		_jnt.active = true;
+		_jnt.wrapShortest = true;
+		_jnt.epsAngle = degToRad(0.5); // 0.5 degrees tolerance
+
+		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s",
+			link.c_str(), current, target, maxOmega);
+
+		return OpResult::Success(false);
+	}
+
+	// --- RIGID MOTION METHODS ---
+
 	utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
-		if (!_rig.active || !_rig.obj) { 
+		if (!_rig.active || !_rig.obj) {
 			D_INFO("No active rigid rotation.");
 			return OpResult::Success();
 		}
@@ -101,7 +176,7 @@ namespace commands {
 		if (q_err.w() < 0.0) { q_err.coeffs() *= -1.0; }
 
 		double angle = 2.0 * std::acos(glm::clamp((double)q_err.w(), -1.0, 1.0)); // [0,pi] clamp
-		
+
 		if (angle < _rig.epsAngle) {
 			s.angularVelocity = Vec3::Zero();
 			_rig.active = false;
@@ -119,18 +194,6 @@ namespace commands {
 
 		SIM_ROTATE("Updating rigid rotate to object id=%d angleErr=%.3f rad omega=%.3f rad/s axis=(%.3f, %.3f, %.3f)",
 			(int)_rig.obj->id, angle, omega, axis.x(), axis.y(), axis.z());
-
-		return OpResult::Success(false);
-	}
-
-	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_jnt.active) { return OpResult::Success(true); }
-
-		const bool done = _robot->isJointAtTargetRad(_jnt.link, (float)_jnt.epsAngle);
-		if (done) { _jnt.active = false; return OpResult::Success(true); }
-
-		SIM_ROTATE("Updating joint rotate to link='%s'", _jnt.link.c_str());
 
 		return OpResult::Success(false);
 	}
@@ -164,59 +227,6 @@ namespace commands {
 		return OpResult::Success(false);
 	}
 
-	utils::OpResult CommandContextMotion::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
-		if (!_robot) return OpResult::Failure("beginJointRotateTo -> no robot.");
-		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
-
-		const double current = getJointAngleRad(link);
-		const double target = angleDeg * (PI / 180.0);
-		const double maxOmega = maxOmegaDegPerSec * (PI / 180.0);
-
-		auto r1 = setJointMaxOmegaRad(link, maxOmega);
-		if (!r1.ok) { return r1; }
-
-		auto r2 = setJointTargetRad(link, target);
-		if (!r2.ok) { return r2; }
-
-		_jnt.link = link;
-		_jnt.start = current;
-		_jnt.target = target;
-		_jnt.maxOmega = maxOmegaDegPerSec * (PI / 180.0);
-		_jnt.active = true;
-		_jnt.wrapShortest = true;
-		_jnt.epsAngle = 0.25 * (PI / 180.0);
-
-		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s",
-			link.c_str(), current, target, maxOmega);
-
-		return OpResult::Success(false);
-	}
-		
-	// --- STOP MOTION METHODS ---
-
-	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
-		if (!obj) return;
-		auto& s = obj->state;
-
-		angularVelocityPrev = s.angularVelocity; // store previous angular velocity
-
-		if (axes.x) s.angularVelocity.x() = 0.0;
-		if (axes.y) s.angularVelocity.y() = 0.0;
-		if (axes.z) s.angularVelocity.z() = 0.0;
-	}
-
-	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
-		if (!obj) return;
-		auto& s = obj->state;
-
-		linearVelocityPrev = s.linearVelocity; // store previous linear velocity
-
-		if (axes.x) s.linearVelocity.x() = 0.0;
-		if (axes.y) s.linearVelocity.y() = 0.0;
-		if (axes.z) s.linearVelocity.z() = 0.0;
-	}
-
-	// --- ROTATION COMMAND METHODS ---
 	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt) {
 		if (!obj || !obj->getMesh()) {
 			SIM_FAIL("No object provided for rotation.");
@@ -254,24 +264,29 @@ namespace commands {
 
 		return OpResult::Success(true);
 	}
+		
+	// --- STOP MOTION METHODS ---
 
-	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); }
-		return OpResult::Success(true);
+	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+
+		angularVelocityPrev = s.angularVelocity; // store previous angular velocity
+
+		if (axes.x) s.angularVelocity.x() = 0.0;
+		if (axes.y) s.angularVelocity.y() = 0.0;
+		if (axes.z) s.angularVelocity.z() = 0.0;
 	}
-	utils::OpResult CommandContextMotion::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		float currentRad = 0.0f;
-		if (!_robot->tryGetJointAngleRad(link, currentRad)) { return OpResult::Failure("Failed to get joint angle -> Joint not found."); }
-		const float targetRad = static_cast<double>(currentRad) + deltaRad;
-		return setJointTargetRad(link, targetRad);
-	}
-	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); }
-		return OpResult::Success(true);
+
+	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
+		if (!obj) return;
+		auto& s = obj->state;
+
+		linearVelocityPrev = s.linearVelocity; // store previous linear velocity
+
+		if (axes.x) s.linearVelocity.x() = 0.0;
+		if (axes.y) s.linearVelocity.y() = 0.0;
+		if (axes.z) s.linearVelocity.z() = 0.0;
 	}
 
 	// --- TRANSLATION COMMAND METHODS ---
