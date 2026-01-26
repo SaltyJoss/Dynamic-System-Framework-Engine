@@ -212,11 +212,16 @@ namespace robots {
 
 			dx[i] = omega;		// dtheta/dt = omega
 			dx[i + n] = alpha;	// domega/dt = alpha
-
-			LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
-				theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
-			SIM_ROTATE("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
-				theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+			
+			static double lastLogTime = -1.0;
+			constexpr double LOG_PERIOD = 0.05; // 20 Hz
+			
+			// Logging - periodic to avoid spamming
+			if (lastLogTime < 0.0 || (t - lastLogTime) >= LOG_PERIOD) {
+				SIM_ROTATE("theta = % .4f ref = % .4f err = % .4f omega = % .6f kp = % .2f kd = % .2f fric = % .4f damp = % .4f tau = % .4f",
+					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+				lastLogTime = t;
+			}
 		}
 		return dx;
 	}

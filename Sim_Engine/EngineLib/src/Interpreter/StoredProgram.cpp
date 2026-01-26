@@ -42,7 +42,7 @@ namespace interpreter {
 		_commands.emplace_back(cmd);
 	}
 
-	// Reset program to initial state
+	// Reset program counters
 	void StoredProgram::reset() {
 		_currentLineNumber = 0;
 		PC = 0;

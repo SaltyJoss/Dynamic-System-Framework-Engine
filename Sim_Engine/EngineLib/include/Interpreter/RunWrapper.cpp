@@ -1,7 +1,10 @@
 #include "pch.h"
 #include "Interpreter/RunWrapper.h"
 
+#include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
+
+extern ENGINE_API Debug gLog;
 
 namespace interpreter {
 	RunWrapper::RunWrapper(Parser* parser, IStoredProgram* program) : _parser(parser), _program(program) {

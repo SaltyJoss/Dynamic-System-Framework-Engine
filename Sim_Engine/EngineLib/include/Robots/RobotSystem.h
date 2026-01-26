@@ -69,6 +69,8 @@ namespace robots {
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
+		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
+
 		// --- GET AND SET INTEGRATION METHOD ---
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
@@ -96,6 +98,7 @@ namespace robots {
         bool _hasRobot = false;
 
         std::string _loadedName;
+		int _currentJointIndex = -1;
 
         std::unordered_map<std::string, int> _linkIndex;
 

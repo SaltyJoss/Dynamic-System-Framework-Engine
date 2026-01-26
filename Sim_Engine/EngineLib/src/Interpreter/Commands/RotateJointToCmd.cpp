@@ -23,9 +23,9 @@ namespace commands {
 
 	program_data::CmdResult RotateJointToCmd::update(CommandContextMotion& cntx, double dt) {
 		auto* robot = cntx.Robot();
-        // Defensive dt: avoid giant dt spikes causing weird timing/logic.
+		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
         if (dt < 0.0) dt = 0.0;
-        if (dt > 0.05) dt = 0.05; // cap at 50ms (tweak as you like) -> best 
+        if (dt > 0.05) dt = 0.05; // 50ms
 
         // --- One-time setup ---
         if (!_started) {
@@ -47,21 +47,6 @@ namespace commands {
                 return { CmdState::Failed, {}, "rotateJointTo: maxOmega too small." };
             }
 
-            // Apply to robot
-            auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaRad);
-            if (!r1.ok) {
-                markFailed(r1.message);
-                SIM_FAIL("Failed to set max omega for '%s' -> %s", _link.c_str(), r1.message.c_str());
-                return { CmdState::Failed, {}, r1.message };
-            }
-
-            auto r2 = cntx.setJointTargetRad(_link, _targetRad);
-            if (!r2.ok) {
-                markFailed(r2.message);
-                SIM_FAIL("Failed to set target for '%s' -> %s", _link.c_str(), r2.message.c_str());
-                return { CmdState::Failed, {}, r2.message };
-            }
-
             // Compute an informed timeout
             float theta0 = 0.0f;
             if (!robot->tryGetJointAngleRad(_link, theta0)) {
@@ -70,13 +55,23 @@ namespace commands {
                 return { CmdState::Failed, {}, "rotateJointTo: joint not found (angle)." };
             }
 
+			// Set max omega
+            auto r1 = cntx.setJointMaxOmegaRad(_link, _maxOmegaRad);
+            if (!r1.ok) { markFailed(r1.message); SIM_FAIL("Failed to set max omega for '%s' -> %s", _link.c_str(), r1.message.c_str()); return { CmdState::Failed, {}, r1.message }; }
+
+			// Set target
+            auto r2 = cntx.setJointTargetRad(_link, _targetRad);
+            if (!r2.ok) { markFailed(r2.message); SIM_FAIL("Failed to set target for '%s' -> %s", _link.c_str(), r2.message.c_str()); return { CmdState::Failed, {}, r2.message }; }
+
+			// Estimate minimum time to reach target at max speed
             const double delta = std::abs(_targetRad - (double)theta0);
             const double Tmin = delta / _maxOmegaRad;
 
-            // Margin: allow settling + controller dynamics.
+			// Set timeout based on Tmin
             _timeoutSec = std::clamp(3.0 * Tmin + 0.5, 2.0, 60.0);
 
-            SIM_ROTATE("rotateJointTo start: link='%s' target=%.2f deg maxOmega=%.2f deg/s Tmin=%.2fs timeout=%.2fs", _link.c_str(), _angleDeg, _maxOmegaDeg, Tmin, _timeoutSec);
+            SIM_ROTATE("rotateJointTo start: link='%s' target=%.2f deg start=%.2f deg maxOmega=%.2f deg/s Tmin=%.2fs timeout=%.2fs",
+                _link.c_str(), _angleDeg, radToDeg(theta0), _maxOmegaDeg, Tmin, _timeoutSec);
 
             return { CmdState::Executing, {}, "rotateJointTo started" };
         }
