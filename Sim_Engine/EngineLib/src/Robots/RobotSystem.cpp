@@ -46,7 +46,6 @@ namespace robots {
 		return angleRad;
 	}
 
-
 	// Convert mathlib::Pose to glm::mat4
 	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
 		glm::mat4 M(1.0f);
@@ -60,48 +59,6 @@ namespace robots {
 		glm::mat4 Ti = glm::translate(glm::mat4(1.0f), -pivot);
 		glm::mat4 R = glm::rotate(glm::mat4(1.0f), angleRad, axisUnit);
 		return T * R * Ti;
-	}
-
-	// Method to compute the world transforms of all robot links at zero joint angles (Not needed nor used currently)
-	static std::vector<glm::mat4> computeVisualZeroWorld(const RobotModel& robot, const std::unordered_map<std::string, int>& linkIndx, const glm::mat4& rootPose) {
-		std::vector<glm::mat4> world(robot.links.size(), glm::mat4(1.0f));
-
-		int rootIndx = linkIndx.at("link00"); // assume first link is root (follows my convention)
-		world[rootIndx] = rootPose;
-
-		// Build parent -> list of outgoing joints
-		std::unordered_map<std::string, std::vector<const RobotJoint*>> children;
-		children.reserve(robot.joints.size());
-		for (const auto& j : robot.joints) { children[j.parent].push_back(&j); }
-
-		// DFS (or BFS)
-		std::stack<std::string> st;
-		st.push("link00"); // start from root
-		world[linkIndx.at("link00")] = rootPose; // set root pose
-		
-		// Traverse the tree, !st.empty() ensures we process all links, including branches (meaning multiple children)
-		while (!st.empty()) {
-			std::string parentName = st.top(); st.pop();
-			int parentIndx = linkIndx.at(parentName);
-
-			auto it = children.find(parentName);
-			if (it == children.end()) continue;
-
-			for (const RobotJoint* jp : it->second) {
-				const RobotJoint& joint = *jp;
-				int childIndx = linkIndx.at(joint.child);
-
-				glm::mat4 T = glm::translate(glm::mat4(1.0f), joint.origin_xyz);
-				glm::mat4 R = glm::mat4_cast(joint.origin_q);
-				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), joint.angleRad, glm::normalize(joint.axis));
-
-				world[childIndx] = world[parentIndx] * T * R * Rq;
-			
-				st.push(joint.child);
-			}
-		}
-
-		return world;
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---

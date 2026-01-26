@@ -25,12 +25,18 @@ namespace robots {
         // ---- Accessors ---
 
         const std::vector<RobotLink>& links() const { return _robot.links; }
+		std::vector<RobotLink>& links() { return _robot.links; }
         const std::vector<RobotJoint>& joints() const { return _robot.joints; }
+		std::vector<RobotJoint>& joints() { return _robot.joints; }
+
         std::size_t linkCount() const { return _robot.links.size(); }
 
         bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
         const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }
+
+		double getGravity() const { return _gravity; }
+        void setGravity(double g) { _gravity = g; }
 
 		// ---- Joint State Methods ---
 
@@ -109,6 +115,8 @@ namespace robots {
 
         std::vector<glm::mat4> _bindWorld0;  // size = links.size()
 		std::vector<glm::mat4> _bindLocal0;  // size = links.size()
+
+		double _gravity = 9.81; // m/s^2
 
 		VecX _robotQHome; // home/reset joint angles (radians)
         bool _robotHomeValid = false;
