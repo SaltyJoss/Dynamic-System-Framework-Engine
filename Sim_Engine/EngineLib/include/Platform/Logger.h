@@ -5,47 +5,20 @@
 // =============================================
 // Class responsible for logging messages to a file and console with different severity levels.
 //
-// Summary:
-// =============================================
-//
 // structs / enumerations:
 // --------------------------------------------
 // LogLevel
 //      -> Enumeration of log severity levels (Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output).
 // LogEntry
 //      -> Struct representing a log entry with level, type, and message.
-// --------------------------------------------
-//
-// public:
-// --------------------------------------------
-// Debug()
-//      -> Constructor that initializes the logger and creates a log file.
-// ~Debug()
-//      -> Destructor that closes the log file.
-// void logError(const char* type, const char* format, ...)
-//      -> Logs an error message with the specified type and formatted message.
-// void logInfo(const char* type, const char* format, ...)
-//      -> Logs an informational message with the specified type and formatted message.
-// void logWarning(const char* type, const char* format, ...)
-//      -> Logs a warning message with the specified type and formatted message.
-// void logDebug(const char* type, const char* format, ...)
-//      -> Logs a debug message with the specified type and formatted message, used to parse logs seperately to the debug panel in the application
-// void dLog(LogLevel level, const char* format, ...)
-//      -> Logs a debug panel message with the specified level and formatted message.
-// const std::vector<LogEntry>& Entries() const
-// 	    -> Returns a constant reference to the vector of log entries.
-// void clear()
-// 	    -> Clears all log entries from the logger.
-// --------------------------------------------
-//
-// private:
-// --------------------------------------------
-// std::mutex _mutex
-//      -> Mutex for thread-safe logging.
-// std::ofstream _file
-//      -> Output file stream for the log file.
-// void logCentral(const char* level, const char* type, const char* format, va_list args)
-//      -> Centralized logging function that handles formatting and writing log entries.
+// LogType
+//      -> Enumeration of log types (General, Simulation).
+// simLogLevel
+// 	    -> Enumeration of simulation log severity levels (Error, Fail, Success, Runtime, Rotate, Translate).
+// simEntry
+//      -> Struct representing a simulation log entry with level, type, and message.
+// DataEntry
+//      -> Struct representing a data entry with a data string.
 // --------------------------------------------
 //
 // ============================================
@@ -67,149 +40,243 @@ enum class LogType { General, Simulation };
 
 struct LogEntry {
 	LogLevel level = LogLevel::Info;
-    std::string type;
-    std::string message;
+	std::string type;
+	std::string message;
 };
 
 struct ENGINE_API simEntry {
-    simLogLevel level = simLogLevel::Runtime;
-    std::string type;
+	simLogLevel level = simLogLevel::Runtime;
+	std::string type;
 	std::string message;
+};
+
+struct ENGINE_API DataEntry {
+	std::string data;
 };
 
 class ENGINE_API Debug {
 public:
-    Debug() {
-        try { std::filesystem::create_directory("Log"); }
-        catch (const std::filesystem::filesystem_error& e)  {
-            std::cerr << "Failed to create Log directory: " << e.what() << std::endl;
-        }
+	Debug() {
+		std::cerr << "CWD: " << std::filesystem::current_path().string() << "\n";
 
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-        std::tm tm_data;
-        localtime_s(&tm_data, &now_time);
+		try { std::filesystem::create_directory("Log"); }
+		catch (const std::filesystem::filesystem_error& e) {
+			std::cerr << "Failed to create Log directory: " << e.what() << std::endl;
+		}
 
-        std::ostringstream oss;
-        oss << "Log/session_" << std::put_time(&tm_data, "%Y%m%d_%H%M%S") << ".txt";
+		auto now = std::chrono::system_clock::now();
+		std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+		std::tm tm_data;
+		localtime_s(&tm_data, &now_time);
 
-        try {
-            _file.open(oss.str(), std::ios::app);
-            if (!_file.is_open())
-                std::cerr << "Failed to open log file: " << oss.str() << std::endl;
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Exception opening log file: " << e.what() << std::endl;
-        }
+		std::ostringstream oss;
+		oss << "Log/session_" << std::put_time(&tm_data, "%Y%m%d_%H%M%S") << ".txt";
 
-    }
+		try {
+			_file.open(oss.str(), std::ios::app);
+			if (!_file.is_open())
+				std::cerr << "Failed to open log file: " << oss.str() << std::endl;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Exception opening log file: " << e.what() << std::endl;
+		}
+	}
 
-    ~Debug() {
-        std::lock_guard<std::mutex> lock(_mutex);
-        if (_file.is_open()) _file.close();
-    }
+	~Debug() {
+		std::lock_guard<std::mutex> lock(_mutex);
+		if (_file.is_open()) _file.close();
+	}
 
-    static Debug& Instance() {
-        static Debug inst;
-        return inst;
-    }
+	static Debug& Instance() {
+		static Debug inst;
+		return inst;
+	}
 
-    std::vector<LogEntry>& Entries() { return _entries; }
-    const std::vector<LogEntry>& Entries() const { return _entries; }
+	std::vector<LogEntry>& Entries() { return _entries; }
+	const std::vector<LogEntry>& Entries() const { return _entries; }
 
-    std::vector<simEntry>& SimEntries() { return _simEntries; }
+	std::vector<simEntry>& SimEntries() { return _simEntries; }
 	const std::vector<simEntry>& SimEntries() const { return _simEntries; }
 
 	// General logging functions
-    void logError(const char* type, const char* format, ...) {
-        va_list args;
-        va_start(args, format);
-        logCentral("ERROR", type, format, args);
-        va_end(args);
-    }
-
-    void logInfo(const char* type, const char* format, ...) {
-        va_list args;
-        va_start(args, format);
-        logCentral("INFO", type, format, args);
-        va_end(args);
-    }
-
-    void logWarning(const char* type, const char* format, ...) {
-        va_list args;
-        va_start(args, format);
-        logCentral("WARN", type, format, args);
-        va_end(args);
-    }
-
-    // Centeralised logging function for debug panel logs only, outputted to debug panel console only
-    void dLog(LogLevel level, const char* format, ...) {
-        char buffer[1024];
-
-        va_list args;
-        va_start(args, format);
-        std::vsnprintf(buffer, sizeof(buffer), format, args);
-        va_end(args);
-
-        LogEntry e;
-        e.level = level;
-        e.message = buffer;
-        _entries.push_back(std::move(e));
-    }
-
-    void simLog(simLogLevel level, const char* format, ...) {
-        char buffer[1024];
-
-        va_list args;
-        va_start(args, format);
-        std::vsnprintf(buffer, sizeof(buffer), format, args);
-        va_end(args);
-
-        simEntry e;
-        e.level = level;
-        e.message = buffer;
-        _simEntries.push_back(std::move(e));
+	void logError(const char* type, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		logCentral("ERROR", type, format, args);
+		va_end(args);
 	}
 
-    void clear() {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _entries.clear();
-    }
+	void logInfo(const char* type, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		logCentral("INFO", type, format, args);
+		va_end(args);
+	}
 
-    void clearSimLog() { _simEntries.clear(); }
+	void logWarning(const char* type, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		logCentral("WARN", type, format, args);
+		va_end(args);
+	}
+
+	// Centeralised logging function for debug panel logs only, outputted to debug panel console only
+	void dLog(LogLevel level, const char* format, ...) {
+		char buffer[1024];
+
+		va_list args;
+		va_start(args, format);
+		std::vsnprintf(buffer, sizeof(buffer), format, args);
+		va_end(args);
+
+		LogEntry e;
+		e.level = level;
+		e.message = buffer;
+		_entries.push_back(std::move(e));
+	}
+
+	void simLog(simLogLevel level, const char* format, ...) {
+		char buffer[1024];
+
+		va_list args;
+		va_start(args, format);
+		std::vsnprintf(buffer, sizeof(buffer), format, args);
+		va_end(args);
+
+		simEntry e;
+		e.level = level;
+		e.message = buffer;
+		_simEntries.push_back(std::move(e));
+	}
+
+	void clear() {
+		std::lock_guard<std::mutex> lock(_mutex);
+		_entries.clear();
+	}
+
+	void clearSimLog() { _simEntries.clear(); }
 
 private:
-    std::mutex _mutex;
-    std::ofstream _file;
-    std::vector<LogEntry> _entries;
+	std::mutex _mutex;
+	std::ofstream _file;
+	std::vector<LogEntry> _entries;
 	std::vector<simEntry> _simEntries;
 
 	// Centralised logging function for global logs outputted to file and console
-    void logCentral(const char* level, const char* type, const char* format, va_list args) {
-        char buffer[1024];
-        vsnprintf(buffer, sizeof(buffer), format, args);
+	void logCentral(const char* level, const char* type, const char* format, va_list args) {
+		char buffer[1024];
+		vsnprintf(buffer, sizeof(buffer), format, args);
 
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-        std::tm tm_data;
-        localtime_s(&tm_data, &now_time);
-
-        std::ostringstream oss;
-        oss << "[" << std::put_time(&tm_data, "%Y-%m-%d %H:%M:%S") << "] "
-              << "[" << level << " / " << type << "]: "
-              << buffer;
+		auto now = std::chrono::system_clock::now();
+		std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+		std::tm tm_data;
+		localtime_s(&tm_data, &now_time);
+		std::ostringstream oss;
+		oss << "[" << std::put_time(&tm_data, "%Y-%m-%d %H:%M:%S") << "] "
+			<< "[" << level << " / " << type << "]: "
+			<< buffer;
 
 		// Lock for thread safety - construct log line outside lock to minimize lock time
-        std::string logLine = oss.str(); // construct outside lock
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            if (_file.is_open()) { _file << oss.str() << std::endl; }
-            std::cout << oss.str() << std::endl;
-        }
-    }
+		std::string logLine = oss.str(); // construct outside lock
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			if (_file.is_open()) { _file << oss.str() << std::endl; }
+			std::cout << oss.str() << std::endl;
+		}
+	}
+};
+
+enum DataType { Simulation, Reference };
+
+class ENGINE_API DataCapture {
+public:
+	DataCapture() {
+		if (_dataType == DataType::Simulation) { _path = "Simulation"; }
+		if (_dataType == DataType::Reference) { _path = "Reference"; }
+
+		std::cerr << "CWD: " << std::filesystem::current_path().string() << "\n";
+		
+		auto dir = std::filesystem::path("Runs") / _path;
+		try { std::filesystem::create_directories(dir); }
+		catch (const std::filesystem::filesystem_error& e) {
+			std::cerr << "create_directories failed: " << e.what() << std::endl;
+		}
+
+		auto now = std::chrono::system_clock::now();
+		std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+		std::tm tm_data;
+		localtime_s(&tm_data, &now_time);
+		std::ostringstream oss;
+		oss << dir.string() << "/dsfe_run_" << std::put_time(&tm_data, "%Y%m%d_%H%M%S") << ".csv";
+
+		try {
+			_file.open(oss.str(), std::ios::app);
+			if (!_file.is_open())
+				std::cerr << "Failed to open data capture file: " << oss.str() << std::endl;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Exception opening data capture file: " << e.what() << std::endl;
+		}
+
+	}
+
+	~DataCapture() {
+		std::lock_guard<std::mutex> lock(_mutex);
+		if (_file.is_open()) _file.close();
+	}
+
+	std::vector<DataEntry>& DataEntries() { return _dataEntries; }
+	const std::vector<DataEntry>& DataEntries() const { return _dataEntries; }
+
+	static DataCapture& Instance() {
+		static DataCapture inst;
+		return inst;
+	}
+
+	// General logging functions
+	void logData(DataType dataType, const char* fmt, ...) {
+		_dataType = dataType;
+		va_list args;
+		va_start(args, fmt);
+		logCentral(fmt, args);
+		va_end(args);
+	}
+
+	void clear() {
+		std::lock_guard<std::mutex> lock(_mutex);
+		_dataEntries.clear();
+	}
+
+private:
+	std::mutex _mutex;
+	std::ofstream _file;
+	std::vector<DataEntry> _dataEntries;
+
+	std::string _path = "Simulation";
+
+	DataType _dataType = DataType::Simulation;
+
+	// Centralised logging function for global logs outputted to file and console
+	void logCentral(const char* fmt, va_list args) {
+		char buffer[1024];
+		vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+		std::ostringstream oss;
+		oss << buffer;
+
+		// Lock for thread safety - construct log line outside lock to minimize lock time
+		std::string logLine = oss.str();
+
+		// construct outside lock
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			if (_file.is_open()) { _file << oss.str() << std::endl; }
+		}
+	}
 };
 
 // Global logger instance
 extern ENGINE_API Debug gLog;
+extern ENGINE_API DataCapture gData;
 
 

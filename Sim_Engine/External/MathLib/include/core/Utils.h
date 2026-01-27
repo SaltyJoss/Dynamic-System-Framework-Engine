@@ -41,4 +41,7 @@ namespace mathlib {
 
 	// Returns a cubic function f(x) = a*x^3 + b*x^2 + c*x + d
 	std::function<double(double)> cubic(double a, double b, double c, double d) { return [a, b, c, d](double x) { return a * x * x * x + b * x * x + c * x + d; }; }
+
+	// Dot product of two Vec3
+	double dot(const Vec3& v1, const Vec3& v2) { return v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z(); }
 }

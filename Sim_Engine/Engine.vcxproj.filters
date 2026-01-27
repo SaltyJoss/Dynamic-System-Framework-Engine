@@ -34,6 +34,9 @@
     <Filter Include="Resource Files\shaders\WorldGrid">
       <UniqueIdentifier>{de23fb45-02ed-4a6f-9244-c7b22d4c385a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\configs">
+      <UniqueIdentifier>{0d03b4a3-5c11-4406-bd5d-1d97259ddc06}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\assets\shaders\fs_pbr.frag.glsl">
@@ -95,6 +98,9 @@
     </None>
     <None Include="Engine\assets\shaders\world_grid.vert.glsl">
       <Filter>Resource Files\shaders\WorldGrid</Filter>
+    </None>
+    <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json">
+      <Filter>Resource Files\configs</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -104,6 +104,7 @@ xcopy "$(ProjectDir)External\MathLib\$(Configuration)\*.dll" "$(TargetDir)" /Y</
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json" />
     <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
     <None Include="Engine\assets\shaders\brdf_lut.vert.glsl" />
     <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl" />
