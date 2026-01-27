@@ -65,6 +65,8 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
+		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega) const;
+
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);

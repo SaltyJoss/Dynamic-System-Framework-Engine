@@ -149,4 +149,26 @@ namespace robots {
 			}
 		}
 	};
+
+	// --- Robot Model Metrics ---
+	
+	// Overall robot metrics
+	struct RobotMetrics {
+		double time;
+		double energy;
+		double power;
+		double linearMomentum[3];
+		double angularMomentum[3];
+	};
+
+	// Per-joint metrics
+	struct JointMetrics {
+		double theta, omega;
+		double thetaRef, omegaRef, alphaRef;
+		double err, err_d;
+		double I_eff;
+		double tau;
+		double alpha;
+	};
+
 }

@@ -38,6 +38,7 @@
 #include <Platform/WindowManager.h>
 
 #include "EngineLib/LogMacros.h"
+#include "Platform/DataManager.h"
 
 namespace gui {
 	// --------------------------------------------------
@@ -478,15 +479,19 @@ namespace gui {
 	}
 
 	void simManager::startSimulation() {
+		if (_simRunning) return; 
 		D_INFO("starting simulation");
 		_simTime = 0.0;
 		_simRunning = true;
+		DATA_CAPTURE_ENABLE(true);
 	}
 
 	void simManager::stopSimulation() {
+		if (!_simRunning) return;
 		D_INFO("stopping simulation");
+		DATA_CAPTURE_ENABLE(false);
 		_simRunning = false;
-		_simTime = 0.0; // reset sim time
+		_simTime = 0.0;
 	}
 
 	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }

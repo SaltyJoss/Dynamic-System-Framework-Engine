@@ -113,9 +113,6 @@
 class Debug;
 extern ENGINE_API Debug gLog;
 
-class DataCapture;
-extern ENGINE_API DataCapture gData;
-
 // ============================================
 //         GLOBAL EXCEPTION HANDLING
 // ============================================
@@ -271,10 +268,5 @@ extern ENGINE_API DataCapture gData;
 #define SIM_RUNTIME(fmt, ...)   Debug::Instance().simLog(simLogLevel::Runtime,   fmt, ##__VA_ARGS__) // Using Runtime level for runtime messages (e.g. performance, sim time)
 #define SIM_ROTATE(fmt, ...)    Debug::Instance().simLog(simLogLevel::Rotate,    fmt, ##__VA_ARGS__) // Using Debug level for rotation related messages
 #define SIM_TRANSLATE(fmt, ...) Debug::Instance().simLog(simLogLevel::Translate, fmt, ##__VA_ARGS__) // Using Debug level for translation related messages
-// --------------------------------------------
-// Simulation data logging macros
-// --------------------------------------------
-#define CAPTURE_SIM_DATA(fmt, ...) DataCapture::Instance().logData(DataType::Simulation, fmt, ##__VA_ARGS__)
-#define CAPTURE_REF_DATA(fmt, ...) DataCapture::Instance().logData(DataType::Reference,  fmt, ##__VA_ARGS__)
 
 // END OF FILE

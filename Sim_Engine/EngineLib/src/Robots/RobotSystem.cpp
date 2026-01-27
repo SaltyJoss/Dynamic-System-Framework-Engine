@@ -13,6 +13,8 @@
 
 #include "EngineLib/LogMacros.h"
 
+#include "Platform/DataManager.h"
+
 using namespace mathlib;
 using namespace constants;
 
@@ -140,6 +142,59 @@ namespace robots {
 		}
 	}
 
+	JointMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega) const {
+		JointMetrics m{};
+		m.theta = theta;
+		m.omega = omega;
+
+		// Reference angles, velocities, and accelerations
+		m.thetaRef = (double)joint.thetaRefRad;
+		m.omegaRef = (double)joint.omegaRefRad_s;
+		m.alphaRef = (double)joint.alphaRefRad_s2;
+
+		// PD gains
+		const double k_p = (double)joint.k_p;
+		const double k_d = (double)joint.k_d;
+
+		// Errors
+		m.err = m.thetaRef - theta;
+		m.err_d = m.omegaRef - omega;
+
+		m.I_eff = computeJointAxisInertia(joint, link);
+
+		// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
+		m.tau = m.I_eff * m.alphaRef + k_p * m.err + k_d * m.err_d; // control torque
+
+		// Passive dynamics
+		const double c = (double)joint.dynamics.damping;
+		const double mu = (double)joint.dynamics.friction;
+
+		m.tau -= c * omega;
+
+		// Friction model
+		const double v_eps = 1e-2; // small velocity threshold
+		if (std::abs(omega) > v_eps) { m.tau -= mu * sgn(omega); } // Coulomb friction
+		else { m.tau -= mu * (omega / v_eps); } // linear region near zero
+
+		// Effort clamp
+		if (joint.limits.maxEffort > 0.0f) {
+			const double e = (double)joint.limits.maxEffort;
+			if (m.tau > e) { m.tau = e; }
+			if (m.tau < -e) { m.tau = -e; }
+		}
+
+		// Angular acceleration
+		m.alpha = m.tau / m.I_eff; // angular acceleration
+
+		// Omega clamp
+		const double wMax = (double)joint.limits.maxOmegaRad_s;
+		if (wMax > 0.0) {
+			if ((omega >= wMax && m.alpha > 0.0) || (omega <= -wMax && m.alpha < 0.0)) { m.alpha = 0.0; }
+		}
+
+		return m;
+	}
+
 	// Derivative function for ODE integration
 	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
 		const int n = static_cast<int>(_robot.joints.size());
@@ -153,73 +208,14 @@ namespace robots {
 			const RobotJoint& joint = _robot.joints[i];
 			const RobotLink& link = _robot.links[i+1];
 
-			//D_DEBUG("JointID %s (Link: %s): ", joint.name.c_str(), link.name.c_str());
-
-			// Reference angles, velocities, and accelerations
 			const double thetaRef = static_cast<double>(joint.thetaRefRad);
 			const double omegaRef = static_cast<double>(joint.omegaRefRad_s);
 			const double alphaRef = static_cast<double>(joint.alphaRefRad_s2);
 
-			// PD gains
-			const double k_p = static_cast<double>(joint.k_p);
-			const double k_d = static_cast<double>(joint.k_d);
+			JointMetrics m = computeJointMetrics(joint, link, theta, omega);
 
-			// Errors
-			const double err   = thetaRef - theta;
-			const double err_d = omegaRef - omega;
-
-			const double I_eff = computeJointAxisInertia(joint, link);
-
-			// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
-			double tau = I_eff * alphaRef + k_p * err + k_d * err_d; // control torque
-
-			// Passive dynamics
-			const double c = static_cast<double>(joint.dynamics.damping);
-			const double mu = static_cast<double>(joint.dynamics.friction);
-
-			tau -= c * omega;
-			
-			// Friction model
-			const double v_eps = 1e-2; // small velocity threshold
-			if (std::abs(omega) > v_eps) { tau -= mu * sgn(omega); } // Coulomb friction
-			else { tau -= mu * (omega / v_eps); } // linear region near zero
-
-			// Effort clamp
-			if (joint.limits.maxEffort > 0.0f) {
-				const double e = static_cast<double>(joint.limits.maxEffort);
-				if (tau > e) { tau = e; }
-				if (tau < -e) { tau = -e; }
-			}
-
-			// Angular acceleration
-			double alpha = tau / I_eff; // angular acceleration
-
-			// Omega clamp
-			const double wMax = static_cast<double>(joint.limits.maxOmegaRad_s);
-			if (wMax > 0.0) {
-				if ((omega >= wMax && alpha > 0.0) || (omega <= -wMax && alpha < 0.0)) { alpha = 0.0; }
-			}
-
-			dx[i] = omega;		// dtheta/dt = omega
-			dx[i + n] = alpha;	// domega/dt = alpha
-						
-			//CSV 
-			//CAPTURE_SIM_DATA("robot_joint_control",
-			//	{
-			//		{"sim_time", t},
-			//		{"joint_name", joint.name},
-			//		{"theta", theta},
-			//		{"theta_ref", thetaRef},
-			//		{"err", err},
-			//		{"omega", omega},
-			//		{"omega_ref", omegaRef},
-			//		{"alpha_ref", alphaRef},
-			//		{"torque", tau},
-			//		{"I_eff", I_eff}
-			//	}
-			//);
-
-			//CAPTURE_SIM_DATA("robot_joint_control,sim_time=%f,joint_name=%s,theta=%.4f,theta_ref=%.4f,omega=%.4f,omega_ref=%.4f,alpha_ref=%.4f,tau=%.4f,I_eff=%.4f,err=%.4f,err_d=%.4f", t, joint.name.c_str(), theta, thetaRef, omega, omegaRef, alphaRef, tau, I_eff, err, err_d);
+			dx[i] =		  omega;	// dtheta/dt = omega
+			dx[i + n] = m.alpha;	// domega/dt = alpha		
 		}
 		return dx;
 	}
@@ -258,22 +254,36 @@ namespace robots {
 			enforceJointLimits(j);
 		}
 
+		for (int i = 0; i < (int)_robot.joints.size(); ++i) {
+			const auto& joint = _robot.joints[i];
+			const auto& link = _robot.links[i + 1];
+
+			const double theta = (double)joint.angleRad;
+			const double omega = (double)joint.omegaRad_s;
+
+			JointMetrics m = computeJointMetrics(joint, link, theta, omega);
+
+			CAPTURE_SIM_DATA("robot_joint_control",
+				(data::FieldList{
+					{"sim_time", simTime},
+					{"dt", dt},
+					{"joint_name", std::string(joint.name)},
+					{"theta", m.theta},
+					{"theta_ref", m.thetaRef},
+					{"err", m.err},
+					{"omega", m.omega},
+					{"omega_ref", m.omegaRef},
+					{"err_d", m.err_d},
+					{"alpha_ref", m.alphaRef},
+					{"torque", m.tau},
+					{"I_eff", m.I_eff},
+					{"alpha", m.alpha}
+				})
+			);
+		}
+
 		// Update kinematics
 		updateRobotKinematics();
-
-		//// ===== TELEMETRY (rate-limited) =====
-		//static double lastLogT = -1.0;
-		//constexpr double LOG_DT = 0.1; // 10 Hz is perfect for humans
-
-		//if (lastLogT < 0.0 || (simTime - lastLogT) >= LOG_DT) {
-		//	for (const auto& j : _robot.joints) {
-		//		const double err = j.thetaRefRad - j.angleRad;
-
-		//		LOG_INFO("t=%.3f | %s | q=%.4f rad (%.1f deg) | q_ref=%.4f | err=%.4f | w=%.4f | w_ref=%.4f | a_ref=%.4f",
-		//			simTime, j.child.c_str(), j.angleRad, glm::degrees(j.angleRad), j.thetaRefRad, err, j.omegaRad_s, j.omegaRefRad_s, j.alphaRefRad_s2);
-		//	}
-		//	lastLogT = simTime;
-		//}
 	}
 
 	// --- ROBOT LOADING AND RESET METHODS ---
@@ -613,4 +623,4 @@ namespace robots {
 		_robotRootPose = (T * R) * Align;
 		_robotRootPose = _robotRootHome;
 	}
-} // namespace robot
+} // namespace robots

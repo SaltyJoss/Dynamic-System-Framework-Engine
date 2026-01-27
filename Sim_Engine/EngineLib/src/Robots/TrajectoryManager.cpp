@@ -29,14 +29,28 @@ namespace control {
 			const std::string& link = it->first;
 			auto& traj = it->second;
 
+			// Evaluate trajectory at time t
 			const auto ref = traj->eval(t);
 
-			robot.trySetJointTargetRad(link, (float)ref.q);
-			robot.trySetJointOmegaRefRad(link, (float)ref.qd);
-			robot.trySetJointAlphaRefRad(link, (float)ref.qdd);
+			// Apply trajectory reference to robot joint
+			const bool ok1 = robot.trySetJointTargetRad(link, (float)ref.q);
+			if (!ok1) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
 
-			if (traj->finished(t)) { it = _active.erase(it); } 
-			else { ++it; }
+			const bool ok2 = robot.trySetJointOmegaRefRad(link, (float)ref.qd);
+			if (!ok2) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
+
+			const bool ok3 = robot.trySetJointAlphaRefRad(link, (float)ref.qdd);
+			if (!ok3) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
+
+			// Remove finished trajectories
+			if (traj->finished(t)) {
+				D_WARN("Trajectory finished immediately: link='%s' t=%.6f", link.c_str(), t);
+				it = _active.erase(it);
+			}
+			else {
+				++it;
+			}
+
 		}
 	}
 } // namespace control
