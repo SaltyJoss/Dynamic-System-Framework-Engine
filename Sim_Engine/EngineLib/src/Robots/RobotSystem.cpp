@@ -493,9 +493,8 @@ namespace robots {
 		for (auto& joint : _robot.joints) {
 			joint.omegaRefRad_s = 0.0f;
 			joint.alphaRefRad_s2 = 0.0f;
-			return true;
 		}
-		return false;
+		return true;
 	}
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (radians)

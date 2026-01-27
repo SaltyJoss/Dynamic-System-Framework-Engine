@@ -438,17 +438,30 @@ namespace gui {
 		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
 		_accum += frame_dt;
 		while (_accum >= _dt) {
-
-			_simTime += _dt;
-
-			if (_scriptRunning && _activeProgram) { 
+			if (_scriptRunning && _activeProgram) {
 				_activeProgram->step(_dt);
-				if (_activeProgram->isCompleted() || _activeProgram->isStopped() || _activeProgram->isFaulted()) {
-					_scriptRunning = false; _activeProgram = nullptr; D_DEBUG("Program execution completed.");
+
+				const bool completed = _activeProgram->isCompleted();
+				const bool stopped   = _activeProgram->isStopped();
+				const bool faulted   = _activeProgram->isFaulted();
+
+				if (completed || stopped || faulted) {
+					D_FAIL("SCRIPT END: completed=%d stopped=%d faulted=%d (dt=%.6f simTime=%.3f)",
+						(int)completed, (int)stopped, (int)faulted, _dt, _simTime);
+
+					_scriptRunning = false;
+					_activeProgram = nullptr;
+					D_DEBUG("Program execution completed.");
 				}
+			}
+			else if (_scriptRunning && !_activeProgram) {
+				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
+				_scriptRunning = false;
 			}
 
 			if (_simRunning) {
+				_simTime += _dt;
+
 				updatePhysics(_dt);
 				if (hasRobot()) { 
 					_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories

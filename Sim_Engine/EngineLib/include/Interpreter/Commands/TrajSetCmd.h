@@ -24,7 +24,7 @@ namespace commands {
         program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
         void execute() override;
 
-        gui::simManager* _sim = nullptr;
+        CommandContextMotion* _cntxMtn = nullptr;
 
         std::string _link;
         std::string _type;

@@ -328,6 +328,11 @@ namespace interpreter {
 				// Create ParallelGroupCmd
 				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
+
+				D_FAIL("CREATE FAILED: cmd=%s id=%s argc=%zu raw='%s'",
+					cmd.cmdName.c_str(), cmd.identifier.c_str(),
+					cmd.tokens.size(), cmd.rawLine.c_str());
+
 				continue;
 			}
 

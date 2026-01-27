@@ -27,6 +27,8 @@ namespace control {
 		// Clears all active trajectories
 		void clearAll();
 
+		bool empty() const { return _active.empty(); }
+
 		// Set a trajectory for a specific robot link
 		void set(const std::string& link, std::unique_ptr<control::IJointTrajectory> traj);
 		// Apply active trajectories to the robot at time t

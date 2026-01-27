@@ -128,13 +128,14 @@ namespace interpreter {
 
 	// Step through the program by dt seconds
 	void StoredProgram::step(double dt) {
-		//LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
+		LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
 
 
 		if (_state == ProgramState::Paused) { return; }
 		if (_state == ProgramState::Stopped || _state == ProgramState::Completed || _state == ProgramState::Faulted) { return; }
 		if (_state != ProgramState::Running) { start(); }
 		if (_stopRequested) { stop(); return; }
+
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 
@@ -161,7 +162,7 @@ namespace interpreter {
 
 		if (r.state == CmdState::Failed) { _state = ProgramState::Faulted; return; }
 		if (r.state == CmdState::Executed) {
-			PC++;
+			++PC;
 			if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 		}
 	}
