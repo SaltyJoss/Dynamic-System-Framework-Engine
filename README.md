@@ -2,15 +2,22 @@
 
 #### Implementation of Mathematical Modelling and Control Optimisation for a Multi-DOF Robotic Arm in Microgravity
 
+### <ins>Robotic Arm Script **[26-01-2026]**</ins>
+
+https://github.com/user-attachments/assets/3f6bace3-3c9b-4410-b8eb-6f51e67dc07e
+
+> **[26-01-2026]** Example of new trajectory logic working visually -> WIP there are ALOT of bugs with current implementation
+> NOTE: effectively ready to extract information for analysis and comparison
+
 ### <ins>Robotic Arm Scripts **[25-01-2026]**</ins>
 
 https://github.com/user-attachments/assets/1d5b637f-f75b-4e18-bdd4-dec6c24fb3ca
 
-> [25-01-2026] Script 1: Example of parallel command execution block in dsl for less robotic movement
+> **[25-01-2026]** Script 1: Example of parallel command execution block in dsl for less robotic movement
 
 https://github.com/user-attachments/assets/c31d2d9b-c5b6-44eb-a99a-41f03d84675f
 
-> [25-01-2026] Script 2: Smaller example of parallel command execution block
+> **[25-01-2026]** Script 2: Smaller example of parallel command execution block
 
 ### <ins>Robotic Arm Script **[24-01-2026]**</ins>
 
