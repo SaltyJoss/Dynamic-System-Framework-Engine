@@ -4,6 +4,9 @@
 #include "core/constants.h"
 #include "IJointTrajectory.h"
 
+#include <vector> 
+#include <utility>
+
 using namespace mathlib;
 using namespace constants;
 
@@ -17,7 +20,7 @@ namespace control {
 
 	class MultisineTrajectory : public IJointTrajectory {
 	public:
-		MultisineTrajectory(double t0, double tf, double q0, const std::vector<SineComponent> comps)
+		MultisineTrajectory(double t0, double tf, double q0, std::vector<SineComponent> comps)
 			: _t0(t0), _tf(tf), _q0(q0), _comps(std::move(comps)) {
 		}
 
