@@ -161,15 +161,15 @@ extern ENGINE_API Debug gLog;
 // --------------------------------------------
 // Debug panel logging macros
 // --------------------------------------------
-#define D_TRACE(fmt, ...) Debug::Instance().dLog(LogLevel::Trace,   fmt, ##__VA_ARGS__)
-#define D_DEBUG(fmt, ...) Debug::Instance().dLog(LogLevel::Debug,   fmt, ##__VA_ARGS__)
-#define D_INFO(fmt,  ...) Debug::Instance().dLog(LogLevel::Info,    fmt, ##__VA_ARGS__)
-#define D_WARN(fmt,  ...) Debug::Instance().dLog(LogLevel::Warning, fmt, ##__VA_ARGS__)
-#define D_ERROR(fmt, ...) Debug::Instance().dLog(LogLevel::Error,   fmt, ##__VA_ARGS__)
-#define D_SUCCESS(fmt,    ...) Debug::Instance().dLog(LogLevel::Success,    fmt, ##__VA_ARGS__) // Using Info level for OK messages
-#define D_FAIL(fmt,  ...) Debug::Instance().dLog(LogLevel::Fail, fmt, ##__VA_ARGS__) // Using Info level for FAIL messages
+#define D_TRACE(fmt, ...)   Debug::Instance().dLog(LogLevel::Trace,   fmt, ##__VA_ARGS__)
+#define D_DEBUG(fmt, ...)   Debug::Instance().dLog(LogLevel::Debug,   fmt, ##__VA_ARGS__)
+#define D_INFO(fmt,  ...)   Debug::Instance().dLog(LogLevel::Info,    fmt, ##__VA_ARGS__)
+#define D_WARN(fmt,  ...)   Debug::Instance().dLog(LogLevel::Warning, fmt, ##__VA_ARGS__)
+#define D_ERROR(fmt, ...)   Debug::Instance().dLog(LogLevel::Error,   fmt, ##__VA_ARGS__)
+#define D_SUCCESS(fmt, ...) Debug::Instance().dLog(LogLevel::Success,    fmt, ##__VA_ARGS__) // Using Info level for OK messages
+#define D_FAIL(fmt,  ...)   Debug::Instance().dLog(LogLevel::Fail, fmt, ##__VA_ARGS__) // Using Info level for FAIL messages
 #define D_RUNTIME(fmt, ...) Debug::Instance().dLog(LogLevel::Runtime, fmt, ##__VA_ARGS__) // Using Runtime level for runtime messages (e.g. performance, sim time)
-#define D_OUTPUT(fmt, ...) Debug::Instance().dLog(LogLevel::Output,    fmt, ##__VA_ARGS__) // Using Info level for general output messages
+#define D_OUTPUT(fmt, ...)  Debug::Instance().dLog(LogLevel::Output,    fmt, ##__VA_ARGS__) // Using Info level for general output messages
 // --------------------------------------------
 // Once variants for debug panel logging macros
 // --------------------------------------------
@@ -254,3 +254,20 @@ extern ENGINE_API Debug gLog;
         } \
     } while(0)
 // --------------------------------------------
+//
+// ============================================
+//          SIMULATION ENGINE LOG MACROS 
+// ============================================
+//
+// --------------------------------------------
+// Simulation engine specific logging macros
+// --------------------------------------------
+#define SIM_ERROR(fmt, ...)     Debug::Instance().simLog(simLogLevel::Error,     fmt, ##__VA_ARGS__) // Using Error level for simulation engine errors
+#define SIM_FAIL(fmt,  ...)     Debug::Instance().simLog(simLogLevel::Fail,      fmt, ##__VA_ARGS__) // Using Fail level for FAIL messages
+#define SIM_SUCCESS(fmt, ...)   Debug::Instance().simLog(simLogLevel::Success,   fmt, ##__VA_ARGS__) // Using Success level for SUCCESSFUL messages
+#define SIM_RUNTIME(fmt, ...)   Debug::Instance().simLog(simLogLevel::Runtime,   fmt, ##__VA_ARGS__) // Using Runtime level for runtime messages (e.g. performance, sim time)
+#define SIM_ROTATE(fmt, ...)    Debug::Instance().simLog(simLogLevel::Rotate,    fmt, ##__VA_ARGS__) // Using Debug level for rotation related messages
+#define SIM_TRANSLATE(fmt, ...) Debug::Instance().simLog(simLogLevel::Translate, fmt, ##__VA_ARGS__) // Using Debug level for translation related messages
+// --------------------------------------------
+
+// END OF FILE

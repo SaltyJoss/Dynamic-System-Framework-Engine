@@ -46,7 +46,6 @@ namespace robots {
 		return angleRad;
 	}
 
-
 	// Convert mathlib::Pose to glm::mat4
 	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
 		glm::mat4 M(1.0f);
@@ -60,48 +59,6 @@ namespace robots {
 		glm::mat4 Ti = glm::translate(glm::mat4(1.0f), -pivot);
 		glm::mat4 R = glm::rotate(glm::mat4(1.0f), angleRad, axisUnit);
 		return T * R * Ti;
-	}
-
-	// Method to compute the world transforms of all robot links at zero joint angles (Not needed nor used currently)
-	static std::vector<glm::mat4> computeVisualZeroWorld(const RobotModel& robot, const std::unordered_map<std::string, int>& linkIndx, const glm::mat4& rootPose) {
-		std::vector<glm::mat4> world(robot.links.size(), glm::mat4(1.0f));
-
-		int rootIndx = linkIndx.at("link00"); // assume first link is root (follows my convention)
-		world[rootIndx] = rootPose;
-
-		// Build parent -> list of outgoing joints
-		std::unordered_map<std::string, std::vector<const RobotJoint*>> children;
-		children.reserve(robot.joints.size());
-		for (const auto& j : robot.joints) { children[j.parent].push_back(&j); }
-
-		// DFS (or BFS)
-		std::stack<std::string> st;
-		st.push("link00"); // start from root
-		world[linkIndx.at("link00")] = rootPose; // set root pose
-		
-		// Traverse the tree, !st.empty() ensures we process all links, including branches (meaning multiple children)
-		while (!st.empty()) {
-			std::string parentName = st.top(); st.pop();
-			int parentIndx = linkIndx.at(parentName);
-
-			auto it = children.find(parentName);
-			if (it == children.end()) continue;
-
-			for (const RobotJoint* jp : it->second) {
-				const RobotJoint& joint = *jp;
-				int childIndx = linkIndx.at(joint.child);
-
-				glm::mat4 T = glm::translate(glm::mat4(1.0f), joint.origin_xyz);
-				glm::mat4 R = glm::mat4_cast(joint.origin_q);
-				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), joint.angleRad, glm::normalize(joint.axis));
-
-				world[childIndx] = world[parentIndx] * T * R * Rq;
-			
-				st.push(joint.child);
-			}
-		}
-
-		return world;
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
@@ -170,17 +127,27 @@ namespace robots {
 			const double theta = x[i];
 			const double omega = x[i + n];
 
-			// Targets and gains
+			// Current joint
 			const RobotJoint& joint = _robot.joints[i];
+
+			// Reference angles, velocities, and accelerations
 			const double thetaRef = static_cast<double>(joint.thetaRefRad);
+			const double omegaRef = static_cast<double>(joint.omegaRefRad_s);
+			const double alphaRef = static_cast<double>(joint.alphaRefRad_s2);
+
+			// PD gains
 			const double k_p = static_cast<double>(joint.k_p);
 			const double k_d = static_cast<double>(joint.k_d);
 
-			// Error
-			double err = thetaRef - theta;
+			// Errors
+			const double err   = thetaRef - theta;
+			const double err_d = omegaRef - omega;
 
-			// PD 
-			double tau = k_p * err - k_d * omega; // control torque
+			// Effective inertia
+			const double I_eff = 1.0; // TODO: per joint effective inertia (will sort once trajectory tracking is in)
+
+			// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
+			double tau = I_eff * alphaRef + k_p * err + k_d * err_d; // control torque
 
 			// Passive dynamics
 			const double damping = static_cast<double>(joint.dynamics.damping);
@@ -200,8 +167,7 @@ namespace robots {
 				if (tau < -e) { tau = -e; }
 			}
 
-			// Effective inertia (assumed 1.0 as placeholder, I aim to extend this later)
-			const double I_eff = 1.0;	// TODO: per joint effective inertia
+			// Angular acceleration
 			double alpha = tau / I_eff; // angular acceleration
 
 			// Omega clamp
@@ -212,12 +178,17 @@ namespace robots {
 
 			dx[i] = omega;		// dtheta/dt = omega
 			dx[i + n] = alpha;	// domega/dt = alpha
-
-			if (i == 2) {
-				LOG_INFO("j03 theta=%.4f ref=%.4f err=%.4f omega=%.6f kp=%.2f kd=%.2f fric=%.4f damp=%.4f tau=%.4f",
+			
+			static double lastLogTime = -1.0;
+			constexpr double LOG_PERIOD = 0.05; // 20 Hz
+			
+			// Logging - periodic to avoid spamming
+			if (lastLogTime < 0.0 || (t - lastLogTime) >= LOG_PERIOD) {
+				SIM_ROTATE("theta = % .4f ref = % .4f err = % .4f omega = % .6f kp = % .2f kd = % .2f fric = % .4f damp = % .4f tau = % .4f",
 					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
+				SIM_RUNTIME("ref q=%.3f qd=%.3f qdd=%.3f", thetaRef, omegaRef, alphaRef); // log reference trajectory
+				lastLogTime = t;
 			}
-
 		}
 		return dx;
 	}
@@ -297,6 +268,9 @@ namespace robots {
 		for (auto& joint : _robot.joints) {
 			joint.omegaRad_s = 0.0f;
 			joint.thetaRefRad = joint.angleRad;
+			joint.omegaRefRad_s = 0.0f;
+			joint.alphaRefRad_s2 = 0.0f;
+
 		}
 
 		updateRobotKinematics();
@@ -436,6 +410,18 @@ namespace robots {
 		return false;
 	}
 
+	// Method to get the target angle (reference) of a specific robot joint in radians
+	bool RobotSystem::tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const {
+		if (!_hasRobot) { return false; }
+		for (const auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				outTargetRad = joint.thetaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Method to set the target angle (reference) of a specific robot joint in radians
 	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, float targetRad) {
 		if (!_hasRobot) { return false; }
@@ -475,6 +461,40 @@ namespace robots {
 			}
 		}
 		return false;
+	}
+
+	// Method to set the reference angular velocity of a specific robot joint in radians
+	bool RobotSystem::trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.omegaRefRad_s = omegaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Method to set the reference angular acceleration of a specific robot joint in radians
+	bool RobotSystem::trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad) {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			if (joint.child == childLink) {
+				joint.alphaRefRad_s2 = alphaRefRad;
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	// Method to zero the reference derivatives (velocity and acceleration) of a specific robot joint
+	bool RobotSystem::tryZeroJointRefDerivatives() {
+		if (!_hasRobot) { return false; }
+		for (auto& joint : _robot.joints) {
+			joint.omegaRefRad_s = 0.0f;
+			joint.alphaRefRad_s2 = 0.0f;
+		}
+		return true;
 	}
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (radians)

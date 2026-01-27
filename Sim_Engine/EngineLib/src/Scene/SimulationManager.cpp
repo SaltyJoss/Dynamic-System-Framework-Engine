@@ -25,6 +25,7 @@
 #include "Robots/RobotLoader.h"
 #include "Robots/RobotModel.h"
 #include "Robots/RobotSystem.h"
+#include "Robots/TrajectoryManager.h"
 
 #include "Interpreter/IStoredProgram.h"
 
@@ -89,6 +90,9 @@ namespace gui {
 		std::unique_ptr<physics::PhysicsSystem> _physics;
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;
+
+		// Trajectory Manager
+		control::TrajectoryManager _traj;
 
 		Impl(simManager& owner) {
 			_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
@@ -434,19 +438,35 @@ namespace gui {
 		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
 		_accum += frame_dt;
 		while (_accum >= _dt) {
-
-			_simTime += _dt;
-
-			if (_scriptRunning && _activeProgram) { 
+			if (_scriptRunning && _activeProgram) {
 				_activeProgram->step(_dt);
-				if (_activeProgram->isCompleted() || _activeProgram->isStopped() || _activeProgram->isFaulted()) {
-					_scriptRunning = false; _activeProgram = nullptr; D_DEBUG("Program execution completed.");
+
+				const bool completed = _activeProgram->isCompleted();
+				const bool stopped   = _activeProgram->isStopped();
+				const bool faulted   = _activeProgram->isFaulted();
+
+				if (completed || stopped || faulted) {
+					D_FAIL("SCRIPT END: completed=%d stopped=%d faulted=%d (dt=%.6f simTime=%.3f)",
+						(int)completed, (int)stopped, (int)faulted, _dt, _simTime);
+
+					_scriptRunning = false;
+					_activeProgram = nullptr;
+					D_DEBUG("Program execution completed.");
 				}
+			}
+			else if (_scriptRunning && !_activeProgram) {
+				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
+				_scriptRunning = false;
 			}
 
 			if (_simRunning) {
+				_simTime += _dt;
+
 				updatePhysics(_dt);
-				if (hasRobot()) { _impl->_robotSystem->step(_dt, _simTime); }
+				if (hasRobot()) { 
+					_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories
+					_impl->_robotSystem->step(_dt, _simTime);	 // step robot system
+				}
 			}
 
 			_accum -= _dt;
@@ -456,24 +476,24 @@ namespace gui {
 	}
 
 	void simManager::startSimulation() {
+		D_INFO("starting simulation");
 		_simTime = 0.0;
 		_simRunning = true;
-		D_INFO("startSimulation() simRunning=%d", (int)_simRunning);
-		D_INFO("startSimulation() simTime=%.6f", _simTime);
-
 	}
 
 	void simManager::stopSimulation() {
+		D_INFO("stopping simulation");
 		_simRunning = false;
-		D_INFO("stopSimulation() simTime before reset=%.6f", _simTime);
 		_simTime = 0.0; // reset sim time
-		D_INFO("stopSimulation() _simRunning=%d", (int)_simRunning);
-		D_INFO("stopSimulation() simTim after resete=%.6f", _simTime);
 	}
 
 	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
 	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
 	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
+
+	control::TrajectoryManager& simManager::traj() { return _impl->_traj; }
+	const control::TrajectoryManager& simManager::traj() const { return _impl->_traj; }
+
 
 // --------------------------------------------------
 //						ROBOTS

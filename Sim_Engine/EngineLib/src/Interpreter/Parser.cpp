@@ -21,6 +21,7 @@ namespace interpreter {
 				s == "rotateto"			||
 				s == "rotatejointby"	||
 				s == "rotatejointto"	||
+				s == "trajset"			||
 				s == "translate"		||
 				s == "set"				||
 				s == "select" 			||
@@ -327,6 +328,11 @@ namespace interpreter {
 				// Create ParallelGroupCmd
 				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
+
+				D_FAIL("CREATE FAILED: cmd=%s id=%s argc=%zu raw='%s'",
+					cmd.cmdName.c_str(), cmd.identifier.c_str(),
+					cmd.tokens.size(), cmd.rawLine.c_str());
+
 				continue;
 			}
 
@@ -348,16 +354,17 @@ namespace interpreter {
 			return;
 		}
 
+		// Check if command is registered
 		if (!commands::CommandFactory::Instance().hasCommand(cmd.cmdName)) {
 			D_FAIL("Unknown command: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
 			_program->stop();
 			return;
 		}
-
+		
+		// Create command instance
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
 		if (command) {
-
 			D_DEBUG("SCRIPT: %s \n\t| target=%s \n\t| args=%d",
 				cmd.cmdName.c_str(),
 				cmd.identifier.c_str(),

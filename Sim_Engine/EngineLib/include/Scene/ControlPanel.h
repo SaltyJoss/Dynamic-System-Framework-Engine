@@ -99,7 +99,7 @@ namespace gui {
 		bool diagRunning = false;
         bool _robotRequested = false;
         bool _hasRobot = false;
-		bool _openStats = false;
+        bool _openStats = true;
 
         std::string _requestedRobot;
         std::string _currentObjectName;
@@ -111,7 +111,7 @@ namespace gui {
 
 		float simLength = 30.0f;  // ~30 seconds default
 		float diagLength = 15.0f; // ~15 seconds default
-        float deltaTime = 1 / 120; // ~120 FPS default
+        float deltaTime = 1 / 180; // ~180 FPS default
 		float simTime = 0.0f;     // current simulation time
 		float diagTime = 0.0f;    // current diagnostic time
 

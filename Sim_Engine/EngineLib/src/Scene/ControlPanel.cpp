@@ -130,7 +130,6 @@ namespace gui {
                 _resChanged = false;
 			}
 
-
             ImGui::EndMenu();
         }
 
@@ -179,14 +178,13 @@ namespace gui {
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
-        ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
         const bool wasRunning = _sim->isSimRunning(); // snapshot
 
         // Simulation Start/Stop Button
         if (_sim->isSimRunning()) {
 		    if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
-
                 LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
                 D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
         }
@@ -194,23 +192,21 @@ namespace gui {
 		beginControlPanel("ControlPanel"); // Begin Child Panel
 
         roboticArmSelector();
-		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Simulation")) {
             simulationProperties();
             jointProperties();
             objectProperties();
 			if (_openStats) { stats(); }
         }
-        if (ImGui::CollapsingHeader("Light")) { tempLightControls(); }
-        if (ImGui::CollapsingHeader("Camera")) { cameraProperties(); }
         if (ImGui::CollapsingHeader("Display")) { displaySettings(); }
-
-        sceneObjectsTable();
 
 		endControlPanel(); // End Child Panel
 
         ImGui::End();
         ImGui::PopStyleColor();
+
+        sceneObjectsTable();
 
         _meshLoad.Display();
         if (_meshLoad.HasSelected()) {
@@ -234,43 +230,9 @@ namespace gui {
         }
     }
 
-    void ControlPanel::tempLightControls() {
-        if (!_light) return;
-        ImGui::SeparatorText("Light Settings:");
-        ImGui::Text("Intensity");
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::DragFloat("##intensity", &_light->_intensity, 0.1f, 0.0f, 100.0f, "%.1f");
-        ImGui::Text("Color"); 
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::ColorEdit3("##Colour", glm::value_ptr(_light->_colour)), ImGui::SameLine();
-		ImGui::Separator();
-		ImGui::Text("Direction");
-        ImGui::SetNextItemWidth(150.0f);
-		ImGui::DragFloat3("##direction", &_light->_direction.x, 0.1f, -1.0f, 1.0f, "%.2f");
-		ImGui::Separator();
-        ImGui::Text("Position");
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::DragFloat3("##position", &_light->_position.x, 0.1f, -100.0f, 100.0f, "%.1f");
-        ImGui::Separator();
-    }
-
     void ControlPanel::simulationProperties() {
         ImGui::Text("Setup");
         ImGui::Separator();
-
-		ImGui::Text("Simulation Length:");
-
-        float step = 0.001f;
-        float stepFast = 0.01f;
-
-        if (!_hasRobot) {
-            ImGui::SetNextItemWidth(150.0f);
-            ImGui::InputScalar("seconds##sim", ImGuiDataType_Float, &simLength, &step, &stepFast, "%.3f");
-        }
-
-        ImGui::Text("Delta Time (dt)");
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
 
 		ImGui::NewLine();
 
@@ -292,30 +254,35 @@ namespace gui {
 
                     switch (updatedMethod) {
                     case integration::eIntegrationMethod::Euler:
-                        D_INFO("Integrator set to Euler");
-                        break;
+                        D_INFO("Integrator set to Euler"); break;
                     case integration::eIntegrationMethod::Midpoint:
-                        D_INFO("Integrator set to RK2 (Midpoint)");
-                        break;
+                        D_INFO("Integrator set to RK2 (Midpoint)"); break;
                     case integration::eIntegrationMethod::Heun:
-                        D_INFO("Integrator set to RK2 (Heun)");
-						break;
+                        D_INFO("Integrator set to RK2 (Heun)"); break;
                     case integration::eIntegrationMethod::Ralston:
-                        D_INFO("Integrator set to RK2 (Ralston)");
-						break;
+                        D_INFO("Integrator set to RK2 (Ralston)"); break;
                     case integration::eIntegrationMethod::RK4:
-                        D_INFO("Integrator set to RK4");
-                        break;
+                        D_INFO("Integrator set to RK4"); break;
                     default:
                         break;
                     }
                 }
-                if (isSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-			}
+                if (isSelected) { ImGui::SetItemDefaultFocus(); }
+            }
             ImGui::EndCombo();
         }
+
+
+        float step = 0.001f;
+        float stepFast = 0.01f;
+
+		ImGui::BeginDisabled(_sim->isSimRunning());
+        ImGui::Text("Delta Time (dt)");
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
+		ImGui::EndDisabled();
+
+        ImGui::Text("Current dt: %.5f seconds", _sim->getFixedDeltaTime());
 
         // Deals with simulation time tracking using chrono
         if (_sim->isSimRunning()) {
@@ -339,7 +306,7 @@ namespace gui {
             ImGui::Separator();
             return;
 		}
-        if (!_obj) {
+        if (!_obj && !_hasRobot) {
             ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             ImGui::Separator();
@@ -348,68 +315,116 @@ namespace gui {
 
         ImGui::SeparatorText("Physics Settings:");
 
-		// Gravity Controls
-        ImGui::Text("Gravity");
-        double minGravity = 0.0; double maxGravity = 20.0;
-		ImGui::SetNextItemWidth(150.0f);
-        ImGui::DragScalar("m/s^2", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity); // 5 decimal places for precision (because I want to test realistic gravity values)
-
         ImGui::Separator();
 
-        double minMass = 0.25; double maxMass = 100.0;
-        double minDamping = 0.0; double maxDamping = 1.0;
+		double minMass = 0.0; double maxMass = 100.0;        // mass limits
+		double minDamping = 0.0; double maxDamping = 1.0;    // damping limits
+        double minFriction = 0.0; double maxFriction = 10.0; // friction limits
+		double minGravity = 0.0; double maxGravity = 10.0;   // gravity limits
 
         if (_hasRobot) {
-            for (const auto& link : _sim->getRobotSystem()->links()) { if (link.name == _obj->name) { minMass = link.inertial.mass; maxMass = link.inertial.mass; } }
-			for (const auto& joint : _sim->getRobotSystem()->joints()) { if (joint.child == _obj->name) { maxDamping = joint.dynamics.damping; } }
-        }
+            robots::RobotSystem* robot = _sim->getRobotSystem();
+			auto& links = robot->links();
+            auto& joints = robot->joints();
 
+            static int currentJointIndex = 0;
+            currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
 
-        // Mass Controls
+            for (int i = 0; i < (int)joints.size(); ++i) {
+                if (joints[i].name == _currentJointName) { currentJointIndex = i; break; }
+            }
 
-        ImGui::Text("Mass:");
-        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+			auto& j = joints[currentJointIndex];
 
-        ImGui::Separator();
+            int linkIndex = currentJointIndex;
+            linkIndex = std::clamp(linkIndex, 0, (int)links.size() - 1);
+            auto& L = links[linkIndex];
 
-        ImGui::Text("Damping:");
-        ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg/s", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
+            float damping = (float)j.dynamics.damping;
+            float friction = (float)j.dynamics.friction;
+            double g = (double)robot->getGravity();
+			
+			ImGui::BeginDisabled(_sim->isSimRunning());
 
-        ImGui::Separator();
+            ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
+            ImGui::Text("Joint Angle: %.3f - Link Mass: %.3f kg", glm::degrees(j.angleRad), L.inertial.mass);
+            ImGui::Spacing();
 
-        if (_obj->category == scene::ObjectCategory::General) {
+            ImGui::Text("Damping:");
             ImGui::SetNextItemWidth(150.0f);
-            // Scale Controls
-            ImGui::Text("Scale:");
-            float minScale = 0.0001f; float maxScale = 100.0f;
-            ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
-            ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
-            ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
+            if (ImGui::DragFloat("kg/s##damp", &damping, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = damping; }
+            ImGui::Spacing();
+
+            ImGui::Text("Friction:");
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::DragFloat("##fric", &friction, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = friction;  }
+            ImGui::Spacing();
+
+            ImGui::Text("Gravity:");
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &g, 0.00005f, &minGravity, &maxGravity)) {
+                robot->setGravity(g); // you need a setter
+            }
+            ImGui::Spacing();
+
+			ImGui::EndDisabled();
 
             ImGui::Separator();
-
-            // Linear Velocity Controls
-            ImGui::Text("Linear Velocity:");
-            double minVelocity = -100.0; double maxVelocity = 100.0;
-            ImGui::DragScalar("X##linVelX", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
-            ImGui::DragScalar("Y##linVelY", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
-            ImGui::DragScalar("Z##linVelZ", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
-
-            ImGui::Separator();
-
-            // Angular Velocity Controls
-            ImGui::Text("Angular Velocity:");
-            double minTorque = -100.0; double maxTorque = 100.0;
-            ImGui::DragScalar("X##angVelX", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
-            ImGui::DragScalar("Y##angVelY", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
-            ImGui::DragScalar("Z##angVelZ", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
-
-            ImGui::Separator();
-        }
-        if (_hasRobot) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Note: Some object properties are locked for individual robot joints and links.");
             ImGui::Separator();
-		}
+        }
+        else if (!_sim->isSimRunning()) {
+            minMass = 0.25; maxMass = 100.0;
+            minDamping = 0.0; maxDamping = 1.0;
+
+            ImGui::BeginDisabled(_sim->isSimRunning());
+
+            ImGui::Text("Mass:");
+            ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg##mass", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
+            ImGui::Spacing();
+
+            ImGui::Text("Damping:");
+            ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg/s##damp", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
+            ImGui::Spacing();
+
+			ImGui::Text("Gravity:");
+			ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity);
+            ImGui::Spacing();
+
+			ImGui::Separator();
+
+            if (_obj->category == scene::ObjectCategory::General) {
+                ImGui::SetNextItemWidth(150.0f);
+                // Scale Controls
+                ImGui::Text("Scale:");
+                float minScale = 0.0001f; float maxScale = 100.0f;
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragFloat("(x)", &_obj->transform.scale.x, 0.001f, minScale, maxScale);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragFloat("(y)", &_obj->transform.scale.y, 0.001f, minScale, maxScale);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragFloat("(z)", &_obj->transform.scale.z, 0.001f, minScale, maxScale);
+
+                ImGui::Spacing();
+
+                // Linear Velocity Controls
+                ImGui::Text("Linear Velocity:");
+                double minVelocity = -100.0; double maxVelocity = 100.0;
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("X##linVelX", ImGuiDataType_Double, &_obj->state.linearVelocity.x(), 0.0025f, &minVelocity, &maxVelocity);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("Y##linVelY", ImGuiDataType_Double, &_obj->state.linearVelocity.y(), 0.0025f, &minVelocity, &maxVelocity);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("Z##linVelZ", ImGuiDataType_Double, &_obj->state.linearVelocity.z(), 0.0025f, &minVelocity, &maxVelocity);
+
+                ImGui::Spacing();
+
+                // Angular Velocity Controls
+                ImGui::Text("Angular Velocity:");
+                double minTorque = -100.0; double maxTorque = 100.0;
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("X##angVelX", ImGuiDataType_Double, &_obj->state.angularVelocity.x(), 0.0025f, &minTorque, &maxTorque);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("Y##angVelY", ImGuiDataType_Double, &_obj->state.angularVelocity.y(), 0.0025f, &minTorque, &maxTorque);
+                ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("Z##angVelZ", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
+
+                ImGui::Separator();
+
+				ImGui::EndDisabled();
+            }
+        }
 
         ImGui::Text("Reset Object:");
         // Reset Object Button
@@ -466,21 +481,24 @@ namespace gui {
         }
 
         const char* preview = _currentJointName.c_str();
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("Joint", preview)) {
-            for (int i = 0; i < (int)joints.size(); ++i) {
-                const bool selected = (i == currentJointIndex);
-                if (ImGui::Selectable(joints[i].name.c_str(), selected)) {
-                    currentJointIndex = i;
-                    _currentJointName = joints[i].name;
-                    _currentLinkName = joints[i].child;
 
-                    minAngleDeg = glm::degrees(joints[i].limits.minAngle);
-                    maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
+        if (!_sim->isSimRunning()) {
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::BeginCombo("Joint", preview)) {
+                for (int i = 0; i < (int)joints.size(); ++i) {
+                    const bool selected = (i == currentJointIndex);
+                    if (ImGui::Selectable(joints[i].name.c_str(), selected)) {
+                        currentJointIndex = i;
+                        _currentJointName = joints[i].name;
+                        _currentLinkName = joints[i].child;
+
+                        minAngleDeg = glm::degrees(joints[i].limits.minAngle);
+                        maxAngleDeg = glm::degrees(joints[i].limits.maxAngle);
+                    }
+                    if (selected) ImGui::SetItemDefaultFocus();
                 }
-                if (selected) ImGui::SetItemDefaultFocus();
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
         }
 
         float angleRad = 0.0f;
@@ -561,6 +579,7 @@ namespace gui {
             // Position block
 			if (ImGui::BeginTable("telemetryTable", 2, ImGuiTableFlags_BordersInnerV)) {
 				// Position
+				ImGui::BeginDisabled(_hasRobot); // disable position display for robot joints
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0); ImGui::Text("Position (m)");
 				ImGui::TableSetColumnIndex(1); ImGui::Text("X: %.3f  Y: %.3f  Z: %.3f", pos.x, pos.y, pos.z);
@@ -571,6 +590,7 @@ namespace gui {
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0); ImGui::Text("Rotation (deg)");
 				ImGui::TableSetColumnIndex(1); ImGui::Text("Pitch: %.1f  Yaw: %.1f  Roll: %.1f", eulerDeg.x, eulerDeg.y, eulerDeg.z);
+                ImGui::EndDisabled();
 
 				ImGui::EndTable();
 			}
@@ -585,43 +605,25 @@ namespace gui {
 
         if (*_controlMode == simManager::ControlMode::Object) { _sim->attachCameraToObject(_obj); }
         else { _sim->detachCameraFromObject(); }
-
-        //ImGui::SeparatorText("Object Appearance");
-        //if (!_mesh) {
-        //    ImGui::Text("No mesh loaded!");
-        //    LOG_WARN_ONCE("No mesh loaded while rendering Object Appearance");
-        //}
     }
 
     void ControlPanel::displaySettings() {
-		if (_sim->isSimRunning()) {
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit display settings while simulation is running.");
-            ImGui::Separator();
-            return;
-        }
-
         ImGui::SeparatorText("Display Settings");
-
-        //bool enabled = _sim->isSkyboxEnabled();
-        //if (ImGui::Checkbox("Enable Skybox", &enabled)) {
-        //    _sim->setSkyboxEnabled(enabled);
-        //    LOG_INFO("Skybox Enabled = %s", enabled ? "true" : "false");
-        //}
-
         static float fovDeg = 70.0f;
-
+        ImGui::BeginDisabled(_sim->isSimRunning());
         bool edited = ImGui::SliderFloat("Field of View", &fovDeg, 25.0f, 125.0f, "%.1f");
         bool active = ImGui::IsItemActive();
 
         if (!active && !edited) { fovDeg = _sim->getCamera()->getFOVDegrees(); }
         if (edited) { _sim->getCamera()->setFOVDegrees(fovDeg); }
+        ImGui::EndDisabled();
     }
 
 	// Robotic Arm Selector
     void ControlPanel::roboticArmSelector() {
         if (!_showRobotSelector) return;
 
-        ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
+        ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_NoDocking);
 
         ImGui::Text("Select a robotic arm model:");
         ImGui::Separator();
@@ -639,7 +641,7 @@ namespace gui {
     void ControlPanel::roboticCardDisplay(const char* name, const char* company) {
         ImGui::PushID(name);
 
-        ImGui::BeginChild("robot_card", ImVec2(0, 42.5), true, ImGuiWindowFlags_None);
+        ImGui::BeginChild("robot_card", ImVec2(0, 55), true, ImGuiWindowFlags_NoScrollbar);
 
         // Loads robot
         if (ImGui::Selectable(name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
@@ -653,7 +655,7 @@ namespace gui {
 			_hasRobot = true;
         }
 
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", company);
+        ImGui::TextDisabled("Company: %s", company);
 
         ImGui::EndChild();
         ImGui::Spacing();
@@ -663,12 +665,18 @@ namespace gui {
 
 	// Scene Objects List
 	void ControlPanel::sceneObjectsTable() {
-		ImGui::BeginChild("SceneObjectsTable", ImVec2(0, 250), true, ImGuiWindowFlags_None);
+        ImGui::SetNextWindowPos(ImVec2(0, 250), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 
-		auto& objs = _sim->getObjects();          // get reference to scene objects
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
+		ImGui::Begin("SceneObjectsTable", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+
+        beginControlPanel("Rigid Body Table");
+
+		auto& objs = _sim->getObjects();
 		int indexToDelete = -1;
 
-		ImGui::Text("Scene Table");
+		ImGui::Text("Active Rigid-Bodies");
 		ImGui::Separator();
 
 		ImGuiTableFlags tableFlags =
@@ -819,15 +827,6 @@ namespace gui {
 			rowH = 20.0f;
 			ImGui::TableNextRow(ImGuiTableRowFlags_None, rowH);
 
-			ImGui::TableSetColumnIndex(0);
-			ImGui::TextUnformatted("Objects");
-
-			ImGui::TableSetColumnIndex(1);
-			ImGui::TextDisabled("Obj");
-
-			ImGui::TableSetColumnIndex(2);
-			ImGui::TextDisabled("Actions");
-
 			// General Object Loop
 			for (int i = 0; i < objs.size(); i++) {
 				auto* obj = objs[i].get();
@@ -876,9 +875,12 @@ namespace gui {
 			_sim->deleteObject(indexToDelete);
 			LOG_INFO("Deleted object at index %d", indexToDelete);
 		}
-		ImGui::EndChild();
-	}
 
+		endControlPanel();
+
+		ImGui::End();
+        ImGui::PopStyleColor();
+	}
 
 	// --- HELPER FUNCTIONS ---
 

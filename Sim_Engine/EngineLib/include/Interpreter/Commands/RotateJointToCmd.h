@@ -13,7 +13,7 @@ namespace commands {
 		// Constructor
 		RotateJointToCmd(std::string link, double maxOmegaDeg, double angleDeg);
 
-		std::string_view getName() const { return "rotateBy"; }
+		std::string_view getName() const { return "rotateJointTo"; }
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }

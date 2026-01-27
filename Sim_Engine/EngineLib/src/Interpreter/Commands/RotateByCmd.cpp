@@ -28,7 +28,7 @@ namespace commands {
 		scene::Object* obj = cntx.resolveDefaultObject();
 		if (!obj) {
 			markFailed("rotateBy(<objID>,...) target but no current object selected.");
-			D_FAIL("rotateBy(<objID>,...) target but no current object selected.");
+			SIM_FAIL("rotateBy(<objID>,...) target but no current object selected.");
 			return CmdResult{ CmdState::Failed, {}, "No current object selected." };
 		}
 
@@ -40,7 +40,7 @@ namespace commands {
 		auto result = cntx.rotateObject(obj, mask, _omegaDeg, dt);
 		if (!result.ok) {
 			markFailed(result.message);
-			D_FAIL("Failed to rotate object -> %s", result.message.c_str());
+			SIM_FAIL("Failed to rotate object -> %s", result.message.c_str());
 			return CmdResult{ CmdState::Failed, {}, result.message };
 		}
 
@@ -49,11 +49,11 @@ namespace commands {
 			if (obj) { cntx.stopRotation(obj, mask); }
 
 			markCompleted();
-			D_SUCCESS("Completed rotation of %.2f degrees.", _deltaDeg);
+			SIM_SUCCESS("Completed rotation of %.2f degrees.", _deltaDeg);
 			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
-		D_RUNTIME("Total rotated: %.2f / %.2f degrees.", _totalRotated, _deltaDeg);
+		SIM_RUNTIME("Total rotated: %.2f / %.2f degrees.", _totalRotated, _deltaDeg);
 
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
@@ -68,13 +68,13 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateRotateByCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateBy(<objID>, <axes>, <omegaDeg>, <deltaDeg>)
 		if (args.size() != 3) {
-			D_FAIL("rotateBy command expects 3 args: <axes>, <omegaDeg>, <deltaDeg>, got %zu.", args.size());
+			SIM_FAIL("rotateBy command expects 3 args: <axes>, <omegaDeg>, <deltaDeg>, got %zu.", args.size());
 			return nullptr;
 		}
 
 		scene::ObjectID objID{};
 		if(!tryParseObjID(id, objID)) {
-			D_FAIL("rotateBy command requires a valid object ID as the first argument.");
+			SIM_FAIL("rotateBy command requires a valid object ID as the first argument.");
 			return nullptr;
 		}
 
@@ -84,7 +84,7 @@ namespace commands {
 		auto omegaOpt = parseDouble(args[1]);
 		auto deltaOpt = parseDouble(args[2]);
 		if (!omegaOpt || !deltaOpt) {
-			D_FAIL("rotateBy command requires numeric omega and delta.");
+			SIM_FAIL("rotateBy command requires numeric omega and delta.");
 			return nullptr;
 		}
 

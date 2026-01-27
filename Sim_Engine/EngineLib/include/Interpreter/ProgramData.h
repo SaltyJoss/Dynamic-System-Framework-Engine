@@ -107,6 +107,7 @@ namespace program_data {
 		CmdSignalType signal = CmdSignal_None;
 		size_t jumpTarget = 0; // for jump signals
 	};
+
 	// Command result struct
 	struct ENGINE_API CmdResult {
 		CmdState state = CmdState::NotStarted;

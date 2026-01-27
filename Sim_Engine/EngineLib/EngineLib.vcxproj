@@ -115,8 +115,13 @@
     <ClInclude Include="..\External\imgui\imstb_textedit.h" />
     <ClInclude Include="..\External\imgui\imstb_truetype.h" />
     <ClInclude Include="..\External\MathLib\include\control\Error.h" />
+    <ClInclude Include="..\External\MathLib\include\control\IJointTrajectory.h" />
     <ClInclude Include="..\External\MathLib\include\control\Metrics.h" />
+    <ClInclude Include="..\External\MathLib\include\control\MultisineTrajectory.h" />
     <ClInclude Include="..\External\MathLib\include\control\PID.h" />
+    <ClInclude Include="..\External\MathLib\include\control\SinusoidalTrajectory.h" />
+    <ClInclude Include="..\External\MathLib\include\control\TrajectoryTypes.h" />
+    <ClInclude Include="..\External\MathLib\include\control\TrapezoidTrajectory.h" />
     <ClInclude Include="..\External\MathLib\include\core\constants.h" />
     <ClInclude Include="..\External\MathLib\include\core\Types.h" />
     <ClInclude Include="..\External\MathLib\include\core\Utils.h" />
@@ -155,6 +160,8 @@
     <ClInclude Include="include\Interpreter\Commands\SpinCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\StartCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\StopCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\TrajClearCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\TrajSetCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\WaitCmd.h" />
     <ClInclude Include="include\Interpreter\ICommand.h" />
     <ClInclude Include="include\Interpreter\IStoredProgram.h" />
@@ -192,6 +199,7 @@
     <ClInclude Include="include\Robots\RobotLoader.h" />
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Robots\RobotSystem.h" />
+    <ClInclude Include="include\Robots\TrajectoryManager.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
     <ClInclude Include="include\Scene\CommandScriptEditor.h" />
@@ -227,6 +235,8 @@
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\StartCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\StopCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\TrajClearCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\TrajSetCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\WaitCmd.cpp" />
     <ClCompile Include="src\Interpreter\Parser.cpp" />
     <ClCompile Include="src\Interpreter\RegisterCommand.cpp" />
@@ -234,6 +244,7 @@
     <ClCompile Include="src\Interpreter\UIContext.cpp" />
     <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Numerics\IntegrationService.cpp" />
+    <ClCompile Include="src\Robots\TrajectoryManager.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>
   <ItemGroup>

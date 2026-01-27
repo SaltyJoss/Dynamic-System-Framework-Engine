@@ -52,6 +52,7 @@ namespace scene {
 namespace interpreter { class ENGINE_API IStoredProgram; }
 namespace physics { class ENGINE_API PhysicsSystem; }
 namespace robots { class ENGINE_API RobotSystem; }
+namespace control { class ENGINE_API TrajectoryManager; }
 
 // I want to rename to more appropriate namespace later
 namespace gui {
@@ -160,6 +161,10 @@ namespace gui {
 
         robots::RobotSystem* getRobotSystem();
         const robots::RobotSystem* getRobotSystem() const;
+
+        control::TrajectoryManager& traj();
+        const control::TrajectoryManager& traj() const;
+
 
 		// Input Handling
         void processMovementKey(int key, float delta);

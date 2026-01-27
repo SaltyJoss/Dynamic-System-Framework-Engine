@@ -37,8 +37,11 @@ namespace gui {
 	static int textResizeCallback(ImGuiInputTextCallbackData* data) {
 		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
 			auto* str = static_cast<std::string*>(data->UserData);
-			str->resize(data->BufTextLen);
+			// Resize string callback 
+			str->resize(data->BufTextLen + 1);
 			data->Buf = str->data();
+			// Ensure string size matches buffer length
+			str->resize(data->BufTextLen);
 		}
 		return 0;
 	}
@@ -117,7 +120,7 @@ namespace gui {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.70f, 0.10f, 0.10f, 1.0f));
 		}
 
-		if (ImGui::Button(_sim->isScriptRunning() ? "Stop Script" : "Run Script")) {
+		if (ImGui::Button(_sim->isScriptRunning() ? "Stop" : "Run")) {
 			_sim->setScriptRunning(!_sim->isScriptRunning());
 			LOG_INFO("Command script %s.", _sim->isScriptRunning() ? "started" : "stopped");
 			D_INFO("Command script %s.", _sim->isScriptRunning() ? "started" : "stopped");
@@ -199,6 +202,8 @@ namespace gui {
 		}
 
 		endEditorPanel();
+		
+
 
 		ImGui::End();
 		ImGui::PopStyleColor();
@@ -228,10 +233,12 @@ namespace gui {
 			ImGuiInputTextFlags_AllowTabInput |
 			ImGuiInputTextFlags_CallbackResize;
 
+		if (_scriptText.empty() || _scriptText.back() != '\0') { _scriptText.push_back('\0'); }
+
 		ImGui::InputTextMultiline(
 			"##editor",
 			_scriptText.data(),
-			_scriptText.size() + 1,
+			_scriptText.capacity() + 1,
 			ImVec2(-FLT_MIN, -FLT_MIN),
 			flags,
 			textResizeCallback,
@@ -254,11 +261,11 @@ namespace gui {
 		if (!_scriptText.empty() && _scriptText[0] != '\0') ++lineCount;
 
 
-		// basic status: character count + quick hint
+		// Render status info
 		ImGui::TextDisabled("Lines: %d", lineCount);
 		ImGui::SameLine(); ImGui::TextDisabled(" | ");
 		ImGui::SameLine(); ImGui::TextDisabled("Chars: %d", (int)_scriptText.size());
-		ImGui::SameLine();  ImGui::TextDisabled("|");
+		ImGui::SameLine(); ImGui::TextDisabled(" | ");
 		ImGui::SameLine(); ImGui::TextDisabled("State: %s", _sim->isScriptRunning() ? "Running" : "Idle");
 	}
 
@@ -387,12 +394,7 @@ namespace gui {
 	}
 
 	void CommandScriptEditor::renderCmdInstructions() {
-		ImGui::BeginChild(
-			"CmdInstructions",
-			ImVec2(0, -30),
-			true,
-			ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar
-		);
+		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 		ImGui::Spacing();
 
 		ImGui::SeparatorText("DSL Command Format:");
@@ -418,58 +420,54 @@ namespace gui {
 		ImGui::SeparatorText("DSL Command List:");
 		ImGui::Spacing();
 
-		// --- TRANSLATE ---
-		// translate(obj, x, y, z, vel) or translate({x,y,z}, vel, dt) depending on your actual command design
-		ImGui::TextColored(CMD_COL, "translate");
-		TextInlineColored(ARG_COL, "(obj, ");
-		TextInlineColored(ARG_COL, "x, y, z, ");
-		TextInlineColored(ARG_COL, "distance, velocity)");
-		TextInlineColored(DESC_COL, " # Translate default object");
+		// --- ROTATEJOINTTO ---
+		ImGui::TextColored(CMD_COL, "rotateJointTo");
+		TextInlineColored(ARG_COL, "(<J_i>, <°w^(-1)>, <theta°>)");
+
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Rotates robotic arm joint (J) to some angle (°) by some max angular velocity (°w^(-1))");
+			ImGui::EndTooltip();
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		// --- ROTATE (axis mask) ---
-		ImGui::TextColored(CMD_COL, "rotate");
-		TextInlineColored(ARG_COL, "({x,y,z}, omega, startDeg, endDeg)");
-		TextInlineColored(DESC_COL, " # Rotate about axes (mask)");
+		// --- ROTATEJOINTBY ---
+		ImGui::TextColored(CMD_COL, "rotateJointBy");
+		TextInlineColored(ARG_COL, "(<J_i>, <°w^(-1)>, <delta°>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Rotates robotic arm joint (J_i) by some delta angle (°) by some angular velocity (°w^(-1))");
+			ImGui::EndTooltip();
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		// --- ROTATE (default object) ---
-		ImGui::TextColored(CMD_COL, "rotate");
-		TextInlineColored(ARG_COL, "(obj, omega, startDeg, endDeg)");
-		TextInlineColored(DESC_COL, " # Rotate default object (mask defaults e.g. z)");
+		// --- ROTATETO ---
+		ImGui::TextColored(CMD_COL, "rotateTo");
+		TextInlineColored(ARG_COL, "(<B>, <{x,y,z}>, <°ω⁻¹>, <theta°>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Rotates a rigid body (B) to some angle (°) by some max angular velocity (°w^(-1)) across some axis ({x,y,z})");
+			ImGui::EndTooltip();
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		// --- ROTATE (link/joint) ---
-		ImGui::TextColored(CMD_COL, "rotate");
-		TextInlineColored(ARG_COL, "(linkName, omega, startDeg, endDeg)");
-		TextInlineColored(DESC_COL, " # Rotate robot joint/link");
-
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
-
-		// --- SET (integrator) ---
-		ImGui::TextColored(CMD_COL, "set");
-		TextInlineColored(ARG_COL, "(integrator, euler|midpoint|heun|ralston|rk4)");
-		TextInlineColored(DESC_COL, " # Set integration method");
-
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
-
-		// --- COLOUR ---
-		ImGui::TextColored(CMD_COL, "colour");
-		TextInlineColored(ARG_COL, "(obj, r, g, b)");
-		TextInlineColored(DESC_COL, " # Set colour (RGB 0..1 or 0..255 depending on your design)");
+		// --- ROTATEBY ---
+		ImGui::TextColored(CMD_COL, "rotateBy");
+		TextInlineColored(ARG_COL, "(<B>, <{x,y,z}>, <°w^(-1)>, <delta°>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Rotates a rigid body (B) by some delta angle (°) at some angular velocity (°w^(-1)) across some axis ({x,y,z})");
+			ImGui::EndTooltip();
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -477,28 +475,113 @@ namespace gui {
 
 		// --- LOAD ---
 		ImGui::TextColored(CMD_COL, "load");
-		TextInlineColored(ARG_COL, "(obj, \"path/to/model.obj\")");
-		TextInlineColored(DESC_COL, " # Load object asset");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Load some single or chain rigid body model");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "(<id>, <path>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::TextDisabled("Identifiers & Arguments:");
+			ImGui::TextDisabled("	• \"Robot\" -> args: \"Z1\", \"UR5\", \"Panda\", \"KUKA iiwa\", \"some\\path\\to\\robot.json\"");
+			ImGui::TextDisabled("	• \"Obj\"	-> args: \"cube\", \"circle\", \"some\\path\\to\\object\\location.fbx\"");
+			ImGui::EndTooltip(); 
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		ImGui::TextColored(CMD_COL, "load");
-		TextInlineColored(ARG_COL, "(robot, \"RobotName\" | \"path/to/robot.json\")");
-		TextInlineColored(DESC_COL, " # Load robot model");
+		// --- SET ---
+		ImGui::TextColored(CMD_COL, "set");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Set some identifier by a value in its respective format");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "(<id>, <value>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::TextDisabled("Identifiers & Arguments:");
+			ImGui::TextDisabled("	• \"integrator\" -> args: \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\"");
+			ImGui::TextDisabled("	• \"dt\"         -> args: \"double val\"");
+			ImGui::TextDisabled("	• \"omega\"      -> args: \"double val\"");
+			ImGui::TextDisabled("	• \"colour\"		-> args: \"{1.0, 1.0, 1.0}\", \"#ffffff\", \"red\"");
+			ImGui::EndTooltip();
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		ImGui::TextColored(CMD_COL, "load");
-		TextInlineColored(ARG_COL, "(tex, \"path/to/texture.png\")");
-		TextInlineColored(DESC_COL, " # Load texture");
+		// --- START ---
+		ImGui::TextColored(CMD_COL, "start");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Start the simulation run");
+			ImGui::TextDisabled("No arguments.");
+			ImGui::TextDisabled("Note: 'start' must be called to begin a simulation run after loading models and setting parameters.");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "()");
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
+
+		// --- STOP ---
+		ImGui::TextColored(CMD_COL, "stop");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Stops the simulation");
+			ImGui::TextDisabled("No arguments.");
+			ImGui::TextDisabled("Note: \'stop\' halts the simulation run but does not reset loaded models or parameters.");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "()");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- WAIT ---
+		ImGui::TextColored(CMD_COL, "wait");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Pauses script execution for some time (s)");
+			ImGui::TextDisabled("Argument: time in seconds (s).");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "(<time_s>)");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- SELECT ---
+		ImGui::TextColored(CMD_COL, "select");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Selects a rigid body or joint by its identifier");
+			ImGui::TextDisabled("Argument: identifier string of the object to select.");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "(<id>)");
+
+		ImGui::Spacing();
+		ImGui::SeparatorText("DSL Parallel Execution:");
+		ImGui::Spacing();
+
+		// --- PARALLEL ---
+		ImGui::TextColored(CMD_COL, "parallel");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Begins a parallel block where commands run concurrently");
+			ImGui::TextDisabled("Argument: timeout in seconds (s) for the parallel block to auto-complete.");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "(<timeout>)");
 
 		ImGui::EndChild();
 	}

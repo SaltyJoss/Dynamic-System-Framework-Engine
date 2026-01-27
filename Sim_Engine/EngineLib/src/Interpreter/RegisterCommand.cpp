@@ -5,6 +5,8 @@
 #include "Interpreter/Commands/RotateByCmd.h"
 #include "Interpreter/Commands/RotateJointToCmd.h"
 #include "Interpreter/Commands/RotateJointByCmd.h"
+#include "Interpreter/Commands/TrajSetCmd.h"
+#include "Interpreter/Commands/TrajClearCmd.h"
 
 // Primary function commands
 #include "Interpreter/Commands/StartCmd.h"
@@ -22,6 +24,8 @@ namespace commands {
 		factory.registerCommand("rotateby",			&commands::CreateRotateByCmd);		// rotate command
 		factory.registerCommand("rotatejointto",	&commands::CreateRotateJointToCmd);	// rotateJoint command
 		factory.registerCommand("rotatejointby",	&commands::CreateRotateJointByCmd);	// rotateJoint command
+		factory.registerCommand("trajset",			&commands::CreateTrajSetCmd);		// trajSet command
+		factory.registerCommand("trajclear",		&commands::CreateTrajClearCmd);		// trajClear command	
 		// Primary Function commands
 		factory.registerCommand("start",	&commands::CreateStartCmd);		// start command
 		factory.registerCommand("stop",		&commands::CreateStopCmd);		// stop command

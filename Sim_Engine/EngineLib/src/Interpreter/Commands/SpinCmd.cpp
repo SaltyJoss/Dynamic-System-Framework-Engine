@@ -28,7 +28,7 @@ namespace commands {
 		scene::Object* obj = _cntxMtn->resolveDefaultObject();
 		if (!obj) {
 			markFailed("spin(<objID>,...) target but no current object selected.");
-			D_FAIL("spin(<objID>,...) target but no current object selected.");
+			SIM_FAIL("spin(<objID>,...) target but no current object selected.");
 			return CmdResult{ CmdState::Failed, {}, "No current object selected." };
 		}
 
@@ -37,7 +37,7 @@ namespace commands {
 		auto result = cntx.rotateObject(obj, mask, _omegaDeg, dt);
 		if (!result.ok) {
 			markFailed(result.message);
-			D_FAIL("Failed to spin object -> %s", result.message.c_str());
+			SIM_FAIL("Failed to spin object -> %s", result.message.c_str());
 			return CmdResult{ CmdState::Failed, {}, result.message };
 		}
 
@@ -45,11 +45,11 @@ namespace commands {
 		if (_remainingTime <= 0.0) {
 			cntx.stopRotation(obj, mask);
 			markCompleted();
-			D_SUCCESS("Completed spin command.");
+			SIM_SUCCESS("Completed spin command.");
 			return CmdResult{ CmdState::Executed, {}, "" };
 		}
 
-		D_RUNTIME("Remaining spin time: %.2f seconds.", _remainingTime);
+		SIM_RUNTIME("Remaining spin time: %.2f seconds.", _remainingTime);
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
@@ -61,13 +61,13 @@ namespace commands {
 	std::unique_ptr<ICommand> CreateSpinCmd(const std::string& id, const std::vector<std::string>& args) {
 		// spin(<objID>, <axes>, <omegaDeg>, <duration>)
 		if (args.size() != 3) {
-			D_FAIL("spin command expects 3 args: <axes>, <omegaDeg>, <duration>, got %zu.", args.size());
+			SIM_FAIL("spin command expects 3 args: <axes>, <omegaDeg>, <duration>, got %zu.", args.size());
 			return nullptr;
 		}
 
 		scene::ObjectID objID{};
 		if (!tryParseObjID(id, objID)) {
-			D_FAIL("spin command requires a valid object ID as the first argument.");
+			SIM_FAIL("spin command requires a valid object ID as the first argument.");
 			return nullptr;
 		}
 
@@ -77,7 +77,7 @@ namespace commands {
 		auto omegaOpt = parseDouble(args[1]);
 		auto durOpt = parseDouble(args[2]);
 		if (!omegaOpt || !durOpt) {
-			D_FAIL("spin command requires numeric values for omegaDeg and duration.");
+			SIM_FAIL("spin command requires numeric values for omegaDeg and duration.");
 			return nullptr;
 		}
 

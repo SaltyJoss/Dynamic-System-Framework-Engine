@@ -18,13 +18,13 @@ namespace gui {
         beginDebugPanel("Output Panel");
 
         if (ImGui::BeginTabBar("Debug Tabs")) {
-            if (ImGui::BeginTabItem("Log")) {
+            if (ImGui::BeginTabItem("Terminal Log")) {
                 renderLog();
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Error List")) {
-                renderErrorTable();
+            if (ImGui::BeginTabItem("Simulation Log")) {
+				renderSimLog();
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
@@ -219,6 +219,91 @@ namespace gui {
             ImGui::SetClipboardText(clip.c_str());
         }
     }
+
+    void DebugPanel::renderSimLog() {
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar
+                                      | ImGuiWindowFlags_AlwaysVerticalScrollbar;
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
+        ImGui::BeginChild("simLogChild", ImVec2(0, -30), true, window_flags);
+
+        const auto& entries = gLog.Instance().SimEntries();
+
+        for (int i = 0; i < (int)entries.size(); ++i) {
+            const auto& e = entries[i];
+
+            const char* levelStr = "";
+            ImVec4 levelColour{ 1, 1, 1, 1 }; // Colour associated log levelling! (I think its useful)
+
+            // Determine log level string and colour
+            switch (e.level) {
+                // debug level for general debugging information
+			case simLogLevel::Rotate:    levelStr = "ROTATE";    levelColour = rotateCol;    break;
+				// translate level for general debugging information
+			case simLogLevel::Translate: levelStr = "TRANSLATE"; levelColour = translateCol; break;
+                // error level for error messages
+            case simLogLevel::Error:     levelStr = "ERROR";     levelColour = errorCol;     break;
+                // fail level for failed operations
+            case simLogLevel::Fail:      levelStr = "FAIL";      levelColour = failCol;      break;
+                // success level for successful operations
+            case simLogLevel::Success:   levelStr = "SUCCESS";   levelColour = okCol;        break;
+                // Runtime level for runtime specific messages
+            case simLogLevel::Runtime:
+            default:                  levelStr = "RUNTIME";   levelColour = runtimeCol;   break;
+            }
+
+            bool selected = simSelectedLines.count(i) > 0;
+
+            ImGui::PushID(i);
+            if (ImGui::Selectable("##logline", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+                if (ImGui::GetIO().KeyShift && lastClickedLine != -1) {
+                    int a = std::min(lastClickedLine, i);
+                    int b = std::max(lastClickedLine, i);
+                    simSelectedLines.clear();
+                    for (int j = a; j <= b; ++j)
+                        simSelectedLines.insert(j);
+                }
+                else if (ImGui::GetIO().KeyCtrl) {
+                    if (selected) simSelectedLines.erase(i);
+                    else simSelectedLines.insert(i);
+                    lastClickedLine = i;
+                }
+                else {
+                    simSelectedLines.clear();
+                    simSelectedLines.insert(i);
+                    lastClickedLine = i;
+                }
+            }
+
+            // Render coloured text on top of selectable
+            ImGui::SameLine();
+            ImGui::TextUnformatted("[");
+            ImGui::SameLine(0, 0);
+            ImGui::TextColored(levelColour, "%s", levelStr);
+            ImGui::SameLine(0, 0);
+            ImGui::TextUnformatted("]: ");
+            ImGui::SameLine(0, 0);
+            ImGui::TextWrapped("%s", e.message.c_str());
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+
+        if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
+            std::string clip;
+            for (int idx : simSelectedLines) {
+                const auto& e = entries[idx];
+                clip += e.message;
+                clip += "\n";
+            }
+            ImGui::SetClipboardText(clip.c_str());
+        }
+
+		// button to clear simulation log
+        if (ImGui::Button("Clear Simulation Log")) { clearSimLog(); }
+	}
 
     void DebugPanel::beginDebugPanel(const char* id, ImVec2 size) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));

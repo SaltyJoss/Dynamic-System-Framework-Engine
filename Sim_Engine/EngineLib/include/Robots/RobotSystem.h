@@ -16,7 +16,7 @@ namespace robots {
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
 
-        // --- UTILITY METHODS ---
+        // --- Utility Methods ---
 
         static float clampJointAngle(const RobotJoint& joint, float angleRad);
         static float wrapToPi(float angleRad);
@@ -25,12 +25,18 @@ namespace robots {
         // ---- Accessors ---
 
         const std::vector<RobotLink>& links() const { return _robot.links; }
+		std::vector<RobotLink>& links() { return _robot.links; }
         const std::vector<RobotJoint>& joints() const { return _robot.joints; }
+		std::vector<RobotJoint>& joints() { return _robot.joints; }
+
         std::size_t linkCount() const { return _robot.links.size(); }
 
         bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
         const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }
+
+		double getGravity() const { return _gravity; }
+        void setGravity(double g) { _gravity = g; }
 
 		// ---- Joint State Methods ---
 
@@ -42,7 +48,9 @@ namespace robots {
         bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
 
+		bool tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
+
 		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
 		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
 
@@ -51,6 +59,11 @@ namespace robots {
 
 		bool isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const;
         bool isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const;
+
+		bool trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad);
+		bool trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad);
+
+		bool tryZeroJointRefDerivatives();
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -68,6 +81,8 @@ namespace robots {
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+
+		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
 		// --- GET AND SET INTEGRATION METHOD ---
 
@@ -96,6 +111,7 @@ namespace robots {
         bool _hasRobot = false;
 
         std::string _loadedName;
+		int _currentJointIndex = -1;
 
         std::unordered_map<std::string, int> _linkIndex;
 
@@ -104,6 +120,8 @@ namespace robots {
 
         std::vector<glm::mat4> _bindWorld0;  // size = links.size()
 		std::vector<glm::mat4> _bindLocal0;  // size = links.size()
+
+		double _gravity = 9.81; // m/s^2
 
 		VecX _robotQHome; // home/reset joint angles (radians)
         bool _robotHomeValid = false;
