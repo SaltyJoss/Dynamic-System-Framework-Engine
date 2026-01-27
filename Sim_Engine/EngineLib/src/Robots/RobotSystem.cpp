@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
+#include "Robots/TrajectoryManager.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -139,6 +140,24 @@ namespace robots {
 
 			_robot.joints[i].angleRad = theta;
 			_robot.joints[i].omegaRad_s = omega;
+		}
+	}
+
+	mathlib::VecX RobotSystem::packRefStateFromRobot(robots::RobotSystem& robot) const {
+		const int n = static_cast<int>(robot._robot.joints.size());
+		mathlib::VecX xr(2 * n);
+		for (int i = 0; i < n; ++i) {
+			xr[i]	 = static_cast<double>(robot._robot.joints[i].thetaRefRad);
+			xr[i + n] = static_cast<double>(robot._robot.joints[i].omegaRefRad_s);
+		}
+		return xr;
+	}
+
+	void RobotSystem::unpackRefStateToRobot(robots::RobotSystem& robot, const mathlib::VecX& xr) {
+		const int n = static_cast<int>(robot._robot.joints.size());
+		for (int i = 0; i < n; ++i) {
+			robot._robot.joints[i].thetaRefRad	 = static_cast<float>(xr[i]);
+			robot._robot.joints[i].omegaRefRad_s = static_cast<float>(xr[i + n]);
 		}
 	}
 
@@ -297,6 +316,61 @@ namespace robots {
 
 		// Update kinematics
 		updateRobotKinematics();
+	}
+
+	void RobotSystem::stepReference(control::TrajectoryManager& traj, double dt, double t) {
+		if (!_hasRobot) return;
+		
+		const int n = (int)_robot.joints.size();
+		if (n <= 0) { return; }
+
+		if (!_refInit || (int)_xRef.size() != 2 * n) {
+			_xRef = packRefStateFromRobot(*this);
+			_refInit = true;
+		}
+
+		std::vector<double> alphaIn(n, 0.0);
+
+		for (int i = 0; i < n; ++i) {
+			const RobotJoint& joint = _robot.joints[i];
+			control::TrajState s{};
+			if (traj.tryEval(std::string(joint.child), t, s)) {
+				alphaIn[i] = s.qdd;
+			}
+			else {
+				alphaIn[i] = 0.0;
+			}
+		}
+
+		auto fRef = [&](double t, const mathlib::VecX& xIn) -> mathlib::VecX {
+			mathlib::VecX dx(2 * n);
+			for (int i = 0; i < n; ++i) {
+				const double theta = xIn[i];
+				const double omega = xIn[i + n];
+				// Current joint
+				const RobotJoint& joint = _robot.joints[i];
+				const RobotLink& link = _robot.links[i + 1];
+				JointMetrics m = computeJointMetrics(joint, link, theta, omega);
+				// Override alpha with trajectory input
+				m.alpha = alphaIn[i];
+				dx[i] =		  omega;	// dtheta/dt = omega
+				dx[i + n] = m.alpha;	// domega/dt = alpha		
+			}
+			return dx;
+		};
+
+		const double rtol = 1e-6;
+		const double atol = 1e-9;
+
+		auto out = _refSolver->refStep(_xRef, t, dt, fRef, rtol, atol);
+		_xRef = out.x_next;
+
+		unpackRefStateToRobot(*this, _xRef);
+
+		for (int i = 0; i < n; ++i) {
+			_robot.joints[i].alphaRefRad_s2 = (float)alphaIn[i];
+			_robot.joints[i].thetaRefRad = clampJointAngle(_robot.joints[i], _robot.joints[i].thetaRefRad);
+		}
 	}
 
 	// --- ROBOT LOADING AND RESET METHODS ---

@@ -70,6 +70,7 @@ namespace robots {
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);
+		void stepReference(control::TrajectoryManager& traj, double dt, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
 
@@ -103,10 +104,14 @@ namespace robots {
 
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
-		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
-		void enforceJointLimits(RobotJoint& j);
+
+		mathlib::VecX packRefStateFromRobot(robots::RobotSystem& robot) const;
+		void unpackRefStateToRobot(robots::RobotSystem& robot, const mathlib::VecX& xr);
 
 		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
+
+		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
+		void enforceJointLimits(RobotJoint& j);
 
 		double _simTime = 0.0;
 		spawnFn _loadMeshReturn;
@@ -122,8 +127,8 @@ namespace robots {
         glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
 		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
 
-        std::vector<glm::mat4> _bindWorld0;  // size = links.size()
-		std::vector<glm::mat4> _bindLocal0;  // size = links.size()
+		mathlib::VecX _xRef; // reference state vector for integration
+		bool _refInit = false;
 
 		double _gravity = 9.81; // m/s^2
 

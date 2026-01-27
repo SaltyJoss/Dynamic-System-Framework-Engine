@@ -13,6 +13,22 @@ namespace control {
 	// Clears all active trajectories
 	void TrajectoryManager::clearAll() { _active.clear(); }
 
+	bool TrajectoryManager::tryEval(const std::string& link, double t, control::TrajState& out) const {
+		auto it = _active.find(link);
+		if (it == _active.end()) { return false; }
+		const auto r = it->second->eval(t);
+		out.q = r.q;
+		out.qd = r.qd;
+		out.qdd = r.qdd;
+		return true;
+	}
+
+	bool TrajectoryManager::hasActive(const std::string& link) const {
+		auto it = _active.find(link);
+		return (it != _active.end() && it->second);
+	}
+
+
 	// Set a trajectory for a specific robot link
 	void TrajectoryManager::set(const std::string& link, std::unique_ptr<control::IJointTrajectory> traj) {
 		if (!traj) {

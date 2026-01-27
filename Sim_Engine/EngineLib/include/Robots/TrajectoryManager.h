@@ -29,6 +29,11 @@ namespace control {
 
 		bool empty() const { return _active.empty(); }
 
+		//
+		bool tryEval(const std::string& link, double t, control::TrajState& out) const;
+		// Check if a trajectory is active for a specific robot link
+		bool hasActive(const std::string& link) const;
+
 		// Set a trajectory for a specific robot link
 		void set(const std::string& link, std::unique_ptr<control::IJointTrajectory> traj);
 		// Apply active trajectories to the robot at time t
