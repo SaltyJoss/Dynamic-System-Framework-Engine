@@ -61,6 +61,29 @@ namespace robots {
 		return T * R * Ti;
 	}
 
+	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const {
+		// Inertia matrix
+		const robots::Inertia& inertial = link.inertial.inertia;
+		
+		glm::mat3 I_link(
+			inertial.ixx, inertial.ixy, inertial.ixz,
+			inertial.ixy, inertial.iyy, inertial.iyz,
+			inertial.ixz, inertial.iyz, inertial.izz
+		);
+
+		// Transform to world frame
+		glm::mat3 R = glm::mat3(glm::mat3_cast(joint.origin_q));
+		glm::mat3 I_world = R * I_link * glm::transpose(R);
+
+		// Joint axis in world frame
+		glm::vec3 a = glm::normalize(joint.axis);
+
+		// Effective inertia
+		double I_eff = glm::dot(a, I_world * a);
+		I_eff = std::max(I_eff, 1e-6); // avoid division by zero
+		return I_eff;
+	}
+
 	// --- ROBOT STATE INTEGRATION METHODS ---
 
 	// Method to create Object instances for each robot link
@@ -121,7 +144,6 @@ namespace robots {
 	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
 		const int n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(2 * n);
-		const double c = 2.0; // damping [1/s] -> placeholder for now
 
 		for (int i = 0; i < n; ++i) {
 			const double theta = x[i];
@@ -129,6 +151,9 @@ namespace robots {
 
 			// Current joint
 			const RobotJoint& joint = _robot.joints[i];
+			const RobotLink& link = _robot.links[i+1];
+
+			//D_DEBUG("JointID %s (Link: %s): ", joint.name.c_str(), link.name.c_str());
 
 			// Reference angles, velocities, and accelerations
 			const double thetaRef = static_cast<double>(joint.thetaRefRad);
@@ -143,22 +168,21 @@ namespace robots {
 			const double err   = thetaRef - theta;
 			const double err_d = omegaRef - omega;
 
-			// Effective inertia
-			const double I_eff = 1.0; // TODO: per joint effective inertia (will sort once trajectory tracking is in)
+			const double I_eff = computeJointAxisInertia(joint, link);
 
 			// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
 			double tau = I_eff * alphaRef + k_p * err + k_d * err_d; // control torque
 
 			// Passive dynamics
-			const double damping = static_cast<double>(joint.dynamics.damping);
-			const double friction = static_cast<double>(joint.dynamics.friction);
+			const double c = static_cast<double>(joint.dynamics.damping);
+			const double mu = static_cast<double>(joint.dynamics.friction);
 
-			tau -= damping * omega;
+			tau -= c * omega;
 			
 			// Friction model
 			const double v_eps = 1e-2; // small velocity threshold
-			if (std::abs(omega) > v_eps) { tau -= friction * sgn(omega); } // Coulomb friction
-			else { tau -= friction * (omega / v_eps); } // linear region near zero
+			if (std::abs(omega) > v_eps) { tau -= mu * sgn(omega); } // Coulomb friction
+			else { tau -= mu * (omega / v_eps); } // linear region near zero
 
 			// Effort clamp
 			if (joint.limits.maxEffort > 0.0f) {
@@ -178,17 +202,24 @@ namespace robots {
 
 			dx[i] = omega;		// dtheta/dt = omega
 			dx[i + n] = alpha;	// domega/dt = alpha
-			
-			static double lastLogTime = -1.0;
-			constexpr double LOG_PERIOD = 0.05; // 20 Hz
-			
-			// Logging - periodic to avoid spamming
-			if (lastLogTime < 0.0 || (t - lastLogTime) >= LOG_PERIOD) {
-				SIM_ROTATE("theta = % .4f ref = % .4f err = % .4f omega = % .6f kp = % .2f kd = % .2f fric = % .4f damp = % .4f tau = % .4f",
-					theta, thetaRef, err, omega, k_p, k_d, friction, damping, tau);
-				SIM_RUNTIME("ref q=%.3f qd=%.3f qdd=%.3f", thetaRef, omegaRef, alphaRef); // log reference trajectory
-				lastLogTime = t;
-			}
+						
+			//CSV 
+			//CAPTURE_SIM_DATA("robot_joint_control",
+			//	{
+			//		{"sim_time", t},
+			//		{"joint_name", joint.name},
+			//		{"theta", theta},
+			//		{"theta_ref", thetaRef},
+			//		{"err", err},
+			//		{"omega", omega},
+			//		{"omega_ref", omegaRef},
+			//		{"alpha_ref", alphaRef},
+			//		{"torque", tau},
+			//		{"I_eff", I_eff}
+			//	}
+			//);
+
+			//CAPTURE_SIM_DATA("robot_joint_control,sim_time=%f,joint_name=%s,theta=%.4f,theta_ref=%.4f,omega=%.4f,omega_ref=%.4f,alpha_ref=%.4f,tau=%.4f,I_eff=%.4f,err=%.4f,err_d=%.4f", t, joint.name.c_str(), theta, thetaRef, omega, omegaRef, alphaRef, tau, I_eff, err, err_d);
 		}
 		return dx;
 	}
@@ -229,6 +260,20 @@ namespace robots {
 
 		// Update kinematics
 		updateRobotKinematics();
+
+		//// ===== TELEMETRY (rate-limited) =====
+		//static double lastLogT = -1.0;
+		//constexpr double LOG_DT = 0.1; // 10 Hz is perfect for humans
+
+		//if (lastLogT < 0.0 || (simTime - lastLogT) >= LOG_DT) {
+		//	for (const auto& j : _robot.joints) {
+		//		const double err = j.thetaRefRad - j.angleRad;
+
+		//		LOG_INFO("t=%.3f | %s | q=%.4f rad (%.1f deg) | q_ref=%.4f | err=%.4f | w=%.4f | w_ref=%.4f | a_ref=%.4f",
+		//			simTime, j.child.c_str(), j.angleRad, glm::degrees(j.angleRad), j.thetaRefRad, err, j.omegaRad_s, j.omegaRefRad_s, j.alphaRefRad_s2);
+		//	}
+		//	lastLogT = simTime;
+		//}
 	}
 
 	// --- ROBOT LOADING AND RESET METHODS ---

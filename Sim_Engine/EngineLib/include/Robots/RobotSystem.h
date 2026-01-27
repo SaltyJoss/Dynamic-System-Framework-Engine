@@ -104,6 +104,8 @@ namespace robots {
 		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
 		void enforceJointLimits(RobotJoint& j);
 
+		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
+
 		double _simTime = 0.0;
 		spawnFn _loadMeshReturn;
 
