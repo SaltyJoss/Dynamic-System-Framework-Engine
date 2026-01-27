@@ -5,6 +5,8 @@
 
 load(robot, Z1)
 
+wait(2.0)
+
 trajClear()
 start()
 
@@ -12,10 +14,7 @@ start()
 wait(2.0)
 
 # Run all 6 together for 12 seconds
-parallel(12.0) {
-
-    # J0: TRAP -> move to +90deg (pi/2)
-    trajSet(link00, TRAP, 1.57079632679, 1.0, 2.0)
+parallel(10.0) {
 
     # J1: TRAP -> move to -60deg
     trajSet(link01, TRAP, -1.0471975512, 0.9, 1.8)

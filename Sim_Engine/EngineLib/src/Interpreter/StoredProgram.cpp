@@ -128,8 +128,7 @@ namespace interpreter {
 
 	// Step through the program by dt seconds
 	void StoredProgram::step(double dt) {
-		LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
-
+		//LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
 
 		if (_state == ProgramState::Paused) { return; }
 		if (_state == ProgramState::Stopped || _state == ProgramState::Completed || _state == ProgramState::Faulted) { return; }

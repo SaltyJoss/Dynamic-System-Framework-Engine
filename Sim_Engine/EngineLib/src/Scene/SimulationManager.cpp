@@ -451,6 +451,8 @@ namespace gui {
 
 					_scriptRunning = false;
 					_activeProgram = nullptr;
+
+					stopSimulation();
 					D_DEBUG("Program execution completed.");
 				}
 			}
