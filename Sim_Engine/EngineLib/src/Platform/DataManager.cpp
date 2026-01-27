@@ -81,7 +81,7 @@ namespace data {
 				<< " dir=" << dir.string() << "\n";
 		}
 
-		_path = (dir / ("run_" + timestampCompact() + ".csv")).string();
+		_path = (dir / ("dsfe_run_" + timestampCompact() + ".csv")).string();
 		_file.open(_path, std::ios::out);
 
 		if (!_file.is_open()) {
