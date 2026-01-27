@@ -161,7 +161,7 @@ namespace interpreter {
 
 		if (r.state == CmdState::Failed) { _state = ProgramState::Faulted; return; }
 		if (r.state == CmdState::Executed) {
-			++PC;
+			PC++; // not ++PC because we may want to re-execute the same command
 			if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 		}
 	}

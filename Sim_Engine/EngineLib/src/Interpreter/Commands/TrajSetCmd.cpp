@@ -36,18 +36,12 @@ namespace commands {
             [](unsigned char c) { return (unsigned char)std::toupper(c); });
         return s;
     }
+
     
 	// --- Markers ---
-
-    void TrajSetCmd::markFailed(const std::string& message) {
-        _result = { CmdState::Failed, {}, message };
-    }
-
-    void TrajSetCmd::markCompleted() {
-        _result = { CmdState::Executed, {}, "" };
-    }
-
-    bool TrajSetCmd::hasStarted() const { return _started; }
+	void TrajSetCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
+	void TrajSetCmd::markCompleted() { setResult({ CmdState::Executed, {}, "trajSet ran successfully" }); }
+	bool TrajSetCmd::hasStarted() const { return _started; }
 
 	// --- TrajSetCmd Implementation ---
 
@@ -57,8 +51,6 @@ namespace commands {
     }
 
 	program_data::CmdResult TrajSetCmd::update(CommandContextMotion& cntx, double dt) {
-		if (_done) { return _result; }
-
 		auto* sim = cntx.Sim();
 		if (!sim) {
 			markFailed("trajSet: no SimulationManager in context.");
@@ -84,7 +76,7 @@ namespace commands {
 		const std::string typeU = upperCopy(trimCopy(_type));
 
 		// ===== TRAPEZOID =====
-		// trajSet(link, TRAP, q1, vmax, amax)
+		// trajSet(link, TRAP, q1, vmax, amax) //
 		if (typeU == "TRAP" || typeU == "TRAPEZOID") {
 			if (_params.size() != 3) {
 				SIM_FAIL("trajSet TRAP expects 3 params: q1, vmax, amax (got %zu)", _params.size());
@@ -92,9 +84,9 @@ namespace commands {
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
 
-			const double q1 = _params[0];
-			const double vmax = _params[1];
-			const double amax = _params[2];
+			const double q1 = degToRad(_params[0]);
+			const double vmax = degToRad(_params[1]);
+			const double amax = degToRad(_params[2]);
 
 			auto traj = std::make_unique<control::TrapezoidTrajectory>(t0, q0, q1, vmax, amax);
 			sim->traj().set(_link, std::move(traj));
@@ -104,12 +96,9 @@ namespace commands {
 			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f",
 				_link.c_str(), q0, q1, vmax, amax);
 
-			D_RUNTIME("trajSet UPDATE: link=%s type=%s nParams=%zu",
-				_link.c_str(), _type.c_str(), _params.size());
-
 			_done = true;
 			markCompleted();
-			return _result;
+			return { CmdState::Executed, {}, "trajSet TRAP executed" };
 		}
 
 		// ===== SINE =====
@@ -121,10 +110,10 @@ namespace commands {
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
 
-			const double amp = _params[0];
-			const double fHz = _params[1];
-			const double dur = _params[2];
-			const double phi = (_params.size() == 4) ? _params[3] : 0.0;
+			const double amp = degToRad(_params[0]); // radians
+			const double fHz = _params[1]; // Hz
+			const double dur = _params[2]; // seconds
+			const double phi = (_params.size() == 4) ? degToRad(_params[3]) : 0.0; // radians
 
 			if (dur <= 0.0) {
 				markFailed("trajSet(SINE): duration must be positive.");
@@ -141,11 +130,8 @@ namespace commands {
 			SIM_SUCCESS("trajSet: SINE link='%s' q0=%.6f amp=%.6f f=%.6fHz dur=%.6fs phi=%.6f",
 				_link.c_str(), (double)q0, amp, fHz, dur, phi);
 
-			D_RUNTIME("trajSet UPDATE: link=%s type=%s nParams=%zu",
-				_link.c_str(), _type.c_str(), _params.size());
-
 			markCompleted();
-			return _result;
+			return { CmdState::Executed, {}, "trajSet SINE executed" };
 		}
 
 		// ===== MULTISINE =====
@@ -153,19 +139,19 @@ namespace commands {
 		if (typeU == "MSINE" || typeU == "MULTISINE") {
 			if (_params.size() < 4) {
 				markFailed("trajSet(MSINE): expects duration then (amp,f,phase) triples.");
-				return { CmdState::Failed, {}, "trajSet failed" };
+				return { CmdState::Failed, {}, "trajSet(MSINE): expects duration then (amp,f,phase) triples." };
 			}
 
-			const double dur = _params[0];
+			const double dur = _params[0]; // seconds
 			if (dur <= 0.0) {
 				markFailed("trajSet(MSINE): duration must be positive.");
-				return _result;
+				return { CmdState::Failed, {}, "trajSet(MSINE): duration must be positive." };
 			}
 
 			const size_t rest = _params.size() - 1;
 			if (rest % 3 != 0) {
 				markFailed("trajSet(MSINE): params after duration must be triples (amp,f,phase).");
-				return _result;
+				return { CmdState::Failed, {}, "trajSet(MSINE): params after duration must be triples (amp,f,phase)." };
 			}
 
 			std::vector<control::SineComponent> comps;
@@ -173,13 +159,13 @@ namespace commands {
 
 			for (size_t i = 0; i < rest; i += 3) {
 				control::SineComponent c;
-				c.amp = _params[1 + i + 0];
-				c.freqHz = _params[1 + i + 1];
-				c.phaseRad = _params[1 + i + 2];
+				c.amp = degToRad(_params[1 + i + 0]);	   // radians
+				c.freqHz = _params[1 + i + 1];	 // Hz
+				c.phaseRad = degToRad(_params[1 + i + 2]); // radians
 
 				if (c.freqHz <= 0.0) {
 					markFailed("trajSet(MSINE): all frequencies must be positive.");
-					return _result;
+					return { CmdState::Failed, {}, "trajSet(MSINE): all frequencies must be positive." };
 				}
 				comps.push_back(c);
 			}
@@ -187,24 +173,22 @@ namespace commands {
 			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, (double)q0, std::move(comps));
 			sim->traj().set(_link, std::move(traj));
 
-			SIM_SUCCESS("trajSet: MSINE link='%s' q0=%.6f dur=%.6fs components=%zu",
-				_link.c_str(), (double)q0, dur, rest / 3);
+			SIM_SUCCESS("trajSet: MSINE link='%s' q0=%.6f dur=%.6fs nComps=%zu",
+				_link.c_str(), (double)q0, dur, comps.size());
 
 			_done = true;
 			markCompleted();
-			return { CmdState::Executed, {}, "trajSet executed" };
+			return { CmdState::Executed, {}, "trajSet MULTISINE executed" };
 		}
 
 		SIM_FAIL("trajSet: unknown type '%s'", _type.c_str());
 		markFailed("trajSet: unknown type (use TRAP/SINE/MSINE).");
-		return _result;
+		return { CmdState::Failed, {}, "trajSet failed" };
 	}
 
 
     void TrajSetCmd::execute() {
-        _started = true;
-        _done = false;
-        _result = { CmdState::Executing, {}, "trajSet started" };
+        setResult({ CmdState::Executing, {}, "trajSet started" });
     }
 
 	// --- Factory ---
@@ -238,3 +222,12 @@ namespace commands {
     }
 
 } // namespace commands
+
+
+// Syntax:
+// trajSet(<linkName>, <type>, <params...>)
+
+// Types and params:
+// trajSet(link, TRAP, q1(deg), vmax(deg/s), amax(deg/s²))
+// trajSet(link, SINE, amp(deg), freq(Hz), duration(s) [, phase(deg)])
+// trajSet(link, MSINE, duration(s), amp1(deg), f1(Hz), ph1(deg), amp2, f2, ph2, ...)

@@ -37,8 +37,6 @@ namespace control {
 
 			if (traj->finished(t)) { it = _active.erase(it); } 
 			else { ++it; }
-
-			SIM_RUNTIME("Traj active=%zu t=%.3f", _active.size(), t);
 		}
 	}
 } // namespace control

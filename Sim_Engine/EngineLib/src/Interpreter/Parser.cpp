@@ -314,7 +314,6 @@ namespace interpreter {
 		for (auto& cmd : _programData.cmd) {
 			if (cmd.cmdName.empty()) { continue; }
 			if (cmd.isParallelBlock) {
-				// Build inner commands vector
 				std::vector<std::unique_ptr<commands::ICommand>> innerCmds;
 				innerCmds.reserve(cmd.inner.size());
 
@@ -329,9 +328,8 @@ namespace interpreter {
 				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
 
-				D_FAIL("CREATE FAILED: cmd=%s id=%s argc=%zu raw='%s'",
-					cmd.cmdName.c_str(), cmd.identifier.c_str(),
-					cmd.tokens.size(), cmd.rawLine.c_str());
+
+				LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
 
 				continue;
 			}
@@ -364,12 +362,12 @@ namespace interpreter {
 		// Create command instance
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
+		LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu",
+			cmd.cmdName.c_str(), "", 0, cmd.inner.size());
+
 		if (command) {
-			D_DEBUG("SCRIPT: %s \n\t| target=%s \n\t| args=%d",
-				cmd.cmdName.c_str(),
-				cmd.identifier.c_str(),
-				cmd.tokens.size()
-			);
+			D_DEBUG("SCRIPT: %s | target=%s | args=%d",
+				cmd.cmdName.c_str(), cmd.identifier.c_str(), cmd.tokens.size());
 
 			_program->add(command);
 			D_INFO("Added command: %s()", cmd.cmdName.c_str());
