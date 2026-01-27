@@ -247,6 +247,13 @@ namespace robots {
 		// Unpack new state
 		unpackState(x_Next);
 
+		if (!_robot.joints.empty()) {
+			const auto& j = _robot.joints[0];
+			LOG_WARN("J0 theta=%.4f thetaRef=%.4f omega=%.4f omegaRef=%.4f",
+				j.angleRad, j.thetaRefRad, j.omegaRad_s, j.omegaRefRad_s);
+		}
+
+
 		// Enforce joint limits
 		for (auto& j : _robot.joints) {
 			const float wMax = j.limits.maxOmegaRad_s;
@@ -268,6 +275,12 @@ namespace robots {
 					{"sim_time", simTime},
 					{"dt", dt},
 					{"joint_name", std::string(joint.name)},
+					{"joint_child", std::string(joint.child)},
+					{"joint_parent", std::string(joint.parent)},
+					{"minAngle", (double)joint.limits.minAngle},
+					{"maxAngle", (double)joint.limits.maxAngle},
+					{"wMax",     (double)joint.limits.maxOmegaRad_s},
+					{"continuous", joint.limits.continuous},
 					{"theta", m.theta},
 					{"theta_ref", m.thetaRef},
 					{"err", m.err},
