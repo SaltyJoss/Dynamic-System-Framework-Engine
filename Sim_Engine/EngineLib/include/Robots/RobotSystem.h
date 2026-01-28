@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+namespace control { class ENGINE_API TrajectoryManager; }
+
 namespace robots {
 	// Joint state structure
     struct ENGINE_API JointState { double theta; double omega; };

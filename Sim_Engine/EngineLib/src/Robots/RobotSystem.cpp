@@ -329,35 +329,36 @@ namespace robots {
 			_refInit = true;
 		}
 
-		std::vector<double> alphaIn(n, 0.0);
+		std::vector<double> qIn(n, 0.0);
+		std::vector<double> qdIn(n, 0.0);
+		std::vector<double> qddIn(n, 0.0);
 
 		for (int i = 0; i < n; ++i) {
+			// Current joint
 			const RobotJoint& joint = _robot.joints[i];
+			// Query trajectory manager
 			control::TrajState s{};
 			if (traj.tryEval(std::string(joint.child), t, s)) {
-				alphaIn[i] = s.qdd;
+				qIn[i] = s.q;
+				qdIn[i] = s.qd;
+				qddIn[i] = s.qdd;
 			}
 			else {
-				alphaIn[i] = 0.0;
+				qIn[i] = 0.0;
+				qdIn[i] = 0.0;
+				qddIn[i] = 0.0;
 			}
 		}
 
-		auto fRef = [&](double t, const mathlib::VecX& xIn) -> mathlib::VecX {
+		auto fRef = [&](double /*t_local*/, const mathlib::VecX& xIn) -> mathlib::VecX {
 			mathlib::VecX dx(2 * n);
 			for (int i = 0; i < n; ++i) {
-				const double theta = xIn[i];
 				const double omega = xIn[i + n];
-				// Current joint
-				const RobotJoint& joint = _robot.joints[i];
-				const RobotLink& link = _robot.links[i + 1];
-				JointMetrics m = computeJointMetrics(joint, link, theta, omega);
-				// Override alpha with trajectory input
-				m.alpha = alphaIn[i];
-				dx[i] =		  omega;	// dtheta/dt = omega
-				dx[i + n] = m.alpha;	// domega/dt = alpha		
+				dx[i] = omega;		  // dtheta/dt = omega
+				dx[i + n] = qddIn[i]; // domega/dt = alpha
 			}
 			return dx;
-		};
+			};
 
 		const double rtol = 1e-6;
 		const double atol = 1e-9;
@@ -368,8 +369,28 @@ namespace robots {
 		unpackRefStateToRobot(*this, _xRef);
 
 		for (int i = 0; i < n; ++i) {
-			_robot.joints[i].alphaRefRad_s2 = (float)alphaIn[i];
+			_robot.joints[i].alphaRefRad_s2 = (float)qddIn[i];
 			_robot.joints[i].thetaRefRad = clampJointAngle(_robot.joints[i], _robot.joints[i].thetaRefRad);
+		}
+
+		for (int i = 0; i < n; ++i) {
+			const auto& joint = _robot.joints[i];
+
+			CAPTURE_REF_DATA("robot_joint_reference",
+				(data::FieldList{
+					{"sim_time",  t},
+					{"dt",        dt},
+					{"joint_child",  std::string(joint.child)},
+					{"joint_parent", std::string(joint.parent)},
+					{"traj_theta_ref", (double)qIn[i]},
+					{"traj_omega_ref", (double)qdIn[i]},
+					{"traj_alpha_ref", (double)qddIn[i]},
+					{"theta_ref", (double)joint.thetaRefRad},
+					{"omega_ref", (double)joint.omegaRefRad_s},
+					{"alpha_ref", (double)joint.alphaRefRad_s2},
+					{"dt_sug", out.dt_sug}
+					})
+			);
 		}
 	}
 

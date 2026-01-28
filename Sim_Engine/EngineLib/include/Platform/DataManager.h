@@ -86,8 +86,8 @@ namespace data {
 // ---macro definitions ---
 
 // DATA_CAPTURE_ENABLE
-#ifdef CAPTURE_SIM_DATA
-#error CAPTURE_SIM_DATA already defined before DataManager.h
+#ifdef DATA_CAPTURE_ENABLE
+#error DATA_CAPTURE_ENABLE already defined before DataManager.h
 #endif
 // Enable or disable data capture
 #define DATA_CAPTURE_ENABLE(b) \
