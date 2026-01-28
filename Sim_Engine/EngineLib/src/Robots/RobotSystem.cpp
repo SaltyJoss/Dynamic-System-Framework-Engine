@@ -268,13 +268,6 @@ namespace robots {
 		// Unpack new state
 		unpackState(x_Next);
 
-		if (!_robot.joints.empty()) {
-			const auto& j = _robot.joints[0];
-			LOG_WARN("J0 theta=%.4f thetaRef=%.4f omega=%.4f omegaRef=%.4f",
-				j.angleRad, j.thetaRefRad, j.omegaRad_s, j.omegaRefRad_s);
-		}
-
-
 		// Enforce joint limits
 		for (auto& j : _robot.joints) {
 			const float wMax = j.limits.maxOmegaRad_s;
@@ -291,28 +284,38 @@ namespace robots {
 
 			JointMetrics m = computeJointMetrics(joint, link, theta, omega);
 
-			CAPTURE_SIM_DATA("robot_joint_control",
+			HDF5_SIM_DATA("robot_joint_control",
 				(data::FieldList{
-					{"sim_time", simTime},
-					{"dt", dt},
-					{"joint_name", std::string(joint.name)},
+					// Simulation info
+					{"sim_time",    simTime},
+					{"dt",          dt},
+					//  Joint identification
+					{"joint_name",  std::string(joint.name)},
 					{"joint_child", std::string(joint.child)},
-					{"joint_parent", std::string(joint.parent)},
-					{"minAngle", (double)joint.limits.minAngle},
-					{"maxAngle", (double)joint.limits.maxAngle},
-					{"wMax",     (double)joint.limits.maxOmegaRad_s},
-					{"continuous", joint.limits.continuous},
-					{"theta", m.theta},
-					{"theta_ref", m.thetaRef},
-					{"err", m.err},
-					{"omega", m.omega},
-					{"omega_ref", m.omegaRef},
-					{"err_d", m.err_d},
-					{"alpha_ref", m.alphaRef},
-					{"torque", m.tau},
-					{"I_eff", m.I_eff},
-					{"alpha", m.alpha}
-				})
+					{"joint_parent",std::string(joint.parent)},
+					// {"continuous", joint.limits.continuous}, // ignoring for now as my HDF5 doesn't support bool
+					// Limit values
+					{"minAngle",    (double)joint.limits.minAngle},
+					{"maxAngle",    (double)joint.limits.maxAngle},
+					{"wMax",        (double)joint.limits.maxOmegaRad_s},
+					{"maxEffort",   (double)joint.limits.maxEffort},
+					{"k_p",         (double)joint.k_p},
+					{"k_d",         (double)joint.k_d},
+					// Dynamics values
+					{"damping",     (double)joint.dynamics.damping},
+					{"friction",    (double)joint.dynamics.friction},
+					// State and control values
+					{"theta",       m.theta},
+					{"theta_ref",   m.thetaRef},
+					{"err",         m.err},
+					{"omega",       m.omega},
+					{"omega_ref",   m.omegaRef},
+					{"err_d",       m.err_d},
+					{"alpha_ref",   m.alphaRef},
+					{"torque",      m.tau},
+					{"I_eff",       m.I_eff},
+					{"alpha",       m.alpha}
+					})
 			);
 		}
 
@@ -391,21 +394,27 @@ namespace robots {
 		for (int i = 0; i < n; ++i) {
 			const auto& joint = _robot.joints[i];
 
-			CAPTURE_REF_DATA("robot_joint_reference",
+			HDF5_REF_DATA("robot_joint_reference",
 				(data::FieldList{
-					{"sim_time",  t},
-					{"dt",        dt},
-					{"joint_name", std::string(joint.name)},
-					{"joint_child",  std::string(joint.child)},
-					{"joint_parent", std::string(joint.parent)},
-					{"traj_theta_ref", (double)qIn[i]},
-					{"traj_omega_ref", (double)qdIn[i]},
-					{"traj_alpha_ref", (double)qddIn[i]},
-					{"theta_ref", (double)joint.thetaRefRad},
-					{"omega_ref", (double)joint.omegaRefRad_s},
-					{"alpha_ref", (double)joint.alphaRefRad_s2},
-					{"dt_sug", out.dt_sug}
-					})
+					// Simulation info
+					{"sim_time",      t},
+					{"dt",            dt},
+					//  Joint identification
+					{"joint_name",    std::string(joint.name)},
+					{"joint_child",   std::string(joint.child)},
+					{"joint_parent",  std::string(joint.parent)},
+					// Reference trajectory inputs
+					{"traj_theta_ref",(double)qIn[i]},
+					{"traj_omega_ref",(double)qdIn[i]},
+					{"traj_alpha_ref",(double)qddIn[i]},
+					// Reference states after integration
+					{"theta_ref",     (double)joint.thetaRefRad},
+					{"omega_ref",     (double)joint.omegaRefRad_s},
+					{"alpha_ref",     (double)joint.alphaRefRad_s2},
+					// Integration info
+					{"dt_taken",      out.dt_taken},
+					{"dt_sug",        out.dt_sug}
+				})
 			);
 		}
 	}
