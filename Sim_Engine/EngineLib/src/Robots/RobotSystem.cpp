@@ -143,21 +143,23 @@ namespace robots {
 		}
 	}
 
-	mathlib::VecX RobotSystem::packRefStateFromRobot(robots::RobotSystem& robot) const {
-		const int n = static_cast<int>(robot._robot.joints.size());
-		mathlib::VecX xr(2 * n);
+	mathlib::VecX RobotSystem::packRefState() const {
+		const int n = (int)_robot.joints.size();
+		mathlib::VecX x(2 * n);
 		for (int i = 0; i < n; ++i) {
-			xr[i]	 = static_cast<double>(robot._robot.joints[i].thetaRefRad);
-			xr[i + n] = static_cast<double>(robot._robot.joints[i].omegaRefRad_s);
+			x[i] = (double)_robot.joints[i].thetaRefRad;
+			x[i + n] = (double)_robot.joints[i].omegaRefRad_s;
 		}
-		return xr;
+		return x;
 	}
 
-	void RobotSystem::unpackRefStateToRobot(robots::RobotSystem& robot, const mathlib::VecX& xr) {
-		const int n = static_cast<int>(robot._robot.joints.size());
+	void RobotSystem::unpackRefState(const mathlib::VecX& x) {
+		const int n = (int)_robot.joints.size();
 		for (int i = 0; i < n; ++i) {
-			robot._robot.joints[i].thetaRefRad	 = static_cast<float>(xr[i]);
-			robot._robot.joints[i].omegaRefRad_s = static_cast<float>(xr[i + n]);
+			auto& j = _robot.joints[i];
+			j.thetaRefRad = (float)x[i];
+			j.omegaRefRad_s = (float)x[i + n];
+			j.thetaRefRad = clampJointAngle(j, j.thetaRefRad);
 		}
 	}
 
@@ -324,15 +326,12 @@ namespace robots {
 		const int n = (int)_robot.joints.size();
 		if (n <= 0) { return; }
 
-		if (!_refInit || (int)_xRef.size() != 2 * n) {
-			_xRef = packRefStateFromRobot(*this);
-			_refInit = true;
-		}
-
+		// Prepare input trajectory vectors
 		std::vector<double> qIn(n, 0.0);
 		std::vector<double> qdIn(n, 0.0);
 		std::vector<double> qddIn(n, 0.0);
 
+		// Query trajectory manager for each joint
 		for (int i = 0; i < n; ++i) {
 			// Current joint
 			const RobotJoint& joint = _robot.joints[i];
@@ -343,13 +342,24 @@ namespace robots {
 				qdIn[i] = s.qd;
 				qddIn[i] = s.qdd;
 			}
-			else {
-				qIn[i] = 0.0;
-				qdIn[i] = 0.0;
+			else { // holds last reference
+				qIn[i] = (double)joint.thetaRefRad;
+				qdIn[i] = (double)joint.omegaRefRad_s;
 				qddIn[i] = 0.0;
 			}
 		}
 
+		// Initialise reference state vector if needed
+		if (!_refInit || (int)_xRef.size() != 2 * n) {
+			_xRef = mathlib::VecX(2 * n);
+			for (int i = 0; i < n; ++i) {
+				_xRef[i]	 = qIn[i];	// theta
+				_xRef[i + n] = qdIn[i];	// omega
+			}
+			_refInit = true;
+		}
+
+		// Define the reference derivative function
 		auto fRef = [&](double /*t_local*/, const mathlib::VecX& xIn) -> mathlib::VecX {
 			mathlib::VecX dx(2 * n);
 			for (int i = 0; i < n; ++i) {
@@ -358,21 +368,26 @@ namespace robots {
 				dx[i + n] = qddIn[i]; // domega/dt = alpha
 			}
 			return dx;
-			};
+		};
 
+		// Reference integration tolerances
 		const double rtol = 1e-6;
 		const double atol = 1e-9;
 
+		// Take reference integration step
 		auto out = _refSolver->refStep(_xRef, t, dt, fRef, rtol, atol);
 		_xRef = out.x_next;
 
-		unpackRefStateToRobot(*this, _xRef);
+		// Unpack reference state
+		unpackRefState(_xRef);
 
+		// Set reference accelerations
 		for (int i = 0; i < n; ++i) {
 			_robot.joints[i].alphaRefRad_s2 = (float)qddIn[i];
 			_robot.joints[i].thetaRefRad = clampJointAngle(_robot.joints[i], _robot.joints[i].thetaRefRad);
 		}
 
+		// Capture reference data
 		for (int i = 0; i < n; ++i) {
 			const auto& joint = _robot.joints[i];
 
@@ -380,6 +395,7 @@ namespace robots {
 				(data::FieldList{
 					{"sim_time",  t},
 					{"dt",        dt},
+					{"joint_name", std::string(joint.name)},
 					{"joint_child",  std::string(joint.child)},
 					{"joint_parent", std::string(joint.parent)},
 					{"traj_theta_ref", (double)qIn[i]},

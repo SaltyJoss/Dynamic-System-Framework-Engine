@@ -107,8 +107,8 @@ namespace robots {
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
 
-		mathlib::VecX packRefStateFromRobot(robots::RobotSystem& robot) const;
-		void unpackRefStateToRobot(robots::RobotSystem& robot, const mathlib::VecX& xr);
+		mathlib::VecX packRefState() const;
+		void unpackRefState(const mathlib::VecX& xr);
 
 		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
 

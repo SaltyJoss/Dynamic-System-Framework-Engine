@@ -467,7 +467,9 @@ namespace gui {
 
 				// step physics
 				updatePhysics(_dt);
-				if (hasRobot()) { 
+				if (hasRobot()) {
+					// apply trajectories to robot
+					_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories
 					// step robot references and dynamics
 					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
 					// step robot system
