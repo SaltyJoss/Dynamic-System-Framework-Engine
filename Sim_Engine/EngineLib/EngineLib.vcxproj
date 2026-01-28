@@ -55,12 +55,12 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINE_LIB_BUILD;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>H5_BUILT_AS_DYNAMIC_LIB;ENGINE_LIB_BUILD;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen;C:\Program Files\HDF_Group\HDF5\2.0.0\include</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -69,8 +69,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>hdf5.lib;glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\2.0.0\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
@@ -82,12 +82,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINE_LIB_BUILD;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>H5_BUILT_AS_DYNAMIC_LIB;ENGINE_LIB_BUILD;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen;C:\Program Files\HDF_Group\HDF5\2.0.0\include</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -96,8 +96,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>hdf5.lib;glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\2.0.0\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
