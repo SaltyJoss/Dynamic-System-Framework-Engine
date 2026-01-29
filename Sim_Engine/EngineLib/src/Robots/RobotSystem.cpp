@@ -64,6 +64,27 @@ namespace robots {
 		return T * R * Ti;
 	}
 
+	// Method to apply a soft velocity barrier to joint torque
+	void applyOmegaBarrier(double& tau, double omega, double wMax, double I_eff) {
+		if (wMax <= 0.0) return;
+
+		const double absw = std::abs(omega);
+		const double wSoft = 0.90 * wMax;
+
+		if (absw <= wSoft) return;
+
+		// How deep into the "soft zone" are we? 0..1
+		const double t = (absw - wSoft) / (wMax - wSoft);
+		const double gain = 2.0 * I_eff;  // tune factor; units make sense as torque per (rad/s)
+
+		// Quadratic ramp gives gentle start and strong near limit
+		const double wall = gain * (t * t) * (absw - wSoft);
+
+		// Apply opposing torque to reduce |omega|
+		tau -= wall * (omega >= 0.0 ? 1.0 : -1.0);
+	}
+
+	// Method to compute effective inertia about a joint axis
 	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const {
 		// Inertia matrix
 		const robots::Inertia& inertial = link.inertial.inertia;
@@ -173,17 +194,23 @@ namespace robots {
 		m.omegaRef = (double)joint.omegaRefRad_s;
 		m.alphaRef = (double)joint.alphaRefRad_s2;
 
-		// PD gains
-		const double k_p = (double)joint.k_p;
-		const double k_d = (double)joint.k_d;
-
 		// Errors
 		m.err = m.thetaRef - theta;
 		m.err_d = m.omegaRef - omega;
-
+			
 		m.I_eff = computeJointAxisInertia(joint, link);
+		if (!std::isfinite(m.I_eff) || m.I_eff < 1e-9) m.I_eff = 1e-9;
 
-		// PD -> u(t) = 𝐼_eff * α_ref + k_p * e(t) + k_d * ė(t) 
+		const double wn = (double)joint.wn_target;
+		const double z = (double)joint.zeta_target;
+
+		double k_p = m.I_eff * wn * wn;
+		double k_d = 2.0 * z * m.I_eff * wn;
+
+		m.kp = k_p;
+		m.kd = k_d;
+
+		// PD -> u(t) = I_eff * a_ref + k_p * e(t) + k_d * de(t) 
 		m.tau = m.I_eff * m.alphaRef + k_p * m.err + k_d * m.err_d; // control torque
 
 		// Passive dynamics
@@ -194,7 +221,7 @@ namespace robots {
 
 		// Friction model
 		const double v_eps = 1e-2; // small velocity threshold
-		if (std::abs(omega) > v_eps) { m.tau -= mu * sgn(omega); } // Coulomb friction
+		if (std::abs(omega) > v_eps) { m.tau -= mu * std::tanh(omega / v_eps); } // Coulomb friction
 		else { m.tau -= mu * (omega / v_eps); } // linear region near zero
 
 		// Effort clamp
@@ -204,14 +231,13 @@ namespace robots {
 			if (m.tau < -e) { m.tau = -e; }
 		}
 
-		// Angular acceleration
-		m.alpha = m.tau / m.I_eff; // angular acceleration
+		// Velocity soft limit
+		const double wMax = (double)std::abs(joint.limits.maxOmegaRad_s);
 
-		// Omega clamp
-		const double wMax = (double)joint.limits.maxOmegaRad_s;
-		if (wMax > 0.0) {
-			if ((omega >= wMax && m.alpha > 0.0) || (omega <= -wMax && m.alpha < 0.0)) { m.alpha = 0.0; }
-		}
+		// Apply soft velocity barrier
+		applyOmegaBarrier(m.tau, omega, wMax, m.I_eff);
+		// Final angular acceleration
+		m.alpha = m.tau / m.I_eff;
 
 		return m;
 	}

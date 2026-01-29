@@ -786,6 +786,17 @@ namespace gui {
 
 							if (jointSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.95f, 0.6f, 1.0f));
 							ImGui::TextUnformatted(joint.name.c_str());
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::TextDisabled("Angle(deg): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
+                                    glm::degrees(joint.angleRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
+
+                                static std::vector<float> jointAngleHistory;
+                                jointAngleHistory.push_back(glm::degrees(joint.angleRad));
+                                if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
+                                ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
+                                ImGui::EndTooltip();
+                            }
 							if (jointSelected) ImGui::PopStyleColor();
 
 							if (rowClicked) {

@@ -44,4 +44,19 @@ namespace mathlib {
 
 	// Dot product of two Vec3
 	double dot(const Vec3& v1, const Vec3& v2) { return v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z(); }
+
+	// Natural frequency of a mass-spring system
+	double natural_freq(double k_p, double I) {
+		if (!std::isfinite(k_p) || !std::isfinite(I)) return std::numeric_limits<double>::quiet_NaN();
+		if (k_p < 0.0 || I <= 0.0) return std::numeric_limits<double>::quiet_NaN();
+		return std::sqrt(k_p / I);
+	}
+
+	// Damping ratio of a mass-spring-damper system 
+	double damping_ratio(double k_d, double I, double k_p) {
+		if (!std::isfinite(k_p) || !std::isfinite(k_d) || !std::isfinite(I)) { return std::numeric_limits<double>::quiet_NaN(); }
+		if (k_p <= 0.0 || I <= 0.0) { return std::numeric_limits<double>::quiet_NaN(); }
+		double w_n = natural_freq(k_p, I);
+		return k_d / (2.0 * I * w_n); // damping ratio - zeta
+	}
 }
