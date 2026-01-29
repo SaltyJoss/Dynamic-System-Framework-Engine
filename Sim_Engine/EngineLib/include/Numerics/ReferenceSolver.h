@@ -42,10 +42,10 @@ namespace integration {
 			Vec3 omega;       // angular velocity (rad/s)
 		};
 
-		RefStepResult refStep(const VecX& x, double t, double dt_try, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
-			double dt_sug = dt_try;
-			VecX x_next = referenceIntegrationMethod(const_cast<VecX&>(x), t, dt_sug, f, rtol, atol, refMethod);
-			return { x_next, dt_try, dt_sug }; 
+		RefStepResult refStep(VecX& x, double t, double dt_try, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
+			double dt = dt_try;
+			VecX x_next = referenceIntegrationMethod(const_cast<VecX&>(x), t, dt, f, rtol, atol, refMethod);
+			return { x_next, /*dt_taken=*/dt_try, /*dt_sug=*/dt };
 		}
 
 		void setReferenceIntegrationMethod(eReferenceIntegrator m) { refMethod = m; }

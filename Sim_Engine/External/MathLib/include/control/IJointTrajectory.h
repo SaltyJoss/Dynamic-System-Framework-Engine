@@ -16,6 +16,9 @@ namespace control {
 		// Get the time span of the trajectory
 		virtual TrajTimeSpan span() const = 0;
 		// Check if the trajectory is finished at time t
-		bool finished(double t) const { return t >= span().tf; }
+		bool finished(double t) const {
+			const auto s = span();
+			return t >= s.tf;
+		}
 	};
 } // namespace control

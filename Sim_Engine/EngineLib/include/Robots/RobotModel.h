@@ -105,9 +105,12 @@ namespace robots {
 		float thetaRefRad = 0.0f;	 // rad
 		float omegaRefRad_s = 0.0f;  // rad/s
 		float alphaRefRad_s2 = 0.0f; // rad/s^2
-		float k_p = 25.0f;	// position gain
-		float k_i = 0.0f;	// integral gain (not used)
-		float k_d = 8.0f;	// velocity gain
+		float k_p = 10.0f;	// position gain (rad)
+		float k_i = 0.0f;	// integral gain (rad*s)
+		float k_d = 10.0f;	// velocity gain (rad/s)
+
+		float wn_target = 20.0f;    // rad/s
+		float zeta_target = 1.1f;   // damping ratio
 
 		// --- Precomputed transforms ---
 		glm::mat4 jointToChildRest = glm::mat4(1.0f);
@@ -149,4 +152,27 @@ namespace robots {
 			}
 		}
 	};
+
+	// --- Robot Model Metrics ---
+	
+	// Overall robot metrics
+	struct RobotMetrics {
+		double time;
+		double energy;
+		double power;
+		double linearMomentum[3];
+		double angularMomentum[3];
+	};
+
+	// Per-joint metrics
+	struct JointMetrics {
+		double theta, omega;
+		double thetaRef, omegaRef, alphaRef;
+		double err, err_d;
+		double I_eff;
+		double tau;
+		double alpha;
+		double kp, kd;
+	};
+
 }

@@ -504,6 +504,9 @@
     <ClInclude Include="..\External\MathLib\include\control\TrapezoidTrajectory.h">
       <Filter>External\MathLib\Control</Filter>
     </ClInclude>
+    <ClInclude Include="include\Platform\DataManager.h">
+      <Filter>Header Files\include\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -697,6 +700,9 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\TrajSetCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands\Trajectory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DataManager.cpp">
+      <Filter>Source Files\src\Platform</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

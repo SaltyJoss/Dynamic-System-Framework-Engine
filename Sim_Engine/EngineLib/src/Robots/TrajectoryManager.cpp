@@ -13,6 +13,22 @@ namespace control {
 	// Clears all active trajectories
 	void TrajectoryManager::clearAll() { _active.clear(); }
 
+	bool TrajectoryManager::tryEval(const std::string& link, double t, control::TrajState& out) const {
+		auto it = _active.find(link);
+		if (it == _active.end()) { return false; }
+		const auto r = it->second->eval(t);
+		out.q = r.q;
+		out.qd = r.qd;
+		out.qdd = r.qdd;
+		return true;
+	}
+
+	bool TrajectoryManager::hasActive(const std::string& link) const {
+		auto it = _active.find(link);
+		return (it != _active.end() && it->second);
+	}
+
+
 	// Set a trajectory for a specific robot link
 	void TrajectoryManager::set(const std::string& link, std::unique_ptr<control::IJointTrajectory> traj) {
 		if (!traj) {
@@ -29,16 +45,28 @@ namespace control {
 			const std::string& link = it->first;
 			auto& traj = it->second;
 
+			// Evaluate trajectory at time t
 			const auto ref = traj->eval(t);
 
-			robot.trySetJointTargetRad(link, (float)ref.q);
-			robot.trySetJointOmegaRefRad(link, (float)ref.qd);
-			robot.trySetJointAlphaRefRad(link, (float)ref.qdd);
+			// Apply trajectory reference to robot joint
+			const bool ok1 = robot.trySetJointTargetRad(link, (float)ref.q);
+			if (!ok1) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
 
-			if (traj->finished(t)) { it = _active.erase(it); } 
-			else { ++it; }
+			const bool ok2 = robot.trySetJointOmegaRefRad(link, (float)ref.qd);
+			if (!ok2) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
 
-			SIM_RUNTIME("Traj active=%zu t=%.3f", _active.size(), t);
+			const bool ok3 = robot.trySetJointAlphaRefRad(link, (float)ref.qdd);
+			if (!ok3) { D_ERROR("Bad link key '%s' (no joint.child match)", link.c_str()); }
+
+			// Remove finished trajectories
+			if (traj->finished(t)) {
+				D_WARN("Trajectory finished immediately: link='%s' t=%.6f", link.c_str(), t);
+				it = _active.erase(it);
+			}
+			else {
+				++it;
+			}
+
 		}
 	}
 } // namespace control

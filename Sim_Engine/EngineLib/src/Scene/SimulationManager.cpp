@@ -38,6 +38,7 @@
 #include <Platform/WindowManager.h>
 
 #include "EngineLib/LogMacros.h"
+#include "Platform/DataManager.h"
 
 namespace gui {
 	// --------------------------------------------------
@@ -451,6 +452,8 @@ namespace gui {
 
 					_scriptRunning = false;
 					_activeProgram = nullptr;
+
+					stopSimulation();
 					D_DEBUG("Program execution completed.");
 				}
 			}
@@ -462,9 +465,14 @@ namespace gui {
 			if (_simRunning) {
 				_simTime += _dt;
 
+				// step physics
 				updatePhysics(_dt);
-				if (hasRobot()) { 
+				if (hasRobot()) {
+					// apply trajectories to robot
 					_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories
+					// step robot references and dynamics
+					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
+					// step robot system
 					_impl->_robotSystem->step(_dt, _simTime);	 // step robot system
 				}
 			}
@@ -476,15 +484,19 @@ namespace gui {
 	}
 
 	void simManager::startSimulation() {
+		if (_simRunning) return; 
 		D_INFO("starting simulation");
 		_simTime = 0.0;
 		_simRunning = true;
+		DATA_CAPTURE_ENABLE(true);
 	}
 
 	void simManager::stopSimulation() {
+		if (!_simRunning) return;
 		D_INFO("stopping simulation");
+		DATA_CAPTURE_ENABLE(false);
 		_simRunning = false;
-		_simTime = 0.0; // reset sim time
+		_simTime = 0.0;
 	}
 
 	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }

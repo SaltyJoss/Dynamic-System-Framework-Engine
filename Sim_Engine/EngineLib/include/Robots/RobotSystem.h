@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+namespace control { class ENGINE_API TrajectoryManager; }
+
 namespace robots {
 	// Joint state structure
     struct ENGINE_API JointState { double theta; double omega; };
@@ -65,9 +67,12 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
+		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega) const;
+
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);
+		void stepReference(control::TrajectoryManager& traj, double dt, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
 
@@ -89,6 +94,8 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
+		JointMetrics metrics() const { return _metrics; }
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -101,6 +108,12 @@ namespace robots {
 
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
+
+		mathlib::VecX packRefState() const;
+		void unpackRefState(const mathlib::VecX& xr);
+
+		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
+
 		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
 		void enforceJointLimits(RobotJoint& j);
 
@@ -108,6 +121,7 @@ namespace robots {
 		spawnFn _loadMeshReturn;
 
         RobotModel _robot;
+		JointMetrics _metrics;
         bool _hasRobot = false;
 
         std::string _loadedName;
@@ -118,8 +132,8 @@ namespace robots {
         glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
 		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
 
-        std::vector<glm::mat4> _bindWorld0;  // size = links.size()
-		std::vector<glm::mat4> _bindLocal0;  // size = links.size()
+		mathlib::VecX _xRef; // reference state vector for integration
+		bool _refInit = false;
 
 		double _gravity = 9.81; // m/s^2
 

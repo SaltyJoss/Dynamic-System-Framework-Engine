@@ -12,7 +12,7 @@ using namespace mathlib;
 namespace commands {
 	// --- RotateTo Mark Methods ---
 	void RotateJointByCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
-	void RotateJointByCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateJointBy() ran successfully" }); }
+	void RotateJointByCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateJointBy ran successfully" }); }
 	bool RotateJointByCmd::hasStarted() const { return _started; }
 
 	RotateJointByCmd::RotateJointByCmd(std::string linkName, double omegaDegPerSec, double deltaDeg) 
