@@ -44,8 +44,8 @@ namespace interpreter {
 
 		// State variables (not needed previously, but trying for this new syntax!)
 		char quote = 0;			// "" or ''
-		char braceDepth = 0;	// {}
-		char parenDepth = 0;	// ()
+		int braceDepth = 0;	// {}
+		int parenDepth = 0;	// ()
 
 		// Trim whitespace from current
 		auto trimInPlace = [](std::string& str) {
@@ -79,10 +79,21 @@ namespace interpreter {
 			}
 			
 			if (c == '"' || c == '\'') { quote = c; continue; }
+			// Braces
 			if (c == '{') { ++braceDepth; current.push_back(c); continue; }
-			if (c == '}') { --braceDepth; current.push_back(c); continue; }
+			if (c == '}') { 
+				if (braceDepth > 0) { --braceDepth; } 
+				else { D_WARN("Unmatched closing brace '}' in argument list"); }
+				current.push_back(c); continue; 
+			}
+			// Parentheses
 			if (c == '(') { ++parenDepth; current.push_back(c); continue; }
-			if (c == ')') { --parenDepth; current.push_back(c); continue; }
+			if (c == ')') { 
+				if (parenDepth > 0) { --parenDepth; } 
+				else { D_WARN("Unmatched closing parenthesis ')' in argument list"); }
+				current.push_back(c); continue; 
+			}
+			// Comma (only if not nested)
 			if (c == ',' && braceDepth == 0 && parenDepth == 0) { pushCurrent(); continue; }
 
 			current.push_back(c);
@@ -256,6 +267,7 @@ namespace interpreter {
 				par.inner = std::move(innerCmds);
 
 				_programData.cmd.push_back(std::move(par));
+				continue;
 			}
 			{
 				Command cmd;
@@ -299,6 +311,9 @@ namespace interpreter {
 					cmd.identifier.clear();
 					cmd.tokens = std::move(parts);
 				}
+
+				LOG_INFO("PARSE cmdName='%s' raw='%s'", cmd.cmdName.c_str(), cmd.rawLine.c_str());
+
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
 		}
@@ -324,12 +339,9 @@ namespace interpreter {
 				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
 
-
 				LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
-
 				continue;
 			}
-
 			buildCommand(cmd);
 		}
 	}
@@ -358,13 +370,10 @@ namespace interpreter {
 		// Create command instance
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
-		LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu",
-			cmd.cmdName.c_str(), "", 0, cmd.inner.size());
+		LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
 
 		if (command) {
-			D_DEBUG("SCRIPT: %s | target=%s | args=%d",
-				cmd.cmdName.c_str(), cmd.identifier.c_str(), cmd.tokens.size());
-
+			D_DEBUG("SCRIPT: %s | target=%s | args=%d", cmd.cmdName.c_str(), cmd.identifier.c_str(), cmd.tokens.size());
 			_program->add(command);
 			D_INFO("Added command: %s()", cmd.cmdName.c_str());
 		}
