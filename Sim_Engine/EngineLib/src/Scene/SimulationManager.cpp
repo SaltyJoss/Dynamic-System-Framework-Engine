@@ -469,11 +469,11 @@ namespace gui {
 				updatePhysics(_dt);
 				if (hasRobot()) {
 					// apply trajectories to robot
-					_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories
+					//_impl->_traj.apply(*_impl->_robotSystem, _simTime); // apply trajectories
 					// step robot references and dynamics
 					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
 					// step robot system
-					_impl->_robotSystem->step(_dt, _simTime);	 // step robot system
+					_impl->_robotSystem->step(_impl->_traj, _dt, _simTime);	 // step robot system
 				}
 			}
 

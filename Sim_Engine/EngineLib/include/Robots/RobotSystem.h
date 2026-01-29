@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
@@ -67,11 +68,11 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega) const;
+		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef) const;
 
 		// --- SIMULATION STEP METHOD ---
 
-		void step(double dt, double simTime);
+		void step(const control::TrajectoryManager& traj, double dt, double simTime);
 		void stepReference(control::TrajectoryManager& traj, double dt, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
@@ -114,7 +115,7 @@ namespace robots {
 
 		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
 
-		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
+		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
 		void enforceJointLimits(RobotJoint& j);
 
 		double _simTime = 0.0;

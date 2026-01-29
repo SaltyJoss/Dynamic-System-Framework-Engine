@@ -37,31 +37,16 @@ namespace robots {
 
 	// Method to wrap an angle in radians to the range [-pi, pi]
 	float RobotSystem::wrapToPi(float angleRad) {
-		angleRad = std::fmod(angleRad + PI, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
-		return angleRad - PI;
+		angleRad = std::fmod(angleRad + static_cast<float>(PI_d), static_cast<float>(TWO_PI_d));
+		if (angleRad < 0.0f) { angleRad += static_cast<float>(TWO_PI_d); }
+		return angleRad - static_cast<float>(PI_d);
 	}
 
 	// Method to wrap an angle in radians to the range [0, 2pi]
 	float RobotSystem::wrapRad(float angleRad) {
-		angleRad = fmod(angleRad, TWO_PI);
-		if (angleRad < 0.0f) angleRad += TWO_PI;
+		angleRad = fmod(angleRad, static_cast<float>(TWO_PI_d));
+		if (angleRad < 0.0f) { angleRad += static_cast<float>(TWO_PI_d); }
 		return angleRad;
-	}
-
-	// Convert mathlib::Pose to glm::mat4
-	static glm::mat4 poseToGlm(const mathlib::Pose& T) {
-		glm::mat4 M(1.0f);
-		for (int r = 0; r < 4; ++r) { for (int c = 0; c < 4; ++c) { M[c][r] = static_cast<float>(T(r, c)); } }
-		return M;
-	}
-
-	// Method to create a rotation matrix about a pivot point
-	static glm::mat4 rotAboutPivot(const glm::vec3& pivot, const glm::vec3& axisUnit, float angleRad) {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f), pivot);
-		glm::mat4 Ti = glm::translate(glm::mat4(1.0f), -pivot);
-		glm::mat4 R = glm::rotate(glm::mat4(1.0f), angleRad, axisUnit);
-		return T * R * Ti;
 	}
 
 	// Method to apply a soft velocity barrier to joint torque
@@ -184,15 +169,15 @@ namespace robots {
 		}
 	}
 
-	JointMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega) const {
+	JointMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef) const {
 		JointMetrics m{};
+
+		// References
 		m.theta = theta;
 		m.omega = omega;
-
-		// Reference angles, velocities, and accelerations
-		m.thetaRef = (double)joint.thetaRefRad;
-		m.omegaRef = (double)joint.omegaRefRad_s;
-		m.alphaRef = (double)joint.alphaRefRad_s2;
+		m.thetaRef = thetaRef;
+		m.omegaRef = omegaRef;
+		m.alphaRef = alphaRef;
 
 		// Errors
 		m.err = m.thetaRef - theta;
@@ -201,8 +186,8 @@ namespace robots {
 		m.I_eff = computeJointAxisInertia(joint, link);
 		if (!std::isfinite(m.I_eff) || m.I_eff < 1e-9) m.I_eff = 1e-9;
 
-		const double wn = (double)joint.wn_target;
-		const double z = (double)joint.zeta_target;
+		const double wn = joint.wn_target;
+		const double z = joint.zeta_target;
 
 		double k_p = m.I_eff * wn * wn;
 		double k_d = 2.0 * z * m.I_eff * wn;
@@ -214,8 +199,8 @@ namespace robots {
 		m.tau = m.I_eff * m.alphaRef + k_p * m.err + k_d * m.err_d; // control torque
 
 		// Passive dynamics
-		const double c = (double)joint.dynamics.damping;
-		const double mu = (double)joint.dynamics.friction;
+		const double c = joint.dynamics.damping;
+		const double mu = joint.dynamics.friction;
 
 		m.tau -= c * omega;
 
@@ -226,13 +211,13 @@ namespace robots {
 
 		// Effort clamp
 		if (joint.limits.maxEffort > 0.0f) {
-			const double e = (double)joint.limits.maxEffort;
+			const double e = joint.limits.maxEffort;
 			if (m.tau > e) { m.tau = e; }
 			if (m.tau < -e) { m.tau = -e; }
 		}
 
 		// Velocity soft limit
-		const double wMax = (double)std::abs(joint.limits.maxOmegaRad_s);
+		const double wMax = std::abs(joint.limits.maxOmegaRad_s);
 
 		// Apply soft velocity barrier
 		applyOmegaBarrier(m.tau, omega, wMax, m.I_eff);
@@ -243,11 +228,13 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(double t, const mathlib::VecX& x) const {
+	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
 		const int n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(2 * n);
 
+		// For each joint
 		for (int i = 0; i < n; ++i) {
+			// Current states
 			const double theta = x[i];
 			const double omega = x[i + n];
 
@@ -255,12 +242,19 @@ namespace robots {
 			const RobotJoint& joint = _robot.joints[i];
 			const RobotLink& link = _robot.links[i+1];
 
-			const double thetaRef = static_cast<double>(joint.thetaRefRad);
-			const double omegaRef = static_cast<double>(joint.omegaRefRad_s);
-			const double alphaRef = static_cast<double>(joint.alphaRefRad_s2);
+			// Evaluate reference trajectory
+			control::TrajState ref{};
+			bool hasRef = traj.tryEval(link.name, t, ref);
 
-			JointMetrics m = computeJointMetrics(joint, link, theta, omega);
+			// Reference states
+			double thetaRef = hasRef ? ref.q   : (double)joint.thetaRefRad;
+			double omegaRef = hasRef ? ref.qd  : (double)joint.omegaRefRad_s;
+			double alphaRef = hasRef ? ref.qdd : (double)joint.alphaRefRad_s2;
 
+			// Compute joint metrics
+			JointMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef);
+
+			// Fill in derivatives
 			dx[i] =		  omega;	// dtheta/dt = omega
 			dx[i + n] = m.alpha;	// domega/dt = alpha		
 		}
@@ -279,7 +273,7 @@ namespace robots {
 	}
 
 	// Method to advance the robot state by dt using the selected integrator
-	void RobotSystem::step(double dt, double simTime) {
+	void RobotSystem::step(const control::TrajectoryManager& traj, double dt, double simTime) {
 		if (!_hasRobot) return;
 
 		_simTime = simTime;
@@ -288,7 +282,7 @@ namespace robots {
 		mathlib::VecX x = packState(); // current state vector
 
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 		//
 		//LOG_INFO("preClamp theta_next=%g rad (%g deg), omega_next=%g rad/s",
@@ -306,12 +300,23 @@ namespace robots {
 
 		for (int i = 0; i < (int)_robot.joints.size(); ++i) {
 			const auto& joint = _robot.joints[i];
-			const auto& link = _robot.links[i + 1];
+			const auto& link  = _robot.links[i + 1];
 
+			// Current states
 			const double theta = (double)joint.angleRad;
 			const double omega = (double)joint.omegaRad_s;
 
-			JointMetrics m = computeJointMetrics(joint, link, theta, omega);
+			// Evaluate reference trajectory
+			control::TrajState ref{};
+			const bool hasRef = traj.tryEval(link.name, simTime, ref);
+
+			// Reference states
+			const double thetaRef = hasRef ? ref.q : (double)joint.thetaRefRad;
+			const double omegaRef = hasRef ? ref.qd : (double)joint.omegaRefRad_s;
+			const double alphaRef = hasRef ? ref.qdd : (double)joint.alphaRefRad_s2;
+
+			// Compute joint metrics
+			JointMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef);
 
 			HDF5_SIM_DATA("robot_joint_control",
 				(data::FieldList{
@@ -328,11 +333,12 @@ namespace robots {
 					{"maxAngle",    (double)joint.limits.maxAngle},
 					{"wMax",        (double)joint.limits.maxOmegaRad_s},
 					{"maxEffort",   (double)joint.limits.maxEffort},
-					{"k_p",         (double)joint.k_p},
-					{"k_d",         (double)joint.k_d},
 					// Dynamics values
 					{"damping",     (double)joint.dynamics.damping},
 					{"friction",    (double)joint.dynamics.friction},
+					// Control gains
+					{"k_p",         m.kp},
+					{"k_d",         m.kd},
 					// State and control values
 					{"theta",       m.theta},
 					{"theta_ref",   m.thetaRef},
