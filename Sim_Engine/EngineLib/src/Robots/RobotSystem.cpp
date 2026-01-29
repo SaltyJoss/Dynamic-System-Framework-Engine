@@ -290,7 +290,10 @@ namespace robots {
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
-		
+		//
+		//LOG_INFO("preClamp theta_next=%g rad (%g deg), omega_next=%g rad/s",
+		//	x_Next[0], glm::degrees((float)x_Next[0]), x_Next[(int)_robot.joints.size()]);
+
 		// Unpack new state
 		unpackState(x_Next);
 

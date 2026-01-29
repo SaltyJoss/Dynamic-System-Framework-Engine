@@ -8,8 +8,8 @@ namespace integration {
 	// Ordinary Differential Equation (ODE) solvers
 	// ----------------------------------------------------------------
 	// Euler method
-	VecX ODE::eulerStep(const VecX& x, const VecX& dxdt, double dt) {
-		return x + dxdt * dt;
+	VecX ODE::eulerStep(const VecX& x, double t, double dt, const std::function<VecX(double, const VecX&)>& f) {
+		return x + dt * f(t, x);
 	}
 
 	// Second-order Runge-Kutta method (Midpoint method)

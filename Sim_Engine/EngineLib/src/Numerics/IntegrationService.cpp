@@ -17,9 +17,8 @@ namespace integration {
 			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
 			return x; // could also throw an error here, but feel this is better
 		}
-		VecX dxdt = f(t, x);
 
-		if (m == eIntegrationMethod::Euler)			{ return _ODE->eulerStep(x, dxdt, dt); }
+		if (m == eIntegrationMethod::Euler)			{ return _ODE->eulerStep(x, t, dt, f); }
 		else if (m == eIntegrationMethod::Midpoint) { return _ODE->midpointStep(x, t, dt, f); }
 		else if (m == eIntegrationMethod::Heun)		{ return _ODE->heunStep(x, t, dt, f); }
 		else if (m == eIntegrationMethod::Ralston)  { return _ODE->ralstonStep(x, t, dt, f); }
@@ -27,7 +26,7 @@ namespace integration {
 		else {
 
 			LOG_WARN("Unknown integration method: %s. Defaulting to Euler Method (simplest)", method);
-			return _ODE->eulerStep(x, dxdt, dt);
+			return _ODE->eulerStep(x, t, dt, f);
 		}
 	}
 } // namespace numerics

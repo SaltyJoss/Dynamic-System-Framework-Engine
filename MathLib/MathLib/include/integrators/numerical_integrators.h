@@ -34,7 +34,7 @@ namespace integration {
 	class MATHLIB_API ODE {
 	public:
 		// Euler method
-		VecX eulerStep(const VecX& x, const VecX& dxdt, double dt);
+		VecX eulerStep(const VecX& x, double t, double dt, const std::function<VecX(double, const VecX&)>& f);
 
 		// Second-order Runge-Kutta method (Midpoint)
 		VecX midpointStep(const VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);

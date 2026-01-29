@@ -76,7 +76,7 @@ namespace commands {
 		const std::string typeU = upperCopy(trimCopy(_type));
 
 		// ===== TRAPEZOID =====
-		// trajSet(link, TRAP, q1, vmax, amax) //
+		// trajSet(link, TRAP, q1, vmax, amax)
 		if (typeU == "TRAP" || typeU == "TRAPEZOID") {
 			if (_params.size() != 3) {
 				SIM_FAIL("trajSet TRAP expects 3 params: q1, vmax, amax (got %zu)", _params.size());
