@@ -347,7 +347,7 @@ namespace gui {
 			ImGui::BeginDisabled(_sim->isSimRunning());
 
             ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
-            ImGui::Text("Joint Angle: %.3f - Link Mass: %.3f kg", glm::degrees(j.angleRad), L.inertial.mass);
+            ImGui::Text("Joint Angle: %.3f - Link Mass: %.3f kg", glm::degrees(j.thetaRad), L.inertial.mass);
             ImGui::Spacing();
 
             ImGui::Text("Damping:");
@@ -561,7 +561,7 @@ namespace gui {
                     ImGui::Separator();
                     const auto& joints = robot->joints();
                     for (const auto& joint : joints) {
-                        float angleDeg = glm::degrees(joint.angleRad);
+                        float angleDeg = glm::degrees(joint.thetaRad);
                         ImGui::Text("%s: %.2f deg", joint.name.c_str(), angleDeg);
 
                         // Plot Outputs specific to robotic arm
@@ -787,10 +787,10 @@ namespace gui {
                             if (ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
                                 ImGui::TextDisabled("Angle(deg): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
-                                    glm::degrees(joint.angleRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
+                                    glm::degrees(joint.thetaRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
 
                                 static std::vector<float> jointAngleHistory;
-                                jointAngleHistory.push_back(glm::degrees(joint.angleRad));
+                                jointAngleHistory.push_back(glm::degrees(joint.thetaRad));
                                 if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
                                 ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
                                 ImGui::EndTooltip();

@@ -4,7 +4,7 @@
 
 namespace constants {
 	// Mathematical constants
-	static constexpr long double e = 2.718281828459045235L;				// Euler's number
+	static constexpr long double e_n = 2.718281828459045235L;			// Euler's number
 	static constexpr long double PI = 3.141592653589793238L;			// Pi
 	static constexpr long double PHI = 1.618033988749894848L;			// Golden ratio
 	static constexpr long double SQRT2 = 1.414213562373095049L;			// Square root of 2

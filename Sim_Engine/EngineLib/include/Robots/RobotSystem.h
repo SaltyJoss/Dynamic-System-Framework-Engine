@@ -105,37 +105,50 @@ namespace robots {
 
 		std::vector<std::unique_ptr<scene::Object>>& _objects;
 
+		spawnFn _loadMeshReturn;
+
+		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
 
+		// Reference state packing and unpacking
 		mathlib::VecX packRefState() const;
 		void unpackRefState(const mathlib::VecX& xr);
 
+		// Compute joint effective inertia
 		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
 
+		// Compute state derivatives
 		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
+
+		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);
 
+		// Simulation time
 		double _simTime = 0.0;
-		spawnFn _loadMeshReturn;
 
+		// Robot model and state
         RobotModel _robot;
         bool _hasRobot = false;
+		glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
+		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
+		VecX _robotQHome;							// home/reset joint positions
+		bool _robotHomeValid = false;				// is home position valid
 
+		// Link name to index map
+		std::unordered_map<std::string, int> _linkIndex;
         std::string _loadedName;
 		int _currentJointIndex = -1;
 
-        std::unordered_map<std::string, int> _linkIndex;
-
-        glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
-		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
-
-		mathlib::VecX _xRef; // reference state vector for integration
+		// Reference state
+		mathlib::VecX _xRef;
 		bool _refInit = false;
 
-		double _gravity = 9.81; // m/s^2
+		// precomputed clamp lookup tables
+		mutable std::vector<uint8_t> _clampTheta;
+		mutable std::vector<uint8_t> _clampOmega;
 
-		VecX _robotQHome; // home/reset joint angles (radians)
-        bool _robotHomeValid = false;
+		// Gravity acceleration (m/s^2)
+		double _gravity = 9.81; // m/s^2
 	};
 } // namespace robot
