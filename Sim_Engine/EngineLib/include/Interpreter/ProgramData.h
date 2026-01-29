@@ -41,7 +41,8 @@ namespace program_data {
 		Midpoint,
 		Heun,
 		Ralston,
-		RK4
+		RK4,
+		RK45
 	};
 
 	// Enum for preset colours

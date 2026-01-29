@@ -100,7 +100,6 @@ namespace robots {
         void buildLinkIndex();
 
         std::unique_ptr < integration::IntegrationService> _integrator;
-        std::unique_ptr<integration::ReferenceSolver> _refSolver;
         integration::eIntegrationMethod _curIntMethod{};
 
 		std::vector<std::unique_ptr<scene::Object>>& _objects;

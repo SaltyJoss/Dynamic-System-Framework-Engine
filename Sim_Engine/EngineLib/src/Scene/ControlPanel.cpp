@@ -263,6 +263,8 @@ namespace gui {
                         D_INFO("Integrator set to RK2 (Ralston)"); break;
                     case integration::eIntegrationMethod::RK4:
                         D_INFO("Integrator set to RK4"); break;
+                    case integration::eIntegrationMethod::RK45:
+						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
                     default:
                         break;
                     }

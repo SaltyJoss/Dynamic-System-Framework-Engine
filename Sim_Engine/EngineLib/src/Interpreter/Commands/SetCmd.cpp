@@ -16,6 +16,7 @@ namespace commands {
 		if (s == "heun")     return IntegratorMethod::Heun;
 		if (s == "ralston")  return IntegratorMethod::Ralston;
 		if (s == "rk4")      return IntegratorMethod::RK4;
+		if (s == "rk45")     return IntegratorMethod::RK45;
 		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s.c_str());
 		return IntegratorMethod::Euler;
 	}
