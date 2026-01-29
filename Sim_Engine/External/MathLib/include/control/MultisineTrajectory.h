@@ -20,19 +20,19 @@ namespace control {
 
 	class MultisineTrajectory : public IJointTrajectory {
 	public:
-		MultisineTrajectory(double t0, double tf, double q0, std::vector<SineComponent> comps)
-			: _t0(t0), _tf(tf), _q0(q0), _comps(std::move(comps)) {
+		MultisineTrajectory(double t0, double tf, double centre, std::vector<SineComponent> comps)
+			: _t0(t0), _tf(tf), _centre(centre), _comps(std::move(comps)) {
 		}
 
 		// Get the trajectory state at time t
 		TrajState eval(double t) const override {
-			if (t <= _t0) { return { _q0, 0.0, 0.0 }; } // before start time
+			if (t <= _t0) { return { _centre, 0.0, 0.0 }; } // before start time
 
 			// after end time
 			const double tt = (t >= _tf) ? _tf : t; // clamp to end time
 			const double tau = tt - _t0;			// time since start
 
-			double q = _q0, qd = 0.0, qdd = 0.0;
+			double q = _centre, qd = 0.0, qdd = 0.0;
 			// Sum contributions from all sine components
 			for (const auto& c : _comps) {
 				const double w = 2.0 * PI_d * c.freqHz;				// angular frequency
@@ -49,7 +49,7 @@ namespace control {
 		TrajTimeSpan span() const override { return { _t0, _tf }; }
 
 	private:
-		double _t0{ 0 }, _tf{ 0 }, _q0{ 0 }; // start time, end time, position offset
+		double _t0{ 0 }, _tf{ 0 }, _centre{ 0 }; // start time, end time, position offset
 		std::vector<SineComponent> _comps;     // amplitudes of the sine components
 	};
 }
