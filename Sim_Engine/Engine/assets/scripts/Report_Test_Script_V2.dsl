@@ -9,6 +9,14 @@
 # J5: [ -77,  +77]
 # J6: [-160, +160]
 
+load(robot, Z1)
+set(integrator, rk4)
+wait(0.5)
+
+trajClear()
+start()
+wait(0.5)
+
 # -----------------------------
 # Phase 0: Move to a neutral HOME pose (2.5s)
 # -----------------------------
@@ -115,13 +123,6 @@ parallel(0.0) {
 wait(8.0)
 wait(0.3)
 
-load(robot, Z1)
-set(integrator, rk4)
-wait(0.5)
-
-trajClear()
-start()
-wait(0.5)
 
 # -----------------------------
 # Phase 7: Small inspection "wrist scan" (8s)
