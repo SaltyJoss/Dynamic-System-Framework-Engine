@@ -53,8 +53,6 @@ namespace gui {
 	
 	// Draw the menu items
 	void CommandScriptEditor::drawMenus() {
-		double dt = ImGui::GetIO().DeltaTime;
-
 		// File menu for loading/saving scripts
 		if (ImGui::BeginMenu("Script")) {
 			if (ImGui::MenuItem("Load")) {

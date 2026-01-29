@@ -318,8 +318,8 @@ namespace gui {
         ImGui::Separator();
 
 		double minMass = 0.0; double maxMass = 100.0;        // mass limits
-		double minDamping = 0.0; double maxDamping = 1.0;    // damping limits
-        double minFriction = 0.0; double maxFriction = 10.0; // friction limits
+		float minDamping = 0.0;  float maxDamping = 1.0;    // damping limits
+        float minFriction = 0.0; float maxFriction = 10.0; // friction limits
 		double minGravity = 0.0; double maxGravity = 10.0;   // gravity limits
 
         if (_hasRobot) {
@@ -340,8 +340,8 @@ namespace gui {
             linkIndex = std::clamp(linkIndex, 0, (int)links.size() - 1);
             auto& L = links[linkIndex];
 
-            float damping = (float)j.dynamics.damping;
-            float friction = (float)j.dynamics.friction;
+            float c = (float)j.dynamics.damping;
+            float f = (float)j.dynamics.friction;
             double g = (double)robot->getGravity();
 			
 			ImGui::BeginDisabled(_sim->isSimRunning());
@@ -352,12 +352,12 @@ namespace gui {
 
             ImGui::Text("Damping:");
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::DragFloat("kg/s##damp", &damping, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = damping; }
+            if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
             ImGui::Spacing();
 
             ImGui::Text("Friction:");
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::DragFloat("##fric", &friction, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = friction;  }
+            if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f;  }
             ImGui::Spacing();
 
             ImGui::Text("Gravity:");
@@ -698,8 +698,6 @@ namespace gui {
 			if (_hasRobot) {
 				robots::RobotSystem* robotSys = _sim->getRobotSystem();
 				if (robotSys && robotSys->hasRobot()) {
-					bool selected = false;
-
 					const auto& links = robotSys->links();
 					const auto& joints = robotSys->joints();
 
@@ -910,17 +908,4 @@ namespace gui {
         ImGui::EndChild();
         ImGui::PopStyleVar(4);
     }
-
-	// Section Header Helper
-    static void SectionHeader(const char* title, const char* desc = nullptr) {
-        ImGui::Spacing();
-        ImGui::TextUnformatted(title);
-        if (desc) {
-            ImGui::SameLine();
-            ImGui::TextDisabled("%s", desc);
-        }
-        ImGui::Separator();
-        ImGui::Spacing();
-    }
-    
 }

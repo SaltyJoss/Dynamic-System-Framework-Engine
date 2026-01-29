@@ -26,29 +26,27 @@ namespace commands {
 		utils::OpResult setOmega(const mathlib::Vec3& omega, utils::AngularUnits units);
 		utils::OpResult setFixedDt(double dt);
 
-		utils::OpResult setColour(const glm::vec3& color);
-		utils::OpResult setMetallic(float metallic);
+		const utils::OpResult setColour(const glm::vec3& color) const;
+		const utils::OpResult setMetallic(float metallic) const;
 		
 		// Loaders (loadCmd)
 		utils::OpResult loadObject(const std::string& objectPath);
 		utils::OpResult loadRobot(const std::string& robotName);
-		utils::OpResult loadTexture(const std::string& texturePath);
+		const utils::OpResult loadTexture(const std::string& texturePath) const;
 		
 		// Clearers (clearCmd)
 		utils::OpResult clearObject();
 		utils::OpResult clearRobot();
-		utils::OpResult clearTexture();
+		const utils::OpResult clearTexture() const;
 
 		// Selectors (selectCmd)
 		utils::OpResult selectObject(scene::ObjectID id);
 
-		// Primary Commands
 		utils::OpResult startSim();
-		utils::OpResult stopSim();
-		utils::OpResult waitSim();
-		utils::OpResult resetSim();
-		utils::OpResult logSimData(const std::string& logPath);
-		utils::OpResult deleteObject(scene::ObjectID id);
+
+		// Loggers (logCmd)
+		//utils::OpResult logSimData(const std::string& logPath);
+		//utils::OpResult deleteObject(scene::ObjectID id);
 
 	private:
 		gui::simManager* _sim = nullptr;

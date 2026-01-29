@@ -3,7 +3,7 @@
 
 namespace data {
 	// Escape a string for CSV format
-    inline std::string escape_csv(const std::string_view s) {
+    static inline std::string escape_csv(const std::string_view s) {
 		bool needQuotes = false;
 		for (char c : s) {
 			if (c == ',' || c == '"' || c == '\n' || c == '\r') { 
@@ -25,7 +25,7 @@ namespace data {
 		return out;
     }
 
-	inline std::string toString(const Value& v) {
+	static inline std::string toString(const Value& v) {
 		// Visitor struct to convert Value to string
 		struct {
 			std::string operator()(std::nullptr_t) const { return "null"; }
@@ -70,7 +70,7 @@ namespace data {
 		return std::visit(visitor, v);
 	}
 
-	inline std::string timestampCompact() {
+	static inline std::string timestampCompact() {
 		auto now = std::chrono::system_clock::now();
 		std::time_t t = std::chrono::system_clock::to_time_t(now);
 		std::tm tm{};

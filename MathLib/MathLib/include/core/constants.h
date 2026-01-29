@@ -28,15 +28,15 @@ namespace constants {
 	static constexpr double TWO_OVER_PI_d = (double)TWO_OVER_PI;
 
 	// Fundamental physics constants
-	double G = 6.67430e-11;             // Gravitational constant (m^3 kg^-1 s^-2)
-	double mu_Earth = 3.986004418e14;   // Standard gravitational parameter for Earth (m^3 s^-2)
-	double g_Earth = 9.80665;           // Standard gravity on Earth's surface (m/s^2)
-	double g_Moon = 1.6220013;          // Standard gravity on Moon's surface (m/s^2)
-	double g_Mars = 3.72076;            // Standard gravity on Mars' surface (m/s^2)
-	double c = 2.99792458e8;            // Speed of light in vacuum (m/s)
+	static constexpr double G = 6.67430e-11;             // Gravitational constant (m^3 kg^-1 s^-2)
+	static constexpr double mu_Earth = 3.986004418e14;   // Standard gravitational parameter for Earth (m^3 s^-2)
+	static constexpr double g_Earth = 9.80665;           // Standard gravity on Earth's surface (m/s^2)
+	static constexpr double g_Moon = 1.6220013;          // Standard gravity on Moon's surface (m/s^2)
+	static constexpr double g_Mars = 3.72076;            // Standard gravity on Mars' surface (m/s^2)
+	static constexpr double c_0 = 2.99792458e8;            // Speed of light in vacuum (m/s)
 
 	// Extra physics constants
-	double microgravity_threshold = 1e-6;   // Threshold for microgravity conditions (m/s^2)
-	double air_density = 1.225;             // Air density at sea level (kg/m^3)
-	double vacuum_density = 0.0;            // Vacuum density (kg/m^3)
-}
+	static constexpr double g_threshold = 1e-6;   // Threshold for microgravity conditions (m/s^2)
+	static constexpr double air_density = 1.225;  // Air density at sea level (kg/m^3)
+	static constexpr double vacuum_density = 0.0; // Vacuum density (kg/m^3)
+}// namespace constants

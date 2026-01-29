@@ -50,7 +50,7 @@ namespace robots {
 	}
 
 	// Method to apply a soft velocity barrier to joint torque
-	void applyOmegaBarrier(double& tau, double omega, double wMax, double I_eff) {
+	static void applyOmegaBarrier(double& tau, double omega, double wMax, double I_eff) {
 		if (wMax <= 0.0) return;
 
 		const double absw = std::abs(omega);
@@ -123,9 +123,9 @@ namespace robots {
 
 	// Method to pack robot joint states into a state vector
 	mathlib::VecX RobotSystem::packState() const {
-		const int n = static_cast<int>(_robot.joints.size());
+		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX x(2 * n);
-		for (int i = 0; i < n; ++i) {
+		for (size_t i = 0; i < n; ++i) {
 			x[i]	 = static_cast<double>(_robot.joints[i].angleRad);
 			x[i + n] = static_cast<double>(_robot.joints[i].omegaRad_s);
 		}
@@ -134,8 +134,8 @@ namespace robots {
 	
 	// Method to unpack state vector into robot joints
 	void RobotSystem::unpackState(const mathlib::VecX& x) {
-		const int n = static_cast<int>(_robot.joints.size());
-		for (int i = 0; i < n; ++i) {
+		const size_t n = static_cast<int>(_robot.joints.size());
+		for (size_t i = 0; i < n; ++i) {
 			float theta = static_cast<float>(x[i]);
 			float omega = static_cast<float>(x[i + n]);
 
@@ -150,9 +150,9 @@ namespace robots {
 	}
 
 	mathlib::VecX RobotSystem::packRefState() const {
-		const int n = (int)_robot.joints.size();
+		const size_t n = (int)_robot.joints.size();
 		mathlib::VecX x(2 * n);
-		for (int i = 0; i < n; ++i) {
+		for (size_t i = 0; i < n; ++i) {
 			x[i] = (double)_robot.joints[i].thetaRefRad;
 			x[i + n] = (double)_robot.joints[i].omegaRefRad_s;
 		}
@@ -160,8 +160,8 @@ namespace robots {
 	}
 
 	void RobotSystem::unpackRefState(const mathlib::VecX& x) {
-		const int n = (int)_robot.joints.size();
-		for (int i = 0; i < n; ++i) {
+		const size_t n = (int)_robot.joints.size();
+		for (size_t i = 0; i < n; ++i) {
 			auto& j = _robot.joints[i];
 			j.thetaRefRad = (float)x[i];
 			j.omegaRefRad_s = (float)x[i + n];
@@ -211,9 +211,9 @@ namespace robots {
 
 		// Effort clamp
 		if (joint.limits.maxEffort > 0.0f) {
-			const double e = joint.limits.maxEffort;
-			if (m.tau > e) { m.tau = e; }
-			if (m.tau < -e) { m.tau = -e; }
+			const double e_ = joint.limits.maxEffort;
+			if (m.tau > e_) { m.tau = e_; }
+			if (m.tau < -e_) { m.tau = -e_; }
 		}
 
 		// Velocity soft limit
@@ -229,11 +229,11 @@ namespace robots {
 
 	// Derivative function for ODE integration
 	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
-		const int n = static_cast<int>(_robot.joints.size());
+		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(2 * n);
 
 		// For each joint
-		for (int i = 0; i < n; ++i) {
+		for (size_t i = 0; i < n; ++i) {
 			// Current states
 			const double theta = x[i];
 			const double omega = x[i + n];
@@ -298,7 +298,7 @@ namespace robots {
 			enforceJointLimits(j);
 		}
 
-		for (int i = 0; i < (int)_robot.joints.size(); ++i) {
+		for (size_t i = 0; i < (int)_robot.joints.size(); ++i) {
 			const auto& joint = _robot.joints[i];
 			const auto& link  = _robot.links[i + 1];
 
@@ -390,7 +390,7 @@ namespace robots {
 		// Initialise reference state vector if needed
 		if (!_refInit || (int)_xRef.size() != 2 * n) {
 			_xRef = mathlib::VecX(2 * n);
-			for (int i = 0; i < n; ++i) {
+			for (size_t i = 0; i < n; ++i) {
 				_xRef[i]	 = qIn[i];	// theta
 				_xRef[i + n] = qdIn[i];	// omega
 			}
@@ -400,7 +400,7 @@ namespace robots {
 		// Define the reference derivative function
 		auto fRef = [&](double /*t_local*/, const mathlib::VecX& xIn) -> mathlib::VecX {
 			mathlib::VecX dx(2 * n);
-			for (int i = 0; i < n; ++i) {
+			for (size_t i = 0; i < n; ++i) {
 				const double omega = xIn[i + n];
 				dx[i] = omega;		  // dtheta/dt = omega
 				dx[i + n] = qddIn[i]; // domega/dt = alpha

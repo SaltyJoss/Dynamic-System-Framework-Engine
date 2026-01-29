@@ -256,7 +256,6 @@ namespace interpreter {
 				par.inner = std::move(innerCmds);
 
 				_programData.cmd.push_back(std::move(par));
-				continue;
 			}
 			{
 				Command cmd;
@@ -302,9 +301,6 @@ namespace interpreter {
 				}
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
-
-			next_line:
-			continue;
 		}
 	}
 

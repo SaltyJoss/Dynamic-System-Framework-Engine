@@ -150,7 +150,7 @@ namespace render {
 		GLuint _EBO;
 	};
 
-	class FrameBuffer {
+	class ENGINE_API FrameBuffer {
 	public:
 		virtual ~FrameBuffer() = default;
 
@@ -177,7 +177,7 @@ namespace render {
 		int _samples = 1;
 	};
 
-	class RenderContext {
+	class ENGINE_API RenderContext {
 	public:
 		virtual ~RenderContext() = default;
 

@@ -54,7 +54,7 @@ namespace commands {
 	}
 
 	//  Set the colour property of the current object
-	OpResult UIContext::setColour(const glm::vec3& color) {
+	const OpResult UIContext::setColour(const glm::vec3& color) const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 
@@ -63,7 +63,7 @@ namespace commands {
 	}
 
 	//  Set the metallic property of the current object
-	OpResult UIContext::setMetallic(float metallic) {
+	const OpResult UIContext::setMetallic(float metallic) const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 
@@ -99,7 +99,7 @@ namespace commands {
 
 		if (it == objects.end()) { return OpResult::Failure("Selected object ID not found."); }
 
-		const int index = std::distance(objects.begin(), it);
+		const int index = (int)std::distance(objects.begin(), it);
 		const scene::ObjectID deletedId = _objID;
 
 		_sim->deleteObject(index);
@@ -136,13 +136,13 @@ namespace commands {
 	// --- TEXTURE LOAD AND CLEAR METHODS ---
 	// (Texture loading/clearing not implemented yet)
 
-	OpResult UIContext::loadTexture(const std::string& texturePath) {
+	const OpResult UIContext::loadTexture(const std::string& texturePath) const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");
 	}
 
-	OpResult UIContext::clearTexture() {
+	const OpResult UIContext::clearTexture() const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");

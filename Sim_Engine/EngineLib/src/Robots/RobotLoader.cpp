@@ -15,28 +15,6 @@ using kinematics::DH_Params;
 namespace robots {
 	// --- Static Helper Functions ---
 
-	// Find a link by name in the robot model
-	static RobotLink* findLink(std::vector<RobotLink>& links, const std::string& name) {
-		for (auto& link : links) { if (link.name == name) { return &link; } }
-		LOG_WARN("Link %s not found in robot model", name.c_str());
-		return nullptr;
-	}
-
-	// Parse quaternion from joint data
-	static glm::quat parseQuaternion(const json& jointData) {
-		if (jointData.contains("quat") && jointData["quat"].is_array() && jointData["quat"].size() == 4) {
-			const auto& q = jointData["quat"];
-			return glm::normalize(glm::quat(
-				q[0].get<float>(), // w
-				q[1].get<float>(), // x
-				q[2].get<float>(), // y
-				q[3].get<float>()  // z
-			));
-		}
-
-		return glm::quat(1.0, 0.0, 0.0, 0.0);
-	}
-
 	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
 	static glm::quat rpyRadToQuat(const glm::vec3& rpyRad)
 	{

@@ -158,16 +158,16 @@ namespace commands {
 			comps.reserve(rest / 3);
 
 			for (size_t i = 0; i < rest; i += 3) {
-				control::SineComponent c;
-				c.amp = degToRad(_params[1 + i + 0]);	   // radians
-				c.freqHz = _params[1 + i + 1];	 // Hz
-				c.phaseRad = degToRad(_params[1 + i + 2]); // radians
+				control::SineComponent comp;
+				comp.amp = degToRad(_params[1 + i + 0]);	   // radians
+				comp.freqHz = _params[1 + i + 1];	 // Hz
+				comp.phaseRad = degToRad(_params[1 + i + 2]); // radians
 
-				if (c.freqHz <= 0.0) {
+				if (comp.freqHz <= 0.0) {
 					markFailed("trajSet(MSINE): all frequencies must be positive.");
 					return { CmdState::Failed, {}, "trajSet(MSINE): all frequencies must be positive." };
 				}
-				comps.push_back(c);
+				comps.push_back(comp);
 			}
 
 			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, (double)q0, std::move(comps));

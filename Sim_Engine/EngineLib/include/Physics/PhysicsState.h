@@ -1,5 +1,5 @@
 #pragma once
-
+#pragma warning(disable : 4251)
 
 //=============================================
 //            File: PhysicsState.h

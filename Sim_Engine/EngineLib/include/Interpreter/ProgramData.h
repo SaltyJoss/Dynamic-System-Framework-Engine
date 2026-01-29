@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
@@ -32,10 +33,6 @@ namespace program_data {
 	// Struct representing program data
 	struct ENGINE_API ProgramData {
 		std::vector<Command> cmd; // Vector storing the instructions
-
-		bool empty() const;
-		size_t size() const;
-		const Command& at(size_t i) const;
 	};
 
 	// Numerical integrator methods

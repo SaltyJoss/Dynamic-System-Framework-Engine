@@ -35,7 +35,7 @@ namespace control {
 			double q = _q0, qd = 0.0, qdd = 0.0;
 			// Sum contributions from all sine components
 			for (const auto& c : _comps) {
-				const double w = 2.0 * PI * c.freqHz;				// angular frequency
+				const double w = 2.0 * PI_d * c.freqHz;				// angular frequency
 				const double s = std::sin(w * tau + c.phaseRad);	// sine term
 				const double coss = std::cos(w * tau + c.phaseRad); // cosine term
 				q += c.amp * s;		   // position

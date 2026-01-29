@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
@@ -31,9 +32,9 @@ namespace integration {
 		};
 
 		struct ENGINE_API RefStepResult {
-			VecX x_next;		// next state vector
-			double dt_taken;	// actual step size taken
-			double dt_sug;		// suggested next step size
+			VecX x_next;			// next state vector
+			double dt_taken = 0.0;	// actual step size taken
+			double dt_sug = 0.0;	// suggested next step size
 		};
 
 		struct ENGINE_API RefIntegratorDiagSample {

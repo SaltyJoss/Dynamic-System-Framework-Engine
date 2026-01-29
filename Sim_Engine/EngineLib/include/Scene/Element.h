@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4100)
 
 // =============================================
 //             File: Element.h
@@ -33,8 +34,6 @@ namespace scene {
 	public:
 		virtual ~Element() = default;
 
-		virtual void update(shaders::Shader* shader) {
-			// nothing by default
-		}
+		virtual void update(shaders::Shader* shader) {}
 	};
 }

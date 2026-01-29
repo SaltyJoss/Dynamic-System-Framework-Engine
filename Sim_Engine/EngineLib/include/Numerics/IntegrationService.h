@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
@@ -26,7 +27,7 @@ namespace integration {
 		IntegrationService();
 
 		mathlib::VecX stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
-		mathlib::VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
+		//mathlib::VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }

@@ -16,17 +16,13 @@ namespace commands {
 		if (s == "heun")     return IntegratorMethod::Heun;
 		if (s == "ralston")  return IntegratorMethod::Ralston;
 		if (s == "rk4")      return IntegratorMethod::RK4;
-		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s);
+		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s.c_str());
 		return IntegratorMethod::Euler;
 	}
 
-	// Helper function to parse the function definition
-	static std::string parseFunc(const std::string& s) {
-		return "Not implemented yet.";
-	}
-
 	// Helper function to parse the colour
-	static Colour parseColourBlock(const std::string& s) {
+	static Colour parseColourBlock(const std::string& str) {
+		std::string s = toLower(str);
 		if (s == "red")			{ return Colour{ BlockColour::Red,		mathlib::Vec3{ 1.00f, 0.00f, 0.00f } }; }
 		if (s == "green")		{ return Colour{ BlockColour::Green,	mathlib::Vec3{ 0.00f, 1.00f, 0.00f } }; }
 		if (s == "blue")		{ return Colour{ BlockColour::Blue,		mathlib::Vec3{ 0.00f, 0.00f, 1.00f } }; }

@@ -49,7 +49,6 @@ namespace commands {
 		utils::OpResult stopAllOmega(); // stops all angular velocity
 
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
-		utils::OpResult stopJointOmega(const std::string& childLink); // stops joint angular velocity
 
 		// --- HELPER METHODS ---
 
@@ -68,13 +67,8 @@ namespace commands {
 		void setObjectID(scene::ObjectID id) { _objID = id; }
 
 		// --- PROCESS CONTROL METHODS ---
-
-		// Start and wait
-		void startMotion();
-		void waitSomeTime(double dt);
 	
 		// Stop Motion
-		void stopAllMotion(scene::Object* obj, utils::AxisMask axes);
 		void stopRotation(scene::Object* obj, utils::AxisMask axes);
 		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
@@ -102,7 +96,7 @@ namespace commands {
 		// Translates in world coordinates along a specified direction
 		utils::OpResult translateWorld(const mathlib::Vec3& direction, double distance, double vel);
 		// Translates along specified axes at a given velocity
-		utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt);
+		const utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt) const;
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;

@@ -39,8 +39,6 @@ namespace gui {
     void DebugPanel::renderErrorTable() {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
         ImGui::BeginChild("ErrorTableChild", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-        
-        const auto& entries = gLog.Instance().Entries();
 
         ImGuiTableFlags tableFlags =
             ImGuiTableFlags_BordersV |

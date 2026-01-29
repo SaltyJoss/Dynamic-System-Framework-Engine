@@ -34,11 +34,11 @@ namespace control {
 			double q = _q0, qd = 0.0, qdd = 0.0;
 			// Sum contributions from all sine components
 			for (const auto& c : _comps) {
-				const double w = 2.0 * PI * c.freqHz;				// angular frequency
+				const double w = 2.0 * PI_d * c.freqHz;				// angular frequency
 				const double s = std::sin(w * tau + c.phaseRad);	// sine term
 				const double coss = std::cos(w * tau + c.phaseRad); // cosine term
-				q   +=  c.amp * s;		   // position
-				qd  +=  c.amp * w * coss;  // velocity
+				q += c.amp * s;		   // position
+				qd += c.amp * w * coss;  // velocity
 				qdd += -c.amp * w * w * s; // acceleration
 			}
 			return { q, qd, qdd };
@@ -46,7 +46,7 @@ namespace control {
 
 		// Get the time span of the trajectory
 		TrajTimeSpan span() const override { return { _t0, _tf }; }
-		
+
 	private:
 		double _t0{ 0 }, _tf{ 0 }, _q0{ 0 }; // start time, end time, position offset
 		std::vector<SineComponent> _comps;     // amplitudes of the sine components

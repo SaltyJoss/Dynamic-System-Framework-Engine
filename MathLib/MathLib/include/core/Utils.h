@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
@@ -12,15 +13,15 @@ namespace mathlib {
 	Vec3 toVec3(const std::array<double, 3>& arr) { return Vec3(arr[0], arr[1], arr[2]); }
 
 	// Convert degrees to radians
-	double deg2rad(double degrees) { return degrees * (PI / 180.0); }
+	double deg2rad(double degrees) { return degrees * (PI_d / 180.0); }
 
 	// Convert radians to degrees
-	double rad2deg(double radians) { return radians * (180.0 / PI); }
+	double rad2deg(double radians) { return radians * (180.0 / PI_d); }
 
 	// Clamp a value between min and max
 	double clamp(double value, double minVal, double maxVal) {
-		if (value < minVal) return minVal;
-		if (value > maxVal) return maxVal;
+		if (value < minVal) { return minVal; }
+		if (value > maxVal) { return maxVal; }
 		return value;
 	}
 
@@ -56,6 +57,7 @@ namespace mathlib {
 	double damping_ratio(double k_d, double I, double k_p) {
 		if (!std::isfinite(k_p) || !std::isfinite(k_d) || !std::isfinite(I)) { return std::numeric_limits<double>::quiet_NaN(); }
 		if (k_p <= 0.0 || I <= 0.0) { return std::numeric_limits<double>::quiet_NaN(); }
-		return k_d / (2.0 * std::sqrt(k_p * I)); // damping ratio - zeta
+		double w_n = natural_freq(k_p, I);
+		return k_d / (2.0 * I * w_n); // damping ratio - zeta
 	}
 }

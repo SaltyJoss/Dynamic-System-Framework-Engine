@@ -95,8 +95,6 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
-		JointMetrics metrics() const { return _metrics; }
-
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -122,7 +120,6 @@ namespace robots {
 		spawnFn _loadMeshReturn;
 
         RobotModel _robot;
-		JointMetrics _metrics;
         bool _hasRobot = false;
 
         std::string _loadedName;

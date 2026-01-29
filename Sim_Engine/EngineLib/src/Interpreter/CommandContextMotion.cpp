@@ -61,19 +61,19 @@ namespace commands {
 
 	// --- HELPER METHODS ---
 
-	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
-	inline glm::quat toGlm(const mathlib::Quat& q) { return glm::quat(q.w(), q.x(), q.y(), q.z()); }
+	static inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
+	static inline glm::quat toGlm(const mathlib::Quat& q) { return glm::quat((double)q.w(), (double)q.x(), (double)q.y(), (double)q.z()); }
 
 	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
-		const float x = dir.x();
-		const float y = dir.y();
-		const float z = dir.z();
+		const double x = dir.x();
+		const double y = dir.y();
+		const double z = dir.z();
 
-		const float length = std::sqrt(x * x + y * y + z * z);
+		const double length = std::sqrt(x * x + y * y + z * z);
 
 		if (length < 1e-6f) { return Vec3(0.0f, 0.0f, 0.0f); }
 
-		const float invLen = 1.0f / length;
+		const double invLen = 1.0f / length;
 		return Vec3(x * invLen, y * invLen, z * invLen);
 	}
 
@@ -88,7 +88,7 @@ namespace commands {
 
 	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { 
+		if (!_robot->trySetJointTargetRad(link, (float)thetaTargetRad)) { 
 			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
 		}
 		return OpResult::Success(true);
@@ -107,7 +107,7 @@ namespace commands {
 	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { 
+		if (!_robot->trySetJointOmegaMaxRad(link, (float)maxOmegaRad_s)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
@@ -223,7 +223,7 @@ namespace commands {
 		_rig.axisUnit = axisUnit;
 		_rig.qStart = s.q;
 
-		const double angRad = angleDeg * (PI / 180.0);
+		const double angRad = angleDeg * (PI_d / 180.0);
 		Quat dq(std::cos(0.5 * angRad),
 			axisUnit.x() * std::sin(0.5 * angRad),
 			axisUnit.y() * std::sin(0.5 * angRad),
@@ -315,7 +315,7 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) {
+	const OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) {
 			SIM_FAIL("No object associated with this context.");
@@ -358,7 +358,7 @@ namespace commands {
 	}
 
 	double CommandContextMotion::convertOmegaToInternal(double omega) const {
-		if (_angularUnits == AngularUnits::DegPerSec) { return omega * (PI / 180.0); } // Convert degrees to radians
+		if (_angularUnits == AngularUnits::DegPerSec) { return omega * (PI_d / 180.0); } // Convert degrees to radians
 		return omega;
 	}
 } // namespace commands

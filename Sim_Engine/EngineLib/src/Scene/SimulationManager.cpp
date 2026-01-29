@@ -82,9 +82,6 @@ namespace gui {
 		scene::Object* _cameraFollowTarget = nullptr;
 
 		std::shared_ptr<scene::Mesh> _mesh;
-		std::shared_ptr<scene::Mesh> _checkerPlane;
-		std::shared_ptr<scene::Mesh> createCheckerPlane(float size = 50.0f);
-
 		std::vector<std::unique_ptr<scene::Object>> _objects;
 
 		// Physics System
@@ -171,7 +168,7 @@ namespace gui {
 	}
 
 	// Helper to get the next ObjectID
-	inline scene::ObjectID next(scene::ObjectID id) { return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
+	static inline scene::ObjectID next(scene::ObjectID id) { return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
 
 	// --------------------------------------------------
 	//				    LIGHT & SKYBOX
@@ -393,8 +390,6 @@ namespace gui {
 
 		vpW = (vpW < 1) ? 1 : vpW;
 		vpH = (vpH < 1) ? 1 : vpH;
-
-		float renderScale = _settingsCurrent.renderScale;
 
 		if (vpW != _size.x || vpH != _size.y) {
 			resize(vpW, vpH);
@@ -718,8 +713,8 @@ namespace gui {
 		float nearPlane = _impl->_camera->getNear();
 		float farPlane = _impl->_camera->getFar();
 
-		float cascadeNear[NUM_CASCADES];
-		float cascadeFar[NUM_CASCADES];
+		float cascadeNear[NUM_CASCADES]{};
+		float cascadeFar[NUM_CASCADES]{};
 
 		cascadeNear[0] = nearPlane;
 		cascadeFar[0] = nearPlane + _cascadeSplits[0] * (farPlane);
@@ -859,8 +854,8 @@ namespace gui {
 	}
 
 	void simManager::rebuildRenderTargets() {
-		const int vpW = (float)_size.x;
-		const int vpH = (float)_size.y;
+		const int vpW = (int)_size.x;
+		const int vpH = (int)_size.y;
 
 		const float scale = _settingsCurrent.renderScale;
 		const int w = std::max(1, (int)std::lround(vpW * scale));

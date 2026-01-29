@@ -319,8 +319,8 @@ namespace render {
 
 		const unsigned int MAX_MIP_LEVELS = 5;
 		for (unsigned int mip = 0; mip < MAX_MIP_LEVELS; ++mip) {
-			unsigned int mipWidth = PREFILTER_RES * std::pow(0.5, mip);
-			unsigned int mipHeight = PREFILTER_RES * std::pow(0.5, mip);
+			unsigned int mipWidth = PREFILTER_RES * (int)std::pow(0.5, mip);
+			unsigned int mipHeight = PREFILTER_RES * (int)std::pow(0.5, mip);
 			
 			glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
