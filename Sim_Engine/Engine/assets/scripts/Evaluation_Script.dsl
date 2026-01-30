@@ -12,7 +12,7 @@
 # ============================================================
 
 load(robot, Z1)
-set(integrator, rk4)
+set(integrator, rk45)
 
 trajClear()
 wait(0.25)

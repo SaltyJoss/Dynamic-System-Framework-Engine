@@ -240,7 +240,7 @@ namespace gui {
         auto& phys = _sim->getPhysicsSystem();
         auto currentEnum = phys.getIntegrationMethod();
 
-        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
+        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
         const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
         
 		ImGui::SetNextItemWidth(150.0f);
@@ -273,7 +273,6 @@ namespace gui {
             }
             ImGui::EndCombo();
         }
-
 
         float step = 0.001f;
         float stepFast = 0.01f;
@@ -319,10 +318,10 @@ namespace gui {
 
         ImGui::Separator();
 
-		double minMass = 0.0; double maxMass = 100.0;        // mass limits
-		float minDamping = 0.0;  float maxDamping = 1.0;    // damping limits
+        double minMass = 0.0;    double maxMass = 100.0;   // mass limits
+		float minDamping = 0.0;  float maxDamping = 1.0;   // damping limits
         float minFriction = 0.0; float maxFriction = 10.0; // friction limits
-		double minGravity = 0.0; double maxGravity = 10.0;   // gravity limits
+		double minGravity = 0.0; double maxGravity = 10.0; // gravity limits
 
         if (_hasRobot) {
             robots::RobotSystem* robot = _sim->getRobotSystem();
