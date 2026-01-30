@@ -37,7 +37,7 @@ float pixelsPerCell(float cellSize)
 float gridAA(vec2 worldXZ, float spacing)
 {
     vec2 p = worldXZ / spacing;
-    vec2 fw = fwidth(p) * gRenderScale;
+    vec2 fw = fwidth(p);
     vec2 g = abs(fract(p - 0.5) - 0.5) / fw;
     float line = 1.0 - clamp(min(g.x, g.y), 0.0, 1.0);
     return line;
@@ -88,9 +88,9 @@ void main() {
     float fade = exp(-t / falloff);
     fade *= 1.0 - smoothstep(300.0, 900.0, vViewZ);
 
-    if (p0 >= MIN_PX) { a = a0; weight = 0.35; }
-    else if (p1 >= MIN_PX) { a = a1; weight = 0.55; }
-    else if (p2 >= MIN_PX) { a = a2; weight = 0.75; }
+    if (p0 >= MIN_PX) { a = a0; weight = 0.25; } // thin grid
+    else if (p1 >= MIN_PX) { a = a1; weight = 0.35; } // medium grid
+    else if (p2 >= MIN_PX) { a = a2; weight = 0.55; } // thick grid
     else { a = 0.0; weight = 0.0; }
 
     // Final colour

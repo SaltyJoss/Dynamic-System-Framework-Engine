@@ -233,6 +233,7 @@ namespace gui {
 			}
 
 			v.fb->bind();
+			glViewport(0, 0, v.w, v.h);
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
@@ -258,6 +259,7 @@ namespace gui {
 
 			// Post-Processing
 			v.post->bind();
+			glViewport(0, 0, v.w, v.h);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_BLEND);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -507,12 +509,12 @@ namespace gui {
 	// Main Dockspace with Menu Bar
 	void simManager::drawMainDockspace() {
 		ImGuiWindowFlags flags =
-			ImGuiWindowFlags_NoDocking |
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoBringToFrontOnFocus |
+			ImGuiWindowFlags_NoDocking				|
+			ImGuiWindowFlags_NoTitleBar				|
+			ImGuiWindowFlags_NoCollapse				|
+			ImGuiWindowFlags_NoResize				|
+			ImGuiWindowFlags_NoMove					|
+			ImGuiWindowFlags_NoBringToFrontOnFocus	|
 			ImGuiWindowFlags_NoNavFocus;
 
 		const ImGuiViewport* vp = ImGui::GetMainViewport();
@@ -538,10 +540,12 @@ namespace gui {
 		ImGui::End();
 	}
 
-	
 	// Viewport Window
 	void simManager::drawViewportWindow() {
-		ImGui::Begin("Viewport");
+		ImGui::Begin("Viewport", nullptr,
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoScrollWithMouse);
+
 		ImGuiIO& io = ImGui::GetIO();
 
 		beginSimManager("##ViewportBody");
@@ -968,6 +972,8 @@ namespace gui {
 			}
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, (int)_size.x, (int)_size.y);
+
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
@@ -1195,7 +1201,10 @@ namespace gui {
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
 
-		ImGui::BeginChild(id, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+		ImGui::BeginChild(id, ImVec2(0, 0), true, 
+			ImGuiWindowFlags_AlwaysUseWindowPadding |
+			ImGuiWindowFlags_NoScrollbar			|
+			ImGuiWindowFlags_NoScrollWithMouse);
 	}
 
 	// End Control Panel Helper
