@@ -158,18 +158,21 @@ namespace gui {
 
 			// Now force their orientation using YOUR yaw/pitch system
 			{
+				// Top
 				auto* camTop = _views[(size_t)ViewID::Top].cam.get();
 				camTop->setFocus(target);
 				camTop->setYaw(-glm::half_pi<float>());
 				camTop->setPitch(-glm::half_pi<float>() + 0.001f);
 				camTop->updateViewMatrix();
 
+				// Right
 				auto* camRight = _views[(size_t)ViewID::Right].cam.get();
 				camRight->setFocus(target);
 				camRight->setYaw(glm::pi<float>());
 				camRight->setPitch(0.0f);
 				camRight->updateViewMatrix();
 
+				// Front
 				auto* camFront = _views[(size_t)ViewID::Front].cam.get();
 				camFront->setFocus(target);
 				camFront->setYaw(-glm::half_pi<float>());
