@@ -122,7 +122,7 @@ namespace physics {
 
 		// Perform adaptive step to reach t_next
 		while (rt.t < t_next) {
-			double dt = std::min(rt.dt, t_next - rt.t);
+			dt = std::min(rt.dt, t_next - rt.t);
 			auto res = _refSolver->refStep(rt.x, rt.t, dt, f, 1e-6, 1e-9);
 			rt.x = res.x_next;
 			rt.t += res.dt_taken;

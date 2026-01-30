@@ -53,9 +53,6 @@ namespace interpreter {
 		bool isCompleted() const override { return _state == ProgramState::Completed; }
 		bool isFaulted() const override { return _state == ProgramState::Faulted; }
 
-		// Get the current instruction
-		const Command* getCurrentInstruction() const;
-
 		// Set & Get Current line number
 		void setCurrentLineNumber(int lineNumber) override { _currentLineNumber = lineNumber; }
 		int getCurrentLineNumber() const override { return _currentLineNumber; }

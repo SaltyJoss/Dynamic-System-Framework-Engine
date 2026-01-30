@@ -46,7 +46,7 @@ namespace commands {
 	// Not needed right now, will revist soon
 	void SelectCmd::listObjID() {
 		D_RUNTIME("Available Object IDs: ");
-		scene::Object* obj = _uiCntx->resolveObject(_objID);
+		//scene::Object* obj = _uiCntx->resolveObject(_objID);
 		//for (const auto& [name, id] : obj->) {
 		//	D_RUNTIME(" - Name: '%s', ID: %u", name.c_str(), static_cast<uint32_t>(id));
 		//}

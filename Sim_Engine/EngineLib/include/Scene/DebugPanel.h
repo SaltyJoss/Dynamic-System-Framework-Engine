@@ -33,16 +33,6 @@ namespace gui {
 		std::string text;
 	};
 
-	static ImVec4 LevelColor(TerminalLine::Level lvl) {
-		switch (lvl) {
-		case TerminalLine::Level::Info:  return ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
-		case TerminalLine::Level::Warn:  return ImVec4(0.95f, 0.85f, 0.40f, 1.0f);
-		case TerminalLine::Level::Error: return ImVec4(0.95f, 0.45f, 0.45f, 1.0f);
-		case TerminalLine::Level::Debug: return ImVec4(0.65f, 0.75f, 1.00f, 1.0f);
-		}
-		return ImVec4(1, 1, 1, 1);
-	}
-
 	class ENGINE_API DebugPanel {
 	public:
 		void render();

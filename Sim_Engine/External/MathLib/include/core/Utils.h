@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
@@ -12,15 +13,15 @@ namespace mathlib {
 	Vec3 toVec3(const std::array<double, 3>& arr) { return Vec3(arr[0], arr[1], arr[2]); }
 
 	// Convert degrees to radians
-	double deg2rad(double degrees) { return degrees * (PI / 180.0); }
+	double deg2rad(double degrees) { return degrees * (PI_d / 180.0); }
 
 	// Convert radians to degrees
-	double rad2deg(double radians) { return radians * (180.0 / PI); }
+	double rad2deg(double radians) { return radians * (180.0 / PI_d); }
 
 	// Clamp a value between min and max
 	double clamp(double value, double minVal, double maxVal) {
-		if (value < minVal) return minVal;
-		if (value > maxVal) return maxVal;
+		if (value < minVal) { return minVal; }
+		if (value > maxVal) { return maxVal; }
 		return value;
 	}
 

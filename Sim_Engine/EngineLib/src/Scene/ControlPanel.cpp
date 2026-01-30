@@ -240,7 +240,7 @@ namespace gui {
         auto& phys = _sim->getPhysicsSystem();
         auto currentEnum = phys.getIntegrationMethod();
 
-        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4" };
+        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
         const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
         
 		ImGui::SetNextItemWidth(150.0f);
@@ -263,6 +263,8 @@ namespace gui {
                         D_INFO("Integrator set to RK2 (Ralston)"); break;
                     case integration::eIntegrationMethod::RK4:
                         D_INFO("Integrator set to RK4"); break;
+                    case integration::eIntegrationMethod::RK45:
+						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
                     default:
                         break;
                     }
@@ -271,7 +273,6 @@ namespace gui {
             }
             ImGui::EndCombo();
         }
-
 
         float step = 0.001f;
         float stepFast = 0.01f;
@@ -317,10 +318,10 @@ namespace gui {
 
         ImGui::Separator();
 
-		double minMass = 0.0; double maxMass = 100.0;        // mass limits
-		double minDamping = 0.0; double maxDamping = 1.0;    // damping limits
-        double minFriction = 0.0; double maxFriction = 10.0; // friction limits
-		double minGravity = 0.0; double maxGravity = 10.0;   // gravity limits
+        double minMass = 0.0;    double maxMass = 100.0;   // mass limits
+		float minDamping = 0.0;  float maxDamping = 1.0;   // damping limits
+        float minFriction = 0.0; float maxFriction = 10.0; // friction limits
+		double minGravity = 0.0; double maxGravity = 10.0; // gravity limits
 
         if (_hasRobot) {
             robots::RobotSystem* robot = _sim->getRobotSystem();
@@ -340,24 +341,24 @@ namespace gui {
             linkIndex = std::clamp(linkIndex, 0, (int)links.size() - 1);
             auto& L = links[linkIndex];
 
-            float damping = (float)j.dynamics.damping;
-            float friction = (float)j.dynamics.friction;
+            float c = (float)j.dynamics.damping;
+            float f = (float)j.dynamics.friction;
             double g = (double)robot->getGravity();
 			
 			ImGui::BeginDisabled(_sim->isSimRunning());
 
             ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
-            ImGui::Text("Joint Angle: %.3f - Link Mass: %.3f kg", glm::degrees(j.angleRad), L.inertial.mass);
+            ImGui::Text("Joint Angle: %.3f - Link Mass: %.3f kg", glm::degrees(j.thetaRad), L.inertial.mass);
             ImGui::Spacing();
 
             ImGui::Text("Damping:");
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::DragFloat("kg/s##damp", &damping, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = damping; }
+            if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
             ImGui::Spacing();
 
             ImGui::Text("Friction:");
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::DragFloat("##fric", &friction, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = friction;  }
+            if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f;  }
             ImGui::Spacing();
 
             ImGui::Text("Gravity:");
@@ -561,7 +562,7 @@ namespace gui {
                     ImGui::Separator();
                     const auto& joints = robot->joints();
                     for (const auto& joint : joints) {
-                        float angleDeg = glm::degrees(joint.angleRad);
+                        float angleDeg = glm::degrees(joint.thetaRad);
                         ImGui::Text("%s: %.2f deg", joint.name.c_str(), angleDeg);
 
                         // Plot Outputs specific to robotic arm
@@ -698,8 +699,6 @@ namespace gui {
 			if (_hasRobot) {
 				robots::RobotSystem* robotSys = _sim->getRobotSystem();
 				if (robotSys && robotSys->hasRobot()) {
-					bool selected = false;
-
 					const auto& links = robotSys->links();
 					const auto& joints = robotSys->joints();
 
@@ -789,10 +788,10 @@ namespace gui {
                             if (ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
                                 ImGui::TextDisabled("Angle(deg): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
-                                    glm::degrees(joint.angleRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
+                                    glm::degrees(joint.thetaRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
 
                                 static std::vector<float> jointAngleHistory;
-                                jointAngleHistory.push_back(glm::degrees(joint.angleRad));
+                                jointAngleHistory.push_back(glm::degrees(joint.thetaRad));
                                 if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
                                 ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
                                 ImGui::EndTooltip();
@@ -910,17 +909,4 @@ namespace gui {
         ImGui::EndChild();
         ImGui::PopStyleVar(4);
     }
-
-	// Section Header Helper
-    static void SectionHeader(const char* title, const char* desc = nullptr) {
-        ImGui::Spacing();
-        ImGui::TextUnformatted(title);
-        if (desc) {
-            ImGui::SameLine();
-            ImGui::TextDisabled("%s", desc);
-        }
-        ImGui::Separator();
-        ImGui::Spacing();
-    }
-    
 }

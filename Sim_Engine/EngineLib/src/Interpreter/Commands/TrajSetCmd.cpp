@@ -76,7 +76,7 @@ namespace commands {
 		const std::string typeU = upperCopy(trimCopy(_type));
 
 		// ===== TRAPEZOID =====
-		// trajSet(link, TRAP, q1, vmax, amax) //
+		// trajSet(link, TRAP, q1, vmax, amax)
 		if (typeU == "TRAP" || typeU == "TRAPEZOID") {
 			if (_params.size() != 3) {
 				SIM_FAIL("trajSet TRAP expects 3 params: q1, vmax, amax (got %zu)", _params.size());
@@ -96,50 +96,67 @@ namespace commands {
 			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f",
 				_link.c_str(), q0, q1, vmax, amax);
 
+			LOG_INFO("trajSet: TRAP link=%s t0=%.6f q0=%.9f q1=%.9f vmax=%.9f amax=%.9f",
+				_link.c_str(), t0, q0, q1, vmax, amax);
+
 			_done = true;
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet TRAP executed" };
 		}
 
 		// ===== SINE =====
-		// trajSet(link, SINE, amp, freqHz, durationSec, phaseRad?)
+		// trajSet(link, SINE, durationSec, centerDeg, amp, freqHz, phaseRad?)
 		if (typeU == "SINE" || typeU == "SIN") {
-			if (!(_params.size() == 3 || _params.size() == 4)) {
-				SIM_FAIL("trajSet SINE expects 3 or 4 params: amp, freqHz, durationSec [,phaseRad] (got %zu)", _params.size());
-				markFailed("trajSet(SINE): expects amp, freqHz, durationSec [,phaseRad].");
+			if (!(_params.size() == 4 || _params.size() == 5)) {
+				SIM_FAIL("trajSet SINE expects 4 or 5 params: centerDeg, amp, freqHz, durationSec [,phaseRad] (got %zu)", _params.size());
+				markFailed("trajSet(SINE): expects centerDeg, amp, freqHz, durationSec [,phaseRad].");
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
 
-			const double amp = degToRad(_params[0]); // radians
-			const double fHz = _params[1]; // Hz
-			const double dur = _params[2]; // seconds
-			const double phi = (_params.size() == 4) ? degToRad(_params[3]) : 0.0; // radians
+			const double dur = _params[0]; // seconds
+			const double centre = degToRad(_params[1]); // radians
+			const double amp = degToRad(_params[2]);	// radians
+			const double fHz = _params[3]; // Hz
 
+			// Duration check
 			if (dur <= 0.0) {
 				markFailed("trajSet(SINE): duration must be positive.");
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
+			// Frequency check
 			if (fHz <= 0.0) {
 				markFailed("trajSet(SINE): frequency must be positive.");
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
+			// Amplitude check
+			if (!(amp > 0.0)) { 
+				markFailed("trajSet(SINE): amplitude must be > 0."); 
+				return { CmdState::Failed, {}, "trajSet failed" }; 
+			}
 
-			auto traj = std::make_unique<control::SinusoidalTrajectory>(t0, t0 + dur, (double)q0, amp, fHz, phi);
+			// Phase
+			double phi = (_params.size() == 5) ? degToRad(_params[4]) : 0.0; // radians
+
+			auto traj = std::make_unique<control::SinusoidalTrajectory>(t0, t0 + dur, centre, amp, fHz, phi);
 			sim->traj().set(_link, std::move(traj));
 
-			SIM_SUCCESS("trajSet: SINE link='%s' q0=%.6f amp=%.6f f=%.6fHz dur=%.6fs phi=%.6f",
-				_link.c_str(), (double)q0, amp, fHz, dur, phi);
+			SIM_SUCCESS("trajSet: SINE link='%s' dur=%.6fs centre=%.6f amp=%.6f f=%.6fHz phi=%.6f",
+				_link.c_str(), dur, centre, amp, fHz, phi);
+
+			LOG_INFO("trajSet: SINE link=%s t0=%.6f q0=%.9f centre=%.9f amp=%.9f fHz=%.6f dur=%.6f phi=%.9f phaseMode=%s",
+				_link.c_str(), t0, q0, centre, amp, fHz, dur, phi,
+				(_params.size() == 5 ? "USER" : "AUTO"));
 
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet SINE executed" };
 		}
 
 		// ===== MULTISINE =====
-		// trajSet(link, MSINE, durationSec, amp1, f1, ph1, amp2, f2, ph2, ...)
+		// trajSet(link, MSINE, durationSec, centerDeg, amp1, f1, ph1, amp2, f2, ph2, ...)
 		if (typeU == "MSINE" || typeU == "MULTISINE") {
-			if (_params.size() < 4) {
-				markFailed("trajSet(MSINE): expects duration then (amp,f,phase) triples.");
-				return { CmdState::Failed, {}, "trajSet(MSINE): expects duration then (amp,f,phase) triples." };
+			if (_params.size() < 5) {
+				markFailed("trajSet(MSINE): expects duration, centre(deg), and then (amp,f,phase) triples.");
+				return { CmdState::Failed, {}, "trajSet(MSINE): expects duration, centre(deg), and then (amp,f,phase) triples." };
 			}
 
 			const double dur = _params[0]; // seconds
@@ -148,7 +165,10 @@ namespace commands {
 				return { CmdState::Failed, {}, "trajSet(MSINE): duration must be positive." };
 			}
 
-			const size_t rest = _params.size() - 1;
+			const double centre = degToRad(_params[1]);
+
+
+			const size_t rest = _params.size() - 2;
 			if (rest % 3 != 0) {
 				markFailed("trajSet(MSINE): params after duration must be triples (amp,f,phase).");
 				return { CmdState::Failed, {}, "trajSet(MSINE): params after duration must be triples (amp,f,phase)." };
@@ -157,24 +177,29 @@ namespace commands {
 			std::vector<control::SineComponent> comps;
 			comps.reserve(rest / 3);
 
-			for (size_t i = 0; i < rest; i += 3) {
-				control::SineComponent c;
-				c.amp = degToRad(_params[1 + i + 0]);	   // radians
-				c.freqHz = _params[1 + i + 1];	 // Hz
-				c.phaseRad = degToRad(_params[1 + i + 2]); // radians
+			for (size_t k = 2; k + 2 < _params.size(); k += 3) {
+				control::SineComponent comp;
+				comp.amp = degToRad(_params[k + 0]);	  // radians
+				comp.freqHz = _params[k + 1];			  // Hz
+				comp.phaseRad = degToRad(_params[k + 2]); // radians
 
-				if (c.freqHz <= 0.0) {
+				if (comp.freqHz <= 0.0) {
 					markFailed("trajSet(MSINE): all frequencies must be positive.");
 					return { CmdState::Failed, {}, "trajSet(MSINE): all frequencies must be positive." };
 				}
-				comps.push_back(c);
+				comps.push_back(comp);
 			}
 
-			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, (double)q0, std::move(comps));
+			const size_t nComps = comps.size();
+
+			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, centre, std::move(comps));
 			sim->traj().set(_link, std::move(traj));
 
-			SIM_SUCCESS("trajSet: MSINE link='%s' q0=%.6f dur=%.6fs nComps=%zu",
-				_link.c_str(), (double)q0, dur, comps.size());
+			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu",
+				_link.c_str(), centre, dur, nComps);
+
+			LOG_INFO("trajSet: MSINE link=%s t0=%.6f q0=%.9f centre=%.9f dur=%.6f nComps=%zu", 
+				_link.c_str(), t0, q0, centre, dur, nComps);
 
 			_done = true;
 			markCompleted();
@@ -229,5 +254,5 @@ namespace commands {
 
 // Types and params:
 // trajSet(link, TRAP, q1(deg), vmax(deg/s), amax(deg/s²))
-// trajSet(link, SINE, amp(deg), freq(Hz), duration(s) [, phase(deg)])
+// trajSet(link, SINE, centerDeg(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)])
 // trajSet(link, MSINE, duration(s), amp1(deg), f1(Hz), ph1(deg), amp2, f2, ph2, ...)

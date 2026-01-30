@@ -9,6 +9,14 @@
 # J5: [ -77,  +77]
 # J6: [-160, +160]
 
+load(robot, Z1)
+set(integrator, rk4)
+wait(0.5)
+
+trajClear()
+start()
+wait(0.5)
+
 # -----------------------------
 # Phase 0: Move to a neutral HOME pose (2.5s)
 # -----------------------------
@@ -105,32 +113,25 @@ wait(0.3)
 # Phase 6.1: small, low-frequency inspection sweep
 # -----------------------------
 parallel(0.0) {
-  trajSet(link01, MSINE, 8.0, 3.0, 0.08, 10.0, 2.0, 0.16, 110.0, 1.0, 0.28, 210.0)
-  trajSet(link02, MSINE, 8.0, 2.5, 0.07, 40.0, 1.5, 0.14, 140.0, 1.0, 0.25, 240.0)
-  trajSet(link03, MSINE, 8.0, 2.5, 0.07, 80.0, 1.5, 0.14, 180.0, 1.0, 0.25, 280.0)
-  trajSet(link04, MSINE, 8.0, 4.0, 0.10, 0.0, 2.0, 0.20, 90.0, 1.0, 0.35, 180.0)
-  trajSet(link05, MSINE, 8.0, 4.0, 0.10, 30.0, 2.0, 0.20, 120.0, 1.0, 0.35, 210.0)
-  trajSet(link06, MSINE, 8.0, 6.0, 0.09, 45.0, 3.0, 0.18, 135.0, 1.5, 0.32, 225.0)
+  trajSet(link01, MSINE, 8.0, 0.2, 3.0, 0.08, 10.0, 2.0, 0.16, 110.0, 1.0, 0.28, 210.0)
+  trajSet(link02, MSINE, 8.0, 0.2, 2.5, 0.07, 40.0, 1.5, 0.14, 140.0, 1.0, 0.25, 240.0)
+  trajSet(link03, MSINE, 8.0, 0.2, 2.5, 0.07, 80.0, 1.5, 0.14, 180.0, 1.0, 0.25, 280.0)
+  trajSet(link04, MSINE, 8.0, 0.2, 4.0, 0.10,  0.0, 2.0, 0.20,  90.0, 1.0, 0.35, 180.0)
+  trajSet(link05, MSINE, 8.0, 0.2, 4.0, 0.10, 30.0, 2.0, 0.20, 120.0, 1.0, 0.35, 210.0)
+  trajSet(link06, MSINE, 8.0, 0.2, 6.0, 0.09, 45.0, 3.0, 0.18, 135.0, 1.5, 0.32, 225.0)
 }
 wait(8.0)
 wait(0.3)
 
-load(robot, Z1)
-set(integrator, rk4)
-wait(0.5)
-
-trajClear()
-start()
-wait(0.5)
 
 # -----------------------------
 # Phase 7: Small inspection "wrist scan" (8s)
 # (Low amplitude, low frequency; realistic sensor sweep)
 # -----------------------------
 parallel(0.0) {
-  trajSet(link04, SINE,  6.0, 0.12, 8.0,  0.0)
-  trajSet(link05, SINE,  6.0, 0.12, 8.0, 90.0)
-  trajSet(link06, SINE, 10.0, 0.10, 8.0, 45.0)
+  trajSet(link04, SINE, 8.0, 0.2,  6.0, 0.12, 0.0)
+  trajSet(link05, SINE, 8.0, 0.2,  6.0, 0.12, 90.0)
+  trajSet(link06, SINE, 8.0, 0.2, 10.0, 0.10, 45.0)
 }
 wait(8.0)
 wait(0.3)

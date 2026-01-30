@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 // =============================================
 //            File: RobotModel.h
@@ -97,7 +98,7 @@ namespace robots {
 		JointDynamics dynamics;
 
 		// --- State ---
-		float angleRad = 0.0f;	 // rad
+		float thetaRad = 0.0f;	 // rad
 		float omegaRad_s = 0.0f; // rad/s
 		float torque = 0.0f;	 // Nm or N
 
@@ -134,7 +135,7 @@ namespace robots {
 			const int n = static_cast<int>(joints.size());
 			LOG_INFO_ONCE("Making joint vector of size %d", n);
 			VecX q(n);
-			for (int i = 0; i < n; ++i) { q(i) = static_cast<double>(joints[i].angleRad); }
+			for (int i = 0; i < n; ++i) { q(i) = static_cast<double>(joints[i].thetaRad); }
 			return q;
 		}
 
@@ -148,7 +149,7 @@ namespace robots {
 			}
 			for (int i = 0; i < n; ++i) {
 				float a = static_cast<float>(q(i));
-				joints[i].angleRad = a;
+				joints[i].thetaRad = a;
 			}
 		}
 	};

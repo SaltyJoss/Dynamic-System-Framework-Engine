@@ -11,14 +11,14 @@ namespace control {
 	class SinusoidalTrajectory : public IJointTrajectory {
 	public:
 		SinusoidalTrajectory(double t0, double tf, double q0, double amp, double freqHz, double phaseRad = 0.0)
-		: _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
+			: _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
 
 		TrajState eval(double t) const override {
 			if (t <= _t0) { return { _q0, 0.0, 0.0 }; } // before start time
 			// after end time
 			if (t >= _tf) {
 				const double tau = _tf - _t0;
-				const double w = 2.0 * PI * _f;
+				const double w = 2.0 * PI_d * _f;
 				const double s = std::sin(w * tau + _phi); // sine term
 				const double c = std::cos(w * tau + _phi); // cosine term
 				

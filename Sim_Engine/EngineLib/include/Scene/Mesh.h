@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 //=============================================
 //				File: Mesh.h
@@ -54,14 +55,14 @@ namespace scene {
 		std::string getName() const { return _name; }
 		std::string setName(const std::string& name) { return _name = name.c_str() + id; }
 
-		double getMetallic() const { return _metallic; }
-		void setMetallic(double m) { _metallic = m; }
+		float getMetallic() const { return _metallic; }
+		void setMetallic(float m) { _metallic = m; }
 
 		glm::vec3 getAlbedo() const { return _albedo; }
 		void setAlbedo(const glm::vec3& a) { _albedo = a; }
 		
 		// Update
-		void update(shaders::Shader* shader) {	// will use for specifying objects colour and texture
+		const void update(shaders::Shader* shader) const {	// will use for specifying objects colour and texture
 			shader->setVec3(_albedo, "albedo");
 			shader->setFlt1(_metallic, "metallic");
 			shader->setFlt1(1.0f, "ao");
@@ -76,8 +77,8 @@ namespace scene {
 		std::string  _name = "obj" + id;
 
 		glm::vec3 _albedo = glm::vec3(7.0f, 0.0f, 0.2f);
-		double _metallic = 0.1f;
-		double _roughness = 0.5f;
+		float _metallic = 0.1f;
+		float _roughness = 0.5f;
 
 	};
 }

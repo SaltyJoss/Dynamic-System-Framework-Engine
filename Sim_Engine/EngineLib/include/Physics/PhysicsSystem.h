@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 //=============================================
 //            File: PhysicsSystem.h
@@ -40,11 +41,11 @@ namespace scene {
 
 namespace physics {
 	struct ENGINE_API IntegratorDiagSample {
-		double t;
-		Quat q_method;	// integrator quaternion
-		Quat q_ref;		// reference quaternion
-		Vec3 omega;		// integrator angular velocity
-		double alpha;	// angle error
+		double t = 0.0;
+		Quat q_method;		// integrator quaternion
+		Quat q_ref;			// reference quaternion
+		Vec3 omega;			// integrator angular velocity
+		double alpha = 0.0;	// angle error
 	};
 
 	struct ENGINE_API ErrorSample {
@@ -88,7 +89,7 @@ namespace physics {
 		void setSimulationMode(eSimulationMode mode) { _simulationMode = mode; }
 		eSimulationMode getSimulationMode() const { return _simulationMode; }
 
-		void setIntegrationMethod(integration::eIntegrationMethod method) { _integrator->setIntegrationMethod(method); }
+		void setIntegrationMethod(integration::eIntegrationMethod m) { _integrator->setIntegrationMethod(m); }
 		integration::eIntegrationMethod getIntegrationMethod() const { return _integrator->getIntegrationMethod(); }
 
 		void setFrameType(FrameType type) { _frame = type;  }
@@ -153,7 +154,7 @@ namespace physics {
 		integration::eIntegrationMethod method = integration::eIntegrationMethod::Euler; // default method
 
 		// Simulation parameters
-		double _dt = 1.0f / 120.0f; // ~120 FPS
+		double _dt = 1.0f / 180.0f; // ~120 FPS
 		double _h = 1.0f;
 		double _t = 0.0f;
 	};

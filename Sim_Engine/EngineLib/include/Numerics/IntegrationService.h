@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
@@ -15,7 +16,15 @@ namespace integration {
 		Midpoint = 1,	// Second-Order Runge-Kutta (Midpoint)
 		Heun = 2,		// Second-Order Runge-Kutta (Heun)
 		Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
-		RK4 = 4			// Fourth-Order Runge-Kutta 
+		RK4 = 4,		// Fourth-Order Runge-Kutta 
+		RK45 = 5		// RK45 Method with Adaptive Step Size (Dormand-Prince)
+	};
+
+	// Struct representing the result of a single integration step
+	struct ENGINE_API StepOut {
+		VecX x_next;			// next state vector
+		double dt_taken = 0.0;	// actual step size taken
+		double dt_sug = 0.0;	// suggested next step size
 	};
 
 
@@ -26,16 +35,13 @@ namespace integration {
 		IntegrationService();
 
 		mathlib::VecX stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
-		mathlib::VecX referenceIntegrationMethod(VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
+		StepOut stepAdaptiveODE(eIntegrationMethod m, VecX& x, double t, double dt_try, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
 
-		integration::ReferenceSolver* getReferenceSolver() const { return _refSolver.get(); }
-
 	private:
 		integration::eIntegrationMethod method;
 		std::unique_ptr<integration::ODE> _ODE;
-		std::unique_ptr<integration::ReferenceSolver> _refSolver;
 	};
 }

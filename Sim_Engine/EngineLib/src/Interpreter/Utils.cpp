@@ -107,8 +107,8 @@ namespace utils {
 	}
 
 	// Helper function to convert string_view to integer
-	std::optional<bool> toBoolean(const std::string s) {
-		std::string_view lowerStr = std::string(toLower(s));
+	static std::optional<bool> toBoolean(const std::string s) {
+		std::string lowerStr = toLower(s);
 		if (lowerStr == "true" || lowerStr == "1") {
 			return true;
 		}
