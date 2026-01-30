@@ -2,6 +2,12 @@
 
 #### Implementation of Mathematical Modelling and Control Optimisation for a Multi-DOF Robotic Arm in Microgravity
 
+### <ins>Robotic Arm Script **[30-01-2026]**</ins>
+
+https://github.com/user-attachments/assets/0a920c6c-e25f-4de9-ba32-b08ac459ff10
+
+> **[30-01-2026]** Example of new trajectory logic working visually -> works perfectly with the numerical output!
+
 ### <ins>Robotic Arm Script **[26-01-2026]**</ins>
 
 https://github.com/user-attachments/assets/3f6bace3-3c9b-4410-b8eb-6f51e67dc07e
