@@ -18,7 +18,6 @@ namespace scene {
 	class ENGINE_API Camera : public Element
 	{
 	public:
-
 		Camera(const glm::vec3& position, float fov, float aspect, float zNear, float zFar) {
 			_position = position;
 			_aspect = aspect;
@@ -53,7 +52,6 @@ namespace scene {
 		void setYaw(float yaw) { _yaw = yaw; updateViewMatrix(); }
 		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
 		
-
 		void setDistance(float offset) {
 			_distance += offset;
 			updateViewMatrix();
@@ -117,6 +115,8 @@ namespace scene {
 		void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
 		void clampToFloor(float floorY);
 
+		void lookAt(const glm::vec3& target, const glm::vec3& upHint = glm::vec3(0, 1, 0));
+
 		std::array<glm::vec4, 8> getFrustumCornersWorldSpace(float near, float far) const;
 
 		float getFOVRadians() const { return _FOV; }
@@ -134,7 +134,14 @@ namespace scene {
 			updateProjectionMatrix();
 		}
 
+		void setOrbitDistance(float d) {
+			_distance = glm::max(0.05f, d);
+			updateViewMatrix();
+		}
+		float getOrbitDistance() const { return _distance; }
+
 	private:
+		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
 		void updateProjectionMatrix() {
 			if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
 			_projection = glm::perspective(_FOV, _aspect, _near, _far);
