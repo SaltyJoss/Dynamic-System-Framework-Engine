@@ -203,8 +203,8 @@ namespace gui {
         int fbWidth = prevViewport[2];
         int fbHeight = prevViewport[3];
 
-		const int orientatorSize = std::max(1, (int)std::lround(125 * scale)); // pixels, scaled accordingly
-        const int margin = 10;
+		const int orientatorSize = std::max(1, (int)std::lround(70)); // pixels, scaled accordingly
+        const int margin = 25;
 
         int x = margin;
         int y = margin;
@@ -248,7 +248,7 @@ namespace gui {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projOrientator[0][0]);
 
         glBindVertexArray(g_VAO);
-        glLineWidth(2.5f);
+        glLineWidth(1.5f);
         glDrawArrays(GL_LINES, 0, 6);
         glBindVertexArray(0);
 

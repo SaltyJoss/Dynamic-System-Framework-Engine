@@ -56,6 +56,9 @@ namespace control { class ENGINE_API TrajectoryManager; }
 
 // I want to rename to more appropriate namespace later
 namespace gui {
+    // View IDs
+    enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
+
 	class AxisOrientator;
 	// simManager Class (Plan on renaming later)
     class ENGINE_API simManager {
@@ -194,14 +197,21 @@ namespace gui {
 
     private:       
 		// Rendering Pipeline Methods
-        void MeshRender();
-        void WorldGridRender();
+        void MeshRender(scene::Camera* cam);
+        void WorldGridRender(scene::Camera* cam);
         void InitShadowResource(int baseRes);
         void InitIBL();
-        void ShadowPass();
-        void SkyboxRender();
-		void oreintationGizmoRender(); // Not really sure what to call this yet so GizmoRender for now!
-        glm::mat4 LightSpaceMatrix(float near, float far);
+        void SkyboxRender(scene::Camera* cam);
+        void ShadowPass(scene::Camera* cam);
+        glm::mat4 LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane);
+
+        void drawMainDockspace();
+        void drawViewportWindow();
+        //void drawSceneWindow();
+        //void drawInspectorWindow();
+
+        void beginSimManager(const char* id);
+		void endSimManager();
 
         // Misc Settings
         bool _glReady = false;

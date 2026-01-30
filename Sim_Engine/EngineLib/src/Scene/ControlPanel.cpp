@@ -67,7 +67,6 @@ namespace gui {
             ImGui::EndMenu();
         }
 
-
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
             if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
