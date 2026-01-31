@@ -290,16 +290,12 @@ namespace gui {
     }
 
     void ControlPanel::objectProperties() {
-        if (_sim->isSimRunning()) {
-            ImGui::Separator();
+        if (_sim->isSimRunning()) { 
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
-            ImGui::Separator();
             return;
 		}
-        if (!_obj && !_hasRobot) {
-            ImGui::Separator();
+        if (!_obj) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
-            ImGui::Separator();
             return;
         }
 
@@ -309,7 +305,6 @@ namespace gui {
 
         double minMass    = 0.25; double maxMass    = 100.0; // mass limits
         float minDamping  =  0.0; float maxDamping  =   1.0; // damping limits
-        float minFriction =  0.0; float maxFriction =  10.0; // friction limits
         double minGravity =  0.0; double maxGravity =  10.0; // gravity limits
 
 		ImGui::BeginDisabled(_sim->isSimRunning());
@@ -385,7 +380,6 @@ namespace gui {
             return;
         }
 
-		double minMass    = 0.0; double maxMass    = 100.0; // mass limits
         float minDamping  = 0.0; float maxDamping  = 1.0;   // damping limits
         float minFriction = 0.0; float maxFriction = 10.0;  // friction limits
         double minGravity = 0.0; double maxGravity = 10.0;  // gravity limits
@@ -447,7 +441,11 @@ namespace gui {
     void ControlPanel::displaySettings() {
         static float fovDeg = 70.0f;
         ImGui::BeginDisabled(_sim->isSimRunning());
-        bool edited = ImGui::SliderFloat("Field of View", &fovDeg, 25.0f, 125.0f, "%.1f");
+
+		ImGui::Text("Camera Field of View (FOV):");
+		
+        ImGui::SetNextItemWidth(150.0f);
+        bool edited = ImGui::SliderFloat("Field of View", &fovDeg, 25.0f, 125.0f, "%.f");
         bool active = ImGui::IsItemActive();
 
         if (!active && !edited) { fovDeg = _sim->getCamera()->getFOVDegrees(); }
