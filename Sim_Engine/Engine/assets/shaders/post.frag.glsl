@@ -10,8 +10,7 @@ uniform float whitePoint;
 
 vec3 tonemapReinhard(vec3 x) { return x / (x + vec3(1.0)); }
 
-vec3 tonemapACES(vec3 x)
-{
+vec3 tonemapACES(vec3 x) {
     const float a = 2.51;
     const float b = 0.03;
     const float c = 2.43;
@@ -20,26 +19,32 @@ vec3 tonemapACES(vec3 x)
     return clamp((x*(a*x + b)) / (x*(c*x + d) + e), 0.0, 1.0);
 }
 
+vec3 tonemapSample(vec3 hdr) {
+    hdr *= exposure;
+    hdr /= max(whitePoint, 1e-4);
+    return tonemapACES(hdr);
+}
+
 // FXAA implementation
-vec3 fxaa(sampler2D tex, vec2 uv, vec2 res)
+vec3 fxaaTonemapped(sampler2D tex, vec2 uv, vec2 res)
 {
     // Calculate pixel size
     vec2 px = 1.0 / res;
 
     // Sample the surrounding pixels
-    vec3 rgbNW = texture(tex, uv + vec2(-px.x, -px.y)).rgb;
-    vec3 rgbNE = texture(tex, uv + vec2( px.x, -px.y)).rgb;
-    vec3 rgbSW = texture(tex, uv + vec2(-px.x,  px.y)).rgb;
-    vec3 rgbSE = texture(tex, uv + vec2( px.x,  px.y)).rgb;
-    vec3 rgbM  = texture(tex, uv).rgb;
+    vec3 rgbNW = tonemapSample(texture(tex, uv + vec2(-px.x, -px.y)).rgb);
+    vec3 rgbNE = tonemapSample(texture(tex, uv + vec2( px.x, -px.y)).rgb);
+    vec3 rgbSW = tonemapSample(texture(tex, uv + vec2(-px.x,  px.y)).rgb);
+    vec3 rgbSE = tonemapSample(texture(tex, uv + vec2( px.x,  px.y)).rgb);
+    vec3 rgbM  = tonemapSample(texture(tex, uv).rgb);
 
     // Compute luminance
-    vec3 luma = vec3(0.299, 0.587, 0.114);
-    float lumaNW = dot(rgbNW, luma);
-    float lumaNE = dot(rgbNE, luma);
-    float lumaSW = dot(rgbSW, luma);
-    float lumaSE = dot(rgbSE, luma);
-    float lumaM  = dot(rgbM,  luma);
+    vec3 lumaW = vec3(0.299, 0.587, 0.114);
+    float lumaNW = dot(rgbNW, lumaW);
+    float lumaNE = dot(rgbNE, lumaW);
+    float lumaSW = dot(rgbSW, lumaW);
+    float lumaSE = dot(rgbSE, lumaW);
+    float lumaM  = dot(rgbM,  lumaW);
 
     // Compute edge detection
     float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
@@ -58,33 +63,28 @@ vec3 fxaa(sampler2D tex, vec2 uv, vec2 res)
 
     // Sample along the edge direction
     vec3 rgbA = 0.5 * (
-        texture(tex, uv + dir * (1.0 / 3.0 - 0.5)).rgb +
-        texture(tex, uv + dir * (2.0 / 3.0 - 0.5)).rgb);
+        tonemapSample(texture(tex, uv + dir * (1.0 / 3.0 - 0.5)).rgb) +
+        tonemapSample(texture(tex, uv + dir * (2.0 / 3.0 - 0.5)).rgb)
+    );
 
     vec3 rgbB = rgbA * 0.5 + 0.25 * (
-        texture(tex, uv + dir * -0.5).rgb +
-        texture(tex, uv + dir * 0.5).rgb);
+        tonemapSample(texture(tex, uv + dir * -0.5).rgb) +
+        tonemapSample(texture(tex, uv + dir *  0.5).rgb)
+    );
 
     // Choose final color based on luminance
-    float lumaB = dot(rgbB, luma);
+    float lumaB = dot(rgbB, lumaW);
     if ((lumaB < lumaMin) || (lumaB > lumaMax)) { return rgbA; }
     return rgbB;
 
 }
 
 // Main fragment shader entry point
-void main()
-{
-    float exposureMul = exposure;
-    vec3 col = fxaa(hdrScene, uv, uRes);
+void main() {
+    // FXAA on tonemapped LDR (linear)
+    vec3 ldrAA = fxaaTonemapped(hdrScene, uv, uRes);
 
-    col *= exposureMul;
-    col /= max(whitePoint, 1e-4);
-    
-    //col = tonemapReinhard(col);
-    col = tonemapACES(col);
-    col = pow(col, vec3(1.0/2.2)); // Gamma to sRGB
-    FragColour = vec4(col, 1.0);
-
-    //  FragColour = vec4(1, 0, 1, 1); -> debugging 
+    // Gamma last
+    vec3 srgb = pow(ldrAA, vec3(1.0/2.2));
+    FragColour = vec4(srgb, 1.0);
 }

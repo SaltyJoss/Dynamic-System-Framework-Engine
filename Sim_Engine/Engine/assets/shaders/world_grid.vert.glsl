@@ -1,10 +1,11 @@
 #version 460 core
 
-out vec2 GridXZ;
 out vec3 WorldPos;
 out float vViewZ;
 
 uniform mat4 gVP = mat4(1.0);
+uniform mat4 gView;
+
 uniform float gGridSize = 1000.0;
 uniform vec3 gCameraWorldPos;
 
@@ -26,12 +27,13 @@ void main()
 	vec3 local = Pos[Index] * gGridSize;	
 	vec3 vPos3 = local;
 
-//	vPos3.x += gCameraWorldPos.x;
-//	vPos3.z += gCameraWorldPos.z;
 	vPos3.y += gGridY + gGridYOffset;
 
-	gl_Position = gVP * vec4(vPos3, 1.0);
+	// Output
 	WorldPos = vPos3;
-	GridXZ = local.xz;
-    vViewZ = -gl_Position.z; // positive forward for a standard RH view where camera looks -Z
+
+	// Recompute view Z for fragment shader
+    vec4 viewPos = gView * vec4(vPos3, 1.0);
+	vViewZ = -viewPos.z;
+	gl_Position = gVP * vec4(vPos3, 1.0);
 }

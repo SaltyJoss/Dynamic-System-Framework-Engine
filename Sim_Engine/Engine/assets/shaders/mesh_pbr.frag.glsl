@@ -54,8 +54,7 @@ const float PI = 3.14159265359;
 // PBR Helper Functions (Cook-Torrance GGX)
 // ------------------------------------------------------------
 
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
+float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0);
@@ -68,8 +67,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
     return nom / max(denom, 0.0000001);
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
+float GeometrySchlickGGX(float NdotV, float roughness) {
     float r = roughness + 1.0;
     float k = (r * r) / 8.0;
 
@@ -79,8 +77,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     return nom / max(denom, 0.0000001);
 }
 
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
 
@@ -90,14 +87,12 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
-{
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
 
 // Fresnel with roughness for IBL (reduces overly strong reflections at grazing angles)
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
-{
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) *
         pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
@@ -106,8 +101,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 // Cascaded Shadow Mapping
 // ------------------------------------------------------------
 
-float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float dist)
-{
+float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float dist) {
     vec4 lightSpacePos = lightSpaceMatrix[cascadeIndex] * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -137,8 +131,7 @@ float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float
     int samples = 0;
 
     for (int x = -2; x <= 2; ++x)
-    for (int y = -2; y <= 2; ++y)
-    {
+    for (int y = -2; y <= 2; ++y) {
         vec2 offset = vec2(x, y) * texelSize * radiusTexels;
         float lit = texture(cascadeShadowMap[cascadeIndex], vec3(projCoords.xy + offset, projCoords.z - bias));
         sum += lit;
@@ -149,8 +142,7 @@ float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float
     return 1.0 - litFactor; // 0 lit, 1 shadow
 }
 
-float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
-{
+float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L) {
     float d = length(worldPos - camPos);
 
     // normalize distance into [0..1] over the whole shadow range
@@ -160,8 +152,7 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 
     // Blend region around split 0
     float blendWidth = max(1.0, 0.15 * cascadeSplits[0]);
-    float t = smoothstep(cascadeSplits[0] - blendWidth,
-                         cascadeSplits[0] + blendWidth, d);
+    float t = smoothstep(cascadeSplits[0] - blendWidth, cascadeSplits[0] + blendWidth, d);
 
     float s0 = shadowSingleCascade(0, worldPos, N, L, dist01);
     float s1 = shadowSingleCascade(1, worldPos, N, L, dist01);
@@ -173,8 +164,7 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L)
 // Main
 // ------------------------------------------------------------
 
-void main()
-{
+void main() {
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
     vec3 L = normalize(-lightDirection);
@@ -219,7 +209,9 @@ void main()
     // --- Specular IBL ---
     vec3 R = reflect(-V, N);  // reflection dir
     // scale max mip level to however many mip levels you generated (e.g. 4)
-    vec3 prefiltered = textureLod(prefilterMap, R, roughness * 4.0).rgb;
+    float maxMip = float(textureQueryLevels(prefilterMap) - 1);
+    float r = max(roughness, 0.08);
+    vec3 prefiltered = textureLod(prefilterMap, R, r * maxMip).rgb;
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
     vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
