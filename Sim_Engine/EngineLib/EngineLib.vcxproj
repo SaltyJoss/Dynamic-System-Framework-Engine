@@ -141,6 +141,7 @@
     <ClInclude Include="..\External\MathLib\include\MathLibAPI.h" />
     <ClInclude Include="..\External\stb\stb_image.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="include\Analysis\Telemetry.h" />
     <ClInclude Include="include\Application.h" />
     <ClInclude Include="include\Assets\importBase.h" />
     <ClInclude Include="include\Assets\importObj.h" />
@@ -222,6 +223,7 @@
     <ClInclude Include="pch.h" />
     <ClCompile Include="include\Interpreter\RunWrapper.cpp" />
     <ClInclude Include="include\Interpreter\SimFwd.h" />
+    <ClCompile Include="src\Analysis\Telemetry.cpp" />
     <ClCompile Include="src\Interpreter\Command.cpp" />
     <ClCompile Include="src\Interpreter\CommandContextMotion.cpp" />
     <ClCompile Include="src\Interpreter\CommandFactory.cpp" />

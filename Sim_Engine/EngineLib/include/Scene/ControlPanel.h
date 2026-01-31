@@ -16,6 +16,7 @@
 #include "Physics/PhysicsSystem.h"
 
 #include "Scene/Object.h"
+#include "Analysis/Telemetry.h"
 #include "Scene/SimulationManager.h"
 #include "Scene/Light.h"
 #include "Platform/Logger.h"
@@ -61,11 +62,9 @@ namespace gui {
 
 		// Internal Methods
         void simulationProperties();
-        void cameraProperties();
         void objectProperties();
         void jointProperties();
         void displaySettings();
-        void stats();
 
 		void tempLightControls();
 
@@ -73,6 +72,10 @@ namespace gui {
         void roboticCardDisplay(const char* name, const char* company);
 
         void sceneObjectsTable();
+
+		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
+        void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+
 
 		// Helper Methods
         void beginControlPanel(const char* id, ImVec2 size = ImVec2(0, 0));
@@ -101,11 +104,11 @@ namespace gui {
         bool _hasRobot = false;
         bool _openStats = true;
 
-        std::string _requestedRobot;
-        std::string _currentObjectName;
-        std::string _currentLinkName;
-		std::string _currentJointName;
-        std::string _lastLinkName;
+		std::string _requestedRobot;    // name of requested robot to load
+		std::string _currentObjectName; // name of currently selected object
+		std::string _currentLinkName;   // name of currently selected link
+		std::string _currentJointName;  // name of currently selected joint
+		std::string _lastLinkName;      // name of last selected link
 
         std::unordered_map<std::string, float> _linkAngles;
 

@@ -30,6 +30,8 @@
 #include "Scene/RenderPreset.h"
 #include "FpsCounter.h"
 
+#include "Analysis/Telemetry.h"
+
 #include "Platform/Logger.h"
 
 // Forward Declarations
@@ -177,7 +179,7 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
         
-		// Extra
+		// Simulation Control
 		double getFixedDeltaTime() const { return _dt; }
 		void setFixedDeltaTime(double dt) { _dt = dt; }
 
@@ -194,6 +196,11 @@ namespace gui {
 
         void setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
         interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
+
+		// Telemetry
+        diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
+		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
+
 
     private:       
 		// Rendering Pipeline Methods
@@ -224,8 +231,8 @@ namespace gui {
 
         double _dt = 1.0f / 180.0f;
         double _fixedDt = 1.0f / 180.0f;
-		double _accum = 0.0;
-		double _simTime = 0.0;
+		double _accum = 0.0;   // Accumulator for fixed timestep
+		double _simTime = 0.0; // Current simulation time
 		bool _simRunning = false;
 
         static constexpr float planeHeight = -2.5f;
@@ -246,6 +253,9 @@ namespace gui {
 
 		// Active Script Program
         interpreter::IStoredProgram* _activeProgram = nullptr;
+
+		// Telemetry
+		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};

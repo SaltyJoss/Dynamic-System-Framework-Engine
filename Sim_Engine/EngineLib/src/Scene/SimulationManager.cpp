@@ -287,7 +287,7 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	simManager::simManager() : _size(1920, 1080), _backgroundColour(0.0f, 0.0f, 0.0f),
+	simManager::simManager() : _size(3840, 2160), _backgroundColour(0.0f, 0.0f, 0.0f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
 		_resSize = _size; // store initial size
 	}
@@ -691,6 +691,8 @@ namespace gui {
 				if (hasRobot()) {
 					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
 					_impl->_robotSystem->step(_impl->_traj, _dt, _simTime);
+
+					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 			_accum -= _dt;

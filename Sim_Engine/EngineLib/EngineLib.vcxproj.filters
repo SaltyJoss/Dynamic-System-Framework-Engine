@@ -154,6 +154,12 @@
     <Filter Include="Header Files\include\Interpreter\Commands\Trajectory">
       <UniqueIdentifier>{c56ddd3d-5655-4a69-a207-e2cd8ee31eb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\Analysis">
+      <UniqueIdentifier>{b1fe7502-cf29-42aa-93b3-6d3463038bb0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\Analysis">
+      <UniqueIdentifier>{f81b0809-94a1-4432-b518-d56ced90c23d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -507,6 +513,9 @@
     <ClInclude Include="include\Platform\DataManager.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="include\Analysis\Telemetry.h">
+      <Filter>Header Files\include\Analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -703,6 +712,9 @@
     </ClCompile>
     <ClCompile Include="src\Platform\DataManager.cpp">
       <Filter>Source Files\src\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Analysis\Telemetry.cpp">
+      <Filter>Source Files\src\Analysis</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
