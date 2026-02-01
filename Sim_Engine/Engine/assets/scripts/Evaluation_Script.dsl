@@ -13,6 +13,7 @@
 
 load(robot, Z1)
 set(integrator, rk4)
+wait(2)
 
 trajClear()
 wait(0.25)
