@@ -30,6 +30,8 @@
 #include "Scene/RenderPreset.h"
 #include "FpsCounter.h"
 
+#include "Analysis/Telemetry.h"
+
 #include "Platform/Logger.h"
 
 // Forward Declarations
@@ -81,8 +83,15 @@ namespace gui {
         void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
-		void setSize(const glm::vec2& size) { _size = size; }
-		glm::vec2 getSize() const { return _size; }
+        void setInternalSize(const glm::vec2& size) { _internalSize = size; }
+        glm::vec2 getInternalSize() const { return _internalSize; }
+
+        void setDisplaySize(const glm::vec2& size) { _displaySize = size; }
+        glm::vec2 getDisplaySize() const { return _displaySize; }
+
+        void setSize(const glm::vec2& size) { setInternalSize(size); }
+        glm::vec2 getSize() const { return getInternalSize(); }
+
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
         void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
 
@@ -108,6 +117,15 @@ namespace gui {
         void attachCameraToObject(scene::Object* obj);
         void detachCameraFromObject();
 
+        void setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset = glm::vec3(0.0f, 0.25f, 1.0f));
+        void clearViewFollowTarget(ViewID view);
+
+        // Follow a robot joint by name (binds the view to that joint's child link object)
+        bool setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset);
+
+        // Convenience: follow in the Follow view
+        bool followRobotJoint(const std::string& jointName, const glm::vec3& offset = glm::vec3(0.0f, 0.2f, 0.6f));
+
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
         std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);
@@ -124,7 +142,7 @@ namespace gui {
         ShaderMode currentShaderMode = ShaderMode::PBR;  // default
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
-        void rebuildRenderTargets();
+        //void rebuildRenderTargets();
 		void resetHDRToPreset();
         void reloadAllShaders();
 
@@ -177,7 +195,7 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
         
-		// Extra
+		// Simulation Control
 		double getFixedDeltaTime() const { return _dt; }
 		void setFixedDeltaTime(double dt) { _dt = dt; }
 
@@ -195,6 +213,11 @@ namespace gui {
         void setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
         interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
 
+		// Telemetry
+        diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
+		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
+
+
     private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
@@ -204,6 +227,8 @@ namespace gui {
         void SkyboxRender(scene::Camera* cam);
         void ShadowPass(scene::Camera* cam);
         glm::mat4 LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane);
+        glm::vec2 getPresetResolutionPx() const;
+		glm::vec2 getInternalResolutionSizePx() const;
 
         void drawMainDockspace();
         void drawViewportWindow();
@@ -217,15 +242,18 @@ namespace gui {
         bool _glReady = false;
         bool _scriptRunning = false;
 
-        glm::vec2 _size;
-		glm::vec2 _resSize; // To store current size for render target rebuilds
+        glm::vec2 _internalSize = { 1920.0f, 1080.0f };
+		glm::vec2 _displaySize = { 1920.0f, 1080.0f };
         glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
+
+		float _displayW = 0.0f, _displayH = 0.0f;
+		float _gridInternalScale = 1.0f;
         float _backgroundAlpha = 1.0f;
 
         double _dt = 1.0f / 180.0f;
         double _fixedDt = 1.0f / 180.0f;
-		double _accum = 0.0;
-		double _simTime = 0.0;
+		double _accum = 0.0;   // Accumulator for fixed timestep
+		double _simTime = 0.0; // Current simulation time
 		bool _simRunning = false;
 
         static constexpr float planeHeight = -2.5f;
@@ -246,6 +274,9 @@ namespace gui {
 
 		// Active Script Program
         interpreter::IStoredProgram* _activeProgram = nullptr;
+
+		// Telemetry
+		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};

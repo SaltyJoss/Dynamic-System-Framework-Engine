@@ -41,6 +41,9 @@ namespace robots {
 		double getGravity() const { return _gravity; }
         void setGravity(double g) { _gravity = g; }
 
+		// Get pointer to this RobotSystem
+		const RobotSystem& getRobot() const { return *this; }
+
 		// ---- Joint State Methods ---
 
         void updateRobotKinematics();

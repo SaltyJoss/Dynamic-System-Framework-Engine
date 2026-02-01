@@ -86,6 +86,7 @@ namespace render {
 			void deleteBuffers() override;
 			void bind() override;
 			void unbind() override;
+			void endSetup();
 			uint32_t getTexture() override;
 	};
 }

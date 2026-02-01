@@ -51,7 +51,7 @@ namespace render {
 		bool axisOrientator = true;
 
 		// Render-Specific
-		float renderScale = 1.25f; // 0.5 = half res, 0.75 = 3/4 res (default), 1.0 = native, 2.0 = double res
+		float renderScale = 1.0f;
 	};
 
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset qual);

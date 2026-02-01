@@ -26,7 +26,7 @@ namespace render {
 			s.ssaoSamples = 32;
 			s.ssaoStrength = 0.75f;
 			s.bloom = true;
-			s.bloomThreshold = 0.6f;
+			s.bloomThreshold = 0.5f;
 			s.envPreFilterRes = 256;
 			s.envIrradianceRes = 32;
 			s.msaaSamples = 4;
@@ -41,7 +41,7 @@ namespace render {
 			s.ssaoSamples = 64;
 			s.ssaoStrength = 1.0f;
 			s.bloom = true;
-			s.bloomThreshold = 0.7f;
+			s.bloomThreshold = 0.75f;
 			s.envPreFilterRes = 512;
 			s.envIrradianceRes = 64;
 			s.msaaSamples = 8;
@@ -50,25 +50,25 @@ namespace render {
 		case QualityPreset::Ultra:
 			s.shadowMapRes = 8192;
 			s.shadowCascades = 16;
-			s.pcfKernel = 7; // 7 gives better softness at high res
+			s.pcfKernel = 9; // 7 gives better softness at high res
 			s.ssao = true;
 			s.ssaoResDiv = 1;
 			s.ssaoSamples = 64;
 			s.ssaoStrength = 1.0f;
 			s.bloom = true;
-			s.bloomThreshold = 0.75f;
+			s.bloomThreshold = 1.0f;
 			s.envPreFilterRes = 512;
-			s.envIrradianceRes = 64;
+			s.envIrradianceRes = 128;
 			s.msaaSamples = 16;
 			s.fxaa = false;
 			break;
 		}
 
 		switch (res) {
-			case ResolutionPreset::R_720p: s.renderScale = 0.66f; break;
+			case ResolutionPreset::R_720p: s.renderScale = 1.0f; break;
 			case ResolutionPreset::R_1080p: s.renderScale = 1.0f; break;
-			case ResolutionPreset::R_1440p: s.renderScale = 1.33f; break;
-			case ResolutionPreset::R_4K: s.renderScale = 2.0f; break;
+			case ResolutionPreset::R_1440p: s.renderScale = 1.0f; break;
+			case ResolutionPreset::R_4K: s.renderScale = 1.0f; break;
 		}
 
 		s.exposure = 1.0f;
