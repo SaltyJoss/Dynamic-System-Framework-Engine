@@ -303,17 +303,13 @@ namespace gui {
 
 			// Follow view: always track the currently selected object (e.g. clicked joint)
 			if (&v == &_views[(size_t)gui::ViewID::Follow]) {
-				// Bind follow target to whatever the UI selected
 				v.followTarget = _selectedObject;
 				v.followEnabled = (v.followTarget != nullptr);
 
 				if (v.followEnabled && v.cam) {
-					// IMPORTANT: use the SAME world transform you render with
-					// because many rigs animate via mesh->localTransform instead of Object::transform
 					glm::mat4 M = v.followTarget->transform.toMatrix() * v.followTarget->getMesh()->localTransform;
 					glm::vec3 worldPos = glm::vec3(M[3]); // translation column
 
-					// If your camera follow uses rotation too, keep it consistent:
 					v.cam->setFollowTarget(worldPos, v.followTarget->transform.rotQ);
 				}
 			}
