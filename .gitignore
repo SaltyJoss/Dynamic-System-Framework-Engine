@@ -441,6 +441,13 @@ intermediate/
 *.ilk
 *.tlog
 
+# Do not ignore
+# - external dependencies (may contain necessary .lib/.dll files)
+!external/**/bin/**/*.dll
+!external/**/bin/**/*.lib
+!external/**/lib/**/*.lib
+!external/**/lib/**/*.dll
+
 # Ignore vcpkg build and installed files if used
 vcpkg_installed/
 vcpkg_buildtrees/
