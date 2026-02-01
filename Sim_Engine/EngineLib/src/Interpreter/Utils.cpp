@@ -106,18 +106,6 @@ namespace utils {
 		return (lowerStr == "true" || lowerStr == "false" || lowerStr == "1" || lowerStr == "0");
 	}
 
-	// Helper function to convert string_view to integer
-	static std::optional<bool> toBoolean(const std::string s) {
-		std::string lowerStr = toLower(s);
-		if (lowerStr == "true" || lowerStr == "1") {
-			return true;
-		}
-		else if (lowerStr == "false" || lowerStr == "0") {
-			return false;
-		}
-		return std::nullopt;
-	}
-
 	// Helper function to convert hex string to RGB vector (wanted to make my own, so I did)
 	mathlib::Vec3 hexToRGB(const std::string& hex) {
 		if (hex.size() != 7 || hex[0] != '#') {

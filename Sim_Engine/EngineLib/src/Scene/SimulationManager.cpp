@@ -329,7 +329,6 @@ namespace gui {
 
 			owner.MeshRender(v.cam.get());
 			if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get()); }
-			if (owner._settingsCurrent.axisOrientator) { _axisOrientator->render(v.cam->getViewMatrix(), owner._settingsCurrent.renderScale); }
 
 			v.fb->unbind();
 
@@ -341,8 +340,8 @@ namespace gui {
 			// Post-Processing
 			v.post->bind();
 			glDisable(GL_MULTISAMPLE);
-
 			glViewport(0, 0, v.displayW, v.displayH);
+
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_BLEND);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -358,6 +357,7 @@ namespace gui {
 
 			glBindVertexArray(_fullscreenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
+			if (owner._settingsCurrent.axisOrientator) { _axisOrientator->render(v.cam->getViewMatrix()); }
 			glBindVertexArray(0);
 
 			v.post->unbind();

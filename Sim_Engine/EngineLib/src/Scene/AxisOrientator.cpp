@@ -9,16 +9,18 @@
 #include <imgui.h> // needed if you keep any ImGui usage
 
 namespace gui {
-
+	// --- Static Member Definitions ---
     GLuint AxisOrientator::g_VAO = 0;
     GLuint AxisOrientator::g_VBO = 0;
     GLuint AxisOrientator::g_VAOCones = 0;
     GLuint AxisOrientator::g_VBOCones = 0;
     GLuint AxisOrientator::g_Shader = 0;
 
+	// Cone data
     bool AxisOrientator::g_Initialised = false;
     int AxisOrientator::g_ConeVertexCount = 0;
 
+	// --- Member Function Definitions ---
     void AxisOrientator::init() {
         // Interleaved (pos, color)
         float vertices[] = {
@@ -53,12 +55,14 @@ namespace gui {
 
 		// Cones for tip (looked this up online, logged for future reference)
         const int segments = 16;
-        const float radius = 0.08f;
+        const float radius = 0.07f;
         const float tipOffset = 0.25f;   // how far past the axis end the tip goes
 
+		// Build cone vertices
         std::vector<float> coneVertices;
         coneVertices.reserve(3 * segments * 3 * 2 * 6); // 3 axes * segments * (base+side) * 3 verts * 6 floats
 
+		// Helper to add a cone along an axis
         auto addCone = [&](const glm::vec3& baseCenter,
             const glm::vec3& tip,
             const glm::vec3& u,
@@ -194,17 +198,15 @@ namespace gui {
         g_Initialised = true;
     }
 
-    void AxisOrientator::render(const glm::mat4& viewMatrix, float scale) {
+    void AxisOrientator::render(const glm::mat4& viewMatrix) {
         if (!g_Initialised) init();
 
         // 1) Use current viewport (whatever FBO / window is bound)
         GLint prevViewport[4];
         glGetIntegerv(GL_VIEWPORT, prevViewport);
-        int fbWidth = prevViewport[2];
-        int fbHeight = prevViewport[3];
 
-		const int orientatorSize = 300; // pixels, scaled accordingly
-        const int margin = 25;
+        const int orientatorSize = 50; // pixels, scaled accordingly
+        const int margin = 3;
 
         int x = margin;
         int y = margin;
@@ -212,7 +214,7 @@ namespace gui {
         GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
         GLboolean blendEnabled = glIsEnabled(GL_BLEND);
 
-        // 2) Set small viewport for the gizmo
+        // Set small viewport for the gizmo
         glViewport(x, y, orientatorSize, orientatorSize);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
@@ -224,6 +226,7 @@ namespace gui {
 			glm::vec3(0.0f, 1.0f, 0.0f)  // up
         );
 
+		// Projection matrix
         glm::mat4 projOrientator = glm::perspective(
             glm::radians(45.0f),
             1.0f,       // square viewport
@@ -238,7 +241,7 @@ namespace gui {
         // World -> rot -> viewOrientator
         glm::mat4 gizmoView = viewOrientator * rot;
 
-        // 4) Draw
+        // Draw
         glUseProgram(g_Shader);
 
         GLint viewLoc = glGetUniformLocation(g_Shader, "uView");
@@ -248,7 +251,7 @@ namespace gui {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projOrientator[0][0]);
 
         glBindVertexArray(g_VAO);
-        glLineWidth(1.5f);
+        glLineWidth(2.5f);
         glDrawArrays(GL_LINES, 0, 6);
         glBindVertexArray(0);
 
