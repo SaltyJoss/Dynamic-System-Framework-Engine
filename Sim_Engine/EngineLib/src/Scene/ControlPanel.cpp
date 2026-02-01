@@ -11,6 +11,8 @@
 #include <imgui.h>
 #include <chrono>
 
+#include <implot.h>
+
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
@@ -394,36 +396,38 @@ namespace gui {
 		float f = (float)j.dynamics.friction;
 		double g = (double)robot->getGravity();
 
-        ImGui::BeginDisabled(_sim->isSimRunning());
-
-		ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
-		ImGui::Spacing();
-
-		ImGui::Text("Damping:");
-		ImGui::SetNextItemWidth(150.0f);
-		if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
-		ImGui::Spacing();
-
-		ImGui::Text("Friction:");
-		ImGui::SetNextItemWidth(150.0f);
-		if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f; }
-		ImGui::Spacing();
-
-		ImGui::Text("Gravity:");
-		ImGui::SetNextItemWidth(150.0f);
-		if (ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &g, 0.00005f, &minGravity, &maxGravity)) {
-			robot->setGravity(g); // you need a setter
-		}
-		ImGui::Spacing();
-		ImGui::Separator();
-
-		ImGui::EndDisabled();
-
 		// Trajectory Inspector
 		ImGui::Text("Joint Telemetry:");
+        ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
+        ImGui::Spacing();
 
         const auto& rec = _sim->telemetry();
         drawTelemetryPlots(rec);
+
+        ImGui::BeginDisabled(_sim->isSimRunning());
+
+        ImGui::Text("Joint Dynamics:");
+
+        ImGui::Text("Damping:");
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
+        ImGui::Spacing();
+
+        ImGui::Text("Friction:");
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f; }
+        ImGui::Spacing();
+
+        ImGui::Text("Gravity:");
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &g, 0.00005f, &minGravity, &maxGravity)) {
+            robot->setGravity(g); // you need a setter
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        ImGui::EndDisabled();
+
         drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 
 		ImGui::Spacing();
@@ -724,13 +728,8 @@ namespace gui {
 							ImGui::TextUnformatted(joint.name.c_str());
                             if (ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
-                                ImGui::TextDisabled("Angle(deg): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
-                                    glm::degrees(joint.thetaRad), joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
-
-                                static std::vector<float> jointAngleHistory;
-                                jointAngleHistory.push_back(glm::degrees(joint.thetaRad));
-                                if (jointAngleHistory.size() > 100) jointAngleHistory.erase(jointAngleHistory.begin());
-                                ImGui::PlotLines(("##" + joint.name + "_angle_plot").c_str(), jointAngleHistory.data(), (int)jointAngleHistory.size(), 0, nullptr, -180.0f, 180.0f, ImVec2(0, 25));
+                                ImGui::TextDisabled("Angle(rad): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
+                                    joint.thetaRad, joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
                                 ImGui::EndTooltip();
                             }
 							if (jointSelected) ImGui::PopStyleColor();
@@ -864,22 +863,10 @@ namespace gui {
         _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
     }
 
-    static void computeMinMax(const std::vector<float>& v, int lastN, float& outMin, float& outMax) {
-        if (v.empty()) { outMin = 0.0f; outMax = 1.0f; return; }
-        const int n = (int)v.size();
-        const int start = (lastN <= 0 || lastN >= n) ? 0 : (n - lastN);
-
-        float mn = v[start];
-        float mx = v[start];
-        for (int i = start + 1; i < n; ++i) {
-            mn = (v[i] < mn) ? v[i] : mn;
-            mx = (v[i] > mx) ? v[i] : mx;
-        }
-        if (mn == mx) { mx = mn + 1e-6f; } // avoid zero range
-        outMin = mn;
-        outMax = mx;
+    static void computeWindow(int total, int windowN, int& start, int& count) {
+        count = std::min(windowN, total);
+        start = std::max(0, total - count);
     }
-
 
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
@@ -909,51 +896,70 @@ namespace gui {
 
         ImGui::Spacing();
 
-        // Plot sizes aligned
-        const ImVec2 plotSize(0, 80); // width=auto, height fixed
+        // Build per-joint error series
+        const int sampleCount = (int)ring.size();
+        const int jointCount = (int)ring.at(sampleCount - 1).j.size();
 
-        // Plot RMS
-        {
-            float mn, mxv;
-            computeMinMax(rms, windowN, mn, mxv);
-            ImGui::Text("RMS error (rad)   current: %.6f", lastRms);
-            ImGui::PlotLines("##rms", rms.data(), (int)rms.size(), 0, nullptr, mn, mxv, plotSize);
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                ImGui::Text("Latest: %.6f", lastRms);
-                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
-                ImGui::EndTooltip();
+		// Prepare data arrays
+        static std::vector<float> x;
+        static std::vector<std::vector<float>> y;
+
+		// Resize time array
+        x.resize(sampleCount);
+
+		// Resize joint error arrays
+        if ((int)y.size() != jointCount) y.resize(jointCount);
+        for (int j = 0; j < jointCount; ++j) y[j].resize(sampleCount);
+
+		// Fill data arrays
+        for (int k = 0; k < sampleCount; ++k) {
+            const auto& s = ring.at(k);
+            x[k] = (float)s.timeSec;
+            const int m = std::min(jointCount, (int)s.j.size());
+            for (int j = 0; j < m; ++j) {
+                y[j][k] = s.j[j].thetaRefRad - s.j[j].thetaRad;
+            }
+            for (int j = m; j < jointCount; ++j) {
+                y[j][k] = 0.0f;
             }
         }
 
-        // Plot Max
-        {
-            float mn, mxv;
-            computeMinMax(mx, windowN, mn, mxv);
-            ImGui::Text("Max error (rad)   current: %.6f", lastMax);
-            ImGui::PlotLines("##max", mx.data(), (int)mx.size(), 0, nullptr, mn, mxv, plotSize);
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                ImGui::Text("Latest: %.6f", lastMax);
-                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
-                ImGui::EndTooltip();
-            }
+		// Determine plot window
+        int start = 0, count = 0;
+        windowN = std::clamp(windowN, 1, (int)ring.size());
+        computeWindow((int)ring.size(), windowN, start, count);
+        const ImVec2 plotSz(-1, 200); 
+
+		// ---------- Draw Plots ----------
+
+		// RMS & Error Max
+        if (ImPlot::BeginPlot("Error Plot (RMS, Max)", plotSz)) {
+            ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
+            ImPlot::PlotLine("RMS", x.data() + start, rms.data() + start, count);
+            ImPlot::PlotLine("Max", x.data() + start, mx.data() + start, count);
+            ImPlot::EndPlot();
         }
 
-        // Plot Clamp Sum (this one often benefits from fixed range)
-        {
-            float mn, mxv;
-            computeMinMax(cs, windowN, mn, mxv);
-            ImGui::Text("Clamp events      current: %.0f", lastCs);
-            ImGui::PlotLines("##clamp", cs.data(), (int)cs.size(), 0, nullptr, mn, mxv, plotSize);
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                ImGui::Text("Latest: %.6f", lastCs);
-                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
-                ImGui::EndTooltip();
-            }
+        // Clamp Sum
+        if (ImPlot::BeginPlot("Clamp Events", plotSz)) {
+            ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
+            ImPlot::PlotStairs("Sum", x.data() + start, cs.data() + start, count);
+            ImPlot::EndPlot();
         }
 
+		// Joint Error
+        if (ImPlot::BeginPlot("Joint Error Overlay", plotSz)) {
+            ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
+            for (int j = 0; j < jointCount; ++j) {
+                char label[16];
+                snprintf(label, sizeof(label), "J%02d", j + 1);
+                ImPlot::PlotLine(label, x.data() + start, y[j].data() + start, count);
+            }
+            ImPlot::EndPlot();
+        }
         ImGui::Spacing();
     }
 

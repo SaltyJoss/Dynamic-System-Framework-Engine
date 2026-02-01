@@ -84,7 +84,6 @@ namespace diagnostics {
 
 		// debug: verify the written sample is visible through ring.at()
 		const auto& last = ring.at(ring.size() - 1);
-		D_INFO("telemetry: size=%zu t=%.3f joints=%zu", ring.size(), last.timeSec, last.j.size());
 	}
 		
 } // namespace diagnostics
