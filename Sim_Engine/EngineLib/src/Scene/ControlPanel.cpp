@@ -421,12 +421,14 @@ namespace gui {
 
 		// Trajectory Inspector
 		ImGui::Text("Joint Telemetry:");
-        
+
         const auto& rec = _sim->telemetry();
         drawTelemetryPlots(rec);
-        drawTrajectoryInspector(rec, (int)_sim->getRobotSystem()->joints().size(), _selection.index);
+        drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 
 		ImGui::Spacing();
+		ImGui::Text("Reset Robot:");
+        ImGui::Spacing();
 
         if (ImGui::Button("Reset")) {
             if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
@@ -829,9 +831,44 @@ namespace gui {
         ImGui::PopStyleColor();
 	}
 
+    void ControlPanel::selectJointAndFollow(int jointIdx)
+    {
+        if (!_sim || !_sim->hasRobot()) return;
+
+        robots::RobotSystem* robot = _sim->getRobotSystem();
+        if (!robot) return;
+
+        auto& joints = robot->joints();
+        auto& links = robot->links();
+        if (joints.empty()) return;
+
+        jointIdx = std::clamp(jointIdx, 0, (int)joints.size() - 1);
+
+        const auto& joint = joints[jointIdx];
+        _currentJointName = joint.name;
+
+        _selection.type = SelectionType::JOINT;
+        _selection.index = jointIdx;
+        _selection.source = SelectionSource::CONTROL_PANEL;
+
+        // find attached object for child link
+        scene::Object* attachedObj = nullptr;
+        for (auto& l : links) {
+            if (l.name == joint.child) { attachedObj = l.attachedObject; break; }
+        }
+        if (attachedObj) {
+            _sim->setSelectedObject(attachedObj);
+        }
+
+        // camera follow
+        _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
+    }
+
+
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
-        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry yet."); return; }
+        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry plots yet."); return; }
+        ImGui::Text("Telemetry ring size: %zu / %zu", ring.size(), ring.capacity());
 
 		// Build series
         static std::vector<float> rms, mx, cs; // root mean square, max, clamp sum
@@ -848,7 +885,7 @@ namespace gui {
 
     void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint) {
         const auto& ring = rec.ring;
-        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry yet. "); return; }
+        if (ring.size() < 1) { ImGui::TextUnformatted("No trajectory telemetry yet."); return; }
 
 		const diagnostics::TelemetrySample& s = ring.at(ring.size() - 1);
 		if (selectedJoint < 0) { selectedJoint = 0; }
@@ -857,13 +894,16 @@ namespace gui {
 		ImGui::Text("t = %.3f s", s.timeSec);
 
 		int currentJ = selectedJoint + 1;
-
-        ImGui::SliderInt("Joint index", &currentJ, 1, (int)s.j.size());
-		selectedJoint = currentJ - 1;
+        if (ImGui::SliderInt("Joint index", &currentJ, 1, (int)s.j.size())) {
+            selectedJoint = currentJ - 1;
+            selectJointAndFollow(selectedJoint);
+        }
+        else {
+            selectedJoint = currentJ - 1; // keep it in sync even if unchanged
+        }
 
 		const diagnostics::JointTelemetry& j = s.j[selectedJoint];
 		const float e = j.thetaRefRad - j.thetaRad;
-
 
         ImGui::Separator();
         ImGui::TextDisabled("Robot loaded:   %s", _requestedRobot.c_str());
@@ -871,16 +911,17 @@ namespace gui {
 
 		// --------------- Joint Inspector ----------------
         ImGui::Separator();
+		// Joint Info
         ImGui::Text("State:");
 		ImGui::Text("theta:     %.6f rad",       j.thetaRad);
 		ImGui::Text("omega:     %.6f rad/s",     j.omegaRad_s);
-		ImGui::Text("alpha:     %.6f rad/s^2",   j.alphaRad_s2);
 		ImGui::Text("damping:   %.6f kg·m^2/s",  j.damping);
         ImGui::Text("friction:  %.6f N·m",       j.friction);
         ImGui::Text("torque:    %.6f N·m",       j.torqueNm);
 		ImGui::Text("Inertia:   %.6f kg·m^2",    j.I_eff);
 
         ImGui::Separator();
+		// Reference Info
 		ImGui::Text("Reference:");
 		ImGui::Text("theta_ref: %.6f rad",     j.thetaRefRad);
 		ImGui::Text("omega_ref: %.6f rad/s",   j.omegaRefRad_s);
@@ -888,6 +929,7 @@ namespace gui {
 		ImGui::Text("error e:   %.6f drad",    e);
 
 		ImGui::Separator();
+		// Control Info
 		ImGui::Text("Control:");
 		ImGui::Text("Active: %s", j.traj_active ? "Yes" : "No");
         if (j.traj_active) {
@@ -897,22 +939,21 @@ namespace gui {
 		}
 
 		ImGui::Separator();
+		// Limit Info
         ImGui::Text("Limits:");
 		ImGui::Text("Clamp_theta:   %s", j.clampTheta ? "Yes" : "No");
 		ImGui::Text("Clamp_omega:   %s", j.clampOmega ? "Yes" : "No");
 
+		// Find and show worst joint button
         if (ImGui::Button("Show Worst Joint")) {
-            // find worst joint in last sample
             float worstErr = 0.0f;
             int worstIdx = 0;
             for (int i = 0; i < (int)s.j.size(); ++i) {
                 float err = std::abs(s.j[i].thetaRefRad - s.j[i].thetaRad);
-                if (err > worstErr) {
-                    worstErr = err;
-                    worstIdx = i;
-                }
+                if (err > worstErr) { worstErr = err; worstIdx = i; }
             }
-			selectedJoint = worstIdx;
+            selectedJoint = worstIdx;
+            selectJointAndFollow(selectedJoint);
         }
 	}
 }

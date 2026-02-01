@@ -825,8 +825,6 @@ namespace gui {
 		LOG_INFO("Resized simManager INTERNAL RT to %dx%d", width, height);
 	}
 
-
-
 	// --------------------------------------------------
 	//						PHYSICS
 	// --------------------------------------------------
@@ -836,71 +834,6 @@ namespace gui {
 			if (obj) { _impl->_physics->update(dt, obj.get()); }
 		}
 	}
-
-	void simManager::stepFixed(double frame_dt) {
-		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
-		_accum += frame_dt;
-		while (_accum >= _dt) {
-			if (_scriptRunning && _activeProgram) {
-				_activeProgram->step(_dt);
-
-				const bool completed = _activeProgram->isCompleted();
-				const bool stopped = _activeProgram->isStopped();
-				const bool faulted = _activeProgram->isFaulted();
-
-				if (completed || stopped || faulted) {
-					D_FAIL("SCRIPT END: completed=%d stopped=%d faulted=%d (dt=%.6f simTime=%.3f)",
-						(int)completed, (int)stopped, (int)faulted, _dt, _simTime);
-
-					_scriptRunning = false;
-					_activeProgram = nullptr;
-
-					stopSimulation();
-					D_DEBUG("Program execution completed.");
-				}
-			}
-			else if (_scriptRunning && !_activeProgram) {
-				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
-				_scriptRunning = false;
-			}
-
-			if (_simRunning) {
-				_simTime += _dt;
-
-				updatePhysics(_dt);
-				if (hasRobot()) {
-					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
-					_impl->_robotSystem->step(_impl->_traj, _dt, _simTime);
-				}
-			}
-			_accum -= _dt;
-		}
-		//D_DEBUG("Running state: %s", _scriptRunning ? "Running" : "Idle");
-	}
-
-	void simManager::startSimulation() {
-		if (_simRunning) return;
-		D_INFO("starting simulation");
-		_simTime = 0.0;
-		_simRunning = true;
-		DATA_CAPTURE_ENABLE(true);
-	}
-
-	void simManager::stopSimulation() {
-		if (!_simRunning) return;
-		D_INFO("stopping simulation");
-		DATA_CAPTURE_ENABLE(false);
-		_simRunning = false;
-		_simTime = 0.0;
-	}
-
-	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
-	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
-	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
-
-	control::TrajectoryManager& simManager::traj() { return _impl->_traj; }
-	const control::TrajectoryManager& simManager::traj() const { return _impl->_traj; }
-
 
 	// --------------------------------------------------
 	//						ROBOTS
@@ -940,6 +873,90 @@ namespace gui {
 
 	robots::RobotSystem* simManager::getRobotSystem() { return _impl->_robotSystem.get(); }
 	const robots::RobotSystem* simManager::getRobotSystem() const { return _impl->_robotSystem.get(); }
+
+	// --------------------------------------------------
+	//					SIMULATION LOOP
+	// --------------------------------------------------
+
+	void simManager::stepFixed(double frame_dt) {
+		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
+		_accum += frame_dt;
+		while (_accum >= _dt) {
+			if (_scriptRunning && _activeProgram) {
+				_activeProgram->step(_dt);
+
+				const bool completed = _activeProgram->isCompleted();
+				const bool stopped = _activeProgram->isStopped();
+				const bool faulted = _activeProgram->isFaulted();
+
+				if (completed) {
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)",
+						(int)completed, _dt, _simTime);
+
+					_scriptRunning = false;
+					_activeProgram = nullptr;
+
+					stopSimulation();
+					D_RUNTIME("Program execution completed.");
+				}
+				else if (stopped || faulted) {
+					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f simTime=%.3f)",
+						(int)stopped, (int)faulted, _dt, _simTime);
+
+					_scriptRunning = false;
+					_activeProgram = nullptr;
+
+					stopSimulation();
+					D_RUNTIME("Program execution completed.");
+				}
+			}
+			else if (_scriptRunning && !_activeProgram) {
+				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
+				_scriptRunning = false;
+			}
+
+			if (_simRunning) {
+				_simTime += _dt;
+
+				updatePhysics(_dt);
+				if (hasRobot()) {
+					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
+					_impl->_robotSystem->step(_impl->_traj, _dt, _simTime);
+					if (!_telemetryBegun) {
+						_telemetry.beginRun(_simTime, 60.0, 120.0);
+						_telemetryBegun = true;
+					}
+					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
+				}
+			}
+			_accum -= _dt;
+		}
+	}
+
+	void simManager::startSimulation() {
+		if (_simRunning) return;
+		D_RUNTIME("starting simulation");
+		_simTime = 0.0;
+		_simRunning = true;
+		_telemetryBegun = true;
+		DATA_CAPTURE_ENABLE(true);
+	}
+
+	void simManager::stopSimulation() {
+		if (!_simRunning) return;
+		D_RUNTIME("stopping simulation");
+		DATA_CAPTURE_ENABLE(false);
+		_simRunning = false;
+		_simTime = 0.0;
+		_telemetryBegun = false;
+	}
+
+	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
+	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
+	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
+
+	control::TrajectoryManager& simManager::traj() { return _impl->_traj; }
+	const control::TrajectoryManager& simManager::traj() const { return _impl->_traj; }
 
 	// --------------------------------------------------
 	//			 INTERNAL REDNDERING PIPELINE
@@ -1128,16 +1145,10 @@ namespace gui {
 					glActiveTexture(GL_TEXTURE2);
 					glBindTexture(GL_TEXTURE_2D, _impl->_ibl->getBRDFLUT());
 
-					LOG_INFO_ONCE("RadianceMap = %u, Prefilter = %u, BRDF = %u", _impl->_ibl->getIrradianceMap(), _impl->_ibl->getPrefilterMap(), _impl->_ibl->getBRDFLUT());
 					break;
 			}
 
 			_impl->currentShader = shader; // for external access
-
-			int loc = glGetUniformLocation(shader->getProgramID(), "albedo");
-			LOG_INFO_ONCE("Lit Shader albedo uniform location = %d", loc);
-
-			//obj->getMesh()->update(shader);
 			obj->getMesh()->render();
 		}
 	}
@@ -1285,17 +1296,18 @@ namespace gui {
 		for (auto& v : _impl->_views) { v.w = v.h = 0; } // internal invalidation
 
 		LOG_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
+		D_RUNTIME("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
 
 		_settingsValid = true;
 	}
 
 	glm::vec2 simManager::getPresetResolutionPx() const {
 		switch (_resCurrent) {
-		case render::ResolutionPreset::R_720p:  return { 1280, 720 };
-		case render::ResolutionPreset::R_1080p: return { 1920, 1080 };
-		case render::ResolutionPreset::R_1440p: return { 2560, 1440 };
-		case render::ResolutionPreset::R_4K:	return { 3840, 2160 };
-		default: return { 1920, 1080 };
+			case render::ResolutionPreset::R_720p:  return { 1280, 720 };
+			case render::ResolutionPreset::R_1080p: return { 1920, 1080 };
+			case render::ResolutionPreset::R_1440p: return { 2560, 1440 };
+			case render::ResolutionPreset::R_4K:	return { 3840, 2160 };
+			default: return { 1920, 1080 };
 		}
 	}
 
