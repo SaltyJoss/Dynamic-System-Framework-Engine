@@ -12,13 +12,6 @@
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	// Safely normalize a vector, returning a fallback if the vector is too small
-	static glm::vec3 safeNormalize(const glm::vec3& v, const glm::vec3& fallback) {
-		const float eps = 1e-8f;
-		if (glm::length2(v) < eps) return fallback;
-		return glm::normalize(v);
-	}
-
 	void Camera::update(shaders::Shader* shader) {
 		updateViewMatrix();
 
