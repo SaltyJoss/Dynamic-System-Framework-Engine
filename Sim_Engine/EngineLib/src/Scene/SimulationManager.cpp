@@ -57,17 +57,20 @@ namespace gui {
 			std::unique_ptr<scene::Camera> cam;
 			std::unique_ptr<render::OpenGLFrameBuffer> fb;
 			std::unique_ptr<render::OpenGLFrameBuffer> post;
+
 			// Cache size
 			int w = 1, h = 1;
 			int displayW = 1, displayH = 1;
+
+			// Follow Target
+			scene::Object* followTarget = nullptr;
+			glm::vec3 followOffset = glm::vec3(0.0f, 0.25f, 1.0f); // tweak
+			bool followEnabled = false;
 		};
 
 		std::array<Viewport, (size_t)ViewID::COUNT> _views;
 		VID activeView = VID::Manual;
 
-		//// Viewport & Render Targets
-		//std::unique_ptr<render::OpenGLFrameBuffer> _frameBuffer;
-		//std::unique_ptr<render::OpenGLFrameBuffer> _postBuffer;
 		// Skybox & IBL
 		std::unique_ptr<render::IBL> _ibl;
 		std::unique_ptr<render::SkyboxRenderer> _skybox;
@@ -108,6 +111,8 @@ namespace gui {
 		std::unique_ptr<physics::PhysicsSystem> _physics;
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;
+		bool eeFollowBound = false;
+		scene::Object* eeObject = nullptr;
 
 		// Trajectory Manager
 		control::TrajectoryManager _traj;
@@ -115,12 +120,6 @@ namespace gui {
 		scene::Object* followTarget = nullptr;
 
 		Impl(simManager& owner) {
-			//_frameBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-			//_frameBuffer->createBuffers((int)owner._size.x, (int)owner._size.y, owner._settingsCurrent.msaaSamples);
-
-			//_postBuffer = std::make_unique<render::OpenGLFrameBuffer>();
-			//_postBuffer->createBuffers((int)owner._size.x, (int)owner._size.y, 1);
-
 			_postShader = std::make_unique<shaders::Shader>();
 			_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
 
@@ -163,11 +162,11 @@ namespace gui {
 
 			// Perspective
 			makeView(ViewID::Manual, { 0.0f, 0.5f, 1.0f },  60.0f, target, { 0.0f, 1.0f, 0.0f });  // Default
-			makeView(ViewID::Follow, { 0.0f, 0.25f, 3.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Follow
+			makeView(ViewID::Follow, { 3.0f, 0.25f, 0.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Follow
 			// Ortho-ish
 			makeView(ViewID::Top,   { 0.0f, 3.0f, 0.0f },  20.0f, target, { 0.0f, 0.0f, -1.0f }); // Top
 			makeView(ViewID::Right, { 3.0f, 0.25f, 0.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Right
-			makeView(ViewID::Front, { 0.0f, 0.1f, 3.0f },  20.0f, target, { 0.0f, -1.0f, 0.0f });  // Front
+			makeView(ViewID::Front, { 0.0f, 0.1f, 3.0f },  20.0f, target, { 0.0f, -1.0f, 0.0f }); // Front
 
 			// Now force their orientation using YOUR yaw/pitch system
 			{
@@ -191,6 +190,13 @@ namespace gui {
 				camFront->setYaw(-glm::half_pi<float>());
 				camFront->setPitch(0.0f);
 				camFront->updateViewMatrix();
+
+				// Follow
+				auto* camFollow = _views[(size_t)ViewID::Follow].cam.get();
+				camFollow->setFocus(target);
+				camFollow->setYaw(glm::pi<float>());
+				camFollow->setPitch(0.0f);
+				camFollow->updateViewMatrix();
 			}
 
 			// Shader Types A
@@ -295,6 +301,23 @@ namespace gui {
 
 			if (owner.hasRobot()) { owner.getRobotSystem()->updateRobotKinematics(); }
 
+			// Follow view: always track the currently selected object (e.g. clicked joint)
+			if (&v == &_views[(size_t)gui::ViewID::Follow]) {
+				// Bind follow target to whatever the UI selected
+				v.followTarget = _selectedObject;
+				v.followEnabled = (v.followTarget != nullptr);
+
+				if (v.followEnabled && v.cam) {
+					// IMPORTANT: use the SAME world transform you render with
+					// because many rigs animate via mesh->localTransform instead of Object::transform
+					glm::mat4 M = v.followTarget->transform.toMatrix() * v.followTarget->getMesh()->localTransform;
+					glm::vec3 worldPos = glm::vec3(M[3]); // translation column
+
+					// If your camera follow uses rotation too, keep it consistent:
+					v.cam->setFollowTarget(worldPos, v.followTarget->transform.rotQ);
+				}
+			}
+
 			if (owner.skyboxEnabled) {
 				glDepthMask(GL_FALSE);
 				glDepthFunc(GL_LEQUAL);
@@ -342,6 +365,31 @@ namespace gui {
 			glBindVertexArray(0);
 
 			v.post->unbind();
+		}
+
+		static bool icontains(const std::string& s, const char* sub) {
+			auto it = std::search(
+				s.begin(), s.end(),
+				sub, sub + std::strlen(sub),
+				[](char a, char b) { return std::tolower((unsigned char)a) == std::tolower((unsigned char)b); }
+			);
+			return it != s.end();
+		}
+
+		scene::Object* findEndEffectorFromRange(size_t startIdx) {
+			for (size_t i = startIdx; i < _objects.size(); ++i) {
+				scene::Object* o = _objects[i].get();
+				if (!o) continue;
+
+				const std::string& n = o->name;
+				if (icontains(n, "end") || icontains(n, "eff") || icontains(n, "ee") || icontains(n, "tool") || icontains(n, "tcp") || icontains(n, "gripper")) {
+					return o;
+				}
+			}
+
+			// Fallback: last object added (usually the last link)
+			if (_objects.size() > startIdx) return _objects.back().get();
+			return nullptr;
 		}
 	};
 
@@ -475,6 +523,79 @@ namespace gui {
 		_impl->_cameraFollowTarget = nullptr;
 		cam->clearFollow();
 	}
+
+	// Set the follow target for a specific view
+	void simManager::setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset) {
+		if (view < ViewID::Manual || view >= ViewID::COUNT) { return; }
+		auto& v = _impl->_views[static_cast<size_t>(view)];
+		v.followTarget = obj;
+		v.followOffset = offset;
+		v.followEnabled = (obj != nullptr);
+
+		if (v.followEnabled && v.cam && obj) {
+			v.cam->startFollow(obj->transform.position, obj->transform.rotQ, offset);
+		}
+	}
+
+	// Clear the follow target for a specific view
+	void simManager::clearViewFollowTarget(ViewID view) {
+		if (view < ViewID::Manual || view >= ViewID::COUNT) { return; }
+		auto& v = _impl->_views[static_cast<size_t>(view)];
+		v.followTarget = nullptr;
+		v.followEnabled = false;
+		if (v.cam) { v.cam->clearFollow(); }
+	}
+
+	bool simManager::setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset) {
+		if (!hasRobot()) {
+			LOG_WARN("setViewFollowRobotJoint: no robot loaded");
+			return false;
+		}
+
+		robots::RobotSystem* rs = getRobotSystem();
+		if (!rs) return false;
+
+		auto& joints = rs->joints();
+		auto& links = rs->links();
+
+		// 1) Find joint by name
+		const robots::RobotJoint* jPtr = nullptr;
+		for (auto& j : joints) {
+			if (j.name == jointName) { jPtr = &j; break; }
+		}
+		if (!jPtr) {
+			LOG_WARN("setViewFollowRobotJoint: joint not found: %s", jointName.c_str());
+			return false;
+		}
+
+		// 2) Find child link -> attached object
+		scene::Object* targetObj = nullptr;
+		for (auto& l : links) {
+			if (l.name == jPtr->child) {
+				targetObj = l.attachedObject; // this is the key
+				break;
+			}
+		}
+
+		if (!targetObj) {
+			LOG_WARN("setViewFollowRobotJoint: no attached object for joint=%s child=%s",
+				jointName.c_str(), jPtr->child.c_str());
+			return false;
+		}
+
+		// 3) Bind the view follow target
+		setViewFollowTarget(view, targetObj, offset);
+
+		LOG_INFO("Follow view=%d bound to joint='%s' -> child='%s' -> obj='%s'",
+			(int)view, jointName.c_str(), jPtr->child.c_str(), targetObj->name.c_str());
+
+		return true;
+	}
+
+	bool simManager::followRobotJoint(const std::string& jointName, const glm::vec3& offset) {
+		return setViewFollowRobotJoint(gui::ViewID::Follow, jointName, offset);
+	}
+
 
 	// --------------------------------------------------
 	//			    MESH LOADING & GEOMETRY
@@ -788,12 +909,37 @@ namespace gui {
 	// --------------------------------------------------
 	//						ROBOTS
 	// --------------------------------------------------
-	void simManager::loadRobot(const std::string& name) { if (_impl->_robotSystem) { _impl->_robotSystem->loadRobot(name); } }
+	void simManager::loadRobot(const std::string& name) {
+		if (!_impl->_robotSystem) return;
+		const size_t startIdx = _impl->_objects.size();
+
+		_impl->_robotSystem->loadRobot(name);
+		_impl->eeFollowBound = false;
+		_impl->eeObject = nullptr;
+
+		scene::Object* ee = _impl->findEndEffectorFromRange(startIdx);
+		if (ee) {
+			_impl->eeObject = ee;
+			setViewFollowTarget(gui::ViewID::Follow, ee, glm::vec3(0.0f, 0.2f, 0.6f));
+			_impl->eeFollowBound = true;
+
+			LOG_INFO("Follow view bound to end-effector candidate: %s", ee->name.c_str());
+		}
+		else {
+			LOG_WARN("Could not find end-effector object to follow.");
+		}
+	}
 	void simManager::setRobotLinkRotation(const std::string& linkName, float angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
 	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
 	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
 	void simManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
-	void simManager::clearRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); } }
+	void simManager::clearRobot() {
+		if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); }
+
+		clearViewFollowTarget(gui::ViewID::Follow);
+		_impl->eeFollowBound = false;
+		_impl->eeObject = nullptr;
+	}
 	bool simManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
 
 	robots::RobotSystem* simManager::getRobotSystem() { return _impl->_robotSystem.get(); }
@@ -1167,8 +1313,7 @@ namespace gui {
 		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 
-	void simManager::reloadAllShaders()
-	{
+	void simManager::reloadAllShaders() {
 		_impl->_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
 		_impl->_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
 		_impl->_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");

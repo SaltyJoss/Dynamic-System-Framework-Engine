@@ -203,7 +203,7 @@ namespace gui {
         int fbWidth = prevViewport[2];
         int fbHeight = prevViewport[3];
 
-		const int orientatorSize = std::max(1, (int)std::lround(70)); // pixels, scaled accordingly
+		const int orientatorSize = 300; // pixels, scaled accordingly
         const int margin = 25;
 
         int x = margin;

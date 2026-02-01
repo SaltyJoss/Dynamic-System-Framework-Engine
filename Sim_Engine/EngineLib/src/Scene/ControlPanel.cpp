@@ -17,8 +17,7 @@ namespace gui {
 	// --- Helper Functions ---
 
 	// Segmented Button Row Helper
-    static bool SegmentedButtonRow(const char* label, const char* const* items, int itemCount, int& current, float buttonWidth)
-    {
+    static bool SegmentedButtonRow(const char* label, const char* const* items, int itemCount, int& current, float buttonWidth) {
         ImGui::TextUnformatted(label);
 
         bool changed = false;
@@ -167,7 +166,6 @@ namespace gui {
 		beginControlPanel("ControlPanel"); // Begin Child Panel
 
         roboticArmSelector();
-
 
 		if (ImGui::BeginTabBar("ControlPanelTabs")) {
             if (ImGui::BeginTabItem("Simulation Properties")) {
@@ -396,7 +394,7 @@ namespace gui {
 		float f = (float)j.dynamics.friction;
 		double g = (double)robot->getGravity();
 
-		ImGui::BeginDisabled(_sim->isSimRunning());
+        ImGui::BeginDisabled(_sim->isSimRunning());
 
 		ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
 		ImGui::Spacing();
@@ -427,6 +425,8 @@ namespace gui {
         const auto& rec = _sim->telemetry();
         drawTelemetryPlots(rec);
         drawTrajectoryInspector(rec, (int)_sim->getRobotSystem()->joints().size(), _selection.index);
+
+		ImGui::Spacing();
 
         if (ImGui::Button("Reset")) {
             if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
@@ -733,13 +733,15 @@ namespace gui {
                             }
 							if (jointSelected) ImGui::PopStyleColor();
 
-							if (rowClicked) {
-								_currentJointName = joint.name;
-								_selection.type = SelectionType::JOINT;
-								_selection.index = i;
-								_selection.source = SelectionSource::CONTROL_PANEL;
-								if (attachedObj) { _sim->setSelectedObject(attachedObj); }
-							}
+                            if (rowClicked) {
+                                _currentJointName = joint.name;
+                                _selection.type = SelectionType::JOINT;
+                                _selection.index = i;
+                                _selection.source = SelectionSource::CONTROL_PANEL;
+                                if (attachedObj) { _sim->setSelectedObject(attachedObj); }
+
+                                _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
+                            }
 
 							ImGui::PopID();
 
@@ -829,7 +831,7 @@ namespace gui {
 
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
-        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry yet. "); return; }
+        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry yet."); return; }
 
 		// Build series
         static std::vector<float> rms, mx, cs; // root mean square, max, clamp sum

@@ -117,6 +117,15 @@ namespace gui {
         void attachCameraToObject(scene::Object* obj);
         void detachCameraFromObject();
 
+        void setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset = glm::vec3(0.0f, 0.25f, 1.0f));
+        void clearViewFollowTarget(ViewID view);
+
+        // Follow a robot joint by name (binds the view to that joint's child link object)
+        bool setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset);
+
+        // Convenience: follow in the Follow view
+        bool followRobotJoint(const std::string& jointName, const glm::vec3& offset = glm::vec3(0.0f, 0.2f, 0.6f));
+
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
         std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);

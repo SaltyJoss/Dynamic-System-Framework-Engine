@@ -80,7 +80,6 @@ namespace render {
 		unbind();
 	}
 
-
 	/*
 	* --------------------------------------------
 	*      OPENGL FRAME-BUFFER METHODS
