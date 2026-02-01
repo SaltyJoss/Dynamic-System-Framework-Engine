@@ -864,11 +864,32 @@ namespace gui {
         _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
     }
 
+    static void computeMinMax(const std::vector<float>& v, int lastN, float& outMin, float& outMax) {
+        if (v.empty()) { outMin = 0.0f; outMax = 1.0f; return; }
+        const int n = (int)v.size();
+        const int start = (lastN <= 0 || lastN >= n) ? 0 : (n - lastN);
+
+        float mn = v[start];
+        float mx = v[start];
+        for (int i = start + 1; i < n; ++i) {
+            mn = (v[i] < mn) ? v[i] : mn;
+            mx = (v[i] > mx) ? v[i] : mx;
+        }
+        if (mn == mx) { mx = mn + 1e-6f; } // avoid zero range
+        outMin = mn;
+        outMax = mx;
+    }
+
 
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
         if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry plots yet."); return; }
-        ImGui::Text("Telemetry ring size: %zu / %zu", ring.size(), ring.capacity());
+
+		// Sim samples selector
+		static int windowN = 600; // default to 10 seconds at 60Hz
+        ImGui::SetNextItemWidth(140.0f);
+        ImGui::SliderInt("Window (samples)", &windowN, 50, (int)ring.size());
+        ImGui::SameLine(); ImGui::TextDisabled("(%0.1fs @60Hz)", windowN / 60.0f);
 
 		// Build series
         static std::vector<float> rms, mx, cs; // root mean square, max, clamp sum
@@ -876,11 +897,64 @@ namespace gui {
         buildSeries(ring, mx,  [](const diagnostics::TelemetrySample& s) { return s.err_max; });
         buildSeries(ring, cs,  [](const diagnostics::TelemetrySample& s) { return (float)s.clamp_sum; });
 
-		// Plot Outputs
-        ImGui::Text("Telemetry (%zu samples)", ring.size());
-        ImGui::PlotLines("RMS |e| (rad)", rms.data(), (int)rms.size(), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(0, 100));
-        ImGui::PlotLines("Max |e| (rad)",  mx.data(),  (int)mx.size(), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(0, 100));
-		ImGui::PlotLines("Clamp Sum",      cs.data(),  (int)cs.size(), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(0, 100));
+        // Latest values
+        const auto& last = ring.at(ring.size() - 1);
+        const float lastRms = rms.back();
+        const float lastMax = mx.back();
+        const float lastCs = cs.back();
+
+        // Compact “stats row”
+        ImGui::Text("Samples: %zu / %zu", ring.size(), ring.capacity());
+        ImGui::SameLine(); ImGui::TextDisabled("t=%.3fs", last.timeSec);
+
+        ImGui::Spacing();
+
+        // Plot sizes aligned
+        const ImVec2 plotSize(0, 80); // width=auto, height fixed
+
+        // Plot RMS
+        {
+            float mn, mxv;
+            computeMinMax(rms, windowN, mn, mxv);
+            ImGui::Text("RMS error (rad)   current: %.6f", lastRms);
+            ImGui::PlotLines("##rms", rms.data(), (int)rms.size(), 0, nullptr, mn, mxv, plotSize);
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Latest: %.6f", lastRms);
+                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
+                ImGui::EndTooltip();
+            }
+        }
+
+        // Plot Max
+        {
+            float mn, mxv;
+            computeMinMax(mx, windowN, mn, mxv);
+            ImGui::Text("Max error (rad)   current: %.6f", lastMax);
+            ImGui::PlotLines("##max", mx.data(), (int)mx.size(), 0, nullptr, mn, mxv, plotSize);
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Latest: %.6f", lastMax);
+                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
+                ImGui::EndTooltip();
+            }
+        }
+
+        // Plot Clamp Sum (this one often benefits from fixed range)
+        {
+            float mn, mxv;
+            computeMinMax(cs, windowN, mn, mxv);
+            ImGui::Text("Clamp events      current: %.0f", lastCs);
+            ImGui::PlotLines("##clamp", cs.data(), (int)cs.size(), 0, nullptr, mn, mxv, plotSize);
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Latest: %.6f", lastCs);
+                ImGui::Text("Min/Max (window): %.6f / %.6f", mn, mxv);
+                ImGui::EndTooltip();
+            }
+        }
+
+        ImGui::Spacing();
     }
 
     void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint) {
