@@ -70,7 +70,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>hdf5.lib;glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\2.0.0\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>

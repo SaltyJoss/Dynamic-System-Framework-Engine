@@ -443,10 +443,9 @@ intermediate/
 
 # Do not ignore
 # - external dependencies (may contain necessary .lib/.dll files)
-!external/**/bin/**/*.dll
-!external/**/bin/**/*.lib
-!external/**/lib/**/*.lib
-!external/**/lib/**/*.dll
+!External/**/
+!External/**/*.lib
+!External/**/*.dll
 
 # Ignore vcpkg build and installed files if used
 vcpkg_installed/
