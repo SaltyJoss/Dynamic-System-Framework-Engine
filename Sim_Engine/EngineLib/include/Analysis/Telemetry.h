@@ -1,6 +1,10 @@
 #pragma once
 #include "EngineCore.h"
 #include <vector>
+#include <functional>
+
+#include "Platform/Logger.h"
+#include "EngineLib/LogMacros.h"
 
 namespace robots { class ENGINE_API RobotSystem; }
 namespace control { class ENGINE_API TrajectoryManager; }
@@ -18,7 +22,6 @@ namespace diagnostics {
 		// Actual data
 		float thetaRad = 0.0f;		 // Joint angle in radians
 		float omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
-		float alphaRad_s2 = 0.0f;	 // Joint angular acceleration in radians per second squared
 
 		// Additional dynamics data
 		float torqueNm = 0.0f;		 // Joint torque (N·m)
@@ -120,14 +123,14 @@ namespace diagnostics {
 
 		// Update method to be called each simulation step
 		void update(double simTime, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt = nullptr, eTelemetryLevel level = eTelemetryLevel::NONE) {
-			if (level == eTelemetryLevel::NONE) { return; } // No telemetry requested
-			
+			if (level == eTelemetryLevel::NONE) { return; }
+
+			// Record samples at the specified frequency
 			while (simTime >= _next_t) {
 				// Record telemetry data
 				record(_next_t, robotSys, trajOpt, level);
 				_next_t += _T;
 			}
-
 		}
 
 		// Ring buffer to store telemetry samples

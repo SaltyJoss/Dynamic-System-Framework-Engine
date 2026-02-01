@@ -23,6 +23,7 @@ namespace commands {
 
 	// --- Utility Functions ---
 
+	// Trims whitespace from both ends of a string and returns a copy
     static inline std::string trimCopy(const std::string& s) {
         size_t a = 0;
         while (a < s.size() && std::isspace((unsigned char)s[a])) ++a;
@@ -31,6 +32,7 @@ namespace commands {
         return s.substr(a, b - a);
     }
 
+	// Converts string to uppercase copy
     std::string TrajSetCmd::upperCopy(std::string s) {
         std::transform(s.begin(), s.end(), s.begin(),
             [](unsigned char c) { return (unsigned char)std::toupper(c); });
@@ -45,11 +47,13 @@ namespace commands {
 
 	// --- TrajSetCmd Implementation ---
 
+	// Constructor
     TrajSetCmd::TrajSetCmd(std::string link, std::string type, std::vector<double> params)
         : _link(std::move(link)), _type(std::move(type)), _params(std::move(params)) {
         _result = { CmdState::NotStarted, {}, "" };
     }
 
+	// Updates trajSet command
 	program_data::CmdResult TrajSetCmd::update(CommandContextMotion& cntx, double dt) {
 		auto* sim = cntx.Sim();
 		if (!sim) {
@@ -96,9 +100,6 @@ namespace commands {
 			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f",
 				_link.c_str(), q0, q1, vmax, amax);
 
-			LOG_INFO("trajSet: TRAP link=%s t0=%.6f q0=%.9f q1=%.9f vmax=%.9f amax=%.9f",
-				_link.c_str(), t0, q0, q1, vmax, amax);
-
 			_done = true;
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet TRAP executed" };
@@ -142,10 +143,6 @@ namespace commands {
 
 			SIM_SUCCESS("trajSet: SINE link='%s' dur=%.6fs centre=%.6f amp=%.6f f=%.6fHz phi=%.6f",
 				_link.c_str(), dur, centre, amp, fHz, phi);
-
-			LOG_INFO("trajSet: SINE link=%s t0=%.6f q0=%.9f centre=%.9f amp=%.9f fHz=%.6f dur=%.6f phi=%.9f phaseMode=%s",
-				_link.c_str(), t0, q0, centre, amp, fHz, dur, phi,
-				(_params.size() == 5 ? "USER" : "AUTO"));
 
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet SINE executed" };
@@ -198,9 +195,6 @@ namespace commands {
 			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu",
 				_link.c_str(), centre, dur, nComps);
 
-			LOG_INFO("trajSet: MSINE link=%s t0=%.6f q0=%.9f centre=%.9f dur=%.6f nComps=%zu", 
-				_link.c_str(), t0, q0, centre, dur, nComps);
-
 			_done = true;
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet MULTISINE executed" };
@@ -211,16 +205,15 @@ namespace commands {
 		return { CmdState::Failed, {}, "trajSet failed" };
 	}
 
-
+	// Execute command
     void TrajSetCmd::execute() {
         setResult({ CmdState::Executing, {}, "trajSet started" });
     }
 
 	// --- Factory ---
 
+	// Factory function to create TrajSetCmd
     std::unique_ptr<ICommand> CreateTrajSetCmd(const std::string& id, const std::vector<std::string>& args) {
-        // DSL format: trajSet(<link>, <type>, <params...>)
-        // Parser convention (like rotateJointTo): id == <link>, args == [type, param1, param2, ...]
         if (id.empty()) {
             D_FAIL("trajSet: missing identifier (link).");
             return nullptr;
@@ -251,7 +244,7 @@ namespace commands {
 
 // Syntax:
 // trajSet(<linkName>, <type>, <params...>)
-
+// 
 // Types and params:
 // trajSet(link, TRAP, q1(deg), vmax(deg/s), amax(deg/s²))
 // trajSet(link, SINE, centerDeg(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)])

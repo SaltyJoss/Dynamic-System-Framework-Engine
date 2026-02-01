@@ -186,7 +186,6 @@ namespace gui {
         control::TrajectoryManager& traj();
         const control::TrajectoryManager& traj() const;
 
-
 		// Input Handling
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
@@ -277,6 +276,7 @@ namespace gui {
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
+        bool _telemetryBegun = false;
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};

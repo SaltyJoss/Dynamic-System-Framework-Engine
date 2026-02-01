@@ -15,6 +15,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+// ImPlot
+#include <implot.h>
+
 namespace render {
 	bool render::GUIContext::init(window::IWindow* window) {
 		__super::init(window);
@@ -43,6 +46,8 @@ namespace render {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		ImPlot::CreateContext();
 
 		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking  | ImGuiWindowFlags_NoTitleBar 
 									 | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize 
@@ -92,6 +97,7 @@ namespace render {
 	}
 
 	void render::GUIContext::end() {
+		ImPlot::DestroyContext();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();

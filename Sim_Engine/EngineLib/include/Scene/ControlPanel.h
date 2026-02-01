@@ -73,6 +73,7 @@ namespace gui {
 
         void sceneObjectsTable();
 
+        void selectJointAndFollow(int jointIndex);
 		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
         void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
 

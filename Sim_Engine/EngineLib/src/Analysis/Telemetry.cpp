@@ -9,11 +9,12 @@ namespace diagnostics {
 		const int n = (int)robotSys.getRobot().joints().size();
 
 		// Begin write
-		TelemetrySample s = ring.beginWrite();
+		TelemetrySample& s = ring.beginWrite();
 		s.timeSec = t;
 
 		// Resize joint vector (if needed)
-		if (s.j.size() != (size_t)n) { s.j.resize((size_t)n); }
+		const auto& joints = robotSys.getRobot().joints();
+		s.j.resize(joints.size());
 
 		// Accumulators for error statistics
 		double sum_e2	= 0.0;	// sum of squared errors
@@ -22,36 +23,38 @@ namespace diagnostics {
 		int clampSum	= 0;	// sum of clamping events
 
 		for (int i = 0; i < n; ++i) {
-			const auto& joint = robotSys.getRobot().joints()[i];
+			const auto& j = robotSys.getRobot().joints()[i];
 
 			JointTelemetry jt;
 
 			// Joint data
-			jt.thetaRad	   = joint.thetaRad;
-			jt.omegaRad_s  = joint.omegaRad_s;
-			jt.alphaRad_s2 = joint.alphaRefRad_s2; // approximate
-			jt.torqueNm	   = joint.torque;
-			jt.damping	   = joint.dynamics.damping;
-			jt.friction	   = joint.dynamics.friction;
-			jt.effort = (joint.limits.maxEffort > 0.0f) ? (joint.torque / joint.limits.maxEffort) : 0.0f;
-			jt.I_eff	   = robotSys.computeJointMetrics(joint, robotSys.getRobot().links()[i + 1],
-				(double)joint.thetaRad,    (double)joint.omegaRad_s, 
-				(double)joint.thetaRefRad, (double)joint.omegaRefRad_s,
-				(double)joint.alphaRefRad_s2).I_eff;
+			jt.thetaRad	   = j.thetaRad;
+			jt.omegaRad_s  = j.omegaRad_s;
+			jt.torqueNm	   = j.torque;
+			jt.damping	   = j.dynamics.damping;
+			jt.friction	   = j.dynamics.friction;
+			jt.effort = (j.limits.maxEffort > 0.0f) ? (j.torque / j.limits.maxEffort) : 0.0f;
+			jt.I_eff	   = robotSys.computeJointMetrics(
+				j, robotSys.getRobot().links()[i + 1],
+				(double)j.thetaRad,    (double)j.omegaRad_s, 
+				(double)j.thetaRefRad, (double)j.omegaRefRad_s,
+				(double)j.alphaRefRad_s2
+			).I_eff;
 
 			// Reference data
-			jt.thetaRefRad	  = joint.thetaRefRad;
-			jt.omegaRefRad_s  = joint.omegaRefRad_s;
-			jt.alphaRefRad_s2 = joint.alphaRefRad_s2;
+			jt.thetaRefRad	  = j.thetaRefRad;
+			jt.omegaRefRad_s  = j.omegaRefRad_s;
+			jt.alphaRefRad_s2 = j.alphaRefRad_s2;
 
 			// Clamping flags
-			if (jt.clampTheta) { ++clampSum; }
-			if (jt.clampOmega) { ++clampSum; }
+			jt.clampTheta = (j.thetaRad <= j.limits.minAngle) || (j.thetaRad >= j.limits.maxAngle);
+			jt.clampOmega = (j.omegaRad_s <= 0.0f) || (j.omegaRad_s >= j.limits.maxOmegaRad_s);
+			clampSum += (int)jt.clampTheta + (int)jt.clampOmega;
 
 			// Trajectory data
 			if (trajOpt) {
 				control::TrajState ts{};
-				if (trajOpt->tryEval(std::string(joint.child), t, ts)) {
+				if (trajOpt->tryEval(std::string(j.child), t, ts)) {
 					jt.traj_q   = (float)ts.q;
 					jt.traj_qd  = (float)ts.qd;
 					jt.traj_qdd = (float)ts.qdd;
@@ -61,7 +64,7 @@ namespace diagnostics {
 
 			// Joint error
 			const float e = jt.thetaRefRad - jt.thetaRad;
-			sum_e2 += pow((double)e, 2.0);
+			sum_e2 += (double)e * (double)e;
 			
 			// Max absolute error and worst joint
 			const float abs_e = std::abs(e);
@@ -78,6 +81,9 @@ namespace diagnostics {
 
 		// Finalize write
 		ring.endWrite();
+
+		// debug: verify the written sample is visible through ring.at()
+		const auto& last = ring.at(ring.size() - 1);
 	}
 		
 } // namespace diagnostics
