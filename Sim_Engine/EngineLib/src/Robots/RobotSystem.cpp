@@ -221,24 +221,25 @@ namespace robots {
 		m.kd = k_d;
 
 		// PD -> u(t) = I_eff * a_ref + k_p * e(t) + k_d * de(t) 
-		m.tau = m.I_eff * m.alphaRef + k_p * m.err + k_d * m.err_d; // control torque
+		double tau_motor = m.I_eff * m.alphaRef + k_p * m.err + k_d * m.err_d; // control torque
 
 		// Passive dynamics
 		const double c = joint.dynamics.damping;
 		const double mu = joint.dynamics.friction;
-
-		m.tau -= c * omega;
-
-		// Friction model
 		const double v_eps = 1e-2; // small velocity threshold
-		if (std::abs(omega) > v_eps) { m.tau -= mu * std::tanh(omega / v_eps); } // Coulomb friction
-		else { m.tau -= mu * (omega / v_eps); } // linear region near zero
+
+		double tau_loss = 0.0;
+		tau_loss += c * omega; // viscous damping
+		tau_loss += mu * std::tanh(omega / v_eps); // Coulomb friction (smooth approx)
+
+		double tau_g = 0.0; // gravity torque (not added yet)
+
+		m.tau = tau_motor - tau_loss - tau_g; // net torque
 
 		// Effort clamp
 		if (joint.limits.maxEffort > 0.0f) {
-			const double e_ = joint.limits.maxEffort;
-			if (m.tau > e_) { m.tau = e_; }
-			if (m.tau < -e_) { m.tau = -e_; }
+			const double e_max = joint.limits.maxEffort;
+			m.tau = std::clamp(m.tau, -e_max, e_max);
 		}
 
 		// Velocity soft limit

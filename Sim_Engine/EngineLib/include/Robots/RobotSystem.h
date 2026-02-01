@@ -151,6 +151,6 @@ namespace robots {
 		mutable std::vector<uint8_t> _clampOmega;
 
 		// Gravity acceleration (m/s^2)
-		double _gravity = 9.81; // m/s^2
+		double _gravity = constants::g_Earth;
 	};
 } // namespace robot
