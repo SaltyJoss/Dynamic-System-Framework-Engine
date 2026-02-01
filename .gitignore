@@ -441,6 +441,20 @@ intermediate/
 *.ilk
 *.tlog
 
+# Do not ignore
+# - external dependencies (may contain necessary .lib/.dll files)
+# --- but keep vendor libs in External ---
+!Sim_Engine/External/**
+
+# - HDF5 plugin folders (may contain necessary .lib/.dll files)
+!Sim_Engine/External/HDF5/
+!Sim_Engine/External/HDF5/lib/
+!Sim_Engine/External/HDF5/lib/plugin/
+
+# - necessary .lib/.dll files in External
+!Sim_Engine/External/**/*.lib
+!Sim_Engine/External/**/*.dll
+
 # Ignore vcpkg build and installed files if used
 vcpkg_installed/
 vcpkg_buildtrees/
