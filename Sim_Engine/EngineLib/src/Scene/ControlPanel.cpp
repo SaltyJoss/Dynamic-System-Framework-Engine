@@ -886,9 +886,6 @@ namespace gui {
 
         // Latest values
         const auto& last = ring.at(ring.size() - 1);
-        const float lastRms = rms.back();
-        const float lastMax = mx.back();
-        const float lastCs = cs.back();
 
         // Compact “stats row”
         ImGui::Text("Samples: %zu / %zu", ring.size(), ring.capacity());

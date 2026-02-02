@@ -71,7 +71,7 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef) const;
+		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -151,6 +151,6 @@ namespace robots {
 		mutable std::vector<uint8_t> _clampOmega;
 
 		// Gravity acceleration (m/s^2)
-		double _gravity = constants::g_Earth;
+		double _gravity = 0.0;
 	};
 } // namespace robot

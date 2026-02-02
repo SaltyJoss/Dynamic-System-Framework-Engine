@@ -22,6 +22,7 @@ namespace diagnostics {
 		// Actual data
 		float thetaRad = 0.0f;		 // Joint angle in radians
 		float omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
+		float eta = 0.0f;			 // 
 
 		// Additional dynamics data
 		float torqueNm = 0.0f;		 // Joint torque (N·m)

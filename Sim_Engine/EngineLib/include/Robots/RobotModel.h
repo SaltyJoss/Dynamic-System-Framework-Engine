@@ -101,6 +101,7 @@ namespace robots {
 		float thetaRad = 0.0f;	 // rad
 		float omegaRad_s = 0.0f; // rad/s
 		float torque = 0.0f;	 // Nm or N
+		float eta = 0.0f;		 // Integral state
 
 		// --- Control ---
 		float thetaRefRad = 0.0f;	 // rad
@@ -110,8 +111,9 @@ namespace robots {
 		float k_i = 0.0f;	// integral gain (rad*s)
 		float k_d = 10.0f;	// velocity gain (rad/s)
 
-		float wn_target = 20.0f;    // rad/s
-		float zeta_target = 1.1f;   // damping ratio
+		float wn_target = 20.0f;   // rad/s
+		float beta_target = 0.1f;  // overshoot ratio
+		float zeta_target = 1.1f;  // damping ratio
 
 		// --- Precomputed transforms ---
 		glm::mat4 jointToChildRest = glm::mat4(1.0f);
@@ -167,13 +169,14 @@ namespace robots {
 
 	// Per-joint metrics
 	struct JointMetrics {
-		double theta, omega;
+		double theta, omega, eta;
 		double thetaRef, omegaRef, alphaRef;
 		double err, err_d;
 		double I_eff;
 		double tau;
+		double c, mu;
 		double alpha;
-		double kp, kd;
+		double kp, kd, ki;
 	};
 
 }
