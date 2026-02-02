@@ -6,7 +6,7 @@
 #include <core/Types.h>
 #include <core/constants.h>
 #include <integrators/numerical_integrators.h>
-#include "ReferenceSolver.h"
+
 #include "Platform/Logger.h"
 
 namespace integration {
@@ -40,8 +40,14 @@ namespace integration {
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
 
+		const std::string IntegratorName(eIntegrationMethod m);
+
 	private:
+		const char* toString(eIntegrationMethod m);
+
 		integration::eIntegrationMethod method;
 		std::unique_ptr<integration::ODE> _ODE;
+
+		std::string _methodStr = "Euler";
 	};
 }

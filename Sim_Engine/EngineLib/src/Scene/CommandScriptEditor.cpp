@@ -417,6 +417,34 @@ namespace gui {
 		ImGui::Spacing();
 		ImGui::SeparatorText("DSL Command List:");
 		ImGui::Spacing();
+		
+		// --- TRAJSET ---
+		ImGui::TextColored(CMD_COL, "trajSet");
+		TextInlineColored(ARG_COL, "(<J_i>, <type>, <params...>)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			TextInlineColored(DESC_COL, "# Sets a trajectory for robotic arm joint (J_i) of some type with parameters");
+			ImGui::TextDisabled("Types and parameters:");
+			ImGui::TextDisabled("	• <type>: TRAP, SINE, MSINE");
+			ImGui::TextDisabled("	• TRAP, <params...>: center(deg), vmax(deg/s), amax(deg/s²)");
+			ImGui::TextDisabled("	• SINE, <params...>: center(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)]");
+			ImGui::TextDisabled("	• MSINE, <params...>: duration(s), amp1(deg), f1(Hz), ph1(deg), amp2, f2, ph2, ...");
+			ImGui::EndTooltip();
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// --- TRAJCLEAR ---
+		ImGui::TextColored(CMD_COL, "trajClear");
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::TextDisabled("No arguments.");
+			TextInlineColored(DESC_COL, "# Clears any trajectory set for robotic arm joints");
+			ImGui::EndTooltip();
+		}
+		TextInlineColored(ARG_COL, "()");
 
 		// --- ROTATEJOINTTO ---
 		ImGui::TextColored(CMD_COL, "rotateJointTo");
@@ -502,10 +530,10 @@ namespace gui {
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::TextDisabled("Identifiers & Arguments:");
-			ImGui::TextDisabled("	• \"integrator\" -> args: \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\"");
-			ImGui::TextDisabled("	• \"dt\"         -> args: \"double val\"");
-			ImGui::TextDisabled("	• \"omega\"      -> args: \"double val\"");
-			ImGui::TextDisabled("	• \"colour\"		-> args: \"{1.0, 1.0, 1.0}\", \"#ffffff\", \"red\"");
+			ImGui::TextDisabled("	• \"integrator\" -> args: \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\", \"rk45\"");
+			ImGui::TextDisabled("	• \"dt\"         -> args: \"numerical val\"");
+			ImGui::TextDisabled("	• \"omega\"      -> args: \"numerical val\"");
+			ImGui::TextDisabled("	• \"colour\"		-> args: \"{0.0-1.0, 0.0-1.0, 0.0-1.0}\", \"#ffffff\", \"red\"");
 			ImGui::EndTooltip();
 		}
 
