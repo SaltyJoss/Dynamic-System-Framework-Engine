@@ -95,6 +95,8 @@ namespace robots {
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
+		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
+
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
 		// --- GET AND SET INTEGRATION METHOD ---

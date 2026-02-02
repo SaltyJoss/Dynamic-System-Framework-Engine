@@ -164,9 +164,9 @@ namespace gui {
 			makeView(ViewID::Manual, { 0.0f, 0.5f, 1.0f },  60.0f, target, { 0.0f, 1.0f, 0.0f });  // Default
 			makeView(ViewID::Follow, { 3.0f, 0.25f, 0.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Follow
 			// Ortho-ish
-			makeView(ViewID::Top,   { 0.0f, 3.0f, 0.0f },  20.0f, target, { 0.0f, 0.0f, -1.0f }); // Top
+			makeView(ViewID::Top,   { 0.0f, 2.0f, 0.0f },  20.0f, target, { 0.0f, 0.0f, -1.0f }); // Top
 			makeView(ViewID::Right, { 3.0f, 0.25f, 0.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Right
-			makeView(ViewID::Front, { 0.0f, 0.1f, 3.0f },  20.0f, target, { 0.0f, -1.0f, 0.0f }); // Front
+			makeView(ViewID::Front, { 0.0f, 0.25f, 3.0f },  20.0f, target, { 0.0f, -1.0f, 0.0f }); // Front
 
 			// Now force their orientation using YOUR yaw/pitch system
 			{
@@ -301,18 +301,25 @@ namespace gui {
 
 			if (owner.hasRobot()) { owner.getRobotSystem()->updateRobotKinematics(); }
 
-			// Follow view: always track the currently selected object (e.g. clicked joint)
+			// Update Follow Target (Doesnt deref pointer until used - hopefully fixes previous crashes)
 			if (&v == &_views[(size_t)gui::ViewID::Follow]) {
 				v.followTarget = _selectedObject;
 				v.followEnabled = (v.followTarget != nullptr);
 
 				if (v.followEnabled && v.cam) {
-					glm::mat4 M = v.followTarget->transform.toMatrix() * v.followTarget->getMesh()->localTransform;
-					glm::vec3 worldPos = glm::vec3(M[3]); // translation column
-
-					v.cam->setFollowTarget(worldPos, v.followTarget->transform.rotQ);
+					auto* mesh = v.followTarget->getMesh();
+					if (!mesh) {
+						v.followTarget = nullptr;
+						v.followEnabled = false;
+					}
+					else {
+						glm::mat4 M = v.followTarget->transform.toMatrix() * mesh->localTransform;
+						glm::vec3 worldPos = glm::vec3(M[3]);
+						v.cam->setFollowTarget(worldPos, v.followTarget->transform.rotQ);
+					}
 				}
 			}
+
 
 			if (owner.skyboxEnabled) {
 				glDepthMask(GL_FALSE);
@@ -839,12 +846,16 @@ namespace gui {
 	//						ROBOTS
 	// --------------------------------------------------
 	void simManager::loadRobot(const std::string& name) {
-		if (!_impl->_robotSystem) return;
-		const size_t startIdx = _impl->_objects.size();
-
-		_impl->_robotSystem->loadRobot(name);
+		setSelectedObject(nullptr);
+		detachCameraFromObject();
+		clearViewFollowTarget(gui::ViewID::Follow);
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
+
+		if (!_impl->_robotSystem) return;
+
+		const size_t startIdx = _impl->_objects.size();
+		_impl->_robotSystem->loadRobot(name);
 
 		scene::Object* ee = _impl->findEndEffectorFromRange(startIdx);
 		if (ee) {
@@ -857,6 +868,8 @@ namespace gui {
 		else {
 			LOG_WARN("Could not find end-effector object to follow.");
 		}
+
+		_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
 	}
 	void simManager::setRobotLinkRotation(const std::string& linkName, float angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
 	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }

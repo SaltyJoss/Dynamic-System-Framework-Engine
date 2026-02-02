@@ -859,4 +859,16 @@ namespace robots {
 		_robotRootPose = (T * R) * Align;
 		_robotRootPose = _robotRootHome;
 	}
+
+	// Method to set the default pose of the robot using joint angles in degrees
+	bool RobotSystem::setDefaultPoseDeg(const std::vector<float>& qDeg) {
+		if (!_hasRobot) { return false; }
+		if (qDeg.size() != _robot.joints.size()) { return false; }
+		for (size_t i = 0; i < _robot.joints.size(); ++i) {
+			_robot.joints[i].thetaRad = glm::radians(qDeg[i]);
+		}
+		_robotQHome = _robot.makeJointVector();
+		_robotHomeValid = true;
+		return true;
+	}
 } // namespace robots
