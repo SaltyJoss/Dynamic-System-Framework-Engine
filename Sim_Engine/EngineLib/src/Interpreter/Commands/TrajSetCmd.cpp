@@ -109,8 +109,8 @@ namespace commands {
 		// trajSet(link, SINE, durationSec, centerDeg, amp, freqHz, phaseRad?)
 		if (typeU == "SINE" || typeU == "SIN") {
 			if (!(_params.size() == 4 || _params.size() == 5)) {
-				SIM_FAIL("trajSet SINE expects 4 or 5 params: centerDeg, amp, freqHz, durationSec [,phaseRad] (got %zu)", _params.size());
-				markFailed("trajSet(SINE): expects centerDeg, amp, freqHz, durationSec [,phaseRad].");
+				SIM_FAIL("trajSet SINE expects 4 or 5 params: durationSec, centerDeg, amp, freqHz [,phaseRad] (got %zu)", _params.size());
+				markFailed("trajSet(SINE): expects durationSec, centerDeg, amp, freqHz [,phaseRad].");
 				return { CmdState::Failed, {}, "trajSet failed" };
 			}
 
@@ -246,6 +246,6 @@ namespace commands {
 // trajSet(<linkName>, <type>, <params...>)
 // 
 // Types and params:
-// trajSet(link, TRAP, q1(deg), vmax(deg/s), amax(deg/s²))
-// trajSet(link, SINE, centerDeg(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)])
+// trajSet(link, TRAP, center(deg), vmax(deg/s), amax(deg/s²))
+// trajSet(link, SINE, center(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)])
 // trajSet(link, MSINE, duration(s), amp1(deg), f1(Hz), ph1(deg), amp2, f2, ph2, ...)

@@ -426,9 +426,9 @@ namespace gui {
 			TextInlineColored(DESC_COL, "# Sets a trajectory for robotic arm joint (J_i) of some type with parameters");
 			ImGui::TextDisabled("Types and parameters:");
 			ImGui::TextDisabled("	• <type>: TRAP, SINE, MSINE");
-			ImGui::TextDisabled("	• TRAP, <params...>: center(deg), vmax(deg/s), amax(deg/s²)");
-			ImGui::TextDisabled("	• SINE, <params...>: center(deg), amp(deg), freq(Hz), duration(s) [, phase(deg)]");
-			ImGui::TextDisabled("	• MSINE, <params...>: duration(s), amp1(deg), f1(Hz), ph1(deg), amp2, f2, ph2, ...");
+			ImGui::TextDisabled("	• TRAP, <params...>: q1(°), vmax(°/s), amax(°/s²)");
+			ImGui::TextDisabled("	• SINE, <params...>:  duration(s), center(°), amp(°), freq(Hz) [, phase(°)]");
+			ImGui::TextDisabled("	• MSINE, <params...>: duration(s), center(°) amp1(°), f1(Hz), ph1(°), amp2, f2, ph2, ...");
 			ImGui::EndTooltip();
 		}
 
