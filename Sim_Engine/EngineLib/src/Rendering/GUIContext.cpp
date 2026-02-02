@@ -26,6 +26,7 @@ namespace render {
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		ImPlot::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard
@@ -46,8 +47,6 @@ namespace render {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		ImPlot::CreateContext();
 
 		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking  | ImGuiWindowFlags_NoTitleBar 
 									 | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize 
