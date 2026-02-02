@@ -122,6 +122,12 @@ namespace diagnostics {
 			ring.reset(capSamples);
 		}
 
+		// Clear all recorded telemetry data
+		void clear() {
+			ring.clear();
+			_next_t = 0.0;
+		}
+
 		// Update method to be called each simulation step
 		void update(double simTime, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt = nullptr, eTelemetryLevel level = eTelemetryLevel::NONE) {
 			if (level == eTelemetryLevel::NONE) { return; }

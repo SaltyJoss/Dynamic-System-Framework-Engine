@@ -79,6 +79,13 @@ namespace commands {
 		const double t0 = sim->getSimTime();
 		const std::string typeU = upperCopy(trimCopy(_type));
 
+		// Get hardware max omega
+		float wMax_hw = 0.0;
+		if (!robot->tryGetJointOmegaMaxRad(_link, wMax_hw)) {
+			D_WARN("trajSet: failed to get joint max omega for link='%s'", _link.c_str());
+			wMax_hw = std::numeric_limits<float>::infinity();
+		}
+
 		// ===== TRAPEZOID =====
 		// trajSet(link, TRAP, q1, vmax, amax)
 		if (typeU == "TRAP" || typeU == "TRAPEZOID") {
@@ -94,11 +101,14 @@ namespace commands {
 
 			auto traj = std::make_unique<control::TrapezoidTrajectory>(t0, q0, q1, vmax, amax);
 			sim->traj().set(_link, std::move(traj));
+	
+			double wMax_est = std::abs(vmax);
+			wMax_est = std::min(wMax_est, (double)wMax_hw);
+			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)wMax_est)) {
+				D_WARN("trajSet(TRAP): failed to set joint omega ref max for link='%s'", _link.c_str());
+			}
 
-			cntx.setJointMaxOmegaRad(_link, std::abs(vmax));
-
-			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f",
-				_link.c_str(), q0, q1, vmax, amax);
+			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f", _link.c_str(), q0, q1, vmax, amax);
 
 			_done = true;
 			markCompleted();
@@ -141,8 +151,13 @@ namespace commands {
 			auto traj = std::make_unique<control::SinusoidalTrajectory>(t0, t0 + dur, centre, amp, fHz, phi);
 			sim->traj().set(_link, std::move(traj));
 
-			SIM_SUCCESS("trajSet: SINE link='%s' dur=%.6fs centre=%.6f amp=%.6f f=%.6fHz phi=%.6f",
-				_link.c_str(), dur, centre, amp, fHz, phi);
+			double wMax_est = TWO_PI_d * fHz * amp;
+			wMax_est = std::min(wMax_est, (double)wMax_hw);
+			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)(wMax_est))) {
+				D_WARN("trajSet(SINE): failed to set joint omega ref max for link='%s'", _link.c_str());
+			}
+
+			SIM_SUCCESS("trajSet: SINE link='%s' dur=%.6fs centre=%.6f amp=%.6f f=%.6fHz phi=%.6f", _link.c_str(), dur, centre, amp, fHz, phi);
 
 			markCompleted();
 			return { CmdState::Executed, {}, "trajSet SINE executed" };
@@ -163,7 +178,6 @@ namespace commands {
 			}
 
 			const double centre = degToRad(_params[1]);
-
 
 			const size_t rest = _params.size() - 2;
 			if (rest % 3 != 0) {
@@ -189,11 +203,24 @@ namespace commands {
 
 			const size_t nComps = comps.size();
 
+			double wMax_est = 0.0;
+			for (const auto& c : comps) {
+				wMax_est += TWO_PI_d * c.freqHz * std::abs(c.amp);
+			}
+
+			// Clamps estimated max omega to hardware limit
+			wMax_est = std::min(wMax_est, (double)wMax_hw);
+
+			// Set joint omega ref max
+			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)wMax_est)) {
+				D_WARN("trajSet(MSINE): failed to set joint omega ref max for link='%s'", _link.c_str());
+
+			}
+
 			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, centre, std::move(comps));
 			sim->traj().set(_link, std::move(traj));
 
-			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu",
-				_link.c_str(), centre, dur, nComps);
+			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu", _link.c_str(), centre, dur, nComps);
 
 			_done = true;
 			markCompleted();

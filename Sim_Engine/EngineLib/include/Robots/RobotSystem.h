@@ -57,7 +57,9 @@ namespace robots {
 		bool tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
 
+		bool tryGetJointOmegaMaxRad(const std::string& childLink, float& maxOmegaRad) const;
 		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
+
 		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
 
 		bool isJointAtTargetRad(const std::string& childLink, float tolRad) const;
@@ -68,6 +70,8 @@ namespace robots {
 
 		bool trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad);
 		bool trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad);
+
+		bool trySetJointOmegaRefMaxRad(const std::string& childLink, float omegaRefMaxRad);
 
 		bool tryZeroJointRefDerivatives();
 

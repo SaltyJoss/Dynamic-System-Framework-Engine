@@ -69,6 +69,8 @@ namespace robots {
 		float maxAngle = 0.0f;
 		float maxOmegaRad_s = glm::radians(180.0f);
 		float maxEffort = 0.0f; // max torque/force
+		// Soft limits
+		double omegaRefMaxRad_s = 0.0;
 	};
 
 	struct JointDynamics {
@@ -173,10 +175,14 @@ namespace robots {
 		double thetaRef, omegaRef, alphaRef;
 		double err, err_d;
 		double I_eff;
-		double tau;
+		double tau, tau_motor, tau_loss;
+		double tau_barrier, tau_sat;
+		double wMax_hw, wMax_traj;
+		double traj_overspeed;
 		double c, mu;
 		double alpha;
 		double kp, kd, ki;
+		bool sat_flag, traj_overspeed_flag;
 	};
 
 }
