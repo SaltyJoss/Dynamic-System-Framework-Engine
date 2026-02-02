@@ -35,7 +35,7 @@ namespace diagnostics {
 			jt.damping	   = j.dynamics.damping;
 			jt.friction	   = j.dynamics.friction;
 			jt.effort = (j.limits.maxEffort > 0.0f) ? (j.torque / j.limits.maxEffort) : 0.0f;
-			jt.I_eff  = robotSys.computeJointMetrics(	
+			jt.I_eff  = (float)robotSys.computeJointMetrics(	
 				j, robotSys.getRobot().links()[i + 1],
 				(double)j.thetaRad,    (double)j.omegaRad_s, 
 				(double)j.thetaRefRad, (double)j.omegaRefRad_s,

@@ -863,6 +863,7 @@ namespace gui {
 	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
 	void simManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
 	void simManager::clearRobot() {
+		setSelectedObject(nullptr); // deselect any selected object
 		if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); }
 
 		clearViewFollowTarget(gui::ViewID::Follow);
@@ -935,6 +936,7 @@ namespace gui {
 
 	void simManager::startSimulation() {
 		if (_simRunning) return;
+		telemetry().clear();
 		D_RUNTIME("starting simulation");
 		_simTime = 0.0;
 		_simRunning = true;
@@ -947,7 +949,6 @@ namespace gui {
 		D_RUNTIME("stopping simulation");
 		DATA_CAPTURE_ENABLE(false);
 		_simRunning = false;
-		_simTime = 0.0;
 		_telemetryBegun = false;
 	}
 

@@ -438,7 +438,14 @@ namespace gui {
             if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
 
 			_sim->getRobotSystem()->resetRobot();
-			LOG_INFO("Robot reset to initial position and orientation.");
+
+			// Clear selection
+			_selection.type = SelectionType::NONE;
+			_selection.index = -1;
+			_selection.source = SelectionSource::NONE;
+			_currentJointName = "";
+			_currentLinkName = "";
+
 			D_INFO("Reset Robot to initial position and orientation.");
 			return;
         }
