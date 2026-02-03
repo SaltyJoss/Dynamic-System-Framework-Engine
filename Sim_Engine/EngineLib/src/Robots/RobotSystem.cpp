@@ -258,8 +258,8 @@ namespace robots {
 
 		tau_i = 0.0; // disable I-term for now (testing)
 
-		// PD -> u(t) = I_eff * a_ref + [k_p * e(t) + (k_i * eta) + (k_d * de(t))]
-		double tau_motor = m.I_eff * m.alphaRef + k_p * m.err + tau_i + k_d * m.err_d; // control torque
+		// Inverse dynamics control law (PD + feedforward)
+		double tau_motor = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * m.alphaRef; // control torque
 		m.tau_motor = tau_motor;
 
 		// Passive dynamics
@@ -270,18 +270,18 @@ namespace robots {
 		m.c = c;
 		m.mu = mu;
 
-		// Losses
-		double tau_loss = 0.0;
-		tau_loss += c * omega; // viscous damping
-		tau_loss += mu * std::tanh(omega / v_eps); // Coulomb friction
+		// Friction model (viscous + Coulomb/Stribeck)
+		double tau_friction = 0.0;
+		tau_friction += c * omega; // viscous damping
+		tau_friction += mu * std::tanh(omega / v_eps); // Coulomb friction
 
-		m.tau_loss = tau_loss;
+		m.tau_friction = tau_friction;
 
 		// Gravity torque (to be added)
 		double tau_g = 0.0; // zeroed
 
 		// Net torque
-		m.tau = tau_motor - tau_loss - tau_g; // net torque
+		m.tau = tau_motor - tau_friction; // net torque
 
 		double tau_preSat = m.tau;
 
@@ -418,7 +418,7 @@ namespace robots {
 					// Torque values
 					{"torque",         m.tau},
 					{"torque_motor",   m.tau_motor},
-					{"torque_loss",    m.tau_loss},
+					{"torque_friction",m.tau_friction},
 					{"torque_barrier", m.tau_barrier},
 					{"torque_sat",	   m.tau_sat},
 					// Dynamics values

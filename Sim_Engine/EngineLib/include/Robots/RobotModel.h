@@ -175,7 +175,7 @@ namespace robots {
 		double thetaRef, omegaRef, alphaRef;
 		double err, err_d;
 		double I_eff;
-		double tau, tau_motor, tau_loss;
+		double tau, tau_motor, tau_friction;
 		double tau_barrier, tau_sat;
 		double wMax_hw, wMax_traj;
 		double traj_overspeed;
