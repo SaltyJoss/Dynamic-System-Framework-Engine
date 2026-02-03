@@ -12,7 +12,6 @@
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-
 	void Camera::update(shaders::Shader* shader) {
 		updateViewMatrix();
 
@@ -28,12 +27,12 @@ namespace scene {
 		float velocity = _currentSpeed * dt;
 
 		switch (key) {
-			case GLFW_KEY_W:			moveForward(velocity);	break;
-			case GLFW_KEY_S:			moveBackward(velocity); break;
-			case GLFW_KEY_A:			moveLeft(velocity);		break;
-			case GLFW_KEY_D:			moveRight(velocity);	break;
-			case GLFW_KEY_SPACE:		moveUp(velocity);		break;
-			case GLFW_KEY_LEFT_SHIFT:	moveDown(velocity);		break;
+		case GLFW_KEY_W:			moveForward(velocity);	break;
+		case GLFW_KEY_S:			moveBackward(velocity); break;
+		case GLFW_KEY_A:			moveLeft(velocity);		break;
+		case GLFW_KEY_D:			moveRight(velocity);	break;
+		case GLFW_KEY_SPACE:		moveUp(velocity);		break;
+		case GLFW_KEY_LEFT_SHIFT:	moveDown(velocity);		break;
 		}
 
 		updateViewMatrix();
@@ -137,6 +136,8 @@ namespace scene {
 		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
 		_up = glm::normalize(glm::cross(_right, _forward));
 
+		rebuildAxesFromFrontUp_(f, worldUp);
+
 		_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
 	}
 
@@ -158,4 +159,44 @@ namespace scene {
 	//
 	//	_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
 	//}
+
+	// Rebuild the camera axes based on a given front vector and an up hint
+	void Camera::rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint)
+	{
+		_forward = glm::normalize(front);
+
+		glm::vec3 up = glm::normalize(upHint);
+
+		// If up is nearly parallel to forward, choose a safe fallback
+		if (glm::abs(glm::dot(_forward, up)) > 0.999f) {
+			up = (glm::abs(_forward.y) < 0.999f) ? glm::vec3(0, 1, 0) : glm::vec3(0, 0, 1);
+		}
+
+		_right = glm::normalize(glm::cross(_forward, up));
+		_up = glm::normalize(glm::cross(_right, _forward));
+	}
+
+	// Orient the camera to look at a target point with an up hint
+	void Camera::lookAt(const glm::vec3& target, const glm::vec3& upHint)
+	{
+		// Keep orbit focus consistent
+		_focus = target;
+
+		glm::vec3 dir = target - _position;
+		float len = glm::length(dir);
+		if (len < 1e-6f) return;
+		dir /= len;
+
+		// Match your yaw/pitch convention:
+		// Your default: _yaw = -pi/2 gives forward (0,0,-1).
+		// That corresponds to:
+		// forward.x = cos(yaw)*cos(pitch)
+		// forward.y = sin(pitch)
+		// forward.z = sin(yaw)*cos(pitch)
+		_pitch = std::asin(glm::clamp(dir.y, -1.0f, 1.0f));
+		_yaw = std::atan2(dir.z, dir.x);
+
+		rebuildAxesFromFrontUp_(_forward, upHint);
+		updateViewMatrix();
+	}
 }

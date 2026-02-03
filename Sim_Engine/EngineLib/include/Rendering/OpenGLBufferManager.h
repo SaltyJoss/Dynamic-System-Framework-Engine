@@ -66,8 +66,6 @@
 #include "RenderBase.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
-
 namespace render {
 	class ENGINE_API OpenGLVertexIndexBuffer : public VertexIndexBuffer {
 		public:
@@ -86,6 +84,7 @@ namespace render {
 			void deleteBuffers() override;
 			void bind() override;
 			void unbind() override;
+			void endSetup();
 			uint32_t getTexture() override;
 	};
 }

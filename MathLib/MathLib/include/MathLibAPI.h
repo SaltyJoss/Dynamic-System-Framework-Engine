@@ -1,5 +1,4 @@
 #pragma message("Generating MathLibAPI.h")
-#pragma message("ProjectDir = " PROJECTDIR)
 #pragma once
 
 #ifdef MATHLIB_BUILD

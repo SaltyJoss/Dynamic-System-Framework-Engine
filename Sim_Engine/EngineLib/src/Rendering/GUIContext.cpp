@@ -15,6 +15,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+// ImPlot
+#include <implot.h>
+
 namespace render {
 	bool render::GUIContext::init(window::IWindow* window) {
 		__super::init(window);
@@ -23,6 +26,7 @@ namespace render {
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		ImPlot::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard
@@ -92,6 +96,7 @@ namespace render {
 	}
 
 	void render::GUIContext::end() {
+		ImPlot::DestroyContext();
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();

@@ -25,7 +25,7 @@ namespace render {
 	* draw(int indxCount) -> Draws the scene using the bound VAO and the specified index count.
 	* --------------------------------------------
 	*/
-	void render::OpenGLVertexIndexBuffer::createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
+	void OpenGLVertexIndexBuffer::createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
 		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
 
 		glGenVertexArrays(1, &_VAO);
@@ -56,7 +56,7 @@ namespace render {
 		LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
-	void render::OpenGLVertexIndexBuffer::deleteBuffers() {
+	void OpenGLVertexIndexBuffer::deleteBuffers() {
 		LOG_INFO("Deleting OpenGLVertexIndexBuffer buffers");
 
 		glDisableVertexAttribArray(0);
@@ -70,16 +70,15 @@ namespace render {
 		LOG_INFO("Buffers deleted");
 	}
 
-	void render::OpenGLVertexIndexBuffer::bind() { glBindVertexArray(_VAO); }
+	void OpenGLVertexIndexBuffer::bind() { glBindVertexArray(_VAO); }
 
-	void render::OpenGLVertexIndexBuffer::unbind() { glBindVertexArray(0); }
+	void OpenGLVertexIndexBuffer::unbind() { glBindVertexArray(0); }
 
-	void render::OpenGLVertexIndexBuffer::draw(int indxCount) {
+	void OpenGLVertexIndexBuffer::draw(int indxCount) {
 		bind();
 		glDrawElements(GL_TRIANGLES, indxCount, GL_UNSIGNED_INT, nullptr);
 		unbind();
 	}
-
 
 	/*
 	* --------------------------------------------
@@ -94,7 +93,7 @@ namespace render {
 	* unbind() -> Unbinds the framebuffer, reverting to the default framebuffer.
 	* --------------------------------------------
 	*/
-	void render::OpenGLFrameBuffer::createBuffers(int32_t width, int32_t height, int samples) {
+	void OpenGLFrameBuffer::createBuffers(int32_t width, int32_t height, int samples) {
 		LOG_INFO("Creating framebuffer buffers with size %dx%d (samples=%d)", width, height, samples);
 		_width = width;
 		_height = height;
@@ -111,12 +110,19 @@ namespace render {
 		glCreateTextures(GL_TEXTURE_2D, 1, &_texID);
 		glBindTexture(GL_TEXTURE_2D, _texID);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		// Allocate full mip chain (immutable storage)
+		int levels = 1 + (int)std::floor(std::log2((double)std::max(_width, _height)));
+		glTexStorage2D(GL_TEXTURE_2D, levels, GL_RGBA8, _width, _height);
+
+		// Use mipmaps for minification (downsampling)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// Attach level 0 to the resolve FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _texID, 0);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &_depthID);
@@ -131,12 +137,9 @@ namespace render {
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, _depthID, 0);
 		GLenum buffers[4] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(1, buffers);
-
-		// ----------------------------
-		// MSAA FBO (optional) - what you render into when samples > 1
-		// ----------------------------
-		if (_samples > 1)
-		{
+		
+		// Check FBO completeness
+		if (_samples > 1) {
 			glGenFramebuffers(1, &_msaaFBO);
 			glBindFramebuffer(GL_FRAMEBUFFER, _msaaFBO);
 
@@ -154,18 +157,47 @@ namespace render {
 			glDrawBuffers(1, &drawBuf);
 		}
 
-		unbind();
+		auto checkFBO = [&](const char* name) {
+			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			if (status != GL_FRAMEBUFFER_COMPLETE) {
+				LOG_ERROR("%s incomplete: 0x%X", name, (unsigned)status);
+				return false;
+			}
+			return true;
+		};
+
+		// --- Check RESOLVE FBO completeness ---
+		glBindFramebuffer(GL_FRAMEBUFFER, _FBO);
+		if (!checkFBO("Resolve FBO")) {
+			LOG_ERROR("Resolve FBO failed; disabling framebuffer.");
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			deleteBuffers();
+			return;
+		}
+
+		// --- Check MSAA FBO completeness ---
+		if (_samples > 1 && _msaaFBO != 0) {
+			glBindFramebuffer(GL_FRAMEBUFFER, _msaaFBO);
+			if (!checkFBO("MSAA FBO")) {
+				LOG_ERROR("MSAA FBO failed; falling back to non-MSAA.");
+
+				// destroy msaa only (keep resolve FBO alive)
+				glDeleteFramebuffers(1, &_msaaFBO); _msaaFBO = 0;
+				glDeleteTextures(1, &_msaaColour);  _msaaColour = 0;
+				glDeleteRenderbuffers(1, &_msaaDepthRBO); _msaaDepthRBO = 0;
+
+				_samples = 1; // force no msaa path
+			}
+		}
+
+		endSetup();
 
 		LOG_INFO_ONCE("frame tex=%u (samples=%d)", _texID, _samples);
 		LOG_INFO_ONCE("msaaFBO=%u resolveFBO=%u", _msaaFBO, _FBO);
-
-		D_INFO_ONCE("frame tex=%u (samples=%d)", _texID, _samples);
-		D_INFO_ONCE("msaaFBO=%u resolveFBO=%u", _msaaFBO, _FBO);
-
 		LOG_INFO("Framebuffer buffers created successfully");
 	}
 
-	void render::OpenGLFrameBuffer::deleteBuffers() {
+	void OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
 			LOG_INFO("Deleting framebuffer buffers");
 			if (_msaaFBO) glDeleteFramebuffers(1, &_msaaFBO);
@@ -189,7 +221,7 @@ namespace render {
 		else { LOG_WARN("Attempted to delete framebuffer buffers but none exist"); }
 	}
 
-	void render::OpenGLFrameBuffer::bind() {
+	void OpenGLFrameBuffer::bind() {
 		if (!_FBO) { LOG_WARN_ONCE("Attempted to bind framebuffer but FBO is 0"); return; }
 
 		const bool useMSAA = (_samples > 1 && _msaaFBO != 0);
@@ -207,11 +239,12 @@ namespace render {
 		LOG_INFO_ONCE("FB bind target=%u (msaaFBO=%u resolveFBO=%u samples=%d)", target, _msaaFBO, _FBO, _samples);
 	}
 
-	void render::OpenGLFrameBuffer::unbind() {
-
+	void OpenGLFrameBuffer::unbind() {
 		const bool useMSAA = (_samples > 1) && (_msaaFBO != 0);
 
-		if (useMSAA && _FBO) {
+		if (useMSAA && _FBO)
+		{
+			// Resolve MSAA -> resolve FBO (texture-backed)
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, _msaaFBO);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 
@@ -224,10 +257,22 @@ namespace render {
 				GL_COLOR_BUFFER_BIT,
 				GL_NEAREST
 			);
-
-			LOG_INFO_ONCE("Resolved MSAA -> resolve FBO");
-
 		}
+
+		// CRITICAL: reset ALL framebuffer targets, not just GL_FRAMEBUFFER
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Restore default backbuffer state
+		glDrawBuffer(GL_BACK);
+		glReadBuffer(GL_BACK);
+
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDisable(GL_SCISSOR_TEST);
+	}
+
+	void OpenGLFrameBuffer::endSetup() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glDrawBuffer(GL_BACK);
@@ -235,7 +280,8 @@ namespace render {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
 	}
-	uint32_t render::OpenGLFrameBuffer::getTexture() { return _texID; }
+
+	uint32_t OpenGLFrameBuffer::getTexture() { return _texID; }
 }
 
 

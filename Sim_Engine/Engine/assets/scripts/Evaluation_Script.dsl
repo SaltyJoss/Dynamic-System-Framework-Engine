@@ -5,14 +5,15 @@
 # Joint limits reminder (deg):
 # J1: [-150, +150]
 # J2: [   0, +170]
-# J3: [-165,   0]
+# J3: [-165,    0]
 # J4: [ -87,  +87]
 # J5: [ -77,  +77]
 # J6: [-160, +160]
 # ============================================================
 
 load(robot, Z1)
-set(integrator, rk45)
+set(integrator, rk4)
+wait(2)
 
 trajClear()
 wait(0.25)
