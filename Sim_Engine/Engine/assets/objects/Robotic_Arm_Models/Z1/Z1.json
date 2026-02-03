@@ -244,8 +244,8 @@
                 "effort": 30.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.12
             },
 
             "control": {
@@ -276,8 +276,8 @@
                 "effort": 60.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.25,
+                "friction": 0.18
             },
 
             "control": {
@@ -308,8 +308,8 @@
                 "effort": 30.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.24,
+                "friction": 0.16
             },
 
             "control": {
@@ -340,8 +340,8 @@
                 "effort": 30.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.1,
+                "friction": 0.08
             },
 
             "control": {
@@ -372,8 +372,8 @@
                 "effort": 30.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.1,
+                "friction": 0.05
             },
 
             "control": {
@@ -405,8 +405,8 @@
                 "effort": 30.0
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.05,
+                "friction": 0.02
             },
 
             "control": {

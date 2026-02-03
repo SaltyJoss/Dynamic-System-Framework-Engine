@@ -7,19 +7,6 @@ using namespace mathlib;
 namespace integration {
 	// --- HELPER METHODS ---
 
-	// Helper to convert integration method enum to string
-	static const char* toString(eIntegrationMethod m) {
-		switch (m) {
-		case eIntegrationMethod::Euler:    return "Euler";
-		case eIntegrationMethod::Midpoint: return "Midpoint";
-		case eIntegrationMethod::Heun:     return "Heun";
-		case eIntegrationMethod::Ralston:  return "Ralston";
-		case eIntegrationMethod::RK4:      return "RK4";
-		case eIntegrationMethod::RK45:     return "RK45";
-		default:                           return "Unknown";
-		}
-	}
-
 	// Helper to trim whitespace from string
 	static inline std::string trimCopy(std::string s) {
 		auto notSpace = [](unsigned char c) { return !std::isspace(c); };
@@ -39,16 +26,39 @@ namespace integration {
 	static bool tryParseMethod(std::string s, eIntegrationMethod& out) {
 		s = upperCopy(trimCopy(std::move(s)));
 
-		if (s == "EULER") out = eIntegrationMethod::Euler;
-		else if (s == "MIDPOINT") out = eIntegrationMethod::Midpoint;
-		else if (s == "HEUN") out = eIntegrationMethod::Heun;
-		else if (s == "RALSTON") out = eIntegrationMethod::Ralston;
-		else if (s == "RK4" || s == "RK-4" || s == "RUNGEKUTTA4") out = eIntegrationMethod::RK4;
-		else if (s == "RK45" || s == "RK4(5)" || s == "DOPRI" || s == "DORMANDPRINCE") out = eIntegrationMethod::RK45;
-		else return false;
+		if (s == "EULER")		  { out = eIntegrationMethod::Euler; }
+		else if (s == "MIDPOINT") { out = eIntegrationMethod::Midpoint; }
+		else if (s == "HEUN")	  { out = eIntegrationMethod::Heun; }
+		else if (s == "RALSTON")  { out = eIntegrationMethod::Ralston; }
+		else if (s == "RK4" || s == "RK-4" || s == "RUNGEKUTTA4") { out = eIntegrationMethod::RK4; }
+		else if (s == "RK45" || s == "RK4(5)" || s == "DOPRI" || s == "DORMANDPRINCE") { out = eIntegrationMethod::RK45; }
+		else { return false; }
 
 		return true;
 	}
+
+	// Helper to convert integration method enum to string
+	const char* IntegrationService::toString(eIntegrationMethod m) {
+		switch (m) {
+			case eIntegrationMethod::Euler:
+				return "Euler";
+			case eIntegrationMethod::Midpoint:
+				return "Midpoint";
+			case eIntegrationMethod::Heun:
+				return "Heun";
+			case eIntegrationMethod::Ralston:
+				return "Ralston";
+			case eIntegrationMethod::RK4:
+				return "RK4";
+			case eIntegrationMethod::RK45:
+				return "RK45";
+			default:
+				return "Unknown";
+		}
+	}
+
+	// Get integrator name
+	const std::string IntegrationService::IntegratorName(eIntegrationMethod m) { return std::string(toString(m)); }
 
 	// --- INTEGRATION SERVICE METHODS ---
 

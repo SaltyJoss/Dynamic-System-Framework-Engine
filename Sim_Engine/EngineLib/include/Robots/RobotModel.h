@@ -69,6 +69,8 @@ namespace robots {
 		float maxAngle = 0.0f;
 		float maxOmegaRad_s = glm::radians(180.0f);
 		float maxEffort = 0.0f; // max torque/force
+		// Soft limits
+		double omegaRefMaxRad_s = 0.0;
 	};
 
 	struct JointDynamics {
@@ -101,6 +103,7 @@ namespace robots {
 		float thetaRad = 0.0f;	 // rad
 		float omegaRad_s = 0.0f; // rad/s
 		float torque = 0.0f;	 // Nm or N
+		float eta = 0.0f;		 // Integral state
 
 		// --- Control ---
 		float thetaRefRad = 0.0f;	 // rad
@@ -110,8 +113,9 @@ namespace robots {
 		float k_i = 0.0f;	// integral gain (rad*s)
 		float k_d = 10.0f;	// velocity gain (rad/s)
 
-		float wn_target = 20.0f;    // rad/s
-		float zeta_target = 1.1f;   // damping ratio
+		float wn_target = 20.0f;   // rad/s
+		float beta_target = 0.1f;  // overshoot ratio
+		float zeta_target = 1.1f;  // damping ratio
 
 		// --- Precomputed transforms ---
 		glm::mat4 jointToChildRest = glm::mat4(1.0f);
@@ -167,13 +171,18 @@ namespace robots {
 
 	// Per-joint metrics
 	struct JointMetrics {
-		double theta, omega;
+		double theta, omega, eta;
 		double thetaRef, omegaRef, alphaRef;
 		double err, err_d;
 		double I_eff;
-		double tau;
+		double tau, tau_motor, tau_loss;
+		double tau_barrier, tau_sat;
+		double wMax_hw, wMax_traj;
+		double traj_overspeed;
+		double c, mu;
 		double alpha;
-		double kp, kd;
+		double kp, kd, ki;
+		bool sat_flag, traj_overspeed_flag;
 	};
 
 }

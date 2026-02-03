@@ -18,8 +18,8 @@ namespace render {
 			s.fxaa = true;
 			break;
 		case QualityPreset::Medium:
-			s.shadowMapRes = 4096;
-			s.shadowCascades = 4;
+			s.shadowMapRes = 2048;
+			s.shadowCascades = 2;
 			s.pcfKernel = 5;
 			s.ssao = true;
 			s.ssaoResDiv = 2;
@@ -33,8 +33,8 @@ namespace render {
 			s.fxaa = false;
 			break;
 		case QualityPreset::High:
-			s.shadowMapRes = 8192;
-			s.shadowCascades = 8;
+			s.shadowMapRes = 4096;
+			s.shadowCascades = 4;
 			s.pcfKernel = 5;
 			s.ssao = true;
 			s.ssaoResDiv = 2;
@@ -49,7 +49,7 @@ namespace render {
 			break;
 		case QualityPreset::Ultra:
 			s.shadowMapRes = 8192;
-			s.shadowCascades = 16;
+			s.shadowCascades = 8;
 			s.pcfKernel = 9; // 7 gives better softness at high res
 			s.ssao = true;
 			s.ssaoResDiv = 1;
@@ -58,8 +58,8 @@ namespace render {
 			s.bloom = true;
 			s.bloomThreshold = 1.0f;
 			s.envPreFilterRes = 512;
-			s.envIrradianceRes = 128;
-			s.msaaSamples = 16;
+			s.envIrradianceRes = 64;
+			s.msaaSamples = 8;
 			s.fxaa = false;
 			break;
 		}

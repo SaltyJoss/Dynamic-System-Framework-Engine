@@ -57,7 +57,9 @@ namespace robots {
 		bool tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
 
+		bool tryGetJointOmegaMaxRad(const std::string& childLink, float& maxOmegaRad) const;
 		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
+
 		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
 
 		bool isJointAtTargetRad(const std::string& childLink, float tolRad) const;
@@ -69,9 +71,11 @@ namespace robots {
 		bool trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad);
 		bool trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad);
 
+		bool trySetJointOmegaRefMaxRad(const std::string& childLink, float omegaRefMaxRad);
+
 		bool tryZeroJointRefDerivatives();
 
-		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef) const;
+		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -90,6 +94,8 @@ namespace robots {
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+
+		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
 
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
@@ -151,6 +157,6 @@ namespace robots {
 		mutable std::vector<uint8_t> _clampOmega;
 
 		// Gravity acceleration (m/s^2)
-		double _gravity = 9.81; // m/s^2
+		double _gravity = 0.0;
 	};
 } // namespace robot

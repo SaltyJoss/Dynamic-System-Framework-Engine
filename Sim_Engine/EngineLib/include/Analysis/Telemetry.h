@@ -22,6 +22,7 @@ namespace diagnostics {
 		// Actual data
 		float thetaRad = 0.0f;		 // Joint angle in radians
 		float omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
+		float eta = 0.0f;			 // 
 
 		// Additional dynamics data
 		float torqueNm = 0.0f;		 // Joint torque (N·m)
@@ -119,6 +120,12 @@ namespace diagnostics {
 
 			const size_t capSamples = (size_t)std::ceil(maxSeconds * _fs);
 			ring.reset(capSamples);
+		}
+
+		// Clear all recorded telemetry data
+		void clear() {
+			ring.clear();
+			_next_t = 0.0;
 		}
 
 		// Update method to be called each simulation step
