@@ -1,17 +1,18 @@
-# Dynamic Systems Framework (DSFE)
-
 <div align="center">
+
+<img width="950" height="105" alt="image" src="https://github.com/user-attachments/assets/9e48b947-a16c-4cd1-92ff-5a357f21fd30" />
   
-![Build](https://github.com/SaltyJoss/RoboticArm_MathModelling/actions/workflows/build.yml/badge.svg) ![GitHub branch status](https://img.shields.io/github/checks-status/SaltyJoss/RoboticArm_MathModelling/Main) ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/SaltyJoss/RoboticArm_MathModelling) ![GitHub last commit](https://img.shields.io/github/last-commit/SaltyJoss/RoboticArm_MathModelling) 
+![Build](https://github.com/SaltyJoss/RoboticArm_MathModelling/actions/workflows/build.yml/badge.svg) ![GitHub License](https://img.shields.io/badge/GitHub-GPL--3.0-green) ![GitHub branch status](https://img.shields.io/github/checks-status/SaltyJoss/RoboticArm_MathModelling/Main) ![GitHub last commit](https://img.shields.io/github/last-commit/SaltyJoss/RoboticArm_MathModelling) ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/SaltyJoss/RoboticArm_MathModelling)
 
-![GitHub top language](https://img.shields.io/github/languages/top/SaltyJoss/RoboticArm_MathModelling) ![GitHub language count](https://img.shields.io/github/languages/count/SaltyJoss/RoboticArm_MathModelling) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/saltyjoss/RoboticArm_MathModelling) 
+![GitHub top language](https://img.shields.io/github/languages/top/SaltyJoss/RoboticArm_MathModelling) ![GitHub language count](https://img.shields.io/github/languages/count/SaltyJoss/RoboticArm_MathModelling) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/saltyjoss/RoboticArm_MathModelling)
 
-![GitHub License](https://img.shields.io/badge/GitHub-GPL--3.0-informational) ![GitHub Repo stars](https://img.shields.io/github/stars/saltyjoss/RoboticArm_MathModelling) ![GitHub watchers](https://img.shields.io/github/watchers/saltyjoss/RoboticArm_MathModelling)
+![GitHub Repo stars](https://img.shields.io/github/stars/saltyjoss/RoboticArm_MathModelling) ![GitHub watchers](https://img.shields.io/github/watchers/saltyjoss/RoboticArm_MathModelling)
+
+<img width="1229" height="81" alt="image" src="https://github.com/user-attachments/assets/9e90197b-d53d-4bb5-bb01-0d252da06950" />
+
+
 
 </div>
-
-
-#### Implementation of Mathematical Modelling and Control Optimisation for a Multi-DOF Robotic Arm in Microgravity
 
 ### <ins>Robotic Arm Script **[02-02-2026]**</ins>
 
