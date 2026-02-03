@@ -245,7 +245,7 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.17
+                "friction": 0.12
             },
 
             "control": {
@@ -406,7 +406,7 @@
             },
             "dynamics": {
                 "damping": 0.05,
-                "friction": 0.03
+                "friction": 0.02
             },
 
             "control": {

@@ -238,7 +238,7 @@ namespace robots {
 
 		// Compute PID gains
 		double k_p = m.I_eff * wn * wn;
-		double k_i = /*b * k_p * wn*/0;
+		double k_i = b * k_p * wn;
 		double k_d = 2.0 * z * m.I_eff * wn;
 
 		// Store gains
