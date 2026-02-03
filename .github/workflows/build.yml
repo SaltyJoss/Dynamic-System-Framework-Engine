@@ -9,24 +9,39 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      - name: Install VS 2026 Build Tools (C++ / v145)
+        shell: pwsh
+        run: |
+          choco install visualstudio2026buildtools --yes --no-progress --package-parameters `
+            "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+            
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
 
-    - name: Add VS 2026 components
-      run: |
-        # Install Visual Studio 2026 build tools with v145 platform toolset
-        choco install visualstudio2026buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.v145.x86.x64"
+      - name: Verify MSBuild and toolset
+        shell: pwsh
+        run: |
+          msbuild -version
+          vswhere -latest -products * -property installationPath
 
-    - name: Clean build folders
-      run: |
-        if (Test-Path bin) { Remove-Item -Recurse -Force bin }
-        if (Test-Path bin-int) { Remove-Item -Recurse -Force bin-int }
-        if (Test-Path out) { Remove-Item -Recurse -Force out }
-        if (Test-Path x64) { Remove-Item -Recurse -Force x64 }
-        if (Test-Path build) { Remove-Item -Recurse -Force build }
+      - name: Clean build folders
+        shell: pwsh
+        run: |
+          $folders = @("bin","bin-int","out","x64","build")
+          foreach ($f in $folders) {
+            if (Test-Path $f) { Remove-Item -Recurse -Force $f }
+          }
 
-    - name: Force clean Release build
-      run: |
-        msbuild Sim_Engine/Engine.sln /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:RuntimeLibrary=MultiThreadedDLL /p:PlatformToolset=v145 /m
+      - name: Rebuild Release (v145)
+        shell: pwsh
+        run: |
+          msbuild "Sim_Engine/Engine.sln" `
+            /t:Rebuild `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:PlatformToolset=v145 `
+            /m
