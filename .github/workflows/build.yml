@@ -30,4 +30,3 @@ jobs:
     - name: Force clean Release build
       run: |
         msbuild Sim_Engine/Engine.sln /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:RuntimeLibrary=MultiThreadedDLL /p:PlatformToolset=v145 /m
-        msbuild MathLib/MathLib.sln /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:RuntimeLibrary=MultiThreadedDLL /p:PlatformToolset=v145 /m
