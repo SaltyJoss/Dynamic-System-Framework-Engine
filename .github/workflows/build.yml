@@ -13,6 +13,11 @@ jobs:
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
+      
+    - name: Add VS 2026 components
+      run: |
+        # Install Visual Studio 2026 build tools with v145 platform toolset
+        choco install visualstudio2026buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.v145.x86.x64"
 
     - name: Clean build folders
       run: |
