@@ -75,9 +75,8 @@ https://github.com/user-attachments/assets/c8d9c531-128a-4e70-a23e-498714460c0f
 <div align="center">
 
 ## Citations
-If you use this software in academic work, please cite it. See `CITATION.cff`.
-
-<br />
+If you use this software in academic work, please cite it. <br />
+See [`CITATION.cff`][citation].
 
 ## License
 Licensed under the [GPL-3.0 License][license-url].
@@ -86,13 +85,15 @@ Licensed under the [GPL-3.0 License][license-url].
 > This project is licensed under **GPL-3.0**. You may **use, modify, and distribute** it (including commercially). <br />
 > If you **distribute** this project or a modified version, you must **provide the corresponding source code** under **GPL-3.0**, and **keep copyright, license, and attribution notices** intact. <br />
 > Modified versions should be **clearly marked as modified**. See the [LICENSE][license-url] file for details. <br />
+
 <br />
+
 > **Attribution:** Please retain the [original author][saltyjoss] credit. A link back to this repository is greatly appreciated. <br />
 
 </div>
 
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="center">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- PROJECT BADGES -->
 [build-shield]: https://img.shields.io/github/actions/workflow/status/SaltyJoss/RoboticArm_MathModelling/build.yml?style=for-the-badge
@@ -142,4 +143,5 @@ Licensed under the [GPL-3.0 License][license-url].
 [github-url]: https://github.com
 
 <!-- EXTRA LINKS -->
-[saltyjoss]: https://github.com/saltyjoss
+[saltyjoss]: https://github.com/SaltyJoss
+[citation]:  https://github.com/saltyjoss/RoboticArm_MathModelling/CITATION.cff
