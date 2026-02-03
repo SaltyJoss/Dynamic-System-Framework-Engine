@@ -2,6 +2,14 @@
 
 #### Implementation of Mathematical Modelling and Control Optimisation for a Multi-DOF Robotic Arm in Microgravity
 
+### <ins>Robotic Arm Script **[02-02-2026]**</ins>
+
+https://github.com/user-attachments/assets/c8d9c531-128a-4e70-a23e-498714460c0f
+
+> **[02-02-2026]** Example of new Integration Gain working fully, along with small tweaks in damping and friction coefficients (on a per Joint basis)
+> ***NOTE:** I am fully aware of the issues this project still has, however I have reached a point inwhich I can start writing up my dissertation*
+> ***NOTE:** I do not think I will be satisfied with this project, but at this point I am proud of what I have achieved* 
+
 ### <ins>Robotic Arm Script **[30-01-2026]**</ins>
 
 https://github.com/user-attachments/assets/0a920c6c-e25f-4de9-ba32-b08ac459ff10
