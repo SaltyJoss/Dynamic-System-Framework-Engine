@@ -14,8 +14,17 @@ jobs:
       - name: Install VS 2026 Build Tools (C++ / v145)
         shell: pwsh
         run: |
+          $exitCode = 0
           choco install visualstudio2026buildtools --yes --no-progress --package-parameters `
             "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -eq 3010) {
+            Write-Host "Installation succeeded but requires reboot (exit code 3010). Continuing without reboot."
+            exit 0
+          } elseif ($exitCode -ne 0) {
+            Write-Host "Installation failed with exit code $exitCode"
+            exit $exitCode
+          }
             
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
