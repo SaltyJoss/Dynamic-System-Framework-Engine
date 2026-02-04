@@ -3,9 +3,9 @@ message: "If you use this software in academic work, please cite it."
 title: "DSFE"
 type: software
 authors:
-  - family-names: "YourSurname"
-    given-names: "YourGivenName"
+  - family-names: "Joss"
+    given-names: "Salton"
 repository-code: "https://github.com/SaltyJoss/RoboticArm_MathModelling"
 url: "https://github.com/SaltyJoss/RoboticArm_MathModelling"
 license: "GPL-3.0"
-date-released: "2026-02-02"
+date-released: "2026-02-03"
