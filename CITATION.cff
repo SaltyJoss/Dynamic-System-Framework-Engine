@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software in academic work, please cite it."
+title: "DSFE"
+type: software
+authors:
+  - family-names: "YourSurname"
+    given-names: "YourGivenName"
+repository-code: "https://github.com/SaltyJoss/RoboticArm_MathModelling"
+url: "https://github.com/SaltyJoss/RoboticArm_MathModelling"
+license: "GPL-3.0"
+date-released: "2026-02-02"
