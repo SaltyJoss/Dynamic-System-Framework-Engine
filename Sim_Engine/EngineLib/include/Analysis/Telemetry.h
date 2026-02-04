@@ -64,7 +64,7 @@ namespace diagnostics {
 	class ENGINE_API TelemetryRing {
 	public:
 		// Constructor with specified capacity
-		explicit TelemetryRing(size_t cap = 2000) : _cap(cap) { _buf.resize(cap); }
+		explicit TelemetryRing(size_t cap = 10000) : _cap(cap) { _buf.resize(cap); }
 
 		// Clear the ring buffer
 		void clear() { _size = 0; _head = 0; }

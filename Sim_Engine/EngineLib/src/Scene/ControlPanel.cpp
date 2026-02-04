@@ -901,17 +901,22 @@ namespace gui {
     }
 
     // Utility: lock X axis to visible window (kills AutoFit jitter on X)
-    static void setupWindowedXAxis(const std::vector<float>& x, int start, int count) {
+    static void setupScrollingXAxis(const std::vector<float>& x, int start, int count, float rightPaddingFrac = 0.02f) {
         const float tMin = x[start];
         const float tMax = x[start + count - 1];
-        ImPlot::SetupAxisLimits(ImAxis_X1, tMin, tMax, ImPlotCond_Always);
+
+        // Tiny padding so the newest point isn't glued to the border
+        const float span = std::max(1e-6f, tMax - tMin);
+        const float pad = span * rightPaddingFrac;
+
+        ImPlot::SetupAxisLimits(ImAxis_X1, tMin, tMax + pad, ImPlotCond_Always);
     }
 
 	// Build series utility
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
         if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry plots yet."); return; }
-
+        
 		static size_t lastSize = 0;
 
 		static std::vector<float> rms, mx, cs;    // root mean square, max, clamp sum
@@ -964,15 +969,17 @@ namespace gui {
 		// Estimate Hz and approximate N
 		const float hz = estHz(x);
         const int approxN = (int)std::round(windowSec * hz);
-		ImGui::SameLine(); ImGui::TextDisabled("(~%d samples @~%.1fHz)", approxN, hz);
+        int start = 0, count = 0;
+        computeWindowByTime(x, windowSec, start, count);
+		ImGui::SameLine(); ImGui::TextDisabled("(~%d samples @~%.1fHz, t=%.3fs)", approxN, hz, last.timeSec);
 
-		// Determine plot window
-		int start = 0, count = 0;
-		computeWindowByTime(x, windowSec, start, count);
-
-        // Compact “stats row”
-        ImGui::Text("Samples: %zu / %zu", ring.size(), ring.capacity());
-        ImGui::SameLine(); ImGui::TextDisabled("t=%.3fs", last.timeSec);
+        // Follow toggle + jump-to-latest
+        static bool follow = true;
+        ImGui::SameLine(); ImGui::Checkbox("Follow", &follow);
+        ImGui::SameLine(); 
+        if (ImGui::Button("Jump to latest")) {
+            follow = true;
+        }
 
         ImGui::Spacing();
 
@@ -983,6 +990,7 @@ namespace gui {
 		// RMS & Error Max
         if (ImPlot::BeginPlot("Error Plot (RMS, Max)", plotSz)) {
             ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             ImPlot::PlotLine("RMS", x.data() + start, rms.data() + start, count);
             ImPlot::PlotLine("Max", x.data() + start, mx.data() + start, count);
@@ -992,6 +1000,7 @@ namespace gui {
         // Clamp Sum
         if (ImPlot::BeginPlot("Clamp Events", plotSz)) {
             ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             ImPlot::PlotStairs("Sum", x.data() + start, cs.data() + start, count);
             ImPlot::EndPlot();
@@ -1000,6 +1009,7 @@ namespace gui {
 		// Joint Error
         if (ImPlot::BeginPlot("Joint Error Overlay", plotSz)) {
             ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }cco
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             for (int j = 0; j < jointCount; ++j) {
                 char label[16];
