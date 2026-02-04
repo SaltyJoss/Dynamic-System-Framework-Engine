@@ -525,6 +525,9 @@
     <ClInclude Include="..\External\implot\implot_internal.h">
       <Filter>External\implot</Filter>
     </ClInclude>
+    <ClInclude Include="include\Platform\Paths.h">
+      <Filter>Header Files\include\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -733,6 +736,9 @@
     </ClCompile>
     <ClCompile Include="..\External\implot\implot_items.cpp">
       <Filter>External\implot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Paths.cpp">
+      <Filter>Source Files\src\Platform</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

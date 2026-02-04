@@ -123,7 +123,6 @@ namespace scene {
 		ObjectCategory category = ObjectCategory::General;
 		AssetSource source;
 
-
 		explicit Object(std::shared_ptr<Mesh> mesh);
 
 		Mesh* getMesh() { return _mesh.get(); }	// mutable version

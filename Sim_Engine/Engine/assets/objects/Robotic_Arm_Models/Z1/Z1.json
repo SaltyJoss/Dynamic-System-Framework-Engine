@@ -13,7 +13,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link00.dae"
+                "mesh": "Z1/meshes/z1_Link00.dae"
             },
             "collision": [
                 {
@@ -43,7 +43,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link01.dae"
+                "mesh": "Z1/meshes/z1_Link01.dae"
             },
             "inertial": {
                 "mass": 0.67332551,
@@ -64,7 +64,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link02.dae"
+                "mesh": "Z1/meshes/z1_Link02.dae"
             },
             "collision": [
                 {
@@ -108,7 +108,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link03.dae"
+                "mesh": "Z1/meshes/z1_Link03.dae"
             },
             "collision": [
                 {
@@ -145,7 +145,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link04.dae"
+                "mesh": "Z1/meshes/z1_Link04.dae"
             },
             "collision": [
                 {
@@ -175,7 +175,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link05.dae"
+                "mesh": "Z1/meshes/z1_Link05.dae"
             },
             "inertial": {
                 "mass": 0.38938492,
@@ -196,7 +196,7 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Engine/assets/Objects/Robotic_Arm_Models/Z1/meshes/z1_Link06.dae"
+                "mesh": "Z1/meshes/z1_Link06.dae"
             },
             "collision": [
                 {

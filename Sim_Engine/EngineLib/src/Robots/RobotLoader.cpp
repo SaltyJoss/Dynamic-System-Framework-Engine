@@ -259,7 +259,6 @@ namespace robots {
 
 			robot.joints.push_back(joint);
 
-
 			// If robot is DH-mode, also parse DH table
 			if (robot.kinematicsModel == eKinematicsModel::DH) {
 				DH_Params dh{};

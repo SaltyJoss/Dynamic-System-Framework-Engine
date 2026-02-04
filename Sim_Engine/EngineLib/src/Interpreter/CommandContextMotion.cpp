@@ -62,7 +62,15 @@ namespace commands {
 	// --- HELPER METHODS ---
 
 	static inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
-	static inline glm::quat toGlm(const mathlib::Quat& q) { return glm::quat(q.w(), q.x(), q.y(), q.z()); }
+	static inline glm::quat toGlm(const mathlib::Quat& q) {
+		return glm::quat(
+			static_cast<float>(q.w()),
+			static_cast<float>(q.x()),
+			static_cast<float>(q.y()),
+			static_cast<float>(q.z())
+		);
+	}
+
 
 	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();

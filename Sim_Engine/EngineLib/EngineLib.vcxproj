@@ -184,6 +184,7 @@
     <ClInclude Include="include\Platform\DataManager.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
+    <ClInclude Include="include\Platform\Paths.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
     <ClInclude Include="include\Platform\str_utils.h" />
     <ClInclude Include="include\Platform\Window.h" />
@@ -262,6 +263,7 @@
     <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Numerics\IntegrationService.cpp" />
     <ClCompile Include="src\Platform\DataManager.cpp" />
+    <ClCompile Include="src\Platform\Paths.cpp" />
     <ClCompile Include="src\Robots\TrajectoryManager.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include "Scene/CommandScriptEditor.h"
 #include "Interpreter/StoredProgram.h"
+#include "Platform/Paths.h"
 #include <io.h>
 
 #include "EngineLib/LogMacros.h"
@@ -14,7 +15,7 @@ namespace gui {
 		// Preallocate script text buffer
 		_scriptText.reserve(8192);
 
-		_currentScriptPath = "Engine/assets/scripts";
+		_currentScriptPath = (paths::assets() / "DSLScripts").string();
 		_currentScriptFile = "<...>";
 
 		_load.SetTitle("Load Command Script");
