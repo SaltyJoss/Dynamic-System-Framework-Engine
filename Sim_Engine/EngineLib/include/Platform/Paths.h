@@ -1,9 +1,7 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
 #include <filesystem>
-#pragma comment(lib, "Shell32.lib")
 
 namespace paths {
 	void init();

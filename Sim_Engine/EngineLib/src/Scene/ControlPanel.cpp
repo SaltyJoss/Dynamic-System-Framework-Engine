@@ -1031,6 +1031,7 @@ namespace gui {
 		ImGui::Text("t = %.3f s", s.timeSec);
 
 		int currentJ = selectedJoint + 1;
+
         if (ImGui::SliderInt("Joint index", &currentJ, 1, (int)s.j.size())) {
             selectedJoint = currentJ - 1;
             selectJointAndFollow(selectedJoint);
