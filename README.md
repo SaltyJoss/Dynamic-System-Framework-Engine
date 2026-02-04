@@ -76,7 +76,7 @@ https://github.com/user-attachments/assets/c8d9c531-128a-4e70-a23e-498714460c0f
 
 ## Citations
 If you use this software in academic work, please cite it. <br />
-See [`CITATION.cff`][citation].
+See [`CITATION.cff`][citation-url].
 
 ## License
 Licensed under the [GPL-3.0 License][license-url].
@@ -144,4 +144,4 @@ Licensed under the [GPL-3.0 License][license-url].
 
 <!-- EXTRA LINKS -->
 [saltyjoss]: https://github.com/SaltyJoss
-[citation]:  https://github.com/saltyjoss/RoboticArm_MathModelling/CITATION.cff
+[citation-url]: https://github.com/SaltyJoss/RoboticArm_MathModelling/blob/Main/CITATION.cff
