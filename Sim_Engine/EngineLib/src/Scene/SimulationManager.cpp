@@ -36,6 +36,7 @@
 #include "Rendering/Texture.h"
 
 #include <Platform/WindowManager.h>
+#include "Platform/Paths.h"
 
 #include "EngineLib/LogMacros.h"
 #include "Platform/DataManager.h"
@@ -121,7 +122,7 @@ namespace gui {
 
 		Impl(simManager& owner) {
 			_postShader = std::make_unique<shaders::Shader>();
-			_postShader->load("Engine/assets/shaders/post.vert.glsl", "Engine/assets/shaders/post.frag.glsl");
+			_postShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "post.frag.glsl").string());
 
 			glGenVertexArrays(1, &_fullscreenVAO);
 
@@ -201,23 +202,23 @@ namespace gui {
 
 			// Shader Types A
 			_shaderBasic = std::make_shared<shaders::Shader>();
-			_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
+			_shaderBasic->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_basic.frag.glsl").string());
 
 			_shaderLit = std::make_shared<shaders::Shader>();
-			_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
+			_shaderLit->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_lit.frag.glsl").string());
 
 			_shaderPBR = std::make_shared<shaders::Shader>();
-			_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
+			_shaderPBR->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_pbr.frag.glsl").string());
 
 			currentShader = _shaderPBR.get();
 			_skybox = std::make_unique<render::SkyboxRenderer>();
 
 			// Shader Types B
 			_worldGridShader = std::make_unique<shaders::Shader>();
-			_worldGridShader->load("Engine/assets/shaders/world_grid.vert.glsl", "Engine/assets/shaders/world_grid.frag.glsl");
+			_worldGridShader->load((paths::assets() / "shaders" / "world_grid.vert.glsl").string(), (paths::assets() / "shaders" / "world_grid.frag.glsl").string());
 
 			_shadowShader = std::make_unique<shaders::Shader>();
-			_shadowShader->load("Engine/assets/shaders/shadow_depth.vert.glsl", "Engine/assets/shaders/shadow_depth.frag.glsl");
+			_shadowShader->load((paths::assets() / "shaders" / "shadow_depth.vert.glsl").string(), (paths::assets() / "shaders" / "shadow_depth.frag.glsl").string());
 
 			_light = std::make_unique<scene::Light>();
 			_light->_isDirectional = true;
@@ -800,7 +801,7 @@ namespace gui {
 				ImGui::Image((ImTextureID)(intptr_t)v.post->getTexture(), inner, ImVec2(0, 1), ImVec2(1, 0));
 
 				ImGui::EndChild();
-				};
+			};
 
 			drawCell("##Top", gui::ViewID::Top, false);
 			drawCell("##Front", gui::ViewID::Front, true);
@@ -1013,7 +1014,7 @@ namespace gui {
 
 	void simManager::InitIBL() {
 		_impl->_ibl = std::make_unique<render::IBL>();
-		_impl->_ibl->init("Engine/assets/hdr/default_white.hdr");
+		_impl->_ibl->init((paths::assets() / "hdr" / "default_white.hdr").string());
 	}
 
 	void simManager::WorldGridRender(scene::Camera* cam) {
@@ -1281,7 +1282,7 @@ namespace gui {
 		_impl->_skybox->render(projection, view);
 	}
 
-	std::string simManager::getDefaultHDR() const { return "Engine/assets/hdr/default_white.hdr"; }
+	std::string simManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
 
 	shaders::Shader* simManager::getActiveShader() const { return _impl->currentShader; }
 	void simManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
@@ -1336,9 +1337,9 @@ namespace gui {
 	}
 
 	void simManager::reloadAllShaders() {
-		_impl->_shaderBasic->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_basic.frag.glsl");
-		_impl->_shaderLit->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_lit.frag.glsl");
-		_impl->_shaderPBR->load("Engine/assets/shaders/vs_pbr.vert.glsl", "Engine/assets/shaders/mesh_pbr.frag.glsl");
+		_impl->_shaderBasic->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_basic.frag.glsl").string());
+		_impl->_shaderLit->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_lit.frag.glsl").string());
+		_impl->_shaderPBR->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_pbr.frag.glsl").string());
 
 		LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");

@@ -6,11 +6,13 @@
 #include "Scene/Mesh.h"
 
 #include <stack>
+#include <unordered_set>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 #include "Robots/TrajectoryManager.h"
+#include "Platform/Paths.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -96,7 +98,7 @@ namespace robots {
 	// Method to create Object instances for each robot link
 	void RobotSystem::instantiateRobotLinks() {
 		for (auto& link : _robot.links) {
-			auto objs = _loadMeshReturn(link.visual.meshFile);
+			auto objs = _loadMeshReturn((paths::assets() / "objects" / "Robotic_Arm_Models" / link.visual.meshFile).string());
 			if (objs.empty()) { continue; }
 
 			scene::Object* obj = objs[0];
@@ -278,7 +280,7 @@ namespace robots {
 		m.tau_friction = tau_friction;
 
 		// Gravity torque (to be added)
-		double tau_g = 0.0; // zeroed
+		//double tau_g = 0.0; // zeroed
 
 		// Net torque
 		m.tau = tau_motor - tau_friction; // net torque
@@ -502,8 +504,15 @@ namespace robots {
 	void RobotSystem::loadRobot(const std::string& name) {
 		clearRobot();
 
-		std::string jsonPath = "Engine/assets/objects/Robotic_Arm_Models/" + name + "/" + name + ".json";
-		_robot = robots::RobotLoader::loadFromJSON(jsonPath);
+		const std::filesystem::path jsonPath = paths::assets() / "objects" / "Robotic_Arm_Models" / name / (name + ".json");
+
+		if (!std::filesystem::exists(jsonPath)) {
+			LOG_ERROR("Robot JSON file not found -> %s", jsonPath.string().c_str());
+			D_ERROR("Robot JSON file not found -> %s", jsonPath.string().c_str());
+			return;
+		}
+
+		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
 		_hasRobot = true;
 		_loadedName = name;
 
@@ -535,9 +544,7 @@ namespace robots {
 			joint.thetaRefRad = joint.thetaRad;
 			joint.omegaRefRad_s = 0.0f;
 			joint.alphaRefRad_s2 = 0.0f;
-
 		}
-
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
 		D_SUCCESS("Robot reset to home position.");
@@ -579,11 +586,31 @@ namespace robots {
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
 
+	std::string RobotSystem::findRootLink() const {
+		std::unordered_set<std::string> children;
+		for (const auto& joint : _robot.joints) { children.insert(joint.child); }
+		for (const auto& link : _robot.links) {
+			if (children.find(link.name) == children.end()) {
+				return link.name;
+			}
+		}
+		return _robot.links.empty() ? "" : _robot.links.front().name; // fallback
+	}
+
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
-
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
-		int rootIdx = _linkIndex.at("link00");
+
+		// Find root link
+		const std::string rootName = findRootLink();
+		auto itRoot = _linkIndex.find(rootName);
+		if (itRoot == _linkIndex.end()) {
+			LOG_WARN_ONCE("RobotSystem::updateRobotKinematics: root link '%s' not found in link index", rootName.c_str());
+			return;
+		}
+
+		// Set root link pose
+		int rootIdx = itRoot->second;
 		world[rootIdx] = _robotRootPose;
 
 		// parent -> children joints
@@ -592,23 +619,29 @@ namespace robots {
 		for (const auto& j : _robot.joints) children[j.parent].push_back(&j);
 
 		std::stack<std::string> st;
-		st.push("link00");
+		st.push(rootName);
 
 		while (!st.empty()) {
 			std::string parentName = st.top(); st.pop();
-			int pIdx = _linkIndex.at(parentName);
+			auto itP = _linkIndex.find(parentName);
 
+			// Skip if parent link not found
+			if (itP == _linkIndex.end()) { continue; }
+			int pIdx = itP->second;
+
+			// Find children joints
 			auto it = children.find(parentName);
 			if (it == children.end()) continue;
 
+			// For each child joint
 			for (const RobotJoint* jp : it->second) {
 				const RobotJoint& j = *jp;
-				int cIdx = _linkIndex.at(j.child);
+				auto itC = _linkIndex.find(j.child);
+				if (itC == _linkIndex.end()) { continue; }
+				int cIdx = itC->second;
 
 				glm::mat4 T = glm::translate(glm::mat4(1.0f), j.origin_xyz);
 				glm::mat4 R0 = glm::mat4_cast(j.origin_q);
-
-				// axis_frame == "joint" means axis is in the joint frame AFTER origin rotation
 				glm::vec3 axisWrtParent = glm::normalize(glm::vec3(R0 * glm::vec4(j.axis, 0.0f)));
 				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), j.thetaRad, axisWrtParent);
 				world[cIdx] = world[pIdx] * T * R0 * Rq;

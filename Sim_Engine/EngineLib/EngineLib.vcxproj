@@ -73,7 +73,8 @@
       <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
+      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +101,8 @@
       <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
+      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -184,6 +186,7 @@
     <ClInclude Include="include\Platform\DataManager.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
     <ClInclude Include="include\Platform\Logger.h" />
+    <ClInclude Include="include\Platform\Paths.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
     <ClInclude Include="include\Platform\str_utils.h" />
     <ClInclude Include="include\Platform\Window.h" />
@@ -262,6 +265,7 @@
     <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Numerics\IntegrationService.cpp" />
     <ClCompile Include="src\Platform\DataManager.cpp" />
+    <ClCompile Include="src\Platform\Paths.cpp" />
     <ClCompile Include="src\Robots\TrajectoryManager.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
   </ItemGroup>

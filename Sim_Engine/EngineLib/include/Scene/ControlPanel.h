@@ -27,8 +27,6 @@
 #include "Platform/imguiWidgets.h"
 #include <imfilebrowser.h>
 
-extern ENGINE_API Debug gLog;
-
 namespace gui {
 	// ControlPanel Class
     class ENGINE_API ControlPanel {

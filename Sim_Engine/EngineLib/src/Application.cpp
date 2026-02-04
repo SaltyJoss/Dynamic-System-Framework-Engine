@@ -1,25 +1,24 @@
 #include "pch.h"
 #include "Application.h"
-
 #include "Platform/WindowManager.h"
+#include "Platform/Paths.h"
 #include "Scene/Camera.h"
-#include "Platform/Window.h"
 #include <filesystem>
 #include "EngineLib/LogMacros.h"
+#include "Platform/DataManager.h"
 
 namespace fs = std::filesystem;
 Application* Application::sInstance = nullptr;
 
-static void ensureWorkingDir() {
-    namespace fs = std::filesystem;
-    auto root = fs::path(__FILE__).parent_path().parent_path().parent_path();
-    fs::current_path(root);
-    LOG_INFO("Working directory set to: %s", fs::current_path().string().c_str());
-}
-
 Application::Application(const std::string& appName) {
-    ensureWorkingDir();
-    LOG_INFO("Working directory set to: %s", fs::current_path().string().c_str());
+	paths::init();
+	data::DataManager::instance().setParentFolder(paths::runs().string());
+
+	LOG_INFO("Root path: %s", paths::root().string().c_str());
+	LOG_INFO("Assets path: %s", paths::assets().string().c_str());
+	LOG_INFO("Configs path: %s", paths::configs().string().c_str());
+	LOG_INFO("Logs path: %s", paths::logs().string().c_str());
+	LOG_INFO("Runs path: %s", paths::runs().string().c_str());
 
 	_window = std::make_unique<window::GLWindow>();
 	_window->init(1920, 1080, appName);

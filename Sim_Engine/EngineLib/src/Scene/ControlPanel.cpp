@@ -8,6 +8,7 @@
 #include "Scene/Mesh.h"
 #include "Scene/ControlPanel.h"
 #include "Robots/RobotSystem.h"
+#include "Platform/Paths.h"
 #include <imgui.h>
 #include <chrono>
 
@@ -93,11 +94,11 @@ namespace gui {
         _currentHDRFile = "<...>";
         // Mesh loader
         _meshLoad.SetTitle("Open Object Model");
-        _meshLoad.SetDirectory("Engine/assets/objects");
+        _meshLoad.SetDirectory((paths::assets() / "objects").string());
         _meshLoad.SetTypeFilters({ ".fbx", ".obj", ".dae", ".stl"});
         // HDR loader
         _hdrLoad.SetTitle("Load HDR Environment");
-        _hdrLoad.SetDirectory("Engine/assets/hdr");
+        _hdrLoad.SetDirectory((paths::assets() / "hdr").string());
         _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
     }
 
@@ -108,10 +109,11 @@ namespace gui {
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Layout")) {
-                ImGui::SaveIniSettingsToDisk("Engine/configs/imgui_layout.ini");
+                ImGui::SaveIniSettingsToDisk((paths::configs() / "imgui_layout.ini").string().c_str());
             }
             if (ImGui::MenuItem("Load Layout")) {
-                ImGui::LoadIniSettingsFromDisk("Engine/configs/imgui_layout.ini");
+                ImGui::LoadIniSettingsFromDisk((paths::configs() / "imgui_layout.ini").string().c_str());
+
             }
             ImGui::EndMenu();
         }
@@ -360,12 +362,10 @@ namespace gui {
                 LOG_WARN("No object selected to reset.");
                 return;
 			}
-
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
         }
-
 		ImGui::Separator();
     }
 
@@ -869,76 +869,126 @@ namespace gui {
         // camera follow
         _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
     }
+	// --- Telemetry Plots ---
 
-    static void computeWindow(int total, int windowN, int& start, int& count) {
-        count = std::min(windowN, total);
-        start = std::max(0, total - count);
+	// Compute window by time(sec)
+    static void computeWindowByTime(const std::vector<float>& x, float windowSec, int& start, int& count) {
+		const int total = (int)x.size();
+		if (total <= 0) { start = 0; count = 0; return; }
+
+		windowSec = std::max(0.0f, windowSec);
+
+		const float tEnd = x[total - 1];
+		const float tStart = std::max(x.front(), tEnd - windowSec);
+
+		auto it = std::lower_bound(x.begin(), x.end(), tStart);
+		start = (int)std::distance(x.begin(), it);
+		start = std::clamp(start, 0, total - 1);
+
+		count = total - start;
+		count = std::max(1, count);
     }
 
+	// Estimate Hz from time series
+	static float estHz(const std::vector<float>& x) {
+        const int n = (int)x.size();
+        if (n < 2) { return 60.0f; }
+        float dt = (x.back() - x.front()) / (float)(n - 1);
+        if (dt <= 1e-6f) { return 0.0f; }
+        return 1.0f/ dt;
+    }
+
+    // Utility: lock X axis to visible window (kills AutoFit jitter on X)
+    static void setupScrollingXAxis(const std::vector<float>& x, int start, int count, float rightPaddingFrac = 0.02f) {
+        const float tMin = x[start];
+        const float tMax = x[start + count - 1];
+
+        // Tiny padding so the newest point isn't glued to the border
+        const float span = std::max(1e-6f, tMax - tMin);
+        const float pad = span * rightPaddingFrac;
+
+        ImPlot::SetupAxisLimits(ImAxis_X1, tMin, tMax + pad, ImPlotCond_Always);
+    }
+
+	// Build series utility
     void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
         const auto& ring = rec.ring;
         if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry plots yet."); return; }
+        
+		static size_t lastSize = 0;
 
-		// Sim samples selector
-		static int windowN = 600; // default to 10 seconds at 60Hz
-        ImGui::SetNextItemWidth(140.0f);
-        ImGui::SliderInt("Window (samples)", &windowN, 50, (int)ring.size());
-        ImGui::SameLine(); ImGui::TextDisabled("(%0.1fs @60Hz)", windowN / 60.0f);
+		static std::vector<float> rms, mx, cs;    // root mean square, max, clamp sum
+		static std::vector<float> x;              // time series
+		static std::vector<std::vector<float>> y; // per-joint error series
 
-		// Build series
-        static std::vector<float> rms, mx, cs; // root mean square, max, clamp sum
-        buildSeries(ring, rms, [](const diagnostics::TelemetrySample& s) { return s.err_rms; });
-        buildSeries(ring, mx,  [](const diagnostics::TelemetrySample& s) { return s.err_max; });
-        buildSeries(ring, cs,  [](const diagnostics::TelemetrySample& s) { return (float)s.clamp_sum; });
+		const int sampleCount = (int)ring.size();
+		const int jointCount = (int)ring.at(sampleCount - 1).j.size();
 
+
+        if (ring.size() != lastSize) {
+			lastSize = ring.size();
+
+            // Build series
+            buildSeries(ring, rms, [](const diagnostics::TelemetrySample& s) { return s.err_rms; });
+            buildSeries(ring, mx,  [](const diagnostics::TelemetrySample& s) { return s.err_max; });
+            buildSeries(ring, cs,  [](const diagnostics::TelemetrySample& s) { return (float)s.clamp_sum; });
+
+			// Prepare data arrays
+			x.resize(sampleCount);
+
+			// Resize joint error arrays
+            if ((int)y.size() != jointCount) { y.resize(jointCount); }
+			for (int j = 0; j < jointCount; ++j) { y[j].resize(sampleCount); }
+
+			// Fill data arrays
+            for (int k = 0; k < sampleCount; ++k) {
+                const auto& s = ring.at(k);
+                x[k] = (float)s.timeSec;
+                const int m = std::min(jointCount, (int)s.j.size());
+                for (int j = 0; j < m; ++j) {
+                    y[j][k] = s.j[j].thetaRefRad - s.j[j].thetaRad;
+                }
+                for (int j = m; j < jointCount; ++j) {
+                    y[j][k] = 0.0f;
+                }
+			}
+        }
         // Latest values
         const auto& last = ring.at(ring.size() - 1);
 
-        // Compact “stats row”
-        ImGui::Text("Samples: %zu / %zu", ring.size(), ring.capacity());
-        ImGui::SameLine(); ImGui::TextDisabled("t=%.3fs", last.timeSec);
+        // Time Window Slider
+		const float totalSec = (x.size() >= 2) ? (x.back() - x.front()) : 0.0f;
+        static float windowSec = 10.0f;
+		windowSec = std::clamp(windowSec, 0.25f, std::max(0.25f, totalSec));
+
+		ImGui::SetNextItemWidth(150.0f);
+		ImGui::SliderFloat("Time Window (s)", &windowSec, 0.25f, std::max(0.25f, totalSec), "%.2f s", ImGuiSliderFlags_Logarithmic);
+
+		// Estimate Hz and approximate N
+		const float hz = estHz(x);
+        const int approxN = (int)std::round(windowSec * hz);
+        int start = 0, count = 0;
+        computeWindowByTime(x, windowSec, start, count);
+		ImGui::SameLine(); ImGui::TextDisabled("(~%d samples @~%.1fHz, t=%.3fs)", approxN, hz, last.timeSec);
+
+        // Follow toggle + jump-to-latest
+        static bool follow = true;
+        ImGui::SameLine(); ImGui::Checkbox("Follow", &follow);
+        ImGui::SameLine(); 
+        if (ImGui::Button("Jump to latest")) {
+            follow = true;
+        }
 
         ImGui::Spacing();
 
-        // Build per-joint error series
-        const int sampleCount = (int)ring.size();
-        const int jointCount = (int)ring.at(sampleCount - 1).j.size();
-
-		// Prepare data arrays
-        static std::vector<float> x;
-        static std::vector<std::vector<float>> y;
-
-		// Resize time array
-        x.resize(sampleCount);
-
-		// Resize joint error arrays
-        if ((int)y.size() != jointCount) y.resize(jointCount);
-        for (int j = 0; j < jointCount; ++j) y[j].resize(sampleCount);
-
-		// Fill data arrays
-        for (int k = 0; k < sampleCount; ++k) {
-            const auto& s = ring.at(k);
-            x[k] = (float)s.timeSec;
-            const int m = std::min(jointCount, (int)s.j.size());
-            for (int j = 0; j < m; ++j) {
-                y[j][k] = s.j[j].thetaRefRad - s.j[j].thetaRad;
-            }
-            for (int j = m; j < jointCount; ++j) {
-                y[j][k] = 0.0f;
-            }
-        }
-
-		// Determine plot window
-        int start = 0, count = 0;
-        windowN = std::clamp(windowN, 1, (int)ring.size());
-        computeWindow((int)ring.size(), windowN, start, count);
         const ImVec2 plotSz(-1, 200); 
 
 		// ---------- Draw Plots ----------
 
 		// RMS & Error Max
         if (ImPlot::BeginPlot("Error Plot (RMS, Max)", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             ImPlot::PlotLine("RMS", x.data() + start, rms.data() + start, count);
             ImPlot::PlotLine("Max", x.data() + start, mx.data() + start, count);
@@ -947,7 +997,8 @@ namespace gui {
 
         // Clamp Sum
         if (ImPlot::BeginPlot("Clamp Events", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             ImPlot::PlotStairs("Sum", x.data() + start, cs.data() + start, count);
             ImPlot::EndPlot();
@@ -955,7 +1006,8 @@ namespace gui {
 
 		// Joint Error
         if (ImPlot::BeginPlot("Joint Error Overlay", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             for (int j = 0; j < jointCount; ++j) {
                 char label[16];
@@ -967,6 +1019,7 @@ namespace gui {
         ImGui::Spacing();
     }
 
+	// Trajectory Inspector
     void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint) {
         const auto& ring = rec.ring;
         if (ring.size() < 1) { ImGui::TextUnformatted("No trajectory telemetry yet."); return; }

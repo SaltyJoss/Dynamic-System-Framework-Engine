@@ -34,6 +34,8 @@ namespace robots {
 
         std::size_t linkCount() const { return _robot.links.size(); }
 
+		std::string findRootLink() const;
+
         bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
         const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }

@@ -159,13 +159,11 @@ namespace gui {
         std::vector<std::unique_ptr<scene::Object>>& getObjects();
         scene::Object* getObject();
 		scene::Object* getObjectByID(scene::ObjectID id);
-		scene::Object* getObjectByName(const std::string& name);
 
         // Physics
         void updatePhysics(double dt);
         void tick(double frame_dt);
 		void stepFixed(double frame_dt);
-		bool hasPhysics() const;
 
 		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
         physics::PhysicsSystem& getPhysicsSystem();
