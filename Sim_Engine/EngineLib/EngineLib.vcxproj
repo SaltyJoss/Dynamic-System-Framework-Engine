@@ -73,7 +73,8 @@
       <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
+      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +101,8 @@
       <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y</Command>
+      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

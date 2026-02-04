@@ -362,12 +362,10 @@ namespace gui {
                 LOG_WARN("No object selected to reset.");
                 return;
 			}
-
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
         }
-
 		ImGui::Separator();
     }
 
