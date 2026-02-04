@@ -1009,7 +1009,7 @@ namespace gui {
 		// Joint Error
         if (ImPlot::BeginPlot("Joint Error Overlay", plotSz)) {
             ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
-            if (follow) { setupScrollingXAxis(x, start, count); }cco
+            if (follow) { setupScrollingXAxis(x, start, count); }
             ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
             for (int j = 0; j < jointCount; ++j) {
                 char label[16];
