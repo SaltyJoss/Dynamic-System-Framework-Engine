@@ -126,7 +126,7 @@ namespace robots {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Compute joint effective inertia
-		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
+		double computeJointAxisInertia(const RobotJoint& joint, glm::mat3 linkIntertia) const;
 
 		// Compute state derivatives
 		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;

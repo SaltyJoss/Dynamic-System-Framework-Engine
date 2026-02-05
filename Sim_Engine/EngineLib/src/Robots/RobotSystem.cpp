@@ -69,17 +69,18 @@ namespace robots {
 		tau -= wall * (omega >= 0.0 ? 1.0 : -1.0);
 	}
 
-	// Method to compute effective inertia about a joint axis
-	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const {
-		// Inertia matrix
+	// Method to compute the inertia tensor of a robot link
+	static glm::mat3 computeLinkInertiaTensor(const RobotLink& link) {
 		const robots::Inertia& inertial = link.inertial.inertia;
-		
-		glm::mat3 I_link(
+		return glm::mat3(
 			inertial.ixx, inertial.ixy, inertial.ixz,
 			inertial.ixy, inertial.iyy, inertial.iyz,
 			inertial.ixz, inertial.iyz, inertial.izz
 		);
+	}
 
+	// Method to compute effective inertia about a joint axis
+	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, glm::mat3 I_link) const {
 		// Transform to world frame
 		glm::mat3 R = glm::mat3(glm::mat3_cast(joint.origin_q));
 		glm::mat3 I_world = R * I_link * glm::transpose(R);
@@ -213,6 +214,17 @@ namespace robots {
 		}
 	}
 
+	static glm::vec3 computeLinearVelocityJacobian(const RobotJoint& joint, const RobotLink& link) {
+		// Currrently going to assume joints are revolute, the linear velocity contribution from this joint is v = w x r
+		glm::vec3 r = link.inertial.com_xyz - joint.origin_xyz; // vector from joint to link COM in joint 
+		glm::vec3 v = glm::cross(joint.axis, r); // linear velocity contribution from this joint's angular velocity
+		return v;
+	}
+
+	static glm::vec3 computeAngularVelocityJacobian(const RobotJoint& joint) {
+		return joint.axis; // angular velocity contribution from this joint's angular velocity
+	}
+
 	// Method to compute joint metrics for control
 	JointMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
 		JointMetrics m{};
@@ -229,8 +241,17 @@ namespace robots {
 		// Errors
 		m.err = m.thetaRef - theta;
 		m.err_d = m.omegaRef - omega;
-			
-		m.I_eff = computeJointAxisInertia(joint, link);
+		
+		// Link inertia tensor
+		m.I_link = computeLinkInertiaTensor(link);
+
+		// linear velocity jacobian
+		m.Jv = computeLinearVelocityJacobian(joint, link);
+		// angular velocity jacobian
+		m.Jw = computeAngularVelocityJacobian(joint);
+
+		// Effective inertia
+		m.I_eff = computeJointAxisInertia(joint, m.I_link);
 		if (!std::isfinite(m.I_eff) || m.I_eff < 1e-9) { m.I_eff = 1e-9; }
 
 		// Control parameters

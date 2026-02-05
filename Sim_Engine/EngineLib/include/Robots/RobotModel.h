@@ -30,7 +30,7 @@ namespace robots {
 	struct Inertial {
 		float mass = 0.0f;
 		glm::vec3 com_xyz{ 0,0,0 };
-		Inertia inertia{};
+		Inertia inertia{}; // 
 	};
 
 	struct CollisionShape {
@@ -182,6 +182,8 @@ namespace robots {
 		double c, mu;
 		double alpha;
 		double kp, kd, ki;
+		glm::mat3 I_link; // not a joint metric but convenient to store here
+		glm::vec3 Jv, Jw; // linear and angular Jacobian for this joint's child link com
 		bool sat_flag, traj_overspeed_flag;
 	};
 
