@@ -77,7 +77,7 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
+		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -117,6 +117,9 @@ namespace robots {
 
 		spawnFn _loadMeshReturn;
 
+		// Forward kinematics computation
+		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
+
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
@@ -125,11 +128,8 @@ namespace robots {
 		mathlib::VecX packRefState() const;
 		void unpackRefState(const mathlib::VecX& xr);
 
-		// Compute joint effective inertia
-		double computeJointAxisInertia(const RobotJoint& joint, Mat3 linkIntertia) const;
-
 		// Compute state derivatives
-		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
+		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff) const;
 
 		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);

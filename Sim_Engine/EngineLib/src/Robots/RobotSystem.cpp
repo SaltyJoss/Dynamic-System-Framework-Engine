@@ -29,7 +29,7 @@ namespace robots {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 
-	// --- TOGLM OVERLOADS ---
+	// --- 'toGlm' OVERLOADS ---
 
 	static glm::vec3 toGlm(const Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 	static glm::vec4 toGlm(const Vec4& v) { return glm::vec4(v.x(), v.y(), v.z(), v.w()); }
@@ -60,7 +60,6 @@ namespace robots {
 		return g;
 	}
 
-
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
@@ -83,16 +82,17 @@ namespace robots {
 		return angleRad;
 	}
 
-	// Method to apply a soft velocity barrier to joint torque
+	// Method to apply a soft velocity barrier to joint torque using a quadratic "wall" function (basically a softer version of a hard velocity limit)
 	static void applyOmegaBarrier(double& tau, double omega, double wMax, double I_eff) {
 		if (wMax <= 0.0) return;
 
+		// Check if we're in the "soft zone" near the velocity limit
 		const double absw = std::abs(omega);
 		const double wSoft = 0.90 * wMax;
 
 		if (absw <= wSoft) return;
 
-		// How deep into the "soft zone" are we? 0..1
+		// Check if we're above the hard limit (with some tolerance)
 		const double t = (absw - wSoft) / (wMax - wSoft);
 		const double T = 0.2; // time constant
 		const double wall = (I_eff / T) * (t * t) * (absw - wSoft); // [Nm]
@@ -114,19 +114,69 @@ namespace robots {
 		return M;
 	}
 
-	// Method to compute effective inertia about a joint axis
-	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, Mat3 I_link) const {
-		// Transform to world frame
-		Mat3 R = Mat3(joint.origin_q);
-		Mat3 I_world = R * I_link * R.transpose();
+	// Method to compute the transformation matrix for a joint motion given its axis and angle
+	static Pose jointMotionTransform(const Vec3& axis_joint, double theta) {
+		Pose T = Pose::Identity(); // homogeneous transformation matrix (4x4)
 
-		// Joint axis in world frame
-		Vec3 a = joint.axis.normalized();
+		Eigen::AngleAxisd aa(theta, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
+		T.block<3, 3>(0, 0) = aa.toRotationMatrix();		  // set upper-left 3x3 block to rotation matrix
+		
+		return T;
+	}
 
-		// Effective inertia
-		double I_eff = a.dot(I_world * a);
-		I_eff = std::max(I_eff, 1e-6); // avoid division by zero
-		return I_eff;
+	// Method to compute the full spatial velocity Jacobian column for a joint
+	static Vec6 computeJacobianColumn(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world) {
+		Vec3 joint_pos_world = T_world.block<3, 1>(0, 3); // position of joint in world frame
+		Mat3 R_world = T_world.block<3, 3>(0, 0);		  // rotation from joint frame to world frame
+
+		Vec3 world_com = R_world * link.inertial.com_xyz + joint_pos_world; // COM position in world frame
+		Vec3 world_axis = (R_world * joint.axis).normalized();				// joint axis in world frame
+
+		Vec3 r = world_com - joint_pos_world; // vector from joint to COM in world frame
+		Vec3 J_v = world_axis.cross(r);		  // [rad/s], linear velocity Jacobian  (3x1)
+		Vec3 J_w = world_axis;				  // [rad/s], angular velocity Jacobian (3x1)
+
+		// Store Jacobians in metrics
+		m.Jv = J_v;
+		m.Jw = J_w;
+
+		return Vec6(J_v.x(), J_v.y(), J_v.z(), J_w.x(), J_w.y(), J_w.z()); // [rad/s], spatial velocity Jacobian column (6x1)
+	}
+
+	// Method to compute the spatial inertia matrix for a link
+	static Mat6 computeSpatialInertiaMatrix(double mass, const Mat3& I) {
+		Mat6 M = Mat6::Zero(); // spacial inertia matrix (6x6)
+
+		// Upper-left 3x3 block is mass matrix, lower-right 3x3 block is inertia tensor, off-diagonal blocks are zero for point mass assumption
+		M.topLeftCorner<3, 3>() = mass * Mat3::Identity(); // mass matrix
+		M.bottomRightCorner<3, 3>() = I;				   // inertia tensor
+
+		return M; // [kg, kg*m^2]
+	}
+
+	// Method to compute the inertia matrix element for a joint
+	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world) {
+		const double mass = link.inertial.mass; // mass of the link, locally defined
+
+		// Transform inertia tensor to world frame
+		Mat3 R = T_world.block<3, 3>(0, 0); // rotation from joint frame to world frame
+		Mat3 I_local = computeLinkInertiaTensor(link); // inertia tensor in joint frame, locally defined
+		Mat3 I_world = R * I_local * R.transpose(); // inertia tensor in world frame
+
+		// Compute Jacobian column (6x1 vector: [Jv; Jw]) and spatial inertia matrix (6x6) for this link
+		Vec6 J_i = computeJacobianColumn(m, joint, link, T_world); // [rad/s]
+		Mat6 M_i = computeSpatialInertiaMatrix(mass, I_world);   // [kg, kg*m^2]
+
+		// Effective inertia contribution for this joint: M_ii = J_i^T * M_i * J_i, could also use .coeff(0) since it's a scalar
+		// REMINDER: see if .coeff(0) is faster than current method for 1x1 matrices
+		double M_ii = (J_i.transpose() * M_i * J_i); // [kg*m^2], [1x6] * [6x6] * [6x1] = [1x1] scalar 
+
+		return std::max(M_ii, 1e-6); // [kg*m^2], avoid zero inertia
+	}
+
+	// Method to compute the Coriolis/centrifugal torque for a joint
+	static double C(const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
+
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
@@ -226,6 +276,7 @@ namespace robots {
 		}
 	}
 
+	// Method to pack reference state vector (target angles and velocities) for control
 	mathlib::VecX RobotSystem::packRefState() const {
 		const size_t n = (int)_robot.joints.size();
 		mathlib::VecX x(2 * n);
@@ -239,6 +290,7 @@ namespace robots {
 		return x;
 	}
 
+	// Method to unpack reference state vector into robot joints
 	void RobotSystem::unpackRefState(const mathlib::VecX& x) {
 		const size_t n = (int)_robot.joints.size();
 		for (size_t i = 0; i < n; ++i) {
@@ -249,74 +301,47 @@ namespace robots {
 		}
 	}
 
-	// 3x6 Jacobian for linear velocity contribution of a revolute joint
-	static Vec3 computeLinearVelocityJacobian(const RobotJoint& joint, const RobotLink& link) {
-		Vec3 r = link.inertial.com_xyz - joint.origin_xyz;
-		Vec3 Jv = joint.axis.cross(r); // linear velocity Jacobian contribution from this joint
-		return Jv;
-	}
+	// Method to compute forward kinematics for all links given joint angles
+	std::vector<Pose> RobotSystem::computeForwardKinematics_fromState(const VecX& x) const {
+		const auto& joints = _robot.joints;
+		const auto& links = _robot.links;
+		const size_t n = (size_t)joints.size();
 
-	// 3x6 Jacobian for angular velocity contribution of a revolute joint
-	static Vec3 computeAngularVelocityJacobian(const RobotJoint& joint) {
-		Vec3 Jw = joint.axis; // angular velocity Jacobian contribution from this joint
-		return Jw;
-	}
+		std::vector<Pose> T_world;
+		T_world.reserve((size_t)links.size());
 
-	// Method to compute the Jacobian column for a joint (for inertia transformation)
-	static Vec6 computeLinkJacobian(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
-		m.Jv = computeLinearVelocityJacobian(joint, link);
-		m.Jw = computeAngularVelocityJacobian(joint);
+		Pose T = Pose::Identity(); // world -> base
+		T_world.push_back(T);	   // base link 
 
-		Vec3 Jv = m.Jv;
-		Vec3 Jw = m.Jw;
+		for (size_t i = 0; i < n; ++i) {
+			const auto& joint = joints[i];
 
-		Vec6 J = Vec6::Zero();
+			const double theta = x[i]; // joint angle from state vector
 
-		J << Jv,
-			 Jw;
-
-		return J;
+			Pose T_origin = Pose::Identity(); // transform from parent link to joint frame (fixed)
+			T_origin.block<3, 3>(0, 0) = joint.origin_q.toRotationMatrix(); // rotation from parent link frame to joint frame, derived from rpy in JSON
+			T_origin.block<3, 1>(0, 3) = joint.origin_xyz;					// translation from parent link to joint frame
 			
-	}
+			// Compute joint motion transform based on joint axis and angle
+			Pose T_motion = Pose::Identity();
+			if (joint.type == eJointType::REVOLUTE) {
+				T_motion = jointMotionTransform(joint.axis, theta); // rotation about joint axis
+			}
+			else if (joint.type == eJointType::PRISMATIC) {
+				T_motion.block<3, 1>(0, 3) = joint.axis.normalized() * theta; // translation along joint axis
+			}
 
-	// Method to compute the inertia matrix element for a joint
-	static double M(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
-		const double m_i = link.inertial.mass;
+			// compose transforms: parent -> joint -> motion -> child
+			T = T * T_origin * T_motion;
 
-		// Compute the Intertia tensor in world frame, and the Jacobian for this joint
-		const Mat3 I_link = computeLinkInertiaTensor(link);
-		const Vec3 J_v    = computeLinearVelocityJacobian(joint, link);
-		const Vec3 J_w    = computeAngularVelocityJacobian(joint);
-		const Mat3 R_i    = Mat3(joint.origin_q);
+			T_world.push_back(T); // link i+1 pose in world frame
+		}
 
-		// Store in metrics for potential use in control
-		m.I_link = I_link;
-		m.Jv = J_v;
-		m.Jw = J_w;
-		m.R = R_i;
-
-		// Tranposed Jacobian and Rotation
-		const Mat3 J_vT = m.Jv.transpose();
-		const Mat3 J_wT = m.Jw.transpose();
-		const Mat3 RT  =  m.R.transpose();
-		const Mat3 I_world = m.R * m.I_link * RT;
-
-		// Inertia matrix element for this joint
-		Mat3 M = (m_i * J_vT * J_v) + (J_wT * I_world * J_w);
-	}
-
-	// Method to compute the Coriolis/centrifugal torque for a joint
-	static double C(const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
-		return 0.0;
-	}
-
-	// Method to compute the gravity torque for a joint (not used for now)
-	static double G(const RobotJoint& joint, const RobotLink& link, double theta) {
-		return 0.0;
+		return T_world;
 	}
 
 	// Method to compute joint metrics for control
-	RobotMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
+	RobotMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
 		RobotMetrics m{};
 
 		// Constants
@@ -333,14 +358,14 @@ namespace robots {
 		m.alphaRef = alphaRef;
 
 		// Errors
-		m.err = m.thetaRef - theta;
+		m.err   = m.thetaRef - theta;
 		m.err_d = m.omegaRef - omega;
 
-		m.I_link = computeLinkInertiaTensor(link);
-
 		// Effective inertia
-		m.I_eff = computeJointAxisInertia(joint, m.I_link);
-		if (!std::isfinite(m.I_eff) || m.I_eff < 1e-9) { m.I_eff = 1e-9; }
+		m.I_eff = I_eff;
+
+		// Joint-Space Model
+		// M(q) = inertia matrix, C(q, qdot) = Coriolis/centrifugal, g(q) = gravity
 
 		// Control parameters
 		const double wn = (double)joint.wn_target;
@@ -428,11 +453,14 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
+	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(3 * n);
 
-		// For each joint
+		// Compute forward kinematics for current state to get link poses and Jacobians needed for dynamics
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x); // compute forward kinematics for current state
+
+		// Loop through each joint and compute derivatives
 		for (size_t i = 0; i < n; ++i) {
 			// Current states
 			const double theta = x[i];
@@ -449,7 +477,7 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, eta);
+			RobotMetrics m = computeJointMetrics(joint, link, I_eff[i], theta, omega, thetaRef, omegaRef, alphaRef, eta);
 
 			// Fill in derivatives
 			dx[i]		  = omega;	 // dtheta/dt = omega
@@ -473,14 +501,31 @@ namespace robots {
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(const control::TrajectoryManager& traj, double dt, double simTime) {
 		if (!_hasRobot) return;
-
+		const size_t n = _robot.joints.size();
 		_simTime = simTime;
 
-		// Pack current state
-		mathlib::VecX x = packState(); // current state vector
+		// FK needed for inertia
+		mathlib::VecX x = packState();
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
+
+		// Effective inertia cache
+		std::vector<double> I_eff(n, 0.0);
+
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				RobotMetrics tmp;
+				I_eff[i] += computeJointInertiaContribution(
+					tmp,
+					_robot.joints[i],
+					_robot.links[k],
+					T_world[k]
+				);
+			}
+			I_eff[i] = std::max(I_eff[i], 1e-6);
+		}
 
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn, I_eff); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		// Unpack new state
@@ -493,7 +538,7 @@ namespace robots {
 			enforceJointLimits(j);
 		}
 
-		for (size_t i = 0; i < (int)_robot.joints.size(); ++i) {
+		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = _robot.joints[i];
 			const auto& link  = _robot.links[i + 1];
 
@@ -507,7 +552,7 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, 0);
+			RobotMetrics m = computeJointMetrics(joint, link, I_eff[i], theta, omega, thetaRef, omegaRef, alphaRef, 0);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
 			std::string header = "simulation_" + _robot.name + "_" + IntName;

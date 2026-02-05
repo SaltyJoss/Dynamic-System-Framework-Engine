@@ -22,6 +22,7 @@
 namespace robots {
 	// --- Robot Model Kinematic Models ---
 	enum class eKinematicsModel { URDF, DH };
+	enum class eJointType { REVOLUTE, PRISMATIC };
 
 	// --- Robot Model Links ---
 
@@ -79,6 +80,9 @@ namespace robots {
 		std::string name = "";
 		std::string parent = "";
 		std::string child = "";
+
+		// URDF joint type
+		eJointType type = eJointType::REVOLUTE;
 
 		// NEW (in parent link local space)
 		Vec3 axisParent = Vec3(0.0, 0.0, 1.0);
@@ -160,20 +164,20 @@ namespace robots {
 	// Per-joint metrics
 	struct RobotMetrics {
 		// Joint metrics
-		double theta, omega, eta;
-		double thetaRef, omegaRef, alphaRef;
-		double err, err_d;
-		double I_eff;
-		double tau, tau_motor, tau_robot, tau_f;
-		double tau_barrier, tau_sat;
-		double wMax_hw, wMax_traj;
-		double traj_overspeed;
-		double c, mu, g;
-		double alpha;
-		double kp, kd, ki;
+		double theta{ 0.0 }, omega{ 0.0 }, eta{ 0.0 };
+		double thetaRef{ 0.0 }, omegaRef{ 0.0 }, alphaRef{ 0.0 };
+		double err{ 0.0 }, err_d{ 0.0 };
+		double I_eff{ 0.0 };
+		double tau{ 0.0 }, tau_motor{ 0.0 }, tau_robot{ 0.0 }, tau_f{ 0.0 };
+		double tau_barrier{ 0.0 }, tau_sat{ 0.0 };
+		double wMax_hw{ 0.0 }, wMax_traj{ 0.0 };
+		double traj_overspeed{ 0.0 };
+		double c{ 0.0 }, mu{ 0.0 }, g{ 0.0 };
+		double alpha{ 0.0 };
+		double kp{ 0.0 }, kd{ 0.0 }, ki{ 0.0 };
 		bool sat_flag, traj_overspeed_flag;
 		// link metrics
-		double mass;
+		double mass{ 0.0 }, M_ii{ 0.0 };
 		Mat3 I_link, I_world, R;
 		Vec3 Jv, Jw;
 		Vec3 com, v_com, omega_link;
