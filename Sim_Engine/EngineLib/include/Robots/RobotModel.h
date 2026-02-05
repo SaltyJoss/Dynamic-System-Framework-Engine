@@ -168,7 +168,8 @@ namespace robots {
 		double thetaRef{ 0.0 }, omegaRef{ 0.0 }, alphaRef{ 0.0 };
 		double err{ 0.0 }, err_d{ 0.0 };
 		double I_eff{ 0.0 };
-		double tau{ 0.0 }, tau_motor{ 0.0 }, tau_robot{ 0.0 }, tau_f{ 0.0 };
+		double tau{ 0.0 }, tau_control{ 0.0 }, tau_robot{ 0.0 };
+		double tau_damping{ 0.0 }, tau_friction{ 0.0 }, tau_coriolis{ 0.0 };
 		double tau_barrier{ 0.0 }, tau_sat{ 0.0 };
 		double wMax_hw{ 0.0 }, wMax_traj{ 0.0 };
 		double traj_overspeed{ 0.0 };

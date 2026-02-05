@@ -77,7 +77,7 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
+		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta, double tau_coriolis) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -119,6 +119,10 @@ namespace robots {
 
 		// Forward kinematics computation
 		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
+		// Compute the effective inertia for each joint based on the current state and robot configuration
+		void computeI_eff(const std::vector<double>& theta, std::vector<double>& I_eff_out) const;
+		// Compute the contribution of a link to the inertia of a joint based on the current state
+		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff);
 
 		// State packing and unpacking
         mathlib::VecX packState() const;
@@ -129,7 +133,7 @@ namespace robots {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Compute state derivatives
-		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff) const;
+		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff, const std::vector<double>& tau_coriolis) const;
 
 		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);

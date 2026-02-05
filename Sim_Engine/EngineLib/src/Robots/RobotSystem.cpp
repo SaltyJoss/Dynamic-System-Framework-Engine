@@ -174,11 +174,6 @@ namespace robots {
 		return std::max(M_ii, 1e-6); // [kg*m^2], avoid zero inertia
 	}
 
-	// Method to compute the Coriolis/centrifugal torque for a joint
-	static double C(const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
-
-	}
-
 	// --- ROBOT STATE INTEGRATION METHODS ---
 
 	// Method to create Object instances for each robot link
@@ -340,8 +335,76 @@ namespace robots {
 		return T_world;
 	}
 
+	void RobotSystem::computeI_eff(const std::vector<double>& theta, std::vector<double>& I_eff_out) const {
+		const size_t n = _robot.joints.size();
+		I_eff_out.assign(n, 0.0);
+
+		// Use existing state packing
+		mathlib::VecX x = packState();
+		for (size_t i = 0; i < n; ++i) {
+			x[i] = theta[i];  // overwrite positions
+		}
+
+		// Forward kinematics
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
+
+		// Accumulate inertia per joint
+		for (size_t i = 0; i < n; ++i) {
+
+			double I_eff_i = 0.0;
+			const RobotJoint& joint = _robot.joints[i];
+
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+
+				const RobotLink& link = _robot.links[k];
+
+				RobotMetrics m;
+				computeJacobianColumn(m, joint, link, T_world[k]);
+
+				// Translational contribution
+				I_eff_i += link.inertial.mass * m.Jv.squaredNorm();
+				// Rotational contribution (scalar inertia)
+				I_eff_i += link.inertial.inertia.izz * m.Jw.squaredNorm();
+			}
+
+			I_eff_out[i] = std::max(I_eff_i, 1e-6);
+		}
+	}
+
+	std::vector<double> RobotSystem::computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) {
+		const size_t n = (size_t)_robot.joints.size();
+		std::vector<double> tau_C(n, 0.0);
+
+		constexpr double eps = 1e-6;
+
+		for (size_t i = 0; i < n; ++i) {
+			double sum = 0.0;
+
+			for (size_t j = 0; j < n; ++j) {
+				// Compute Christoffel symbols (simplified for diagonal inertia)
+				std::vector<double> theta_pert = theta;
+				theta_pert[j] += eps;
+
+				// Compute perturbed inertia matrix diagonal element
+				std::vector<double> I_eff_pert = I_eff;
+				computeI_eff(theta_pert, I_eff_pert);
+
+				double dI_omega_j = (I_eff_pert[i] - I_eff[i]) / eps;
+				sum += dI_omega_j * omega[j];
+			}
+			// C_i = 0.5 * sum_jk (dI_ij/dtheta_k + dI_ik/dtheta_j - dI_jk/dtheta_i) * omega_j * omega_k, simplified to diagonal case
+			tau_C[i] = 0.5 * sum * omega[i]; // only consider terms where j=k=i for diagonal inertia			
+		}
+		return tau_C;
+	}
+
 	// Method to compute joint metrics for control
-	RobotMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
+	RobotMetrics RobotSystem::computeJointMetrics(
+		const RobotJoint& joint, const RobotLink& link, double I_eff, 
+		double theta, double omega, 
+		double thetaRef, double omegaRef, double alphaRef, 
+		double eta, double tau_coriolis
+	) const {
 		RobotMetrics m{};
 
 		// Constants
@@ -395,8 +458,7 @@ namespace robots {
 		tau_i = 0.0; // disable I-term for now (testing)
 
 		// Inverse dynamics control law (PD + feedforward)
-		double tau_motor = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * m.alphaRef; // control torque
-		m.tau_motor = tau_motor;
+		double tau_control = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * m.alphaRef; // control torque
 
 		// Passive dynamics
 		const double c = (double)joint.dynamics.damping;
@@ -407,17 +469,18 @@ namespace robots {
 		m.mu = mu;
 
 		// Friction model (viscous + Coulomb/Stribeck)
-		double tau_friction = 0.0;
-		tau_friction += c * omega; // viscous damping
-		tau_friction += mu * std::tanh(omega / v_eps); // Coulomb friction
-
-		m.tau_f = tau_friction;
-
-		// Gravity torque (to be added)
-		//double tau_g = 0.0; // zeroed
+		double tau_damping{ 0.0 }, tau_friction{ 0.0 };
+		tau_damping  = c * omega; // viscous damping
+		tau_friction = mu * std::tanh(omega / v_eps); // Coulomb friction
+		
+		// Cache torques in metrics
+		m.tau_control = tau_control;
+		m.tau_damping  = tau_damping;
+		m.tau_friction = tau_friction;
+		m.tau_coriolis = tau_coriolis;
 
 		// Net torque
-		m.tau = tau_motor - tau_friction; // net torque
+		m.tau = tau_control - tau_damping - tau_friction - tau_coriolis;
 
 		double tau_preSat = m.tau;
 
@@ -453,7 +516,7 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff) const {
+	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff, const std::vector<double>& tau_coriolis) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(3 * n);
 
@@ -477,7 +540,12 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(joint, link, I_eff[i], theta, omega, thetaRef, omegaRef, alphaRef, eta);
+			RobotMetrics m = computeJointMetrics(
+				joint, link, I_eff[i], 
+				theta, omega, 
+				thetaRef, omegaRef, alphaRef, 
+				eta, tau_coriolis[i]
+			);
 
 			// Fill in derivatives
 			dx[i]		  = omega;	 // dtheta/dt = omega
@@ -508,10 +576,15 @@ namespace robots {
 		mathlib::VecX x = packState();
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
-		// Effective inertia cache
+		// Caches for inertia and Coriolis
 		std::vector<double> I_eff(n, 0.0);
+		std::vector<double> q(n), qd(n);
 
+		// Compute effective inertia for each joint at current state
 		for (size_t i = 0; i < n; ++i) {
+			q[i] = _robot.joints[i].thetaRad;
+			qd[i] = _robot.joints[i].omegaRad_s;
+
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
 				RobotMetrics tmp;
 				I_eff[i] += computeJointInertiaContribution(
@@ -524,8 +597,11 @@ namespace robots {
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
 
+		// Compute Coriolis torques for current state
+		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
+
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn, I_eff); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn, I_eff, tau_coriolis); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		// Unpack new state
@@ -552,7 +628,12 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(joint, link, I_eff[i], theta, omega, thetaRef, omegaRef, alphaRef, 0);
+			RobotMetrics m = computeJointMetrics(
+				joint, link, I_eff[i], 
+				theta, omega, 
+				thetaRef, omegaRef, alphaRef, 
+				0, tau_coriolis[i]
+			);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
 			std::string header = "simulation_" + _robot.name + "_" + IntName;
@@ -572,11 +653,13 @@ namespace robots {
 					{"traj_overspeed", m.traj_overspeed},
 					{"maxEffort",	   (double)joint.limits.maxEffort},
 					// Torque values
-					{"torque",         m.tau},
-					{"torque_motor",   m.tau_motor},
-					{"torque_friction",m.tau_f},
-					{"torque_barrier", m.tau_barrier},
-					{"torque_sat",	   m.tau_sat},
+					{"torque",          m.tau},
+					{"torque_motor",    m.tau_control},
+					{"torque_damping",  m.tau_damping},
+					{"torque_friction", m.tau_friction},
+					{"torque_coriolis", m.tau_coriolis},
+					{"torque_barrier",  m.tau_barrier},
+					{"torque_sat",	    m.tau_sat},
 					// Dynamics values
 					{"damping",  m.c},
 					{"friction", m.mu},
