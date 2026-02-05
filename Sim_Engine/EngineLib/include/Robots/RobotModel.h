@@ -29,24 +29,24 @@ namespace robots {
 
 	struct Inertial {
 		float mass = 0.0f;
-		Vec3 com_xyz{ 0,0,0 };
+		Vec3 com_xyz{ 0.0,0.0,0.0 };
 		Inertia inertia{};
 	};
 
 	struct CollisionShape {
 		std::string type;
-		Vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+		Vec3 size{ 0.0,0.0,0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 
-		Vec3 origin_xyz{ 0,0,0 };
-		Vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0.0,0.0,0.0 };
+		Vec3 origin_rpy{ 0.0,0.0,0.0 };
 
 		std::string meshFile;	// Z1 provided STLs for collision meshes, dont use yet
 	};
 
 	struct Visual {
 		std::string meshFile;
-		Vec3 origin_xyz{ 0,0,0 };
-		Vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0.0,0.0,0.0 };
+		Vec3 origin_rpy{ 0.0,0.0,0.0 };
 	};
 
 	struct RobotLink {
@@ -54,9 +54,6 @@ namespace robots {
 		Visual visual{};
 		std::vector<CollisionShape> collisions;
 		Inertial inertial{};
-
-		// render-only correction (optional)
-		glm::mat4 dhToMeshFix = glm::mat4(1.0f);
 
 		scene::Object* attachedObject = nullptr;
 	};
@@ -84,12 +81,12 @@ namespace robots {
 		std::string child = "";
 
 		// NEW (in parent link local space)
-		Vec3 axisParent = Vec3(0, 0, 1);
-		Vec3 pivotParent = Vec3(0, 0, 0);
+		Vec3 axisParent = Vec3(0.0, 0.0, 1.0);
+		Vec3 pivotParent = Vec3(0.0, 0.0, 0.0);
 
 		// URDF joint frame (parent → joint)
-		Vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
-		Vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
+		Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
+		Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
 		Quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
@@ -118,8 +115,8 @@ namespace robots {
 		float zeta_target = 1.1f;  // damping ratio
 
 		// --- Precomputed transforms ---
-		Mat4 jointToChildRest = Mat4(1.0f);
-		Mat4 parentToJoint = Mat4(1.0f);
+		Mat4 jointToChildRest = Mat4::Identity();
+		Mat4 parentToJoint = Mat4::Identity();
 	};
 
 	// --- Robot Model ---
@@ -179,7 +176,7 @@ namespace robots {
 		double mass;
 		Mat3 I_link, I_world, R;
 		Vec3 Jv, Jw;
-		Vec3 com, v_com, omega;
+		Vec3 com, v_com, omega_link;
 	};
 
 }

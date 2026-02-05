@@ -29,6 +29,38 @@ namespace robots {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 
+	// --- TOGLM OVERLOADS ---
+
+	static glm::vec3 toGlm(const Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
+	static glm::vec4 toGlm(const Vec4& v) { return glm::vec4(v.x(), v.y(), v.z(), v.w()); }
+	static glm::quat toGlm(const Quat& q) {
+		return glm::quat(
+			static_cast<float>(q.w()),
+			static_cast<float>(q.x()),
+			static_cast<float>(q.y()),
+			static_cast<float>(q.z())
+		);
+	}
+	
+	// Converts a 3x3 Eigen matrix to a glm::mat3, taking into account the row-major to column-major conversion
+	static glm::mat3 toGlm(const Mat3& m) {
+		glm::mat3 g(1.0f);
+		for (int c = 0; c < 3; ++c)
+			for (int r = 0; r < 3; ++r)
+				g[c][r] = static_cast<float>(m(r, c));
+		return g;
+	}
+
+	// Converts a 4x4 Eigen matrix to a glm::mat4, taking into account the row-major to column-major conversion
+	static glm::mat4 toGlm(const Mat4& m) {
+		glm::mat4 g(1.0f);
+		for (int c = 0; c < 4; ++c)
+			for (int r = 0; r < 4; ++r)
+				g[c][r] = static_cast<float>(m(r, c));
+		return g;
+	}
+
+
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
@@ -71,12 +103,15 @@ namespace robots {
 
 	// Method to compute the inertia tensor of a robot link
 	static Mat3 computeLinkInertiaTensor(const RobotLink& link) {
-		const robots::Inertia& inertial = link.inertial.inertia;
-		return Mat3(
-			inertial.ixx, inertial.ixy, inertial.ixz,
-			inertial.ixy, inertial.iyy, inertial.iyz,
-			inertial.ixz, inertial.iyz, inertial.izz
-		);
+		const robots::Inertia& I = link.inertial.inertia;
+
+		// Construct the inertia tensor matrix
+		Mat3 M = Mat3::Zero();
+		M << I.ixx, I.ixy, I.ixz,
+			 I.ixy, I.iyy, I.iyz,
+			 I.ixz, I.iyz, I.izz;
+
+		return M;
 	}
 
 	// Method to compute effective inertia about a joint axis
@@ -105,7 +140,7 @@ namespace robots {
 			scene::Object* obj = objs[0];
 
 			obj->category = scene::ObjectCategory::RobotLink;
-			obj->transform.scale = Vec3(_robot.scale);
+			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
@@ -228,14 +263,20 @@ namespace robots {
 	}
 
 	// Method to compute the Jacobian column for a joint (for inertia transformation)
-	static Mat3 computeLinkJacobian(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
+	static Vec6 computeLinkJacobian(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
 		m.Jv = computeLinearVelocityJacobian(joint, link);
 		m.Jw = computeAngularVelocityJacobian(joint);
 
-		Mat3 Jv = m.Jv;
-		Mat3 Jw = m.Jw;
+		Vec3 Jv = m.Jv;
+		Vec3 Jw = m.Jw;
 
-		return Mat3(Jv[0], Jv[1], Jv[2], Jw[0], Jw[1], Jw[2]);
+		Vec6 J = Vec6::Zero();
+
+		J << Jv,
+			 Jw;
+
+		return J;
+			
 	}
 
 	// Method to compute the inertia matrix element for a joint
@@ -245,7 +286,7 @@ namespace robots {
 		m.R = Mat3(joint.origin_q);
 
 		// Transpose Jacobian and rotation for inertia transformation
-		Mat3 J = computeLinkJacobian(m, joint, link);
+		Vec6 J = computeLinkJacobian(m, joint, link);
 	}
 
 	// Method to compute the Coriolis/centrifugal torque for a joint
@@ -278,6 +319,8 @@ namespace robots {
 		// Errors
 		m.err = m.thetaRef - theta;
 		m.err_d = m.omegaRef - omega;
+
+		m.I_link = computeLinkInertiaTensor(link);
 
 		// Effective inertia
 		m.I_eff = computeJointAxisInertia(joint, m.I_link);
@@ -566,9 +609,9 @@ namespace robots {
 		_hasRobot = true;
 		_loadedName = name;
 
-		_robotRootHome = Mat4(1.0f);
-		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), Vec3(1, 0, 0));
-		_robotRootHome = glm::translate(_robotRootHome, Vec3(0.0f, 0.0f, 0.0f));
+		_robotRootHome = glm::mat4(1.0f);
+		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+		_robotRootHome = glm::translate(_robotRootHome, glm::vec3(0.0f, 0.0f, 0.0f));
 		_robotRootPose = _robotRootHome;
 
 		_robotQHome = _robot.makeJointVector();
@@ -649,7 +692,7 @@ namespace robots {
 
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
-		std::vector<Mat4> world(_robot.links.size(), Mat4(1.0f));
+		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
 
 		// Find root link
 		const std::string rootName = findRootLink();
@@ -690,10 +733,15 @@ namespace robots {
 				if (itC == _linkIndex.end()) { continue; }
 				int cIdx = itC->second;
 
-				Mat4 T = Eigen::Affine3f(Eigen::Translation3f(j.origin_xyz) * Quat(j.origin_q)).matrix(); // joint origin transform
-				Vec3 axisWrtParent = Vec3(Quat(j.origin_q) * j.axis).normalized();
-				Mat4 Rq = Eigen::Affine3f(Eigen::AngleAxisf(j.thetaRad, axisWrtParent)).matrix();
-				world[cIdx] = world[pIdx] * T * Rq;
+				Vec4 axis = Vec4(j.axis.x(), j.axis.y(), j.axis.z(), 0.0);
+
+				glm::mat4 T = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
+				glm::mat4 R0 = glm::mat4_cast(toGlm(j.origin_q));
+				glm::vec3 axis_joint = glm::normalize(toGlm(j.axis));
+				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), j.thetaRad, axis_joint);
+
+				// Apply joint rotation in JOINT frame
+				world[cIdx] = world[pIdx] * T * R0 * Rq;
 
 				st.push(j.child);
 			}
@@ -926,18 +974,18 @@ namespace robots {
 	}
 
 	// Method to set the robot root pose in world coordinates
-	void RobotSystem::setRobotRootPose(const Vec3& pos, const Quat& rot) {
-		Mat4 T = glm::translate(Mat4(1.0f), pos);
-		Mat4 R = glm::mat4_cast(rot);
-		Mat4 Align = glm::rotate(Mat4(1.0f), glm::radians(-90.0f), Vec3(1, 0, 0));
+	void RobotSystem::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm ::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
 		_robotRootPose = (T * R) * Align;
 	}
 
 	// Method to set the robot root home pose in world coordinates
-	void RobotSystem::setRobotRootHome(const Vec3& pos, const Quat& rot) {
-		Mat4 T = glm::translate(Mat4(1.0f), pos);
-		Mat4 R = glm::mat4_cast(rot);
-		Mat4 Align = glm::rotate(Mat4(1.0f), glm::radians(-90.0f), Vec3(1, 0, 0));
+	void RobotSystem::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 R = glm::mat4_cast(rot);
+		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
 		_robotRootPose = (T * R) * Align;
 		_robotRootPose = _robotRootHome;
 	}

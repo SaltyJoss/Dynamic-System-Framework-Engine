@@ -94,8 +94,8 @@ namespace robots {
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
-        void setRobotRootPose(const Vec3& pos, const Quat& rot);
-        void setRobotRootHome(const Vec3& pos, const Quat& rot);
+        void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
+		void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
 		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
 

@@ -22,18 +22,18 @@
 namespace physics {
 	// public struct for physical states
 	struct ENGINE_API PhysicsState {
-		Quat q; // Orientation as quaternion
-		Vec3 linearVelocity;
-		Vec3 angularVelocity;
+		Quat q = Quat::Identity();			 // default to no rotation
+		Vec3 linearVelocity = Vec3::Zero();  // default to no movement
+		Vec3 angularVelocity = Vec3::Zero(); // default to no rotation
 
 		double gravity = 0.0; // default to zero-g
-		double mass = 1.0; // default to 1kg
+		double mass = 1.0;	  // default to 1kg
 		double damping = 0.0; // default to no damping
 
-		Mat3 inertia;
-		Vec3 forces;
-		Vec3 position;
-		Vec3 torques;
+		Mat3 inertia = Mat3::Identity(); // default to identity inertia tensor
+		Vec3 forces = Vec3::Zero();		 // default to no forces
+		Vec3 position = Vec3::Zero();	 // default to origin
+		Vec3 torques = Vec3::Zero();	 // default to no torques
 	};
 }
 

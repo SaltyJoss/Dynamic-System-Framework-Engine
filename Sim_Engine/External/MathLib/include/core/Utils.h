@@ -9,8 +9,40 @@ using namespace mathlib;
 using namespace constants;
 
 namespace mathlib {
-	// Convert std::array to Eigen::Vector3d
-	Vec3 toVec3(const std::array<double, 3>& arr) { return Vec3(arr[0], arr[1], arr[2]); }
+	// convert any non-eigen vector to Vec3 (if it has 3 elements)
+	template <typename T>
+	Vec3 toVec3(const T& vec) {
+		static_assert(std::tuple_size<T>::value == 3, "Input vector must have exactly 3 elements");
+		return Vec3(vec[0], vec[1], vec[2]);
+	}
+
+	// convert any non-eigen vector to Vec4 (if it has 4 elements)
+	template <typename T>
+	Vec4 toVec4(const T& vec) {
+		static_assert(std::tuple_size<T>::value == 4, "Input vector must have exactly 4 elements");
+		return Vec4(vec[0], vec[1], vec[2], vec[3]);
+	}
+
+	// Convert any non-eigen matrix to Mat3 (if it has 3x3 elements)
+	template <typename T>
+	Mat3 toMat3(const T& mat) {
+		static_assert(std::tuple_size<T>::value == 3 && std::tuple_size<typename T::value_type>::value == 3, "Input matrix must be 3x3");
+		return Mat3(mat[0][0], mat[0][1], mat[0][2],
+					mat[1][0], mat[1][1], mat[1][2],
+					mat[2][0], mat[2][1], mat[2][2]
+		);
+	}
+
+	// convert any non-eigen matrix to Mat4 (if it has 4x4 elements)
+	template <typename T>
+	Mat4 toMat4(const T& mat) {
+		static_assert(std::tuple_size<T>::value == 4 && std::tuple_size<typename T::value_type>::value == 4, "Input matrix must be 4x4");
+		return Mat4(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
+					mat[1][0], mat[1][1], mat[1][2], mat[1][3],
+					mat[2][0], mat[2][1], mat[2][2], mat[2][3],
+					mat[3][0], mat[3][1], mat[3][2], mat[3][3]
+		);
+	}
 
 	// Convert degrees to radians
 	double deg2rad(double degrees) { return degrees * (PI_d / 180.0); }
