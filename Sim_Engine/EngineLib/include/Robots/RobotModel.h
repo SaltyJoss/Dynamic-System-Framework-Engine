@@ -85,9 +85,9 @@ namespace robots {
 		Vec3 pivotParent = Vec3(0.0, 0.0, 0.0);
 
 		// URDF joint frame (parent → joint)
-		Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
-		Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
-		Quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
+		Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
+		Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
+		Quat origin_q{ 1,0,0,0 };         // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
 		Vec3 axis{ 0.0f, 0.0f, 1.0f };

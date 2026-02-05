@@ -251,7 +251,7 @@ namespace robots {
 
 	// 3x6 Jacobian for linear velocity contribution of a revolute joint
 	static Vec3 computeLinearVelocityJacobian(const RobotJoint& joint, const RobotLink& link) {
-		Vec3 r = link.inertial.com_xyz - joint.origin_xyz; // vector from joint to link COM in world frame
+		Vec3 r = link.inertial.com_xyz - joint.origin_xyz;
 		Vec3 Jv = joint.axis.cross(r); // linear velocity Jacobian contribution from this joint
 		return Jv;
 	}
@@ -280,13 +280,29 @@ namespace robots {
 	}
 
 	// Method to compute the inertia matrix element for a joint
-	static double M(RobotMetrics m, const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
-		// Compute inertia tensor for the link
-		m.I_link = computeLinkInertiaTensor(link);
-		m.R = Mat3(joint.origin_q);
+	static double M(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
+		const double m_i = link.inertial.mass;
 
-		// Transpose Jacobian and rotation for inertia transformation
-		Vec6 J = computeLinkJacobian(m, joint, link);
+		// Compute the Intertia tensor in world frame, and the Jacobian for this joint
+		const Mat3 I_link = computeLinkInertiaTensor(link);
+		const Vec3 J_v    = computeLinearVelocityJacobian(joint, link);
+		const Vec3 J_w    = computeAngularVelocityJacobian(joint);
+		const Mat3 R_i    = Mat3(joint.origin_q);
+
+		// Store in metrics for potential use in control
+		m.I_link = I_link;
+		m.Jv = J_v;
+		m.Jw = J_w;
+		m.R = R_i;
+
+		// Tranposed Jacobian and Rotation
+		const Mat3 J_vT = m.Jv.transpose();
+		const Mat3 J_wT = m.Jw.transpose();
+		const Mat3 RT  =  m.R.transpose();
+		const Mat3 I_world = m.R * m.I_link * RT;
+
+		// Inertia matrix element for this joint
+		Mat3 M = (m_i * J_vT * J_v) + (J_wT * I_world * J_w);
 	}
 
 	// Method to compute the Coriolis/centrifugal torque for a joint
