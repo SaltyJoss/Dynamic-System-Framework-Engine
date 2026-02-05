@@ -29,24 +29,24 @@ namespace robots {
 
 	struct Inertial {
 		float mass = 0.0f;
-		glm::vec3 com_xyz{ 0,0,0 };
-		Inertia inertia{}; // 
+		Vec3 com_xyz{ 0,0,0 };
+		Inertia inertia{};
 	};
 
 	struct CollisionShape {
 		std::string type;
-		glm::vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+		Vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 
-		glm::vec3 origin_xyz{ 0,0,0 };
-		glm::vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0,0,0 };
+		Vec3 origin_rpy{ 0,0,0 };
 
 		std::string meshFile;	// Z1 provided STLs for collision meshes, dont use yet
 	};
 
 	struct Visual {
 		std::string meshFile;
-		glm::vec3 origin_xyz{ 0,0,0 };
-		glm::vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0,0,0 };
+		Vec3 origin_rpy{ 0,0,0 };
 	};
 
 	struct RobotLink {
@@ -84,16 +84,16 @@ namespace robots {
 		std::string child = "";
 
 		// NEW (in parent link local space)
-		glm::vec3 axisParent = glm::vec3(0, 0, 1);
-		glm::vec3 pivotParent = glm::vec3(0, 0, 0);
+		Vec3 axisParent = Vec3(0, 0, 1);
+		Vec3 pivotParent = Vec3(0, 0, 0);
 
 		// URDF joint frame (parent → joint)
-		glm::vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
-		glm::vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
-		glm::quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
+		Vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
+		Vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
+		Quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
-		glm::vec3 axis{ 0.0f, 0.0f, 1.0f };
+		Vec3 axis{ 0.0f, 0.0f, 1.0f };
 
 		// --- Limits ---
 		JointLimit limits;
@@ -118,8 +118,8 @@ namespace robots {
 		float zeta_target = 1.1f;  // damping ratio
 
 		// --- Precomputed transforms ---
-		glm::mat4 jointToChildRest = glm::mat4(1.0f);
-		glm::mat4 parentToJoint = glm::mat4(1.0f);
+		Mat4 jointToChildRest = Mat4(1.0f);
+		Mat4 parentToJoint = Mat4(1.0f);
 	};
 
 	// --- Robot Model ---
@@ -158,33 +158,28 @@ namespace robots {
 		}
 	};
 
-	// --- Robot Model Metrics ---
-	
-	// Overall robot metrics
-	struct RobotMetrics {
-		double time;
-		double energy;
-		double power;
-		double linearMomentum[3];
-		double angularMomentum[3];
-	};
+	// --- Robot Metrics ---
 
 	// Per-joint metrics
-	struct JointMetrics {
+	struct RobotMetrics {
+		// Joint metrics
 		double theta, omega, eta;
 		double thetaRef, omegaRef, alphaRef;
 		double err, err_d;
 		double I_eff;
-		double tau, tau_motor, tau_friction;
+		double tau, tau_motor, tau_robot, tau_f;
 		double tau_barrier, tau_sat;
 		double wMax_hw, wMax_traj;
 		double traj_overspeed;
-		double c, mu;
+		double c, mu, g;
 		double alpha;
 		double kp, kd, ki;
-		glm::mat3 I_link; // not a joint metric but convenient to store here
-		glm::vec3 Jv, Jw; // linear and angular Jacobian for this joint's child link com
 		bool sat_flag, traj_overspeed_flag;
+		// link metrics
+		double mass;
+		Mat3 I_link, I_world, R;
+		Vec3 Jv, Jw;
+		Vec3 com, v_com, omega;
 	};
 
 }

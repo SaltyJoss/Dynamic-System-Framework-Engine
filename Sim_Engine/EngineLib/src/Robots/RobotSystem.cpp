@@ -70,9 +70,9 @@ namespace robots {
 	}
 
 	// Method to compute the inertia tensor of a robot link
-	static glm::mat3 computeLinkInertiaTensor(const RobotLink& link) {
+	static Mat3 computeLinkInertiaTensor(const RobotLink& link) {
 		const robots::Inertia& inertial = link.inertial.inertia;
-		return glm::mat3(
+		return Mat3(
 			inertial.ixx, inertial.ixy, inertial.ixz,
 			inertial.ixy, inertial.iyy, inertial.iyz,
 			inertial.ixz, inertial.iyz, inertial.izz
@@ -80,16 +80,16 @@ namespace robots {
 	}
 
 	// Method to compute effective inertia about a joint axis
-	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, glm::mat3 I_link) const {
+	double RobotSystem::computeJointAxisInertia(const RobotJoint& joint, Mat3 I_link) const {
 		// Transform to world frame
-		glm::mat3 R = glm::mat3(glm::mat3_cast(joint.origin_q));
-		glm::mat3 I_world = R * I_link * glm::transpose(R);
+		Mat3 R = Mat3(joint.origin_q);
+		Mat3 I_world = R * I_link * R.transpose();
 
 		// Joint axis in world frame
-		glm::vec3 a = glm::normalize(joint.axis);
+		Vec3 a = joint.axis.normalized();
 
 		// Effective inertia
-		double I_eff = glm::dot(a, I_world * a);
+		double I_eff = a.dot(I_world * a);
 		I_eff = std::max(I_eff, 1e-6); // avoid division by zero
 		return I_eff;
 	}
@@ -105,7 +105,7 @@ namespace robots {
 			scene::Object* obj = objs[0];
 
 			obj->category = scene::ObjectCategory::RobotLink;
-			obj->transform.scale = glm::vec3(_robot.scale);
+			obj->transform.scale = Vec3(_robot.scale);
 			link.attachedObject = obj;
 
 			LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
@@ -214,20 +214,57 @@ namespace robots {
 		}
 	}
 
-	static glm::vec3 computeLinearVelocityJacobian(const RobotJoint& joint, const RobotLink& link) {
-		// Currrently going to assume joints are revolute, the linear velocity contribution from this joint is v = w x r
-		glm::vec3 r = link.inertial.com_xyz - joint.origin_xyz; // vector from joint to link COM in joint 
-		glm::vec3 v = glm::cross(joint.axis, r); // linear velocity contribution from this joint's angular velocity
-		return v;
+	// 3x6 Jacobian for linear velocity contribution of a revolute joint
+	static Vec3 computeLinearVelocityJacobian(const RobotJoint& joint, const RobotLink& link) {
+		Vec3 r = link.inertial.com_xyz - joint.origin_xyz; // vector from joint to link COM in world frame
+		Vec3 Jv = joint.axis.cross(r); // linear velocity Jacobian contribution from this joint
+		return Jv;
 	}
 
-	static glm::vec3 computeAngularVelocityJacobian(const RobotJoint& joint) {
-		return joint.axis; // angular velocity contribution from this joint's angular velocity
+	// 3x6 Jacobian for angular velocity contribution of a revolute joint
+	static Vec3 computeAngularVelocityJacobian(const RobotJoint& joint) {
+		Vec3 Jw = joint.axis; // angular velocity Jacobian contribution from this joint
+		return Jw;
+	}
+
+	// Method to compute the Jacobian column for a joint (for inertia transformation)
+	static Mat3 computeLinkJacobian(RobotMetrics m, const RobotJoint& joint, const RobotLink& link) {
+		m.Jv = computeLinearVelocityJacobian(joint, link);
+		m.Jw = computeAngularVelocityJacobian(joint);
+
+		Mat3 Jv = m.Jv;
+		Mat3 Jw = m.Jw;
+
+		return Mat3(Jv[0], Jv[1], Jv[2], Jw[0], Jw[1], Jw[2]);
+	}
+
+	// Method to compute the inertia matrix element for a joint
+	static double M(RobotMetrics m, const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
+		// Compute inertia tensor for the link
+		m.I_link = computeLinkInertiaTensor(link);
+		m.R = Mat3(joint.origin_q);
+
+		// Transpose Jacobian and rotation for inertia transformation
+		Mat3 J = computeLinkJacobian(m, joint, link);
+	}
+
+	// Method to compute the Coriolis/centrifugal torque for a joint
+	static double C(const RobotJoint& joint, const RobotLink& link, double theta, double omega) {
+		return 0.0;
+	}
+
+	// Method to compute the gravity torque for a joint (not used for now)
+	static double G(const RobotJoint& joint, const RobotLink& link, double theta) {
+		return 0.0;
 	}
 
 	// Method to compute joint metrics for control
-	JointMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
-		JointMetrics m{};
+	RobotMetrics RobotSystem::computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const {
+		RobotMetrics m{};
+
+		// Constants
+		m.mass = link.inertial.mass;
+		m.g = _gravity; // 0 for now
 
 		// Current states
 		m.theta = theta;
@@ -241,14 +278,6 @@ namespace robots {
 		// Errors
 		m.err = m.thetaRef - theta;
 		m.err_d = m.omegaRef - omega;
-		
-		// Link inertia tensor
-		m.I_link = computeLinkInertiaTensor(link);
-
-		// linear velocity jacobian
-		m.Jv = computeLinearVelocityJacobian(joint, link);
-		// angular velocity jacobian
-		m.Jw = computeAngularVelocityJacobian(joint);
 
 		// Effective inertia
 		m.I_eff = computeJointAxisInertia(joint, m.I_link);
@@ -298,7 +327,7 @@ namespace robots {
 		tau_friction += c * omega; // viscous damping
 		tau_friction += mu * std::tanh(omega / v_eps); // Coulomb friction
 
-		m.tau_friction = tau_friction;
+		m.tau_f = tau_friction;
 
 		// Gravity torque (to be added)
 		//double tau_g = 0.0; // zeroed
@@ -361,7 +390,7 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			JointMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, eta);
+			RobotMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, eta);
 
 			// Fill in derivatives
 			dx[i]		  = omega;	 // dtheta/dt = omega
@@ -419,7 +448,7 @@ namespace robots {
 			const double alphaRef = (double)joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			JointMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, 0);
+			RobotMetrics m = computeJointMetrics(joint, link, theta, omega, thetaRef, omegaRef, alphaRef, 0);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
 			std::string header = "simulation_" + _robot.name + "_" + IntName;
@@ -435,13 +464,13 @@ namespace robots {
 					{"minAngle",	   (double)joint.limits.minAngle},
 					{"maxAngle",	   (double)joint.limits.maxAngle},
 					{"wMax_hw",		   m.wMax_hw},
-					{ "wMax_traj",	   m.wMax_traj},
+					{"wMax_traj",	   m.wMax_traj},
 					{"traj_overspeed", m.traj_overspeed},
 					{"maxEffort",	   (double)joint.limits.maxEffort},
 					// Torque values
 					{"torque",         m.tau},
 					{"torque_motor",   m.tau_motor},
-					{"torque_friction",m.tau_friction},
+					{"torque_friction",m.tau_f},
 					{"torque_barrier", m.tau_barrier},
 					{"torque_sat",	   m.tau_sat},
 					// Dynamics values
@@ -537,9 +566,9 @@ namespace robots {
 		_hasRobot = true;
 		_loadedName = name;
 
-		_robotRootHome = glm::mat4(1.0f);
-		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-		_robotRootHome = glm::translate(_robotRootHome, glm::vec3(0.0f, 0.0f, 0.0f));
+		_robotRootHome = Mat4(1.0f);
+		_robotRootHome = glm::rotate(_robotRootHome, glm::radians(-90.0f), Vec3(1, 0, 0));
+		_robotRootHome = glm::translate(_robotRootHome, Vec3(0.0f, 0.0f, 0.0f));
 		_robotRootPose = _robotRootHome;
 
 		_robotQHome = _robot.makeJointVector();
@@ -620,7 +649,7 @@ namespace robots {
 
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
-		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+		std::vector<Mat4> world(_robot.links.size(), Mat4(1.0f));
 
 		// Find root link
 		const std::string rootName = findRootLink();
@@ -661,11 +690,10 @@ namespace robots {
 				if (itC == _linkIndex.end()) { continue; }
 				int cIdx = itC->second;
 
-				glm::mat4 T = glm::translate(glm::mat4(1.0f), j.origin_xyz);
-				glm::mat4 R0 = glm::mat4_cast(j.origin_q);
-				glm::vec3 axisWrtParent = glm::normalize(glm::vec3(R0 * glm::vec4(j.axis, 0.0f)));
-				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), j.thetaRad, axisWrtParent);
-				world[cIdx] = world[pIdx] * T * R0 * Rq;
+				Mat4 T = Eigen::Affine3f(Eigen::Translation3f(j.origin_xyz) * Quat(j.origin_q)).matrix(); // joint origin transform
+				Vec3 axisWrtParent = Vec3(Quat(j.origin_q) * j.axis).normalized();
+				Mat4 Rq = Eigen::Affine3f(Eigen::AngleAxisf(j.thetaRad, axisWrtParent)).matrix();
+				world[cIdx] = world[pIdx] * T * Rq;
 
 				st.push(j.child);
 			}
@@ -898,18 +926,18 @@ namespace robots {
 	}
 
 	// Method to set the robot root pose in world coordinates
-	void RobotSystem::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
-		glm::mat4 R = glm::mat4_cast(rot);
-		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+	void RobotSystem::setRobotRootPose(const Vec3& pos, const Quat& rot) {
+		Mat4 T = glm::translate(Mat4(1.0f), pos);
+		Mat4 R = glm::mat4_cast(rot);
+		Mat4 Align = glm::rotate(Mat4(1.0f), glm::radians(-90.0f), Vec3(1, 0, 0));
 		_robotRootPose = (T * R) * Align;
 	}
 
 	// Method to set the robot root home pose in world coordinates
-	void RobotSystem::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
-		glm::mat4 R = glm::mat4_cast(rot);
-		glm::mat4 Align = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1, 0, 0));
+	void RobotSystem::setRobotRootHome(const Vec3& pos, const Quat& rot) {
+		Mat4 T = glm::translate(Mat4(1.0f), pos);
+		Mat4 R = glm::mat4_cast(rot);
+		Mat4 Align = glm::rotate(Mat4(1.0f), glm::radians(-90.0f), Vec3(1, 0, 0));
 		_robotRootPose = (T * R) * Align;
 		_robotRootPose = _robotRootHome;
 	}

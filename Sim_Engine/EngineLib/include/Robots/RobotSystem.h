@@ -77,7 +77,7 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
+		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -94,8 +94,8 @@ namespace robots {
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
-        void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
-        void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+        void setRobotRootPose(const Vec3& pos, const Quat& rot);
+        void setRobotRootHome(const Vec3& pos, const Quat& rot);
 
 		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
 
@@ -126,7 +126,7 @@ namespace robots {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Compute joint effective inertia
-		double computeJointAxisInertia(const RobotJoint& joint, glm::mat3 linkIntertia) const;
+		double computeJointAxisInertia(const RobotJoint& joint, Mat3 linkIntertia) const;
 
 		// Compute state derivatives
 		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;

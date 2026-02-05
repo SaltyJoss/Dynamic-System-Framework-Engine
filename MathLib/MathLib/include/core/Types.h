@@ -1,4 +1,3 @@
-#pragma message("Generating Types.h")
 #pragma once
 
 #include "MathLibAPI.h"
@@ -21,6 +20,7 @@ namespace mathlib {
 	using MatX = Eigen::MatrixXd;
 
 	using Pose = Eigen::Matrix4d;		// A 4x4 transformation matrix that combines rotation and translation and represents the pose of an object in 3D space
-	using Quat = Eigen::Quaterniond;	// A quaternion representing rotation in 3D space, composed of one real part and three imaginary parts (w, x, y, z)
+	using Quat = Eigen::Quaterniond;	// A quaternion representing rotation in 3D space, composed of one real part and three imaginary parts (x, y, z, w)
+	using Quatf = Eigen::Quaternionf;	// A quaternion with single-precision floating-point coefficients, used for representing rotations in 3D space with less memory usage than double-precision quaternions
 
-} // namespace mathlib
+}
