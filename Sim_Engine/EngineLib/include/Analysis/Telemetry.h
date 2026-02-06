@@ -29,7 +29,6 @@ namespace diagnostics {
 		float damping = 0.0f;		 // Joint damping coefficient  (kg·m²/s)
 		float friction = 0.0f;		 // Joint friction coefficient (Coulomb friction - N·m)
 		float effort = 0.0f;		 // Normalized effort (0 to 1)
-		float I_eff = 0.0f;			 // Joint effective inertia (kg·m²)
 
 		// Reference data
 		float thetaRefRad = 0.0f;	 // Reference joint angle in radians

@@ -22,6 +22,7 @@
 namespace robots {
 	// --- Robot Model Kinematic Models ---
 	enum class eKinematicsModel { URDF, DH };
+	enum class eJointType { REVOLUTE, PRISMATIC };
 
 	// --- Robot Model Links ---
 
@@ -29,24 +30,24 @@ namespace robots {
 
 	struct Inertial {
 		float mass = 0.0f;
-		glm::vec3 com_xyz{ 0,0,0 };
+		Vec3 com_xyz{ 0.0,0.0,0.0 };
 		Inertia inertia{};
 	};
 
 	struct CollisionShape {
 		std::string type;
-		glm::vec3 size{ 0,0,0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+		Vec3 size{ 0.0,0.0,0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 
-		glm::vec3 origin_xyz{ 0,0,0 };
-		glm::vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0.0,0.0,0.0 };
+		Vec3 origin_rpy{ 0.0,0.0,0.0 };
 
 		std::string meshFile;	// Z1 provided STLs for collision meshes, dont use yet
 	};
 
 	struct Visual {
 		std::string meshFile;
-		glm::vec3 origin_xyz{ 0,0,0 };
-		glm::vec3 origin_rpy{ 0,0,0 };
+		Vec3 origin_xyz{ 0.0,0.0,0.0 };
+		Vec3 origin_rpy{ 0.0,0.0,0.0 };
 	};
 
 	struct RobotLink {
@@ -54,9 +55,6 @@ namespace robots {
 		Visual visual{};
 		std::vector<CollisionShape> collisions;
 		Inertial inertial{};
-
-		// render-only correction (optional)
-		glm::mat4 dhToMeshFix = glm::mat4(1.0f);
 
 		scene::Object* attachedObject = nullptr;
 	};
@@ -83,17 +81,20 @@ namespace robots {
 		std::string parent = "";
 		std::string child = "";
 
+		// URDF joint type
+		eJointType type = eJointType::REVOLUTE;
+
 		// NEW (in parent link local space)
-		glm::vec3 axisParent = glm::vec3(0, 0, 1);
-		glm::vec3 pivotParent = glm::vec3(0, 0, 0);
+		Vec3 axisParent = Vec3(0.0, 0.0, 1.0);
+		Vec3 pivotParent = Vec3(0.0, 0.0, 0.0);
 
 		// URDF joint frame (parent → joint)
-		glm::vec3 origin_xyz{ 0.0f, 0.0f, 0.0f };
-		glm::vec3 origin_rpy{ 0.0f, 0.0f, 0.0f };
-		glm::quat origin_q{ 1,0,0,0 }; // derived from rpy_deg in JSON
+		Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
+		Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
+		Quat origin_q{ 1,0,0,0 };         // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
-		glm::vec3 axis{ 0.0f, 0.0f, 1.0f };
+		Vec3 axis{ 0.0f, 0.0f, 1.0f };
 
 		// --- Limits ---
 		JointLimit limits;
@@ -118,8 +119,8 @@ namespace robots {
 		float zeta_target = 1.1f;  // damping ratio
 
 		// --- Precomputed transforms ---
-		glm::mat4 jointToChildRest = glm::mat4(1.0f);
-		glm::mat4 parentToJoint = glm::mat4(1.0f);
+		Mat4 jointToChildRest = Mat4::Identity();
+		Mat4 parentToJoint = Mat4::Identity();
 	};
 
 	// --- Robot Model ---
@@ -158,31 +159,29 @@ namespace robots {
 		}
 	};
 
-	// --- Robot Model Metrics ---
-	
-	// Overall robot metrics
-	struct RobotMetrics {
-		double time;
-		double energy;
-		double power;
-		double linearMomentum[3];
-		double angularMomentum[3];
-	};
+	// --- Robot Metrics ---
 
 	// Per-joint metrics
-	struct JointMetrics {
-		double theta, omega, eta;
-		double thetaRef, omegaRef, alphaRef;
-		double err, err_d;
-		double I_eff;
-		double tau, tau_motor, tau_friction;
-		double tau_barrier, tau_sat;
-		double wMax_hw, wMax_traj;
-		double traj_overspeed;
-		double c, mu;
-		double alpha;
-		double kp, kd, ki;
+	struct RobotMetrics {
+		// Joint metrics
+		double theta{ 0.0 }, omega{ 0.0 }, eta{ 0.0 };
+		double thetaRef{ 0.0 }, omegaRef{ 0.0 }, alphaRef{ 0.0 };
+		double err{ 0.0 }, err_d{ 0.0 };
+		double I_eff{ 0.0 };
+		double tau{ 0.0 }, tau_control{ 0.0 }, tau_robot{ 0.0 };
+		double tau_damping{ 0.0 }, tau_friction{ 0.0 }, tau_coriolis{ 0.0 };
+		double tau_barrier{ 0.0 }, tau_sat{ 0.0 };
+		double wMax_hw{ 0.0 }, wMax_traj{ 0.0 };
+		double traj_overspeed{ 0.0 };
+		double c{ 0.0 }, mu{ 0.0 }, g{ 0.0 };
+		double alpha{ 0.0 };
+		double kp{ 0.0 }, kd{ 0.0 }, ki{ 0.0 };
 		bool sat_flag, traj_overspeed_flag;
+		// link metrics
+		double mass{ 0.0 }, M_ii{ 0.0 };
+		Mat3 I_link, I_world, R;
+		Vec3 Jv, Jw;
+		Vec3 com, v_com, omega_link;
 	};
 
 }

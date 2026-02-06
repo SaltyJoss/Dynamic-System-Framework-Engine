@@ -732,8 +732,6 @@ namespace gui {
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse);
 
-		ImGuiIO& io = ImGui::GetIO();
-
 		beginSimManager("##ViewportBody");
 
 		// --- Tabs: Single / Quad ---

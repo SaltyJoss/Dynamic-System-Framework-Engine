@@ -17,11 +17,9 @@
 namespace physics {
 	// Constructor
 	PhysicsSystem::PhysicsSystem() 
-		: _integrator(std::make_unique<integration::IntegrationService>()), _refSolver(std::make_unique<integration::ReferenceSolver>()), 
-		_curIntMethod(integration::eIntegrationMethod::Euler) {
+		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::Euler) {
 		if (!_integrator) { LOG_WARN("Physics got null IntegrationService*"); }
 	}
-
 
 // --------------------------------------------------
 //				  SIMULATION CONTROL
@@ -37,9 +35,6 @@ namespace physics {
 		// Rotate object (uses angular velocity)
 		//updateRotation(dt, obj);
 		updateRotation(dt, obj);
-
-		// Update Reference Integrator States
-		updateRefRotation(dt, obj);
 
 		// Handle floor collision
 		//handleFloorCollision(dt, obj, 0.0f);
@@ -86,58 +81,6 @@ namespace physics {
 			sample.q_method = s.q;
 			sample.omega = s.angularVelocity;
 			_diagSamples.push_back(sample);
-		}
-	}
-
-	void PhysicsSystem::updateRefRotation(double dt, scene::Object* obj) {
-		if (!obj || !obj->getMesh()) return;
-		auto& rt = gRefTracks[obj];
-
-		// State vector [qw,qx,qy,qz,wx,wy,wz]
-		if (!rt.init) {
-			// Initialize reference track
-			rt.x.resize(7);
-			rt.x(0) = obj->state.q.w(); rt.x(1) = obj->state.q.x(); rt.x(2) = obj->state.q.y(); rt.x(3) = obj->state.q.z(); // quaternion angles
-			rt.x(4) = obj->state.angularVelocity.x(); rt.x(5) = obj->state.angularVelocity.y(); rt.x(6) = obj->state.angularVelocity.z(); // angular velocity
-			rt.t = _t;
-			rt.dt = 1e-3; // initial step size
-			rt.init = true;
-		}
-
-		const double t_next = _t + dt;
-
-		// World-Frame Angular Velocity
-		auto f = [&](double, const VecX& st) {
-			VecX d(7);
-			// dq = 1/2 * (0,w) * q -> world frame angular velocity
-			Quat _q(st(0), st(1), st(2), st(3));
-			Vec3 w(st(4), st(5), st(6));
-			Quat dq = (_frame == FrameType::World) ? Quat(0, w.x(), w.y(), w.z()) * _q : _q * Quat(0, w.x(), w.y(), w.z());
-			dq.coeffs() *= 0.5; // Eigen doesnt support scalar multiplication :(
-			d(0) = dq.w(); d(1) = dq.x(); d(2) = dq.y(); d(3) = dq.z();
-			d(4) = -(obj->state.damping * w.x()); d(5) = -(obj->state.damping * w.y()); d(6) = -(obj->state.damping * w.z());
-			return d;
-		};
-
-
-		// Perform adaptive step to reach t_next
-		while (rt.t < t_next) {
-			dt = std::min(rt.dt, t_next - rt.t);
-			auto res = _refSolver->refStep(rt.x, rt.t, dt, f, 1e-6, 1e-9);
-			rt.x = res.x_next;
-			rt.t += res.dt_taken;
-			rt.dt = res.dt_sug;
-		}
-
-		// update ref diagnostics if running
-		if (_diagRunning) {
-			integration::ReferenceSolver::RefIntegratorDiagSample samples;
-			samples.t = rt.t;
-			samples.q = Quat(rt.x(0), rt.x(1), rt.x(2), rt.x(3)); // quaternion angles
-			samples.omega = Vec3(rt.x(4), rt.x(5), rt.x(6)); // angular velocities
-			_refDiagSamples.push_back(samples);
-
-			_t += dt; // advance global time
 		}
 	}
 
@@ -207,105 +150,6 @@ namespace physics {
 		if (obj->transform.position.y < floorY + 0.1f && s.linearVelocity.y() < 0.1f) {
 			s.linearVelocity.y() = 0.0f; // stop small bounces
 		}
-	}
-
-// --------------------------------------------------
-//				Integration Analysis
-// --------------------------------------------------
-	// Start diagnostics
-	void PhysicsSystem::startDiagnostics(scene::Object* obj) {
-		if (!obj) {
-			_diagRunning = false;
-			D_ERROR("Null diagnostic object");
-			return;
-		}
-
-		if (_diagRunning) return; // already running
-		
-		_diagSamples.clear();
-		_refDiagSamples.clear();
-		_t = 0.0;
-		
-		_diagRunning = true;
-		_diagObject = obj;
-		_diagResult = IntegratorDiagResult();
-		_refDiagResult = IntegratorDiagResult();
-		gRefTracks[obj].init = false; // reset reference track for object
-	}
-
-	// Stop diagnostics and compute results using 
-	void PhysicsSystem::stopDiagnostics() {
-		if (!_diagRunning) return;
-		_diagRunning = false;
-
-		if (_refDiagSamples.empty()) {
-			_refDiagResult = IntegratorDiagResult();
-			D_WARN("Reference integrator diagnostics stopped");
-			return;
-		}
-
-		if (_diagSamples.empty()) {
-			_diagResult = IntegratorDiagResult();
-			D_WARN("Integrator diagnostics stopped");
-			return;
-		}
-
-		// build scalar series: omega/time
-		std::vector<double> omegaNorms;
-		omegaNorms.reserve(_diagSamples.size());
-		for (const auto& sample : _diagSamples) {
-			omegaNorms.push_back(sample.omega.norm());
-		}
-		// Reference Integrator Diagnostics
-		std::vector<double> refOmegaNorms;
-		refOmegaNorms.reserve(_refDiagSamples.size());
-		for (const auto& sample : _refDiagSamples) {
-			refOmegaNorms.push_back(sample.omega.norm());
-		}
-
-		integration::analysis analyser;
-		
-		// Fill result struct
-		integration::ErrorStats omegaStats = analyser.computeErrorStats(omegaNorms);
-		_diagResult.duration = _diagSamples.back().t;
-		_diagResult.omegaNormStats = omegaStats; // Omega Stats are min, max, mean, rms of angular velocity norms over time
-		_diagResult.thetaNormStats = integration::ErrorStats(); // Not computed yet, will use MSE and RMSE
-		
-		// Fill reference result struct
-		integration::ErrorStats refOmegaStats = analyser.computeErrorStats(refOmegaNorms);
-		_refDiagResult.duration = _refDiagSamples.back().t;
-		_refDiagResult.omegaNormStats = refOmegaStats;
-		_refDiagResult.thetaNormStats = integration::ErrorStats();
-
-
-		// =============================
-
-		// Log summary
-		D_SUCCESS("Integrator diagnostics finished: \n ================================");
-
-		D_INFO("Integrator diagnostics finished: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %.6f\n\t\t\t Max Error: %.6f\n\t\t\t Mean Error: %.6f\n\t\t\t RMS Error: %.6f",
-			_diagSamples.size(),
-			_diagResult.omegaNormStats.minError,
-			_diagResult.omegaNormStats.maxError,
-			_diagResult.omegaNormStats.meanError,
-			_diagResult.omegaNormStats.rmsError
-		);
-
-		D_INFO("Reference integrator diagnostics: \n\t\t\t Total Samples: %zu\n\t\t\t Min Error: %.6f\n\t\t\t Max Error: %.6f\n\t\t\t Mean Error: %.6f\n\t\t\t RMS Error: %.6f",
-			_refDiagSamples.size(),
-			_refDiagResult.omegaNormStats.minError,
-			_refDiagResult.omegaNormStats.maxError,
-			_refDiagResult.omegaNormStats.meanError,
-			_refDiagResult.omegaNormStats.rmsError
-		);
-
-		// debugging output of omega norms references
-		D_DEBUG("refOmegaNorms size=%zu front=%.6f back=%.6f",
-			refOmegaNorms.size(),
-			refOmegaNorms.front(),
-			refOmegaNorms.back());
-
-		D_DEBUG("Reference Integrator time taken: %f seconds", _refDiagResult.duration);
 	}
 
 } // namespace physics

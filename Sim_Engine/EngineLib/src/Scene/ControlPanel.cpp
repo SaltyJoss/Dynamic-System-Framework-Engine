@@ -1056,7 +1056,6 @@ namespace gui {
 		ImGui::Text("damping:   %.6f kg·m^2/s",  j.damping);
         ImGui::Text("friction:  %.6f N·m",       j.friction);
         ImGui::Text("torque:    %.6f N·m",       j.torqueNm);
-		ImGui::Text("Inertia:   %.6f kg·m^2",    j.I_eff);
 
         ImGui::Separator();
 		// Reference Info

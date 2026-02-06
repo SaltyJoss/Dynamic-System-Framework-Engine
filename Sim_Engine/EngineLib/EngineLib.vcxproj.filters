@@ -477,9 +477,6 @@
     <ClInclude Include="include\Numerics\IntegrationService.h">
       <Filter>Header Files\include\Numerics</Filter>
     </ClInclude>
-    <ClInclude Include="include\Numerics\ReferenceSolver.h">
-      <Filter>Header Files\include\Numerics</Filter>
-    </ClInclude>
     <ClInclude Include="..\External\MathLib\include\kinematics\URDF_Types.h">
       <Filter>External\MathLib\Kinematics</Filter>
     </ClInclude>
