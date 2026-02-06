@@ -160,6 +160,7 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
     <ClInclude Include="include\Interpreter\Commands\RotateJointByCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateJointToCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\RotateToCmd.h" />
+    <ClInclude Include="include\Interpreter\Commands\SaveCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SelectCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SetCmd.h" />
     <ClInclude Include="include\Interpreter\Commands\SpinCmd.h" />
@@ -249,6 +250,7 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
     <ClCompile Include="src\Interpreter\Commands\RotateJointByCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateJointToCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\RotateToCmd.cpp" />
+    <ClCompile Include="src\Interpreter\Commands\SaveCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SelectCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetCmd.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SpinCmd.cpp" />

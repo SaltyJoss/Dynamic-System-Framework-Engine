@@ -41,10 +41,13 @@ namespace data {
 	public:
 		HDF5StreamWriter() = default;
 
-		void start(std::string_view parentFolder, std::string_view subFolder, std::string_view integratorName);
+		void start(std::string_view parentFolder, std::string_view subFolder);
 		void stop();
+        
+        bool commit(const std::filesystem::path& finalPath);
 
 		bool active() const { return _active; }
+        bool committed() const { return _committed; }
 		const std::string& path() const { return _path; }
 
 		void write(std::string topic, const FieldList& fields);
@@ -52,8 +55,10 @@ namespace data {
     private:
         mutable std::mutex _mtx;
         std::string _path;
-		std::string _integratorName;
         bool _active = false;
+
+		bool _committed = false;  // whether any data has been written (for flush/close logic)
+		bool _temporary = true;   // whether this is a temporary file (for cleanup if not committed)
 
 		// HDF5 file and datatype handles 
         hid_t _fileID = -1;
@@ -115,6 +120,9 @@ namespace data {
 		// Check if data logging is enabled
 		bool enabled() const { return _enabled; }
 
+		// Commit HDF5 data to final location (returns true if successful)
+        bool commitHDF5(std::string_view name, bool useIntegratorName);
+
     private:
         DataManager() = default;
 
@@ -162,6 +170,14 @@ namespace data {
 #define HDF5_REF_DATA(topic, fields) \
     do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
 
+// HDF5_SAVE_DATA
+#ifdef HDF5_SAVE_DATA
+    #error HDF5_SAVE_DATA already defined before DataManager.h
+#endif
+// Commit HDF5 data to final location with given name (returns true if successful)
+#define HDF5_SAVE_DATA(name, b) \
+    do { ::data::DataManager::instance().commitHDF5((name), (b)); } while(0)
+
 // --- CSV Macros ---
 
 // CSV_SIM_DATA
@@ -179,6 +195,5 @@ namespace data {
 // Capture reference data as CSV
 #define CSV_REF_DATA(topic, fields) \
     do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
-
 
 // --- end of macro definitions ---

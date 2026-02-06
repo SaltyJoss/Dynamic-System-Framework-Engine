@@ -343,13 +343,45 @@ namespace data {
 
 	// --- HDF5StreamWriter Methods ---
 
+	bool HDF5StreamWriter::commit(const std::filesystem::path& finalPath) {
+		{
+			std::lock_guard<std::mutex> lock(_mtx);
+			if (!_active || _committed) return false;
+		}
+
+		// Close HDF5 file to flush data
+		H5Fclose(_fileID);
+		_fileID = -1;
+
+		// Move temporary file to final location
+		std::error_code ec;
+		std::filesystem::rename(_path, finalPath, ec);
+		if (ec) {
+			std::cerr << "HDF5StreamWriter: commit failed to rename file: " << ec.message()
+				<< " from=" << _path << " to=" << finalPath.string() << "\n";
+			return false;
+		}
+
+		_path = finalPath.string();
+
+		{
+			std::lock_guard<std::mutex> lock(_mtx);
+			_committed = true;
+			_temporary = false;
+		}
+		return true;
+	}
+
 	// start HDF5 stream writer
-	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder, std::string_view integratorName) {
+	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder) {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (_active) return;
 
+		std::string parentFolderStr(parentFolder);
+		std::string subFolderStr(subFolder);
+
 		// Create folder if it doesn't exist
-		std::filesystem::path dir = std::filesystem::path(parentFolder) / subFolder;
+		std::filesystem::path dir = std::filesystem::path(parentFolderStr) / subFolderStr;
 		std::error_code ec;
 		std::filesystem::create_directories(dir, ec);
 		if (ec) {
@@ -357,8 +389,10 @@ namespace data {
 				<< " dir=" << dir.string() << "\n";
 		}
 
+		std::string typeID = subFolderStr.substr(3); // "ref" or "sim"
+
 		// Generate unique file path
-		_path = (dir / ("dsfe_run_" + timestampCompact() + "_" + ".h5")).string();
+		_path = (dir / ("dsfe_" + typeID + "tmp" + timestampCompact() + ".h5")).string();
 
 		// Create HDF5 file
 		_fileID = H5Fcreate(_path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -416,15 +450,24 @@ namespace data {
 
 		// Close datatypes and file
 		if (_vlenStrType >= 0) { H5Tclose(_vlenStrType); }
-		if (_fileID >= 0) {
-			H5Fflush(_fileID, H5F_SCOPE_GLOBAL);
-			H5Fclose(_fileID); 
+		if (_fileID >= 0 && !_committed) {
+			H5Fclose(_fileID);
 		}
 
 		// reset
 		_vlenStrType = -1;
 		_fileID = -1;
 		_active = false;
+
+		// Delete temporary file if not committed
+		if (!_committed && _temporary) {
+			std::error_code ec;
+			std::filesystem::remove(_path, ec);
+			if (ec) {
+				std::cerr << "HDF5StreamWriter: failed to remove temporary file: " << ec.message()
+					<< " path=" << _path << "\n";
+			}
+		}
 	}
 
 	// Write fields to HDF5 datasets
@@ -432,15 +475,9 @@ namespace data {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (!_active) { return; }
 
-		// Ensure group for topic
-		std::string gPath = "/log/" + topic;
-		hid_t g = ensureGroup(_fileID, gPath.c_str());
-		if (g < 0) { return; }
-		H5Gclose(g);
-
 		// Ensure dataset for key
 		auto ensureKey = [&](const std::string& key, const Value& val) -> hid_t {
-			const std::string dPath = gPath + "/" + key;
+			const std::string dPath = "/log/" + topic + "_" + key;
 
 			// Scalar numeric types -> 1D double dataset
 			if (std::holds_alternative<double>(val) ||
@@ -585,8 +622,8 @@ namespace data {
 		_enabled = enabled;
 
 		if (_enabled) {
-			_sim.start(_parentFolder, "Simulation", _integratorName);
-			_ref.start(_parentFolder, "Reference", _integratorName);
+			_sim.start(_parentFolder, "Simulation");
+			_ref.start(_parentFolder, "Reference");
 		}
 		else {
 			_sim.stop();
@@ -603,6 +640,22 @@ namespace data {
 		else if (s == Stream::Reference) {
 			_ref.write(std::string(topic), fields);
 		}
+	}
+
+	bool DataManager::commitHDF5(std::string_view name, bool useIntegratorName) {
+		if (!_enabled) return false;
+
+		std::string strName(name);
+		if (useIntegratorName) {
+			strName += "_" + _integratorName;
+		}
+		
+		auto finalPathSim = std::filesystem::path(_parentFolder) / "Simulation" / ("dsfe_sim_" + std::string(strName) + ".h5");
+		auto finalPathRef = std::filesystem::path(_parentFolder) / "Reference" / ("dsfe_ref_" + std::string(strName) + ".h5");
+
+		bool ok1 = _sim.commit(finalPathSim.string());
+		bool ok2 = _ref.commit(finalPathRef.string());
+		return ok1 && ok2;
 	}
 
 } // namespace data

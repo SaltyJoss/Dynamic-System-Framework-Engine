@@ -525,6 +525,9 @@
     <ClInclude Include="include\Platform\Paths.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SaveCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -736,6 +739,9 @@
     </ClCompile>
     <ClCompile Include="src\Platform\Paths.cpp">
       <Filter>Source Files\src\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SaveCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

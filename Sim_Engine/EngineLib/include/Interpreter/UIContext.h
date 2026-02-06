@@ -44,10 +44,6 @@ namespace commands {
 
 		utils::OpResult startSim();
 
-		// Loggers (logCmd)
-		//utils::OpResult logSimData(const std::string& logPath);
-		//utils::OpResult deleteObject(scene::ObjectID id);
-
 	private:
 		gui::simManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;

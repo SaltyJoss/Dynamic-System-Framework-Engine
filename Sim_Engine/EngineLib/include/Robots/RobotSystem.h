@@ -108,6 +108,8 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
+		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();

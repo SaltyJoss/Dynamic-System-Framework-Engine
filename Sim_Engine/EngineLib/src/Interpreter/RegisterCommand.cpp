@@ -15,6 +15,7 @@
 #include "Interpreter/Commands/SelectCmd.h"
 #include "Interpreter/Commands/LoadCmd.h"
 #include "Interpreter/Commands/SetCmd.h"
+#include "Interpreter/Commands/SaveCmd.h"
 
 namespace commands {
 	void RegisterAllCommands(CommandFactory& factory) {
@@ -33,6 +34,7 @@ namespace commands {
 		factory.registerCommand("select",	&commands::CreateSelectCmd);	// select command
 		factory.registerCommand("load",		&commands::CreateLoadCmd);		// load command
 		factory.registerCommand("set",		&commands::CreateSetCmd);		// set command
+		factory.registerCommand("save",		&commands::CreateSaveCmd);		// save command
 		// New commands later
 	}
 } // namespace commands

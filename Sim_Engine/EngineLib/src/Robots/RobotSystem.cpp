@@ -31,8 +31,11 @@ namespace robots {
 
 	// --- 'toGlm' OVERLOADS ---
 
+	// Converts an Eigen 3D vector to a glm::vec3
 	static glm::vec3 toGlm(const Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
+	// Converts an Eigen 4D vector to a glm::vec4
 	static glm::vec4 toGlm(const Vec4& v) { return glm::vec4(v.x(), v.y(), v.z(), v.w()); }
+	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
 	static glm::quat toGlm(const Quat& q) {
 		return glm::quat(
 			static_cast<float>(q.w()),
@@ -122,32 +125,6 @@ namespace robots {
 		T.block<3, 3>(0, 0) = aa.toRotationMatrix();		  // set upper-left 3x3 block to rotation matrix
 		
 		return T; // (4x4) homogeneous transformation
-	}
-
-	// Method to compute the full spatial velocity Jacobian column for a joint
-	static Vec6 computeJacobianColumn(const RobotJoint& joint, const RobotLink& link, const Pose& T_world) {
-		Vec3 joint_pos_world = T_world.block<3, 1>(0, 3); // position of joint in world frame
-		Mat3 R_world = T_world.block<3, 3>(0, 0);		  // rotation from joint frame to world frame
-
-		Vec3 world_com = R_world * link.inertial.com_xyz + joint_pos_world; // COM position in world frame
-		Vec3 world_axis = (R_world * joint.axis).normalized();				// joint axis in world frame
-
-		Vec3 r = world_com - joint_pos_world; // vector from joint to COM in world frame
-		Vec3 J_v = world_axis.cross(r);		  // [rad/s], (3x1) linear velocity Jacobian
-		Vec3 J_w = world_axis;				  // [rad/s], (3x1) angular velocity Jacobian
-
-		return Vec6(J_v.x(), J_v.y(), J_v.z(), J_w.x(), J_w.y(), J_w.z()); // [rad/s], spatial velocity Jacobian column (6x1)
-	}
-
-	// Method to compute the spatial inertia matrix for a link
-	static Mat6 computeSpatialInertiaMatrix(double mass, const Mat3& I) {
-		Mat6 M = Mat6::Zero(); // spacial inertia matrix (6x6)
-
-		// Upper-left 3x3 block is mass matrix, lower-right 3x3 block is inertia tensor, off-diagonal blocks are zero for point mass assumption
-		M.topLeftCorner<3, 3>() = mass * Mat3::Identity(); // mass matrix
-		M.bottomRightCorner<3, 3>() = I;				   // inertia tensor
-
-		return M; // [kg, kg*m^2], (6x6) spatial inertia matrix
 	}
 
 	// Method to compute the effective inertia contribution of a joint to the end-effector, given the current robot configuration
@@ -619,7 +596,7 @@ namespace robots {
 			);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
-			std::string header = "simulation_" + _robot.name + "_" + IntName;
+			std::string header = _robot.name + "_sim_" + IntName;
 
 			HDF5_SIM_DATA(header, (data::FieldList{
 					// Simulation info
@@ -647,9 +624,9 @@ namespace robots {
 					{"torque_barrier",  m.tau_barrier},
 					{"torque_sat",	    m.tau_sat},
 					// Clamping flags
-					{"clamp_theta", (double)_clampTheta[i]},
-					{"clamp_omega", (double)_clampOmega[i]},
-					{ "sat_flag",  (double)m.sat_flag },
+					{"clamp_theta",			(double)_clampTheta[i]},
+					{"clamp_omega",			(double)_clampOmega[i]},
+					{"sat_flag",			(double)m.sat_flag },
 					{"traj_overspeed_flag", (double)m.traj_overspeed_flag}
 				})
 			);
