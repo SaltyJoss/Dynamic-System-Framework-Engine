@@ -154,24 +154,32 @@ namespace robots {
 		return M; // [kg, kg*m^2]
 	}
 
-	// Method to compute the inertia matrix element for a joint
-	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world) {
-		const double mass = link.inertial.mass; // mass of the link, locally defined
+	// Method to compute the effective inertia contribution of a joint to the end-effector, given the current robot configuration
+	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
+		const double mass = link.inertial.mass;
 
-		// Transform inertia tensor to world frame
-		Mat3 R = T_world.block<3, 3>(0, 0); // rotation from joint frame to world frame
-		Mat3 I_local = computeLinkInertiaTensor(link); // inertia tensor in joint frame, locally defined
-		Mat3 I_world = R * I_local * R.transpose(); // inertia tensor in world frame
+		// Rotation into world frame
+		Mat3 R = T_world.block<3, 3>(0, 0);
 
-		// Compute Jacobian column (6x1 vector: [Jv; Jw]) and spatial inertia matrix (6x6) for this link
-		Vec6 J_i = computeJacobianColumn(m, joint, link, T_world); // [rad/s]
-		Mat6 M_i = computeSpatialInertiaMatrix(mass, I_world);   // [kg, kg*m^2]
+		// Joint axis in world frame
+		Vec3 axis_world = (R * joint.axis).normalized();
 
-		// Effective inertia contribution for this joint: M_ii = J_i^T * M_i * J_i, could also use .coeff(0) since it's a scalar
-		// REMINDER: see if .coeff(0) is faster than current method for 1x1 matrices
-		double M_ii = (J_i.transpose() * M_i * J_i); // [kg*m^2], [1x6] * [6x6] * [6x1] = [1x1] scalar 
+		// Translational contribution (parallel axis theorem)
+		// v = ω × r -> |Jv|^2 done in computeJacobianColumn
+		Vec3 joint_pos_world = T_world.block<3, 1>(0, 3);
+		Vec3 com_world = R * link.inertial.com_xyz + joint_pos_world;
+		Vec3 r = com_world - joint_pos_world;
 
-		return std::max(M_ii, 1e-6); // [kg*m^2], avoid zero inertia
+		double I_trans = mass * (axis_world.cross(r)).squaredNorm();
+
+		// Rotational contribution
+		Mat3 I_local = computeLinkInertiaTensor(link);
+		Mat3 I_world = R * I_local * R.transpose();
+
+		double I_rot = axis_world.transpose() * I_world * axis_world;
+		double I_eff_i = I_trans + I_rot;
+
+		return std::max(I_eff_i, 1e-6);
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
@@ -335,68 +343,53 @@ namespace robots {
 		return T_world;
 	}
 
-	void RobotSystem::computeI_eff(const std::vector<double>& theta, std::vector<double>& I_eff_out) const {
-		const size_t n = _robot.joints.size();
-		I_eff_out.assign(n, 0.0);
-
-		// Use existing state packing
+	// Method to compute a single joints effective inertia
+	double RobotSystem::computeSingleIeff(size_t i, const std::vector<double>& theta ) const {
 		mathlib::VecX x = packState();
-		for (size_t i = 0; i < n; ++i) {
-			x[i] = theta[i];  // overwrite positions
-		}
+		for (size_t k = 0; k < theta.size(); ++k)
+			x[k] = theta[k];
 
-		// Forward kinematics
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
-		// Accumulate inertia per joint
-		for (size_t i = 0; i < n; ++i) {
-
-			double I_eff_i = 0.0;
-			const RobotJoint& joint = _robot.joints[i];
-
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-
-				const RobotLink& link = _robot.links[k];
-
-				RobotMetrics m;
-				computeJacobianColumn(m, joint, link, T_world[k]);
-
-				// Translational contribution
-				I_eff_i += link.inertial.mass * m.Jv.squaredNorm();
-				// Rotational contribution (scalar inertia)
-				I_eff_i += link.inertial.inertia.izz * m.Jw.squaredNorm();
-			}
-
-			I_eff_out[i] = std::max(I_eff_i, 1e-6);
+		double I = 0.0;
+		for (size_t k = 0; k < _robot.links.size(); ++k) {
+			RobotMetrics tmp;
+			I += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
 		}
+		return std::max(I, 1e-6);
 	}
 
-	std::vector<double> RobotSystem::computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) {
-		const size_t n = (size_t)_robot.joints.size();
+
+	// Method to compute the diagonal Coriolis/centrifugal term for each joint using finite differences on the effective inertia
+	std::vector<double> RobotSystem::computeCoriolisDiagonal(
+		const std::vector<double>& theta,
+		const std::vector<double>& omega,
+		const std::vector<double>& I_eff
+	) const {
+		const size_t n = _robot.joints.size();
 		std::vector<double> tau_C(n, 0.0);
 
+		// Small perturbation for finite difference approximation
 		constexpr double eps = 1e-6;
 
+		// Computes the partial derivative of the effective inertia with respect to that joint angle using finite differences, then computes the diagonal Coriolis/centrifugal term
 		for (size_t i = 0; i < n; ++i) {
-			double sum = 0.0;
+			// Create a perturbed copy of the joint angles
+			std::vector<double> theta_pert = theta;
+			// Perturb joint i by a small amount
+			theta_pert[i] += eps;
 
-			for (size_t j = 0; j < n; ++j) {
-				// Compute Christoffel symbols (simplified for diagonal inertia)
-				std::vector<double> theta_pert = theta;
-				theta_pert[j] += eps;
+			// Compute perturbed effective inertia
+			double I_pert = computeSingleIeff(i, theta_pert);
+			// Finite difference approximation of dI/dq_i
+			double dI_dqi = (I_pert - I_eff[i]) / eps;
 
-				// Compute perturbed inertia matrix diagonal element
-				std::vector<double> I_eff_pert = I_eff;
-				computeI_eff(theta_pert, I_eff_pert);
-
-				double dI_omega_j = (I_eff_pert[i] - I_eff[i]) / eps;
-				sum += dI_omega_j * omega[j];
-			}
-			// C_i = 0.5 * sum_jk (dI_ij/dtheta_k + dI_ik/dtheta_j - dI_jk/dtheta_i) * omega_j * omega_k, simplified to diagonal case
-			tau_C[i] = 0.5 * sum * omega[i]; // only consider terms where j=k=i for diagonal inertia			
+			// Coriolis/centrifugal torque contribution for joint i (diagonal term)
+			tau_C[i] = 0.5 * dI_dqi * omega[i] * omega[i];
 		}
 		return tau_C;
 	}
+
 
 	// Method to compute joint metrics for control
 	RobotMetrics RobotSystem::computeJointMetrics(
@@ -516,12 +509,32 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff, const std::vector<double>& tau_coriolis) const {
+	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(3 * n);
 
-		// Compute forward kinematics for current state to get link poses and Jacobians needed for dynamics
-		std::vector<Pose> T_world = computeForwardKinematics_fromState(x); // compute forward kinematics for current state
+		// Extract state
+		std::vector<double> q(n), qd(n);
+		for (size_t i = 0; i < n; ++i) {
+			q[i] = x[i];
+			qd[i] = x[i + n];
+		}
+
+		// FK at x
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
+
+		// State-Consistent effective inertia
+		std::vector<double> I_eff(n, 0.0);
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				RobotMetrics tmp;
+				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+			}
+			I_eff[i] = std::max(I_eff[i], 1e-6);
+		}
+
+		// State-consistent Coriolis/centrifugal term
+		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
 
 		// Loop through each joint and compute derivatives
 		for (size_t i = 0; i < n; ++i) {
@@ -587,21 +600,13 @@ namespace robots {
 
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
 				RobotMetrics tmp;
-				I_eff[i] += computeJointInertiaContribution(
-					tmp,
-					_robot.joints[i],
-					_robot.links[k],
-					T_world[k]
-				);
+				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
 
-		// Compute Coriolis torques for current state
-		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
-
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn, I_eff, tau_coriolis); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		// Unpack new state
@@ -632,7 +637,7 @@ namespace robots {
 				joint, link, I_eff[i], 
 				theta, omega, 
 				thetaRef, omegaRef, alphaRef, 
-				0, tau_coriolis[i]
+				0.0, 0.0
 			);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);

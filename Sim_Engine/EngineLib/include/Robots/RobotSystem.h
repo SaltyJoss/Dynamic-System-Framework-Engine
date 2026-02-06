@@ -120,9 +120,9 @@ namespace robots {
 		// Forward kinematics computation
 		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
 		// Compute the effective inertia for each joint based on the current state and robot configuration
-		void computeI_eff(const std::vector<double>& theta, std::vector<double>& I_eff_out) const;
+		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
 		// Compute the contribution of a link to the inertia of a joint based on the current state
-		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff);
+		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
 
 		// State packing and unpacking
         mathlib::VecX packState() const;
@@ -133,7 +133,7 @@ namespace robots {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Compute state derivatives
-		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x, const std::vector<double>& I_eff, const std::vector<double>& tau_coriolis) const;
+		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
 
 		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);
