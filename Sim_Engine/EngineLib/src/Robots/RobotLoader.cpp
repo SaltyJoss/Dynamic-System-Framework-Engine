@@ -16,17 +16,17 @@ namespace robots {
 	// --- Static Helper Functions ---
 
 	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
-	static glm::quat rpyRadToQuat(const glm::vec3& rpyRad)
+	static Quat rpyRadToQuat(const Vec3& rpyRad)
 	{
-		const float roll = rpyRad.x;
-		const float pitch = rpyRad.y;
-		const float yaw = rpyRad.z;
+		const double roll  = rpyRad.x();
+		const double pitch = rpyRad.y();
+		const double yaw   = rpyRad.z();
 
-		const glm::quat qx = glm::angleAxis(roll, glm::vec3(1, 0, 0));
-		const glm::quat qy = glm::angleAxis(pitch, glm::vec3(0, 1, 0));
-		const glm::quat qz = glm::angleAxis(yaw, glm::vec3(0, 0, 1));
+		const Quat qx(Eigen::AngleAxisd(roll,  Vec3(1.0, 0.0, 0.0)));
+		const Quat qy(Eigen::AngleAxisd(pitch, Vec3(0.0, 1.0, 0.0)));
+		const Quat qz(Eigen::AngleAxisd(yaw,   Vec3(0.0, 0.0, 1.0)));
 
-		return glm::normalize(qz * qy * qx);
+		return (qz * qy * qx).normalized();
 	}
 
 	// Parse DH joint type from string
@@ -38,9 +38,9 @@ namespace robots {
 	}
 
 	// Read a vec3 from a JSON array
-	static glm::vec3 readVec3(const json& j, const char* key, glm::vec3 fallback = {}) {
+	static Vec3 readVec3(const json& j, const char* key, Vec3 fallback = {}) {
 		if (!j.contains(key) || !j[key].is_array() || j[key].size() != 3) { return fallback; }
-		return glm::vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
+		return Vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
 	}
 
 	// --- RobotLoader Link and Joint Parsing ---
@@ -64,8 +64,8 @@ namespace robots {
 			s.origin_rpy = readVec3(c, "origin_rpy", s.origin_rpy);
 
 			if (s.type == "cylinder") {
-				s.size.x = c.value("radius", 0.0f);  // radius
-				s.size.y = c.value("length", 0.0f);  // length
+				s.size.x() = c.value("radius", 0.0f);  // radius
+				s.size.y() = c.value("length", 0.0f);  // length
 			}
 			else if (s.type == "box") { s.size = readVec3(c, "size", s.size); }
 			else if (s.type == "mesh") { s.meshFile = c.value("mesh", ""); }
@@ -98,26 +98,26 @@ namespace robots {
 			joint.origin_xyz = readVec3(o, "origin_xyz", joint.origin_xyz);
 			joint.origin_rpy = readVec3(o, "origin_rpy", joint.origin_rpy);
 		} else {
-			joint.origin_xyz = readVec3(jointData, "origin_xyz", glm::vec3(0));
-			joint.origin_rpy = readVec3(jointData, "origin_rpy", glm::vec3(0));
+			joint.origin_xyz = readVec3(jointData, "origin_xyz", Vec3(0));
+			joint.origin_rpy = readVec3(jointData, "origin_rpy", Vec3(0));
 		}
 		joint.origin_q = rpyRadToQuat(joint.origin_rpy);
 	}
 
 	static void parseJointAxis(const json& jointData, RobotJoint& joint) {
-		joint.axis = glm::vec3(0.0f, 0.0f, 1.0f); // default axis
+		joint.axis = Vec3(0.0f, 0.0f, 1.0f); // default axis
 		if (jointData.contains("axis") && jointData["axis"].is_array() && jointData["axis"].size() == 3) {
 			const auto& a = jointData["axis"];
-			joint.axis = glm::vec3(
+			joint.axis = Vec3(
 				a[0].get<float>(),
 				a[1].get<float>(),
 				a[2].get<float>()
 			);
-			if (glm::length(joint.axis) < 1e-6f) {
+			if (joint.axis.norm() < 1e-6f) {
 				LOG_WARN("Joint %s has zero-length axis, defaulting to (0,0,1)", joint.name.c_str());
-				joint.axis = glm::vec3(0.0f, 0.0f, 1.0f);
+				joint.axis = Vec3(0.0f, 0.0f, 1.0f);
 			}
-			else { joint.axis = glm::normalize(joint.axis); }
+			else { joint.axis.normalize(); }
 		}
 	}
 

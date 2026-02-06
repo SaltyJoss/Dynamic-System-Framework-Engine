@@ -24,7 +24,6 @@
 
 #include "EngineCore.h"
 #include "Numerics/IntegrationService.h"
-#include "Numerics/ReferenceSolver.h"
 
 #include <memory>
 #include <string>
@@ -71,9 +70,6 @@ namespace physics {
 		double duration = 0.0; // total simulation duration
 		Vec3 thetaMin, thetaMax, thetaMean, thetaRms;
 		Vec3 omegaMin, omegaMax, omegaMean, omegaRms;
-
-		integration::ErrorStats omegaNormStats = {};
-		integration::ErrorStats thetaNormStats = {};
 	};
 
 	class ENGINE_API PhysicsSystem {
@@ -100,7 +96,6 @@ namespace physics {
 
 		// System-Updates
 		void updateRotation(double dt, scene::Object* obj);
-		void updateRefRotation(double dt, scene::Object* obj);
 
 		void updateTranslation(double dt, scene::Object* obj);
 
@@ -115,9 +110,6 @@ namespace physics {
 		Vec3 getGravity() const { return _gravity; }
 
 		// Integration Analysis testing
-		void startDiagnostics(scene::Object* obj);
-		void stopDiagnostics();
-
 		bool diagnosticsRunning() const { return _diagRunning; }
 		void setDiagnosticRunning(bool running) { _diagRunning = running; }
 
@@ -126,7 +118,6 @@ namespace physics {
 
 	private:
 		std::unique_ptr<integration::IntegrationService> _integrator;
-		std::unique_ptr<integration::ReferenceSolver> _refSolver;
 		integration::eIntegrationMethod _curIntMethod{};
 
 		mathlib::Vec3 _gravity = mathlib::Vec3(0.0f, -9.81f, 0.0f);
@@ -135,21 +126,12 @@ namespace physics {
 		eSimulationMode _simulationMode = eSimulationMode::Normal;
 		FrameType _frame = FrameType::World;
 
-		std::vector<integration::ErrorSample> _errorSamples;
-
 		bool _diagRunning = false;
 		bool _simRunning = false;
 
 		scene::Object* _diagObject = nullptr;
 		std::vector<IntegratorDiagSample> _diagSamples;
 		IntegratorDiagResult _diagResult;
-
-		scene::Object* _refDiagObject = nullptr;
-		std::vector<integration::ReferenceSolver::RefIntegratorDiagSample> _refDiagSamples;
-		IntegratorDiagResult _refDiagResult;
-
-		// Track reference states for each object
-		std::unordered_map<scene::Object*, RefTrack> gRefTracks;
 
 		integration::eIntegrationMethod method = integration::eIntegrationMethod::Euler; // default method
 

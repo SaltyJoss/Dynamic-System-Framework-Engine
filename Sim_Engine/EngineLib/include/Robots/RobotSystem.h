@@ -77,7 +77,7 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		JointMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta) const;
+		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta, double tau_coriolis) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -95,7 +95,7 @@ namespace robots {
 
         bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
-        void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+		void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
 		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
 
@@ -117,6 +117,13 @@ namespace robots {
 
 		spawnFn _loadMeshReturn;
 
+		// Forward kinematics computation
+		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
+		// Compute the effective inertia for each joint based on the current state and robot configuration
+		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
+		// Compute the contribution of a link to the inertia of a joint based on the current state
+		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
+
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
@@ -124,9 +131,6 @@ namespace robots {
 		// Reference state packing and unpacking
 		mathlib::VecX packRefState() const;
 		void unpackRefState(const mathlib::VecX& xr);
-
-		// Compute joint effective inertia
-		double computeJointAxisInertia(const RobotJoint& joint, const RobotLink& link) const;
 
 		// Compute state derivatives
 		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
