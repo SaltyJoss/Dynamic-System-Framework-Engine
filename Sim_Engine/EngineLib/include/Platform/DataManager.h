@@ -1,4 +1,6 @@
 #pragma once
+// File:   DataManager.h
+// Github: SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
@@ -39,7 +41,7 @@ namespace data {
 	public:
 		HDF5StreamWriter() = default;
 
-		void start(std::string_view parentFolder, std::string_view subFolder);
+		void start(std::string_view parentFolder, std::string_view subFolder, std::string_view integratorName);
 		void stop();
 
 		bool active() const { return _active; }
@@ -50,6 +52,7 @@ namespace data {
     private:
         mutable std::mutex _mtx;
         std::string _path;
+		std::string _integratorName;
         bool _active = false;
 
 		// HDF5 file and datatype handles 
@@ -100,6 +103,9 @@ namespace data {
 		// Enable or disable data logging
         void setEnabled(bool enabled);
 
+		// Set the current integrator name for logging
+		void setIntegratorName(std::string name) { _integratorName = name; }
+
 		// Set parent folder for data logging
         void setParentFolder(std::string folder) { _parentFolder = folder; }
 
@@ -113,6 +119,7 @@ namespace data {
         DataManager() = default;
 
         bool _enabled = false;
+		std::string _integratorName = "Unknown";
         std::string _parentFolder = "Runs";
         HDF5StreamWriter _sim;
         HDF5StreamWriter _ref;
@@ -123,17 +130,25 @@ namespace data {
 
 // DATA_CAPTURE_ENABLE
 #ifdef DATA_CAPTURE_ENABLE
-#error DATA_CAPTURE_ENABLE already defined before DataManager.h
+    #error DATA_CAPTURE_ENABLE already defined before DataManager.h
 #endif
 // Enable or disable data capture
 #define DATA_CAPTURE_ENABLE(b) \
     do { ::data::DataManager::instance().setEnabled((b)); } while(0)
 
+// SET_SIM_INTEGRATOR
+#ifdef SET_SIM_INTEGRATOR
+    #error SET_SIM_INTEGRATOR already defined before DataManager.h
+#endif
+// Set the simulation integrator name for logging
+#define SET_SIM_INTEGRATOR(name) \
+    do { ::data::DataManager::instance().setIntegratorName((name)); } while(0)
+
 // --- HDF5 Macros ---
 
 // HDF5_SIM_DATA
 #ifdef HDF5_SIM_DATA
-#error HDF5_SIM_DATA already defined before DataManager.h
+    #error HDF5_SIM_DATA already defined before DataManager.h
 #endif
 // Capture simulation data as HDF5
 #define HDF5_SIM_DATA(topic, fields) \
@@ -141,7 +156,7 @@ namespace data {
 
 // HDF5_REF_DATA
 #ifdef HDF5_REF_DATA
-#error HDF5_REF_DATA already defined before DataManager.h
+    #error HDF5_REF_DATA already defined before DataManager.h
 #endif
 // Capture reference data as HDF5
 #define HDF5_REF_DATA(topic, fields) \
@@ -151,7 +166,7 @@ namespace data {
 
 // CSV_SIM_DATA
 #ifdef CSV_SIM_DATA
-#error CSV_SIM_DATA already defined before DataManager.h
+    #error CSV_SIM_DATA already defined before DataManager.h
 #endif
 // Capture simulation data as CSV
 #define CSV_SIM_DATA(topic, fields) \
@@ -159,7 +174,7 @@ namespace data {
 
 // CSV_REF_DATA
 #ifdef CSV_REF_DATA
-#error CSV_REF_DATA already defined before DataManager.h
+    #error CSV_REF_DATA already defined before DataManager.h
 #endif
 // Capture reference data as CSV
 #define CSV_REF_DATA(topic, fields) \

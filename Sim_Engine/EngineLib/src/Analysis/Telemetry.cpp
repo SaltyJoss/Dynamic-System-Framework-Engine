@@ -77,7 +77,7 @@ namespace diagnostics {
 		// Finalize write
 		ring.endWrite();
 
-		// debug: verify the written sample is visible through ring.at()
+		// verifies the written sample is visible through ring.at()
 		const auto& last = ring.at(ring.size() - 1);
 	}
 		

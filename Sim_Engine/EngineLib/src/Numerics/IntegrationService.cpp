@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Numerics/IntegrationService.h"
+
 #include "EngineLib/LogMacros.h"
+#include "Platform/DataManager.h"
 
 using namespace mathlib;
 
@@ -33,6 +35,8 @@ namespace integration {
 		else if (s == "RK4" || s == "RK-4" || s == "RUNGEKUTTA4") { out = eIntegrationMethod::RK4; }
 		else if (s == "RK45" || s == "RK4(5)" || s == "DOPRI" || s == "DORMANDPRINCE") { out = eIntegrationMethod::RK45; }
 		else { return false; }
+
+		SET_SIM_INTEGRATOR(s);
 
 		return true;
 	}

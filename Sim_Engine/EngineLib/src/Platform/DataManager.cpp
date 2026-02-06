@@ -344,7 +344,7 @@ namespace data {
 	// --- HDF5StreamWriter Methods ---
 
 	// start HDF5 stream writer
-	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder) {
+	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder, std::string_view integratorName) {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (_active) return;
 
@@ -358,7 +358,7 @@ namespace data {
 		}
 
 		// Generate unique file path
-		_path = (dir / ("dsfe_run_" + timestampCompact() + ".h5")).string();
+		_path = (dir / ("dsfe_run_" + timestampCompact() + "_" + ".h5")).string();
 
 		// Create HDF5 file
 		_fileID = H5Fcreate(_path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -585,8 +585,8 @@ namespace data {
 		_enabled = enabled;
 
 		if (_enabled) {
-			_sim.start(_parentFolder, "Simulation");
-			_ref.start(_parentFolder, "Reference");
+			_sim.start(_parentFolder, "Simulation", _integratorName);
+			_ref.start(_parentFolder, "Reference", _integratorName);
 		}
 		else {
 			_sim.stop();
