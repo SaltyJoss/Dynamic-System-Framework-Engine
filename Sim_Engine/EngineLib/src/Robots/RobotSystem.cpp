@@ -127,11 +127,11 @@ namespace robots {
 		return T; // (4x4) homogeneous transformation
 	}
 
-	// Method to compute the effective inertia contribution of a joint to the end-effector, given the current robot configuration
+	// Method to compute the contribution of a single joint and its child link to the effective inertia I_eff of the joint
 	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
 		const double mass = link.inertial.mass;
 
-		// Rotation into world frame
+		// Rotation from link frame to world frame
 		Mat3 R = T_world.block<3, 3>(0, 0);
 
 		// Joint axis in world frame
@@ -350,6 +350,11 @@ namespace robots {
 		// Small perturbation for finite difference approximation
 		constexpr double eps = 1e-6;
 
+		// Cache forward kinematics for current state
+		mathlib::VecX x = packState();
+		for (size_t k = 0; k < theta.size(); ++k) { x[k] = theta[k]; }
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
+
 		// Computes the partial derivative of the effective inertia with respect to that joint angle using finite differences, then computes the diagonal Coriolis/centrifugal term
 		for (size_t i = 0; i < n; ++i) {
 			// Create a perturbed copy of the joint angles
@@ -357,8 +362,19 @@ namespace robots {
 			// Perturb joint i by a small amount
 			theta_pert[i] += eps;
 
-			// Compute perturbed effective inertia
-			double I_pert = computeSingleIeff(i, theta_pert);
+			// Only perturb FK for joint i
+			mathlib::VecX x_pert = x;
+			x_pert[i] = theta_pert[i];
+			std::vector<Pose> T_world_pert = computeForwardKinematics_fromState(x_pert);
+
+			// Compute perturbed effective inertia for joint i
+			double I_pert = 0.0;
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				RobotMetrics tmp;
+				I_pert += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world_pert[k]);
+			}
+			I_pert = std::max(I_pert, 1e-6);
+
 			// Finite difference approximation of dI/dq_i
 			double dI_dqi = (I_pert - I_eff[i]) / eps;
 
