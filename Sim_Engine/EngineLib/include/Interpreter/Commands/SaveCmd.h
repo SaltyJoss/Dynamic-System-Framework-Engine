@@ -18,7 +18,7 @@ namespace commands {
 	struct ENGINE_API SaveCmdArgs {
 		eSaveType type;
 		std::string filename;
-		std::string isIntegratorName;
+		bool isIntegratorName;
 	};
 
 	class ENGINE_API SaveCmd : public Command {
