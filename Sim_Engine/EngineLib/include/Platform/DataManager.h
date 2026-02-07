@@ -1,6 +1,4 @@
 #pragma once
-// File:   DataManager.h
-// Github: SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
@@ -22,68 +20,62 @@
 #include <hdf5.h>
 
 namespace data {
-	// Variant type to hold different data types
+    // Variant type to hold different data types
     using Value = std::variant<
         std::nullptr_t, bool, int64_t, uint64_t, double, long,
-        std::vector<double>, 
+        std::vector<double>,
         std::vector<std::string>, std::string
     >;
-    
-	// Field type representing a key-value pair
-	using Field = std::pair<std::string, Value>;
-	// List of fields
-	using FieldList = std::vector<Field>;
 
-	// Stream enum for data streams
+    // Field type representing a key-value pair
+    using Field = std::pair<std::string, Value>;
+    // List of fields
+    using FieldList = std::vector<Field>;
+
+    // Stream enum for data streams
     enum class Stream { Simulation, Reference };
 
     class ENGINE_API HDF5StreamWriter {
-	public:
-		HDF5StreamWriter() = default;
+    public:
+        HDF5StreamWriter() = default;
 
-		void start(std::string_view parentFolder, std::string_view subFolder);
-		void stop();
-        
-        bool commit(const std::filesystem::path& finalPath);
+        void start(std::string_view parentFolder, std::string_view subFolder, std::string intName);
+        void stop();
 
-		bool active() const { return _active; }
-        bool committed() const { return _committed; }
-		const std::string& path() const { return _path; }
+        bool active() const { return _active; }
+        const std::string& path() const { return _path; }
 
-		void write(std::string topic, const FieldList& fields);
+        void write(std::string topic, const FieldList& fields);
 
     private:
         mutable std::mutex _mtx;
         std::string _path;
         bool _active = false;
 
-		bool _committed = false;  // whether any data has been written (for flush/close logic)
-		bool _temporary = true;   // whether this is a temporary file (for cleanup if not committed)
-
-		// HDF5 file and datatype handles 
+        // HDF5 file and datatype handles 
         hid_t _fileID = -1;
         hid_t _vlenStrType = -1;
-        
-		// Cached dataset handles for 1D data
-		std::unordered_map<std::string, hid_t> _ds1D_D;        // 1D scalar numeric rows (double)
+
+        // Cached dataset handles for 1D data
+        std::unordered_map<std::string, hid_t> _ds1D_D;        // 1D scalar numeric rows (double)
         std::unordered_map<std::string, hid_t> _ds1D_vlenStr;  // 1D string scalars  <-- ADD THIS
-		// Cached dataset handles for 2D data
+        // Cached dataset handles for 2D data
         std::unordered_map<std::string, hid_t> _ds2D_D;        // 2D numeric rows (vector<double>)
         std::unordered_map<std::string, hid_t> _ds2D_vlenStr;  // 2D string rows (vector<string>)
 
     };
 
     class ENGINE_API CsvStreamWriter {
-    public: 
-		CsvStreamWriter() = default;
+    public:
+        CsvStreamWriter() = default;
 
         void start(std::string_view parentFolder, std::string_view subFolder);
-		void stop();
+        void stop();
 
-		bool active() const { return _active; }
-		const std::string& path() const { return _path; }
+        bool active() const { return _active; }
+        const std::string& path() const { return _path; }
 
-		void write(std::string topic, const FieldList& fields);
+        void write(std::string topic, const FieldList& fields);
 
     private:
         mutable std::mutex _mtx;
@@ -99,13 +91,13 @@ namespace data {
 
     class ENGINE_API DataManager {
     public:
-		// Singleton instance accessor
+        // Singleton instance accessor
         static DataManager& instance() {
             static DataManager instance;
             return instance;
-		}
+        }
 
-		// Enable or disable data logging
+        // Enable or disable data logging
         void setEnabled(bool enabled);
 
 		// Set the current integrator name for logging
@@ -120,8 +112,6 @@ namespace data {
 		// Check if data logging is enabled
 		bool enabled() const { return _enabled; }
 
-		// Commit HDF5 data to final location (returns true if successful)
-        bool commitHDF5(std::string_view name, bool useIntegratorName);
 
     private:
         DataManager() = default;
@@ -138,7 +128,7 @@ namespace data {
 
 // DATA_CAPTURE_ENABLE
 #ifdef DATA_CAPTURE_ENABLE
-    #error DATA_CAPTURE_ENABLE already defined before DataManager.h
+#error DATA_CAPTURE_ENABLE already defined before DataManager.h
 #endif
 // Enable or disable data capture
 #define DATA_CAPTURE_ENABLE(b) \
@@ -146,17 +136,18 @@ namespace data {
 
 // SET_SIM_INTEGRATOR
 #ifdef SET_SIM_INTEGRATOR
-    #error SET_SIM_INTEGRATOR already defined before DataManager.h
+#error SET_SIM_INTEGRATOR already defined before DataManager.h
 #endif
 // Set the simulation integrator name for logging
 #define SET_SIM_INTEGRATOR(name) \
     do { ::data::DataManager::instance().setIntegratorName((name)); } while(0)
 
+
 // --- HDF5 Macros ---
 
 // HDF5_SIM_DATA
 #ifdef HDF5_SIM_DATA
-    #error HDF5_SIM_DATA already defined before DataManager.h
+#error HDF5_SIM_DATA already defined before DataManager.h
 #endif
 // Capture simulation data as HDF5
 #define HDF5_SIM_DATA(topic, fields) \
@@ -164,25 +155,17 @@ namespace data {
 
 // HDF5_REF_DATA
 #ifdef HDF5_REF_DATA
-    #error HDF5_REF_DATA already defined before DataManager.h
+#error HDF5_REF_DATA already defined before DataManager.h
 #endif
 // Capture reference data as HDF5
 #define HDF5_REF_DATA(topic, fields) \
     do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
 
-// HDF5_SAVE_DATA
-#ifdef HDF5_SAVE_DATA
-    #error HDF5_SAVE_DATA already defined before DataManager.h
-#endif
-// Commit HDF5 data to final location with given name (returns true if successful)
-#define HDF5_SAVE_DATA(name, b) \
-    do { ::data::DataManager::instance().commitHDF5((name), (b)); } while(0)
-
 // --- CSV Macros ---
 
 // CSV_SIM_DATA
 #ifdef CSV_SIM_DATA
-    #error CSV_SIM_DATA already defined before DataManager.h
+#error CSV_SIM_DATA already defined before DataManager.h
 #endif
 // Capture simulation data as CSV
 #define CSV_SIM_DATA(topic, fields) \
@@ -190,10 +173,11 @@ namespace data {
 
 // CSV_REF_DATA
 #ifdef CSV_REF_DATA
-    #error CSV_REF_DATA already defined before DataManager.h
+#error CSV_REF_DATA already defined before DataManager.h
 #endif
 // Capture reference data as CSV
 #define CSV_REF_DATA(topic, fields) \
     do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
+
 
 // --- end of macro definitions ---

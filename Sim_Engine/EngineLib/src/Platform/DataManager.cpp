@@ -3,10 +3,10 @@
 
 namespace data {
 	// Escape a string for CSV format
-    static inline std::string escape_csv(const std::string_view s) {
+	static inline std::string escape_csv(const std::string_view s) {
 		bool needQuotes = false;
 		for (char c : s) {
-			if (c == ',' || c == '"' || c == '\n' || c == '\r') { 
+			if (c == ',' || c == '"' || c == '\n' || c == '\r') {
 				needQuotes = true;
 				break;
 			}
@@ -23,7 +23,7 @@ namespace data {
 		}
 		out.push_back('"');
 		return out;
-    }
+	}
 
 	static inline std::string toString(const Value& v) {
 		// Visitor struct to convert Value to string
@@ -76,14 +76,14 @@ namespace data {
 		std::tm tm{};
 
 		// Thread-safe localtime
-		#ifdef _WIN32
-				localtime_s(&tm, &t);
-		#else
-				localtime_r(&t, &tm);
-		#endif
-			std::ostringstream oss;
-			oss << std::put_time(&tm, "%Y%m%d_%H%M%S");
-			return oss.str();
+#ifdef _WIN32
+		localtime_s(&tm, &t);
+#else
+		localtime_r(&t, &tm);
+#endif
+		std::ostringstream oss;
+		oss << std::put_time(&tm, "%Y%m%d_%H%M%S");
+		return oss.str();
 	}
 
 	// =======================================
@@ -335,7 +335,7 @@ namespace data {
 		std::vector<const char*> strData(dim2);
 		for (hsize_t i = 0; i < dim2; ++i) { strData[i] = row[i].c_str(); }
 		H5Dwrite(dataset, vlenStrType, memSpace, filespace, H5P_DEFAULT, strData.data());
-		
+
 		// Cleanup
 		H5Sclose(filespace);
 		H5Sclose(memSpace);
@@ -343,45 +343,16 @@ namespace data {
 
 	// --- HDF5StreamWriter Methods ---
 
-	bool HDF5StreamWriter::commit(const std::filesystem::path& finalPath) {
-		{
-			std::lock_guard<std::mutex> lock(_mtx);
-			if (!_active || _committed) return false;
-		}
-
-		// Close HDF5 file to flush data
-		H5Fclose(_fileID);
-		_fileID = -1;
-
-		// Move temporary file to final location
-		std::error_code ec;
-		std::filesystem::rename(_path, finalPath, ec);
-		if (ec) {
-			std::cerr << "HDF5StreamWriter: commit failed to rename file: " << ec.message()
-				<< " from=" << _path << " to=" << finalPath.string() << "\n";
-			return false;
-		}
-
-		_path = finalPath.string();
-
-		{
-			std::lock_guard<std::mutex> lock(_mtx);
-			_committed = true;
-			_temporary = false;
-		}
-		return true;
-	}
-
 	// start HDF5 stream writer
-	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder) {
+	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder, std::string intName) {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (_active) return;
 
-		std::string parentFolderStr(parentFolder);
-		std::string subFolderStr(subFolder);
+		std::string parentStr(parentFolder);
+		std::string subStr(subFolder);
 
 		// Create folder if it doesn't exist
-		std::filesystem::path dir = std::filesystem::path(parentFolderStr) / subFolderStr;
+		std::filesystem::path dir = std::filesystem::path(parentStr) / subStr;
 		std::error_code ec;
 		std::filesystem::create_directories(dir, ec);
 		if (ec) {
@@ -389,10 +360,12 @@ namespace data {
 				<< " dir=" << dir.string() << "\n";
 		}
 
-		std::string typeID = subFolderStr.substr(3); // "ref" or "sim"
+		std::string typeStr;
 
-		// Generate unique file path
-		_path = (dir / ("dsfe_" + typeID + "tmp" + timestampCompact() + ".h5")).string();
+		if (subStr == "Simulation") { typeStr = "sim"; }
+		else if (subStr == "Reference") { typeStr = "ref"; }
+
+		_path = (dir / ("dsfe_" + typeStr + "_run_" + timestampCompact() + "_" + intName + ".h5")).string();
 
 		// Create HDF5 file
 		_fileID = H5Fcreate(_path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -417,8 +390,8 @@ namespace data {
 			std::cerr << "Hdf5StreamWriter: failed to initialise HDF5 writer.\n";
 
 			// Cleanup
-			if (_vlenStrType >= 0)	{ H5Tclose(_vlenStrType); }	
-			if (_fileID >= 0)		{ H5Fclose(_fileID); }
+			if (_vlenStrType >= 0) { H5Tclose(_vlenStrType); }
+			if (_fileID >= 0) { H5Fclose(_fileID); }
 
 			// Reset handles
 			_vlenStrType = -1;
@@ -450,7 +423,8 @@ namespace data {
 
 		// Close datatypes and file
 		if (_vlenStrType >= 0) { H5Tclose(_vlenStrType); }
-		if (_fileID >= 0 && !_committed) {
+		if (_fileID >= 0) {
+			H5Fflush(_fileID, H5F_SCOPE_GLOBAL);
 			H5Fclose(_fileID);
 		}
 
@@ -458,16 +432,6 @@ namespace data {
 		_vlenStrType = -1;
 		_fileID = -1;
 		_active = false;
-
-		// Delete temporary file if not committed
-		if (!_committed && _temporary) {
-			std::error_code ec;
-			std::filesystem::remove(_path, ec);
-			if (ec) {
-				std::cerr << "HDF5StreamWriter: failed to remove temporary file: " << ec.message()
-					<< " path=" << _path << "\n";
-			}
-		}
 	}
 
 	// Write fields to HDF5 datasets
@@ -475,9 +439,15 @@ namespace data {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (!_active) { return; }
 
+		// Ensure group for topic
+		std::string gPath = "/log/" + topic;
+		hid_t g = ensureGroup(_fileID, gPath.c_str());
+		if (g < 0) { return; }
+		H5Gclose(g);
+
 		// Ensure dataset for key
 		auto ensureKey = [&](const std::string& key, const Value& val) -> hid_t {
-			const std::string dPath = "/log/" + topic + "_" + key;
+			const std::string dPath = gPath + "/" + key;
 
 			// Scalar numeric types -> 1D double dataset
 			if (std::holds_alternative<double>(val) ||
@@ -525,7 +495,7 @@ namespace data {
 			}
 
 			return -1; // unsupported
-		};
+			};
 
 		// Append each field
 		for (const auto& [key, value] : fields) {
@@ -536,7 +506,7 @@ namespace data {
 			if (std::holds_alternative<std::string>(value)) {
 				appendString1D(ds, _vlenStrType, std::get<std::string>(value));
 			}
-			else if (std::holds_alternative<double>(value)) { 
+			else if (std::holds_alternative<double>(value)) {
 				appendDouble1D(ds, std::get<double>(value));
 			}
 			else if (std::holds_alternative<int64_t>(value)) {
@@ -566,21 +536,29 @@ namespace data {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (_active) return;
 
+		std::string parentStr(parentFolder);
+		std::string subStr(subFolder);
+
 		// Create folder if it doesn't exist
-		std::filesystem::path dir = std::filesystem::path(parentFolder) / subFolder;
+		std::filesystem::path dir = std::filesystem::path(parentStr) / subStr;
 		std::error_code ec;
 		std::filesystem::create_directories(dir, ec);
 		if (ec) {
 			std::cerr << "DataManager: create_directories failed: " << ec.message()
 				<< " dir=" << dir.string() << "\n";
 		}
+		
+		std::string typeStr;
 
-		_path = (dir / ("dsfe_run_" + timestampCompact() + ".csv")).string();
+		if (subStr == "Simulation") { typeStr = "sim"; }
+		else if (subStr == "Reference") { typeStr = "ref"; }
+
+		_path = (dir / ("dsfe_" + typeStr + "_run_" + timestampCompact() + ".csv")).string();
 		_file.open(_path, std::ios::out);
 
 		if (!_file.is_open()) {
 			std::cerr << "DataManager: failed to open CSV file for writing: " << _path
-				<<  "cwd=" << std::filesystem::current_path().string() << "\n";
+				<< "cwd=" << std::filesystem::current_path().string() << "\n";
 			_active = false;
 			return;
 		}
@@ -605,9 +583,9 @@ namespace data {
 		if (!_active || !_file.is_open()) return;
 		for (const auto& [key, value] : fields) {
 			std::string val = toString(value);
-			_file << escape_csv(topic) << "," 
-				  << escape_csv(key) << "," 
-				  << escape_csv(toString(val)) << "\n";
+			_file << escape_csv(topic) << ","
+				<< escape_csv(key) << ","
+				<< escape_csv(toString(val)) << "\n";
 		}
 		_file.flush(); // ensure data is written
 	}
@@ -620,10 +598,11 @@ namespace data {
 	void DataManager::setEnabled(bool enabled) {
 		if (enabled == _enabled) return;
 		_enabled = enabled;
+		std::string intName = _integratorName.empty() ? "unknown" : _integratorName;
 
 		if (_enabled) {
-			_sim.start(_parentFolder, "Simulation");
-			_ref.start(_parentFolder, "Reference");
+			_sim.start(_parentFolder, "Simulation", intName);
+			_ref.start(_parentFolder, "Reference", intName);
 		}
 		else {
 			_sim.stop();
@@ -640,22 +619,6 @@ namespace data {
 		else if (s == Stream::Reference) {
 			_ref.write(std::string(topic), fields);
 		}
-	}
-
-	bool DataManager::commitHDF5(std::string_view name, bool useIntegratorName) {
-		if (!_enabled) return false;
-
-		std::string strName(name);
-		if (useIntegratorName) {
-			strName += "_" + _integratorName;
-		}
-		
-		auto finalPathSim = std::filesystem::path(_parentFolder) / "Simulation" / ("dsfe_sim_" + std::string(strName) + ".h5");
-		auto finalPathRef = std::filesystem::path(_parentFolder) / "Reference" / ("dsfe_ref_" + std::string(strName) + ".h5");
-
-		bool ok1 = _sim.commit(finalPathSim.string());
-		bool ok2 = _ref.commit(finalPathRef.string());
-		return ok1 && ok2;
 	}
 
 } // namespace data
