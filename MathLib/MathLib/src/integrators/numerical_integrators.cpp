@@ -144,7 +144,7 @@ namespace integration {
 			}
 		}
 
-		// If it reachs here, it failed to converge after many attempts
+		// If it reaches here, it failed to converge after many attempts
 		// Just putting this here as a policy choice honestly, return the best effort or throw
 		throw std::runtime_error("RK45 failed to converge after maximum attempts");
 		//return x;
