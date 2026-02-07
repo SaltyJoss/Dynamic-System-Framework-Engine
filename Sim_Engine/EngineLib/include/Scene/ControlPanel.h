@@ -63,8 +63,8 @@ namespace gui {
         Moons
     };
 
-    static GravityLevel gravityLevel = GravityLevel::Root;
-    static GravityUIMode gravityMode = GravityUIMode::Preset;
+    inline GravityLevel gravityLevel = GravityLevel::Root;
+    inline GravityUIMode gravityMode = GravityUIMode::Preset;
 
 	// ControlPanel Class
     class ENGINE_API ControlPanel {

@@ -32,7 +32,7 @@ namespace render{
 				stbi_image_free(data);
 			}
 			else {
-				LOG_ERROR("failed to load face: %s", faces[i]);
+				LOG_ERROR("failed to load face: %s", faces[i].c_str());
 				stbi_image_free(data);
 			}
 		}
