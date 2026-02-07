@@ -92,4 +92,54 @@ namespace mathlib {
 		double w_n = natural_freq(k_p, I);
 		return k_d / (2.0 * I * w_n); // damping ratio - zeta
 	}
+
+	// Overloads for std::array and C arrays for Vec3 conversion
+	template <typename T, std::size_t N>
+	std::enable_if_t<N == 3, Vec3> toVec3(const std::array<T, N>& arr) {
+		return Vec3(arr[0], arr[1], arr[2]);
+	}
+	template <typename T>
+	Vec3 toVec3(const T arr[3]) {
+		return Vec3(arr[0], arr[1], arr[2]);
+	}
+
+	// Overloads for std::array and C arrays for Vec4 conversion
+	template <typename T, std::size_t N>
+	std::enable_if_t<N == 4, Vec4> toVec4(const std::array<T, N>& arr) {
+		return Vec4(arr[0], arr[1], arr[2], arr[3]);
+	}
+	template <typename T>
+	Vec4 toVec4(const T arr[4]) {
+		return Vec4(arr[0], arr[1], arr[2], arr[3]);
+	}
+
+	// Overloads for std::array and C arrays for Mat3 conversion
+	template <typename T, std::size_t N>
+	std::enable_if_t<N == 3, Mat3> toMat3(const std::array<std::array<T, N>, N>& mat) {
+		return Mat3(mat[0][0], mat[0][1], mat[0][2],
+					mat[1][0], mat[1][1], mat[1][2],
+					mat[2][0], mat[2][1], mat[2][2]);
+	}
+	template <typename T>
+	Mat3 toMat3(const T mat[3][3]) {
+		return Mat3(mat[0][0], mat[0][1], mat[0][2],
+					mat[1][0], mat[1][1], mat[1][2],
+					mat[2][0], mat[2][1], mat[2][2]);
+	}
+
+	// Overloads for std::array and C arrays for Mat4 conversion
+	template <typename T, std::size_t N>
+	std::enable_if_t<N == 4, Mat4> toMat4(const std::array<std::array<T, N>, N>& mat) {
+		return Mat4(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
+					mat[1][0], mat[1][1], mat[1][2], mat[1][3],
+					mat[2][0], mat[2][1], mat[2][2], mat[2][3],
+					mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+	}
+	template <typename T>
+	Mat4 toMat4(const T mat[4][4]) {
+		return Mat4(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
+					mat[1][0], mat[1][1], mat[1][2], mat[1][3],
+					mat[2][0], mat[2][1], mat[2][2], mat[2][3],
+					mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+	}
 }
