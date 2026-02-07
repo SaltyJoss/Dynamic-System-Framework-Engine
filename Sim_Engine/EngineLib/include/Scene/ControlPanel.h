@@ -65,8 +65,6 @@ namespace gui {
 
     static GravityLevel gravityLevel = GravityLevel::Root;
     static GravityUIMode gravityMode = GravityUIMode::Preset;
-    static bool requestSolarPopup = false;
-    static bool deferCloseCombo = false;
 
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
