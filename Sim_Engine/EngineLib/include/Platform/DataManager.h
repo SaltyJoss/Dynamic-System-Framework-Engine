@@ -20,62 +20,62 @@
 #include <hdf5.h>
 
 namespace data {
-	// Variant type to hold different data types
+    // Variant type to hold different data types
     using Value = std::variant<
         std::nullptr_t, bool, int64_t, uint64_t, double, long,
-        std::vector<double>, 
+        std::vector<double>,
         std::vector<std::string>, std::string
     >;
-    
-	// Field type representing a key-value pair
-	using Field = std::pair<std::string, Value>;
-	// List of fields
-	using FieldList = std::vector<Field>;
 
-	// Stream enum for data streams
+    // Field type representing a key-value pair
+    using Field = std::pair<std::string, Value>;
+    // List of fields
+    using FieldList = std::vector<Field>;
+
+    // Stream enum for data streams
     enum class Stream { Simulation, Reference };
 
     class ENGINE_API HDF5StreamWriter {
-	public:
-		HDF5StreamWriter() = default;
+    public:
+        HDF5StreamWriter() = default;
 
-		void start(std::string_view parentFolder, std::string_view subFolder);
-		void stop();
+        void start(std::string_view parentFolder, std::string_view subFolder, std::string intName);
+        void stop();
 
-		bool active() const { return _active; }
-		const std::string& path() const { return _path; }
+        bool active() const { return _active; }
+        const std::string& path() const { return _path; }
 
-		void write(std::string topic, const FieldList& fields);
+        void write(std::string topic, const FieldList& fields);
 
     private:
         mutable std::mutex _mtx;
         std::string _path;
         bool _active = false;
 
-		// HDF5 file and datatype handles 
+        // HDF5 file and datatype handles 
         hid_t _fileID = -1;
         hid_t _vlenStrType = -1;
-        
-		// Cached dataset handles for 1D data
-		std::unordered_map<std::string, hid_t> _ds1D_D;        // 1D scalar numeric rows (double)
+
+        // Cached dataset handles for 1D data
+        std::unordered_map<std::string, hid_t> _ds1D_D;        // 1D scalar numeric rows (double)
         std::unordered_map<std::string, hid_t> _ds1D_vlenStr;  // 1D string scalars  <-- ADD THIS
-		// Cached dataset handles for 2D data
+        // Cached dataset handles for 2D data
         std::unordered_map<std::string, hid_t> _ds2D_D;        // 2D numeric rows (vector<double>)
         std::unordered_map<std::string, hid_t> _ds2D_vlenStr;  // 2D string rows (vector<string>)
 
     };
 
     class ENGINE_API CsvStreamWriter {
-    public: 
-		CsvStreamWriter() = default;
+    public:
+        CsvStreamWriter() = default;
 
         void start(std::string_view parentFolder, std::string_view subFolder);
-		void stop();
+        void stop();
 
-		bool active() const { return _active; }
-		const std::string& path() const { return _path; }
+        bool active() const { return _active; }
+        const std::string& path() const { return _path; }
 
-		void write(std::string topic, const FieldList& fields);
+        void write(std::string topic, const FieldList& fields);
 
     private:
         mutable std::mutex _mtx;
@@ -91,14 +91,17 @@ namespace data {
 
     class ENGINE_API DataManager {
     public:
-		// Singleton instance accessor
+        // Singleton instance accessor
         static DataManager& instance() {
             static DataManager instance;
             return instance;
-		}
+        }
 
-		// Enable or disable data logging
+        // Enable or disable data logging
         void setEnabled(bool enabled);
+
+		// Set the current integrator name for logging
+		void setIntegratorName(std::string name) { _integratorName = name; }
 
 		// Set parent folder for data logging
         void setParentFolder(std::string folder) { _parentFolder = folder; }
@@ -109,10 +112,12 @@ namespace data {
 		// Check if data logging is enabled
 		bool enabled() const { return _enabled; }
 
+
     private:
         DataManager() = default;
 
         bool _enabled = false;
+		std::string _integratorName = "Unknown";
         std::string _parentFolder = "Runs";
         HDF5StreamWriter _sim;
         HDF5StreamWriter _ref;
@@ -128,6 +133,15 @@ namespace data {
 // Enable or disable data capture
 #define DATA_CAPTURE_ENABLE(b) \
     do { ::data::DataManager::instance().setEnabled((b)); } while(0)
+
+// SET_SIM_INTEGRATOR
+#ifdef SET_SIM_INTEGRATOR
+#error SET_SIM_INTEGRATOR already defined before DataManager.h
+#endif
+// Set the simulation integrator name for logging
+#define SET_SIM_INTEGRATOR(name) \
+    do { ::data::DataManager::instance().setIntegratorName((name)); } while(0)
+
 
 // --- HDF5 Macros ---
 

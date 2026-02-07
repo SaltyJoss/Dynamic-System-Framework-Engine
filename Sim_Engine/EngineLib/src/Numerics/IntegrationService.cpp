@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Numerics/IntegrationService.h"
+
 #include "EngineLib/LogMacros.h"
 
 using namespace mathlib;
@@ -22,16 +23,23 @@ namespace integration {
 		return s;
 	}
 
+	// Helper to convert string to lowercase
+	static inline std::string lowerCopy(std::string s) {
+		std::transform(s.begin(), s.end(), s.begin(),
+			[](unsigned char c) { return (unsigned char)std::tolower(c); });
+		return s;
+	}
+
 	// Parse integration method from string
 	static bool tryParseMethod(std::string s, eIntegrationMethod& out) {
-		s = upperCopy(trimCopy(std::move(s)));
+		s = lowerCopy(trimCopy(std::move(s)));
 
-		if (s == "EULER")		  { out = eIntegrationMethod::Euler; }
-		else if (s == "MIDPOINT") { out = eIntegrationMethod::Midpoint; }
-		else if (s == "HEUN")	  { out = eIntegrationMethod::Heun; }
-		else if (s == "RALSTON")  { out = eIntegrationMethod::Ralston; }
-		else if (s == "RK4" || s == "RK-4" || s == "RUNGEKUTTA4") { out = eIntegrationMethod::RK4; }
-		else if (s == "RK45" || s == "RK4(5)" || s == "DOPRI" || s == "DORMANDPRINCE") { out = eIntegrationMethod::RK45; }
+		if (s == "euler")		  { out = eIntegrationMethod::Euler; }
+		else if (s == "midpoint") { out = eIntegrationMethod::Midpoint; }
+		else if (s == "heun")	  { out = eIntegrationMethod::Heun; }
+		else if (s == "ralston")  { out = eIntegrationMethod::Ralston; }
+		else if (s == "rk4"  || s == "rk-4"  || s == "rungekutta4")   { s = "rk4";  out = eIntegrationMethod::RK4; }
+		else if (s == "rk45" || s == "dopri" || s == "dormandprince") { s = "rk45", out = eIntegrationMethod::RK45; }
 		else { return false; }
 
 		return true;
@@ -41,17 +49,17 @@ namespace integration {
 	const char* IntegrationService::toString(eIntegrationMethod m) {
 		switch (m) {
 			case eIntegrationMethod::Euler:
-				return "Euler";
+				return "euler";
 			case eIntegrationMethod::Midpoint:
-				return "Midpoint";
+				return "midpoint";
 			case eIntegrationMethod::Heun:
-				return "Heun";
+				return "heun";
 			case eIntegrationMethod::Ralston:
-				return "Ralston";
+				return "ralston";
 			case eIntegrationMethod::RK4:
-				return "RK4";
+				return "rk4";
 			case eIntegrationMethod::RK45:
-				return "RK45";
+				return "rk45";
 			default:
 				return "Unknown";
 		}
@@ -70,7 +78,7 @@ namespace integration {
 	VecX IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
 		if (!f) {
 			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x; // could also throw an error here, but feel this is better
+			return x;
 		}
 
 		switch (m) {
