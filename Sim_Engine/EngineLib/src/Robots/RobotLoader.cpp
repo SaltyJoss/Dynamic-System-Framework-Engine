@@ -98,8 +98,8 @@ namespace robots {
 			joint.origin_xyz = readVec3(o, "origin_xyz", joint.origin_xyz);
 			joint.origin_rpy = readVec3(o, "origin_rpy", joint.origin_rpy);
 		} else {
-			joint.origin_xyz = readVec3(jointData, "origin_xyz", Vec3(0));
-			joint.origin_rpy = readVec3(jointData, "origin_rpy", Vec3(0));
+			joint.origin_xyz = readVec3(jointData, "origin_xyz", Vec3::Zero());
+			joint.origin_rpy = readVec3(jointData, "origin_rpy", Vec3::Zero());
 		}
 		joint.origin_q = rpyRadToQuat(joint.origin_rpy);
 	}
@@ -119,14 +119,28 @@ namespace robots {
 			}
 			else { joint.axis.normalize(); }
 		}
+
+		// Parse joint type (e.g., "revolute", "prismatic") if provided.
+		if (jointData.contains("type") && jointData["type"].is_string()) {
+			const std::string typeStr = jointData["type"].get<std::string>();
+			if (typeStr == "revolute" || typeStr == "REVOLUTE") {
+				joint.type = eJointType::REVOLUTE;
+			}
+			else if (typeStr == "prismatic" || typeStr == "PRISMATIC") {
+				joint.type = eJointType::PRISMATIC;
+			}
+			else {
+				LOG_WARN("Joint %s has unknown type '%s', defaulting to REVOLUTE", joint.name.c_str(), typeStr.c_str());
+			}
+		}
 	}
 
 	static void parseJointLimits(const json& jointData, RobotJoint& joint) {
-		joint.limits.continuous = false;
-		joint.limits.minAngle = 0.0f;
-		joint.limits.maxAngle = 0.0f;
-		joint.limits.maxOmegaRad_s = 0.0f;
-		joint.limits.maxEffort = 0.0f;
+		joint.limits.continuous		= false;
+		joint.limits.minAngle		= 0.0f;
+		joint.limits.maxAngle		= 0.0f;
+		joint.limits.maxOmegaRad_s	= 0.0f;
+		joint.limits.maxEffort		= 0.0f;
 
 		if (!jointData.contains("limits") || !jointData["limits"].is_object()) { LOG_WARN("Joint %s missing 'limits' block", joint.name.c_str()); return; }
 

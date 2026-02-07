@@ -9,21 +9,21 @@ using namespace mathlib;
 using namespace constants;
 
 namespace mathlib {
-	// convert any non-eigen vector to Vec3 (if it has 3 elements)
+	// Converts a non-eigen vector to Vec3 (if it has 3 elements)
 	template <typename T>
 	Vec3 toVec3(const T& vec) {
 		static_assert(std::tuple_size<T>::value == 3, "Input vector must have exactly 3 elements");
 		return Vec3(vec[0], vec[1], vec[2]);
 	}
 
-	// convert any non-eigen vector to Vec4 (if it has 4 elements)
+	// Converts a non-eigen vector to Vec4 (if it has 4 elements)
 	template <typename T>
 	Vec4 toVec4(const T& vec) {
 		static_assert(std::tuple_size<T>::value == 4, "Input vector must have exactly 4 elements");
 		return Vec4(vec[0], vec[1], vec[2], vec[3]);
 	}
 
-	// Convert any non-eigen matrix to Mat3 (if it has 3x3 elements)
+	// Converts a non-eigen 3x3 matrix to Mat3 (if it has 3 rows and 3 columns)
 	template <typename T>
 	Mat3 toMat3(const T& mat) {
 		static_assert(std::tuple_size<T>::value == 3 && std::tuple_size<typename T::value_type>::value == 3, "Input matrix must be 3x3");
@@ -33,7 +33,7 @@ namespace mathlib {
 		);
 	}
 
-	// convert any non-eigen matrix to Mat4 (if it has 4x4 elements)
+	// Converts a non-eigen 4x4 matrix to Mat4 (if it has 4 rows and 4 columns)
 	template <typename T>
 	Mat4 toMat4(const T& mat) {
 		static_assert(std::tuple_size<T>::value == 4 && std::tuple_size<typename T::value_type>::value == 4, "Input matrix must be 4x4");

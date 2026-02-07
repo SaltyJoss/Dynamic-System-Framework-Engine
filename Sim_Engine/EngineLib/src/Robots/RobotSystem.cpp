@@ -328,7 +328,7 @@ namespace robots {
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
 		double I = 0.0;
-		// Sum contributions from all links to the effective inertia of joint i
+		// For each link, compute the contribution of joint i to the effective inertia at the end-effector
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
 			RobotMetrics tmp;
 			I += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
@@ -398,13 +398,13 @@ namespace robots {
 				const Mat3 R_k = T_world[k].block<3, 3>(0, 0);
 				const Vec3 com_world = R_k * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
 				
-				// Gravitational force on the link
-				const Vec3 g_world = Vec3(0.0, 0.0, -g); // .dae files show Z as up
-				const Vec3 F_g = Vec3(0.0, -m * g, 0.0); // [N]
+				// Gravitational force on the link (Z-down in world frame; .dae files show Z as up)
+				const Vec3 g_world = Vec3(0.0, -g, 0.0); // [m/s^2], gravity vector in world frame
+				const Vec3 F_g = m * g_world; // [N], gravitational force on the link in world frame
 				
 				// Torque contribution from this link's weight about joint i
-				const Vec3 r = com_world - T_world[i].block<3, 1>(0, 3);
-				
+				const Vec3 r = com_world - p_i; // [m]
+
 				// Torque = r × F_g projected onto joint axis
 				tau_g_i += axis_world.dot(r.cross(F_g));
 			}
@@ -547,7 +547,23 @@ namespace robots {
 		// State-consistent gravity term
 		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
 		
-		LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f, %.3f", (float)_gravity, tau_gravity[0], tau_gravity[1], tau_gravity[2]);
+		// Log gravity torques for debugging
+		if (tau_gravity.size() >= 3) {
+			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f, %.3f",
+				(float)_gravity, tau_gravity[0], tau_gravity[1], tau_gravity[2]);
+		}
+		else if (tau_gravity.size() == 2) {
+			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f",
+				(float)_gravity, tau_gravity[0], tau_gravity[1]);
+		}
+		else if (tau_gravity.size() == 1) {
+			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f",
+				(float)_gravity, tau_gravity[0]);
+		}
+		else {
+			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: (none)",
+				(float)_gravity);
+		}
 
 		// Loop through each joint and compute derivatives
 		for (size_t i = 0; i < n; ++i) {
