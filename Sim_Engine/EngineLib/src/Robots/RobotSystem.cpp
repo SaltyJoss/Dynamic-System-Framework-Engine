@@ -372,13 +372,24 @@ namespace robots {
 	std::vector<double> RobotSystem::computeGravityTorque(const std::vector<double>& theta) const {
 		const size_t n = _robot.joints.size();
 		std::vector<double> tau_G(n, 0.0); // [Nm], gravity torque for each joint
+		double g{ _gravity }; // [m/s^2], gravity acceleration magnitude
 		
+		// Create state vector with current joint angles
+		VecX x = packState();
+		for (size_t k = 0; k < theta.size(); ++k) {
+			x[k] = theta[k]; // [rad]
+		}
+
 		// Compute forward kinematics to get the pose of each link in the world frame
-		std::vector<Pose> T_world = computeForwardKinematics_fromState(packState());
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
 			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
+
+			const Vec3 p_i = T_world[i].block<3, 1>(0, 3);
+			const Mat3 R_i = T_world[i].block<3, 3>(0, 0);
+			const Vec3 axis_world = (R_i * _robot.joints[i].axis).normalized();
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
@@ -387,22 +398,19 @@ namespace robots {
 				if (mass <= 0.0) { continue; }
 
 				// Link's center of mass in world frame
-				Mat3 R = T_world[k].block<3, 3>(0, 0);
-				Vec3 com_world = R * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
+				Mat3 R_k = T_world[k].block<3, 3>(0, 0);
+				Vec3 com_world = R_k * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
 				
 				// Gravitational force on the link
-				Vec3 F_g = Vec3(0.0, -mass * _gravity, 0.0); // [N], assuming gravity acts in -Y direction
-
-				// Joint axis in world frame
-				Vec3 axis_world = (R * _robot.joints[i].axis).normalized();
+				Vec3 F_g = Vec3(0.0, -mass * g, 0.0); // [N]
 				
 				// Torque contribution from this link's weight about joint i
-				Vec3 r = com_world - T_world[i].block<3, 1>(0, 3); // vector from joint i to link k's COM
+				Vec3 r = com_world - T_world[i].block<3, 1>(0, 3);
 				
 				// Torque = r × F_g projected onto joint axis
 				tau_g_i += axis_world.dot(r.cross(F_g));
 			}
-			tau_G[i] = tau_g_i; // total gravity torque for joint i
+			tau_G[i] = tau_g_i;
 		}
 		return tau_G; // [Nm], gravity torques for each joint
 	}
