@@ -24,7 +24,6 @@ namespace mathlib {
 	using Mat6 = Eigen::Matrix<double, 6, 6>;	// A 6x6 matrix, often used to represent spatial inertia tensors or Jacobians in robotics and kinematics
 
 	using Pose = Eigen::Matrix4d;		// A 4x4 transformation matrix that combines rotation and translation and represents the pose of an object in 3D space
-	using Quat = Eigen::Quaterniond;	// A quaternion representing rotation in 3D space, composed of one real part and three imaginary parts (x, y, z, w)
-	using Quatf = Eigen::Quaternionf;	// A quaternion with single-precision floating-point coefficients, used for representing rotations in 3D space with less memory usage than double-precision quaternions
-
+	using Quat = Eigen::Quaterniond;	// A quaternion representing rotation in 3D space; Eigen uses semantic order (w, x, y, z) with scalar part w and vector part (x, y, z), while coeffs() is stored as (x, y, z, w)
+	using Quatf = Eigen::Quaternionf;	// A single-precision quaternion representing rotation in 3D space; same Eigen convention applies: semantic order (w, x, y, z), coeffs() storage (x, y, z, w)
 }
