@@ -2,7 +2,6 @@
 #include "Numerics/IntegrationService.h"
 
 #include "EngineLib/LogMacros.h"
-#include "Platform/DataManager.h"
 
 using namespace mathlib;
 
