@@ -318,17 +318,23 @@ namespace robots {
 	// Method to compute a single joints effective inertia
 	double RobotSystem::computeSingleIeff(size_t i, const std::vector<double>& theta) const {
 		mathlib::VecX x = packState();
-		for (size_t k = 0; k < theta.size(); ++k)
-			x[k] = theta[k];
 
+		// Update state vector with current joint angles
+		for (size_t k = 0; k < theta.size(); ++k) {
+			x[k] = theta[k]; // [rad]
+		}
+
+		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
 		double I = 0.0;
+		// Sum contributions from all links to the effective inertia of joint i
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
 			RobotMetrics tmp;
 			I += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
 		}
-		return std::max(I, 1e-6);
+
+		return std::max(I, 1e-6); // [kg*m^2], I_eff for joint i with floor to avoid singularities
 	}
 
 
@@ -359,7 +365,46 @@ namespace robots {
 			// Coriolis/centrifugal torque contribution for joint i (diagonal term)
 			tau_C[i] = 0.5 * dI_dqi * omega[i] * omega[i];
 		}
-		return tau_C;
+		return tau_C; // [Nm], diagonal Coriolis/centrifugal terms for each joint
+	}
+
+	// Method to compute the gravity torque for each joint
+	std::vector<double> RobotSystem::computeGravityTorque(const std::vector<double>& theta) const {
+		const size_t n = _robot.joints.size();
+		std::vector<double> tau_G(n, 0.0); // [Nm], gravity torque for each joint
+		
+		// Compute forward kinematics to get the pose of each link in the world frame
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(packState());
+
+		// For each joint, sum the gravity contributions from all links
+		for (size_t i = 0; i < n; ++i) {
+			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
+
+			// For each link, compute the gravitational force and its torque contribution about joint i
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				const RobotLink& link = _robot.links[k];
+				const double mass = link.inertial.mass;
+				if (mass <= 0.0) { continue; }
+
+				// Link's center of mass in world frame
+				Mat3 R = T_world[k].block<3, 3>(0, 0);
+				Vec3 com_world = R * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
+				
+				// Gravitational force on the link
+				Vec3 F_g = Vec3(0.0, -mass * _gravity, 0.0); // [N], assuming gravity acts in -Y direction
+
+				// Joint axis in world frame
+				Vec3 axis_world = (R * _robot.joints[i].axis).normalized();
+				
+				// Torque contribution from this link's weight about joint i
+				Vec3 r = com_world - T_world[i].block<3, 1>(0, 3); // vector from joint i to link k's COM
+				
+				// Torque = r × F_g projected onto joint axis
+				tau_g_i += axis_world.dot(r.cross(F_g));
+			}
+			tau_G[i] = tau_g_i; // total gravity torque for joint i
+		}
+		return tau_G; // [Nm], gravity torques for each joint
 	}
 
 	// Method to compute joint metrics for control
@@ -367,7 +412,7 @@ namespace robots {
 		const RobotJoint& joint, const RobotLink& link, double I_eff, 
 		double theta, double omega, 
 		double thetaRef, double omegaRef, double alphaRef, 
-		double eta, double tau_coriolis
+		double eta, double tau_coriolis, double tau_gravity
 	) const {
 		RobotMetrics m{};
 
@@ -406,7 +451,7 @@ namespace robots {
 			tau_i = std::clamp(tau_i, -tau_i_max, tau_i_max);
 		}
 
-		tau_i = 0.0; // disable I-term for now (testing)
+		//tau_i = 0.0; // disable I-term for now (testing)
 
 		// Inverse dynamics control law (PD + feedforward)
 		double tau_control = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * qdd_ref; // control torque
@@ -426,9 +471,10 @@ namespace robots {
 		m.tau_damping  = tau_damping;
 		m.tau_friction = tau_friction;
 		m.tau_coriolis = tau_coriolis;
+		m.tau_gravity = tau_gravity;
 
 		// Net torque
-		m.tau = tau_control - tau_damping - tau_friction - tau_coriolis;
+		m.tau = tau_control - tau_damping - tau_friction - tau_coriolis - tau_gravity; // [Nm], net torque applied to the joint after passive dynamics
 
 		double tau_preSat = m.tau;
 
@@ -490,6 +536,11 @@ namespace robots {
 
 		// State-consistent Coriolis/centrifugal term
 		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
+		
+		// State-consistent gravity term
+		std::vector<double> tau_gravity = computeGravityTorque(q); // [TODO] could also compute gravity in computeJointMetrics and pass it in to save some redundant FK computations:
+		
+		LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f, %.3f", (float)_gravity, tau_gravity[0], tau_gravity[1], tau_gravity[2]);
 
 		// Loop through each joint and compute derivatives
 		for (size_t i = 0; i < n; ++i) {
@@ -512,7 +563,7 @@ namespace robots {
 				joint, link, I_eff[i], 
 				theta, omega, 
 				thetaRef, omegaRef, alphaRef, 
-				eta, tau_coriolis[i]
+				eta, tau_coriolis[i], tau_gravity[i]
 			);
 
 			// Fill in derivatives
@@ -592,7 +643,7 @@ namespace robots {
 				joint, link, I_eff[i], 
 				theta, omega, 
 				thetaRef, omegaRef, alphaRef, 
-				0.0, 0.0
+				0.0, 0.0, 0.0
 			);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
@@ -621,6 +672,7 @@ namespace robots {
 					{"torque_damping",  m.tau_damping},
 					{"torque_friction", m.tau_friction},
 					{"torque_coriolis", m.tau_coriolis},
+					{"torque_gravity",	m.tau_gravity}, // gravity compensation not implemented yet
 					{"torque_barrier",  m.tau_barrier},
 					{"torque_sat",	    m.tau_sat},
 					// Clamping flags
