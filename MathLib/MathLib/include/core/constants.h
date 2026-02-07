@@ -37,7 +37,7 @@ namespace constants {
 	static constexpr double g_zero  = 0.0;	// Zero gravity (m/s^2)
 	static constexpr double g_micro = 1e-6;	// Microgravity threshold (m/s^2)
 
-	// Standard gravity values for our solar systme (m/s^2)
+	// Standard gravity values for our solar system (m/s^2)
 	static constexpr double g_Sun		= 274.0;	// Standard gravity on Sun's surface (m/s^2)
 	static constexpr double g_Mercury	= 3.7;		// Standard gravity on Mercury's surface (m/s^2)
 	static constexpr double g_Venus		= 8.87;		// Standard gravity on Venus' surface (m/s^2)
