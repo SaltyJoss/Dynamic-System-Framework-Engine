@@ -92,6 +92,20 @@ While automated reviews cannot be fully disabled at the repository level, you ca
 
 However, it's generally better to learn to evaluate and filter these comments rather than ignore them entirely, as they occasionally catch real issues.
 
+## Tools to Help
+
+### Merge Readiness Checker Script
+Run `.github/check_merge_readiness.sh` to get an interactive assessment of whether your PR is ready to merge:
+
+```bash
+bash .github/check_merge_readiness.sh
+```
+
+This script walks you through critical checks and helps you distinguish between blocking issues and non-blocking automated suggestions.
+
+### PR Template
+When creating a PR, use the provided template to document which automated comments you've evaluated and dismissed, helping reviewers understand your decisions.
+
 ## Conclusion
 
 **The automated reviewer is a tool, not an authority.** Use your professional judgment to decide which suggestions add value to your project. Your PR is ready to merge when **you** decide it meets your quality standards, not when an automated reviewer runs out of suggestions.
