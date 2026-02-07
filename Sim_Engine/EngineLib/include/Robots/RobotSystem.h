@@ -134,7 +134,7 @@ namespace robots {
 		// Compute the contribution of a link to the inertia of a joint based on the current state
 		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
 		// Compute the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(const std::vector<double>& theta) const;
+		std::vector<double> computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const;
 
 		// State packing and unpacking
         mathlib::VecX packState() const;

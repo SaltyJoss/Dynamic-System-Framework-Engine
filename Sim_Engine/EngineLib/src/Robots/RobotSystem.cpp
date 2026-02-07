@@ -369,7 +369,7 @@ namespace robots {
 	}
 
 	// Method to compute the gravity torque for each joint
-	std::vector<double> RobotSystem::computeGravityTorque(const std::vector<double>& theta) const {
+	std::vector<double> RobotSystem::computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const {
 		const size_t n = _robot.joints.size();
 		std::vector<double> tau_G(n, 0.0); // [Nm], gravity torque for each joint
 		double g{ _gravity }; // [m/s^2], gravity acceleration magnitude
@@ -379,9 +379,6 @@ namespace robots {
 		for (size_t k = 0; k < theta.size(); ++k) {
 			x[k] = theta[k]; // [rad]
 		}
-
-		// Compute forward kinematics to get the pose of each link in the world frame
-		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
@@ -394,18 +391,19 @@ namespace robots {
 			// For each link, compute the gravitational force and its torque contribution about joint i
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
 				const RobotLink& link = _robot.links[k];
-				const double mass = link.inertial.mass;
-				if (mass <= 0.0) { continue; }
+				const double m = link.inertial.mass;
+				if (m <= 0.0) { continue; }
 
 				// Link's center of mass in world frame
-				Mat3 R_k = T_world[k].block<3, 3>(0, 0);
-				Vec3 com_world = R_k * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
+				const Mat3 R_k = T_world[k].block<3, 3>(0, 0);
+				const Vec3 com_world = R_k * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
 				
 				// Gravitational force on the link
-				Vec3 F_g = Vec3(0.0, -mass * g, 0.0); // [N]
+				const Vec3 g_world = Vec3(0.0, 0.0, -g); // .dae files show Z as up
+				const Vec3 F_g = Vec3(0.0, -m * g, 0.0); // [N]
 				
 				// Torque contribution from this link's weight about joint i
-				Vec3 r = com_world - T_world[i].block<3, 1>(0, 3);
+				const Vec3 r = com_world - T_world[i].block<3, 1>(0, 3);
 				
 				// Torque = r × F_g projected onto joint axis
 				tau_g_i += axis_world.dot(r.cross(F_g));
@@ -546,7 +544,7 @@ namespace robots {
 		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
 		
 		// State-consistent gravity term
-		std::vector<double> tau_gravity = computeGravityTorque(q); // [TODO] could also compute gravity in computeJointMetrics and pass it in to save some redundant FK computations:
+		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
 		
 		LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f, %.3f", (float)_gravity, tau_gravity[0], tau_gravity[1], tau_gravity[2]);
 
