@@ -1,6 +1,6 @@
 #pragma once
 // File:   RobotModel.h
-// Github: SaltyJoss
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
