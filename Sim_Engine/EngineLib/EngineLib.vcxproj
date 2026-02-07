@@ -264,6 +264,7 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
     <ClCompile Include="src\Interpreter\Utils.cpp" />
     <ClCompile Include="src\Numerics\IntegrationService.cpp" />
     <ClCompile Include="src\Platform\DataManager.cpp" />
+    <ClCompile Include="src\Platform\Logger.cpp" />
     <ClCompile Include="src\Platform\Paths.cpp" />
     <ClCompile Include="src\Robots\TrajectoryManager.cpp" />
     <ClCompile Include="src\Scene\AxisOrientator.cpp" />
@@ -333,7 +334,6 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\Assets\importObj.cpp" />
     <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
-    <ClCompile Include="src\Platform\Logger.cpp" />
     <ClCompile Include="src\Platform\WindowManager.cpp" />
     <ClCompile Include="src\Rendering\Cubemap.cpp" />
     <ClCompile Include="src\Rendering\CubeVertices.cpp" />

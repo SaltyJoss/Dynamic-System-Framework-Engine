@@ -8,6 +8,8 @@
 #include "Scene/Object.h"
 #include "Scene/Mesh.h"
 
+#include "Platform/DataManager.h"
+
 using namespace mathlib;
 using namespace constants;
 using namespace utils;

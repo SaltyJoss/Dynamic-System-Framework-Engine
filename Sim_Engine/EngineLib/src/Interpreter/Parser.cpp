@@ -16,15 +16,15 @@ namespace interpreter {
 	// Determine if a command requires an identifier
 	bool Parser::requiresIdentifier(std::string_view cmdName) {
 		std::string s = toLower(cmdName);
-		return	s == "spin"				||
-				s == "rotateby"			||
-				s == "rotateto"			||
-				s == "rotatejointby"	||
-				s == "rotatejointto"	||
-				s == "trajset"			||
-				s == "translate"		||
-				s == "set"				||
-				s == "select" 			||
+		return	s == "spin"			 ||
+				s == "rotateby"		 ||
+				s == "rotateto"		 ||
+				s == "rotatejointby" ||
+				s == "rotatejointto" ||
+				s == "trajset"		 ||
+				s == "translate"	 ||
+				s == "set"			 ||
+				s == "select" 		 ||
 				s == "load";
 	}
 

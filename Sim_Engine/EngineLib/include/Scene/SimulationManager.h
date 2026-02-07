@@ -214,7 +214,6 @@ namespace gui {
         diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
 		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
 
-
     private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);

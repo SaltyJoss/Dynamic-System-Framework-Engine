@@ -31,15 +31,18 @@ namespace robots {
 
 	// --- 'toGlm' OVERLOADS ---
 
+	// Converts an Eigen 3D vector to a glm::vec3
 	static glm::vec3 toGlm(const Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
+	// Converts an Eigen 4D vector to a glm::vec4
 	static glm::vec4 toGlm(const Vec4& v) { return glm::vec4(v.x(), v.y(), v.z(), v.w()); }
+	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
 	static glm::quat toGlm(const Quat& q) {
 		return glm::quat(
 			static_cast<float>(q.w()),
 			static_cast<float>(q.x()),
 			static_cast<float>(q.y()),
 			static_cast<float>(q.z())
-		);
+		); // (w, x, y, z)
 	}
 	
 	// Converts a 3x3 Eigen matrix to a glm::mat3, taking into account the row-major to column-major conversion
@@ -48,7 +51,7 @@ namespace robots {
 		for (int c = 0; c < 3; ++c)
 			for (int r = 0; r < 3; ++r)
 				g[c][r] = static_cast<float>(m(r, c));
-		return g;
+		return g; // (3x3)
 	}
 
 	// Converts a 4x4 Eigen matrix to a glm::mat4, taking into account the row-major to column-major conversion
@@ -57,7 +60,7 @@ namespace robots {
 		for (int c = 0; c < 4; ++c)
 			for (int r = 0; r < 4; ++r)
 				g[c][r] = static_cast<float>(m(r, c));
-		return g;
+		return g; // (4x4)
 	}
 
 	// --- HELPER METHODS ---
@@ -72,14 +75,14 @@ namespace robots {
 	float RobotSystem::wrapToPi(float angleRad) {
 		angleRad = std::fmod(angleRad + static_cast<float>(PI_d), static_cast<float>(TWO_PI_d));
 		if (angleRad < 0.0f) { angleRad += static_cast<float>(TWO_PI_d); }
-		return angleRad - static_cast<float>(PI_d);
+		return angleRad - static_cast<float>(PI_d); // [rad]
 	}
 
 	// Method to wrap an angle in radians to the range [0, 2pi]
 	float RobotSystem::wrapRad(float angleRad) {
 		angleRad = fmod(angleRad, static_cast<float>(TWO_PI_d));
 		if (angleRad < 0.0f) { angleRad += static_cast<float>(TWO_PI_d); }
-		return angleRad;
+		return angleRad; // [rad]
 	}
 
 	// Method to apply a soft velocity barrier to joint torque using a quadratic "wall" function (basically a softer version of a hard velocity limit)
@@ -87,14 +90,14 @@ namespace robots {
 		if (wMax <= 0.0) return;
 
 		// Check if we're in the "soft zone" near the velocity limit
-		const double absw = std::abs(omega);
-		const double wSoft = 0.90 * wMax;
+		const double absw = std::abs(omega); // [rad/s]
+		const double wSoft = 0.90 * wMax;	 // [rad/s]
 
-		if (absw <= wSoft) return;
+		if (absw <= wSoft) { return; }
 
 		// Check if we're above the hard limit (with some tolerance)
-		const double t = (absw - wSoft) / (wMax - wSoft);
-		const double T = 0.2; // time constant
+		const double t = (absw - wSoft) / (wMax - wSoft); // [0, 1] as we go from wSoft to wMax
+		const double T = 0.2; // [s], time constant for how quickly the wall ramps up
 		const double wall = (I_eff / T) * (t * t) * (absw - wSoft); // [Nm]
 
 		// Apply opposing torque to reduce |omega|
@@ -111,7 +114,7 @@ namespace robots {
 			 I.ixy, I.iyy, I.iyz,
 			 I.ixz, I.iyz, I.izz;
 
-		return M;
+		return M; // [kg*m^2], (3x3) inertia tensor in link frame
 	}
 
 	// Method to compute the transformation matrix for a joint motion given its axis and angle
@@ -121,37 +124,7 @@ namespace robots {
 		Eigen::AngleAxisd aa(theta, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
 		T.block<3, 3>(0, 0) = aa.toRotationMatrix();		  // set upper-left 3x3 block to rotation matrix
 		
-		return T;
-	}
-
-	// Method to compute the full spatial velocity Jacobian column for a joint
-	static Vec6 computeJacobianColumn(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world) {
-		Vec3 joint_pos_world = T_world.block<3, 1>(0, 3); // position of joint in world frame
-		Mat3 R_world = T_world.block<3, 3>(0, 0);		  // rotation from joint frame to world frame
-
-		Vec3 world_com = R_world * link.inertial.com_xyz + joint_pos_world; // COM position in world frame
-		Vec3 world_axis = (R_world * joint.axis).normalized();				// joint axis in world frame
-
-		Vec3 r = world_com - joint_pos_world; // vector from joint to COM in world frame
-		Vec3 J_v = world_axis.cross(r);		  // [rad/s], linear velocity Jacobian  (3x1)
-		Vec3 J_w = world_axis;				  // [rad/s], angular velocity Jacobian (3x1)
-
-		// Store Jacobians in metrics
-		m.Jv = J_v;
-		m.Jw = J_w;
-
-		return Vec6(J_v.x(), J_v.y(), J_v.z(), J_w.x(), J_w.y(), J_w.z()); // [rad/s], spatial velocity Jacobian column (6x1)
-	}
-
-	// Method to compute the spatial inertia matrix for a link
-	static Mat6 computeSpatialInertiaMatrix(double mass, const Mat3& I) {
-		Mat6 M = Mat6::Zero(); // spacial inertia matrix (6x6)
-
-		// Upper-left 3x3 block is mass matrix, lower-right 3x3 block is inertia tensor, off-diagonal blocks are zero for point mass assumption
-		M.topLeftCorner<3, 3>() = mass * Mat3::Identity(); // mass matrix
-		M.bottomRightCorner<3, 3>() = I;				   // inertia tensor
-
-		return M; // [kg, kg*m^2]
+		return T; // (4x4) homogeneous transformation
 	}
 
 	// Method to compute the effective inertia contribution of a joint to the end-effector, given the current robot configuration
@@ -179,7 +152,7 @@ namespace robots {
 		double I_rot = axis_world.transpose() * I_world * axis_world;
 		double I_eff_i = I_trans + I_rot;
 
-		return std::max(I_eff_i, 1e-6);
+		return std::max(I_eff_i, 1e-6); // [kg*m^2], I_eff contribution of this joint + floor to avoid singularities
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
@@ -224,7 +197,7 @@ namespace robots {
 			x[i + n] = (double)j.omegaRad_s;
 			x[i + 2 * n] = (double)j.eta; // integral state
 		}
-		return x;
+		return x; // state vector
 	}
 	
 	// Method to unpack state vector into robot joints
@@ -240,9 +213,9 @@ namespace robots {
 			auto& j = _robot.joints[i];
 
 			// Current states
-			float theta_in = (float)x[i];
-			float omega_in = (float)x[i + n];
-			float eta_in   = (float)x[i + 2 * n];
+			float theta_in = (float)x[i];		  // [rad]
+			float omega_in = (float)x[i + n];	  // [rad/s]
+			float eta_in   = (float)x[i + 2 * n]; // integral state
 
 			// Clamp joint angle
 			float theta_out = clampJointAngle(j, theta_in);
@@ -298,9 +271,10 @@ namespace robots {
 		const size_t n = (int)_robot.joints.size();
 		for (size_t i = 0; i < n; ++i) {
 			auto& j = _robot.joints[i];
-			j.thetaRefRad = (float)x[i];
-			j.omegaRefRad_s = (float)x[i + n];
-			j.thetaRefRad = clampJointAngle(j, j.thetaRefRad);
+			j.thetaRefRad = (float)x[i];					   // [rad]
+			j.omegaRefRad_s = (float)x[i + n];				   // [rad/s]
+			// Clamp reference angle to joint limits
+			j.thetaRefRad = clampJointAngle(j, j.thetaRefRad); // [rad]
 		}
 	}
 
@@ -316,9 +290,9 @@ namespace robots {
 		Pose T = Pose::Identity(); // world -> base
 		T_world.push_back(T);	   // base link 
 
+		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = joints[i];
-
 			const double theta = x[i]; // joint angle from state vector
 
 			Pose T_origin = Pose::Identity(); // transform from parent link to joint frame (fixed)
@@ -334,17 +308,15 @@ namespace robots {
 				T_motion.block<3, 1>(0, 3) = joint.axis.normalized() * theta; // translation along joint axis
 			}
 
-			// compose transforms: parent -> joint -> motion -> child
-			T = T * T_origin * T_motion;
-
+			// compose transforms 
+			T = T * T_origin * T_motion; // parent -> joint -> motion -> child
 			T_world.push_back(T); // link i+1 pose in world frame
 		}
-
-		return T_world;
+		return T_world; // poses of all links in world frame
 	}
 
 	// Method to compute a single joints effective inertia
-	double RobotSystem::computeSingleIeff(size_t i, const std::vector<double>& theta ) const {
+	double RobotSystem::computeSingleIeff(size_t i, const std::vector<double>& theta) const {
 		mathlib::VecX x = packState();
 		for (size_t k = 0; k < theta.size(); ++k)
 			x[k] = theta[k];
@@ -361,7 +333,7 @@ namespace robots {
 
 
 	// Method to compute the diagonal Coriolis/centrifugal term for each joint using finite differences on the effective inertia
-	std::vector<double> RobotSystem::computeCoriolisDiagonal(
+	std::vector<double> RobotSystem::computeCoriolisDiagonal( 
 		const std::vector<double>& theta,
 		const std::vector<double>& omega,
 		const std::vector<double>& I_eff
@@ -390,7 +362,6 @@ namespace robots {
 		return tau_C;
 	}
 
-
 	// Method to compute joint metrics for control
 	RobotMetrics RobotSystem::computeJointMetrics(
 		const RobotJoint& joint, const RobotLink& link, double I_eff, 
@@ -400,43 +371,30 @@ namespace robots {
 	) const {
 		RobotMetrics m{};
 
-		// Constants
-		m.mass = link.inertial.mass;
-		m.g = _gravity; // 0 for now
-
 		// Current states
-		m.theta = theta;
-		m.omega = omega;
-		m.eta = eta;
+		m.theta = theta;	   // [rad]
+		m.omega = omega;	   // [rad/s]
 		// Reference states
-		m.thetaRef = thetaRef;
-		m.omegaRef = omegaRef;
-		m.alphaRef = alphaRef;
+		double q_ref = thetaRef; // [rad]
+		double qd_ref = omegaRef; // [rad/s]
+		double qdd_ref = alphaRef; // [rad/s^2]
 
 		// Errors
-		m.err   = m.thetaRef - theta;
-		m.err_d = m.omegaRef - omega;
+		m.err   = q_ref  - theta; // [rad]
+		m.err_d = qd_ref - omega; // [rad/s]
 
 		// Effective inertia
-		m.I_eff = I_eff;
-
-		// Joint-Space Model
-		// M(q) = inertia matrix, C(q, qdot) = Coriolis/centrifugal, g(q) = gravity
+		m.I_eff = I_eff; // [kg*m^2]
 
 		// Control parameters
-		const double wn = (double)joint.wn_target;
-		const double z  = (double)joint.zeta_target;
-		const double b  = (double)joint.beta_target;
+		const double wn = (double)joint.wn_target;	 // [rad/s], natural frequency
+		const double z  = (double)joint.zeta_target; // damping ratio
+		const double b  = (double)joint.beta_target; // overshoot ratio
 
 		// Compute PID gains
-		double k_p = m.I_eff * wn * wn;
-		double k_i = b * k_p * wn;
-		double k_d = 2.0 * z * m.I_eff * wn;
-
-		// Store gains
-		m.kp = k_p;
-		m.ki = k_i;
-		m.kd = k_d;
+		double k_p = m.I_eff * wn * wn;		 // [Nm/rad],     proportional gain
+		double k_i = b * k_p * wn;			 // [Nm/(rad*s)], integral gain
+		double k_d = 2.0 * z * m.I_eff * wn; // [Nm/(rad/s)], derivative gain
 
 		// Integral term
 		double tau_i = k_i * eta;
@@ -451,15 +409,12 @@ namespace robots {
 		tau_i = 0.0; // disable I-term for now (testing)
 
 		// Inverse dynamics control law (PD + feedforward)
-		double tau_control = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * m.alphaRef; // control torque
+		double tau_control = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * qdd_ref; // control torque
 
 		// Passive dynamics
 		const double c = (double)joint.dynamics.damping;
 		const double mu = (double)joint.dynamics.friction;
 		const double v_eps = 1e-2; // small velocity threshold
-
-		m.c = c;
-		m.mu = mu;
 
 		// Friction model (viscous + Coulomb/Stribeck)
 		double tau_damping{ 0.0 }, tau_friction{ 0.0 };
@@ -641,51 +596,37 @@ namespace robots {
 			);
 
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
-			std::string header = "simulation_" + _robot.name + "_" + IntName;
+			std::string header = _robot.name + "_sim_" + IntName;
 
 			HDF5_SIM_DATA(header, (data::FieldList{
 					// Simulation info
 					{"sim_time", simTime},
 					{"dt",       dt},
-					//  Joint identification
 					{"joint_name", std::string(joint.name)},
 					{"link_name",  std::string(joint.child)},
-					// Limit values
-					{"minAngle",	   (double)joint.limits.minAngle},
-					{"maxAngle",	   (double)joint.limits.maxAngle},
+					// States
+					{"theta", m.theta},
+					{"omega", m.omega},
+					{"alpha", m.alpha},
+					{"err",	  m.err},
+					{"err_d", m.err_d},
+					// Inertia and limits
+					{"I_eff",		   m.I_eff},
 					{"wMax_hw",		   m.wMax_hw},
 					{"wMax_traj",	   m.wMax_traj},
 					{"traj_overspeed", m.traj_overspeed},
-					{"maxEffort",	   (double)joint.limits.maxEffort},
 					// Torque values
 					{"torque",          m.tau},
-					{"torque_motor",    m.tau_control},
+					{"torque_control",  m.tau_control},
 					{"torque_damping",  m.tau_damping},
 					{"torque_friction", m.tau_friction},
 					{"torque_coriolis", m.tau_coriolis},
 					{"torque_barrier",  m.tau_barrier},
 					{"torque_sat",	    m.tau_sat},
-					// Dynamics values
-					{"damping",  m.c},
-					{"friction", m.mu},
-					{"I_eff",    m.I_eff},
-					// Control gains
-					{"k_p",	m.kp},
-					{"k_i",	m.ki},
-					{"k_d",	m.kd},
-					// States
-					{"theta",	  m.theta},
-					{"theta_ref", m.thetaRef},
-					{"omega",	  m.omega},
-					{"omega_ref", m.omegaRef},
-					{"alpha",	  m.alpha},
-					{"alpha_ref", m.alphaRef},
-					{"err",		  m.err},
-					{"err_d",	  m.err_d},
 					// Clamping flags
-					{"clamp_theta", (double)_clampTheta[i]},
-					{"clamp_omega", (double)_clampOmega[i]},
-					{ "sat_flag",  (double)m.sat_flag },
+					{"clamp_theta",			(double)_clampTheta[i]},
+					{"clamp_omega",			(double)_clampOmega[i]},
+					{"sat_flag",			(double)m.sat_flag },
 					{"traj_overspeed_flag", (double)m.traj_overspeed_flag}
 				})
 			);
@@ -695,6 +636,7 @@ namespace robots {
 		updateRobotKinematics();
 	}
 
+	// Method to step the reference trajectory and update joint reference states
 	void RobotSystem::stepReference(control::TrajectoryManager& traj, double dt, double t) {
 		if (!_hasRobot) return;
 		
@@ -720,6 +662,7 @@ namespace robots {
 			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
 			std::string header = "reference_" + _robot.name + "_" + IntName;
 
+			// Store reference trajectory data
 			HDF5_REF_DATA(header,
 				(data::FieldList{
 					{"sim_time", t},
@@ -727,15 +670,10 @@ namespace robots {
 					{"joint_name", std::string(j.name)},
 					{"joint_child", std::string(j.child)},
 					{"joint_parent", std::string(j.parent)},
-					// "traj_*" == the truth in Option A
 					{"traj_theta_ref", (double)j.thetaRefRad},
 					{"traj_omega_ref", (double)j.omegaRefRad_s},
 					{"traj_alpha_ref", (double)j.alphaRefRad_s2},
-					// "theta_ref" etc also same truth
-					{"theta_ref", (double)j.thetaRefRad},
-					{"omega_ref", (double)j.omegaRefRad_s},
-					{"alpha_ref", (double)j.alphaRefRad_s2},
-				})
+					})
 			);
 		}
 	}

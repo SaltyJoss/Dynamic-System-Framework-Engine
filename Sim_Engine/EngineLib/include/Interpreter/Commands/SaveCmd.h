@@ -9,12 +9,24 @@
 #include <vector>
 
 namespace commands {
-	class ENGINE_API StartCmd final : public Command {
+	// Types of saves that can be performed by the SaveCmd
+	enum class eSaveType {
+		SimData,
+		Plots
+	};
+
+	struct ENGINE_API SaveCmdArgs {
+		eSaveType type;
+		std::string filename;
+		bool isIntegratorName;
+	};
+
+	class ENGINE_API SaveCmd : public Command {
 	public:
 		// Constructor
-		StartCmd();
+		SaveCmd(const std::string& id, const std::vector<std::string>& tokens);
 
-		std::string_view getName() const { return "start"; }
+		std::string_view getName() const { return "save"; }
 		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
@@ -25,6 +37,9 @@ namespace commands {
 		void execute() override;
 
 		UIContext* _uiCntx = nullptr;
+		SaveCmdArgs _target;
+		std::string _filename = "";   // Filename to save to
+		bool _integratorName  = false; // Whether to include integrator name in the filename
 		bool _started = false;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
@@ -37,6 +52,6 @@ namespace commands {
 		// Check if the command has started
 		bool hasStarted() const override;
 	};
-
-	std::unique_ptr<ICommand> CreateStartCmd(const std::string& id, const std::vector<std::string>& args);
+	
+	std::unique_ptr<ICommand> CreateSaveCmd(const std::string& id, const std::vector<std::string>& args);
 } // namespace commands
