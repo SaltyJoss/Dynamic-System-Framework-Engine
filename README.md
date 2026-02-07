@@ -78,6 +78,12 @@ https://github.com/user-attachments/assets/c8d9c531-128a-4e70-a23e-498714460c0f
 If you use this software in academic work, please cite it. <br />
 See [`CITATION.cff`][citation-url].
 
+## Contributing & Pull Requests
+
+**Note on Automated PR Reviews**: This repository uses GitHub Copilot's automated PR reviewer. While helpful for catching some issues, it can be overly pedantic or suggest incorrect changes. See [.github/COPILOT_REVIEW_GUIDELINES.md](.github/COPILOT_REVIEW_GUIDELINES.md) for guidance on evaluating automated review comments.
+
+**TL;DR**: Your PR is ready to merge when builds pass, tests pass, and there are no actual bugs—not when every trivial automated suggestion is addressed. Trust your judgment.
+
 ## License
 Licensed under the [GPL-3.0 License][license-url].
 
