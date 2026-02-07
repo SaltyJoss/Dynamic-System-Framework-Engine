@@ -1,13 +1,6 @@
 #pragma once
-
-//=============================================
-//            File: ControlPanel.h
-//=============================================
-// GUI Control Panel for interacting with the simManager.
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
+// File:    ControlPanel.h
+// GitHub:  SaltyJoss
 
 // Includes
 #include "EngineCore.h"
@@ -28,6 +21,53 @@
 #include <imfilebrowser.h>
 
 namespace gui {
+	// Gravity UI Modes
+    enum class GravityUIMode {
+        Preset,
+        SolarSystem,
+        Custom
+    };
+
+	// Gravity Presets (in m/s^2)
+    enum GravityPreset {
+		// Common Presets
+        PRESET_ZERO_G,
+        PRESET_MICRO_G,
+        PRESET_SOLAR_SYSTEM,
+        PRESET_CUSTOM,
+		// Solar System Bodies
+        PRESET_SUN,
+        PRESET_MERCURY,
+        PRESET_VENUS,
+        PRESET_EARTH,
+        PRESET_MARS,
+        PRESET_JUPITER,
+        PRESET_SATURN,
+        PRESET_URANUS,
+        PRESET_NEPTUNE,
+        PRESET_PLUTO,
+		// Moons
+        PRESET_MOON,
+        PRESET_TITAN,
+        PRESET_ENCELADUS,
+        PRESET_EUROPA,
+        PRESET_GANYMEDE,
+        PRESET_IO
+    };
+
+	// UI Navigation Levels for Gravity Presets
+    enum class GravityLevel {
+        Root,
+        SolarSystem,
+        Planets,
+        Moons
+    };
+
+    static GravityLevel gravityLevel = GravityLevel::Root;
+    static GravityUIMode gravityMode = GravityUIMode::Preset;
+    static bool requestSolarPopup = false;
+    static bool deferCloseCombo = false;
+
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
@@ -130,5 +170,12 @@ namespace gui {
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
         std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();
+
+
     };
 }
+
+// Helper Macros
+
+#define INDENT()   ImGui::Indent(20.0f)
+#define UNINDENT() ImGui::Unindent(20.0f)

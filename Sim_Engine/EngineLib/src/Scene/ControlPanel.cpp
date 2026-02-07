@@ -52,6 +52,190 @@ namespace gui {
         return changed;
     }
 
+    static const char* gravityLevelName(GravityLevel level) {
+        switch (level) {
+        case GravityLevel::Root:        return "Presets";
+        case GravityLevel::SolarSystem: return "Solar System";
+        case GravityLevel::Planets:     return "Planets";
+        case GravityLevel::Moons:       return "Moons";
+        default:                        return "";
+        }
+    }
+
+    static const char* gravityPresetName(GravityPreset p) {
+        switch (p) {
+        case PRESET_ZERO_G:       return "Zero-G";
+        case PRESET_MICRO_G:      return "Micro-G";
+        case PRESET_SOLAR_SYSTEM: return "Solar System";
+        case PRESET_CUSTOM:       return "Custom";
+
+        case PRESET_SUN:          return "Sun";
+        case PRESET_MERCURY:      return "Mercury";
+        case PRESET_VENUS:        return "Venus";
+        case PRESET_EARTH:        return "Earth";
+        case PRESET_MARS:         return "Mars";
+        case PRESET_JUPITER:      return "Jupiter";
+        case PRESET_SATURN:       return "Saturn";
+        case PRESET_URANUS:       return "Uranus";
+        case PRESET_NEPTUNE:      return "Neptune";
+        case PRESET_PLUTO:        return "Pluto";
+
+        case PRESET_MOON:         return "Moon";
+        case PRESET_TITAN:        return "Titan";
+        case PRESET_ENCELADUS:    return "Enceladus";
+        case PRESET_EUROPA:       return "Europa";
+        case PRESET_GANYMEDE:     return "Ganymede";
+        case PRESET_IO:           return "Io";
+        }
+        return "Unknown";
+    }
+
+    static double gravityFromPreset(GravityPreset p) {
+        switch (p) {
+        case PRESET_ZERO_G:    return constants::g_zero;
+        case PRESET_MICRO_G:   return constants::g_micro;
+
+        case PRESET_SUN:       return constants::g_Sun;
+        case PRESET_MERCURY:   return constants::g_Mercury;
+        case PRESET_VENUS:     return constants::g_Venus;
+        case PRESET_EARTH:     return constants::g_Earth;
+        case PRESET_MARS:      return constants::g_Mars;
+        case PRESET_JUPITER:   return constants::g_Jupiter;
+        case PRESET_SATURN:    return constants::g_Saturn;
+        case PRESET_URANUS:    return constants::g_Uranus;
+        case PRESET_NEPTUNE:   return constants::g_Neptune;
+        case PRESET_PLUTO:     return constants::g_Pluto;
+
+        case PRESET_MOON:      return constants::g_Moon;
+        case PRESET_TITAN:     return constants::g_Titan;
+        case PRESET_ENCELADUS: return constants::g_Enceladus;
+        case PRESET_EUROPA:    return constants::g_Europa;
+        case PRESET_GANYMEDE:  return constants::g_Ganymede;
+        case PRESET_IO:        return constants::g_Io;
+
+        default:               return constants::g_Earth;
+        }
+    }
+
+    static void drawGravityChoiceMenu(GravityPreset& preset, double& g) {
+        // Combo label shows navigation state
+        char label[64];
+        snprintf(label, sizeof(label), "Gravity / %s", gravityLevelName(gravityLevel));
+
+        ImGui::Text("Gravity Preset");
+        ImGui::SetNextItemWidth(175.0f);
+
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.8f, 1.0f, 1.0f));
+
+        if (ImGui::BeginCombo("##GravityCombo", label)) {
+
+            // ---------------- ROOT ----------------
+            if (gravityLevel == GravityLevel::Root) {
+
+                if (ImGui::Selectable("Zero-G")) {
+                    preset = PRESET_ZERO_G;
+                    g = gravityFromPreset(preset);
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::Selectable("Micro-G")) {
+                    preset = PRESET_MICRO_G;
+                    g = gravityFromPreset(preset);
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::Selectable("Solar System >", false, ImGuiSelectableFlags_DontClosePopups)) {
+                    gravityLevel = GravityLevel::SolarSystem;
+                }
+
+                if (ImGui::Selectable("Custom")) {
+                    preset = PRESET_CUSTOM;
+                    gravityMode = GravityUIMode::Custom;
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            // ---------------- SOLAR SYSTEM ----------------
+            else if (gravityLevel == GravityLevel::SolarSystem) {
+
+                if (ImGui::Selectable("< Back", false, ImGuiSelectableFlags_DontClosePopups)) {
+                    gravityLevel = GravityLevel::Root;
+                }
+
+                if (ImGui::Selectable("Planets >", false, ImGuiSelectableFlags_DontClosePopups)) {
+                    gravityLevel = GravityLevel::Planets;
+                }
+
+                if (ImGui::Selectable("Moons >", false, ImGuiSelectableFlags_DontClosePopups)) {
+                    gravityLevel = GravityLevel::Moons;
+                }
+            }
+
+            // ---------------- PLANETS ----------------
+            else if (gravityLevel == GravityLevel::Planets) {
+
+                if (ImGui::Selectable("< Back")) {
+                    gravityLevel = GravityLevel::SolarSystem;
+                }
+
+                ImGui::Separator();
+
+                struct { const char* name; GravityPreset p; } planets[] = {
+                    { "Sun",     PRESET_SUN },
+                    { "Mercury", PRESET_MERCURY },
+                    { "Venus",   PRESET_VENUS },
+                    { "Earth",   PRESET_EARTH },
+                    { "Mars",    PRESET_MARS },
+                    { "Jupiter", PRESET_JUPITER },
+                    { "Saturn",  PRESET_SATURN },
+                    { "Uranus",  PRESET_URANUS },
+                    { "Neptune", PRESET_NEPTUNE },
+                    { "Pluto",   PRESET_PLUTO }
+                };
+
+                for (auto& p : planets) {
+                    if (ImGui::Selectable(p.name)) {
+                        preset = p.p;
+                        g = gravityFromPreset(preset);
+                    }
+                }
+            }
+
+            // ---------------- MOONS ----------------
+            else if (gravityLevel == GravityLevel::Moons) {
+
+                if (ImGui::Selectable("< Back")) {
+                    gravityLevel = GravityLevel::SolarSystem;
+                }
+
+                ImGui::Separator();
+
+                struct { const char* name; GravityPreset p; } moons[] = {
+                    { "Moon (Earth)", PRESET_MOON },
+                    { "Titan",        PRESET_TITAN },
+                    { "Enceladus",    PRESET_ENCELADUS },
+                    { "Europa",       PRESET_EUROPA },
+                    { "Ganymede",     PRESET_GANYMEDE },
+                    { "Io",           PRESET_IO }
+                };
+
+                for (auto& m : moons) {
+                    if (ImGui::Selectable(m.name)) {
+                        preset = m.p;
+                        g = gravityFromPreset(preset);
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+
+        ImGui::PopStyleColor();
+    }
+
+
     // Helper to build telemetry series
     static void buildSeries(const diagnostics::TelemetryRing& ring, std::vector<float>& out, std::function<float(const diagnostics::TelemetrySample&)> f) {
         out.resize(ring.size());
@@ -419,10 +603,22 @@ namespace gui {
         ImGui::Spacing();
 
         ImGui::Text("Gravity:");
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &g, 0.00005f, &minGravity, &maxGravity)) {
-            robot->setGravity(g); // you need a setter
+        
+        static GravityPreset gravityPreset = PRESET_EARTH;
+
+		drawGravityChoiceMenu(gravityPreset, g);
+
+        if (gravityMode == GravityUIMode::Custom) {
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::DragScalar("m/s²##g", ImGuiDataType_Double, &g, 0.00005)) {
+                robot->setGravity(g);
+            }
         }
+        else {
+            robot->setGravity(g);
+        }
+        ImGui::TextDisabled("Gravity: %.3f", g);
+
         ImGui::Spacing();
         ImGui::Separator();
 
