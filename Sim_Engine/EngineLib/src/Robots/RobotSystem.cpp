@@ -457,10 +457,11 @@ namespace robots {
 			tau_i = std::clamp(tau_i, -tau_i_max, tau_i_max);
 		}
 
-		//tau_i = 0.0; // disable I-term for now (testing)
-
 		// Inverse dynamics control law (PD + feedforward)
-		double tau_control = (k_p * m.err + tau_i + k_d * m.err_d) + m.I_eff * qdd_ref; // control torque
+		double tau_fb = k_p * m.err + tau_i + k_d * m.err_d;
+
+		// Feedforward term based on reference acceleration and passive dynamics compensation
+		double tau_ff = m.I_eff* qdd_ref + tau_coriolis + tau_gravity;
 
 		// Passive dynamics
 		const double c = (double)joint.dynamics.damping;
@@ -471,16 +472,16 @@ namespace robots {
 		double tau_damping{ 0.0 }, tau_friction{ 0.0 };
 		tau_damping  = c * omega; // viscous damping
 		tau_friction = mu * std::tanh(omega / v_eps); // Coulomb friction
-		
-		// Cache torques in metrics
-		m.tau_control = tau_control;
-		m.tau_damping  = tau_damping;
-		m.tau_friction = tau_friction;
-		m.tau_coriolis = tau_coriolis;
-		m.tau_gravity = tau_gravity;
 
 		// Net torque
-		m.tau = tau_control - tau_damping - tau_friction - tau_coriolis - tau_gravity; // [Nm], net torque applied to the joint after passive dynamics
+		m.tau = tau_fb + tau_ff - (tau_damping + tau_friction); // [Nm], net torque applied to the joint after passive dynamics
+
+		// Cache torques in metrics
+		m.tau_fb = tau_fb;
+		m.tau_coriolis = tau_coriolis;
+		m.tau_gravity = tau_gravity;
+		m.tau_damping = tau_damping;
+		m.tau_friction = tau_friction;
 
 		double tau_preSat = m.tau;
 
@@ -674,11 +675,11 @@ namespace robots {
 					{"traj_overspeed", m.traj_overspeed},
 					// Torque values
 					{"torque",          m.tau},
-					{"torque_control",  m.tau_control},
+					{"torque_feedback", m.tau_fb},
+					{"torque_coriolis", m.tau_coriolis},
+					{"torque_gravity",	m.tau_gravity},
 					{"torque_damping",  m.tau_damping},
 					{"torque_friction", m.tau_friction},
-					{"torque_coriolis", m.tau_coriolis},
-					{"torque_gravity",	m.tau_gravity}, // gravity compensation not implemented yet
 					{"torque_barrier",  m.tau_barrier},
 					{"torque_sat",	    m.tau_sat},
 					// Clamping flags
