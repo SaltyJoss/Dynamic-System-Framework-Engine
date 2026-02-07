@@ -600,7 +600,6 @@ namespace gui {
 		return setViewFollowRobotJoint(gui::ViewID::Follow, jointName, offset);
 	}
 
-
 	// --------------------------------------------------
 	//			    MESH LOADING & GEOMETRY
 	// --------------------------------------------------

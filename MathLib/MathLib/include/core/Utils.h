@@ -9,6 +9,31 @@ using namespace mathlib;
 using namespace constants;
 
 namespace mathlib {
+	// Metrics structure for control and dynamics analysis
+	enum class eSolarSystemSurfaceG {
+		ZeroG = 0,
+		Sun = 1,
+		Mercury = 2,
+		Venus = 3,
+		Earth = 4,
+		Mars = 5,
+		Jupiter = 6,
+		Saturn = 7,
+		Uranus = 8,
+		Neptune = 9,
+		Pluto = 10
+	};
+
+	// Moons of interest for space robotics applications, especially Titan and Enceladus
+	enum class eSolarSystemMoonG {
+		Moon = 0,
+		Titan = 1,
+		Enceladus = 2,
+		Europa = 3,
+		Ganymede = 4,
+		Io = 5
+	};
+
 	// convert any non-eigen vector to Vec3 (if it has 3 elements)
 	template <typename T>
 	Vec3 toVec3(const T& vec) {
