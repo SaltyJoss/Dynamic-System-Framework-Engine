@@ -26,7 +26,7 @@ namespace commands {
 		// Constructor
 		SaveCmd(const std::string& id, const std::vector<std::string>& tokens);
 
-		std::string_view getName() const { return "stop"; }
+		std::string_view getName() const { return "save"; }
 		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
