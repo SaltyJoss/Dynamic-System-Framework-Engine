@@ -1,4 +1,6 @@
 #pragma once
+// File:   RobotSystem.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
@@ -77,7 +79,13 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		RobotMetrics computeJointMetrics(const RobotJoint& joint, const RobotLink& link, double I_eff, double theta, double omega, double thetaRef, double omegaRef, double alphaRef, double eta, double tau_coriolis) const;
+		// Compute control and dynamics metrics for a specific joint based on the current state and reference
+		RobotMetrics computeJointMetrics(
+			const RobotJoint& joint, const RobotLink& link, double I_eff,
+			double theta, double omega,
+			double thetaRef, double omegaRef, double alphaRef,
+			double eta, double tau_coriolis, double tau_gravity
+		) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -106,6 +114,8 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
+		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -123,6 +133,8 @@ namespace robots {
 		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
 		// Compute the contribution of a link to the inertia of a joint based on the current state
 		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
+		// Compute the gravity torque for a joint based on the current state and robot configuration
+		std::vector<double> computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const;
 
 		// State packing and unpacking
         mathlib::VecX packState() const;

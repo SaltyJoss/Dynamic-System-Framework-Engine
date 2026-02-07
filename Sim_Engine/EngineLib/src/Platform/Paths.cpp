@@ -5,9 +5,9 @@
 		#ifdef _MSC_VER
 		#pragma comment(lib, "Shell32.lib")
 	#endif
+	#include <shlobj.h>      // SHGetKnownFolderPath
+	#include <combaseapi.h>  // CoTaskMemFree
 #endif
-#include <shlobj.h>      // SHGetKnownFolderPath
-#include <combaseapi.h>  // CoTaskMemFree
 
 namespace {
 	std::filesystem::path g_root, g_assets, g_configs, g_logs, g_runs;

@@ -21,7 +21,7 @@ namespace commands {
 
 		if (tokens.empty()) {
 			std::string errMsg = "load() command requires a path argument.";
-			markFailed(errMsg);
+			markFailed(errMsg); 
 			D_FAIL(errMsg.c_str());
 			return;
 		}

@@ -1,14 +1,7 @@
 #pragma once
+// File:   RobotModel.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
-
-// =============================================
-//            File: RobotModel.h
-// =============================================
-// Structs representing a robotic model with links and joints.
-//
-// ============================================
-//			  GitHub: SaltyJoss
-// ============================================
 
 #include "EngineCore.h"
 #include <MathLibAPI.h>
@@ -163,25 +156,31 @@ namespace robots {
 
 	// Per-joint metrics
 	struct RobotMetrics {
-		// Joint metrics
-		double theta{ 0.0 }, omega{ 0.0 }, eta{ 0.0 };
-		double thetaRef{ 0.0 }, omegaRef{ 0.0 }, alphaRef{ 0.0 };
-		double err{ 0.0 }, err_d{ 0.0 };
-		double I_eff{ 0.0 };
-		double tau{ 0.0 }, tau_control{ 0.0 }, tau_robot{ 0.0 };
-		double tau_damping{ 0.0 }, tau_friction{ 0.0 }, tau_coriolis{ 0.0 };
-		double tau_barrier{ 0.0 }, tau_sat{ 0.0 };
-		double wMax_hw{ 0.0 }, wMax_traj{ 0.0 };
-		double traj_overspeed{ 0.0 };
-		double c{ 0.0 }, mu{ 0.0 }, g{ 0.0 };
+		// State
+		double theta{ 0.0 };
+		double omega{ 0.0 };
 		double alpha{ 0.0 };
-		double kp{ 0.0 }, kd{ 0.0 }, ki{ 0.0 };
-		bool sat_flag, traj_overspeed_flag;
-		// link metrics
-		double mass{ 0.0 }, M_ii{ 0.0 };
-		Mat3 I_link, I_world, R;
-		Vec3 Jv, Jw;
-		Vec3 com, v_com, omega_link;
-	};
+		double err{ 0.0 };
+		double err_d{ 0.0 };
 
+		// Dynamics
+		double I_eff{ 0.0 };
+		double tau{ 0.0 };
+		double tau_fb{ 0.0 };
+		double tau_damping{ 0.0 };
+		double tau_friction{ 0.0 };
+		double tau_coriolis{ 0.0 };
+		double tau_gravity{ 0.0 };
+
+		// Constraints / realism
+		double tau_barrier{ 0.0 };
+		double tau_sat{ 0.0 };
+		double wMax_hw{ 0.0 };
+		double wMax_traj{ 0.0 };
+		double traj_overspeed{ 0.0 };
+
+		// Stability flags
+		bool sat_flag{ false };
+		bool traj_overspeed_flag{ false };
+	};
 }

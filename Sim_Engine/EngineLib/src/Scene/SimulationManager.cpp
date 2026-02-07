@@ -1,4 +1,4 @@
-
+// SimulationManager.cpp
 #include "pch.h"
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
@@ -600,7 +600,6 @@ namespace gui {
 		return setViewFollowRobotJoint(gui::ViewID::Follow, jointName, offset);
 	}
 
-
 	// --------------------------------------------------
 	//			    MESH LOADING & GEOMETRY
 	// --------------------------------------------------
@@ -949,6 +948,7 @@ namespace gui {
 	void simManager::startSimulation() {
 		if (_simRunning) return;
 		telemetry().clear();
+		SET_SIM_INTEGRATOR(_impl->_robotSystem->getIntegratorName());
 		D_RUNTIME("starting simulation");
 		_simTime = 0.0;
 		_simRunning = true;
