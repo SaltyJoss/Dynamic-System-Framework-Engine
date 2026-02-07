@@ -167,9 +167,10 @@ namespace robots {
 		double I_eff{ 0.0 };
 		double tau{ 0.0 };
 		double tau_control{ 0.0 };
-		double tau_coriolis{ 0.0 };
 		double tau_damping{ 0.0 };
 		double tau_friction{ 0.0 };
+		double tau_coriolis{ 0.0 };
+		double tau_gravity{ 0.0 };
 
 		// Constraints / realism
 		double tau_barrier{ 0.0 };
