@@ -62,12 +62,13 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)bin\EngineLib\Debug\;$(SolutionDir)External\MathLib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib\;$(SolutionDir)External\assimp\lib\$(Configuration)\;$(SolutionDir)External\MathLib\$(Configuration)\;$(SolutionDir)bin\Engine\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc145-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)assets\"  mkdir "$(TargetDir)assets\"
@@ -92,12 +93,13 @@ echo D | xcopy /E /Y /D "$(ProjectDir)Engine\configs\*" "$(TargetDir)configs\"
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)bin\EngineLib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc143-mtd.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\GLFW\lib\;$(SolutionDir)External\assimp\lib\$(Configuration)\;$(SolutionDir)External\MathLib\$(Configuration)\;$(SolutionDir)bin\Engine\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>"glfw3.lib";"MathLib.lib";"assimp-vc145-mt.lib";"opengl32.lib";"EngineLib.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)assets\"  mkdir "$(TargetDir)assets\"
