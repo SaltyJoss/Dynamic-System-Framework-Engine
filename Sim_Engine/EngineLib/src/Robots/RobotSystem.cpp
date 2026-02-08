@@ -221,11 +221,9 @@ namespace robots {
 			// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
 			for (size_t i = 1; i < objs.size(); ++i) {
 				scene::Mesh* extraMesh = objs[i]->getMesh();
-				if (!extraMesh || !baseMesh) continue;
-
-				applyLocalTransform(*extraMesh);
-
-				baseMesh->appendGeometry(*extraMesh);
+				if (extraMesh && baseMesh) {
+					baseMesh->appendGeometry(*extraMesh);
+				}
 
 				objs[i]->name.clear();
 				objs[i]->category = scene::ObjectCategory::General;
@@ -233,23 +231,6 @@ namespace robots {
 
 			// Apply visual origin transform to the merged mesh
 			if(baseMesh) {
-				const Vec3& vt = link.visual.origin_xyz;
-				const Vec3& vr = link.visual.origin_rpy;
-
-				// Construct transformation matrix from visual origin (translation + RPY rotation)
-				glm::mat4 T(1.0f);
-				glm::quat vq = toGlm(rpyRadToQuat(vr));
-				T = T * glm::translate(T, glm::vec3(vt.x(), vt.y(), vt.z())) * glm::toMat4(vq);
-
-				// Transform vertices and normals of the base mesh
-				for (auto& v : baseMesh->_vertices) {
-					glm::vec4 p = T * glm::vec4(v._pos, 1.0f);
-					v._pos = glm::vec3(p);
-
-					glm::vec4 n = T * glm::vec4(v._normal, 0.0f);
-					v._normal = glm::normalize(glm::vec3(n));
-				}
-
 				baseMesh->rebuildGPU();
 			}
 
@@ -1002,22 +983,39 @@ namespace robots {
 
 				Vec4 axis = Vec4(j.axis.x(), j.axis.y(), j.axis.z(), 0.0);
 
-				glm::mat4 T = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
-				glm::mat4 R0 = glm::mat4_cast(toGlm(j.origin_q));
+				glm::mat4 T_joint = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
+				glm::mat4 R_0 = glm::mat4_cast(toGlm(j.origin_q));
 				glm::vec3 axis_joint = glm::normalize(toGlm(j.axis));
-				glm::mat4 Rq = glm::rotate(glm::mat4(1.0f), j.thetaRad, axis_joint);
+				glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, axis_joint);
 
 				// Apply joint rotation in JOINT frame
-				world[cIdx] = world[pIdx] * T * R0 * Rq;
+				world[cIdx] = world[pIdx] * T_joint * R_0 * R_q;
 
 				st.push(j.child);
 			}
 		}
 
 		for (int i = 0; i < (int)_robot.links.size(); ++i) {
-			if (auto* obj = _robot.links[i].attachedObject) {
-				if (auto* mesh = obj->getMesh()) { mesh->localTransform = world[i]; }
-			}
+			auto& link = _robot.links[i];
+			if (!link.attachedObject) continue;
+
+			scene::Object* obj = link.attachedObject;
+			scene::Mesh* mesh = obj->getMesh();
+			if (!mesh) continue;
+
+			// FK: world -> link frame
+			const glm::mat4& T_link = world[i];
+
+			// Visual origin: link frame -> visual frame
+			const Vec3& vt = link.visual.origin_xyz;
+			const Vec3& vr = link.visual.origin_rpy;
+
+			glm::mat4 T_visual(1.0f);
+			T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
+			T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
+
+			// FINAL: world -> link -> visual
+			mesh->localTransform = T_link * T_visual;
 		}
 	}
 
