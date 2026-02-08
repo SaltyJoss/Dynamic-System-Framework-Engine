@@ -775,7 +775,7 @@ namespace gui {
         ImGui::Spacing();
 
         roboticCardDisplay("Z1", "Unitree Robotics");
-        roboticCardDisplay("UR5", "Universal Robots");
+        roboticCardDisplay("UR5e", "Universal Robots");
         roboticCardDisplay("Panda", "Franka Robotics");
         roboticCardDisplay("KUKA iiwa", "KUKA");
 

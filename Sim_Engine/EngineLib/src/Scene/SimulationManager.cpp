@@ -372,10 +372,16 @@ namespace gui {
 		}
 
 		static bool icontains(const std::string& s, const char* sub) {
+			if (sub == nullptr || *sub == '\0') { return false; }
+
+			// Case-insensitive search using std::search with a custom comparator
 			auto it = std::search(
 				s.begin(), s.end(),
 				sub, sub + std::strlen(sub),
-				[](char a, char b) { return std::tolower((unsigned char)a) == std::tolower((unsigned char)b); }
+				[](char a, char b) {
+					return std::tolower((unsigned char)a)
+						== std::tolower((unsigned char)b);
+				}
 			);
 			return it != s.end();
 		}
@@ -647,6 +653,9 @@ namespace gui {
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);
 			auto raw = obj.get();
+
+			raw->internal = true;
+
 			_impl->_objects.push_back(std::move(obj));
 			result.push_back(raw);
 		}
@@ -664,6 +673,21 @@ namespace gui {
 		if (_impl->_selectedObject == _impl->_objects[index].get()) { _impl->_selectedObject = nullptr; }
 		_impl->_objects.erase(_impl->_objects.begin() + index);
 	}
+
+	void simManager::removeObject(scene::Object* obj) {
+		if (!obj) return;
+
+		auto it = std::remove_if(
+			_impl->_objects.begin(),
+			_impl->_objects.end(),
+			[obj](const std::unique_ptr<scene::Object>& o) {
+				return o.get() == obj;
+			}
+		);
+
+		_impl->_objects.erase(it, _impl->_objects.end());
+	}
+
 
 	std::vector<std::unique_ptr<scene::Object>>& simManager::getObjects() { return _impl->_objects; }
 	scene::Object* simManager::getObject() { return _impl->_selectedObject; }

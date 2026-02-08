@@ -63,6 +63,20 @@ namespace robots {
 		return g; // (4x4)
 	}
 
+	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
+	static Quat rpyRadToQuat(const Vec3& rpyRad)
+	{
+		const double roll = rpyRad.x();
+		const double pitch = rpyRad.y();
+		const double yaw = rpyRad.z();
+
+		const Quat qx(Eigen::AngleAxisd(roll, Vec3(1.0, 0.0, 0.0)));
+		const Quat qy(Eigen::AngleAxisd(pitch, Vec3(0.0, 1.0, 0.0)));
+		const Quat qz(Eigen::AngleAxisd(yaw, Vec3(0.0, 0.0, 1.0)));
+
+		return (qz * qy * qx).normalized();
+	}
+
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
@@ -156,22 +170,97 @@ namespace robots {
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
+	static void applyLocalTransform(scene::Mesh& mesh) {
+		const glm::mat4& T = mesh.localTransform;
+
+		for (auto& v : mesh._vertices) {
+			glm::vec4 p = T * glm::vec4(v._pos, 1.0f);
+			v._pos = glm::vec3(p);
+
+			glm::vec4 n = T * glm::vec4(v._normal, 0.0f);
+			v._normal = glm::normalize(glm::vec3(n));
+		}
+
+		mesh.localTransform = glm::mat4(1.0f);
+	}
 
 	// Method to create Object instances for each robot link
 	void RobotSystem::instantiateRobotLinks() {
+		// For each link, load its visual mesh(es), apply the visual origin transform, and create a scene::Object
 		for (auto& link : _robot.links) {
-			auto objs = _loadMeshReturn((paths::assets() / "objects" / "Robotic_Arm_Models" / link.visual.meshFile).string());
-			if (objs.empty()) { continue; }
+			std::vector<scene::Object*> objs;
 
+			// Explicit multiple meshes
+			if (!link.visual.meshFiles.empty()) {
+				for (const auto& meshRelPath : link.visual.meshFiles) {
+					const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath).string();
+					auto partObjs = _loadMeshReturn(fullPath);
+					objs.insert(objs.end(), partObjs.begin(), partObjs.end());
+				}
+			}
+			// Single mesh file
+			else if (!link.visual.meshFile.empty()) {
+				const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / link.visual.meshFile).string();
+				objs = _loadMeshReturn(fullPath);
+			}
+			else {
+				LOG_WARN("Link %s has no visual meshes defined", link.name.c_str());
+				continue;
+			}
+
+			// If no meshes were loaded, skip this link
+			if (objs.empty()) {
+				LOG_WARN("No meshes found for link %s", link.name.c_str());
+				continue;
+			}
+
+			// Merge multiple meshes into one Object (if necessary)
 			scene::Object* obj = objs[0];
+			scene::Mesh* baseMesh = obj->getMesh();
 
+			// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
+			for (size_t i = 1; i < objs.size(); ++i) {
+				scene::Mesh* extraMesh = objs[i]->getMesh();
+				if (!extraMesh || !baseMesh) continue;
+
+				applyLocalTransform(*extraMesh);
+
+				baseMesh->appendGeometry(*extraMesh);
+
+				objs[i]->name.clear();
+				objs[i]->category = scene::ObjectCategory::General;
+			}
+
+			// Apply visual origin transform to the merged mesh
+			if(baseMesh) {
+				const Vec3& vt = link.visual.origin_xyz;
+				const Vec3& vr = link.visual.origin_rpy;
+
+				// Construct transformation matrix from visual origin (translation + RPY rotation)
+				glm::mat4 T(1.0f);
+				glm::quat vq = toGlm(rpyRadToQuat(vr));
+				T = T * glm::translate(T, glm::vec3(vt.x(), vt.y(), vt.z())) * glm::toMat4(vq);
+
+				// Transform vertices and normals of the base mesh
+				for (auto& v : baseMesh->_vertices) {
+					glm::vec4 p = T * glm::vec4(v._pos, 1.0f);
+					v._pos = glm::vec3(p);
+
+					glm::vec4 n = T * glm::vec4(v._normal, 0.0f);
+					v._normal = glm::normalize(glm::vec3(n));
+				}
+
+				baseMesh->rebuildGPU();
+			}
+
+			obj->name = link.name;
 			obj->category = scene::ObjectCategory::RobotLink;
 			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
-
-			LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
-			D_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
 		}
+
+		LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
+		D_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
 	}
 
 	// Method to build a name-to-index map for robot links

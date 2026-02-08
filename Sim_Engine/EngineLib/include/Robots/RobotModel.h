@@ -39,6 +39,7 @@ namespace robots {
 
 	struct Visual {
 		std::string meshFile;
+		std::vector<std::string> meshFiles; // for multiple visual meshes per link (URDF supports this, but we currently only use the first one)
 		Vec3 origin_xyz{ 0.0,0.0,0.0 };
 		Vec3 origin_rpy{ 0.0,0.0,0.0 };
 	};

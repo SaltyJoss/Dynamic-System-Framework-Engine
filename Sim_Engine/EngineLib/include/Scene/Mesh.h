@@ -70,6 +70,36 @@ namespace scene {
 
 		glm::mat4 localTransform = glm::mat4(1.0f);
 
+		void appendGeometry(const Mesh& other) {
+			const uint32_t indexOffset = (uint32_t)_vertices.size();
+
+			const glm::mat4 T = other.localTransform;
+
+			for (const auto& v : other._vertices) {
+				VertexHolder out = v;
+
+				glm::vec4 p = T * glm::vec4(v._pos, 1.0f);
+				out._pos = glm::vec3(p);
+
+				if (glm::length(v._normal) > 0.0f) {
+					glm::vec4 n = T * glm::vec4(v._normal, 0.0f);
+					out._normal = glm::normalize(glm::vec3(n));
+				}
+
+				_vertices.push_back(out);
+			}
+
+			for (uint32_t idx : other._indices) {
+				_indices.push_back(idx + indexOffset);
+			}
+		}
+
+
+		void rebuildGPU() {
+			deleteBuffers();
+			createBuffers();
+		}
+
 	private:
 		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
 

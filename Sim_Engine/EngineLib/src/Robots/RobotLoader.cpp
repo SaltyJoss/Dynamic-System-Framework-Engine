@@ -50,7 +50,21 @@ namespace robots {
 	static void parseVisual(const json& linkData, RobotLink& link) {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
-		link.visual.meshFile = v.value("mesh", link.visual.meshFile);
+
+		// --- Single mesh (e.g. Z1) ---
+		if (v.contains("mesh") && v["mesh"].is_string()) {
+			link.visual.meshFile = v["mesh"].get<std::string>();
+		}
+
+		// --- Multiple meshes (e.g. Panda / MuJoCo style) ---
+		if (v.contains("meshes") && v["meshes"].is_array()) {
+			link.visual.meshFiles.clear();
+			for (const auto& m : v["meshes"]) {
+				if (m.is_string()) {
+					link.visual.meshFiles.push_back(m.get<std::string>());
+				}
+			}
+		}
 		link.visual.origin_xyz = readVec3(v, "origin_xyz", link.visual.origin_xyz);
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
 	}

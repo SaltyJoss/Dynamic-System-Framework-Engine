@@ -154,6 +154,7 @@ namespace gui {
         void setSelectedObject(scene::Object* obj);
         void addObject(std::unique_ptr<scene::Object> obj);
         void deleteObject(int index);
+		void removeObject(scene::Object* obj);
 
 		// Scene Objects Lookup
         std::vector<std::unique_ptr<scene::Object>>& getObjects();
