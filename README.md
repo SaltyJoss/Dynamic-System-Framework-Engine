@@ -51,13 +51,6 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 [![MATLAB][MATLAB]][MATLAB-url]
 [![JSON][JSON]][JSON-url]
 
-### Libraries used
-[![OpenGL][OpenGL]][OpenGL-url]
-[![GLFW][GLFW]][GLFW-url]
-[![GLM][GLM]][GLM-url]
-[![ImGui][ImGui]][ImGui-url]
-[![Eigen][Eigen]][Eigen-url]
-
 </div>
 
 ### <ins>Lastest Update</ins>
