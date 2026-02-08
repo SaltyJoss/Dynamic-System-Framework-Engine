@@ -44,11 +44,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\Engine\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin-int\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\Engine\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin-int\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -64,17 +64,25 @@
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>hdf5.lib;glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Debug;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>hdf5.lib;glfw3.lib;assimp-vc145-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\MathLib\$(Configuration)\;$(SolutionDir)External\assimp\lib\$(Configuration)\;$(SolutionDir)External\GLFW\lib\;$(SolutionDir)External\HDF5\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
-xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
+      <Command>xcopy "$(TargetPath)" "$(OutDir)" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(OutDir)"/Y /D /I
+copy /Y "$(SolutionDir)External\MathLib\$(Configuration)\MathLib.dll"  "$(OutDir)"
+
+if "$(Configuration)"=="Release" (
+  copy /Y "$(SolutionDir)External\assimp\bin\Release\assimp-vc145-mt.dll" "$(OutDir)"
+) else (
+  copy /Y "$(SolutionDir)External\assimp\bin\Debug\assimp-vc145-mtd.dll" "$(OutDir)"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,17 +100,25 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>hdf5.lib;glfw3.lib;MathLib.lib;assimp-vc143-mtd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)External\HDF5\lib;$(SolutionDir)External\assimp\lib;$(SolutionDir)External\GLFW\lib;$(SolutionDir)External\MathLib\Release;$(SolutionDir)External\zlib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>hdf5.lib;glfw3.lib;assimp-vc145-mt.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External\MathLib\$(Configuration)\;$(SolutionDir)External\assimp\lib\$(Configuration)\;$(SolutionDir)External\GLFW\lib\;$(SolutionDir)External\HDF5\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(TargetPath)" "$(SolutionDir)bin\Engine\$(Configuration)\" /Y
-xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Configuration)\"/Y /D /I</Command>
+      <Command>xcopy "$(TargetPath)" "$(OutDir)" /Y
+xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(OutDir)"/Y /D /I
+copy /Y "$(SolutionDir)External\MathLib\$(Configuration)\MathLib.dll"  "$(OutDir)"
+
+if "$(Configuration)"=="Release" (
+  copy /Y "$(SolutionDir)External\assimp\bin\Release\assimp-vc145-mt.dll" "$(OutDir)"
+) else (
+  copy /Y "$(SolutionDir)External\assimp\bin\Debug\assimp-vc145-mtd.dll" "$(OutDir)"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -359,6 +375,11 @@ xcopy "$(SolutionDir)External\HDF5\bin\*.dll" "$(SolutionDir)bin\Engine\$(Config
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Robots\RobotSystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\MathLib\MathLib.vcxproj">
+      <Project>{8386b042-89f5-4101-b6a0-f6af305c7427}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
