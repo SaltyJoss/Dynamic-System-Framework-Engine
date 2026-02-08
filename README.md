@@ -18,38 +18,45 @@
 
 </div>
 
+<div align="left">
 
 <!-- ABOUT THE PROJECT -->
 ## About DSFE
 <br />
 <br />
-<br />
+
+<!-- INSTALLATION -->
+## Installation
+
+### Pre-Requisites:
+Before donwloading the latest release, you will need to have installed the following:
+* <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170">Latest Visual C++ Redistributable</a> <br />
+
+### DSFE Installation:
+Download the latest release of DSFE from `Release` in the `DSFE GitHub Repository`:
+* <a href="https://github.com/SaltyJoss/RoboticArm_MathModelling/releases">Latest Release of DSFE</a> <br />
 <br />
 
-<div align="left">
+> **Disclaimer:**<br />
+> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). It is still under development, please let me know if you find any major bugs or issues within the software.
 
 <!-- PROJECT INFO -->
 ## Project Info
 
 ### Languages used
-* [![C][C]][C-url]
-* [![C++][C++]][C++-url]
-* [![MATLAB][MATLAB]][MATLAB-url]
-* [![JSON][JSON]][JSON-url]
+[![C][C]][C-url]
+[![C++][C++]][C++-url]
+[![OpenGL][OpenGL]][OpenGL-url]
+[![GLSL][GLSL]][GLSL-url]
+[![MATLAB][MATLAB]][MATLAB-url]
+[![JSON][JSON]][JSON-url]
 
 ### Libraries used
-* [![OpenGL][OpenGL]][OpenGL-url]
-* [![GLSL][GLSL]][GLSL-url]
-* [![GLFW][GLFW]][GLFW-url]
-* [![GLM][GLM]][GLM-url]
-* [![ImGui][ImGui]][ImGui-url]
-* [![Eigen][Eigen]][Eigen-url]
-
-### Frameworks used
-* [![VS-IDE][vs-ide]][vs-url]
-* [![CMake][cmake]][cmake-url]
-* [![Git][git]][git-url]
-* [![GitHub][github]][github-url]
+[![OpenGL][OpenGL]][OpenGL-url]
+[![GLFW][GLFW]][GLFW-url]
+[![GLM][GLM]][GLM-url]
+[![ImGui][ImGui]][ImGui-url]
+[![Eigen][Eigen]][Eigen-url]
 
 </div>
 
@@ -92,6 +99,18 @@ Licensed under the [GPL-3.0 License][license-url].
 
 </div>
 
+## Third-Party Tools Used:
+The software itself is made of 3 seperate solutions that are under the GPL-3.0 License. However, it has been built and tested using various thirdparty tools and libraries.
+* [Eigen][Eigen-GitLab] for high-performance linear algebra operations that compute robot kinematics, dynamics, and numerical integration
+* [GLM][GLM-url] for OpenGL-compatible vector and matrix types for graphics transforms, camera math, and rendering-side calculations
+* [GLFW][GLFW-url] for creating windows, manage OpenGL contexts, and handle user input across platforms
+* [GLAD][GLAD-url] for loading OpenGL function pointers at runtime, and enabling access to more modern OpenGL features
+* [ImGui][ImGui-url] for immediate-mode GUI for runtime controls, debugging panels, simulation visualisation tools, and the DSL script editor
+* [ImPlot][ImPlot-url] for more complex realtime plots used during simulation runs in DSFE
+* [Assimp][Assimp-url] for importing 3D meshes and scene data from many file formats for robot models and misc objects
+* [nlohmann Json][Nlohmann-Json-url] for integration of .json files within c++, allowing robots to have defined properties that can be easily retrieved upon loading
+* [HDF5][HDF5-url] for storing structured time-series data from robotic arm simulation runs for post-analysis and comparisons of integration methods performance and stability
+* [stb image][stb-image-url] for lightweight loading of png and jpgs files previously used in cubemaps
 
 <p align="center">(<a href="#readme-top">back to top</a>)</p>
 
@@ -113,34 +132,27 @@ Licensed under the [GPL-3.0 License][license-url].
 [C++-url]: https://isocpp.org/
 [C]: https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white
 [C-url]: https://en.cppreference.com/w/c/language
+[OpenGL]: https://img.shields.io/badge/OpenGL-50C878?style=for-the-badge&logo=opengl&logoColor=white
+[OpenGL-url]: https://www.opengl.org/
+[GLSL]: https://img.shields.io/badge/GLSL-50C878?style=for-the-badge&logo=opengl&logoColor=white
+[GLSL-url]: https://www.khronos.org/opengl/wiki/Core_Language_(GLSL)
 [MATLAB]: https://img.shields.io/badge/MATLAB-FF2323?style=for-the-badge&logo=mathworks&logoColor=white
 [MATLAB-url]: https://www.mathworks.com/products/matlab.html
 [JSON]: https://img.shields.io/badge/JSON-5ACB00?style=for-the-badge&logo=json&logoColor=white
 [JSON-url]: https://www.json.org/json-en.html
 
 <!-- LIBRARY BADGES -->
-[OpenGL]: https://img.shields.io/badge/OpenGL-50C878?style=for-the-badge&logo=opengl&logoColor=white
-[OpenGL-url]: https://www.opengl.org/
-[GLSL]: https://img.shields.io/badge/GLSL-50C878?style=for-the-badge&logo=opengl&logoColor=white
-[GLSL-url]: https://www.khronos.org/opengl/wiki/Core_Language_(GLSL)
-[GLFW]: https://img.shields.io/badge/GLFW-5681C0?style=for-the-badge&logo=glfwl&logoColor=white
 [GLFW-url]: https://www.glfw.org/
-[GLM]: https://img.shields.io/badge/GLM-5681C0?style=for-the-badge&logo=glml&logoColor=white
+[GLAD-url]: https://github.com/Dav1dde/glad
 [GLM-url]: https://github.com/g-truc/glm
-[ImGui]: https://img.shields.io/badge/Dear%20ImGui-365CE5?style=for-the-badge&logo=imguil&logoColor=white
 [ImGui-url]: https://github.com/ocornut/imgui
-[Eigen]: https://img.shields.io/badge/Eigen-DD0000?style=for-the-badge&logo=eigenl&logoColor=white
-[Eigen-url]: https://eigen.tuxfamily.org/
-
-<!-- FRAMEWORK BADGES -->
-[vs-ide]: https://img.shields.io/badge/VS%20IDE-5d2b90?style=for-the-badge&logo=.net&logoColor=white
-[vs-url]: https://visualstudio.microsoft.com/
-[cmake]: https://img.shields.io/badge/CMake-39B54A?style=for-the-badge&logo=cmake&logoColor=white
-[cmake-url]: https://cmake.org/
-[git]: https://img.shields.io/badge/Git-F1502F?style=for-the-badge&logo=git&logoColor=white
-[git-url]: https://git-scm.com/
-[github]: https://img.shields.io/badge/GitHub-2b3137?style=for-the-badge&logo=github&logoColor=white
-[github-url]: https://github.com
+[ImPlot-url]: https://github.com/epezent/implot
+[Assimp-url]: https://github.com/assimp/assimp
+[Eigen-url]: https://libeigen.gitlab.io/
+[Eigen-GitLab]: https://gitlab.com/libeigen/eigen
+[Nlohmann-Json-url]: https://github.com/nlohmann/json
+[HDF5-url]: https://github.com/HDFGroup/hdf5
+[stb-image-url]: https://github.com/nothings/stb/blob/master/stb_image.h
 
 <!-- EXTRA LINKS -->
 [saltyjoss]: https://github.com/SaltyJoss
