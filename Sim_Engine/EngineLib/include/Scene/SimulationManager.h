@@ -155,7 +155,7 @@ namespace gui {
 
 		// Robot System
         void loadRobot(const std::string& name);
-        void setRobotLinkRotation(const std::string& linkName, float angle);
+        void setRobotLinkRotation(const std::string& linkName, double angle);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
         void resetRobot();

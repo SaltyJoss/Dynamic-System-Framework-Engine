@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "Robots/RobotLoader.h"
 
+#include <MathLibAPI.h>
+#include <core/constants.h>
 #include "Scene/Object.h"
 #include "Scene/MeshLoader.h"
 #include "EngineLib/LogMacros.h"
@@ -11,6 +13,8 @@
 using json = nlohmann::json;
 using kinematics::JointType_DH;
 using kinematics::DH_Params;
+
+using namespace constants;
 
 namespace robots {
 	// --- Static Helper Functions ---
@@ -40,7 +44,7 @@ namespace robots {
 	// Read a vec3 from a JSON array
 	static Vec3 readVec3(const json& j, const char* key, Vec3 fallback = {}) {
 		if (!j.contains(key) || !j[key].is_array() || j[key].size() != 3) { return fallback; }
-		return Vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
+		return Vec3(j[key][0].get<double>(), j[key][1].get<double>(), j[key][2].get<double>());
 	}
 
 	// --- RobotLoader Link and Joint Parsing ---
@@ -50,15 +54,15 @@ namespace robots {
 	// Parse materials block if present
 	// Each material is defined as: "materials": { "mat_name": [r, g, b, a] }
 	void loadMaterials(const json& data, RobotModel& robot) {
-		if (!data.contains("materials")) { return; }
+		if (!data.contains("material")) { return; }
 
-		for (auto& [name, col] : data["materials"].items()) {
+		for (auto& [name, col] : data["material"].items()) {
 			if (col.is_array() && col.size() == 4) {
 				Vec4 rgba(
-					col[0].get<float>(),
-					col[1].get<float>(),
-					col[2].get<float>(),
-					col[3].get<float>()
+					col[0].get<double>(),
+					col[1].get<double>(),
+					col[2].get<double>(),
+					col[3].get<double>()
 				);
 				robot.materials[name] = rgba;
 			}
@@ -72,12 +76,12 @@ namespace robots {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
 
-		// --- Single mesh (e.g. Z1) ---
+		// Single Mesh (e.g. URDF style)
 		if (v.contains("mesh") && v["mesh"].is_string()) {
 			link.visual.meshFile = v["mesh"].get<std::string>();
 		}
 
-		// --- Multiple meshes (e.g. Panda / MuJoCo style) ---
+		// Multiple meshes (e.g. SDF style)
 		if (v.contains("meshes") && v["meshes"].is_array()) {
 			link.visual.meshFiles.clear();
 			for (const auto& m : v["meshes"]) {
@@ -86,9 +90,12 @@ namespace robots {
 				}
 			}
 		}
+
+		// Visual geometry origin
 		link.visual.origin_xyz = readVec3(v, "origin_xyz", link.visual.origin_xyz);
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
 
+		// Material
 		if (v.contains("material") && v["material"].is_string()) {
 			const std::string matName = v["material"].get<std::string>();
 			auto it = robot.materials.find(matName);
@@ -165,9 +172,9 @@ namespace robots {
 		if (jointData.contains("axis") && jointData["axis"].is_array() && jointData["axis"].size() == 3) {
 			const auto& a = jointData["axis"];
 			joint.axis = Vec3(
-				a[0].get<float>(),
-				a[1].get<float>(),
-				a[2].get<float>()
+				a[0].get<double>(),
+				a[1].get<double>(),
+				a[2].get<double>()
 			);
 			if (joint.axis.norm() < 1e-6f) {
 				LOG_WARN("Joint %s has zero-length axis, defaulting to (0,0,1)", joint.name.c_str());
@@ -208,10 +215,10 @@ namespace robots {
 		joint.limits.maxEffort = L.value("effort", joint.limits.maxEffort);
 
 		if (!joint.limits.continuous) {
-			if (L.contains("lower") && L["lower"].is_number()) { joint.limits.minAngle = L["lower"].get<float>(); }
+			if (L.contains("lower") && L["lower"].is_number()) { joint.limits.minAngle = L["lower"].get<double>(); }
 			else { LOG_WARN("Joint %s limits missing 'lower'", joint.name.c_str()); }
 
-			if (L.contains("upper") && L["upper"].is_number()) { joint.limits.maxAngle = L["upper"].get<float>(); }
+			if (L.contains("upper") && L["upper"].is_number()) { joint.limits.maxAngle = L["upper"].get<double>(); }
 			else { LOG_WARN("Joint %s limits missing 'upper'", joint.name.c_str()); }
 
 			if (joint.limits.maxAngle < joint.limits.minAngle) {
@@ -250,7 +257,7 @@ namespace robots {
 		joint.k_d = C.value("k_d", joint.k_d);
 
 		if (C.contains("maxOmega") && C["maxOmega"].is_number()) {
-			float maxOmega = C["maxOmega"].get<float>();
+			double maxOmega = C["maxOmega"].get<double>();
 			if (maxOmega > 0.0f) joint.limits.maxOmegaRad_s = maxOmega;
 		}
 	}
@@ -316,7 +323,35 @@ namespace robots {
 		}
 
 		// Load robot scale (default 1.0)
-		robot.scale = data["scale"].get<float>();
+		robot.scale = data["scale"].get<double>();
+
+		// Load base frame if present
+		if (data.contains("base_frame")) {
+			robot.baseFrameIsEngineAligned = false;
+			const auto& bf = data["base_frame"];
+
+			// Read translation and rotation (RPY) from JSON, with defaults
+			Vec3 t = readVec3(bf, "origin_xyz", Vec3::Zero());
+			Vec3 r = readVec3(bf, "origin_rpy", Vec3::Zero());
+			Quat q = rpyRadToQuat(r);
+
+			robot.baseFrame = Mat4::Identity();
+			robot.baseFrame.block<3, 3>(0, 0) = q.toRotationMatrix();
+			robot.baseFrame.block<3, 1>(0, 3) = t;
+
+			LOG_INFO("Base frame loaded from JSON: translation=(%.3f, %.3f, %.3f), rotation_r	py=(%.3f, %.3f, %.3f)", 
+				t.x(), t.y(), t.z(), 
+				r.x(), r.y(), r.z());
+		}
+		else {
+			robot.baseFrameIsEngineAligned = true;
+			robot.baseFrame = Mat4::Identity();
+			LOG_INFO("No base frame specified in JSON, using identity (engine-aligned) by default.");
+		}
+
+		if (robot.name == "Z1") {
+			robot.baseFrameIsEngineAligned = true;
+		}
 
 		// Load links
 		for (auto& linkData : data["links"]) {
@@ -391,13 +426,13 @@ namespace robots {
 
 		for (auto& j : robot.joints) {
 			LOG_INFO("%s | type=%d | origin=(%.3f %.3f %.3f)",
-				j.name.c_str(),
-				(int)j.type,
+				j.name.c_str(), (int)j.type,
 				j.origin_xyz.x(),
 				j.origin_xyz.y(),
 				j.origin_xyz.z()
 			);
 		}
+
 
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

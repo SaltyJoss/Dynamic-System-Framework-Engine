@@ -170,6 +170,9 @@ namespace robots {
 		// Visualization options
 		eVisualFrame visualFrame = eVisualFrame::JOINT;
 		std::unordered_map<std::string, Vec4> materials;
+		Mat4 baseFrame = Mat4::Identity(); // transform from world frame to robot base frame, can be set in JSON
+
+		bool baseFrameIsEngineAligned = false;
 
 		// Create an Eigen vector of joint angles
 		VecX makeJointVector() const {

@@ -97,6 +97,20 @@ namespace scene {
 			createBuffers();
 		}
 
+		glm::mat4 applyLocalTransform() {
+			for (auto& v : _vertices) {
+				glm::vec4 p = localTransform * glm::vec4(v._pos, 1.0f);
+				v._pos = glm::vec3(p);
+				if (glm::length(v._normal) > 0.0f) {
+					glm::vec4 n = localTransform * glm::vec4(v._normal, 0.0f);
+					v._normal = glm::normalize(glm::vec3(n));
+				}
+			}
+			return localTransform;
+		}
+
+		bool hasLocalTransform() const { return localTransform != glm::mat4(1.0f); }
+
 	private:
 		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
 

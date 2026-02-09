@@ -893,7 +893,7 @@ namespace gui {
 
 		//_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
 	}
-	void simManager::setRobotLinkRotation(const std::string& linkName, float angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
+	void simManager::setRobotLinkRotation(const std::string& linkName, double angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
 	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
 	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
 	void simManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
@@ -926,8 +926,7 @@ namespace gui {
 				const bool faulted = _activeProgram->isFaulted();
 
 				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)",
-						(int)completed, _dt, _simTime);
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)", (int)completed, _dt, _simTime);
 
 					_scriptRunning = false;
 					_activeProgram = nullptr;
