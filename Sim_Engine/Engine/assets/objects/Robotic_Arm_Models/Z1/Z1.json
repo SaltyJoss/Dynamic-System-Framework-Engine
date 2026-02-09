@@ -1,5 +1,6 @@
 {
     "name": "Z1",
+    "visual_frame": "link",
     "units": {
         "length": "m",
         "angle": "rad"

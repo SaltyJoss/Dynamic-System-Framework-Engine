@@ -163,6 +163,7 @@ namespace robots {
 
 		// Link name to index map
 		std::unordered_map<std::string, int> _linkIndex;
+		std::unordered_map<std::string, int> _jointIndex;
         std::string _loadedName;
 		int _currentJointIndex = -1;
 

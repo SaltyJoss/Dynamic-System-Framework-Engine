@@ -1,5 +1,6 @@
 {
     "name": "Panda",
+    "visual_frame": "joint",
     "units": {
         "length": "m",
         "angle": "rad"
@@ -106,12 +107,7 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "Panda/meshes/link3_0.obj",
-                    "Panda/meshes/link3_1.obj",
-                    "Panda/meshes/link3_2.obj",
-                    "Panda/meshes/link3_3.obj"
-                ]
+                "meshes": [ "Panda/meshes/link3_0.obj", "Panda/meshes/link3_1.obj", "Panda/meshes/link3_2.obj", "Panda/meshes/link3_3.obj" ]
             },
             "collision": [
                 {
@@ -138,12 +134,7 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "Panda/meshes/link4_0.obj",
-                    "Panda/meshes/link4_1.obj",
-                    "Panda/meshes/link4_2.obj",
-                    "Panda/meshes/link4_3.obj"
-                ]
+                "meshes": [ "Panda/meshes/link4_0.obj", "Panda/meshes/link4_1.obj", "Panda/meshes/link4_2.obj", "Panda/meshes/link4_3.obj" ]
             },
             "collision": [
                 {
@@ -170,11 +161,7 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "Panda/meshes/link5_0.obj",
-                    "Panda/meshes/link5_1.obj",
-                    "Panda/meshes/link5_2.obj"
-                ]
+                "meshes": [ "Panda/meshes/link5_0.obj", "Panda/meshes/link5_1.obj", "Panda/meshes/link5_2.obj" ]
             },
             "collision": [
                 {
@@ -313,7 +300,7 @@
             "child": "link02",
             "origin": {
                 "origin_xyz": [ 0, 0, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ -1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
@@ -332,7 +319,7 @@
             "child": "link03",
             "origin": {
                 "origin_xyz": [ 0, -0.316, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
@@ -351,7 +338,7 @@
             "child": "link04",
             "origin": {
                 "origin_xyz": [ 0.0825, 0, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
@@ -370,7 +357,7 @@
             "child": "link05",
             "origin": {
                 "origin_xyz": [ -0.0825, 0.384, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ -1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
@@ -389,7 +376,7 @@
             "child": "link06",
             "origin": {
                 "origin_xyz": [ 0, 0, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
@@ -408,7 +395,7 @@
             "child": "link07",
             "origin": {
                 "origin_xyz": [ 0.088, 0, 0 ],
-                "origin_rpy": [ 3.14159265359, 0, 0 ]
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
             },
             "axis": [ 0, 0, 1 ],
             "limits": {

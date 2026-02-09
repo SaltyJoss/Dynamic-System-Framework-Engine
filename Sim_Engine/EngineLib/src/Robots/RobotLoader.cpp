@@ -204,12 +204,16 @@ namespace robots {
 		joint.k_p = C.value("k_p", joint.k_p);
 		joint.k_d = C.value("k_d", joint.k_d);
 
-		// You have this also in limits.velocity. Choose ONE source of truth.
-		// I'd prefer: limits.velocity is truth, control.maxOmega is optional override.
 		if (C.contains("maxOmega") && C["maxOmega"].is_number()) {
 			float maxOmega = C["maxOmega"].get<float>();
 			if (maxOmega > 0.0f) joint.limits.maxOmegaRad_s = maxOmega;
 		}
+	}
+
+	static bool isFixedJoint(const json& jointData) {
+		if (!jointData.contains("type")) return false;
+		const std::string t = jointData["type"].get<std::string>();
+		return (t == "fixed" || t == "FIXED");
 	}
 
 	static bool parseDHParameters(const json& jointData, DH_Params& out) {
@@ -249,6 +253,19 @@ namespace robots {
 		json data = json::parse(file);
 
 		robot.name = data["name"].get<std::string>();
+		
+		// Visual frame (optional, defaults to JOINT)
+		if (data.contains("visual_frame")) {
+			const std::string vf = data["visual_frame"].get<std::string>();
+			if (vf == "joint")		{ robot.visualFrame = eVisualFrame::JOINT; }
+			else if (vf == "link")  { robot.visualFrame = eVisualFrame::LINK; }
+			else if (vf == "world") { robot.visualFrame = eVisualFrame::WORLD; }
+			else { LOG_WARN("Unknown visual_frame '%s', defaulting to JOINT", vf.c_str()); }
+		}
+		else {
+			robot.visualFrame = eVisualFrame::JOINT;
+		}
+
 		robot.scale = data["scale"].get<float>();
 
 

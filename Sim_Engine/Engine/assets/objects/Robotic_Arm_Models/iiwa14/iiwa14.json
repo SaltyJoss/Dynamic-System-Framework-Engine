@@ -1,0 +1,208 @@
+{
+    "name": "iiwa14",
+    "visual_frame": "link",
+    "units": {
+        "length": "m",
+        "angle": "rad"
+    },
+    "world_up": "Z",
+    "scale": 1.0,
+
+    "links": [
+        {
+            "name": "link_0",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "iiwa14/meshes/link_0.obj"
+            }
+        },
+        {
+            "name": "link_1",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "iiwa14/meshes/link_1.obj"
+            }
+        },
+        {
+            "name": "link_2",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "meshes": [
+                    "iiwa14/meshes/link_2_grey.obj",
+                    "iiwa14/meshes/link_2_orange.obj"
+                ]
+            }
+        },
+        {
+            "name": "link_3",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "iiwa14/meshes/link_3.obj"
+            }
+        },
+        {
+            "name": "link_4",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "meshes": [
+                    "iiwa14/meshes/link_4_grey.obj",
+                    "iiwa14/meshes/link_4_orange.obj"
+                ]
+            }
+        },
+        {
+            "name": "link_5",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "iiwa14/meshes/link_5.obj"
+            }
+        },
+        {
+            "name": "link_6",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "meshes": [
+                    "iiwa14/meshes/link_6_grey.obj",
+                    "iiwa14/meshes/link_6_orange.obj"
+                ]
+            }
+        },
+        {
+            "name": "link_7",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "iiwa14/meshes/link_7.obj"
+            }
+        }
+    ],
+
+    "joints": [
+        {
+            "name": "joint_1",
+            "type": "revolute",
+            "parent": "link_0",
+            "child": "link_1",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.1575 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.96705972839,
+                "upper": 2.96705972839,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_2",
+            "type": "revolute",
+            "parent": "link_1",
+            "child": "link_2",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.2025 ],
+                "origin_rpy": [ 1.57079632679, 0, 3.14159265359 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.09439510239,
+                "upper": 2.09439510239,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_3",
+            "type": "revolute",
+            "parent": "link_2",
+            "child": "link_3",
+            "origin": {
+                "origin_xyz": [ 0, 0.2045, 0 ],
+                "origin_rpy": [ 1.57079632679, 0, 3.14159265359 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.96705972839,
+                "upper": 2.96705972839,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_4",
+            "type": "revolute",
+            "parent": "link_3",
+            "child": "link_4",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.2155 ],
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.09439510239,
+                "upper": 2.09439510239,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_5",
+            "type": "revolute",
+            "parent": "link_4",
+            "child": "link_5",
+            "origin": {
+                "origin_xyz": [ 0, 0.1845, 0 ],
+                "origin_rpy": [ -1.57079632679, 3.14159265359, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.96705972839,
+                "upper": 2.96705972839,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_6",
+            "type": "revolute",
+            "parent": "link_5",
+            "child": "link_6",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.2155 ],
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -2.09439510239,
+                "upper": 2.09439510239,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        },
+        {
+            "name": "joint_7",
+            "type": "revolute",
+            "parent": "link_6",
+            "child": "link_7",
+            "origin": {
+                "origin_xyz": [ 0, 0.081, 0 ],
+                "origin_rpy": [ -1.57079632679, 3.14159265359, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.05432619099,
+                "upper": 3.05432619099,
+                "velocity": 10.0,
+                "effort": 300
+            }
+        }
+    ]
+}

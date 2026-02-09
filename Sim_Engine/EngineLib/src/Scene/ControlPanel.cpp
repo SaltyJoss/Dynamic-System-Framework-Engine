@@ -777,7 +777,7 @@ namespace gui {
         roboticCardDisplay("Z1", "Unitree Robotics");
         roboticCardDisplay("UR5e", "Universal Robots");
         roboticCardDisplay("Panda", "Franka Robotics");
-        roboticCardDisplay("KUKA iiwa", "KUKA");
+        roboticCardDisplay("iiwa14", "KUKA");
 
         ImGui::End();
     }

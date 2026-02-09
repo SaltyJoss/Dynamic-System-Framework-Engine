@@ -15,7 +15,8 @@
 namespace robots {
 	// --- Robot Model Kinematic Models ---
 	enum class eKinematicsModel { URDF, DH };
-	enum class eJointType { REVOLUTE, PRISMATIC };
+	enum class eJointType { FIXED, REVOLUTE, PRISMATIC };
+	enum class eVisualFrame { NONE, JOINT, LINK, WORLD };
 
 	// --- Robot Model Links ---
 
@@ -121,6 +122,7 @@ namespace robots {
 
 	struct RobotModel {
 		std::string name = "UnnamedRobot";
+		eVisualFrame visualFrame = eVisualFrame::JOINT;
 		float scale = 1.0f;
 
 		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;

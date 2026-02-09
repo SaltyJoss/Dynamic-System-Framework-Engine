@@ -962,6 +962,7 @@ namespace robots {
 		std::stack<std::string> st;
 		st.push(rootName);
 
+		// Traverse the kinematic tree using DFS
 		while (!st.empty()) {
 			std::string parentName = st.top(); st.pop();
 			auto itP = _linkIndex.find(parentName);
@@ -983,18 +984,27 @@ namespace robots {
 
 				Vec4 axis = Vec4(j.axis.x(), j.axis.y(), j.axis.z(), 0.0);
 
+				// Decompose parent transform
+				glm::vec3 p_pos = glm::vec3(world[pIdx][3]);
+				glm::mat4 T_parent = glm::translate(glm::mat4(1.0f), p_pos);
+				glm::mat4 R_parent = world[pIdx];
+				R_parent[3] = glm::vec4(0, 0, 0, 1); // zero translation
+
+				// Joint fixed transform (parent → joint)
 				glm::mat4 T_joint = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
-				glm::mat4 R_0 = glm::mat4_cast(toGlm(j.origin_q));
-				glm::vec3 axis_joint = glm::normalize(toGlm(j.axis));
-				glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, axis_joint);
+				glm::mat4 R_joint = glm::mat4_cast(toGlm(j.origin_q));
+
+				// Joint motion
+				glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, glm::normalize(toGlm(j.axis)));
 
 				// Apply joint rotation in JOINT frame
-				world[cIdx] = world[pIdx] * T_joint * R_0 * R_q;
+				world[cIdx] = T_parent * R_parent * T_joint * R_joint * R_q;
 
 				st.push(j.child);
 			}
 		}
 
+		// Update attached objects (visuals) based on FK results
 		for (int i = 0; i < (int)_robot.links.size(); ++i) {
 			auto& link = _robot.links[i];
 			if (!link.attachedObject) continue;
@@ -1014,8 +1024,9 @@ namespace robots {
 			T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
 			T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
 
-			// FINAL: world -> link -> visual
-			mesh->localTransform = T_link * T_visual;
+			glm::mat4 M = T_link * T_visual;
+			obj->transform.position = glm::vec3(M[3]);
+			obj->transform.rotQ = glm::quat_cast(M);
 		}
 	}
 
