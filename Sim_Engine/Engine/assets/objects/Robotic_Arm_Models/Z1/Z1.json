@@ -247,15 +247,8 @@
             "dynamics": {
                 "damping": 0.2,
                 "friction": 0.12
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         },
-
         {
             "name": "joint02",
             "type": "revolute",
@@ -279,15 +272,8 @@
             "dynamics": {
                 "damping": 0.25,
                 "friction": 0.18
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         },
-
         {
             "name": "joint03",
             "type": "revolute",
@@ -311,15 +297,8 @@
             "dynamics": {
                 "damping": 0.24,
                 "friction": 0.16
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         },
-
         {
             "name": "joint04",
             "type": "revolute",
@@ -343,15 +322,8 @@
             "dynamics": {
                 "damping": 0.1,
                 "friction": 0.08
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         },
-
         {
             "name": "joint05",
             "type": "revolute",
@@ -375,15 +347,8 @@
             "dynamics": {
                 "damping": 0.1,
                 "friction": 0.05
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         },
-
         {
             "name": "joint06",
             "type": "revolute",
@@ -408,12 +373,6 @@
             "dynamics": {
                 "damping": 0.05,
                 "friction": 0.02
-            },
-
-            "control": {
-                "k_p": 10.0,
-                "k_d": 10.0,
-                "maxOmega": 3.1415
             }
         }
     ],

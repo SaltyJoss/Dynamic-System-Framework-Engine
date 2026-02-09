@@ -17,7 +17,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/link_0.obj"
+                "mesh": "iiwa14/meshes/visual/link_0.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 5.0,
+                "com_xyz": [ -0.1, 0.0, 0.07],
+                "inertia": {
+                    "ixx": 0.05,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.06,
+                    "ixz": 0.0,
+                    "iyz": 0.03
+                }
             }
         },
         {
@@ -25,7 +38,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/link_1.obj"
+                "mesh": "iiwa14/meshes/visual/link_1.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 4.0,
+                "com_xyz": [ 0.0, -0.03, 0.12 ],
+                "inertia": {
+                    "ixx": 0.01,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.09,
+                    "ixz": 0.0,
+                    "iyz": 0.02
+                }
             }
         },
         {
@@ -33,10 +59,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "iiwa14/meshes/link_2_grey.obj",
-                    "iiwa14/meshes/link_2_orange.obj"
-                ]
+                "mesh": "iiwa14/meshes/visual/link_2.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 4.0,
+                "com_xyz": [ 0.0003, 0.059, 0.042 ],
+                "inertia": {
+                    "ixx": 0.05,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.018,
+                    "ixz": 0.0,
+                    "iyz": 0.044
+                }
             }
         },
         {
@@ -44,7 +80,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/link_3.obj"
+                "mesh": "iiwa14/meshes/visual/link_3.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 3.0,
+                "com_xyz": [ 0.0, 0.03, 0.13 ],
+                "inertia": {
+                    "ixx": 0.08,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.075,
+                    "ixz": 0.0,
+                    "iyz": 0.01
+                }
             }
         },
         {
@@ -52,10 +101,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "iiwa14/meshes/link_4_grey.obj",
-                    "iiwa14/meshes/link_4_orange.obj"
-                ]
+                "mesh": "iiwa14/meshes/visual/link_4.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 2.7,
+                "com_xyz": [ 0.0, 0.067, 0.034 ],
+                "inertia": {
+                    "ixx": 0.03,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.01,
+                    "ixz": 0.0,
+                    "iyz": 0.029
+                }
             }
         },
         {
@@ -63,7 +122,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/link_5.obj"
+                "mesh": "iiwa14/meshes/visual/link_5.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 1.7,
+                "com_xyz": [ 0.0001, 0.021, 0.076 ],
+                "inertia": {
+                    "ixx": 0.02,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.018,
+                    "ixz": 0.0,
+                    "iyz": 0.005
+                }
             }
         },
         {
@@ -71,10 +143,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [
-                    "iiwa14/meshes/link_6_grey.obj",
-                    "iiwa14/meshes/link_6_orange.obj"
-                ]
+                "mesh": "iiwa14/meshes/visual/link_6.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 1.8,
+                "com_xyz": [ 0.0, 0.0006, 0.0004 ],
+                "inertia": {
+                    "ixx": 0.005,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.0036,
+                    "ixz": 0.0,
+                    "iyz": 0.0047
+                }
             }
         },
         {
@@ -82,7 +164,20 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/link_7.obj"
+                "mesh": "iiwa14/meshes/visual/link_7.stl"
+            },
+            "collision": [],
+            "inertial": {
+                "mass": 0.3,
+                "com_xyz": [ 0.0, 0.0, 0.02 ],
+                "inertia": {
+                    "ixx": 0.001,
+                    "iyy": 0.0,
+                    "izz": 0.0,
+                    "ixy": 0.001,
+                    "ixz": 0.0,
+                    "iyz": 0.001
+                }
             }
         }
     ],
@@ -115,7 +210,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 0.8,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -136,7 +231,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 1.2,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -157,7 +252,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 1.2,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -178,7 +273,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 1.0,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -199,7 +294,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 0.6,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -220,7 +315,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 0.4,
+                "damping": 0.5,
                 "friction": 0.0
             }
         },
@@ -241,7 +336,7 @@
                 "effort": 300
             },
             "dynamics": {
-                "damping": 0.2,
+                "damping": 0.5,
                 "friction": 0.0
             }
         }
