@@ -416,5 +416,19 @@
                 "maxOmega": 3.1415
             }
         }
-    ]
+    ],
+
+    "load_pose": {
+        "active": "default",
+        "default": {
+            "joints": {
+                "joint01": -0.7853981634,
+                "joint02": 0.5846852994,
+                "joint03": -0.7417649321,
+                "joint04": 0.2181661565,
+                "joint05": 0.0,
+                "joint06": 0.0
+            }
+        }
+    }
 }
