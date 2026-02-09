@@ -10,7 +10,10 @@
 
     "links": [
         {
-            "name": "link_0",
+            "name": "world"
+        },
+        {
+            "name": "link00",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -18,7 +21,7 @@
             }
         },
         {
-            "name": "link_1",
+            "name": "link01",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -26,7 +29,7 @@
             }
         },
         {
-            "name": "link_2",
+            "name": "link02",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -37,7 +40,7 @@
             }
         },
         {
-            "name": "link_3",
+            "name": "link03",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -45,7 +48,7 @@
             }
         },
         {
-            "name": "link_4",
+            "name": "link04",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -56,7 +59,7 @@
             }
         },
         {
-            "name": "link_5",
+            "name": "link05",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -64,7 +67,7 @@
             }
         },
         {
-            "name": "link_6",
+            "name": "link06",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -75,7 +78,7 @@
             }
         },
         {
-            "name": "link_7",
+            "name": "link07",
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
@@ -86,10 +89,20 @@
 
     "joints": [
         {
-            "name": "joint_1",
+            "name": "world_joint",
+            "type": "fixed",
+            "parent": "world",
+            "child": "link00",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            }
+        },
+        {
+            "name": "joint01",
             "type": "revolute",
-            "parent": "link_0",
-            "child": "link_1",
+            "parent": "link00",
+            "child": "link01",
             "origin": {
                 "origin_xyz": [ 0, 0, 0.1575 ],
                 "origin_rpy": [ 0, 0, 0 ]
@@ -100,13 +113,17 @@
                 "upper": 2.96705972839,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 0.8,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_2",
+            "name": "joint02",
             "type": "revolute",
-            "parent": "link_1",
-            "child": "link_2",
+            "parent": "link01",
+            "child": "link02",
             "origin": {
                 "origin_xyz": [ 0, 0, 0.2025 ],
                 "origin_rpy": [ 1.57079632679, 0, 3.14159265359 ]
@@ -117,13 +134,17 @@
                 "upper": 2.09439510239,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 1.2,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_3",
+            "name": "joint03",
             "type": "revolute",
-            "parent": "link_2",
-            "child": "link_3",
+            "parent": "link02",
+            "child": "link03",
             "origin": {
                 "origin_xyz": [ 0, 0.2045, 0 ],
                 "origin_rpy": [ 1.57079632679, 0, 3.14159265359 ]
@@ -134,13 +155,17 @@
                 "upper": 2.96705972839,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 1.2,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_4",
+            "name": "joint04",
             "type": "revolute",
-            "parent": "link_3",
-            "child": "link_4",
+            "parent": "link03",
+            "child": "link04",
             "origin": {
                 "origin_xyz": [ 0, 0, 0.2155 ],
                 "origin_rpy": [ 1.57079632679, 0, 0 ]
@@ -151,13 +176,17 @@
                 "upper": 2.09439510239,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 1.0,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_5",
+            "name": "joint05",
             "type": "revolute",
-            "parent": "link_4",
-            "child": "link_5",
+            "parent": "link04",
+            "child": "link05",
             "origin": {
                 "origin_xyz": [ 0, 0.1845, 0 ],
                 "origin_rpy": [ -1.57079632679, 3.14159265359, 0 ]
@@ -168,13 +197,17 @@
                 "upper": 2.96705972839,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 0.6,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_6",
+            "name": "joint06",
             "type": "revolute",
-            "parent": "link_5",
-            "child": "link_6",
+            "parent": "link05",
+            "child": "link06",
             "origin": {
                 "origin_xyz": [ 0, 0, 0.2155 ],
                 "origin_rpy": [ 1.57079632679, 0, 0 ]
@@ -185,13 +218,17 @@
                 "upper": 2.09439510239,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 0.4,
+                "friction": 0.0
             }
         },
         {
-            "name": "joint_7",
+            "name": "joint07",
             "type": "revolute",
-            "parent": "link_6",
-            "child": "link_7",
+            "parent": "link06",
+            "child": "link07",
             "origin": {
                 "origin_xyz": [ 0, 0.081, 0 ],
                 "origin_rpy": [ -1.57079632679, 3.14159265359, 0 ]
@@ -202,7 +239,26 @@
                 "upper": 3.05432619099,
                 "velocity": 10.0,
                 "effort": 300
+            },
+            "dynamics": {
+                "damping": 0.2,
+                "friction": 0.0
             }
         }
-    ]
+    ],
+
+    "load_pose": {
+        "active": "default",
+        "default": {
+            "joints": {
+                "joint01": 0.0,
+                "joint02": 0.006981317,
+                "joint03": 0.0,
+                "joint04": -1.195550538,
+                "joint05": 0.0,
+                "joint06": 1.195550538,
+                "joint07": 0.0
+            }
+        }
+    }
 }
