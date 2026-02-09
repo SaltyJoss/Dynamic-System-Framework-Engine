@@ -290,7 +290,10 @@
                 "velocity": 3.1415,
                 "effort": 87
             },
-            "dynamics": { "damping": 40 }
+            "dynamics": {
+                "damping": 19.0,
+                "friction": 0.04
+            }
         },
 
         {
@@ -309,7 +312,10 @@
                 "velocity": 3.1415,
                 "effort": 87
             },
-            "dynamics": { "damping": 40 }
+            "dynamics": {
+                "damping": 18.0,
+                "friction": 0.04
+            }
         },
 
         {
@@ -328,7 +334,10 @@
                 "velocity": 3.1415,
                 "effort": 87
             },
-            "dynamics": { "damping": 40 }
+            "dynamics": {
+                "damping": 18.0,
+                "friction": 0.035
+            }
         },
 
         {
@@ -347,7 +356,10 @@
                 "velocity": 3.1415,
                 "effort": 87
             },
-            "dynamics": { "damping": 40 }
+            "dynamics": {
+                "damping": 15.0,
+                "friction": 0.03
+            }
         },
 
         {
@@ -366,7 +378,10 @@
                 "velocity": 3.1415,
                 "effort": 12
             },
-            "dynamics": { "damping": 2 }
+            "dynamics": {
+                "damping": 2.0,
+                "friction": 0.0
+            }
         },
 
         {
@@ -385,7 +400,10 @@
                 "velocity": 3.1415,
                 "effort": 12
             },
-            "dynamics": { "damping": 2 }
+            "dynamics": {
+                "damping": 1.8,
+                "friction": 0.0
+            }
         },
 
         {
@@ -404,7 +422,25 @@
                 "velocity": 3.1415,
                 "effort": 12
             },
-            "dynamics": { "damping": 2 }
+            "dynamics": {
+                "damping": 1.5,
+                "friction": 0.0
+            }
         }
-    ]
+    ],
+
+    "load_pose": {
+        "active": "default",
+        "default": {
+            "joints": {
+                "joint01": 0.0,
+                "joint02": -0.7853981634,
+                "joint03": 0.0,
+                "joint04": -2.3561944902,
+                "joint05": 0.0,
+                "joint06": 1.5707963268,
+                "joint07": 0.0
+            }
+        }
+    }
 }
