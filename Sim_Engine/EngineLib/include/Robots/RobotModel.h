@@ -14,9 +14,23 @@
 
 namespace robots {
 	// --- Robot Model Kinematic Models ---
-	enum class eKinematicsModel { URDF, DH };
-	enum class eJointType { FIXED, REVOLUTE, PRISMATIC };
-	enum class eVisualFrame { NONE, JOINT, LINK, WORLD };
+	enum class eKinematicsModel {
+		URDF,
+		DH
+	};
+	/// --- URDF Joint Types ---
+	enum class eJointType {
+		FIXED = 0,
+		REVOLUTE = 1,
+		PRISMATIC = 2
+	};
+	/// --- Visual Frame Options ---
+	enum class eVisualFrame {
+		NONE,
+		JOINT,
+		LINK,
+		WORLD
+	};
 
 	// --- Robot Model Links ---
 
