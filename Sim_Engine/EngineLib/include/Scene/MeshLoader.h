@@ -1,33 +1,10 @@
 #pragma once
+// File:   MeshLoader.h
+// GitHub: SaltyJoss
+// -----
+// Initially templated off a tutorial:
+// GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #pragma warning(disable : 4251)
-
-//=============================================
-//            File: MeshLoader.h
-//=============================================
-// Class responsible for loading 3D mesh files using the Assimp library.
-// 
-// Summary:
-// ============================================
-// 
-// public:
-// --------------------------------------------
-// std::vector<std::shared_ptr<scene::Mesh>> load(const std::string& filepath)
-//      -> Loads a mesh from the specified file path and returns a vector of shared pointers to Mesh objects.
-// --------------------------------------------
-// 
-// private:
-// --------------------------------------------
-// std::vector<std::shared_ptr<scene::Mesh>> _imported
-//      -> Vector of shared pointers to imported Mesh objects.
-// std::shared_ptr<scene::Mesh> processMesh(aiMesh* mesh)
-//      -> Processes an aiMesh and returns a shared pointer to a Mesh object.
-// void processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform)
-//      -> Processes an aiNode and its children, applying transformations and extracting meshes.
-// --------------------------------------------
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
 
 #include "EngineCore.h"
 
@@ -36,25 +13,29 @@
 #include <memory>
 #include <string>
 
+// Forward Declarations for Assimp types
 namespace ai {
 	class Node;
 	class Scene;
 	class Mesh;
 }
 
-namespace scene {
-	class Mesh;
-}
+// Forward Declarations for Mesh.h
+namespace scene { class ENGINE_API Mesh; }
 
 namespace gui {
 	class ENGINE_API MeshLoader {
 	public:
+		// Loads a mesh from the specified file path and returns a vector of shared pointers to Mesh objects
 		std::vector<std::shared_ptr<scene::Mesh>> load(const std::string& filepath);
 
 	private:
+		// Stores the meshes that have been imported during the loading process
 		std::vector<std::shared_ptr<scene::Mesh>> _imported;
+		// Helper method to process an Assimp mesh and convert it into a shared pointer to a scene::Mesh object
 		std::shared_ptr<scene::Mesh> processMesh(aiMesh* mesh);
 
+		// Helper method to recursively process an Assimp node and its children, applying the parent transformation to each mesh
 		void processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform);
 	};
 }

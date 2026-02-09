@@ -8,6 +8,17 @@
     "world_up": "Z",
     "scale": 1.0,
 
+    "material": {
+        "Black": [ 0.0, 0.0, 0.0, 1.0 ],
+        "Blue": [ 0.0, 0.0, 0.8, 1.0 ],
+        "Green": [ 0.0, 0.8, 0.0, 1.0 ],
+        "Grey": [ 0.4, 0.4, 0.4, 1.0 ],
+        "Orange": [ 1.0, 0.423529411765, 0.0392156862745, 1.0 ],
+        "Brown": [ 0.870588235294, 0.811764705882, 0.764705882353, 1.0 ],
+        "Red": [ 0.8, 0.0, 0.0, 1.0 ],
+        "White": [ 1.0, 1.0, 1.0, 1.0 ]
+    },
+
     "links": [
         {
             "name": "world"
@@ -17,12 +28,13 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_0.stl"
+                "mesh": "iiwa14/meshes/visual/link_0.stl",
+                "material": "Grey"
             },
             "collision": [],
             "inertial": {
                 "mass": 5.0,
-                "com_xyz": [ -0.1, 0.0, 0.07],
+                "com_xyz": [ -0.1, 0.0, 0.07 ],
                 "inertia": {
                     "ixx": 0.05,
                     "iyy": 0.0,
@@ -38,7 +50,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_1.stl"
+                "mesh": "iiwa14/meshes/visual/link_1.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -59,7 +72,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_2.stl"
+                "mesh": "iiwa14/meshes/visual/link_2.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -80,7 +94,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_3.stl"
+                "mesh": "iiwa14/meshes/visual/link_3.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -101,7 +116,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_4.stl"
+                "mesh": "iiwa14/meshes/visual/link_4.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -122,7 +138,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_5.stl"
+                "mesh": "iiwa14/meshes/visual/link_5.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -143,7 +160,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_6.stl"
+                "mesh": "iiwa14/meshes/visual/link_6.stl",
+                "material": "Orange"
             },
             "collision": [],
             "inertial": {
@@ -164,7 +182,8 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "iiwa14/meshes/visual/link_7.stl"
+                "mesh": "iiwa14/meshes/visual/link_7.stl",
+                "material": "Grey"
             },
             "collision": [],
             "inertial": {

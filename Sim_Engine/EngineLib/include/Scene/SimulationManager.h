@@ -1,23 +1,6 @@
 #pragma once
-
-//=============================================
-//            File: simManager.h
-//=============================================
-// Class representing a 3D scene view with camera, lighting, and object management.
-// 
-// structures & enumerations:
-// --------------------------------------------
-// enum class ControlMode
-//      -> Enumeration for control modes (Camera or Object).
-// enum class ShaderMode
-// 	    -> Enumeration for shader modes (Basic, Lit, PBR).
-// enum class robotFocusMode
-//      -> Enumeration for robot focus modes (Base, Link, Joint).
-// --------------------------------------------
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
+// File:   MeshLoader.h
+// GitHub: SaltyJoss
 
 #include "EngineCore.h"
 #include <glm/glm.hpp>

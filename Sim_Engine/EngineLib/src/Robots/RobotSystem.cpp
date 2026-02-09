@@ -82,7 +82,7 @@ namespace robots {
 	// Method to clamp a joint angle to its limits
 	float RobotSystem::clampJointAngle(const RobotJoint& joint, float angleRad) {
 		if (joint.limits.continuous) { return wrapRad(angleRad); }
-		else { return glm::clamp(angleRad, joint.limits.minAngle, joint.limits.maxAngle); }
+		else { return glm::clamp(angleRad, static_cast<float>(joint.limits.minAngle), static_cast<float>(joint.limits.maxAngle)); }
 	}
 
 	// Method to wrap an angle in radians to the range [-pi, pi]
@@ -231,6 +231,12 @@ namespace robots {
 
 			// Apply visual origin transform to the merged mesh
 			if(baseMesh) {
+				const Vec4& rgba = link.visual.material;
+
+				// Apply visual material properties
+				baseMesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+				baseMesh->setMetallic(link.visual.metallic);
+
 				baseMesh->rebuildGPU();
 			}
 
@@ -333,7 +339,7 @@ namespace robots {
 			x[i] = (double)j.thetaRefRad;
 			x[i + n] = (double)j.omegaRefRad_s;
 		}
-		return x;
+		return x; // reference state vector
 	}
 
 	// Method to unpack reference state vector into robot joints
@@ -406,7 +412,6 @@ namespace robots {
 
 		return std::max(I, 1e-6); // [kg*m^2], I_eff for joint i with floor to avoid singularities
 	}
-
 
 	// Method to compute the diagonal Coriolis/centrifugal term for each joint using finite differences on the effective inertia
 	std::vector<double> RobotSystem::computeCoriolisDiagonal( 
@@ -690,8 +695,8 @@ namespace robots {
 	void RobotSystem::enforceJointLimits(RobotJoint& j) {
 		if (j.limits.continuous) { return; }
 
-		const float lo = j.limits.minAngle;
-		const float hi = j.limits.maxAngle;
+		const double lo = j.limits.minAngle;
+		const double hi = j.limits.maxAngle;
 
 		if (j.thetaRad < lo) { j.thetaRad = lo; if (j.omegaRad_s < 0.0f) { j.omegaRad_s = 0.0f; }}
 		if (j.thetaRad > hi) { j.thetaRad = hi; if (j.omegaRad_s > 0.0f) { j.omegaRad_s = 0.0f; }}
@@ -732,7 +737,7 @@ namespace robots {
 
 		// Enforce joint limits
 		for (auto& j : _robot.joints) {
-			const float wMax = j.limits.maxOmegaRad_s;
+			const double wMax = j.limits.maxOmegaRad_s;
 			if (wMax > 0.0f) { j.omegaRad_s = glm::clamp(j.omegaRad_s, -wMax, wMax); }
 			enforceJointLimits(j);
 		}
@@ -999,12 +1004,11 @@ namespace robots {
 
 				// Apply joint rotation for revolute joints
 				if (j.type == eJointType::REVOLUTE) {
-					glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, glm::normalize(toGlm(j.axis)));
+					glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), static_cast<float>(j.thetaRad), glm::normalize(toGlm(j.axis)));
 					T_child = T_child * R_q;
 				}
 				else if (j.type == eJointType::PRISMATIC) {
-					glm::mat4 T_q = glm::translate(glm::mat4(1.0f),
-						glm::normalize(toGlm(j.axis)) * j.thetaRad);
+					glm::mat4 T_q = glm::translate(glm::mat4(1.0f), glm::normalize(toGlm(j.axis)) * static_cast<float>(j.thetaRad));
 					T_child = T_child * T_q;
 				}
 
@@ -1041,7 +1045,7 @@ namespace robots {
 	}
 
 	// Method to get the angle of a specific robot joint
-	bool RobotSystem::tryGetJointAngleRad(const std::string& childLink, float& outAngle) const {
+	bool RobotSystem::tryGetJointAngleRad(const std::string& childLink, double& outAngle) const {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
 		for (const auto& joint : _robot.joints) {
@@ -1054,7 +1058,7 @@ namespace robots {
 	}
 
 	// Method to set the angle of a specific robot joint
-	bool RobotSystem::trySetJointAngleRad(const std::string& childLink, float angleRad) {
+	bool RobotSystem::trySetJointAngleRad(const std::string& childLink, double angleRad) {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
 		for (auto& joint : _robot.joints) {
@@ -1067,7 +1071,7 @@ namespace robots {
 	}
 
 	// Method to get the angular velocity of a specific robot joint
-	bool RobotSystem::tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const {
+	bool RobotSystem::tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
 		for (const auto& joint : _robot.joints) {
@@ -1080,7 +1084,7 @@ namespace robots {
 	}
 
 	// Method to set the angular velocity of a specific robot joint
-	bool RobotSystem::trySetJointOmegaRad(const std::string& childLink, float omegaRad) {
+	bool RobotSystem::trySetJointOmegaRad(const std::string& childLink, double omegaRad) {
 		if (!_hasRobot) { return false; }
 		// Find joint child matching childLink
 		for (auto& joint : _robot.joints) {
@@ -1093,7 +1097,7 @@ namespace robots {
 	}
 
 	// Method to get the target angle (reference) of a specific robot joint in radians
-	bool RobotSystem::tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const {
+	bool RobotSystem::tryGetJointTargetRad(const std::string& childLink, double& outTargetRad) const {
 		if (!_hasRobot) { return false; }
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
@@ -1105,7 +1109,7 @@ namespace robots {
 	}
 
 	// Method to set the target angle (reference) of a specific robot joint in radians
-	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, float targetRad) {
+	bool RobotSystem::trySetJointTargetRad(const std::string& childLink, double targetRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
@@ -1118,7 +1122,7 @@ namespace robots {
 	}
 
 	//	Method to get the maximum angular velocity of a specific robot joint in radians
-	bool RobotSystem::tryGetJointOmegaMaxRad(const std::string& childLink, float& maxOmegaRad) const {
+	bool RobotSystem::tryGetJointOmegaMaxRad(const std::string& childLink, double& maxOmegaRad) const {
 		if (!_hasRobot) { return false; }
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
@@ -1130,7 +1134,7 @@ namespace robots {
 	}
 
 	//	Method to set the maximum angular velocity of a specific robot joint in radians
-	bool RobotSystem::trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad) {
+	bool RobotSystem::trySetJointOmegaMaxRad(const std::string& childLink, double maxOmegaRad) {
 		if (!_hasRobot) { return false; }
 		if (maxOmegaRad <= 0.0f) { return false; }
 		for (auto& joint : _robot.joints) {
@@ -1143,11 +1147,11 @@ namespace robots {
 	}
 
 	// Method to increment the target angle (reference) of a specific robot joint in radians
-	bool RobotSystem::tryAddJointTargetRad(const std::string& childLink, float deltaRad) {
+	bool RobotSystem::tryAddJointTargetRad(const std::string& childLink, double deltaRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				float t = joint.thetaRefRad + deltaRad;
+				double t = joint.thetaRefRad + deltaRad;
 				if (joint.limits.continuous) { t = wrapRad(t); }
 				else { t = glm::clamp(t, joint.limits.minAngle, joint.limits.maxAngle); }
 				joint.thetaRefRad = t; // clamp to joint limits
@@ -1158,7 +1162,7 @@ namespace robots {
 	}
 
 	// Method to set the reference angular velocity of a specific robot joint in radians
-	bool RobotSystem::trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad) {
+	bool RobotSystem::trySetJointOmegaRefRad(const std::string& childLink, double omegaRefRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
@@ -1170,7 +1174,7 @@ namespace robots {
 	}
 
 	// Method to set the reference angular acceleration of a specific robot joint in radians
-	bool RobotSystem::trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad) {
+	bool RobotSystem::trySetJointAlphaRefRad(const std::string& childLink, double alphaRefRad) {
 		if (!_hasRobot) { return false; }
 		for (auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
@@ -1182,7 +1186,7 @@ namespace robots {
 	}
 
 	// Method to set the max Omega reference of a specific robot joint in radians
-	bool RobotSystem::trySetJointOmegaRefMaxRad(const std::string& childLink, float maxOmegaRad) {
+	bool RobotSystem::trySetJointOmegaRefMaxRad(const std::string& childLink, double maxOmegaRad) {
 		if (!_hasRobot) { return false; }
 		if (maxOmegaRad <= 0.0f) { return false; }
 		for (auto& joint : _robot.joints) {
@@ -1205,13 +1209,13 @@ namespace robots {
 	}
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (radians)
-	bool RobotSystem::isJointAtTargetRad(const std::string& childLink, float tolRad) const {
+	bool RobotSystem::isJointAtTargetRad(const std::string& childLink, double tolRad) const {
 		if (!_hasRobot) { return false; }
 		if (tolRad < 0.0f) { tolRad = -tolRad; }
 
 		for (const auto& joint : _robot.joints) {
 			if (joint.child == childLink) {
-				float err = joint.thetaRefRad - joint.thetaRad;
+				double err = joint.thetaRefRad - joint.thetaRad;
 				if (joint.limits.continuous) { err = wrapToPi(err); }
 				err = std::abs(err);
 				return err <= tolRad;
@@ -1221,12 +1225,12 @@ namespace robots {
 	}
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (degrees)
-	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, float tolDeg) const { 
+	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, double tolDeg) const { 
 		return isJointAtTargetRad(childLink, glm::radians(tolDeg)); 
 	}
 
 	// Method to check if a specific robot joint is near a target angle within a tolerance (radians)
-	bool RobotSystem::isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const {
+	bool RobotSystem::isJointNearAngleRad(const std::string& childLink, double targetRad, double tolRad) const {
 		if (!_hasRobot) { return false; }
 		tolRad = std::abs(tolRad);
 
@@ -1241,14 +1245,14 @@ namespace robots {
 	}
 
 	// Method to check if a specific robot joint is near a target angle within a tolerance (degrees)
-	bool RobotSystem::isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const { 
+	bool RobotSystem::isJointNearAngleDeg(const std::string& childLink, double targetDeg, double tolDeg) const { 
 		return isJointNearAngleRad(childLink, glm::radians(targetDeg), glm::radians(tolDeg));
 	}
 
 	// --- ROBOT LINK AND ROOT POSE METHODS ---
 
 	// Method to set the rotation angle of a specific robot link angle in degrees
-	bool RobotSystem::setRobotLinkRotation(const std::string& childLinkName, float angleDeg) {
+	bool RobotSystem::setRobotLinkRotation(const std::string& childLinkName, double angleDeg) {
 		for (auto& j : _robot.joints) {
 			if (j.child == childLinkName) {
 				j.thetaRad = glm::radians(angleDeg);
@@ -1277,7 +1281,7 @@ namespace robots {
 	}
 
 	// Method to set the default pose of the robot using joint angles in degrees
-	bool RobotSystem::setDefaultPoseDeg(const std::vector<float>& qDeg) {
+	bool RobotSystem::setDefaultPoseDeg(const std::vector<double>& qDeg) {
 		if (!_hasRobot) { return false; }
 		if (qDeg.size() != _robot.joints.size()) { return false; }
 		for (size_t i = 0; i < _robot.joints.size(); ++i) {

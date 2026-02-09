@@ -47,7 +47,28 @@ namespace robots {
 
 	// link parsing
 
-	static void parseVisual(const json& linkData, RobotLink& link) {
+	// Parse materials block if present
+	// Each material is defined as: "materials": { "mat_name": [r, g, b, a] }
+	void loadMaterials(const json& data, RobotModel& robot) {
+		if (!data.contains("materials")) { return; }
+
+		for (auto& [name, col] : data["materials"].items()) {
+			if (col.is_array() && col.size() == 4) {
+				Vec4 rgba(
+					col[0].get<float>(),
+					col[1].get<float>(),
+					col[2].get<float>(),
+					col[3].get<float>()
+				);
+				robot.materials[name] = rgba;
+			}
+			else {
+				LOG_WARN("Material '%s' has invalid color format, expected array of 4 floats", name.c_str());
+			}
+		}
+	}
+
+	static void parseVisual(const json& linkData, const RobotModel& robot, RobotLink& link) {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
 
@@ -67,6 +88,24 @@ namespace robots {
 		}
 		link.visual.origin_xyz = readVec3(v, "origin_xyz", link.visual.origin_xyz);
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
+
+		if (v.contains("material") && v["material"].is_string()) {
+			const std::string matName = v["material"].get<std::string>();
+			auto it = robot.materials.find(matName);
+
+
+			if (it != robot.materials.end()) {
+				link.visual.material = it->second;
+			}
+			else {
+				LOG_WARN("Link %s references undefined material '%s', using default Grey", link.name.c_str(), matName.c_str());
+				link.visual.material = Vec4(0.4, 0.4, 0.4, 1.0); // different from default to make it obvious when a material is missing
+			}
+		}
+		else {
+			// Default material if not specified
+			link.visual.material = Vec4(0.7, 0.0, 0.2, 1.0); // default redish color
+		}
 	}
 
 	static void parseCollisions(const json& linkData, RobotLink& link) {
@@ -87,6 +126,7 @@ namespace robots {
 		}
 	}
 
+	// Parse inertial properties, including mass, center of mass, and inertia tensor
 	static void parseInertial(const json& linkData, RobotLink& link) {
 		if (!linkData.contains("inertial")) { return; }
 		const auto& I = linkData["inertial"];
@@ -106,6 +146,7 @@ namespace robots {
 
 	// joint parsing
 
+	// Parse joint origin, supporting both the "origin" block (with "origin_xyz" and "origin_rpy" inside) and the flat format with "origin_xyz" and "origin_rpy" directly in the joint block
 	static void parseJointOrigin(const json& jointData, RobotJoint& joint) {
 		if (jointData.contains("origin")) {
 			const auto& o = jointData["origin"];
@@ -118,6 +159,7 @@ namespace robots {
 		joint.origin_q = rpyRadToQuat(joint.origin_rpy);
 	}
 
+	// Parse joint axis, supporting both the "axis" block (with "axis_xyz" inside) and the flat format with "axis" directly in the joint block
 	static void parseJointAxis(const json& jointData, RobotJoint& joint) {
 		joint.axis = Vec3(0.0f, 0.0f, 1.0f); // default axis
 		if (jointData.contains("axis") && jointData["axis"].is_array() && jointData["axis"].size() == 3) {
@@ -149,6 +191,7 @@ namespace robots {
 		}
 	}
 
+	// Parse joint limits, including continuous revolute joints and prismatic joints
 	static void parseJointLimits(const json& jointData, RobotJoint& joint) {
 		joint.limits.continuous		= false;
 		joint.limits.minAngle		= 0.0f;
@@ -179,6 +222,7 @@ namespace robots {
 		else { joint.limits.minAngle = -3.14159265f; joint.limits.maxAngle = 3.14159265f; }
 	}
 
+	// Parse joint dynamics parameters
 	static void parseJointDynamics(const json& jointData, RobotJoint& joint) {
 		joint.dynamics.damping = 0.0f;
 		joint.dynamics.friction = 0.0f;
@@ -193,6 +237,7 @@ namespace robots {
 		if (joint.dynamics.friction < 0.0f) { joint.dynamics.friction = 0.0f; }
 	}
 
+	// Parse joint control parameters
 	static void parseJointControl(const json& jointData, RobotJoint& joint) {
 		joint.k_p = 25.0f;
 		joint.k_d = 8.0f;
@@ -210,12 +255,14 @@ namespace robots {
 		}
 	}
 
+	// Check if a joint is fixed based on its type string
 	static bool isFixedJoint(const json& jointData) {
 		if (!jointData.contains("type")) return false;
 		const std::string t = jointData["type"].get<std::string>();
 		return (t == "fixed" || t == "FIXED");
 	}
 
+	// Parse DH parameters if present
 	static bool parseDHParameters(const json& jointData, DH_Params& out) {
 		// Accept "dh" ONLY (your JSON uses "dh")
 		if (!jointData.contains("dh") || !jointData["dh"].is_object()) return false;
@@ -229,6 +276,7 @@ namespace robots {
 		return true;
 	}
 
+	// Decide kinematics model based on presence of DH parameters
 	static eKinematicsModel decideKinematicsModel(const json& data) {
 		if (!data.contains("joints") || !data["joints"].is_array()) { return eKinematicsModel::URDF; } // no joints -> URDF
 		for (const auto& jointData : data["joints"]) {
@@ -253,7 +301,8 @@ namespace robots {
 		json data = json::parse(file);
 
 		robot.name = data["name"].get<std::string>();
-		
+		loadMaterials(data, robot);
+
 		// Visual frame (optional, defaults to JOINT)
 		if (data.contains("visual_frame")) {
 			const std::string vf = data["visual_frame"].get<std::string>();
@@ -266,15 +315,15 @@ namespace robots {
 			robot.visualFrame = eVisualFrame::JOINT;
 		}
 
+		// Load robot scale (default 1.0)
 		robot.scale = data["scale"].get<float>();
-
 
 		// Load links
 		for (auto& linkData : data["links"]) {
 			RobotLink link;
 			link.name = linkData.value("name", "");
 
-			parseVisual(linkData, link);
+			parseVisual(linkData, robot, link);
 			parseCollisions(linkData, link);
 			parseInertial(linkData, link);
 
