@@ -297,10 +297,21 @@ namespace robots {
 			joint.child = jointData["child"].get<std::string>();
 
 			parseJointOrigin(jointData, joint);
-			parseJointAxis(jointData, joint);
-			parseJointLimits(jointData, joint);
-			parseJointDynamics(jointData, joint);
-			parseJointControl(jointData, joint);
+
+			// If it's a fixed joint, we can skip axis/limits/dynamics/control parsing and just set defaults.
+			if (isFixedJoint(jointData)) {
+				joint.type = eJointType::FIXED;
+				joint.axis = Vec3::Zero();
+				joint.limits.continuous = false;
+				joint.limits.minAngle = 0.0f;
+				joint.limits.maxAngle = 0.0f;
+			}
+			else {
+				parseJointAxis(jointData, joint);
+				parseJointLimits(jointData, joint);
+				parseJointDynamics(jointData, joint);
+				parseJointControl(jointData, joint);
+			}
 
 			robot.joints.push_back(joint);
 
@@ -328,6 +339,17 @@ namespace robots {
 		if (robot.kinematicsModel == eKinematicsModel::URDF) {
 			robot.dhParams.clear();
 		}
+
+		for (auto& j : robot.joints) {
+			LOG_INFO("%s | type=%d | origin=(%.3f %.3f %.3f)",
+				j.name.c_str(),
+				(int)j.type,
+				j.origin_xyz.x(),
+				j.origin_xyz.y(),
+				j.origin_xyz.z()
+			);
+		}
+
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

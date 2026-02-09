@@ -662,6 +662,9 @@ namespace robots {
 			const RobotJoint& joint = _robot.joints[i];
 			const RobotLink& link   = _robot.links[i+1];
 
+			// Fixed joints have no dynamics
+			if (joint.type == eJointType::FIXED) { continue; }
+
 			// Use integrated reference (baseline truth)
 			const double thetaRef = (double)joint.thetaRefRad;
 			const double omegaRef = (double)joint.omegaRefRad_s;
@@ -938,6 +941,7 @@ namespace robots {
 		return _robot.links.empty() ? "" : _robot.links.front().name; // fallback
 	}
 
+	// Method to update the pose of each robot link based on current joint angles using forward kinematics
 	void RobotSystem::updateRobotKinematics() {
 		if (!_hasRobot) return;
 		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
@@ -964,12 +968,16 @@ namespace robots {
 
 		// Traverse the kinematic tree using DFS
 		while (!st.empty()) {
-			std::string parentName = st.top(); st.pop();
-			auto itP = _linkIndex.find(parentName);
+			std::string parentName = st.top(); 
+			st.pop();
 
 			// Skip if parent link not found
+			auto itP = _linkIndex.find(parentName);
 			if (itP == _linkIndex.end()) { continue; }
 			int pIdx = itP->second;
+
+			const glm::mat4& T_parent = world[pIdx];
+
 
 			// Find children joints
 			auto it = children.find(parentName);
@@ -982,24 +990,26 @@ namespace robots {
 				if (itC == _linkIndex.end()) { continue; }
 				int cIdx = itC->second;
 
-				Vec4 axis = Vec4(j.axis.x(), j.axis.y(), j.axis.z(), 0.0);
-
-				// Decompose parent transform
-				glm::vec3 p_pos = glm::vec3(world[pIdx][3]);
-				glm::mat4 T_parent = glm::translate(glm::mat4(1.0f), p_pos);
-				glm::mat4 R_parent = world[pIdx];
-				R_parent[3] = glm::vec4(0, 0, 0, 1); // zero translation
-
-				// Joint fixed transform (parent → joint)
+				// Joint origin transform
 				glm::mat4 T_joint = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
 				glm::mat4 R_joint = glm::mat4_cast(toGlm(j.origin_q));
 
-				// Joint motion
-				glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, glm::normalize(toGlm(j.axis)));
+				// Compute child link pose in world frame
+				glm::mat4 T_child = T_parent * T_joint * R_joint;
 
-				// Apply joint rotation in JOINT frame
-				world[cIdx] = T_parent * R_parent * T_joint * R_joint * R_q;
+				// Apply joint rotation for revolute joints
+				if (j.type == eJointType::REVOLUTE) {
+					glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), j.thetaRad, glm::normalize(toGlm(j.axis)));
+					T_child = T_child * R_q;
+				}
+				else if (j.type == eJointType::PRISMATIC) {
+					glm::mat4 T_q = glm::translate(glm::mat4(1.0f),
+						glm::normalize(toGlm(j.axis)) * j.thetaRad);
+					T_child = T_child * T_q;
+				}
 
+				// FIXED joints: no motion
+				world[cIdx] = T_child;
 				st.push(j.child);
 			}
 		}
