@@ -1,24 +1,22 @@
 
 #include "pch.h"
 #include "Scene/MeshLoader.h"
-
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-
 #include "Scene/Mesh.h"
-
 #include "Rendering/OpenGLBufferManager.h"
 
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
+	// Mesh Initialization
 	void Mesh::init() {
 		_rndrBffrMngr = std::make_unique<render::OpenGLVertexIndexBuffer>();
-
 		createBuffers();
 	}
 
+	// Mesh Loading
 	bool Mesh::load(const std::string& path) {
 		gui::MeshLoader loader;
 		loader.load(path);
@@ -31,11 +29,20 @@ namespace scene {
 		return true;
 	}
 
+	// Create GPU buffers from CPU vertex and index data
 	void Mesh::createBuffers() { _rndrBffrMngr->createBuffers(_vertices, _indices); }
+	// Delete GPU buffers
 	void Mesh::deleteBuffers() { _rndrBffrMngr->deleteBuffers(); }
+
+	// Bind the mesh (binds the GPU buffers)
 	void Mesh::bind() { _rndrBffrMngr->bind(); }
+	// Unbind the mesh (unbinds the GPU buffers)
 	void Mesh::unbind() { _rndrBffrMngr->unbind(); }
+
+	// Render the mesh using the current GPU buffers
 	void Mesh::render() { _rndrBffrMngr->draw((int) _indices.size()); }	
+
+	// Clean up CPU and GPU buffers
 	void Mesh::clean() {
 		if (_rndrBffrMngr) _rndrBffrMngr->deleteBuffers();
 		_vertices.clear();

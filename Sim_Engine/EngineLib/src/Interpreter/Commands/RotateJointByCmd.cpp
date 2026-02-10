@@ -47,7 +47,7 @@ namespace commands {
 			}
 
 			// Get starting angle
-			float theta0 = 0.0f;
+			double theta0 = 0.0f;
 			if (!robot->tryGetJointAngleRad(_link, theta0)) {
 				markFailed("rotateJointBy: joint not found (angle)."); 
 				D_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
@@ -88,8 +88,8 @@ namespace commands {
 		const double tolOmegaRad = degToRad(0.5);	// 0.20 deg/s
 		const double settleSec = 0.15;				// must be stable for 100ms - i need to tune this more
 
-		float theta = 0.0f;
-		float omega = 0.0f;
+		double theta = 0.0f;
+		double omega = 0.0f;
 
 		const bool gotTheta = robot->tryGetJointAngleRad(_link, theta);
 		const bool gotOmega = robot->tryGetJointOmegaRad(_link, omega);
@@ -113,7 +113,7 @@ namespace commands {
 			_noProgressT += dt; 
 		}
 
-		const bool posOK = robot->isJointAtTargetRad(_link, (float)tolPosRad); // consider at target if within position tolerance
+		const bool posOK = robot->isJointAtTargetRad(_link, tolPosRad); // consider at target if within position tolerance
 		const bool omegaOK = (absOm <= tolOmegaRad); // consider stopped if omega is small enough
 
 		if (posOK && omegaOK) {

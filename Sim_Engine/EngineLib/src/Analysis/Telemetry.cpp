@@ -18,7 +18,7 @@ namespace diagnostics {
 
 		// Accumulators for error statistics
 		double sum_e2	= 0.0;	// sum of squared errors
-		float max_abs_e = 0.0f; // max absolute error
+		double max_abs_e = 0.0f; // max absolute error
 		int worstJ		= -1;	// index of worst joint
 		int clampSum	= 0;	// sum of clamping events
 
@@ -50,35 +50,32 @@ namespace diagnostics {
 			if (trajOpt) {
 				control::TrajState ts{};
 				if (trajOpt->tryEval(std::string(j.child), t, ts)) {
-					jt.traj_q   = (float)ts.q;
-					jt.traj_qd  = (float)ts.qd;
-					jt.traj_qdd = (float)ts.qdd;
+					jt.traj_q   = ts.q;
+					jt.traj_qd  = ts.qd;
+					jt.traj_qdd = ts.qdd;
 					jt.traj_active = true;
 				}
 			}
 
 			// Joint error
-			const float e = jt.thetaRefRad - jt.thetaRad;
-			sum_e2 += (double)e * (double)e;
+			const double e = jt.thetaRefRad - jt.thetaRad;
+			sum_e2 += e * e;
 			
 			// Max absolute error and worst joint
-			const float abs_e = std::abs(e);
+			const double abs_e = std::abs(e);
 			if (abs_e > max_abs_e) { max_abs_e = abs_e; worstJ = i; }
 
 			s.j[i] = jt; // store joint telemetry
 		}
 
 		// Error statistics
-		s.err_rms = (n > 0) ? (float)std::sqrt(sum_e2 / (double)n) : 0.0f; // RMS error
+		s.err_rms = (n > 0) ? std::sqrt(sum_e2 / (double)n) : 0.0f; // RMS error
 		s.err_max = max_abs_e;	// max error
 		s.worst_joint = worstJ; // index of worst joint
 		s.clamp_sum = clampSum; // total clamping events
 
 		// Finalize write
 		ring.endWrite();
-
-		// verifies the written sample is visible through ring.at()
-		const auto& last = ring.at(ring.size() - 1);
 	}
 		
 } // namespace diagnostics

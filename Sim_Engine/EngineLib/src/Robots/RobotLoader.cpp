@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "Robots/RobotLoader.h"
 
+#include <MathLibAPI.h>
+#include <core/constants.h>
 #include "Scene/Object.h"
 #include "Scene/MeshLoader.h"
 #include "EngineLib/LogMacros.h"
@@ -11,6 +13,8 @@
 using json = nlohmann::json;
 using kinematics::JointType_DH;
 using kinematics::DH_Params;
+
+using namespace constants;
 
 namespace robots {
 	// --- Static Helper Functions ---
@@ -40,19 +44,75 @@ namespace robots {
 	// Read a vec3 from a JSON array
 	static Vec3 readVec3(const json& j, const char* key, Vec3 fallback = {}) {
 		if (!j.contains(key) || !j[key].is_array() || j[key].size() != 3) { return fallback; }
-		return Vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
+		return Vec3(j[key][0].get<double>(), j[key][1].get<double>(), j[key][2].get<double>());
 	}
 
 	// --- RobotLoader Link and Joint Parsing ---
 
 	// link parsing
 
-	static void parseVisual(const json& linkData, RobotLink& link) {
+	// Parse materials block if present
+	// Each material is defined as: "materials": { "mat_name": [r, g, b, a] }
+	void loadMaterials(const json& data, RobotModel& robot) {
+		if (!data.contains("material")) { return; }
+
+		for (auto& [name, col] : data["material"].items()) {
+			if (col.is_array() && col.size() == 4) {
+				Vec4 rgba(
+					col[0].get<double>(),
+					col[1].get<double>(),
+					col[2].get<double>(),
+					col[3].get<double>()
+				);
+				robot.materials[name] = rgba;
+			}
+			else {
+				LOG_WARN("Material '%s' has invalid color format, expected array of 4 floats", name.c_str());
+			}
+		}
+	}
+
+	static void parseVisual(const json& linkData, const RobotModel& robot, RobotLink& link) {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
-		link.visual.meshFile = v.value("mesh", link.visual.meshFile);
+
+		// Single Mesh (e.g. URDF style)
+		if (v.contains("mesh") && v["mesh"].is_string()) {
+			link.visual.meshFile = v["mesh"].get<std::string>();
+		}
+
+		// Multiple meshes (e.g. SDF style)
+		if (v.contains("meshes") && v["meshes"].is_array()) {
+			link.visual.meshFiles.clear();
+			for (const auto& m : v["meshes"]) {
+				if (m.is_string()) {
+					link.visual.meshFiles.push_back(m.get<std::string>());
+				}
+			}
+		}
+
+		// Visual geometry origin
 		link.visual.origin_xyz = readVec3(v, "origin_xyz", link.visual.origin_xyz);
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
+
+		// Material
+		if (v.contains("material") && v["material"].is_string()) {
+			const std::string matName = v["material"].get<std::string>();
+			auto it = robot.materials.find(matName);
+
+
+			if (it != robot.materials.end()) {
+				link.visual.material = it->second;
+			}
+			else {
+				LOG_WARN("Link %s references undefined material '%s', using default Grey", link.name.c_str(), matName.c_str());
+				link.visual.material = Vec4(0.4, 0.4, 0.4, 1.0); // different from default to make it obvious when a material is missing
+			}
+		}
+		else {
+			// Default material if not specified
+			link.visual.material = Vec4(0.7, 0.5, 0.4, 1.0); // default redish color
+		}
 	}
 
 	static void parseCollisions(const json& linkData, RobotLink& link) {
@@ -73,6 +133,7 @@ namespace robots {
 		}
 	}
 
+	// Parse inertial properties, including mass, center of mass, and inertia tensor
 	static void parseInertial(const json& linkData, RobotLink& link) {
 		if (!linkData.contains("inertial")) { return; }
 		const auto& I = linkData["inertial"];
@@ -92,6 +153,7 @@ namespace robots {
 
 	// joint parsing
 
+	// Parse joint origin, supporting both the "origin" block (with "origin_xyz" and "origin_rpy" inside) and the flat format with "origin_xyz" and "origin_rpy" directly in the joint block
 	static void parseJointOrigin(const json& jointData, RobotJoint& joint) {
 		if (jointData.contains("origin")) {
 			const auto& o = jointData["origin"];
@@ -104,14 +166,15 @@ namespace robots {
 		joint.origin_q = rpyRadToQuat(joint.origin_rpy);
 	}
 
+	// Parse joint axis, supporting both the "axis" block (with "axis_xyz" inside) and the flat format with "axis" directly in the joint block
 	static void parseJointAxis(const json& jointData, RobotJoint& joint) {
 		joint.axis = Vec3(0.0f, 0.0f, 1.0f); // default axis
 		if (jointData.contains("axis") && jointData["axis"].is_array() && jointData["axis"].size() == 3) {
 			const auto& a = jointData["axis"];
 			joint.axis = Vec3(
-				a[0].get<float>(),
-				a[1].get<float>(),
-				a[2].get<float>()
+				a[0].get<double>(),
+				a[1].get<double>(),
+				a[2].get<double>()
 			);
 			if (joint.axis.norm() < 1e-6f) {
 				LOG_WARN("Joint %s has zero-length axis, defaulting to (0,0,1)", joint.name.c_str());
@@ -135,6 +198,7 @@ namespace robots {
 		}
 	}
 
+	// Parse joint limits, including continuous revolute joints and prismatic joints
 	static void parseJointLimits(const json& jointData, RobotJoint& joint) {
 		joint.limits.continuous		= false;
 		joint.limits.minAngle		= 0.0f;
@@ -151,10 +215,10 @@ namespace robots {
 		joint.limits.maxEffort = L.value("effort", joint.limits.maxEffort);
 
 		if (!joint.limits.continuous) {
-			if (L.contains("lower") && L["lower"].is_number()) { joint.limits.minAngle = L["lower"].get<float>(); }
+			if (L.contains("lower") && L["lower"].is_number()) { joint.limits.minAngle = L["lower"].get<double>(); }
 			else { LOG_WARN("Joint %s limits missing 'lower'", joint.name.c_str()); }
 
-			if (L.contains("upper") && L["upper"].is_number()) { joint.limits.maxAngle = L["upper"].get<float>(); }
+			if (L.contains("upper") && L["upper"].is_number()) { joint.limits.maxAngle = L["upper"].get<double>(); }
 			else { LOG_WARN("Joint %s limits missing 'upper'", joint.name.c_str()); }
 
 			if (joint.limits.maxAngle < joint.limits.minAngle) {
@@ -165,6 +229,7 @@ namespace robots {
 		else { joint.limits.minAngle = -3.14159265f; joint.limits.maxAngle = 3.14159265f; }
 	}
 
+	// Parse joint dynamics parameters
 	static void parseJointDynamics(const json& jointData, RobotJoint& joint) {
 		joint.dynamics.damping = 0.0f;
 		joint.dynamics.friction = 0.0f;
@@ -179,6 +244,7 @@ namespace robots {
 		if (joint.dynamics.friction < 0.0f) { joint.dynamics.friction = 0.0f; }
 	}
 
+	// Parse joint control parameters
 	static void parseJointControl(const json& jointData, RobotJoint& joint) {
 		joint.k_p = 25.0f;
 		joint.k_d = 8.0f;
@@ -190,14 +256,20 @@ namespace robots {
 		joint.k_p = C.value("k_p", joint.k_p);
 		joint.k_d = C.value("k_d", joint.k_d);
 
-		// You have this also in limits.velocity. Choose ONE source of truth.
-		// I'd prefer: limits.velocity is truth, control.maxOmega is optional override.
 		if (C.contains("maxOmega") && C["maxOmega"].is_number()) {
-			float maxOmega = C["maxOmega"].get<float>();
+			double maxOmega = C["maxOmega"].get<double>();
 			if (maxOmega > 0.0f) joint.limits.maxOmegaRad_s = maxOmega;
 		}
 	}
 
+	// Check if a joint is fixed based on its type string
+	static bool isFixedJoint(const json& jointData) {
+		if (!jointData.contains("type")) return false;
+		const std::string t = jointData["type"].get<std::string>();
+		return (t == "fixed" || t == "FIXED");
+	}
+
+	// Parse DH parameters if present
 	static bool parseDHParameters(const json& jointData, DH_Params& out) {
 		// Accept "dh" ONLY (your JSON uses "dh")
 		if (!jointData.contains("dh") || !jointData["dh"].is_object()) return false;
@@ -211,6 +283,7 @@ namespace robots {
 		return true;
 	}
 
+	// Decide kinematics model based on presence of DH parameters
 	static eKinematicsModel decideKinematicsModel(const json& data) {
 		if (!data.contains("joints") || !data["joints"].is_array()) { return eKinematicsModel::URDF; } // no joints -> URDF
 		for (const auto& jointData : data["joints"]) {
@@ -235,15 +308,57 @@ namespace robots {
 		json data = json::parse(file);
 
 		robot.name = data["name"].get<std::string>();
-		robot.scale = data["scale"].get<float>();
+		loadMaterials(data, robot);
 
+		// Visual frame (optional, defaults to JOINT)
+		if (data.contains("visual_frame")) {
+			const std::string vf = data["visual_frame"].get<std::string>();
+			if (vf == "joint")		{ robot.visualFrame = eVisualFrame::JOINT; }
+			else if (vf == "link")  { robot.visualFrame = eVisualFrame::LINK; }
+			else if (vf == "world") { robot.visualFrame = eVisualFrame::WORLD; }
+			else { LOG_WARN("Unknown visual_frame '%s', defaulting to JOINT", vf.c_str()); }
+		}
+		else {
+			robot.visualFrame = eVisualFrame::JOINT;
+		}
+
+		// Load robot scale (default 1.0)
+		robot.scale = data["scale"].get<double>();
+
+		// Load base frame if present
+		if (data.contains("base_frame")) {
+			robot.baseFrameIsEngineAligned = false;
+			const auto& bf = data["base_frame"];
+
+			// Read translation and rotation (RPY) from JSON, with defaults
+			Vec3 t = readVec3(bf, "origin_xyz", Vec3::Zero());
+			Vec3 r = readVec3(bf, "origin_rpy", Vec3::Zero());
+			Quat q = rpyRadToQuat(r);
+
+			robot.baseFrame = Mat4::Identity();
+			robot.baseFrame.block<3, 3>(0, 0) = q.toRotationMatrix();
+			robot.baseFrame.block<3, 1>(0, 3) = t;
+
+			LOG_INFO("Base frame loaded from JSON: translation=(%.3f, %.3f, %.3f), rotation_r	py=(%.3f, %.3f, %.3f)", 
+				t.x(), t.y(), t.z(), 
+				r.x(), r.y(), r.z());
+		}
+		else {
+			robot.baseFrameIsEngineAligned = true;
+			robot.baseFrame = Mat4::Identity();
+			LOG_INFO("No base frame specified in JSON, using identity (engine-aligned) by default.");
+		}
+
+		if (robot.name == "Z1") {
+			robot.baseFrameIsEngineAligned = true;
+		}
 
 		// Load links
 		for (auto& linkData : data["links"]) {
 			RobotLink link;
 			link.name = linkData.value("name", "");
 
-			parseVisual(linkData, link);
+			parseVisual(linkData, robot, link);
 			parseCollisions(linkData, link);
 			parseInertial(linkData, link);
 
@@ -266,10 +381,21 @@ namespace robots {
 			joint.child = jointData["child"].get<std::string>();
 
 			parseJointOrigin(jointData, joint);
-			parseJointAxis(jointData, joint);
-			parseJointLimits(jointData, joint);
-			parseJointDynamics(jointData, joint);
-			parseJointControl(jointData, joint);
+
+			// If it's a fixed joint, we can skip axis/limits/dynamics/control parsing and just set defaults.
+			if (isFixedJoint(jointData)) {
+				joint.type = eJointType::FIXED;
+				joint.axis = Vec3::Zero();
+				joint.limits.continuous = false;
+				joint.limits.minAngle = 0.0f;
+				joint.limits.maxAngle = 0.0f;
+			}
+			else {
+				parseJointAxis(jointData, joint);
+				parseJointLimits(jointData, joint);
+				parseJointDynamics(jointData, joint);
+				parseJointControl(jointData, joint);
+			}
 
 			robot.joints.push_back(joint);
 
@@ -297,6 +423,17 @@ namespace robots {
 		if (robot.kinematicsModel == eKinematicsModel::URDF) {
 			robot.dhParams.clear();
 		}
+
+		for (auto& j : robot.joints) {
+			LOG_INFO("%s | type=%d | origin=(%.3f %.3f %.3f)",
+				j.name.c_str(), (int)j.type,
+				j.origin_xyz.x(),
+				j.origin_xyz.y(),
+				j.origin_xyz.z()
+			);
+		}
+
+
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

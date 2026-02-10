@@ -50,7 +50,7 @@ namespace commands {
             }
 
             // Compute an informed timeout
-            float theta0 = 0.0f;
+            double theta0 = 0.0f;
             if (!robot->tryGetJointAngleRad(_link, theta0)) {
                 markFailed("rotateJointTo: joint not found (angle).");
                 D_FAIL("rotateJointTo: joint not found (angle) for '%s'", _link.c_str());
@@ -75,7 +75,7 @@ namespace commands {
             }
 
 			// Estimate minimum time to reach target at max speed
-            const double delta = std::abs(_targetRad - (double)theta0);
+            const double delta = std::abs(_targetRad - theta0);
             const double Tmin = delta / _maxOmegaRad;
 
             _timeoutSec = std::clamp(3.0 * Tmin + 5.0, 10.0, 60.0); // robust timeout estimate min = 10s, max = 60s
@@ -93,8 +93,8 @@ namespace commands {
         const double tolOmegaRad = degToRad(0.5);	// 0.20 deg/s
         const double settleSec = 0.15;				// must be stable for 100ms - i need to tune this more
 
-        float theta = 0.0f;
-        float omega = 0.0f;
+        double theta = 0.0f;
+        double omega = 0.0f;
 
         const bool gotTheta = robot->tryGetJointAngleRad(_link, theta);
         const bool gotOmega = robot->tryGetJointOmegaRad(_link, omega);
@@ -117,7 +117,7 @@ namespace commands {
             _noProgressT += dt;
         }
 
-        const bool posOK = robot->isJointAtTargetRad(_link, (float)tolPosRad);
+        const bool posOK = robot->isJointAtTargetRad(_link, (double)tolPosRad);
         const bool omegaOK = absOm <= tolOmegaRad;
 
         if (posOK && omegaOK) {

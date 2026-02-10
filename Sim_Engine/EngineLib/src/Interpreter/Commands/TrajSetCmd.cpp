@@ -68,22 +68,21 @@ namespace commands {
 		}
 
 		// Validate joint exists and get current angle as q0.
-		float q0f = 0.0f;
-		if (!robot->tryGetJointAngleRad(_link, q0f)) {
+		double q0 = 0.0f;
+		if (!robot->tryGetJointAngleRad(_link, q0)) {
 			SIM_FAIL("trajSet: joint not found '%s'", _link.c_str());
 			markFailed("trajSet: joint not found.");
 			return { CmdState::Failed, {}, "trajSet failed" };
 		}
 
-		const double q0 = (double)q0f;
 		const double t0 = sim->getSimTime();
 		const std::string typeU = upperCopy(trimCopy(_type));
 
 		// Get hardware max omega
-		float wMax_hw = 0.0;
+		double wMax_hw = 0.0;
 		if (!robot->tryGetJointOmegaMaxRad(_link, wMax_hw)) {
 			D_WARN("trajSet: failed to get joint max omega for link='%s'", _link.c_str());
-			wMax_hw = std::numeric_limits<float>::infinity();
+			wMax_hw = std::numeric_limits<double>::infinity();
 		}
 
 		// ===== TRAPEZOID =====
@@ -104,7 +103,7 @@ namespace commands {
 	
 			double wMax_est = std::abs(vmax);
 			wMax_est = std::min(wMax_est, (double)wMax_hw);
-			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)wMax_est)) {
+			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(TRAP): failed to set joint omega ref max for link='%s'", _link.c_str());
 			}
 
@@ -152,8 +151,8 @@ namespace commands {
 			sim->traj().set(_link, std::move(traj));
 
 			double wMax_est = TWO_PI_d * fHz * amp;
-			wMax_est = std::min(wMax_est, (double)wMax_hw);
-			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)(wMax_est))) {
+			wMax_est = std::min(wMax_est, wMax_hw);
+			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(SINE): failed to set joint omega ref max for link='%s'", _link.c_str());
 			}
 
@@ -209,10 +208,10 @@ namespace commands {
 			}
 
 			// Clamps estimated max omega to hardware limit
-			wMax_est = std::min(wMax_est, (double)wMax_hw);
+			wMax_est = std::min(wMax_est, wMax_hw);
 
 			// Set joint omega ref max
-			if (!robot->trySetJointOmegaRefMaxRad(_link, (float)wMax_est)) {
+			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(MSINE): failed to set joint omega ref max for link='%s'", _link.c_str());
 
 			}

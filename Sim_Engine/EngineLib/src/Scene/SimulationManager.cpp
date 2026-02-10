@@ -372,10 +372,16 @@ namespace gui {
 		}
 
 		static bool icontains(const std::string& s, const char* sub) {
+			if (sub == nullptr || *sub == '\0') { return false; }
+
+			// Case-insensitive search using std::search with a custom comparator
 			auto it = std::search(
 				s.begin(), s.end(),
 				sub, sub + std::strlen(sub),
-				[](char a, char b) { return std::tolower((unsigned char)a) == std::tolower((unsigned char)b); }
+				[](char a, char b) {
+					return std::tolower((unsigned char)a)
+						== std::tolower((unsigned char)b);
+				}
 			);
 			return it != s.end();
 		}
@@ -647,6 +653,9 @@ namespace gui {
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);
 			auto raw = obj.get();
+
+			raw->internal = true;
+
 			_impl->_objects.push_back(std::move(obj));
 			result.push_back(raw);
 		}
@@ -664,6 +673,21 @@ namespace gui {
 		if (_impl->_selectedObject == _impl->_objects[index].get()) { _impl->_selectedObject = nullptr; }
 		_impl->_objects.erase(_impl->_objects.begin() + index);
 	}
+
+	void simManager::removeObject(scene::Object* obj) {
+		if (!obj) return;
+
+		auto it = std::remove_if(
+			_impl->_objects.begin(),
+			_impl->_objects.end(),
+			[obj](const std::unique_ptr<scene::Object>& o) {
+				return o.get() == obj;
+			}
+		);
+
+		_impl->_objects.erase(it, _impl->_objects.end());
+	}
+
 
 	std::vector<std::unique_ptr<scene::Object>>& simManager::getObjects() { return _impl->_objects; }
 	scene::Object* simManager::getObject() { return _impl->_selectedObject; }
@@ -867,9 +891,9 @@ namespace gui {
 			LOG_WARN("Could not find end-effector object to follow.");
 		}
 
-		_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
+		//_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
 	}
-	void simManager::setRobotLinkRotation(const std::string& linkName, float angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
+	void simManager::setRobotLinkRotation(const std::string& linkName, double angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
 	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
 	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
 	void simManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
@@ -902,8 +926,7 @@ namespace gui {
 				const bool faulted = _activeProgram->isFaulted();
 
 				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)",
-						(int)completed, _dt, _simTime);
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)", (int)completed, _dt, _simTime);
 
 					_scriptRunning = false;
 					_activeProgram = nullptr;
@@ -1121,12 +1144,12 @@ namespace gui {
 			switch (currentShaderMode) {
 				case ShaderMode::Basic:
 					// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-					shader->setVec3(obj->getAlbedo(), "albedo");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
 					break;
 
 				case ShaderMode::Lit:
 					// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-					shader->setVec3(obj->getAlbedo(), "albedo");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
 					shader->setVec3(_impl->_light->getPosition(), "lightPosition");
 					shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
 					shader->setVec3(_impl->_light->getColour(), "lightColour");
@@ -1135,9 +1158,9 @@ namespace gui {
 
 				case ShaderMode::PBR:
 					// (IMPORTANT) mesh_pbr.frag needs: albedo, metallic, roughness, ao, lightDirection, lightIntensity, lightColour, camPos
-					shader->setVec3(obj->getAlbedo(), "albedo");
-					shader->setFlt1(0.0f, "metallic");
-					shader->setFlt1(0.5f, "roughness");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setFlt1(0.6f, "metallic");
+					shader->setFlt1(0.45f, "roughness");
 					shader->setFlt1(1.0f, "ao");
 
 					shader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
