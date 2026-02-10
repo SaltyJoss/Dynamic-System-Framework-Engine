@@ -52,7 +52,7 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 [![JSON][JSON]][JSON-url]
 
 ### Robotic Models Used:
-  * [Google Deepmind's][mujoco-repo] open source models (`[MuJoCo][mujoco-url]`) of `Z1`, `UR5e`, `iiwa14`, `Panda`
+  * [Google Deepmind's][mujoco-repo] open source models ([MuJoCo][mujoco-url]) of `Z1`, `UR5e`, `iiwa14`, `Panda`
   * [StanforASL's][stanfordASL-repo] repo for `Panda` robotic arm
   * [Unitree Robotics's][unitree-ros-repo] for the `Z1` and `UR5e` robotic arms
 
