@@ -122,9 +122,9 @@ namespace commands {
 
 		double getJointAngleRad(const std::string& link) const;
 
-		std::unordered_map<std::string, float> _jointAngles;
+		std::unordered_map<std::string, double> _jointAngles;
 
-		float _currentAngle = 0.0; // current angle for rotation commands
+		double _currentAngle = 0.0; // current angle for rotation commands
 		std::string _currentLinkName; // current link name for joint commands
 
 		mathlib::Vec3 angularVelocityPrev = mathlib::Vec3::Zero();

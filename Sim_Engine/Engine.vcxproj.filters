@@ -102,6 +102,9 @@
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json">
       <Filter>Resource Files\configs</Filter>
     </None>
+    <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json">
+      <Filter>Resource Files\configs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\src\Main.cpp">

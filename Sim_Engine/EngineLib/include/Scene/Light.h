@@ -1,52 +1,6 @@
 #pragma once
-
-// =============================================
-//            File: Light.h
-// =============================================
-// Class representing a light source in the 3D scene.
-//
-// Summary:
-// =============================================
-//
-// public:
-// --------------------------------------------
-// Light()
-//      -> Constructor that initializes the light with default properties.
-// ~Light()
-//      -> Destructor for the Light class.
-// void setDirection(const glm::vec3& dir)
-//      -> Sets the direction of the light.
-// void setIntensity(const float intsy)
-//      -> Sets the intensity of the light.
-// glm::vec3 getPosition() const
-//      -> Returns the position of the light.
-// glm::vec3 getDirection() const
-//      -> Returns the direction of the light.
-// glm::vec3 getColour() const
-//      -> Returns the colour of the light.
-// float getIntensity() const
-//      -> Returns the intensity of the light.
-// void update(shaders::Shader* shader) override
-//      -> Updates the shader with the light's properties.
-// bool _isDirectional
-//      -> Indicates whether the light is directional.
-// glm::vec3 _direction
-//      -> Direction vector of the light.
-// glm::vec3 _colour
-//      -> Colour of the light.
-// glm::vec3 _position
-//      -> Position of the light.
-// float _strength
-//      -> Strength of the light. (Mainly used for point lights)
-// float _intensity
-//      -> Intensity of the light. (Mainly used for directional lights)
-// float _size
-//      -> Size of the light (for point lights).
-// --------------------------------------------
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
+// File:   Light.h
+// GitHub: SaltyJoss
 
 #include "EngineCore.h"
 
@@ -62,19 +16,19 @@ namespace scene {
     public:
 
         Light() {
-            _direction = glm::vec3(-0.1f, -1.0f, -0.5f);
+            _direction = glm::vec3(5.0f, -25.0f, 1.5f);
             _position = glm::vec3(-4.0f, 20.0f, 12.0f);
             _colour = glm::vec3(1.0f, 0.98f, 0.98f);
-			_intensity = 1.2f;
+			_intensity = 2.5f;
             _size = 25.0f;
         }
         ~Light() {}
 
 		// Default light configurations
         struct DirectionalLight {
-            glm::vec3 direction{ -1.0, -0.3f, 0.2f };
+            glm::vec3 direction{ 5.0f, -25.0f, 1.5f };
             glm::vec3 colour{ 1.0f, 0.98f, 0.95f };
-            float intensity = 10.0f;
+            float intensity = 2.5f;
         };
 
 		// Point light configuration

@@ -149,6 +149,11 @@ namespace scene {
 		void setLastMousePos(const glm::vec2& pos) { _lastMousePos = pos; }
 		glm::vec2 getLastMousePos() const { return _lastMousePos; }
 
+		void setFromMatrix(const glm::mat4& mat) {
+			transform.position = glm::vec3(mat[3]);
+			transform.rotQ = glm::quat_cast(mat);
+		}
+
 		bool visible = true;      // rendered + editor-visible
 		bool internal = false;    // not part of scene graph / editor
 

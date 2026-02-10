@@ -23,9 +23,9 @@ namespace robots {
 
         // --- Utility Methods ---
 
-        static float clampJointAngle(const RobotJoint& joint, float angleRad);
-        static float wrapToPi(float angleRad);
-        static float wrapRad(float angleRad);
+        static double clampJointAngle(const RobotJoint& joint, double angleRad);
+        static double wrapToPi(double angleRad);
+        static double wrapRad(double angleRad);
 
         // ---- Accessors ---
 
@@ -52,30 +52,30 @@ namespace robots {
 
         void updateRobotKinematics();
 
-		bool tryGetJointAngleRad(const std::string& childLink, float& outAngle) const;
-		bool trySetJointAngleRad(const std::string& childLink, float angleRad);
+		bool tryGetJointAngleRad(const std::string& childLink, double& outAngle) const;
+		bool trySetJointAngleRad(const std::string& childLink, double angleRad);
 
-        bool tryGetJointOmegaRad(const std::string& childLink, float& outOmega) const;
-        bool trySetJointOmegaRad(const std::string& childLink, float omegaRad);
+        bool tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const;
+        bool trySetJointOmegaRad(const std::string& childLink, double omegaRad);
 
-		bool tryGetJointTargetRad(const std::string& childLink, float& outTargetRad) const;
-		bool trySetJointTargetRad(const std::string& childLink, float targetRad);
+		bool tryGetJointTargetRad(const std::string& childLink, double& outTargetRad) const;
+		bool trySetJointTargetRad(const std::string& childLink, double targetRad);
 
-		bool tryGetJointOmegaMaxRad(const std::string& childLink, float& maxOmegaRad) const;
-		bool trySetJointOmegaMaxRad(const std::string& childLink, float maxOmegaRad);
+		bool tryGetJointOmegaMaxRad(const std::string& childLink, double& maxOmegaRad) const;
+		bool trySetJointOmegaMaxRad(const std::string& childLink, double maxOmegaRad);
 
-		bool tryAddJointTargetRad(const std::string& childLink, float deltaRad);
+		bool tryAddJointTargetRad(const std::string& childLink, double deltaRad);
 
-		bool isJointAtTargetRad(const std::string& childLink, float tolRad) const;
-		bool isJointAtTargetDeg(const std::string& childLink, float tolDeg) const;
+		bool isJointAtTargetRad(const std::string& childLink, double tolRad) const;
+		bool isJointAtTargetDeg(const std::string& childLink, double tolDeg) const;
 
-		bool isJointNearAngleRad(const std::string& childLink, float targetRad, float tolRad) const;
-        bool isJointNearAngleDeg(const std::string& childLink, float targetDeg, float tolDeg) const;
+		bool isJointNearAngleRad(const std::string& childLink, double targetRad, double tolRad) const;
+        bool isJointNearAngleDeg(const std::string& childLink, double targetDeg, double tolDeg) const;
 
-		bool trySetJointOmegaRefRad(const std::string& childLink, float omegaRefRad);
-		bool trySetJointAlphaRefRad(const std::string& childLink, float alphaRefRad);
+		bool trySetJointOmegaRefRad(const std::string& childLink, double omegaRefRad);
+		bool trySetJointAlphaRefRad(const std::string& childLink, double alphaRefRad);
 
-		bool trySetJointOmegaRefMaxRad(const std::string& childLink, float omegaRefMaxRad);
+		bool trySetJointOmegaRefMaxRad(const std::string& childLink, double omegaRefMaxRad);
 
 		bool tryZeroJointRefDerivatives();
 
@@ -101,11 +101,11 @@ namespace robots {
 
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
-        bool setRobotLinkRotation(const std::string& childLinkName, float angleDeg);
+        bool setRobotLinkRotation(const std::string& childLinkName, double angleDeg);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
 		void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
-		bool setDefaultPoseDeg(const std::vector<float>& qDeg);
+		bool setDefaultPoseDeg(const std::vector<double>& qDeg);
 
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
@@ -163,6 +163,7 @@ namespace robots {
 
 		// Link name to index map
 		std::unordered_map<std::string, int> _linkIndex;
+		std::unordered_map<std::string, int> _jointIndex;
         std::string _loadedName;
 		int _currentJointIndex = -1;
 
@@ -178,3 +179,29 @@ namespace robots {
 		double _gravity = 0.0;
 	};
 } // namespace robot
+
+// --- Logging macros for robot syste debugging ---
+
+// LOG_ROT
+#ifdef LOG_ROT
+#error LOG_ROT macro already defined. Please undefine it before including RobotSystem.h to avoid conflicts.
+#endif
+// Logs the rotation part of a 4x4 matrix with a custom tag
+#define LOG_ROT(tag, M) \
+	LOG_INFO("[ROT] %s | X=(%.2f %.2f %.2f) Y=(%.2f %.2f %.2f) Z=(%.2f %.2f %.2f)", \
+	tag, \
+	M[0][0], M[0][1], M[0][2], \
+	M[1][0], M[1][1], M[1][2], \
+	M[2][0], M[2][1], M[2][2])
+
+#define LOG_MAT4(tag, M) \
+	LOG_INFO("[MAT4] %s:\n" \
+		"[ % .3f % .3f % .3f % .3f ]\n" \
+		"[ % .3f % .3f % .3f % .3f ]\n" \
+		"[ % .3f % .3f % .3f % .3f ]\n" \
+		"[ % .3f % .3f % .3f % .3f ]", \
+		tag, \
+		M[0][0], M[1][0], M[2][0], M[3][0], \
+		M[0][1], M[1][1], M[2][1], M[3][1], \
+		M[0][2], M[1][2], M[2][2], M[3][2], \
+		M[0][3], M[1][3], M[2][3], M[3][3])

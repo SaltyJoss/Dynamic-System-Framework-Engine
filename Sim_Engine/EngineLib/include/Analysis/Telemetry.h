@@ -20,25 +20,25 @@ namespace diagnostics {
 	// Struct for joint telemetry data
 	struct ENGINE_API JointTelemetry{
 		// Actual data
-		float thetaRad = 0.0f;		 // Joint angle in radians
-		float omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
-		float eta = 0.0f;			 // 
+		double thetaRad = 0.0f;		 // Joint angle in radians
+		double omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
+		double eta = 0.0f;			 // 
 
 		// Additional dynamics data
-		float torqueNm = 0.0f;		 // Joint torque (N·m)
-		float damping = 0.0f;		 // Joint damping coefficient  (kg·m²/s)
-		float friction = 0.0f;		 // Joint friction coefficient (Coulomb friction - N·m)
-		float effort = 0.0f;		 // Normalized effort (0 to 1)
+		double torqueNm = 0.0f;		 // Joint torque (N·m)
+		double damping = 0.0f;		 // Joint damping coefficient  (kg·m²/s)
+		double friction = 0.0f;		 // Joint friction coefficient (Coulomb friction - N·m)
+		double effort = 0.0f;		 // Normalized effort (0 to 1)
 
 		// Reference data
-		float thetaRefRad = 0.0f;	 // Reference joint angle in radians
-		float omegaRefRad_s = 0.0f;	 // Reference joint angular velocity in radians per second
-		float alphaRefRad_s2 = 0.0f; // Reference joint angular acceleration in radians per second squared
+		double thetaRefRad = 0.0f;	 // Reference joint angle in radians
+		double omegaRefRad_s = 0.0f;	 // Reference joint angular velocity in radians per second
+		double alphaRefRad_s2 = 0.0f; // Reference joint angular acceleration in radians per second squared
 
 		// Trajectory data
-		float traj_q = 0.0f;		 // Trajectory joint position
-		float traj_qd = 0.0f;		 // Trajectory joint velocity
-		float traj_qdd = 0.0f;		 // Trajectory joint acceleration
+		double traj_q = 0.0f;		 // Trajectory joint position
+		double traj_qd = 0.0f;		 // Trajectory joint velocity
+		double traj_qdd = 0.0f;		 // Trajectory joint acceleration
 		bool traj_active = false;	 // Trajectory active state for a joint
 
 		// Limit clamping flags
@@ -53,8 +53,8 @@ namespace diagnostics {
 		std::vector<JointTelemetry> j;	// Vector of joint telemetry data
 
 		// Summary statistics (precomputed to relieve analysis load)
-		float err_rms = 0.0f;			// RMS error across all joints
-		float err_max = 0.0f;			// Maximum error across all joints
+		double err_rms = 0.0f;			// RMS error across all joints
+		double err_max = 0.0f;			// Maximum error across all joints
 		int clamp_sum = 0;				// Sum of clamping events across all joints
 		int worst_joint = -1;			// Index of the joint with max |e|
 	};
