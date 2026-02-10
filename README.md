@@ -51,6 +51,11 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 [![MATLAB][MATLAB]][MATLAB-url]
 [![JSON][JSON]][JSON-url]
 
+### Robotic Models Used:
+  * [Google Deepmind's][mujoco-repo] open source models ([MuJoCo][mujoco-url]) of `Z1`, `UR5e`, `iiwa14`, `Panda`
+  * [StanforASL's][stanfordASL-repo] repo for `Panda` robotic arm
+  * [Unitree Robotics's][unitree-ros-repo] for the `Z1` and `UR5e` robotic arms
+
 </div>
 
 <br />
@@ -132,5 +137,9 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 [stb-image-url]: https://github.com/nothings/stb/blob/master/stb_image.h
 
 <!-- EXTRA LINKS -->
+[mujoco-repo]: https://github.com/unitreerobotics/unitree_ros
+[mujoco-url]: https://mujoco.org/
+[stanfordASL-repo]: https://github.com/StanfordASL/PandaRobot.jl
+[unitree-ros-repo]: https://github.com/unitreerobotics/unitree_ros
 [saltyjoss]: https://github.com/SaltyJoss
 [citation-url]: https://github.com/SaltyJoss/RoboticArm_MathModelling/blob/Main/CITATION.cff
