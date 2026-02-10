@@ -8,10 +8,24 @@
     "world_up": "Z",
     "scale": 1.0,
 
+    "material": {
+        "UR_Aluminium": [ 0.78, 0.79, 0.80, 1.0 ],
+        "UR_Aluminium_D": [ 0.62, 0.63, 0.64, 1.0 ],
+
+        "UR_Blue": [ 0.56, 0.74, 0.86, 1.0 ],
+        "UR_Blue_D": [ 0.42, 0.60, 0.72, 1.0 ],
+
+        "UR_Charcoal": [ 0.08, 0.08, 0.09, 1.0 ]
+    },
+
+    "base_frame": {
+        "origin_xyz": [ 0.0, 0.0, 0.0 ],
+        "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
+    },
     "links": [
         {
             "name": "link00",
-            "visual": {},
+            "visual": { "material": "UR_Charcoal" },
             "collision": [],
             "inertial": {
                 "mass": 0,
@@ -35,7 +49,8 @@
                 "meshes": [
                     "UR5e/meshes/base_0.obj",
                     "UR5e/meshes/base_1.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -61,7 +76,8 @@
                     "UR5e/meshes/shoulder_0.obj",
                     "UR5e/meshes/shoulder_1.obj",
                     "UR5e/meshes/shoulder_2.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -88,7 +104,8 @@
                     "UR5e/meshes/upperarm_1.obj",
                     "UR5e/meshes/upperarm_2.obj",
                     "UR5e/meshes/upperarm_3.obj"
-                ]
+                ],
+                "material": "UR_Aluminium_D"
             },
             "collision": [],
             "inertial": {
@@ -115,7 +132,8 @@
                     "UR5e/meshes/forearm_1.obj",
                     "UR5e/meshes/forearm_2.obj",
                     "UR5e/meshes/forearm_3.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -141,7 +159,8 @@
                     "UR5e/meshes/wrist1_0.obj",
                     "UR5e/meshes/wrist1_1.obj",
                     "UR5e/meshes/wrist1_2.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -167,7 +186,8 @@
                     "UR5e/meshes/wrist2_0.obj",
                     "UR5e/meshes/wrist2_1.obj",
                     "UR5e/meshes/wrist2_2.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -191,7 +211,8 @@
                 "origin_rpy": [ 1.5707963267948966, 0, 0 ],
                 "meshes": [
                     "UR5e/meshes/wrist3.obj"
-                ]
+                ],
+                "material": "UR_Blue"
             },
             "collision": [],
             "inertial": {
@@ -210,7 +231,7 @@
 
         {
             "name": "link08",
-            "visual": {},
+            "visual": { "material": "UR_Charcoal" },
             "collision": [],
             "inertial": {
                 "mass": 0,
@@ -227,7 +248,7 @@
         },
         {
             "name": "link09",
-            "visual": {},
+            "visual": { "material": "UR_Charcoal" },
             "collision": [],
             "inertial": {
                 "mass": 0,
@@ -289,8 +310,8 @@
             },
             "axis": [ 0, 0, 1 ],
             "limits": {
-                "lower": -6.283185307179586,
-                "upper": 6.283185307179586,
+                "lower": -3.141592653589793,
+                "upper": 0.0,
                 "velocity": 3.141592653589793,
                 "effort": 150
             },

@@ -1,12 +1,17 @@
 {
     "name": "Z1",
-    "visual_frame": "link",
+    "visual_frame": "joint",
     "units": {
         "length": "m",
         "angle": "rad"
     },
     "world_up": "Z",
     "scale": 1.0,
+
+    "base_frame": {
+        "origin_xyz": [ 0.0, 0.0, 0.0 ],
+        "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
+    },
 
     "links": [
         {
@@ -38,7 +43,6 @@
                 }
             }
         },
-
         {
             "name": "link01",
             "visual": {
@@ -59,7 +63,6 @@
                 }
             }
         },
-
         {
             "name": "link02",
             "visual": {
@@ -103,7 +106,6 @@
                 }
             }
         },
-
         {
             "name": "link03",
             "visual": {
@@ -140,7 +142,6 @@
                 }
             }
         },
-
         {
             "name": "link04",
             "visual": {
@@ -247,6 +248,11 @@
             "dynamics": {
                 "damping": 0.2,
                 "friction": 0.12
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         },
         {
@@ -272,6 +278,11 @@
             "dynamics": {
                 "damping": 0.25,
                 "friction": 0.18
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         },
         {
@@ -297,6 +308,11 @@
             "dynamics": {
                 "damping": 0.24,
                 "friction": 0.16
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         },
         {
@@ -322,6 +338,11 @@
             "dynamics": {
                 "damping": 0.1,
                 "friction": 0.08
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         },
         {
@@ -347,6 +368,11 @@
             "dynamics": {
                 "damping": 0.1,
                 "friction": 0.05
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         },
         {
@@ -373,10 +399,14 @@
             "dynamics": {
                 "damping": 0.05,
                 "friction": 0.02
+            },
+            "control": {
+                "k_p": 10.0,
+                "k_d": 10.0,
+                "maxOmega": 3.1415
             }
         }
     ],
-
     "load_pose": {
         "active": "default",
         "default": {

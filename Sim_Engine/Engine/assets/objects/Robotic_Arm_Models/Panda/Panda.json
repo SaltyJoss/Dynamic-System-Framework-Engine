@@ -8,6 +8,14 @@
     "world_up": "Z",
     "scale": 1.0,
 
+    "material": {
+        "White": [ 1.0, 1.0, 1.0, 1.0 ]
+    },
+
+    "base_frame": {
+        "origin_xyz": [ 0.0, 0.0, 0.0 ],
+        "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
+    },
     "links": [
         {
             "name": "link00",
@@ -26,12 +34,14 @@
                     "Panda/meshes/link0_9.obj",
                     "Panda/meshes/link0_10.obj",
                     "Panda/meshes/link0_11.obj"
-                ]
+                ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link0.stl"
+                    "mesh": "Panda/meshes/link0.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -53,12 +63,14 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "Panda/meshes/link1.obj"
+                "mesh": "Panda/meshes/link1.obj",
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link1.stl"
+                    "mesh": "Panda/meshes/link1.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -80,12 +92,14 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "mesh": "Panda/meshes/link2.obj"
+                "mesh": "Panda/meshes/link2.obj",
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link2.stl"
+                    "mesh": "Panda/meshes/link2.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -107,12 +121,14 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link3_0.obj", "Panda/meshes/link3_1.obj", "Panda/meshes/link3_2.obj", "Panda/meshes/link3_3.obj" ]
+                "meshes": [ "Panda/meshes/link3_0.obj", "Panda/meshes/link3_1.obj", "Panda/meshes/link3_2.obj", "Panda/meshes/link3_3.obj" ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link3.stl"
+                    "mesh": "Panda/meshes/link3.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -134,12 +150,14 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link4_0.obj", "Panda/meshes/link4_1.obj", "Panda/meshes/link4_2.obj", "Panda/meshes/link4_3.obj" ]
+                "meshes": [ "Panda/meshes/link4_0.obj", "Panda/meshes/link4_1.obj", "Panda/meshes/link4_2.obj", "Panda/meshes/link4_3.obj" ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link4.stl"
+                    "mesh": "Panda/meshes/link4.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -161,20 +179,24 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link5_0.obj", "Panda/meshes/link5_1.obj", "Panda/meshes/link5_2.obj" ]
+                "meshes": [ "Panda/meshes/link5_0.obj", "Panda/meshes/link5_1.obj", "Panda/meshes/link5_2.obj" ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link5_collision_0.obj"
+                    "mesh": "Panda/meshes/link5_collision_0.obj",
+                    "material": "White"
                 },
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link5_collision_1.obj"
+                    "mesh": "Panda/meshes/link5_collision_1.obj",
+                    "material": "White"
                 },
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link5_collision_2.obj"
+                    "mesh": "Panda/meshes/link5_collision_2.obj",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -214,12 +236,14 @@
                     "Panda/meshes/link6_14.obj",
                     "Panda/meshes/link6_15.obj",
                     "Panda/meshes/link6_16.obj"
-                ]
+                ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link6.stl"
+                    "mesh": "Panda/meshes/link6.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {
@@ -250,12 +274,14 @@
                     "Panda/meshes/link7_5.obj",
                     "Panda/meshes/link7_6.obj",
                     "Panda/meshes/link7_7.obj"
-                ]
+                ],
+                "material": "White"
             },
             "collision": [
                 {
                     "type": "mesh",
-                    "mesh": "Panda/meshes/link7.stl"
+                    "mesh": "Panda/meshes/link7.stl",
+                    "material": "White"
                 }
             ],
             "inertial": {

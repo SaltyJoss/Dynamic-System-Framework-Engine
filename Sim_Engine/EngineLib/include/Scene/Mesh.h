@@ -59,9 +59,9 @@ namespace scene {
 		
 		// Shader Update
 		const void update(shaders::Shader* shader) const {
-			shader->setVec3(_albedo, "albedo");
-			shader->setFlt1(_metallic, "metallic");
-			shader->setFlt1(1.0f, "ao");
+			shader->setVec3(_albedo, "albedo");		// Albedo
+			shader->setFlt1(_metallic, "metallic"); // Metallic
+			shader->setFlt1(1.0f, "ao");			// Ambient Occlusion
 		}
 
 		// Utility to append another mesh's geometry to this one, applying the other mesh's local transform to its vertices in the process
@@ -118,7 +118,7 @@ namespace scene {
 		std::string  _name = "obj" + id;
 
 		// Default material properties
-		glm::vec3 _albedo = glm::vec3(0.7f, 0.0f, 0.2f);
+		glm::vec3 _albedo = glm::vec3(0.4, 0.4, 0.4);
 		float _metallic = 0.1f;
 		float _roughness = 0.5f;
 

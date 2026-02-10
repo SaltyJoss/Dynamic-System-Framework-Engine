@@ -169,7 +169,10 @@ void main() {
     vec3 V = normalize(camPos - WorldPos);
     vec3 L = normalize(-lightDirection);
 
-    float NdotL = max(dot(N, L), 0.0);
+    float wrap = 0.35; // 0.25–0.4 is sane
+    float NdotL = dot(N, L);
+    NdotL = clamp((NdotL + wrap) / (1.0 + wrap), 0.0, 1.0);
+
     float NdotV = max(dot(N, V), 0.0);
 
     if (NdotV <= 0.0) {
@@ -190,11 +193,16 @@ void main() {
     float G = GeometrySmith(N, V, L, roughness);
     vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3 kS = F;
-    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+    float metalStrength = metallic;
+
+    // preserve 70% of diffuse even for metals
+    float diffusePreserve = mix(1.0, 0.7, metalStrength);
+
+    vec3 kD = diffusePreserve * vec3(1.0);
+    vec3 kS = F * metalStrength;
 
     float denom = max(4.0 * NdotV * NdotL, 0.001);
-    vec3  spec = (NDF * G * F) / denom;
+    vec3  spec = kS * (NDF * G) / denom;
     vec3  radiance = lightColour * lightIntensity;
 
     // direct lighting only, plus a tiny ambient
@@ -215,7 +223,6 @@ void main() {
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
     vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
-
     
     float contactShadow = smoothstep(0.0, 0.02, shadow);
     vec3 ambient = (kD * diffuseIBL) * ao * (1.0 - 0.6 * contactShadow) + specularIBL * ao * 0.75;

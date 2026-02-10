@@ -1144,12 +1144,12 @@ namespace gui {
 			switch (currentShaderMode) {
 				case ShaderMode::Basic:
 					// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-					shader->setVec3(obj->getAlbedo(), "albedo");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
 					break;
 
 				case ShaderMode::Lit:
 					// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-					shader->setVec3(obj->getAlbedo(), "albedo");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
 					shader->setVec3(_impl->_light->getPosition(), "lightPosition");
 					shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
 					shader->setVec3(_impl->_light->getColour(), "lightColour");
@@ -1158,9 +1158,9 @@ namespace gui {
 
 				case ShaderMode::PBR:
 					// (IMPORTANT) mesh_pbr.frag needs: albedo, metallic, roughness, ao, lightDirection, lightIntensity, lightColour, camPos
-					shader->setVec3(obj->getAlbedo(), "albedo");
-					shader->setFlt1(0.0f, "metallic");
-					shader->setFlt1(0.5f, "roughness");
+					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setFlt1(0.6f, "metallic");
+					shader->setFlt1(0.45f, "roughness");
 					shader->setFlt1(1.0f, "ao");
 
 					shader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
