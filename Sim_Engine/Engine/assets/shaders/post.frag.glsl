@@ -4,6 +4,8 @@ in vec2 uv;
 out vec4 FragColour;
 
 uniform sampler2D hdrScene;
+uniform sampler2D ssaoTex;
+uniform bool ssaoEnabled;
 uniform vec2 uRes;
 uniform float exposure = 1.0;
 uniform float whitePoint;
@@ -83,6 +85,14 @@ vec3 fxaaTonemapped(sampler2D tex, vec2 uv, vec2 res)
 void main() {
     // FXAA on tonemapped LDR (linear)
     vec3 ldrAA = fxaaTonemapped(hdrScene, uv, uRes);
+
+    // Apply SSAO softly: lerp between full color and AO-darkened color
+    if (ssaoEnabled) {
+        float ao = texture(ssaoTex, uv).r;
+        // Soften: don't let AO go below 0.3 to avoid crushing blacks
+        ao = mix(1.0, ao, 0.6); // 0.6 = blend factor, lower = subtler
+        ldrAA *= ao;
+    }
 
     // Gamma last
     vec3 srgb = pow(ldrAA, vec3(1.0/2.2));

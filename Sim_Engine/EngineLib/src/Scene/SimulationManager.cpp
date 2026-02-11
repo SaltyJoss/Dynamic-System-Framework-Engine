@@ -82,8 +82,7 @@ namespace gui {
 
 		// World Grid & Shadow Shaders
 		std::unique_ptr<shaders::Shader> _worldGridShader;
-		std::unique_ptr<shaders::Shader> _shadowShader;
-		std::unique_ptr<shaders::Shader> _currentShader;
+     std::unique_ptr<shaders::Shader> _shadowShader;
 		shaders::Shader* currentShader;
 
 		// Fullscreen Quad VAO
@@ -96,7 +95,6 @@ namespace gui {
 		glm::mat4 _lightSpaceMatrixCascade[SimManager::NUM_CASCADES] = {};
 
 		// Scene Objects
-		std::unique_ptr<scene::Camera> _camera;
 		std::unique_ptr<scene::Light> _light;
 		std::unique_ptr<AxisOrientator> _axisOrientator;
 
@@ -115,6 +113,15 @@ namespace gui {
 
 		// Trajectory Manager
 		control::TrajectoryManager _traj;
+
+		// SSAO Resources
+		std::unique_ptr<shaders::Shader> _ssaoShader;
+		std::unique_ptr<shaders::Shader> _ssaoBlurShader;
+		GLuint _ssaoFBO = 0, _ssaoTex = 0;
+		GLuint _ssaoBlurFBO = 0, _ssaoBlurTex = 0;
+		GLuint _ssaoNoiseTex = 0;
+		int _ssaoW = 0, _ssaoH = 0;
+		std::vector<glm::vec3> _ssaoKernel;
 
 		Impl(SimManager& owner) {
 			_postShader = std::make_unique<shaders::Shader>();
@@ -219,7 +226,6 @@ namespace gui {
 			_light = std::make_unique<scene::Light>();
 			_light->_isDirectional = true;
 
-			_camera = std::make_unique<scene::Camera>(glm::vec3(0.0f, 0.25f, 1.0f), 60.0f, (float)owner._internalSize.x / (float)owner._internalSize.y, 0.1f, 5000.0f);
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
 			glGenVertexArrays(1, &_worldGridVAO);
@@ -229,17 +235,156 @@ namespace gui {
 
 			_physics = std::make_unique<physics::PhysicsSystem>();
 			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
+
+			// SSAO shaders
+			_ssaoShader = std::make_unique<shaders::Shader>();
+			_ssaoShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao.frag.glsl").string());
+
+			_ssaoBlurShader = std::make_unique<shaders::Shader>();
+			_ssaoBlurShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao_blur.frag.glsl").string());
+
+			// Generate hemisphere kernel
+			initSSAOKernel(64);
+
+			// Generate noise texture (4x4 random rotation vectors)
+			initSSAONoise();
+		}
+
+		void initSSAOKernel(int size) {
+			_ssaoKernel.clear();
+			_ssaoKernel.reserve(size);
+			for (int i = 0; i < size; ++i) {
+				glm::vec3 sample(
+					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					((float)rand() / RAND_MAX)  // hemisphere: z in [0,1]
+				);
+				sample = glm::normalize(sample);
+				sample *= ((float)rand() / RAND_MAX);
+
+				// Accelerating interpolation: cluster samples closer to origin
+				float scale = (float)i / (float)size;
+				scale = 0.1f + scale * scale * 0.9f; // lerp(0.1, 1.0, scale*scale)
+				sample *= scale;
+
+				_ssaoKernel.push_back(sample);
+			}
+		}
+
+		void initSSAONoise() {
+			std::vector<glm::vec3> noise(16);
+			for (int i = 0; i < 16; ++i) {
+				noise[i] = glm::vec3(
+					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					0.0f
+				);
+			}
+			glGenTextures(1, &_ssaoNoiseTex);
+			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, noise.data());
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+
+		void ensureSSAOBuffers(int w, int h) {
+			if (_ssaoW == w && _ssaoH == h) return;
+			_ssaoW = w; _ssaoH = h;
+
+			// Cleanup old
+			if (_ssaoFBO) { glDeleteFramebuffers(1, &_ssaoFBO); glDeleteTextures(1, &_ssaoTex); }
+			if (_ssaoBlurFBO) { glDeleteFramebuffers(1, &_ssaoBlurFBO); glDeleteTextures(1, &_ssaoBlurTex); }
+
+			auto makeSingleChannelFBO = [](GLuint& fbo, GLuint& tex, int w, int h) {
+				glGenFramebuffers(1, &fbo);
+				glGenTextures(1, &tex);
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+				glBindTexture(GL_TEXTURE_2D, tex);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_FLOAT, nullptr);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			};
+
+			makeSingleChannelFBO(_ssaoFBO, _ssaoTex, w, h);
+			makeSingleChannelFBO(_ssaoBlurFBO, _ssaoBlurTex, w, h);
+		}
+
+		void renderSSAO(SimManager& owner, Viewport& v) {
+			if (!owner._settingsCurrent.ssao) return;
+
+			int ssaoDiv = std::max(1, owner._settingsCurrent.ssaoResDiv);
+			int ssaoW = std::max(1, v.w / ssaoDiv);
+			int ssaoH = std::max(1, v.h / ssaoDiv);
+			ensureSSAOBuffers(ssaoW, ssaoH);
+
+			int kernelSize = std::min((int)_ssaoKernel.size(), owner._settingsCurrent.ssaoSamples);
+
+			// --- SSAO pass ---
+			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoFBO);
+			glViewport(0, 0, ssaoW, ssaoH);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+
+			_ssaoShader->use();
+
+			// Depth texture from the resolved scene FBO
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, v.fb->getDepthTexture());
+			_ssaoShader->setInt1(0, "gDepth");
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
+			_ssaoShader->setInt1(1, "gNoise");
+
+			_ssaoShader->setMat4(v.cam->getProjection(), "projection");
+			_ssaoShader->setMat4(glm::inverse(v.cam->getProjection()), "invProjection");
+			_ssaoShader->setVec2(glm::vec2((float)ssaoW / 4.0f, (float)ssaoH / 4.0f), "noiseScale");
+			_ssaoShader->setInt1(kernelSize, "kernelSize");
+			_ssaoShader->setFlt1(0.25f, "radius");
+			_ssaoShader->setFlt1(0.035f, "bias");
+			_ssaoShader->setFlt1(owner._settingsCurrent.ssaoStrength, "strength");
+
+			for (int i = 0; i < kernelSize; ++i) {
+				_ssaoShader->setVec3(_ssaoKernel[i], "samples[" + std::to_string(i) + "]");
+			}
+
+			glBindVertexArray(_fullscreenVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+
+			// --- Blur pass ---
+			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoBlurFBO);
+			glViewport(0, 0, ssaoW, ssaoH);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			_ssaoBlurShader->use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, _ssaoTex);
+			_ssaoBlurShader->setInt1(0, "ssaoInput");
+
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+			glBindVertexArray(0);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
 		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
 			displayH = std::max(1, displayH);
 
+            // Internal render target size
 			glm::ivec2 rt(std::max(1, (int)owner._internalSize.x), std::max(1, (int)owner._internalSize.y));
 
+			// In quad mode, render at the cell's display resolution to avoid scaling artifacts
 			if (owner._impl->viewMode == Impl::ViewMode::Quad) {
-				rt.x = std::max(1, rt.x / 2);
-				rt.y = std::max(1, rt.y / 2);
+				rt.x = std::max(1, displayW);
+				rt.y = std::max(1, displayH);
 			}
 			const int rtW = std::max(1, (int)rt.x);
 			const int rtH = std::max(1, (int)rt.y);
@@ -247,7 +392,7 @@ namespace gui {
 			LOG_INFO_ONCE("Rendering Viewport: RT Size = %dx%d, Display Size = %dx%d", rtW, rtH, displayW, displayH);
 
 			// Calculate internal scale for grid rendering
-			//const float internalScaleX = (float)rtW / (float)displayW;
+			//const float internalScaleX = (float)rtW / (float)displayW;yes
 			//const float internalScaleY = (float)rtH / (float)displayH;
 			//const float internalScale = std::max(internalScaleX, internalScaleY);
 
@@ -296,8 +441,6 @@ namespace gui {
 				glDisable(GL_MULTISAMPLE);
 			}
 
-			if (owner.hasRobot()) { owner.getRobotSystem()->updateRobotKinematics(); }
-
 			// Update Follow Target (Doesnt deref pointer until used - hopefully fixes previous crashes)
 			if (&v == &_views[(size_t)gui::ViewID::Follow]) {
 				v.followTarget = _selectedObject;
@@ -332,9 +475,12 @@ namespace gui {
 			LOG_INFO_ONCE("FB MSAA state: GL_SAMPLE_BUFFERS=%d GL_SAMPLES=%d", sampleBuffers, samples);
 
 			owner.MeshRender(v.cam.get());
-			if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get()); }
+			if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get(), v.w); }
 
 			v.fb->unbind();
+
+			// SSAO pass (reads resolved depth, writes to _ssaoBlurTex)
+			renderSSAO(owner, v);
 
 			// Only valid if you allocated mip levels for _texID (via glTexStorage2D)
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
@@ -352,12 +498,17 @@ namespace gui {
 
 			_postShader->use();
 			_postShader->setInt1(0, "hdrScene");
+			_postShader->setInt1(1, "ssaoTex");
+			_postShader->setBool(owner._settingsCurrent.ssao, "ssaoEnabled");
 			_postShader->setFlt1(owner._settingsCurrent.exposure, "exposure");
 			_postShader->setFlt1(owner._settingsCurrent.whitePoint, "whitePoint");
 			_postShader->setVec2(glm::vec2(v.w, v.h), "uRes");
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, owner._settingsCurrent.ssao ? _ssaoBlurTex : 0);
 
 			glBindVertexArray(_fullscreenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -808,7 +959,7 @@ namespace gui {
 			ImVec2 avail = ImGui::GetContentRegionAvail();
 			ImVec2 cell = ImVec2(avail.x * 0.5f, avail.y * 0.5f);
 
-			auto drawCell = [&](const char* childId, gui::ViewID id, bool sameLine) {
+            auto drawCell = [&](const char* childId, gui::ViewID id, bool sameLine) {
 				if (sameLine) ImGui::SameLine();
 				ImGui::BeginChild(childId, cell, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -816,6 +967,17 @@ namespace gui {
 				ImVec2 inner = ImGui::GetContentRegionAvail();
 
 				ImGui::Image((ImTextureID)(intptr_t)v.post->getTexture(), inner, ImVec2(0, 1), ImVec2(1, 0));
+				// Set active view when clicking inside the quad cell
+				if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+					_impl->activeView = id;
+				}
+				// Visual indication: draw a border around the active cell
+				if (_impl->activeView == id) {
+					ImDrawList* dl = ImGui::GetWindowDrawList();
+					ImVec2 p0 = ImGui::GetWindowPos();
+					ImVec2 p1 = ImVec2(p0.x + ImGui::GetWindowSize().x, p0.y + ImGui::GetWindowSize().y);
+					dl->AddRect(p0, p1, IM_COL32(255, 200, 0, 180), 4.0f, 0, 2.0f);
+				}
 
 				ImGui::EndChild();
 			};
@@ -1034,7 +1196,7 @@ namespace gui {
 		_impl->_ibl->init((paths::assets() / "hdr" / "default_white.hdr").string());
 	}
 
-	void SimManager::WorldGridRender(scene::Camera* cam) {
+	void SimManager::WorldGridRender(scene::Camera* cam, int rtW) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
@@ -1056,10 +1218,15 @@ namespace gui {
 			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		}
 
+		// Scale grid line thickness so smaller RTs (quad mode) match single view appearance
+		const float fullW = std::max(1.0f, _internalSize.x);
+		const float internalScale = (float)std::max(1, rtW) / fullW;
+
 		_impl->_worldGridShader->use();
 		_impl->_worldGridShader->setMat4(cam->getViewProjection(), "gVP");
 		_impl->_worldGridShader->setVec3(cam->getPosition(), "gCameraWorldPos");
 		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
+		_impl->_worldGridShader->setFlt1(internalScale, "gInternalScale");
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1134,7 +1301,6 @@ namespace gui {
 
 			glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
 			shader->setMat4(model, "model");
-			shader->setBool(false, "isFloor");
 
 			// Per-mode material uniforms
 			switch (currentShaderMode) {
@@ -1158,6 +1324,7 @@ namespace gui {
 					shader->setFlt1(0.6f, "metallic");
 					shader->setFlt1(0.45f, "roughness");
 					shader->setFlt1(1.0f, "ao");
+					shader->setFlt1(_settingsCurrent.ambientStrength, "ambientStrength");
 
 					shader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
 					shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
@@ -1357,6 +1524,8 @@ namespace gui {
 		_impl->_shaderBasic->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_basic.frag.glsl").string());
 		_impl->_shaderLit->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_lit.frag.glsl").string());
 		_impl->_shaderPBR->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_pbr.frag.glsl").string());
+		_impl->_ssaoShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao.frag.glsl").string());
+		_impl->_ssaoBlurShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao_blur.frag.glsl").string());
 
 		LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");
@@ -1368,6 +1537,7 @@ namespace gui {
 	//					INPUT HANDLING
 	// --------------------------------------------------
 	void gui::SimManager::processMovementKey(int key, float delta) {
+		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No keyboard movement in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (ctrlMode == ControlMode::Camera) { cam->processKeyboard(key, delta); }
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
@@ -1388,6 +1558,7 @@ namespace gui {
 	}
 
 	void gui::SimManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
@@ -1420,6 +1591,8 @@ namespace gui {
 		glm::vec2 delta = pos2d - _lastMousePos;
 		_lastMousePos = pos2d;
 
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse drag in quad view
+
 		if (!_isHovered) {
 			cam->setCurrentPos2D(pos2d);
 			_impl->_selectedObject->setLastMousePos(pos2d);
@@ -1435,8 +1608,13 @@ namespace gui {
 		auto* obj = _impl->_selectedObject;
 		if (!_isHovered) return;
 
-		if (ctrlMode == ControlMode::Camera) { cam->onMouseWheel(delta); }
-		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { obj->transform.position.z += (float)delta * 0.25f; }
+		if (ctrlMode == ControlMode::Camera) {
+			// Always scroll the active view camera only
+			cam->onMouseWheel(delta);
+		}
+		else if (ctrlMode == ControlMode::Object && _impl->_mesh) {
+			obj->transform.position.z += (float)delta * 0.25f;
+		}
 	}
 
 	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }

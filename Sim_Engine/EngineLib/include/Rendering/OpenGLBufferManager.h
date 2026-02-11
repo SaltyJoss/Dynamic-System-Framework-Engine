@@ -28,5 +28,6 @@ namespace render {
 			void unbind() override;
 			void endSetup();
 			uint32_t getTexture() override;
+			uint32_t getDepthTexture() override { return _depthID; }
 	};
 } // namespace render

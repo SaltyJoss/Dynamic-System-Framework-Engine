@@ -17,6 +17,7 @@ uniform vec3  albedo;      // base colour
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
+uniform float ambientStrength = 0.3; // IBL ambient multiplier
 
 uniform bool        useTexture;
 uniform sampler2D   albedoTex;
@@ -226,7 +227,7 @@ void main() {
     
     float contactShadow = smoothstep(0.0, 0.02, shadow);
     vec3 ambient = (kD * diffuseIBL) * ao * (1.0 - 0.6 * contactShadow) + specularIBL * ao * 0.75;
-    ambient *= 0.3;
+    ambient *= ambientStrength;
     vec3 colour = ambient + Lo;
 
     FragColour = vec4(colour, 1.0);

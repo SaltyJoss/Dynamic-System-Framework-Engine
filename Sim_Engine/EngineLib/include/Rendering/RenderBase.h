@@ -47,6 +47,7 @@ namespace render {
 		virtual void bind() = 0;
 		virtual void unbind() = 0;
 		virtual uint32_t getTexture() = 0;
+		virtual uint32_t getDepthTexture() { return _depthID; }
 
 	protected:
 		uint32_t _FBO = 0;

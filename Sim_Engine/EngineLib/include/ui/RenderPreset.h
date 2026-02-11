@@ -27,7 +27,7 @@ namespace render {
 		bool ssao = true;
 		int ssaoResDiv = 2;  // Resolution division factor for SSAO buffer, 1 = full res, 2 = half res, 4 = quarter res
 		int ssaoSamples = 16; // Number of samples for SSAO, higher = better quality
-		float ssaoStrength = 0.5f;
+		float ssaoStrength = 0.3f;
 
 		// Post Processing
 		bool bloom = true;
@@ -44,6 +44,7 @@ namespace render {
 
 		// Render-Specific
 		float renderScale = 1.0f;
+		float ambientStrength = 0.5f; // IBL ambient multiplier (0.0 = no ambient, 1.0 = full)
 	};
 
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset qual);

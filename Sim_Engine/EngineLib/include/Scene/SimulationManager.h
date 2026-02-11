@@ -202,7 +202,7 @@ namespace gui {
     private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
-        void WorldGridRender(scene::Camera* cam);
+        void WorldGridRender(scene::Camera* cam, int rtW);
         void InitShadowResource(int baseRes);
         void InitIBL();
         void SkyboxRender(scene::Camera* cam);
