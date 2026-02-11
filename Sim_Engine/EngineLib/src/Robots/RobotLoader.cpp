@@ -56,23 +56,62 @@ namespace robots {
 	// Each material is defined as: "materials": { "mat_name": [r, g, b, a] }
 	void loadMaterials(const json& data, RobotModel& robot) {
 		if (!data.contains("material")) { return; }
+		const auto& mat = data["material"];
 
-		for (auto& [name, col] : data["material"].items()) {
-			if (col.is_array() && col.size() == 4) {
-				Vec4 rgba(
-					col[0].get<double>(),
-					col[1].get<double>(),
-					col[2].get<double>(),
-					col[3].get<double>()
-				);
-				robot.materials[name] = rgba;
+		// New nested format: "material" -> "Color" -> { name: [r,g,b,a] }
+		if (mat.contains("Color") && mat["Color"].is_object()) {
+			for (auto& [name, col] : mat["Color"].items()) {
+				if (col.is_array() && col.size() == 4) {
+					robot.materials[name] = Vec4(
+						col[0].get<double>(),
+						col[1].get<double>(),
+						col[2].get<double>(),
+						col[3].get<double>()
+					);
+				}
+				else {
+					LOG_WARN("Material Color '%s' has invalid format, expected array of 4 floats", name.c_str());
+				}
 			}
-			else {
-				LOG_WARN("Material '%s' has invalid color format, expected array of 4 floats", name.c_str());
+		}
+		else {
+			// Legacy flat format: "material" -> { name: [r,g,b,a] }
+			for (auto& [name, col] : mat.items()) {
+				if (col.is_array() && col.size() == 4) {
+					robot.materials[name] = Vec4(
+						col[0].get<double>(),
+						col[1].get<double>(),
+						col[2].get<double>(),
+						col[3].get<double>()
+					);
+				}
 			}
 		}
 	}
 
+	// Helper to parse material properties from a JSON object into color/metallic/roughness
+	static void parseMaterialObject(const json& m, const RobotModel& robot, const std::string& context,
+		Vec4& outColor, float& outMetallic, float& outRoughness) {
+		if (m.contains("Color") && m["Color"].is_string()) {
+			const std::string colorName = m["Color"].get<std::string>();
+			auto it = robot.materials.find(colorName);
+			if (it != robot.materials.end()) {
+				outColor = it->second;
+			}
+			else {
+				LOG_WARN("%s references undefined color '%s', using default Grey", context.c_str(), colorName.c_str());
+				outColor = Vec4(0.4, 0.4, 0.4, 1.0);
+			}
+		}
+		if (m.contains("Metallic") && m["Metallic"].is_number()) {
+			outMetallic = m["Metallic"].get<float>();
+		}
+		if (m.contains("Roughness") && m["Roughness"].is_number()) {
+			outRoughness = m["Roughness"].get<float>();
+		}
+	}
+
+	// Parse visual geometry, supporting both single mesh and multiple meshes, as well as material properties
 	static void parseVisual(const json& linkData, const RobotModel& robot, RobotLink& link) {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
@@ -82,12 +121,27 @@ namespace robots {
 			link.visual.meshFile = v["mesh"].get<std::string>();
 		}
 
-		// Multiple meshes (e.g. SDF style)
+		// Multiple meshes - supports both string arrays and object arrays with per-mesh material
 		if (v.contains("meshes") && v["meshes"].is_array()) {
 			link.visual.meshFiles.clear();
+			link.visual.meshEntries.clear();
 			for (const auto& m : v["meshes"]) {
 				if (m.is_string()) {
+					// Legacy string format
 					link.visual.meshFiles.push_back(m.get<std::string>());
+				}
+				else if (m.is_object() && m.contains("mesh") && m["mesh"].is_string()) {
+					// Object format with per-mesh material
+					VisualMeshEntry entry;
+					entry.meshFile = m["mesh"].get<std::string>();
+
+					if (m.contains("material") && m["material"].is_object()) {
+						entry.hasMaterial = true;
+						parseMaterialObject(m["material"], robot, "Mesh " + entry.meshFile,
+							entry.material, entry.metallic, entry.roughness);
+					}
+
+					link.visual.meshEntries.push_back(entry);
 				}
 			}
 		}
@@ -97,26 +151,41 @@ namespace robots {
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
 
 		// Material
-		if (v.contains("material") && v["material"].is_string()) {
+		if (v.contains("material") && v["material"].is_object()) {
+			parseMaterialObject(v["material"], robot, "Link " + link.name,
+				link.visual.material, link.visual.metallic, link.visual.roughness);
+		}
+		else if (v.contains("material") && v["material"].is_string()) {
+			// Legacy string format: material name lookup
 			const std::string matName = v["material"].get<std::string>();
 			auto it = robot.materials.find(matName);
-
-
 			if (it != robot.materials.end()) {
 				link.visual.material = it->second;
 			}
 			else {
 				LOG_WARN("Link %s references undefined material '%s', using default Grey", link.name.c_str(), matName.c_str());
-				link.visual.material = Vec4(0.4, 0.4, 0.4, 1.0); // different from default to make it obvious when a material is missing
+				link.visual.material = Vec4(0.5, 0.5, 0.5, 1.0); // Default grey material if material name not found
 			}
 		}
 		else {
 			// Default material if not specified
-			link.visual.material = Vec4(0.7, 0.5, 0.4, 1.0); // default redish color
+			link.visual.material = Vec4(0.2, 0.4, 0.5, 1.0); // Default color for visual geometry if no material is specified
 		}
 	}
 
-	static void parseCollisions(const json& linkData, RobotLink& link) {
+	// Parse collision geometry material properties
+	static void parseCollisionMaterial(const json& collisionData, const RobotModel& robot, CollisionShape& shape) {
+		if (!collisionData.contains("material")) { return; }
+		const auto& m = collisionData["material"];
+
+		if (m.is_object()) {
+			parseMaterialObject(m, robot, "Collision",
+				shape.material, shape.metallic, shape.roughness);
+		}
+	}
+
+	// Parse collision geometry, supporting multiple collision shapes per link
+	static void parseCollisions(const json& linkData, const RobotModel& robot, RobotLink& link) {
 		if (!linkData.contains("collision")) { return; }
 		for (const auto& c : linkData["collision"]) {
 			CollisionShape s;
@@ -130,6 +199,8 @@ namespace robots {
 			}
 			else if (s.type == "box") { s.size = readVec3(c, "size", s.size); }
 			else if (s.type == "mesh") { s.meshFile = c.value("mesh", ""); }
+
+			parseCollisionMaterial(c, robot, s);
 			link.collisions.push_back(s);
 		}
 	}
@@ -360,7 +431,7 @@ namespace robots {
 			link.name = linkData.value("name", "");
 
 			parseVisual(linkData, robot, link);
-			parseCollisions(linkData, link);
+			parseCollisions(linkData, robot, link);
 			parseInertial(linkData, link);
 
 			robot.links.push_back(link);

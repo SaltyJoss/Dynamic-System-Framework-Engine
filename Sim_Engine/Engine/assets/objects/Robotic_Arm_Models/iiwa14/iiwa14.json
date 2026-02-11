@@ -9,14 +9,32 @@
     "scale": 1.0,
 
     "material": {
-        "Black": [ 0.0, 0.0, 0.0, 1.0 ],
-        "Blue": [ 0.0, 0.0, 0.8, 1.0 ],
-        "Green": [ 0.0, 0.8, 0.0, 1.0 ],
-        "Grey": [ 0.4, 0.4, 0.4, 1.0 ],
-        "Orange": [ 1.0, 0.4235294, 0.0392157, 1.0 ],
-        "Brown": [ 0.8705882, 0.8117647, 0.7647059, 1.0 ],
-        "Red": [ 0.8, 0.0, 0.0, 1.0 ],
-        "White": [ 1.0, 1.0, 1.0, 1.0 ]
+        "Color": {
+            "Black": [ 0.0, 0.0, 0.0, 1.0 ],
+            "Blue": [ 0.0, 0.0, 0.8, 1.0 ],
+            "Green": [ 0.0, 0.8, 0.0, 1.0 ],
+            "Grey": [ 0.4, 0.4, 0.4, 1.0 ],
+            "Silver": [ 0.6, 0.6, 0.6, 1.0 ],
+            "Orange": [ 1.0, 0.4235294, 0.0392157, 1.0 ],
+            "Brown": [ 0.8705882, 0.8117647, 0.7647059, 1.0 ],
+            "Red": [ 0.8, 0.0, 0.0, 1.0 ],
+            "White": [ 1.0, 1.0, 1.0, 1.0 ]
+        },
+
+        "Presets": {
+            "PaintedMetal": {
+                "Metallic": 0.3,
+                "Roughness": 0.7
+            },
+            "BareMetal": {
+                "Metallic": 0.9,
+                "Roughness": 0.4
+            },
+            "Plastic": {
+                "Metallic": 0.0,
+                "Roughness": 0.6
+            }
+        }
     },
 
     "base_frame": {
@@ -33,9 +51,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_0.stl",
-                "material": "Grey"
+                "material": {
+                    "Color": "Grey",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_0.stl",
+                    "material": { "Color": "Grey" }
+                }
+            ],
             "inertial": {
                 "mass": 5.0,
                 "com_xyz": [ -0.1, 0.0, 0.07 ],
@@ -55,9 +82,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_1.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_1.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 4.0,
                 "com_xyz": [ 0.0, -0.03, 0.12 ],
@@ -77,9 +113,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_2.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_2.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 4.0,
                 "com_xyz": [ 0.0003, 0.059, 0.042 ],
@@ -99,9 +144,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_3.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_3.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 3.0,
                 "com_xyz": [ 0.0, 0.03, 0.13 ],
@@ -121,9 +175,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_4.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_4.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 2.7,
                 "com_xyz": [ 0.0, 0.067, 0.034 ],
@@ -143,9 +206,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_5.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_5.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 1.7,
                 "com_xyz": [ 0.0001, 0.021, 0.076 ],
@@ -165,9 +237,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_6.stl",
-                "material": "Orange"
+                "material": {
+                    "Color": "Orange",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_6.stl",
+                    "material": { "Color": "Orange" }
+                }
+            ],
             "inertial": {
                 "mass": 1.8,
                 "com_xyz": [ 0.0, 0.0006, 0.0004 ],
@@ -187,9 +268,18 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "iiwa14/meshes/visual/link_7.stl",
-                "material": "Grey"
+                "material": {
+                    "Color": "Grey",
+                    "Metallic": 0.3,
+                    "Roughness": 0.7
+                }
             },
-            "collision": [],
+            "collision": [
+                {
+                    "mesh": "iiwa14/meshes/collision/link_7.stl",
+                    "material": { "Color": "Grey" }
+                }
+            ],
             "inertial": {
                 "mass": 0.3,
                 "com_xyz": [ 0.0, 0.0, 0.02 ],

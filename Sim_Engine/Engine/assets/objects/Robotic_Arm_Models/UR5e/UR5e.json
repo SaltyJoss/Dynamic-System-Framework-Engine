@@ -9,13 +9,38 @@
     "scale": 1.0,
 
     "material": {
-        "UR_Aluminium": [ 0.78, 0.79, 0.80, 1.0 ],
-        "UR_Aluminium_D": [ 0.62, 0.63, 0.64, 1.0 ],
+        "Color": {
+            "UR_Aluminium": [ 0.76, 0.77, 0.78, 1.0 ],
+            "UR_Aluminium_D": [ 0.70, 0.72, 0.74, 1.0 ],
+            "UR_Blue": [ 0.66, 0.82, 0.93, 1.0 ],
+            "UR_Blue_D": [ 0.10, 0.44, 0.75, 1.0 ],
+            "UR_Rubber": [ 0.08, 0.08, 0.09, 1.0 ],
+            "UR_Dark": [ 0.15, 0.15, 0.15, 1.0 ],
+            "UR_Matte": [ 0.5137, 0.5176, 0.5137, 1.0 ]
+        },
 
-        "UR_Blue": [ 0.56, 0.74, 0.86, 1.0 ],
-        "UR_Blue_D": [ 0.42, 0.60, 0.72, 1.0 ],
-
-        "UR_Charcoal": [ 0.08, 0.08, 0.09, 1.0 ]
+        "Presets": {
+            "BareMetal": {
+                "Metallic": 0.9,
+                "Roughness": 0.4
+            },
+            "PaintedMetal": {
+                "Metallic": 0.3,
+                "Roughness": 0.7
+            },
+            "AnodisedMetal": {
+                "Metallic": 0.85,
+                "Roughness": 0.45
+            },
+            "Plastic": {
+                "Metallic": 0.1,
+                "Roughness": 0.5
+            },
+            "Rubber": {
+                "Metallic": 0.1,
+                "Roughness": 0.9
+            }
+        }
     },
 
     "base_frame": {
@@ -25,8 +50,16 @@
     "links": [
         {
             "name": "link00",
-            "visual": { "material": "UR_Charcoal" },
-            "collision": [],
+            "visual": {
+                "material": {
+                    "Color": "UR_Rubber",
+                    "Metallic": 0.1,
+                    "Roughness": 0.9
+                }
+            },
+            "collision": [
+                { "mesh": "UR5e/meshes/base_0.obj" }
+            ],
             "inertial": {
                 "mass": 0,
                 "com_xyz": [ 0, 0, 0 ],
@@ -47,12 +80,27 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 3.141592653589793 ],
                 "meshes": [
-                    "UR5e/meshes/base_0.obj",
-                    "UR5e/meshes/base_1.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/base_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/base_1.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.7,
+                            "Roughness": 0.3
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/base_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 4.0,
                 "com_xyz": [ 0, 0, 0 ],
@@ -73,13 +121,35 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 3.141592653589793 ],
                 "meshes": [
-                    "UR5e/meshes/shoulder_0.obj",
-                    "UR5e/meshes/shoulder_1.obj",
-                    "UR5e/meshes/shoulder_2.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/shoulder_0.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.2,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/shoulder_1.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/shoulder_2.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/shoulder_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 3.7,
                 "com_xyz": [ 0, 0, 0 ],
@@ -100,14 +170,43 @@
                 "origin_xyz": [ 0, 0, 0.138 ],
                 "origin_rpy": [ 1.5707963267948966, 0, -1.5707963267948966 ],
                 "meshes": [
-                    "UR5e/meshes/upperarm_0.obj",
-                    "UR5e/meshes/upperarm_1.obj",
-                    "UR5e/meshes/upperarm_2.obj",
-                    "UR5e/meshes/upperarm_3.obj"
-                ],
-                "material": "UR_Aluminium_D"
+                    {
+                        "mesh": "UR5e/meshes/upperarm_0.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_1.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_3.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.2,
+                            "Roughness": 0.6
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/upperarm_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 8.393,
                 "com_xyz": [ -0.2125, 0, 0.138 ],
@@ -128,14 +227,43 @@
                 "origin_xyz": [ 0, 0, 0.007 ],
                 "origin_rpy": [ 1.5707963267948966, 0, -1.5707963267948966 ],
                 "meshes": [
-                    "UR5e/meshes/forearm_0.obj",
-                    "UR5e/meshes/forearm_1.obj",
-                    "UR5e/meshes/forearm_2.obj",
-                    "UR5e/meshes/forearm_3.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/forearm_0.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_1.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_2.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_3.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/forearm_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 2.275,
                 "com_xyz": [ -0.1961, 0, 0.007 ],
@@ -156,13 +284,35 @@
                 "origin_xyz": [ 0, 0, -0.127 ],
                 "origin_rpy": [ 1.5707963267948966, 0, 0 ],
                 "meshes": [
-                    "UR5e/meshes/wrist1_0.obj",
-                    "UR5e/meshes/wrist1_1.obj",
-                    "UR5e/meshes/wrist1_2.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/wrist1_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist1_1.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist1_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist1_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 1.219,
                 "com_xyz": [ 0, 0, 0 ],
@@ -183,13 +333,35 @@
                 "origin_xyz": [ 0, 0, -0.0997 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "meshes": [
-                    "UR5e/meshes/wrist2_0.obj",
-                    "UR5e/meshes/wrist2_1.obj",
-                    "UR5e/meshes/wrist2_2.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/wrist2_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        } 
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist2_1.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist2_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist2_0.obj" ] }
+            ],
             "inertial": {
                 "mass": 1.219,
                 "com_xyz": [ 0, 0, 0 ],
@@ -210,11 +382,19 @@
                 "origin_xyz": [ 0, 0, -0.0989 ],
                 "origin_rpy": [ 1.5707963267948966, 0, 0 ],
                 "meshes": [
-                    "UR5e/meshes/wrist3.obj"
-                ],
-                "material": "UR_Blue"
+                    {
+                        "mesh": "UR5e/meshes/wrist3.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    }
+                ]
             },
-            "collision": [],
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist3.obj" ] }
+            ],
             "inertial": {
                 "mass": 0.1879,
                 "com_xyz": [ 0, 0, -0.0229 ],
@@ -231,7 +411,7 @@
 
         {
             "name": "link08",
-            "visual": { "material": "UR_Charcoal" },
+            "visual": {},
             "collision": [],
             "inertial": {
                 "mass": 0,
@@ -248,7 +428,7 @@
         },
         {
             "name": "link09",
-            "visual": { "material": "UR_Charcoal" },
+            "visual": {},
             "collision": [],
             "inertial": {
                 "mass": 0,

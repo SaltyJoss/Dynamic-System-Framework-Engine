@@ -162,6 +162,31 @@ float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L) {
 }
 
 // ------------------------------------------------------------
+// Procedural studio reflection for metallic surfaces.
+// Simulates a soft overhead/key-light environment so metals
+// have convincing reflections even with a plain white HDR.
+// Only blends in when the actual environment map is weak.
+// ------------------------------------------------------------
+vec3 studioReflection(vec3 R, vec3 L, vec3 lightCol) {
+    // Vertical gradient: brighter above (overhead softbox), darker below (floor)
+    float up = smoothstep(-0.2, 1.0, R.y);
+    vec3 env = mix(vec3(0.18), vec3(0.65), up);
+
+    // Key light reflection — tight highlight along the sun direction
+    float keyDot = max(dot(R, -L), 0.0);
+    env += lightCol * pow(keyDot, 48.0) * 2.5;
+
+    // Softer secondary lobe (broader sheen around the key)
+    env += lightCol * pow(keyDot, 8.0) * 0.3;
+
+    // Subtle fill from the opposite side
+    float fillDot = max(dot(R, L), 0.0);
+    env += lightCol * pow(fillDot, 12.0) * 0.2;
+
+    return env;
+}
+
+// ------------------------------------------------------------
 // Main
 // ------------------------------------------------------------
 
@@ -225,14 +250,24 @@ void main() {
     float maxMip = float(textureQueryLevels(prefilterMap) - 1);
     float r = max(roughness, 0.08);
     vec3 prefiltered = textureLod(prefilterMap, R, r * maxMip).rgb;
+
+    // Blend with procedural studio reflection for metallic surfaces.
+    // When the environment map is weak (e.g. the plain white HDR I use), metals have nothing to reflect and look dark.
+    // The studio function provides a gradient + key-light highlight so metals read as shiny.
+    // Blends out automatically when a rich HDRI is loaded.
+    vec3 studioRef = studioReflection(R, L, lightColour);
+    float envLum   = dot(prefiltered, vec3(0.2126, 0.7152, 0.0722));
+    float studioBlend = metallic * smoothstep(0.5, 0.0, envLum);
+    prefiltered = mix(prefiltered, studioRef, studioBlend);
+
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
     vec3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y);
 
     // Ambient: shadow contact darkening on diffuse only
     float contactShadow = smoothstep(0.0, 0.02, shadow);
-    vec3 ambient = kD_ibl * diffuseIBL * ao * (1.0 - 0.5 * contactShadow)
-                 + specularIBL * ao;
-    ambient *= ambientStrength;
+    vec3 ambientDiffuse  = kD_ibl * diffuseIBL * ao * (1.0 - 0.5 * contactShadow);
+    vec3 ambientSpecular = specularIBL * ao;
+    vec3 ambient = ambientDiffuse * ambientStrength + ambientSpecular;
 
     vec3 colour = ambient + Lo;
 

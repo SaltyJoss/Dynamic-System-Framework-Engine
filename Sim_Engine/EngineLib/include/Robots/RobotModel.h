@@ -54,6 +54,17 @@ namespace robots {
 		Vec3 size{ 0.0, 0.0, 0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 		std::string meshFile; // for mesh collision shapes, not implemented yet
 		Vec4 material{ 0.7f, 0.0f, 0.2f, 1.0f };
+		float metallic = 0.5f;
+		float roughness = 0.5f;
+	};
+
+	// Per-mesh entry with individual material properties
+	struct VisualMeshEntry {
+		std::string meshFile;
+		Vec4 material{ 0.7, 0.0, 0.2, 1.0 };
+		float metallic = 0.5f;
+		float roughness = 0.5f;
+		bool hasMaterial = false; // true if material was explicitly specified
 	};
 
 	// Visual struct, representing the visual geometry of a link
@@ -64,9 +75,11 @@ namespace robots {
 
 		// Visual Geometry Parameters
 		std::string meshFile;
-		std::vector<std::string> meshFiles; // for multiple visual meshes per link
-		Vec4 material{ 0.7, 0.0, 0.2, 1.0 };
+		std::vector<std::string> meshFiles; // for multiple visual meshes per link (legacy, string-only)
+		std::vector<VisualMeshEntry> meshEntries; // for multiple visual meshes with per-mesh material
+		Vec4 material{ 0.5, 0.5, 0.5, 1.0 }; // default grey material if not specified at mesh level
 		float metallic = 0.5f;
+		float roughness = 0.5f;
 	};
 
 	// RobotLink struct, representing a single link in the robot model
@@ -78,8 +91,9 @@ namespace robots {
 		std::vector<CollisionShape> collisions;
 		Inertial inertial{};
 
-		// Attached scene object
-		scene::Object* attachedObject = nullptr;
+		// Attached scene objects (one per visual mesh part)
+		std::vector<scene::Object*> attachedObjects;
+		scene::Object* attachedObject = nullptr; // primary object (first in attachedObjects)
 	};
 
 	// --- Robot Model Joints ---

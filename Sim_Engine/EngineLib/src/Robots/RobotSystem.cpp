@@ -182,6 +182,50 @@ namespace robots {
 	void RobotSystem::instantiateRobotLinks() {
 		// For each link, load its visual mesh(es), apply the visual origin transform, and create a scene::Object
 		for (auto& link : _robot.links) {
+			link.attachedObjects.clear();
+
+			// Per-mesh material entries (new format with meshEntries)
+			if (!link.visual.meshEntries.empty()) {
+				for (const auto& entry : link.visual.meshEntries) {
+					const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile).string();
+					auto partObjs = _loadMeshReturn(fullPath);
+
+					// If no meshes were loaded for this entry, skip it
+					for (auto* obj : partObjs) {
+						scene::Mesh* mesh = obj->getMesh();
+						if (mesh) {
+							// Apply per-mesh material if specified, otherwise use link-level material
+							if (entry.hasMaterial) {
+								const Vec4& rgba = entry.material;
+								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+								mesh->setMetallic(entry.metallic);
+								mesh->setRoughness(entry.roughness);
+							}
+							// Fallback to link-level material
+							else {
+								const Vec4& rgba = link.visual.material;
+								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+								mesh->setMetallic(link.visual.metallic);
+								mesh->setRoughness(link.visual.roughness);
+							}
+							mesh->rebuildGPU();
+						}
+
+						// Set object properties
+						obj->name = link.name;
+						obj->category = scene::ObjectCategory::RobotLink;
+						obj->transform.scale = glm::vec3(_robot.scale);
+						link.attachedObjects.push_back(obj);
+					}
+				}
+
+				if (!link.attachedObjects.empty()) {
+					link.attachedObject = link.attachedObjects[0];
+				}
+				continue;
+			}
+
+			// If no mesh entries, fall back to legacy single mesh or multiple mesh files
 			std::vector<scene::Object*> objs;
 
 			// Explicit multiple meshes
@@ -230,6 +274,7 @@ namespace robots {
 				// Apply visual material properties
 				baseMesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
 				baseMesh->setMetallic(link.visual.metallic);
+				baseMesh->setRoughness(link.visual.roughness);
 
 				baseMesh->rebuildGPU();
 			}
@@ -238,6 +283,7 @@ namespace robots {
 			obj->category = scene::ObjectCategory::RobotLink;
 			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
+			link.attachedObjects.push_back(obj);
 		}
 
 		LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
@@ -896,15 +942,16 @@ namespace robots {
 
 		// Remove robot objects from _objects
 		for (auto& link : _robot.links) {
-			if (auto* dead = link.attachedObject) {
-				// find and erase matching object
+			for (auto* dead : link.attachedObjects) {
+				if (!dead) continue;
 				_objects.erase(
 					std::remove_if(_objects.begin(), _objects.end(),
 						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == dead; }),
 					_objects.end()
 				);
-				link.attachedObject = nullptr; // clear pointer
 			}
+			link.attachedObjects.clear();
+			link.attachedObject = nullptr;
 		}
 
 		_robot.links.clear();
@@ -1013,45 +1060,46 @@ namespace robots {
 		// Update attached objects (visuals) based on FK results
 		for (int i = 0; i < (int)_robot.links.size(); ++i) {
 			auto& link = _robot.links[i];
-			if (!link.attachedObject) continue;
+			if (link.attachedObjects.empty()) continue;
 
-			scene::Object* obj = link.attachedObject;
-			scene::Mesh* mesh = obj->getMesh();
-			if (!mesh) { continue; } 
+			for (auto* obj : link.attachedObjects) {
+				if (!obj) continue;
+				scene::Mesh* mesh = obj->getMesh();
+				if (!mesh) { continue; }
 
-			// Engine-aligned robots (CAD-authored):
-			// Mesh local frame already represents link frame.
-			// FK must be baked directly into the mesh, not the object.
-			if (_robot.baseFrameIsEngineAligned) {
-				mesh->localTransform = glm::mat4(1.0f);
-				mesh->localTransform = world[i];
-				continue;
+				// Engine-aligned robots (CAD-authored):
+				// Mesh local frame already represents link frame.
+				// FK must be baked directly into the mesh, not the object.
+				if (_robot.baseFrameIsEngineAligned) {
+					mesh->localTransform = glm::mat4(1.0f);
+					mesh->localTransform = world[i];
+					continue;
+				}
+
+				// FK: world -> link frame
+				const glm::mat4& T_link = world[i];
+
+				// Visual origin: link frame -> visual frame
+				const Vec3& vt = link.visual.origin_xyz;
+				const Vec3& vr = link.visual.origin_rpy;
+
+				glm::mat4 T_visual(1.0f);
+				T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
+				T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
+
+				glm::mat4 M = T_link * T_visual;
+
+				// Apply mesh-local ONCE
+				if (mesh->hasLocalTransform()) {
+					M = M * mesh->localTransform;
+				}
+
+				obj->transform.position = glm::vec3(M[3]);
+				obj->transform.rotQ = glm::quat_cast(M);
+
+				LOG_INFO_ONCE("Mesh local determinant: %.3f",
+					glm::determinant(mesh->localTransform));
 			}
-
-			// FK: world -> link frame
-			const glm::mat4& T_link = world[i];
-
-			// Visual origin: link frame -> visual frame
-			const Vec3& vt = link.visual.origin_xyz;
-			const Vec3& vr = link.visual.origin_rpy;
-
-			glm::mat4 T_visual(1.0f);
-			T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
-			T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
-
-			glm::mat4 M = T_link * T_visual;
-
-			// Apply mesh-local ONCE
-			if (mesh->hasLocalTransform()) {
-				M = M * mesh->localTransform;
-			}
-
-			obj->transform.position = glm::vec3(M[3]);
-			obj->transform.rotQ = glm::quat_cast(M);
-
-			LOG_INFO_ONCE("Mesh local determinant: %.3f",
-				glm::determinant(mesh->localTransform));
-
 		}
 	}
 
