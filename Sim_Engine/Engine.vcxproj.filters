@@ -107,6 +107,8 @@
     </None>
     <None Include="Engine\assets\shaders\ssao.frag.glsl" />
     <None Include="Engine\assets\shaders\ssao_blur.frag.glsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_iiwa14.dsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_panda.dsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\src\Main.cpp">

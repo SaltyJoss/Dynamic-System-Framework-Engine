@@ -1145,28 +1145,35 @@ namespace gui {
         // Latest values
         const auto& last = ring.at(ring.size() - 1);
 
-        // Time Window Slider
+		// Time Window Slider
 		const float totalSec = (x.size() >= 2) ? (x.back() - x.front()) : 0.0f;
-        static float windowSec = 10.0f;
+		static float windowSec = 10.0f;
+		static bool autoScale = false;
+
+		// When auto-scale is on, lock the window to the full elapsed time
+		if (autoScale && totalSec > 0.25f) { windowSec = totalSec; }
 		windowSec = std::clamp(windowSec, 0.25f, std::max(0.25f, totalSec));
 
+		ImGui::BeginDisabled(autoScale);
 		ImGui::SetNextItemWidth(150.0f);
 		ImGui::SliderFloat("Time Window (s)", &windowSec, 0.25f, std::max(0.25f, totalSec), "%.2f s", ImGuiSliderFlags_Logarithmic);
+		ImGui::EndDisabled();
 
 		// Estimate Hz and approximate N
 		const float hz = estHz(x);
-        const int approxN = (int)std::round(windowSec * hz);
-        int start = 0, count = 0;
-        computeWindowByTime(x, windowSec, start, count);
+		const int approxN = (int)std::round(windowSec * hz);
+		int start = 0, count = 0;
+		computeWindowByTime(x, windowSec, start, count);
 		ImGui::SameLine(); ImGui::TextDisabled("(~%d samples @~%.1fHz, t=%.3fs)", approxN, hz, last.timeSec);
 
-        // Follow toggle + jump-to-latest
-        static bool follow = true;
-        ImGui::SameLine(); ImGui::Checkbox("Follow", &follow);
-        ImGui::SameLine(); 
-        if (ImGui::Button("Jump to latest")) {
-            follow = true;
-        }
+		// Follow toggle + auto-scale toggle + jump-to-latest
+		static bool follow = true;
+		ImGui::SameLine(); ImGui::Checkbox("Follow", &follow);
+		ImGui::SameLine(); ImGui::Checkbox("Auto Scale", &autoScale);
+		ImGui::SameLine(); 
+		if (ImGui::Button("Jump to latest")) {
+			follow = true;
+		}
 
         ImGui::Spacing();
 
