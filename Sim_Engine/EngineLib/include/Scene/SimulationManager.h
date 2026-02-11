@@ -121,7 +121,9 @@ namespace gui {
             PBR = 2
         };
 
-        shaders::Shader* getActiveShader() const;
+        shaders::Shader* getCurrentShader() const;
+		void setCurrentShader(shaders::Shader* shader);
+
         ShaderMode currentShaderMode = ShaderMode::PBR;  // default
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);

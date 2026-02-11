@@ -186,9 +186,6 @@
     <ClInclude Include="include\Platform\WindowManager.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="include\Rendering\Cubemap.h">
-      <Filter>Header Files\include\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="include\Rendering\GUIContext.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
@@ -547,9 +544,6 @@
     </ClCompile>
     <ClCompile Include="src\Scene\Styles.cpp">
       <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\Cubemap.cpp">
-      <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\GUIContext.cpp">
       <Filter>Source Files\src\Rendering</Filter>

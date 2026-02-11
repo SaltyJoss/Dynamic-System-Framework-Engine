@@ -206,7 +206,6 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Platform\str_utils.h" />
     <ClInclude Include="include\Platform\Window.h" />
     <ClInclude Include="include\Platform\WindowManager.h" />
-    <ClInclude Include="include\Rendering\Cubemap.h" />
     <ClInclude Include="include\Rendering\CubeVertices.h" />
     <ClInclude Include="include\Rendering\GUIContext.h" />
     <ClInclude Include="include\Rendering\IBL.h" />
@@ -351,7 +350,6 @@ if "$(Configuration)"=="Release" (
     <ClCompile Include="src\Assets\importObj.cpp" />
     <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="src\Platform\WindowManager.cpp" />
-    <ClCompile Include="src\Rendering\Cubemap.cpp" />
     <ClCompile Include="src\Rendering\CubeVertices.cpp" />
     <ClCompile Include="src\Rendering\GUIContext.cpp" />
     <ClCompile Include="src\Rendering\IBL.cpp" />

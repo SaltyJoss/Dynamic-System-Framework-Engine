@@ -2,16 +2,12 @@
 #include "pch.h"
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
-#include <kinematics/Forward_Kinematics.h>
 
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/gtx/euler_angles.hpp>  
 #include <imgui.h>
 
 #include "Scene/Input.h"
@@ -117,8 +113,6 @@ namespace gui {
 
 		// Trajectory Manager
 		control::TrajectoryManager _traj;
-		// Follow Target
-		scene::Object* followTarget = nullptr;
 
 		Impl(simManager& owner) {
 			_postShader = std::make_unique<shaders::Shader>();
@@ -1305,7 +1299,7 @@ namespace gui {
 
 	std::string simManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
 
-	shaders::Shader* simManager::getActiveShader() const { return _impl->currentShader; }
+	shaders::Shader* simManager::getCurrentShader() const { return _impl->currentShader; }
 	void simManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
 	void simManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {

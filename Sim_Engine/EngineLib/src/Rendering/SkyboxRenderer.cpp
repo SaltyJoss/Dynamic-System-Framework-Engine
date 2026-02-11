@@ -8,8 +8,7 @@
 #include "Rendering/CubeVertices.h"
 
 namespace render{
-    SkyboxRenderer::SkyboxRenderer()
-    {
+	SkyboxRenderer::SkyboxRenderer() : _VAO(0), _VBO(0), _envCubemap(0) {
         shader.load(
             "Engine/assets/shaders/skybox_render.vert.glsl",
             "Engine/assets/shaders/skybox_render.frag.glsl"
