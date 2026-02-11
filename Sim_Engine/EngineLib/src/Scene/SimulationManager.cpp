@@ -441,22 +441,15 @@ namespace gui {
 				glDisable(GL_MULTISAMPLE);
 			}
 
-			// Update Follow Target (Doesnt deref pointer until used - hopefully fixes previous crashes)
+			// Update Follow Target: use the explicitly bound target (e.g. end-effector from loadRobot),
+			// only fall back to _selectedObject if no explicit target was set via setViewFollowTarget
 			if (&v == &_views[(size_t)gui::ViewID::Follow]) {
-				v.followTarget = _selectedObject;
-				v.followEnabled = (v.followTarget != nullptr);
+				scene::Object* target = v.followEnabled ? v.followTarget : _selectedObject;
 
-				if (v.followEnabled && v.cam) {
-					auto* mesh = v.followTarget->getMesh();
-					if (!mesh) {
-						v.followTarget = nullptr;
-						v.followEnabled = false;
-					}
-					else {
-						glm::mat4 M = v.followTarget->transform.toMatrix() * mesh->localTransform;
-						glm::vec3 worldPos = glm::vec3(M[3]);
-						v.cam->setFollowTarget(worldPos, v.followTarget->transform.rotQ);
-					}
+				if (target && target->getMesh()) {
+					glm::mat4 M = target->transform.toMatrix() * target->getMesh()->localTransform;
+					glm::vec3 worldPos = glm::vec3(M[3]);
+					v.cam->setFollowTarget(worldPos, target->transform.rotQ);
 				}
 			}
 
@@ -1026,6 +1019,11 @@ namespace gui {
 	//						ROBOTS
 	// --------------------------------------------------
 	void SimManager::loadRobot(const std::string& name) {
+		// Clear any existing robot first
+		if (hasRobot()) {
+			clearRobot();
+		}
+
 		setSelectedObject(nullptr);
 		detachCameraFromObject();
 		clearViewFollowTarget(gui::ViewID::Follow);
@@ -1047,6 +1045,11 @@ namespace gui {
 		}
 		else {
 			LOG_WARN("Could not find end-effector object to follow.");
+		}
+
+		// Auto-select the first object of the newly loaded robot
+		if (startIdx < _impl->_objects.size()) {
+			setSelectedObject(_impl->_objects[startIdx].get());
 		}
 
 		//_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
