@@ -1,5 +1,6 @@
-
 #include "pch.h"
+// File:   RobotLoader.cpp
+// GitHub: SaltyJoss
 #include "Robots/RobotLoader.h"
 
 #include <MathLibAPI.h>

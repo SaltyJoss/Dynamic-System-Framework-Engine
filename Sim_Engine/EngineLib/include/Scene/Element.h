@@ -1,27 +1,6 @@
 #pragma once
-#pragma warning(disable : 4100)
-
-// =============================================
-//             File: Element.h
-// =============================================
-// Base class for scene scene that can be updated with shaders.
-//
-// Summary:
-// =============================================
-// 
-// public:
-// --------------------------------------------
-// virtual ~Element()
-//      -> Virtual destructor for the Element class.
-// virtual void update(shaders::Shader* shader)
-//      -> Virtual method to update the element with the given shader.
-// --------------------------------------------
-//
-// ============================================
-//			  GitHub: SaltyJoss
-// ============================================
-
-
+// File:   Element.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 
 #include "Rendering/ShaderUtil.h"
@@ -34,6 +13,6 @@ namespace scene {
 	public:
 		virtual ~Element() = default;
 
-		virtual void update(shaders::Shader* shader) {}
+		virtual void update(shaders::Shader*) {}
 	};
-}
+} // namespace scene

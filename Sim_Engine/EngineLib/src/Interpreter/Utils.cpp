@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   Utils.cpp
+// GitHub: SaltyJoss
 #include "Scene/ObjectID.h"
 #include "Interpreter/Utils.h"
 
@@ -59,6 +61,7 @@ namespace utils {
 		return result;
 	}
 
+	// Helper function to strip braces from a string if they exist
 	std::string stripBraces(std::string s) {
 		if (!s.empty() && s.front() == '{' && s.back() == '}') return s.substr(1, s.size() - 2);
 		return s;
@@ -98,6 +101,7 @@ namespace utils {
 		return out;
 	}
 
+	// Helper functions to check if a string can be parsed as a specific type
 	bool isInteger(const std::string_view s) { return parseNumber<int>(s).has_value(); }
 	bool isFloat(const std::string_view s) { return parseNumber<float>(s).has_value(); }
 	bool isDouble(const std::string_view s) { return parseNumber<double>(s).has_value(); }
@@ -152,6 +156,7 @@ namespace utils {
 		return out;
 	}
 
+	// Helper function to parse Vec3 from string (format: "{x, y, z}")
 	mathlib::Vec3 utils::parseVec3(const std::string& str) {
 		std::string s = stripBraces(str);
 		std::vector<std::string> vStr;
@@ -174,7 +179,7 @@ namespace utils {
 		return mathlib::Vec3{ parseFloat(vStr[0]), parseFloat(vStr[1]), parseFloat(vStr[2]) };
 	}
 
-
+	// Helper function to parse an axis mask from a string (e.g. "X", "YZ", "{X Y Z}")
 	AxisMask utils::parseAxisMask(const std::string& args) {
 		std::string s = stripBraces(args);
 
@@ -195,6 +200,7 @@ namespace utils {
 		return mask;
 	}
 
+	// Helper function to try parsing an ObjectID from a string (e.g. "obj123" or "123")
 	bool utils::tryParseObjID(const std::string& s, scene::ObjectID& out) {
 		std::string_view v = s;
 		if (v.rfind("obj", 0) == 0) v.remove_prefix(3);
@@ -206,7 +212,7 @@ namespace utils {
 		return true;
 	}
 
-	// --- Unit Conversion Utilities ---
+	// Helper functions to convert between degrees and radians
 	double degToRad(double degrees) { return degrees * ( PI_d / 180.0); }
 	mathlib::Vec3 degToRad(mathlib::Vec3& degrees) {
 		return mathlib::Vec3{
@@ -216,6 +222,7 @@ namespace utils {
 		};
 	}
 
+	// Helper functions to convert between radians and degrees
 	double radToDeg(double radians) { return radians * (180.0 / PI_d); }
 	mathlib::Vec3 radToDeg(mathlib::Vec3& radians) {
 		return mathlib::Vec3{

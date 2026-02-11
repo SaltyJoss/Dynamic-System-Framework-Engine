@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   Application.cpp
+// GitHub: SaltyJoss
 #include "Application.h"
 #include "Platform/WindowManager.h"
 #include "Platform/Paths.h"
@@ -8,8 +10,10 @@
 #include "Platform/DataManager.h"
 
 namespace fs = std::filesystem;
+// Initialize the static instance pointer to nullptr
 Application* Application::sInstance = nullptr;
 
+// Constructor: Initializes paths, sets up data manager, and creates the main application window
 Application::Application(const std::string& appName) {
 	paths::init();
 	data::DataManager::instance().setParentFolder(paths::runs().string());
@@ -24,12 +28,15 @@ Application::Application(const std::string& appName) {
 	_window->init(1920, 1080, appName);
 }
 
+// Destructor: Defaulted since we're using smart pointers for resource management
 Application::~Application() = default;
 
+// Main application loop: Continues running until the window signals to close, updating and rendering each frame
 void Application::run() {
     while (_window->isRunning() && !_window->shouldClose()) {
 
-        // --- Frame steps ---
+		// Poll for and process events (keyboard, mouse, window events, etc.)
+		// This should be called before any input handling to ensure we have the latest events
         _window->update();                             // Scene updates, movement
         _window->render();                             // Draw everything
     }

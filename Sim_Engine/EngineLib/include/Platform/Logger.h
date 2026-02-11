@@ -1,31 +1,7 @@
 #pragma once
+// File:   Logger.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
-
-// =============================================
-//            File: Logger.h
-// =============================================
-// Class responsible for logging messages to a file and console with different severity levels.
-//
-// structs / enumerations:
-// --------------------------------------------
-// LogLevel
-//      -> Enumeration of log severity levels (Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output).
-// LogEntry
-//      -> Struct representing a log entry with level, type, and message.
-// LogType
-//      -> Enumeration of log types (General, Simulation).
-// simLogLevel
-// 	    -> Enumeration of simulation log severity levels (Error, Fail, Success, Runtime, Rotate, Translate).
-// simEntry
-//      -> Struct representing a simulation log entry with level, type, and message.
-// DataEntry
-//      -> Struct representing a data entry with a data string.
-// --------------------------------------------
-//
-// ============================================
-//			  GitHub: SaltyJoss
-// ============================================
-
 #include "EngineCore.h"
 
 #include <filesystem>
@@ -35,24 +11,23 @@
 #include <mutex>
 #include <sstream>
 
+// Log levels for debug panel and sim log
 enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
 enum class simLogLevel { Error, Fail, Success, Runtime, Rotate, Translate };
 enum class LogType { General, Simulation };
 
+// Structs for log entries in debug panel and sim log
 struct LogEntry {
 	LogLevel level = LogLevel::Info;
 	std::string type;
 	std::string message;
 };
 
+// Simulation log entries, separate from debug panel logs, for storing sim-specific logs that can be cleared separately and have different log levels
 struct ENGINE_API simEntry {
 	simLogLevel level = simLogLevel::Runtime;
 	std::string type;
 	std::string message;
-};
-
-struct ENGINE_API DataEntry {
-	std::string data;
 };
 
 class ENGINE_API Debug {
@@ -185,7 +160,7 @@ private:
 			std::cout << oss.str() << std::endl;
 		}
 	}
-};
+}; // namespace Debug
 
 // Global logger instance
 extern ENGINE_API Debug gLog;

@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    MainContext.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/CommandContextMotion.h"
@@ -9,7 +10,7 @@ namespace commands {
 	// Main context combining motion and UI contexts
 	class ENGINE_API MainContext {
 	public:
-        MainContext(gui::simManager* sim, scene::ObjectID objID)
+        MainContext(gui::SimManager* sim, scene::ObjectID objID)
             : _motion(sim, objID), _ui(sim, objID) {}
 
         // Accessors

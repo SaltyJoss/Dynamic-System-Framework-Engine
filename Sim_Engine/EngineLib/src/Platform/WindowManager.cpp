@@ -1,5 +1,6 @@
-
 #include "pch.h"
+// File:   WindowManager.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
@@ -13,15 +14,15 @@
 #include "Rendering/OpenGLBufferManager.h"
 #include "Rendering/ShaderUtil.h"
 
-#include "Scene/SimulationManager.h"
-#include "Scene/DebugPanel.h"
-#include "Scene/ControlPanel.h"
-#include "Scene/CommandScriptEditor.h"
-
 #include "Scene/Camera.h"
 #include "Scene/Light.h"
 #include "Scene/Input.h"
 #include "Scene/Mesh.h"
+
+#include "Scene/SimulationManager.h"
+#include "ui/DebugPanel.h"
+#include "ui/ControlPanel.h"
+#include "ui/CommandScriptEditor.h"
 
 #include "Platform/WindowManager.h"
 
@@ -93,7 +94,7 @@ namespace window {
         _GUICntx->init(this);
 
         // UI + scene
-        _sim = std::make_unique<gui::simManager>();
+        _sim = std::make_unique<gui::SimManager>();
 		_sim->initGL();
         _controlPanel = std::make_unique<gui::ControlPanel>(_sim.get());
         _debugPanel = std::make_unique<gui::DebugPanel>();
@@ -167,7 +168,7 @@ namespace window {
             glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if (glfwRawMouseMotionSupported())
                 glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            // tell simManager to reset its first-mouse state
+            // tell SimManager to reset its first-mouse state
             if (_sim) _sim->resetMouseDelta();
         }
         else {

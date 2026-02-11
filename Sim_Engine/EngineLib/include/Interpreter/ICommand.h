@@ -1,11 +1,13 @@
 #pragma once
-
+// File:    ICommand.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include <memory>
 #include <string>
 
 namespace commands {
+	// Forward declaration of ICommand for use in IStoredProgram
 	class ENGINE_API CommandContextMotion;
 	class ENGINE_API UIContext;
 

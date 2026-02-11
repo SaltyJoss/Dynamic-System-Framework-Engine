@@ -1,4 +1,6 @@
 #pragma once
+// File:   Camera.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -15,8 +17,7 @@
 #include "Platform/Logger.h"
 
 namespace scene {
-	class ENGINE_API Camera : public Element
-	{
+	class ENGINE_API Camera : public Element {
 	public:
 		Camera(const glm::vec3& position, float fov, float aspect, float zNear, float zFar) {
 			_position = position;
@@ -188,4 +189,4 @@ namespace scene {
 		float _gravity = -9.81f;
 
 	};
-}
+} // namespace scene

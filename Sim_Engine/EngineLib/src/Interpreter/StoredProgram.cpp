@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   StoredProgram.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/StoredProgram.h"
 #include "Scene/SimulationManager.h"
 #include "Physics/PhysicsSystem.h"
@@ -9,7 +11,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace interpreter {
-	StoredProgram::StoredProgram(gui::simManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
+	StoredProgram::StoredProgram(gui::SimManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
 		_cntx(sim, [&] { scene::Object* o = (sim ? sim->getObject() : nullptr); return o ? o->id : scene::ObjectID::INVALID_OBJECT_ID; }()) {
 	}
 	StoredProgram::~StoredProgram() { clear(); }

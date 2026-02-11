@@ -1,5 +1,7 @@
 #include "pch.h"
-#include "Scene/RenderPreset.h"
+// File:   RenderPreset.cpp
+// GitHub: SaltyJoss
+#include "ui/RenderPreset.h"
 
 namespace render {
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset quality) {

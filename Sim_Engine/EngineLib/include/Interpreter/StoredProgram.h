@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    StoredProgram.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "ICommand.h"
@@ -12,7 +13,7 @@ namespace interpreter {
 	class ENGINE_API StoredProgram : public IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram(gui::simManager* sim);
+		StoredProgram(gui::SimManager* sim);
 		~StoredProgram() override;
 
 		// Delete copy constructor and assignment operator to prevent copies
@@ -77,7 +78,7 @@ namespace interpreter {
 		mathlib::Vec3 getColour() const override;
 
 	private:
-		gui::simManager* _sim = nullptr;
+		gui::SimManager* _sim = nullptr;
 		commands::MainContext _cntx;
 		scene::Object* _defaultObj = nullptr;
 

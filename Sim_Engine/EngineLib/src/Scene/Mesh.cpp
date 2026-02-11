@@ -1,5 +1,6 @@
-
 #include "pch.h"
+// File:   Mesh.cpp
+// GitHub: SaltyJoss
 #include "Scene/MeshLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>

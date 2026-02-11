@@ -4,8 +4,6 @@
 // -----
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 
 #include "Rendering/RenderBase.h"
@@ -123,4 +121,4 @@ namespace scene {
 		float _roughness = 0.5f;
 
 	};
-}
+} // namespace scene

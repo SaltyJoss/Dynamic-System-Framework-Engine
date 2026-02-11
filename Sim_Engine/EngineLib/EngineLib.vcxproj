@@ -122,6 +122,11 @@ if "$(Configuration)"=="Release" (
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ui\CommandScriptEditor.cpp" />
+    <ClCompile Include="src\ui\ControlPanel.cpp" />
+    <ClCompile Include="src\ui\DebugPanel.cpp" />
+    <ClCompile Include="src\ui\RenderPreset.cpp" />
+    <ClCompile Include="src\ui\Styles.cpp" />
     <ClInclude Include="..\External\GLAD\glad\glad.h" />
     <ClInclude Include="..\External\imgui\imconfig.h" />
     <ClInclude Include="..\External\imgui\imgui.h" />
@@ -213,7 +218,6 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Rendering\OpenGLBufferManager.h" />
     <ClInclude Include="include\Rendering\OpenGLContext.h" />
     <ClInclude Include="include\Rendering\RenderBase.h" />
-    <ClInclude Include="include\Rendering\RenderPreeset.h" />
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
     <ClInclude Include="include\Rendering\Texture.h" />
@@ -223,9 +227,6 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Robots\TrajectoryManager.h" />
     <ClInclude Include="include\Scene\AxisOrientator.h" />
     <ClInclude Include="include\Scene\Camera.h" />
-    <ClInclude Include="include\Scene\CommandScriptEditor.h" />
-    <ClInclude Include="include\Scene\ControlPanel.h" />
-    <ClInclude Include="include\Scene\DebugPanel.h" />
     <ClInclude Include="include\Scene\Element.h" />
     <ClInclude Include="include\Scene\Face.h" />
     <ClInclude Include="include\Scene\FpsCounter.h" />
@@ -235,10 +236,14 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
     <ClInclude Include="include\Scene\ObjectID.h" />
-    <ClInclude Include="include\Scene\RenderPreset.h" />
     <ClInclude Include="include\Scene\SimulationManager.h" />
-    <ClInclude Include="include\Scene\Styles.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
+    <ClInclude Include="include\ui\CommandScriptEditor.h" />
+    <ClInclude Include="include\ui\ControlPanel.h" />
+    <ClInclude Include="include\ui\DebugLogEntry.h" />
+    <ClInclude Include="include\ui\DebugPanel.h" />
+    <ClInclude Include="include\ui\RenderPreset.h" />
+    <ClInclude Include="include\ui\Styles.h" />
     <ClInclude Include="pch.h" />
     <ClCompile Include="..\External\implot\implot.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -360,16 +365,11 @@ if "$(Configuration)"=="Release" (
     <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Robots\RobotLoader.cpp" />
     <ClCompile Include="src\Scene\Camera.cpp" />
-    <ClCompile Include="src\Scene\CommandScriptEditor.cpp" />
-    <ClCompile Include="src\Scene\ControlPanel.cpp" />
-    <ClCompile Include="src\Scene\DebugPanel.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />
     <ClCompile Include="src\Scene\Mesh.cpp" />
     <ClCompile Include="src\Scene\MeshLoader.cpp" />
     <ClCompile Include="src\Scene\Object.cpp" />
-    <ClCompile Include="src\Scene\RenderPreset.cpp" />
     <ClCompile Include="src\Scene\SimulationManager.cpp" />
-    <ClCompile Include="src\Scene\Styles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Robots\RobotSystem.cpp" />

@@ -1,27 +1,7 @@
 #pragma once
+// File:   PhysicsSystem.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
-
-//=============================================
-//            File: PhysicsSystem.h
-//=============================================
-// Class responsible for managing the physics simulation system.
-// 
-// structures & enumeratiors:
-// --------------------------------------------
-// struct IntegratorDiagSample
-//      -> Structure to hold diagnostic samples for integrator analysis.
-// struct IntegratorDiagResult
-//      -> Structure to hold the results of integrator diagnostics.
-// enum class eSimulationMode
-//      -> Enumeration for simulation modes (Normal, IntegrationAnalysis).
-// enum class eIntegrationMethod
-//      -> Enumeration of available numerical integration methods (Euler, Midpoint, Heun, Ralston, RK4).
-// --------------------------------------------
-// 
-// ============================================
-//			  GitHub: saltyjoss
-// ============================================
-
 #include "EngineCore.h"
 #include "Numerics/IntegrationService.h"
 
@@ -39,21 +19,6 @@ namespace scene {
 }
 
 namespace physics {
-	struct ENGINE_API IntegratorDiagSample {
-		double t = 0.0;
-		Quat q_method;		// integrator quaternion
-		Quat q_ref;			// reference quaternion
-		Vec3 omega;			// integrator angular velocity
-		double alpha = 0.0;	// angle error
-	};
-
-	struct ENGINE_API ErrorSample {
-		double t = 0.0; // simulation time
-		Vec3 x;			// integrator position
-		Vec3 x_ref;		// reference position
-		Vec3 error;		// error between integrator and reference
-	};
-
 	struct ENGINE_API RefTrack {
 		VecX x;
 		double t = 0.0;
@@ -64,12 +29,6 @@ namespace physics {
 	enum class FrameType {
 		World,
 		Body
-	};
-
-	struct ENGINE_API IntegratorDiagResult {
-		double duration = 0.0; // total simulation duration
-		Vec3 thetaMin, thetaMax, thetaMean, thetaRms;
-		Vec3 omegaMin, omegaMax, omegaMean, omegaRms;
 	};
 
 	class ENGINE_API PhysicsSystem {
@@ -109,13 +68,6 @@ namespace physics {
 		void setGravity(const Vec3& gravity) { _gravity = gravity; }
 		Vec3 getGravity() const { return _gravity; }
 
-		// Integration Analysis testing
-		bool diagnosticsRunning() const { return _diagRunning; }
-		void setDiagnosticRunning(bool running) { _diagRunning = running; }
-
-		const IntegratorDiagResult& diagResult() const { return _diagResult; }
-		const std::vector<IntegratorDiagSample>& diagSamples() const { return _diagSamples; }
-
 	private:
 		std::unique_ptr<integration::IntegrationService> _integrator;
 		integration::eIntegrationMethod _curIntMethod{};
@@ -126,12 +78,7 @@ namespace physics {
 		eSimulationMode _simulationMode = eSimulationMode::Normal;
 		FrameType _frame = FrameType::World;
 
-		bool _diagRunning = false;
 		bool _simRunning = false;
-
-		scene::Object* _diagObject = nullptr;
-		std::vector<IntegratorDiagSample> _diagSamples;
-		IntegratorDiagResult _diagResult;
 
 		integration::eIntegrationMethod method = integration::eIntegrationMethod::Euler; // default method
 

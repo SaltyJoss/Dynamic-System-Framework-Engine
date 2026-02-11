@@ -31,4 +31,4 @@ namespace render {
 		void generatePrefilterMap();
 		void generateBRDFLUT();
 	};
-}
+} // namespace render

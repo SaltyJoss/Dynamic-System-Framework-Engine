@@ -1,30 +1,17 @@
-
 #include "pch.h"
-
+// File:   OpenGLBufferManager.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include "Rendering/OpenGLBufferManager.h"
+
 #include "EngineLib/LogMacros.h"
 
 namespace render {
-	/*
-	* --------------------------------------------
-	*      OPENGL VERTEX-INDEX-BUFFER METHODS
-	* --------------------------------------------
-	* 
-	* Summary:
-	* --------------------------------------------
-	* createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) -> Creates the VAO, VBO, and EBO buffers and uploads the vertex and index data to the GPU.
-	* deleteBuffers() -> Deletes the VAO, VBO, and EBO buffers.
-	* bind() -> Binds the VAO for rendering.
-	* unbind() -> Unbinds the VAO.
-	* draw(int indxCount) -> Draws the scene using the bound VAO and the specified index count.
-	* --------------------------------------------
-	*/
+	// Creates the VAO, VBO, and EBO for this buffer using the provided vertex and index data
 	void OpenGLVertexIndexBuffer::createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
 		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
 
@@ -56,6 +43,7 @@ namespace render {
 		LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
+	// Deletes the VAO, VBO, and EBO associated with this buffer
 	void OpenGLVertexIndexBuffer::deleteBuffers() {
 		LOG_INFO("Deleting OpenGLVertexIndexBuffer buffers");
 
@@ -70,29 +58,19 @@ namespace render {
 		LOG_INFO("Buffers deleted");
 	}
 
+	// Binds the VAO for this buffer, making it active for rendering
 	void OpenGLVertexIndexBuffer::bind() { glBindVertexArray(_VAO); }
-
+	// Unbinds the VAO, resetting to the default state
 	void OpenGLVertexIndexBuffer::unbind() { glBindVertexArray(0); }
 
+	// Issues a draw call using the currently bound VAO and EBO, rendering the specified number of indices as triangles
 	void OpenGLVertexIndexBuffer::draw(int indxCount) {
 		bind();
 		glDrawElements(GL_TRIANGLES, indxCount, GL_UNSIGNED_INT, nullptr);
 		unbind();
 	}
 
-	/*
-	* --------------------------------------------
-	*      OPENGL FRAME-BUFFER METHODS
-	* --------------------------------------------
-	* 
-	* Summary:
-	* -------------------------------------------
-	* createBuffers(int32_t width, int32_t height) -> Creates the framebuffer and its associated color and depth textures with the specified width and height.
-	* deleteBuffers() -> Deletes the framebuffer and its associated textures.
-	* bind() -> Binds the framebuffer for rendering and sets the viewport to its dimensions.
-	* unbind() -> Unbinds the framebuffer, reverting to the default framebuffer.
-	* --------------------------------------------
-	*/
+	// Creates the framebuffer and its associated color and depth attachments, with optional MSAA support
 	void OpenGLFrameBuffer::createBuffers(int32_t width, int32_t height, int samples) {
 		LOG_INFO("Creating framebuffer buffers with size %dx%d (samples=%d)", width, height, samples);
 		_width = width;
@@ -197,6 +175,7 @@ namespace render {
 		LOG_INFO("Framebuffer buffers created successfully");
 	}
 
+	// Deletes the framebuffer and its associated attachments
 	void OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
 			LOG_INFO("Deleting framebuffer buffers");
@@ -221,6 +200,7 @@ namespace render {
 		else { LOG_WARN("Attempted to delete framebuffer buffers but none exist"); }
 	}
 
+	// Binds the framebuffer for rendering, using the MSAA FBO if samples > 1, otherwise the resolve FBO
 	void OpenGLFrameBuffer::bind() {
 		if (!_FBO) { LOG_WARN_ONCE("Attempted to bind framebuffer but FBO is 0"); return; }
 
@@ -239,6 +219,7 @@ namespace render {
 		LOG_INFO_ONCE("FB bind target=%u (msaaFBO=%u resolveFBO=%u samples=%d)", target, _msaaFBO, _FBO, _samples);
 	}
 
+	// Unbinds the framebuffer, resolving MSAA if necessary, and restores default backbuffer state
 	void OpenGLFrameBuffer::unbind() {
 		const bool useMSAA = (_samples > 1) && (_msaaFBO != 0);
 
@@ -272,6 +253,7 @@ namespace render {
 		glDisable(GL_SCISSOR_TEST);
 	}
 
+	// Called after creating or resizing buffers to ensure the default framebuffer state is correct
 	void OpenGLFrameBuffer::endSetup() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -281,6 +263,7 @@ namespace render {
 		glDisable(GL_SCISSOR_TEST);
 	}
 
+	// Returns the texture ID of the framebuffer's color attachment (the resolved texture if MSAA is used)
 	uint32_t OpenGLFrameBuffer::getTexture() { return _texID; }
 }
 

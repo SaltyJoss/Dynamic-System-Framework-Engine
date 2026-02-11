@@ -1,5 +1,6 @@
 #include "pch.h"
-
+// File:   TrajClearCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/TrajClearCmd.h"
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
@@ -22,10 +23,11 @@ namespace commands {
 
 	// --- TrajClearCmd Implementation ---
 
+	// Update method for TrajClearCmd
     program_data::CmdResult TrajClearCmd::update(CommandContextMotion& cntx, double /*dt*/) {
         if (_done) return { CmdState::Executed, {}, "" };
 
-        gui::simManager* sim = cntx.Sim();
+        gui::SimManager* sim = cntx.Sim();
         if (!sim) return { CmdState::Failed, {}, "trajClear: no sim in context." };
 
         // Clear all trajectories
@@ -42,12 +44,14 @@ namespace commands {
         return { CmdState::Executed, {}, "" };
     }
 
+	// Execute method for TrajClearCmd
     void TrajClearCmd::execute() {
         _done = false;
         _started = true;
         _result = { CmdState::Executing, {}, "trajClear() started" };
     }
 
+	// Factory function to create TrajClearCmd
     std::unique_ptr<ICommand> CreateTrajClearCmd(const std::string& id, const std::vector<std::string>& args) {
         // trajClear() takes no args
         if (!args.empty()) {

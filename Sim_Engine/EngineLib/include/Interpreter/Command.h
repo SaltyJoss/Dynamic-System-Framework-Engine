@@ -1,4 +1,6 @@
 #pragma once
+// File:    Command.h
+// GitHub:  SaltyJoss
 #pragma warning(disable : 4100)
 
 #include "EngineCore.h"

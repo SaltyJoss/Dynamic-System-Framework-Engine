@@ -1,5 +1,6 @@
 #include "pch.h"
-
+// File:   RobotSystem.cpp
+// GitHub: SaltyJoss
 #include "Robots/RobotSystem.h"
 #include "Robots/RobotLoader.h"
 #include "Scene/Object.h"
@@ -38,15 +39,6 @@ namespace robots {
 			static_cast<float>(v.y()),
 			static_cast<float>(v.z())
 			);
-	}
-	// Converts an Eigen 4D vector to a glm::vec4
-	static glm::vec4 toGlm(const Vec4& v) { 
-		return glm::vec4(
-			static_cast<float>(v.x()),
-			static_cast<float>(v.y()),
-			static_cast<float>(v.z()),
-			static_cast<float>(v.w())
-		);
 	}
 	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
 	static glm::quat toGlm(const Quat& q) {
@@ -157,7 +149,7 @@ namespace robots {
 	}
 
 	// Method to compute the contribution of a single joint and its child link to the effective inertia I_eff of the joint
-	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
+	static double computeJointInertiaContribution(const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
 		const double mass = link.inertial.mass;
 
 		// Rotation from link frame to world frame
@@ -408,8 +400,7 @@ namespace robots {
 		double I = 0.0;
 		// For each link, compute the contribution of joint i to the effective inertia at the end-effector
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
-			RobotMetrics tmp;
-			I += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+			I += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 		}
 
 		return std::max(I, 1e-6); // [kg*m^2], I_eff for joint i with floor to avoid singularities
@@ -447,8 +438,7 @@ namespace robots {
 			// Compute perturbed effective inertia for joint i
 			double I_pert = 0.0;
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_pert += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world_pert[k]);
+				I_pert += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world_pert[k]);
 			}
 			I_pert = std::max(I_pert, 1e-6);
 
@@ -508,7 +498,7 @@ namespace robots {
 
 	// Method to compute joint metrics for control
 	RobotMetrics RobotSystem::computeJointMetrics(
-		const RobotJoint& joint, const RobotLink& link, double I_eff, 
+		const RobotJoint& joint, const RobotLink& /*link*/, double I_eff, 
 		double theta, double omega, 
 		double thetaRef, double omegaRef, double alphaRef, 
 		double eta, double tau_coriolis, double tau_gravity
@@ -610,7 +600,7 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
+	mathlib::VecX RobotSystem::deriv(double /*t*/, const mathlib::VecX& x) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(3 * n);
 
@@ -628,8 +618,7 @@ namespace robots {
 		std::vector<double> I_eff(n, 0.0);
 		for (size_t i = 0; i < n; ++i) {
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
@@ -705,7 +694,7 @@ namespace robots {
 	}
 
 	// Method to advance the robot state by dt using the selected integrator
-	void RobotSystem::step(const control::TrajectoryManager& traj, double dt, double simTime) {
+	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
 		const size_t n = _robot.joints.size();
 		_simTime = simTime;
@@ -724,14 +713,13 @@ namespace robots {
 			qd[i] = _robot.joints[i].omegaRad_s;
 
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
 
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		// Unpack new state

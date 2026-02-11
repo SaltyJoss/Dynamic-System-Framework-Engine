@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    Token.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <string>
 
@@ -19,6 +20,7 @@ namespace interpreter {
 		String
 	};
 
+	// Struct representing a token in the parser
 	struct ENGINE_API Token {
 		TokenType type = TokenType::Unknown;
 		std::string value;

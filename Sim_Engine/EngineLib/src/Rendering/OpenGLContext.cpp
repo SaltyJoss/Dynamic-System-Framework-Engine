@@ -1,43 +1,48 @@
-
 #include "pch.h"
-
+// File:   OpenGLContext.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include "Rendering/OpenGLContext.h"
-
-#include "EngineLib/LogMacros.h"
 #include <Scene/SimulationManager.h>
 
+#include "EngineLib/LogMacros.h"
+
 namespace render {
+	// GLFW Callback for key events
 	static void onKey_Callback(GLFWwindow* win, int  key, int scancode, int action, int mods) {
 		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onKey(key, scancode, action, mods);
 	}
 
+	// GLFW Callback for cursor position events
 	static void CursorPos_Callback(GLFWwindow* win, double xpos, double ypos) {
 		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onCursorPos(xpos, ypos);
 	}
 
-	static void onScroll_Callback(GLFWwindow* win, double xoffset, double yoffset) {
+	// GLFW Callback for scroll events
+	static void onScroll_Callback(GLFWwindow* win, double /*xoffset*/, double yoffset) {
 		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onScroll(yoffset);
 	}
 
+	// GLFW Callback for window resize events
 	static void onResize_Callback(GLFWwindow* win, int width, int height) {
 		auto currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onResize(width, height);
 	}
 
+	// GLFW Callback for window close events
 	static void onClose_Callback(GLFWwindow* win) {
 		window::IWindow* currentWindow = static_cast<window::IWindow*>(glfwGetWindowUserPointer(win));
 		currentWindow->onClose();
 	}
 
+	// Initialize OpenGL context and create GLFW window
 	bool render::OpenGLContext::init(window::IWindow* window) {
 		LOG_INFO("init() Called!");
 		__super::init(window);
@@ -86,16 +91,19 @@ namespace render {
 		return true;
 	}
 
+	// Set viewport and clear buffers before rendering
 	void render::OpenGLContext::preRender() {
 		glViewport(0, 0, _window->getWidth(), _window->getHeight());
 		glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
+	// Swap buffers after rendering
 	void render::OpenGLContext::postRender() {
 		glfwSwapBuffers((GLFWwindow*)_window->getNativeWin());
 	}
 
+	// Clean up GLFW resources and terminate context
 	void render::OpenGLContext::end() {
 		glfwDestroyWindow((GLFWwindow*)_window->getNativeWin());
 		glfwTerminate();

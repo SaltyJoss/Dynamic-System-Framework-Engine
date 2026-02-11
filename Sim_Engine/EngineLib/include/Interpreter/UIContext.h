@@ -1,19 +1,21 @@
 #pragma once
-
+// File:    UIContext.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/Utils.h"
 
 #include "Platform/Logger.h"
 
+// Forward declarations
 namespace interpreter { class ENGINE_API StoredProgram; }
 
 namespace commands {	
 	class ENGINE_API UIContext {
 	public:
-		UIContext(gui::simManager* sim, scene::ObjectID obj);
+		UIContext(gui::SimManager* sim, scene::ObjectID obj);
 
-		gui::simManager* Sim() const { return _sim; }
+		gui::SimManager* Sim() const { return _sim; }
 		robots::RobotSystem* Robot() const { return _robot; }
 		scene::ObjectID DefaultObjectID() const;
 		scene::ObjectID ObjectID() const;
@@ -45,7 +47,7 @@ namespace commands {
 		utils::OpResult startSim();
 
 	private:
-		gui::simManager* _sim = nullptr;
+		gui::SimManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		robots::RobotSystem* _robot = nullptr;
 		scene::ObjectID _objID;

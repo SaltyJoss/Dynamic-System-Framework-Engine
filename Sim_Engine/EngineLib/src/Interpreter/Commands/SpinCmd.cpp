@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   SpinCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/SpinCmd.h"
 #include "Interpreter/Utils.h"
 
@@ -19,6 +21,7 @@ namespace commands {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
+	// Update the command
 	program_data::CmdResult SpinCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
 			markFailed("spin() not started.");
@@ -53,11 +56,13 @@ namespace commands {
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
+	// Execute the command
 	void SpinCmd::execute() {
 		_started = true;
 		setResult({ CmdState::Executing, {}, "spin() started" });
 	}
 
+	// Factory function to create a SpinCmd from arguments
 	std::unique_ptr<ICommand> CreateSpinCmd(const std::string& id, const std::vector<std::string>& args) {
 		// spin(<objID>, <axes>, <omegaDeg>, <duration>)
 		if (args.size() != 3) {

@@ -1,7 +1,6 @@
 #pragma once
 // File:   Light.h
 // GitHub: SaltyJoss
-
 #include "EngineCore.h"
 
 #include "Scene/Element.h"
@@ -11,8 +10,7 @@
 extern ENGINE_API Debug gLog;
 
 namespace scene {
-	class ENGINE_API Light : public Element
-    {
+	class ENGINE_API Light : public Element {
     public:
 
         Light() {

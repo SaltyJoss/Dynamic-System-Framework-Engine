@@ -1,12 +1,12 @@
 #pragma once
+// File:    TrajSetCmd.h
+// GitHub:  SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
-
-#include "Platform/Logger.h"
 
 namespace commands {
 
@@ -49,4 +49,4 @@ namespace commands {
 
     std::unique_ptr<ICommand> CreateTrajSetCmd(const std::string& id, const std::vector<std::string>& args);
 
-} // namespace commandsnds
+} // namespace commands

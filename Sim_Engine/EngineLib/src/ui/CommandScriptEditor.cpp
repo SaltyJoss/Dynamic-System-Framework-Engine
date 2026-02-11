@@ -1,6 +1,8 @@
 #include "pch.h"
+// File:   CommandScriptEditor.cpp
+// GitHub: SaltyJoss
 #include <imgui.h>
-#include "Scene/CommandScriptEditor.h"
+#include "ui/CommandScriptEditor.h"
 #include "Interpreter/StoredProgram.h"
 #include "Platform/Paths.h"
 #include <io.h>
@@ -8,7 +10,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
-	CommandScriptEditor::CommandScriptEditor(gui::simManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
+	CommandScriptEditor::CommandScriptEditor(gui::SimManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
 		_script = std::vector<std::string>();
 		_sim->setScriptRunning(false);
 

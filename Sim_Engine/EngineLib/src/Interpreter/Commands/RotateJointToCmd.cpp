@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   RotateJointToCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/RotateJointToCmd.h"
 #include "Scene/SimulationManager.h"
 #include "Robots/RobotSystem.h"
@@ -16,11 +18,13 @@ namespace commands {
 	void RotateJointToCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateJointTo() ran successfully" }); }
 	bool RotateJointToCmd::hasStarted() const { return _started; }
 
+	// Constructor
 	RotateJointToCmd::RotateJointToCmd(std::string linkName, double maxOmegaDegPerSec, double angleDeg)
 		: _link(std::move(linkName)), _maxOmegaDeg(maxOmegaDegPerSec), _angleDeg(angleDeg), _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
+	// Core update loop for rotateJointTo command
 	program_data::CmdResult RotateJointToCmd::update(CommandContextMotion& cntx, double dt) {
 		auto* robot = cntx.Robot();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
@@ -148,8 +152,10 @@ namespace commands {
         return { CmdState::Executing, {}, "" };
     }
 
+	// Initial execution of the command
 	void RotateJointToCmd::execute() { setResult({ CmdState::Executing, {}, "rotateJointTo() started" }); }
 
+	// Factory function to create RotateJointToCmd from command arguments
 	std::unique_ptr<ICommand> CreateRotateJointToCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateJointTo(<linkName>, <omegaDeg>, <angleDeg>)
 		if (args.size() != 2) {

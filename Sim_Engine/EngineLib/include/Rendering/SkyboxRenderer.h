@@ -19,6 +19,6 @@ namespace render {
 		GLuint _envCubemap;
         shaders::Shader shader;
     };
-}
+} // namespace render
 
 

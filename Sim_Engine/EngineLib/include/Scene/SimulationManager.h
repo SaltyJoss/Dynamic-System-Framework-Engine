@@ -1,7 +1,6 @@
 #pragma once
 // File:   MeshLoader.h
 // GitHub: SaltyJoss
-
 #include "EngineCore.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -10,7 +9,7 @@
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
-#include "Scene/RenderPreset.h"
+#include "ui/RenderPreset.h"
 #include "FpsCounter.h"
 
 #include "Analysis/Telemetry.h"
@@ -44,12 +43,12 @@ namespace gui {
     // View IDs
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
-	class AxisOrientator;
-	// simManager Class (Plan on renaming later)
-    class ENGINE_API simManager {
+	class ENGINE_API AxisOrientator;
+	// SimManager Class (Plan on renaming later)
+    class ENGINE_API SimManager {
     public:
-        simManager();
-        ~simManager();
+        SimManager();
+        ~SimManager();
 
 		// OpenGL Initialisation
         void initGL();
@@ -287,4 +286,4 @@ namespace gui {
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
-}
+} // namespace gui

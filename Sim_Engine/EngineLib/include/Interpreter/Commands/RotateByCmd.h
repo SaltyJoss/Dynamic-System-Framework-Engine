@@ -1,6 +1,7 @@
 #pragma once
+// File:    RotateByCmd.h
+// GitHub:  SaltyJoss
 #pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>

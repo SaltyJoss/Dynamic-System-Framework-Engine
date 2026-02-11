@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   DataManager.cpp
+// GitHub: SaltyJoss
 #include "Platform/DataManager.h"
 
 namespace data {
@@ -25,6 +27,7 @@ namespace data {
 		return out;
 	}
 
+	// Convert a Value to a string representation
 	static inline std::string toString(const Value& v) {
 		// Visitor struct to convert Value to string
 		struct {
@@ -70,6 +73,7 @@ namespace data {
 		return std::visit(visitor, v);
 	}
 
+	// Get current timestamp as a compact string (e.g. "20240601_153045")
 	static inline std::string timestampCompact() {
 		auto now = std::chrono::system_clock::now();
 		std::time_t t = std::chrono::system_clock::to_time_t(now);
@@ -85,10 +89,6 @@ namespace data {
 		oss << std::put_time(&tm, "%Y%m%d_%H%M%S");
 		return oss.str();
 	}
-
-	// =======================================
-	// --- HDF5StreamWriter Implementation ---
-	// =======================================
 
 	// --- HDF5 Utility Functions ---
 
@@ -527,10 +527,6 @@ namespace data {
 		}
 	}
 
-	// =======================================
-	// --- CsvStreamWriter Implementation ---
-	// =======================================
-
 	// start CSV stream writer
 	void CsvStreamWriter::start(std::string_view parentFolder, std::string_view subFolder) {
 		std::lock_guard<std::mutex> lock(_mtx);
@@ -578,6 +574,7 @@ namespace data {
 		_active = false;
 	}
 
+	// Write fields to CSV file
 	void CsvStreamWriter::write(std::string topic, const FieldList& fields) {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (!_active || !_file.is_open()) return;
@@ -589,10 +586,6 @@ namespace data {
 		}
 		_file.flush(); // ensure data is written
 	}
-
-	// =======================================
-	// --- DataManager Implementation ---
-	// =======================================
 
 	// Enable or disable data logging
 	void DataManager::setEnabled(bool enabled) {

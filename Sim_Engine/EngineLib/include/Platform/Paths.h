@@ -1,5 +1,6 @@
 #pragma once
-
+// File:   Paths.h
+// GitHub: SaltyJoss
 #include <string>
 #include <filesystem>
 
@@ -11,4 +12,4 @@ namespace paths {
 	const std::filesystem::path& configs();
 	const std::filesystem::path& logs();
 	const std::filesystem::path& runs();
-}
+} // namespace paths

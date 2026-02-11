@@ -38,4 +38,4 @@ namespace gui {
 		// Helper method to recursively process an Assimp node and its children, applying the parent transformation to each mesh
 		void processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform);
 	};
-}
+} // namespace gui

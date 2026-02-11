@@ -1,8 +1,6 @@
 #pragma once
 // File:   RobotModel.h
 // GitHub: SaltyJoss
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>
@@ -229,4 +227,4 @@ namespace robots {
 		bool sat_flag{ false };
 		bool traj_overspeed_flag{ false };
 	};
-}
+} // namespace robots

@@ -1,14 +1,6 @@
 #pragma once
-
-//=============================================
-//            File: RenderPreset.h
-//=============================================
-// Enumeration for different rendering presets.
-//
-// Summary:
-// ============================================
-//
-// =============================================
+// File:    RenderPreset.h
+// GitHub:  SaltyJoss
 
 namespace render {
 	enum class ResolutionPreset { R_720p, R_1080p, R_1440p, R_4K };
@@ -55,4 +47,4 @@ namespace render {
 	};
 
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset qual);
-}
+} // namespace render

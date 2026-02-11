@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   RotateToCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/RotateToCmd.h"
 #include "Interpreter/Utils.h"
 
@@ -18,7 +20,7 @@ namespace commands {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
-
+	// Update command state
 	CmdResult RotateToCmd::update(CommandContextMotion& cntx, double dt) {
 		if (!_started) {
 			markFailed("rotateTo() not started.");
@@ -44,6 +46,7 @@ namespace commands {
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
+	// Execute the command
 	void RotateToCmd::execute() {
 		_started = true;
 		setResult({ CmdState::Executing, {}, "rotateBy() started" });
@@ -64,6 +67,7 @@ namespace commands {
 		}
 	}
 
+	// Factory function to create RotateToCmd from command arguments
 	std::unique_ptr<ICommand> CreateRotateToCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateTo(<objID>, <axes>, <omegaDeg>, <angleDeg>)
 		if (args.size() != 3) {

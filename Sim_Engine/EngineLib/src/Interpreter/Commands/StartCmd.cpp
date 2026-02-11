@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   StopCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/StartCmd.h"
 
 #include "EngineLib/LogMacros.h"
@@ -10,12 +12,12 @@ namespace commands {
 	void StartCmd::markCompleted() { setResult({ CmdState::Executed, {}, "startSim() ran successfully" }); }
 	bool StartCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
 
-	// --- StartCmd Constructor ---
+	// Constructor
 	StartCmd::StartCmd() : _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
-	// --- StartCmd Method Implementations ---
+	// Execute the command
 	void StartCmd::execute() {
 		if (!getProgram()) {
 			std::string errMsg = "startSim() command has no program context.";
@@ -28,6 +30,7 @@ namespace commands {
 		D_SUCCESS("startSim() command executed: Simulation started.");
 	}
 
+	// Factory function to create a StartCmd instance
 	std::unique_ptr<ICommand> CreateStartCmd(const std::string& id, const std::vector<std::string>& args) {
 		if (id.size() != 0 || !args.empty()) { D_FAIL("startSim() does not take any arguments."); }
 		return std::make_unique<StartCmd>();

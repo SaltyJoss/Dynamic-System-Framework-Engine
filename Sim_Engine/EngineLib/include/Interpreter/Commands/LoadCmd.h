@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    LoadCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>
@@ -54,4 +55,4 @@ namespace commands {
 
 	// --- Free Function to Create LoadCmd ---
 	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::vector<std::string>& tokens);
-}
+} // namespace commands

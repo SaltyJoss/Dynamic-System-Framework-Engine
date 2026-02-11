@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   Object.cpp
+// GitHub: SaltyJoss
 #include "Scene/Object.h"
 #include "Physics/PhysicsState.h"
 #include "Scene/ObjectID.h"
@@ -6,6 +8,7 @@
 #include "Scene/Mesh.h"
 
 namespace scene {
+	// Convert Transform to a 4x4 matrix for rendering
 	glm::mat4 Transform::toMatrix() const {
 		glm::mat4 model(1.0f);
 		model = glm::translate(model, position);
@@ -14,6 +17,9 @@ namespace scene {
 		return model;
 	}
 
+	// --- Object Implementation ---
+
+	// Constructor initializes transform and physics state
 	Object::Object(std::shared_ptr<Mesh> mesh) : _mesh(std::move(mesh)) {
 		transform.position = glm::vec3(0.0f);
 		transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
@@ -29,8 +35,10 @@ namespace scene {
 		state.torques = Vec3::Zero();
 	}
 
+	// Update method passes material properties to the shader
 	void Object::update(shaders::Shader* shader) { if (_mesh) _mesh->update(shader); }
 
+	// Handle mouse movement for object manipulation
 	void Object::onMouseMove(double x, double y, eInputButton button) {
 		glm::vec2 pos2d{ x, y };
 		glm::vec2 delta = pos2d - _lastMousePos;

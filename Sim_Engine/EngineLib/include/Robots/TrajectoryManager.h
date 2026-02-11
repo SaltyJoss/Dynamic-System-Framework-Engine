@@ -1,6 +1,9 @@
 #pragma once
-#pragma warning(disable : 4251)
-
+// File:   TrajectoryManager.h
+// GitHub: SaltyJoss
+// -----
+// Initially templated off a tutorial:
+// GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>
@@ -43,6 +46,9 @@ namespace control {
 		std::size_t activeCount() const { return _active.size(); }
 
 	private:
+#pragma warning(push)
+#pragma warning(disable: 4251)
 		std::unordered_map<std::string, std::unique_ptr<control::IJointTrajectory>> _active;
+#pragma warning(pop)
 	};
 } // namespace control

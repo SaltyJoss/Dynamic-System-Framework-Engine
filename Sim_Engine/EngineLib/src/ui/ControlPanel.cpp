@@ -1,12 +1,9 @@
-// ==================================================
-//				File: ControlPanel.cpp
-// ==================================================
-
 #include "pch.h"
-
+// File:    ControlPanel.cpp
+// GitHub:  SaltyJoss
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
-#include "Scene/ControlPanel.h"
+#include "ui/ControlPanel.h"
 #include "Robots/RobotSystem.h"
 #include "Platform/Paths.h"
 #include <imgui.h>
@@ -52,6 +49,7 @@ namespace gui {
         return changed;
     }
 
+	// Get human-readable name for gravity level
     static const char* gravityLevelName(GravityLevel level) {
         switch (level) {
         case GravityLevel::Root:        return "Presets";
@@ -62,34 +60,7 @@ namespace gui {
         }
     }
 
-    static const char* gravityPresetName(GravityPreset p) {
-        switch (p) {
-        case PRESET_ZERO_G:       return "Zero-G";
-        case PRESET_MICRO_G:      return "Micro-G";
-        case PRESET_SOLAR_SYSTEM: return "Solar System";
-        case PRESET_CUSTOM:       return "Custom";
-
-        case PRESET_SUN:          return "Sun";
-        case PRESET_MERCURY:      return "Mercury";
-        case PRESET_VENUS:        return "Venus";
-        case PRESET_EARTH:        return "Earth";
-        case PRESET_MARS:         return "Mars";
-        case PRESET_JUPITER:      return "Jupiter";
-        case PRESET_SATURN:       return "Saturn";
-        case PRESET_URANUS:       return "Uranus";
-        case PRESET_NEPTUNE:      return "Neptune";
-        case PRESET_PLUTO:        return "Pluto";
-
-        case PRESET_MOON:         return "Moon";
-        case PRESET_TITAN:        return "Titan";
-        case PRESET_ENCELADUS:    return "Enceladus";
-        case PRESET_EUROPA:       return "Europa";
-        case PRESET_GANYMEDE:     return "Ganymede";
-        case PRESET_IO:           return "Io";
-        }
-        return "Unknown";
-    }
-
+	// Gravity value lookup from preset
     static double gravityFromPreset(GravityPreset p) {
         switch (p) {
         case PRESET_ZERO_G:    return constants::g_zero;
@@ -117,6 +88,7 @@ namespace gui {
         }
     }
 
+	// Draw the gravity preset combo menu
     static void drawGravityChoiceMenu(GravityPreset& preset, double& g) {
         // Combo label shows navigation state
         char label[64];
@@ -195,6 +167,7 @@ namespace gui {
                     { "Pluto",   PRESET_PLUTO }
                 };
 
+				// List planets
                 for (auto& p : planets) {
                     if (ImGui::Selectable(p.name)) {
                         preset = p.p;
@@ -205,7 +178,6 @@ namespace gui {
 
             // ---------------- MOONS ----------------
             else if (gravityLevel == GravityLevel::Moons) {
-
                 if (ImGui::Selectable("< Back")) {
                     gravityLevel = GravityLevel::SolarSystem;
                 }
@@ -221,6 +193,7 @@ namespace gui {
                     { "Io",           PRESET_IO }
                 };
 
+				// List moons
                 for (auto& m : moons) {
                     if (ImGui::Selectable(m.name)) {
                         preset = m.p;
@@ -228,10 +201,8 @@ namespace gui {
                     }
                 }
             }
-
             ImGui::EndCombo();
         }
-
         ImGui::PopStyleColor();
     }
 
@@ -262,7 +233,7 @@ namespace gui {
 
 	// --- ControlPanel Implementation ---
 
-    ControlPanel::ControlPanel(simManager* sceneView) :
+    ControlPanel::ControlPanel(SimManager* sceneView) :
 		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
@@ -286,7 +257,7 @@ namespace gui {
         _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
     }
 
-    void ControlPanel::drawMenus(simManager* sim) {
+    void ControlPanel::drawMenus(SimManager* sim) {
         _sim = sim;
         _phys = &_sim->getPhysicsSystem();
         _obj = _sim->getObject();
@@ -325,7 +296,7 @@ namespace gui {
         }
     }
 
-    void ControlPanel::render(simManager* sceneView) {
+    void ControlPanel::render(SimManager* sceneView) {
         // Initialize pointers to scene scene
         _sim = sceneView;
         fov = _sim->getCamera()->getFOVRadians();
@@ -588,7 +559,7 @@ namespace gui {
 
         float minDamping  = 0.0; float maxDamping  = 1.0;   // damping limits
         float minFriction = 0.0; float maxFriction = 10.0;  // friction limits
-        double minGravity = 0.0; double maxGravity = 10.0;  // gravity limits
+        double minGravity = 0.0; double maxGravity = 100.0;  // gravity limits
 
         static int currentJointIndex = 0;
         currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
@@ -632,7 +603,7 @@ namespace gui {
 
         if (gravityMode == GravityUIMode::Custom) {
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::DragScalar("m/s²##g", ImGuiDataType_Double, &g, 0.00005)) {
+            if (ImGui::DragScalar("m/s²##g", ImGuiDataType_Double, &g, 0.005f, &minGravity, &maxGravity)) {
                 robot->setGravity(g);
             }
         }
@@ -773,9 +744,9 @@ namespace gui {
 		// Apply shader changes if needed
         if (shaderChanged) {
             switch (shaderIndx) {
-                case 0: _sim->currentShaderMode = simManager::ShaderMode::Basic; D_INFO("Shader -> Basic Shader"); break;
-                case 1: _sim->currentShaderMode = simManager::ShaderMode::Lit;   D_INFO("Shader -> Lit Shader");   break;
-                case 2: _sim->currentShaderMode = simManager::ShaderMode::PBR;   D_INFO("Shader -> PBR Shader");   break;
+                case 0: _sim->currentShaderMode = SimManager::ShaderMode::Basic; D_INFO("Shader -> Basic Shader"); break;
+                case 1: _sim->currentShaderMode = SimManager::ShaderMode::Lit;   D_INFO("Shader -> Lit Shader");   break;
+                case 2: _sim->currentShaderMode = SimManager::ShaderMode::PBR;   D_INFO("Shader -> PBR Shader");   break;
                 default: break;
             }
         }
@@ -1003,7 +974,7 @@ namespace gui {
 			// General Object Loop
 			for (int i = 0; i < objs.size(); i++) {
 				auto* obj = objs[i].get();
-				rowH = 10.0f;
+			 rowH = 10.0f;
 				bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
 
 				if (obj->category != scene::ObjectCategory::General) { continue; } // skip non-general objects
@@ -1164,7 +1135,7 @@ namespace gui {
                 x[k] = (float)s.timeSec;
                 const int m = std::min(jointCount, (int)s.j.size());
                 for (int j = 0; j < m; ++j) {
-                    y[j][k] = s.j[j].thetaRefRad - s.j[j].thetaRad;
+                    y[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
                 }
                 for (int j = m; j < jointCount; ++j) {
                     y[j][k] = 0.0f;
@@ -1238,7 +1209,7 @@ namespace gui {
     }
 
 	// Trajectory Inspector
-    void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint) {
+    void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int /*jointCount*/, int& selectedJoint) {
         const auto& ring = rec.ring;
         if (ring.size() < 1) { ImGui::TextUnformatted("No trajectory telemetry yet."); return; }
 
@@ -1259,7 +1230,7 @@ namespace gui {
         }
 
 		const diagnostics::JointTelemetry& j = s.j[selectedJoint];
-		const float e = j.thetaRefRad - j.thetaRad;
+		const float e = (float)(j.thetaRefRad - j.thetaRad);
 
         ImGui::Separator();
         ImGui::TextDisabled("Robot loaded:   %s", _requestedRobot.c_str());
@@ -1304,7 +1275,7 @@ namespace gui {
             float worstErr = 0.0f;
             int worstIdx = 0;
             for (int i = 0; i < (int)s.j.size(); ++i) {
-                float err = std::abs(s.j[i].thetaRefRad - s.j[i].thetaRad);
+                float err = (float)std::abs(s.j[i].thetaRefRad - s.j[i].thetaRad);
                 if (err > worstErr) { worstErr = err; worstIdx = i; }
             }
             selectedJoint = worstIdx;

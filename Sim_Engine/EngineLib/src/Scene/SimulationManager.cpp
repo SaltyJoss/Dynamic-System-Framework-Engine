@@ -1,5 +1,6 @@
-// SimulationManager.cpp
 #include "pch.h"
+// File:   SimulationManager.cpp
+// GitHub: SaltyJoss
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
 
@@ -39,7 +40,7 @@
 
 namespace gui {
 	// --- PIMPL Implementation ---
-	struct simManager::Impl {
+	struct SimManager::Impl {
 		// View ID Alias
 		using VID = gui::ViewID;
 
@@ -65,6 +66,7 @@ namespace gui {
 			bool followEnabled = false;
 		};
 
+		// Viewports
 		std::array<Viewport, (size_t)ViewID::COUNT> _views;
 		VID activeView = VID::Manual;
 
@@ -89,9 +91,9 @@ namespace gui {
 		GLuint _worldGridVAO = 0;
 
 		// Shadow Mapping (Cascaded)
-		GLuint _cascadeFBO[simManager::NUM_CASCADES]{};
-		GLuint _cascadeDepth[simManager::NUM_CASCADES]{};
-		glm::mat4 _lightSpaceMatrixCascade[simManager::NUM_CASCADES] = {};
+		GLuint _cascadeFBO[SimManager::NUM_CASCADES]{};
+		GLuint _cascadeDepth[SimManager::NUM_CASCADES]{};
+		glm::mat4 _lightSpaceMatrixCascade[SimManager::NUM_CASCADES] = {};
 
 		// Scene Objects
 		std::unique_ptr<scene::Camera> _camera;
@@ -114,14 +116,14 @@ namespace gui {
 		// Trajectory Manager
 		control::TrajectoryManager _traj;
 
-		Impl(simManager& owner) {
+		Impl(SimManager& owner) {
 			_postShader = std::make_unique<shaders::Shader>();
 			_postShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "post.frag.glsl").string());
 
 			glGenVertexArrays(1, &_fullscreenVAO);
 
 			// Lambda to create views
-			auto makeView = [&](ViewID id, glm::vec3 pos, float fovDeg, glm::vec3 target, glm::vec3 upHint) {
+			auto makeView = [&](ViewID id, glm::vec3 pos, float fovDeg, glm::vec3 target, glm::vec3 /*upHint*/) {
 				auto& v = _views[(size_t)id];
 
 				// INTERNAL render target size (scene render)
@@ -229,7 +231,7 @@ namespace gui {
 			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
 		}
 
-		void renderView(simManager& owner, Viewport& v, int displayW, int displayH) {
+		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
 			displayH = std::max(1, displayH);
 
@@ -245,9 +247,9 @@ namespace gui {
 			LOG_INFO_ONCE("Rendering Viewport: RT Size = %dx%d, Display Size = %dx%d", rtW, rtH, displayW, displayH);
 
 			// Calculate internal scale for grid rendering
-			const float internalScaleX = (float)rtW / (float)displayW;
-			const float internalScaleY = (float)rtH / (float)displayH;
-			const float internalScale = std::max(internalScaleX, internalScaleY);
+			//const float internalScaleX = (float)rtW / (float)displayW;
+			//const float internalScaleY = (float)rtH / (float)displayH;
+			//const float internalScale = std::max(internalScaleX, internalScaleY);
 
 			// Resize only when internal RT changes OR display changes (post buffer)
 			const bool rtChanged = (v.w != rtW) || (v.h != rtH);
@@ -401,11 +403,11 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	simManager::simManager() : _internalSize(3840, 2160), _displaySize(1.0f, 1.0f), _backgroundColour(0.0f, 0.0f, 0.0f),
+	SimManager::SimManager() : _internalSize(3840, 2160), _displaySize(1.0f, 1.0f), _backgroundColour(0.0f, 0.0f, 0.0f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
 	}
 
-	void simManager::initGL() {
+	void SimManager::initGL() {
 		if (_glReady) return;
 		_glReady = true;
 
@@ -416,7 +418,7 @@ namespace gui {
 		applyRenderProfile(s, render::ResolutionPreset::R_4K);
 	}
 
-	simManager::~simManager() {
+	SimManager::~SimManager() {
 		//if (_impl->_frameBuffer) _impl->_frameBuffer->deleteBuffers();
 		//if (_impl->_postBuffer) _impl->_postBuffer->deleteBuffers();
 		if (_impl->_mesh) _impl->_mesh->clean();
@@ -428,9 +430,9 @@ namespace gui {
 	// --------------------------------------------------
 	//				    LIGHT & SKYBOX
 	// --------------------------------------------------
-	scene::Light* simManager::getLight() { return _impl->_light.get(); }
+	scene::Light* SimManager::getLight() { return _impl->_light.get(); }
 
-	void simManager::loadNewHDR(const std::string& path) {
+	void SimManager::loadNewHDR(const std::string& path) {
 		LOG_INFO("Loading new HDR: %s", path.c_str());
 		D_INFO("Loading new HDR: %s", path.c_str());
 
@@ -453,12 +455,12 @@ namespace gui {
 		D_SUCCESS("Loaded HDR successfully.");
 	}
 
-	void simManager::loadNewHDR_UI(const std::string& path) {
+	void SimManager::loadNewHDR_UI(const std::string& path) {
 		loadNewHDR(path);
 		_hdrUserOverride = true;
 	}
 
-	void simManager::loadNewHDR_Preset(const std::string& path) {
+	void SimManager::loadNewHDR_Preset(const std::string& path) {
 		loadNewHDR(path);
 		_hdrUserOverride = false;
 	}
@@ -468,9 +470,9 @@ namespace gui {
 	// --------------------------------------------------
 
 	// Get the active view camera
-	scene::Camera* simManager::getCamera() { return _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get(); }
+	scene::Camera* SimManager::getCamera() { return _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get(); }
 	// Reset the active view camera to default position
-	void simManager::resetView() {
+	void SimManager::resetView() {
 		auto& v = _impl->_views[static_cast<size_t>(_impl->activeView)];
 
 		glm::vec3 pos = { 0.0f, 0.25f, 1.0f };
@@ -510,7 +512,7 @@ namespace gui {
 		v.cam->updateViewMatrix();
 	}
 
-	void simManager::attachCameraToObject(scene::Object* obj) {
+	void SimManager::attachCameraToObject(scene::Object* obj) {
 		if (!obj) return;
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 
@@ -522,14 +524,14 @@ namespace gui {
 		cam->startFollow(pos, rot, glm::vec3(0, 2, 5));
 	}
 
-	void simManager::detachCameraFromObject() {
+	void SimManager::detachCameraFromObject() {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		_impl->_cameraFollowTarget = nullptr;
 		cam->clearFollow();
 	}
 
 	// Set the follow target for a specific view
-	void simManager::setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset) {
+	void SimManager::setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset) {
 		if (view < ViewID::Manual || view >= ViewID::COUNT) { return; }
 		auto& v = _impl->_views[static_cast<size_t>(view)];
 		v.followTarget = obj;
@@ -542,7 +544,7 @@ namespace gui {
 	}
 
 	// Clear the follow target for a specific view
-	void simManager::clearViewFollowTarget(ViewID view) {
+	void SimManager::clearViewFollowTarget(ViewID view) {
 		if (view < ViewID::Manual || view >= ViewID::COUNT) { return; }
 		auto& v = _impl->_views[static_cast<size_t>(view)];
 		v.followTarget = nullptr;
@@ -550,7 +552,7 @@ namespace gui {
 		if (v.cam) { v.cam->clearFollow(); }
 	}
 
-	bool simManager::setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset) {
+	bool SimManager::setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset) {
 		if (!hasRobot()) {
 			LOG_WARN("setViewFollowRobotJoint: no robot loaded");
 			return false;
@@ -596,14 +598,14 @@ namespace gui {
 		return true;
 	}
 
-	bool simManager::followRobotJoint(const std::string& jointName, const glm::vec3& offset) {
+	bool SimManager::followRobotJoint(const std::string& jointName, const glm::vec3& offset) {
 		return setViewFollowRobotJoint(gui::ViewID::Follow, jointName, offset);
 	}
 
 	// --------------------------------------------------
 	//			    MESH LOADING & GEOMETRY
 	// --------------------------------------------------
-	void simManager::loadMesh(const std::string& filepath) {
+	void SimManager::loadMesh(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
@@ -638,7 +640,7 @@ namespace gui {
 		D_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
-	std::vector<scene::Object*> simManager::loadMeshReturn(const std::string& filepath) {
+	std::vector<scene::Object*> SimManager::loadMeshReturn(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
@@ -656,19 +658,19 @@ namespace gui {
 		return result;
 	}
 
-	void simManager::setMesh(std::shared_ptr<scene::Mesh> mesh) { _impl->_mesh = mesh; }
-	std::shared_ptr<scene::Mesh> simManager::getMesh() { return _impl->_mesh; }
+	void SimManager::setMesh(std::shared_ptr<scene::Mesh> mesh) { _impl->_mesh = mesh; }
+	std::shared_ptr<scene::Mesh> SimManager::getMesh() { return _impl->_mesh; }
 
-	void simManager::setSelectedObject(scene::Object* obj) { _impl->_selectedObject = obj; }
-	void simManager::addObject(std::unique_ptr<scene::Object> obj) { _impl->_objects.push_back(std::move(obj)); } // Cache the unique_ptr
+	void SimManager::setSelectedObject(scene::Object* obj) { _impl->_selectedObject = obj; }
+	void SimManager::addObject(std::unique_ptr<scene::Object> obj) { _impl->_objects.push_back(std::move(obj)); } // Cache the unique_ptr
 
-	void simManager::deleteObject(int index) {
+	void SimManager::deleteObject(int index) {
 		if (index < 0 || index >= _impl->_objects.size()) { return; }
 		if (_impl->_selectedObject == _impl->_objects[index].get()) { _impl->_selectedObject = nullptr; }
 		_impl->_objects.erase(_impl->_objects.begin() + index);
 	}
 
-	void simManager::removeObject(scene::Object* obj) {
+	void SimManager::removeObject(scene::Object* obj) {
 		if (!obj) return;
 
 		auto it = std::remove_if(
@@ -683,10 +685,10 @@ namespace gui {
 	}
 
 
-	std::vector<std::unique_ptr<scene::Object>>& simManager::getObjects() { return _impl->_objects; }
-	scene::Object* simManager::getObject() { return _impl->_selectedObject; }
+	std::vector<std::unique_ptr<scene::Object>>& SimManager::getObjects() { return _impl->_objects; }
+	scene::Object* SimManager::getObject() { return _impl->_selectedObject; }
 
-	scene::Object* simManager::getObjectByID(scene::ObjectID id) {
+	scene::Object* SimManager::getObjectByID(scene::ObjectID id) {
 		for (auto& obj : _impl->_objects) {
 			if (obj && obj->id == id) {
 				return obj.get();
@@ -698,7 +700,7 @@ namespace gui {
 	// --------------------------------------------------
 	//				RENDERING ENTRY POINTS
 	// --------------------------------------------------
-	void simManager::render() {
+	void SimManager::render() {
 		ImGuiIO& io = ImGui::GetIO();
 		tick(io.DeltaTime);
 		_fpsCounter.update();
@@ -710,7 +712,7 @@ namespace gui {
 	// --- UI Elements ---
 
 	// Main Dockspace with Menu Bar
-	void simManager::drawMainDockspace() {
+	void SimManager::drawMainDockspace() {
 		ImGuiWindowFlags flags =
 			ImGuiWindowFlags_NoDocking |
 			ImGuiWindowFlags_NoTitleBar |
@@ -744,7 +746,7 @@ namespace gui {
 	}
 
 	// Viewport Window
-	void simManager::drawViewportWindow() {
+	void SimManager::drawViewportWindow() {
 		ImGui::Begin("Viewport", nullptr,
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse);
@@ -835,7 +837,7 @@ namespace gui {
 		ImGui::End();
 	}
 
-	void simManager::resize(int32_t width, int32_t height) {
+	void SimManager::resize(int32_t width, int32_t height) {
 		if (width <= 0 || height <= 0) return;
 		_internalSize = { (float)width, (float)height };
 
@@ -845,13 +847,13 @@ namespace gui {
 			v.displayW = 0; v.displayH = 0;
 		}
 
-		LOG_INFO("Resized simManager INTERNAL RT to %dx%d", width, height);
+		LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
 	// --------------------------------------------------
 	//						PHYSICS
 	// --------------------------------------------------
-	void gui::simManager::updatePhysics(double dt) {
+	void gui::SimManager::updatePhysics(double dt) {
 		// Update each object's physics state
 		for (auto& obj : _impl->_objects) {
 			if (obj) { _impl->_physics->update(dt, obj.get()); }
@@ -861,7 +863,7 @@ namespace gui {
 	// --------------------------------------------------
 	//						ROBOTS
 	// --------------------------------------------------
-	void simManager::loadRobot(const std::string& name) {
+	void SimManager::loadRobot(const std::string& name) {
 		setSelectedObject(nullptr);
 		detachCameraFromObject();
 		clearViewFollowTarget(gui::ViewID::Follow);
@@ -887,11 +889,11 @@ namespace gui {
 
 		//_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
 	}
-	void simManager::setRobotLinkRotation(const std::string& linkName, double angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
-	void simManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
-	void simManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
-	void simManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
-	void simManager::clearRobot() {
+	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
+	void SimManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
+	void SimManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
+	void SimManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
+	void SimManager::clearRobot() {
 		setSelectedObject(nullptr); // deselect any selected object
 		if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); }
 
@@ -899,16 +901,16 @@ namespace gui {
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 	}
-	bool simManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
+	bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
 
-	robots::RobotSystem* simManager::getRobotSystem() { return _impl->_robotSystem.get(); }
-	const robots::RobotSystem* simManager::getRobotSystem() const { return _impl->_robotSystem.get(); }
+	robots::RobotSystem* SimManager::getRobotSystem() { return _impl->_robotSystem.get(); }
+	const robots::RobotSystem* SimManager::getRobotSystem() const { return _impl->_robotSystem.get(); }
 
 	// --------------------------------------------------
 	//					SIMULATION LOOP
 	// --------------------------------------------------
 
-	void simManager::stepFixed(double frame_dt) {
+	void SimManager::stepFixed(double frame_dt) {
 		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
 		_accum += frame_dt;
 		while (_accum >= _dt) {
@@ -950,7 +952,7 @@ namespace gui {
 				updatePhysics(_dt);
 				if (hasRobot()) {
 					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
-					_impl->_robotSystem->step(_impl->_traj, _dt, _simTime);
+					_impl->_robotSystem->step(_dt, _simTime);
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(_simTime, 60.0, 120.0);
 						_telemetryBegun = true;
@@ -962,7 +964,7 @@ namespace gui {
 		}
 	}
 
-	void simManager::startSimulation() {
+	void SimManager::startSimulation() {
 		if (_simRunning) return;
 		telemetry().clear();
 		SET_SIM_INTEGRATOR(_impl->_robotSystem->getIntegratorName());
@@ -973,7 +975,7 @@ namespace gui {
 		DATA_CAPTURE_ENABLE(true);
 	}
 
-	void simManager::stopSimulation() {
+	void SimManager::stopSimulation() {
 		if (!_simRunning) return;
 		D_RUNTIME("stopping simulation");
 		DATA_CAPTURE_ENABLE(false);
@@ -981,26 +983,26 @@ namespace gui {
 		_telemetryBegun = false;
 	}
 
-	void simManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
-	physics::PhysicsSystem& simManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
-	const physics::PhysicsSystem& simManager::getPhysicsSystem() const { return *_impl->_physics; } // const
+	void SimManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
+	physics::PhysicsSystem& SimManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
+	const physics::PhysicsSystem& SimManager::getPhysicsSystem() const { return *_impl->_physics; } // const
 
-	control::TrajectoryManager& simManager::traj() { return _impl->_traj; }
-	const control::TrajectoryManager& simManager::traj() const { return _impl->_traj; }
+	control::TrajectoryManager& SimManager::traj() { return _impl->_traj; }
+	const control::TrajectoryManager& SimManager::traj() const { return _impl->_traj; }
 
 	// --------------------------------------------------
 	//			 INTERNAL REDNDERING PIPELINE
 	// --------------------------------------------------
-	void simManager::InitShadowResource(int baseRes) {
+	void SimManager::InitShadowResource(int baseRes) {
 		if (_shadowsInit) {
-			glDeleteFramebuffers(simManager::NUM_CASCADES, _impl->_cascadeFBO);
-			glDeleteTextures(simManager::NUM_CASCADES, _impl->_cascadeDepth);
+			glDeleteFramebuffers(SimManager::NUM_CASCADES, _impl->_cascadeFBO);
+			glDeleteTextures(SimManager::NUM_CASCADES, _impl->_cascadeDepth);
 		}
 
-		glGenFramebuffers(simManager::NUM_CASCADES, _impl->_cascadeFBO);
-		glGenTextures(simManager::NUM_CASCADES, _impl->_cascadeDepth);
+		glGenFramebuffers(SimManager::NUM_CASCADES, _impl->_cascadeFBO);
+		glGenTextures(SimManager::NUM_CASCADES, _impl->_cascadeDepth);
 
-		for (int i = 0; i < simManager::NUM_CASCADES; i++) {
+		for (int i = 0; i < SimManager::NUM_CASCADES; i++) {
 			const int res = (i == 0) ? baseRes : (baseRes / 2); // 8192, 4096, 2048, 1024, 512, 256, 128
 
 			glBindTexture(GL_TEXTURE_2D, _impl->_cascadeDepth[i]);
@@ -1027,12 +1029,12 @@ namespace gui {
 		_shadowsInit = true;
 	}
 
-	void simManager::InitIBL() {
+	void SimManager::InitIBL() {
 		_impl->_ibl = std::make_unique<render::IBL>();
 		_impl->_ibl->init((paths::assets() / "hdr" / "default_white.hdr").string());
 	}
 
-	void simManager::WorldGridRender(scene::Camera* cam) {
+	void SimManager::WorldGridRender(scene::Camera* cam) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
@@ -1071,7 +1073,7 @@ namespace gui {
 		glDepthFunc(GL_LESS);
 	}
 
-	void simManager::MeshRender(scene::Camera* cam) {
+	void SimManager::MeshRender(scene::Camera* cam) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
@@ -1183,7 +1185,7 @@ namespace gui {
 		}
 	}
 
-	void simManager::ShadowPass(scene::Camera* cam) {
+	void SimManager::ShadowPass(scene::Camera* cam) {
 		float nearPlane = cam->getNear();
 		float farPlane = cam->getFar();
 
@@ -1231,7 +1233,7 @@ namespace gui {
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
-	glm::mat4 simManager::LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane) {
+	glm::mat4 SimManager::LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = cam->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
 		glm::vec3 lightDir = glm::normalize(_impl->_light->getDirection());
@@ -1289,7 +1291,7 @@ namespace gui {
 		return lightProj * lightView;
 	}
 
-	void simManager::SkyboxRender(scene::Camera* cam) {
+	void SimManager::SkyboxRender(scene::Camera* cam) {
 		glm::mat4 view = cam->getViewMatrix();
 		glm::mat4 projection = cam->getProjection();
 
@@ -1297,12 +1299,12 @@ namespace gui {
 		_impl->_skybox->render(projection, view);
 	}
 
-	std::string simManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
+	std::string SimManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
 
-	shaders::Shader* simManager::getCurrentShader() const { return _impl->currentShader; }
-	void simManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
+	shaders::Shader* SimManager::getCurrentShader() const { return _impl->currentShader; }
+	void SimManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
-	void simManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {
+	void SimManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {
 		const bool first = !_settingsValid;
 
 		const bool shadowResChanged = first || (s.shadowMapRes != _settingsCurrent.shadowMapRes);
@@ -1331,7 +1333,7 @@ namespace gui {
 		_settingsValid = true;
 	}
 
-	glm::vec2 simManager::getPresetResolutionPx() const {
+	glm::vec2 SimManager::getPresetResolutionPx() const {
 		switch (_resCurrent) {
 			case render::ResolutionPreset::R_720p:  return { 1280, 720 };
 			case render::ResolutionPreset::R_1080p: return { 1920, 1080 };
@@ -1341,17 +1343,17 @@ namespace gui {
 		}
 	}
 
-	glm::vec2 simManager::getInternalResolutionSizePx() const {
+	glm::vec2 SimManager::getInternalResolutionSizePx() const {
 		return getPresetResolutionPx(); // no scale
 	}
 
-	void simManager::resetHDRToPreset() {
+	void SimManager::resetHDRToPreset() {
 		_hdrUserOverride = false;
 		const std::string hdr = getDefaultHDR();
 		if (hdr != _activeHDRPath) { loadNewHDR(hdr); }
 	}
 
-	void simManager::reloadAllShaders() {
+	void SimManager::reloadAllShaders() {
 		_impl->_shaderBasic->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_basic.frag.glsl").string());
 		_impl->_shaderLit->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_lit.frag.glsl").string());
 		_impl->_shaderPBR->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_pbr.frag.glsl").string());
@@ -1360,18 +1362,18 @@ namespace gui {
 		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 
-	void simManager::setLightColour(const glm::vec3& colour) { _impl->_light->_colour = colour; }
+	void SimManager::setLightColour(const glm::vec3& colour) { _impl->_light->_colour = colour; }
 
 	// --------------------------------------------------
 	//					INPUT HANDLING
 	// --------------------------------------------------
-	void gui::simManager::processMovementKey(int key, float delta) {
+	void gui::SimManager::processMovementKey(int key, float delta) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (ctrlMode == ControlMode::Camera) { cam->processKeyboard(key, delta); }
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
 	}
 
-	void gui::simManager::handleContinuousMovement(GLFWwindow* window, float dt) {
+	void gui::SimManager::handleContinuousMovement(GLFWwindow* window, float dt) {
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
 
@@ -1385,7 +1387,7 @@ namespace gui {
 		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) { processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd); }
 	}
 
-	void gui::simManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+	void gui::SimManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
 		if (!win || !win->isMouseCaptured()) return;
@@ -1412,7 +1414,7 @@ namespace gui {
 		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right); }
 	}
 
-	void simManager::onMouseMove(double x, double y, scene::eInputButton button) {
+	void SimManager::onMouseMove(double x, double y, scene::eInputButton button) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		glm::vec2 pos2d{ x, y };
 		glm::vec2 delta = pos2d - _lastMousePos;
@@ -1428,7 +1430,7 @@ namespace gui {
 		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(x, y, button); }
 	}
 
-	void simManager::onMouseWheel(double delta) {
+	void SimManager::onMouseWheel(double delta) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* obj = _impl->_selectedObject;
 		if (!_isHovered) return;
@@ -1437,12 +1439,12 @@ namespace gui {
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { obj->transform.position.z += (float)delta * 0.25f; }
 	}
 
-	void gui::simManager::resetMouseDelta() { _firstMouse = true; }
+	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }
 
 	// --- Helpers ---
 
 	// Begin Control Panel Helper
-	void simManager::beginSimManager(const char* id) {
+	void SimManager::beginSimManager(const char* id) {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
@@ -1455,7 +1457,7 @@ namespace gui {
 	}
 
 	// End Control Panel Helper
-	void simManager::endSimManager() {
+	void SimManager::endSimManager() {
 		ImGui::EndChild();
 		ImGui::PopStyleVar(4);
 	}

@@ -1,19 +1,13 @@
-// =============================================
-//            File: Application.h
-// =============================================
-// Main Application class for initializing and running the engine.
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
-
+# pragma once
+// File:   Application.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 #include <memory>
 #include <string>
 
 // forward declarations
-namespace window { class GLWindow; }
-namespace scene { class Camera; }
+namespace window { class ENGINE_API GLWindow; }
+namespace scene { class ENGINE_API Camera; }
 
 class ENGINE_API Application {
 public:

@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   TrajectoryManager.cpp
+// GitHub: SaltyJoss
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
 #include "Control/IJointTrajectory.h"
@@ -10,9 +12,11 @@
 namespace control {
 	// Clear trajectory for a specific robot link
 	void TrajectoryManager::clear(const std::string& link) { _active.erase(link); }
+
 	// Clears all active trajectories
 	void TrajectoryManager::clearAll() { _active.clear(); }
 
+	// Evaluate the trajectory for a specific robot link at time t, returning the desired state in out
 	bool TrajectoryManager::tryEval(const std::string& link, double t, control::TrajState& out) const {
 		auto it = _active.find(link);
 		if (it == _active.end()) { return false; }
@@ -23,6 +27,7 @@ namespace control {
 		return true;
 	}
 
+	// Check if a trajectory is active for a specific robot link
 	bool TrajectoryManager::hasActive(const std::string& link) const {
 		auto it = _active.find(link);
 		return (it != _active.end() && it->second);
@@ -35,7 +40,6 @@ namespace control {
 			_active.erase(link);
 			return;
 		}
-
 		_active.insert_or_assign(link, std::move(traj));
 	}
 

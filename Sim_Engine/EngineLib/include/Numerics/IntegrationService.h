@@ -1,4 +1,6 @@
 #pragma once
+// File:   IntegrationService.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
@@ -50,4 +52,4 @@ namespace integration {
 
 		std::string _methodStr = "Euler";
 	};
-}
+} // namespace integration

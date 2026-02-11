@@ -1,5 +1,6 @@
 #include "pch.h"
-
+// File:   TrajSetCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/TrajSetCmd.h"
 #include "Interpreter/CommandContextMotion.h"
 #include "Scene/SimulationManager.h"

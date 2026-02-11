@@ -1,6 +1,7 @@
 #pragma once
+// File:   DataManager.h
+// GitHub: SaltyJoss
 #pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 #include <string>
 #include <string_view>

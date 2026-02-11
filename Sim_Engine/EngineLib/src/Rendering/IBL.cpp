@@ -1,6 +1,6 @@
-
 #include "pch.h"
-
+// File:   IBL.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif

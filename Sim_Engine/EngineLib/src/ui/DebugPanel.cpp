@@ -1,8 +1,8 @@
-
 #include "pch.h"
-
+// File:   DebugPanel.cpp
+// GitHub: SaltyJoss
 #include <imgui.h>
-#include "Scene/DebugPanel.h"
+#include "ui/DebugPanel.h"
 #include <io.h>
 
 #include "EngineLib/LogMacros.h"

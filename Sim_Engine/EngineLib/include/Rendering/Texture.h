@@ -7,8 +7,6 @@
 #include <string>
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
-
 namespace render {
 	class ENGINE_API Texture {
 	public:
@@ -20,4 +18,4 @@ namespace render {
 		void bind(GLuint unit = 0) const;
 		static GLuint load(const std::string& path, bool sRGB = true);
 	};
-}
+} // namespace render

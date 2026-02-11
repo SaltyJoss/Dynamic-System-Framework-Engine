@@ -1,11 +1,8 @@
 #pragma once
 // File:    ControlPanel.h
 // GitHub:  SaltyJoss
-
-// Includes
 #include "EngineCore.h"
 #include <cmath>
-
 #include "Physics/PhysicsSystem.h"
 
 #include "Scene/Object.h"
@@ -69,10 +66,10 @@ namespace gui {
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(simManager* sim);
+        ControlPanel(SimManager* sim);
 
-		void drawMenus(simManager* sim);
-        void render(simManager* sim);
+		void drawMenus(SimManager* sim);
+        void render(SimManager* sim);
         void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
@@ -80,7 +77,7 @@ namespace gui {
 		// Internal Pointers
         std::shared_ptr<scene::Mesh> _mesh;
 
-        simManager* _sim = nullptr;
+        SimManager* _sim = nullptr;
         physics::PhysicsSystem* _phys;
         scene::Light* _light;
         scene::Object* _obj;
@@ -89,7 +86,7 @@ namespace gui {
         std::string _currentMeshFile;
         std::string _currentHDRFile;
 
-        simManager::ControlMode* _controlMode;
+        SimManager::ControlMode* _controlMode;
 
         std::function<void(const std::string&)> meshLoadCallback;
         std::function<void(bool)> simCallback;
@@ -171,7 +168,7 @@ namespace gui {
 
 
     };
-}
+} // namespace gui
 
 // Helper Macros
 

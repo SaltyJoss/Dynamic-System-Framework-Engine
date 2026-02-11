@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   CommandContextMotion.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/CommandContextMotion.h"
 #include "Scene/SimulationManager.h"
 #include "Scene/ObjectID.h"
@@ -11,11 +13,13 @@ using namespace constants;
 using namespace utils;
 
 namespace commands {
-	CommandContextMotion::CommandContextMotion(gui::simManager* sim, scene::ObjectID objID)
+	// Constructor
+	CommandContextMotion::CommandContextMotion(gui::SimManager* sim, scene::ObjectID objID)
 		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
+	// --- OBJECT RESOLUTION METHODS ---
 	scene::ObjectID CommandContextMotion::DefaultObjectID() const { return _defaultObjID; }
 	scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
 
@@ -146,7 +150,7 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	utils::OpResult CommandContextMotion::updateJointRotateTo(double dt) {
+	utils::OpResult CommandContextMotion::updateJointRotateTo(double /*dt*/) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_jnt.active) { return OpResult::Success(true); }
 
@@ -256,7 +260,7 @@ namespace commands {
 	}
 
 	// Rotates the specified object along given axes at a certain angular velocity for a time step dt
-	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double dt) {
+	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double /*dt*/) {
 		if (!obj || !obj->getMesh()) {
 			SIM_FAIL("No object provided for rotation.");
 			return OpResult::Failure("No object provided for rotation.");
@@ -276,7 +280,7 @@ namespace commands {
 	}
 
 	// Rotates the current object along specified axes at a given angular velocity for a time step dt
-	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double dt) {
+	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double /*dt*/) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj || !obj->getMesh()) {
 			SIM_FAIL("No object associated with this context.");
@@ -323,7 +327,7 @@ namespace commands {
 	// --- TRANSLATION COMMAND METHODS ---
 
 	// Translates the current object in world coordinates along a specified direction at a given velocity for a time step dt
-	OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double vel) {
+	OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double /*vel*/) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) {
 			SIM_FAIL("No object associated with this context.");

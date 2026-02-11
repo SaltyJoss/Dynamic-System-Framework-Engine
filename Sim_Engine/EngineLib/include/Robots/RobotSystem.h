@@ -1,8 +1,6 @@
 #pragma once
 // File:   RobotSystem.h
 // GitHub: SaltyJoss
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
 #include "Numerics/IntegrationService.h"
@@ -89,7 +87,7 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
-		void step(const control::TrajectoryManager& traj, double dt, double simTime);
+		void step(double dt, double simTime);
 		void stepReference(control::TrajectoryManager& traj, double dt, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
@@ -145,7 +143,7 @@ namespace robots {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Compute state derivatives
-		mathlib::VecX deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const;
+		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
 
 		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);

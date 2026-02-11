@@ -1,33 +1,9 @@
 #pragma once
-#pragma warning(disable : 4251)
-
-//=============================================
-//            File: Object.h
-//=============================================
-// Class representing a 3D object in the scene with a mesh, transform, and physics state.
-// 
-// Summary:
-// ============================================
-// 
-// Structs & Enumerations:
-// --------------------------------------------
-// enum class ObjectCategory
-//    -> Enumeration for object categories (General, RobotLink).
-// AssetSource
-//		-> Represents the source of an asset with name and path.
-// Transform
-//      -> Represents the position, rotation, and scale of an object in 3D space.
-// --------------------------------------------
-//
-// Built upon code from:
-// ============================================
-//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
-// ============================================
-// 
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
-
+// File:   Object.h
+// GitHub: SaltyJoss
+// -----
+// Initially templated off a tutorial:
+// GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
 #include "Physics/PhysicsState.h"
 #include "Scene/ObjectID.h"
@@ -163,4 +139,4 @@ namespace scene {
 		glm::vec3 albedo = glm::vec3(0.3f, 0.2f, 0.8f);
 		float _distance = 5.0f;
 	};
-}
+} // namespace scene

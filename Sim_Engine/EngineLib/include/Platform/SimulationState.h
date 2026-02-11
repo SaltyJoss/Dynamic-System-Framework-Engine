@@ -1,27 +1,6 @@
 #pragma once
-
-// ============================================
-// 		File: SimulationState.h
-// ============================================
-// Structs and enums representing the current state of selections in the simulation.
-//
-// Summary:
-// ============================================
-// 
-// structs / enumerations:
-// --------------------------------------------
-// enum class SelectionType
-//      -> Enumeration of different types of selections in the simulation (NONE, LINK, ROBOT, OBJECT).
-// enum class SelectionSource
-//      -> Enumeration of different sources of selection (NONE, CONTROL_PANEL, SCENE_VIEW).
-// struct Selection
-//      -> Struct representing the current selection state, including type and index.
-// --------------------------------------------
-//
-// ============================================
-//			  GitHub: SaltyJoss
-// ============================================
-
+// File:   SimulationState.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 #include <Robots/RobotModel.h>
 
@@ -39,7 +18,6 @@ enum class SelectionSource {
 	NONE,
 	CONTROL_PANEL,
 	SCENE_VIEW
-	// may add more sources later (e.g., HIERARCHY_VIEW, PROPERTIES_PANEL)
 };
 
 // Current selection state
