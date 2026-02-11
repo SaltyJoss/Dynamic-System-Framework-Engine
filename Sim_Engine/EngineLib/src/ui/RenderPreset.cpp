@@ -73,8 +73,8 @@ namespace render {
 			case ResolutionPreset::R_4K: s.renderScale = 1.0f; break;
 		}
 
-		s.exposure = 1.0f;
-		s.whitePoint = 1.675f;
+		s.exposure = 1.2f;
+		s.whitePoint = 1.5f;
 		s.grid = true;
 		s.axisOrientator = true;
 

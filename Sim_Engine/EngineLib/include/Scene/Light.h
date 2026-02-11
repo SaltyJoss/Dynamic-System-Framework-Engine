@@ -13,20 +13,20 @@ namespace scene {
 	class ENGINE_API Light : public Element {
     public:
 
-        Light() {
-            _direction = glm::vec3(5.0f, -25.0f, 1.5f);
-            _position = glm::vec3(-4.0f, 20.0f, 12.0f);
-            _colour = glm::vec3(1.0f, 0.98f, 0.98f);
-			_intensity = 2.5f;
-            _size = 25.0f;
-        }
+		Light() {
+			_direction = glm::vec3(1.0f, -1.5f, 0.8f);
+			_position = glm::vec3(-4.0f, 20.0f, 12.0f);
+			_colour = glm::vec3(1.0f, 0.99f, 0.96f);
+			_intensity = 1.8f;
+			_size = 25.0f;
+		}
         ~Light() {}
 
 		// Default light configurations
         struct DirectionalLight {
-            glm::vec3 direction{ 5.0f, -25.0f, 1.5f };
-            glm::vec3 colour{ 1.0f, 0.98f, 0.95f };
-            float intensity = 2.5f;
+            glm::vec3 direction{ 1.0f, -1.5f, 0.8f };
+            glm::vec3 colour{ 1.0f, 0.99f, 0.96f };
+            float intensity = 1.8f;
         };
 
 		// Point light configuration

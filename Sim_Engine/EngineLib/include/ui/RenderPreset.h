@@ -44,7 +44,7 @@ namespace render {
 
 		// Render-Specific
 		float renderScale = 1.0f;
-		float ambientStrength = 0.5f; // IBL ambient multiplier (0.0 = no ambient, 1.0 = full)
+		float ambientStrength = 0.6f; // IBL ambient multiplier (0.0 = no ambient, 1.0 = full)
 	};
 
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset qual);

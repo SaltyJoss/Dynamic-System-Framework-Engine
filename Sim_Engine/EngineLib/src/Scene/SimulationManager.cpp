@@ -554,7 +554,7 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	SimManager::SimManager() : _internalSize(3840, 2160), _displaySize(1.0f, 1.0f), _backgroundColour(0.0f, 0.0f, 0.0f),
+	SimManager::SimManager() : _internalSize(3840, 2160), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
 	}
 
@@ -1319,10 +1319,10 @@ namespace gui {
 					break;
 
 				case ShaderMode::PBR:
-					// (IMPORTANT) mesh_pbr.frag needs: albedo, metallic, roughness, ao, lightDirection, lightIntensity, lightColour, camPos
+					// Per-mesh PBR material properties
 					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
-					shader->setFlt1(0.6f, "metallic");
-					shader->setFlt1(0.45f, "roughness");
+					shader->setFlt1(obj->getMesh()->getMetallic(), "metallic");
+					shader->setFlt1(obj->getMesh()->getRoughness(), "roughness");
 					shader->setFlt1(1.0f, "ao");
 					shader->setFlt1(_settingsCurrent.ambientStrength, "ambientStrength");
 
