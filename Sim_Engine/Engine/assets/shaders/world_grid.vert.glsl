@@ -24,8 +24,12 @@ const int Indices[6] = int[6](0, 1, 2, 0, 2, 3);
 void main()
 {
 	int Index = Indices[gl_VertexID];
-	vec3 local = Pos[Index] * gGridSize;	
+	vec3 local = Pos[Index] * gGridSize;
 	vec3 vPos3 = local;
+
+	// Snap grid center to camera XZ so it's always beneath the viewer
+	vPos3.x += gCameraWorldPos.x;
+	vPos3.z += gCameraWorldPos.z;
 
 	vPos3.y += gGridY + gGridYOffset;
 
@@ -33,7 +37,7 @@ void main()
 	WorldPos = vPos3;
 
 	// Recompute view Z for fragment shader
-    vec4 viewPos = gView * vec4(vPos3, 1.0);
+	vec4 viewPos = gView * vec4(vPos3, 1.0);
 	vViewZ = -viewPos.z;
 	gl_Position = gVP * vec4(vPos3, 1.0);
 }

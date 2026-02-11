@@ -57,10 +57,12 @@ namespace render {
 			return false; 
 		}
 
+		// Set GLFW window hints for OpenGL version and profile
 		auto glWindow = glfwCreateWindow(window->getWidth(), window->getHeight(), window->getHeader().c_str(), nullptr, nullptr);
 		glfwSetInputMode(glWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetInputMode(glWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
+		// Check if window creation succeeded
 		if (!glWindow) {
 			LOG_ERROR("Failed to create GLFW window -> ", glfwGetError(NULL));
 			glfwTerminate();
@@ -70,9 +72,11 @@ namespace render {
 		window->setNativeWin(glWindow);
 		_glfwWindow = glWindow;
 
+		// Set up OpenGL context and callbacks
 		glfwSwapInterval(1);
-		glfwSetWindowUserPointer(glWindow, window);
-		glfwSetWindowSizeLimits(glWindow, 800, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
+		glfwSetWindowUserPointer(glWindow, window); // Set user pointer to access window instance in callbacks
+		glfwSetWindowSizeLimits(glWindow, 800, 450, GLFW_DONT_CARE, GLFW_DONT_CARE); // Minimum 16:9 at 800x450, no maximum
+		glfwSetWindowAspectRatio(glWindow, 16, 9); // Enforce 16:9 aspect ratio
 		glfwSetCursorPosCallback(glWindow, CursorPos_Callback);
 		glfwSetKeyCallback(glWindow, onKey_Callback);
 		glfwSetScrollCallback(glWindow, onScroll_Callback);
@@ -80,6 +84,7 @@ namespace render {
 		glfwSetWindowCloseCallback(glWindow, onClose_Callback);
 		glfwMakeContextCurrent(glWindow);
 
+		// Load OpenGL function pointers using GLAD
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { 
 			LOG_ERROR("Failed to initialise GLAD");
 			return false; 

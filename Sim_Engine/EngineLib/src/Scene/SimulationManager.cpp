@@ -179,6 +179,8 @@ namespace gui {
 				camTop->setFocus(target);
 				camTop->setYaw(-glm::half_pi<float>());
 				camTop->setPitch(-glm::half_pi<float>() + 0.001f);
+				camTop->setOrbitDistance(2.0f);
+				camTop->setMinDistance(0.5f);
 				camTop->updateViewMatrix();
 
 				// Right
@@ -186,6 +188,8 @@ namespace gui {
 				camRight->setFocus(target);
 				camRight->setYaw(glm::pi<float>());
 				camRight->setPitch(0.0f);
+				camRight->setOrbitDistance(3.0f);
+				camRight->setMinDistance(0.5f);
 				camRight->updateViewMatrix();
 
 				// Front
@@ -193,6 +197,8 @@ namespace gui {
 				camFront->setFocus(target);
 				camFront->setYaw(-glm::half_pi<float>());
 				camFront->setPitch(0.0f);
+				camFront->setOrbitDistance(3.0f);
+				camFront->setMinDistance(0.5f);
 				camFront->updateViewMatrix();
 
 				// Follow
@@ -200,6 +206,8 @@ namespace gui {
 				camFollow->setFocus(target);
 				camFollow->setYaw(glm::pi<float>());
 				camFollow->setPitch(0.0f);
+				camFollow->setOrbitDistance(3.0f);
+				camFollow->setMinDistance(0.5f);
 				camFollow->updateViewMatrix();
 			}
 
@@ -558,8 +566,16 @@ namespace gui {
 		InitShadowResource(_settingsCurrent.shadowMapRes);
 		InitIBL();
 
-		auto s = render::MakeSettings(render::ResolutionPreset::R_4K, render::QualityPreset::Ultra);
-		applyRenderProfile(s, render::ResolutionPreset::R_4K);
+		// Pick internal resolution preset based on display size
+		render::ResolutionPreset bestPreset = render::ResolutionPreset::R_1080p;
+		float dispH = _displaySize.y > 1.0f ? _displaySize.y : _internalSize.y;
+		if (dispH >= 2000.0f) { bestPreset = render::ResolutionPreset::R_4K; }
+		else if (dispH >= 1300.0f) { bestPreset = render::ResolutionPreset::R_1440p; }
+		else if (dispH >= 900.0f) { bestPreset = render::ResolutionPreset::R_1080p; }
+		else { bestPreset = render::ResolutionPreset::R_720p; }
+
+		auto s = render::MakeSettings(bestPreset, render::QualityPreset::Ultra);
+		applyRenderProfile(s, bestPreset);
 	}
 
 	SimManager::~SimManager() {
@@ -899,9 +915,12 @@ namespace gui {
 
 		// --- Tabs: Single / Quad ---
 		if (ImGui::BeginTabBar("ViewportTabs", ImGuiTabBarFlags_None)) {
-
 			const bool singleSelected = ImGui::BeginTabItem("Single");
 			if (singleSelected) {
+				// Restore to Manual view when switching back from Quad
+				if (_impl->viewMode == Impl::ViewMode::Quad) {
+					_impl->activeView = gui::ViewID::Manual;
+				}
 				_impl->viewMode = Impl::ViewMode::Single;
 				ImGui::EndTabItem();
 			}
@@ -952,18 +971,29 @@ namespace gui {
 			ImVec2 avail = ImGui::GetContentRegionAvail();
 			ImVec2 cell = ImVec2(avail.x * 0.5f, avail.y * 0.5f);
 
-            auto drawCell = [&](const char* childId, gui::ViewID id, bool sameLine) {
+			// Helper to draw each cell with the same pattern
+			auto drawCell = [&](const char* childId, gui::ViewID id, bool sameLine) {
 				if (sameLine) ImGui::SameLine();
 				ImGui::BeginChild(childId, cell, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
+				
 				auto& v = _impl->_views[(size_t)id];
 				ImVec2 inner = ImGui::GetContentRegionAvail();
 
 				ImGui::Image((ImTextureID)(intptr_t)v.post->getTexture(), inner, ImVec2(0, 1), ImVec2(1, 0));
+
 				// Set active view when clicking inside the quad cell
 				if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
 					_impl->activeView = id;
 				}
+
+				// Handle scroll zoom on hovered quad cell
+				if (ImGui::IsWindowHovered()) {
+					float scrollY = ImGui::GetIO().MouseWheel;
+					if (scrollY != 0.0f) {
+						v.cam->onMouseWheel((double)scrollY);
+					}
+				}
+
 				// Visual indication: draw a border around the active cell
 				if (_impl->activeView == id) {
 					ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -1158,6 +1188,8 @@ namespace gui {
 	// --------------------------------------------------
 	//			 INTERNAL REDNDERING PIPELINE
 	// --------------------------------------------------
+
+	// Initialize shadow map resources for cascaded shadow mapping
 	void SimManager::InitShadowResource(int baseRes) {
 		if (_shadowsInit) {
 			glDeleteFramebuffers(SimManager::NUM_CASCADES, _impl->_cascadeFBO);
@@ -1194,11 +1226,13 @@ namespace gui {
 		_shadowsInit = true;
 	}
 
+	// Initialize the IBL system with a default HDR environment map
 	void SimManager::InitIBL() {
 		_impl->_ibl = std::make_unique<render::IBL>();
 		_impl->_ibl->init((paths::assets() / "hdr" / "default_white.hdr").string());
 	}
 
+	// Render the world grid overlay in the viewport
 	void SimManager::WorldGridRender(scene::Camera* cam, int rtW) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -1227,6 +1261,7 @@ namespace gui {
 
 		_impl->_worldGridShader->use();
 		_impl->_worldGridShader->setMat4(cam->getViewProjection(), "gVP");
+		_impl->_worldGridShader->setMat4(cam->getViewMatrix(), "gView");
 		_impl->_worldGridShader->setVec3(cam->getPosition(), "gCameraWorldPos");
 		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
 		_impl->_worldGridShader->setFlt1(internalScale, "gInternalScale");
@@ -1403,6 +1438,7 @@ namespace gui {
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
+	// Compute the light-space matrix for a given camera frustum slice (cascade)
 	glm::mat4 SimManager::LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane) {
 		std::array<glm::vec4, 8> corners = cam->getFrustumCornersWorldSpace(nearPlane, farPlane);
 
@@ -1461,6 +1497,7 @@ namespace gui {
 		return lightProj * lightView;
 	}
 
+	// Render the skybox using the IBL environment cubemap
 	void SimManager::SkyboxRender(scene::Camera* cam) {
 		glm::mat4 view = cam->getViewMatrix();
 		glm::mat4 projection = cam->getProjection();
@@ -1469,8 +1506,10 @@ namespace gui {
 		_impl->_skybox->render(projection, view);
 	}
 
+	// Load a new HDR environment map for IBL
 	std::string SimManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
 
+	// Load a new HDR environment map for IBL
 	shaders::Shader* SimManager::getCurrentShader() const { return _impl->currentShader; }
 	void SimManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
@@ -1503,6 +1542,7 @@ namespace gui {
 		_settingsValid = true;
 	}
 
+	// Get the pixel dimensions for the current resolution preset
 	glm::vec2 SimManager::getPresetResolutionPx() const {
 		switch (_resCurrent) {
 			case render::ResolutionPreset::R_720p:  return { 1280, 720 };

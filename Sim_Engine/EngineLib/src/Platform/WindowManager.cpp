@@ -77,6 +77,7 @@ namespace window {
         _renderCntx->postRender();
     }
 
+	// Initialisation: Sets up the OpenGL context, GUI context, and simulation manager
     bool GLWindow::init(int width, int height, const std::string& header) {
         _width = width;
         _height = height;
@@ -110,9 +111,22 @@ namespace window {
         return true;
     }
 
+	// Window resize callback: Enforces 16:9 aspect ratio and updates the OpenGL viewport
     void GLWindow::onResize(int width, int height) {
+        if (width <= 0 || height <= 0) return;
+
+        // Enforce 16:9 — derive width from height
+        int correctedW = (height * 16) / 9;
+        if (correctedW != width) {
+            glfwSetWindowSize(_window, correctedW, height);
+            width = correctedW;
+        }
+
         _width = width;
         _height = height;
+
+        // Update the GL viewport for the default framebuffer
+        glViewport(0, 0, width, height);
     }
 
 	// Miscellaneous
@@ -125,21 +139,7 @@ namespace window {
     int window::GLWindow::getHeight() const { return _height; }
     const std::string& window::GLWindow::getHeader() const { return *_header; }
 
-/*
- * --------------------------------------------
- *				USER INTERACTIONS
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * update() -> Updates the window state, handles input, and applies camera movement and gravity.
- * setMouseCaptured(bool captured) -> Sets whether the mouse is captured (disabled) or not.
- * onKey(int key, int scancode, int action, int mods) -> Handles key press events.
- * onScroll(double delta) -> Handles mouse scroll events.
- * onCursorPos(double xpos, double ypos) -> Handles mouse cursor position events.
- * --------------------------------------------
- */
-
+	// Update loop: Handles input and updates the simulation state
     void GLWindow::update() {
 		pollEvents();
 
@@ -158,6 +158,7 @@ namespace window {
         }
     }
 
+	// Input handling
     void window::GLWindow::setMouseCaptured(bool captured) {
         _mouseCaptured = captured;
 
@@ -178,6 +179,7 @@ namespace window {
         }
     }
 
+	// Toggle mouse capture on Escape key press, and also toggle the control panel visibility
     void window::GLWindow::onKey(int key, int scancode, int action, int mods) {
         if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
             setMouseCaptured(!_mouseCaptured);
@@ -188,27 +190,18 @@ namespace window {
         }
     }
 
+	// Forward scroll events to the SimManager for zooming or other scroll-based interactions
     void window::GLWindow::onScroll(double delta) {
         if (_sim) { _sim->onMouseWheel(delta); }
     }
 
+	// Forward window resize events to the SimManager to adjust the internal rendering resolution and aspect ratio
     void window::GLWindow::onCursorPos(double xpos, double ypos) {
 		// LOG_INFO("Mouse moved to: X=%.2f, Y=%.2f", xpos, ypos);
 		if (_sim) { _sim->handleMouseLook(_window, xpos, ypos); }
 	}
 
-/*
- * --------------------------------------------
- *				WINDOW STATES
- * --------------------------------------------
- * 
- * Summary:
- * --------------------------------------------
- * isRunning() const -> Checks if the window is currently running.
- * onClose() -> Handles window close events by setting the running state to false.
- * --------------------------------------------
- */
-
+	// Window states
     bool GLWindow::isRunning() const { return _isRunning; }
     void GLWindow::onClose() { _isRunning = false; }
 }

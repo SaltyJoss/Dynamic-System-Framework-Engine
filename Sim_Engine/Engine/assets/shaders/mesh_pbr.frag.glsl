@@ -170,7 +170,7 @@ void main() {
     vec3 V = normalize(camPos - WorldPos);
     vec3 L = normalize(-lightDirection);
 
-    // Use raw NdotL for specular (physically correct)
+    // Use raw NdotL for specular (physically correct compared to previous)
     float NdotL_raw = max(dot(N, L), 0.0);
 
     // Subtle wrap for diffuse only (softens terminator without ruining specular)
@@ -186,7 +186,7 @@ void main() {
 
     vec3 baseColour = albedo;
 
-    // Base reflectance: dielectrics ~0.04, metals use albedo
+    // Base reflectance -> dielectrics ~0.04, metals use albedo
     vec3 F0 = mix(vec3(0.04), baseColour, metallic);
 
     vec3 H = normalize(V + L);
@@ -197,7 +197,7 @@ void main() {
 
     // --- Energy-conserving split ---
     // Fresnel tells us how much light is reflected (specular)
-    // The rest is refracted (diffuse) — metals have no diffuse
+    // The rest is refracted (diffuse) —> metals have no diffuse
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 

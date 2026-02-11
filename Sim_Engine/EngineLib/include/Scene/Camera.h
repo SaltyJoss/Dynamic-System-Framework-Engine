@@ -54,7 +54,7 @@ namespace scene {
 		void setPitch(float pitch) { _pitch = pitch; updateViewMatrix(); }
 		
 		void setDistance(float offset) {
-			_distance += offset;
+			_distance = glm::max(_minDistance, _distance + offset);
 			updateViewMatrix();
 		}
 
@@ -65,8 +65,8 @@ namespace scene {
 		}
 
 		void onMouseWheel(double delta) {
-			setDistance((float)(delta * 0.5f));
-			updateViewMatrix();
+			// Negative delta = scroll forward = zoom in (decrease distance)
+			setDistance((float)(-delta * 0.5f));
 		}
 
 		void onMouseMove(double x, double y, eInputButton button) {
@@ -136,10 +136,12 @@ namespace scene {
 		}
 
 		void setOrbitDistance(float d) {
-			_distance = glm::max(0.05f, d);
+			_distance = glm::max(_minDistance, d);
 			updateViewMatrix();
 		}
 		float getOrbitDistance() const { return _distance; }
+
+		void setMinDistance(float d) { _minDistance = glm::max(0.05f, d); }
 
 	private:
 		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
@@ -161,6 +163,7 @@ namespace scene {
 		glm::vec3 _velocity{ 0.0f };
 
 		float _distance = 5.0f;
+		float _minDistance = 0.5f;
 		float _aspect;
 		float _FOV;
 		float _near;
