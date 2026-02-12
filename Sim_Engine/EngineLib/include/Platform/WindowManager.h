@@ -1,33 +1,21 @@
 #pragma once
-
-//=============================================
-//            File: WindowManager.h
-//=============================================
-// GLFW-based implementation of the IWindow interface.
-// 
-// ============================================
-//			  GitHub: saltyjoss
-// ============================================
-
+// File:   WindowManager.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
-
 #include "Platform/Window.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
-
 // Forward Declarations
-struct GLFWwindow;
-
+struct ENGINE_API GLFWwindow;
 namespace render { 
-    class GUIContext; 
-    class OpenGLContext; 
+    class ENGINE_API GUIContext;
+    class ENGINE_API OpenGLContext;
 }
 namespace gui { 
-    class simManager; 
-    class ControlPanel; 
-    class DebugPanel;
-	class CommandScriptEditor;
+    class ENGINE_API SimManager;
+    class ENGINE_API ControlPanel;
+    class ENGINE_API DebugPanel;
+	class ENGINE_API CommandScriptEditor;
 }
 
 namespace window {
@@ -51,6 +39,7 @@ namespace window {
         int getHeight() const override;
         const std::string& getHeader() const override;
 
+		// Input handling
         void setMouseCaptured(bool captured);
         bool isMouseCaptured() const { return _mouseCaptured; }
         void onKey(int key, int scancode, int action, int mods) override;
@@ -63,7 +52,7 @@ namespace window {
         void render();
 
     private:
-
+		// UI State
         struct UIState {
 			bool sceneViewOpen = true;
 			bool controlPanelOpen = true;
@@ -75,8 +64,7 @@ namespace window {
 
         std::unique_ptr<render::GUIContext> _GUICntx;
         std::unique_ptr<render::OpenGLContext> _renderCntx;
-
-        std::unique_ptr<gui::simManager> _sim;
+        std::unique_ptr<gui::SimManager> _sim;
         std::unique_ptr<gui::ControlPanel> _controlPanel;
         std::unique_ptr<gui::DebugPanel> _debugPanel;
 		std::unique_ptr<gui::CommandScriptEditor> _cmdEditor;
@@ -84,9 +72,9 @@ namespace window {
         bool _isHovered = false;
         bool _mouseCaptured = false;
         
-
+		// Window properties
         int _width = 0;
         int _height = 0;
         std::string *_header;
     };
-}
+} // namespace window

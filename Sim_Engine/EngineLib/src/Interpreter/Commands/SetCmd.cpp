@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   SetCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/SetCmd.h"
 #include "Interpreter/IStoredProgram.h"
 #include "Interpreter/Utils.h"
@@ -9,6 +11,11 @@ using namespace utils;
 using namespace mathlib;
 
 namespace commands {
+	// --- SetCmd Mark Methods ---
+	void SetCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
+	void SetCmd::markCompleted() { setResult({ CmdState::Executed, {}, "set() ran successfully" }); }
+	bool SetCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
+
 	// Helper function to parse the integration method
 	static IntegratorMethod parseMethod(const std::string& s) {
 		if (s == "euler")    return IntegratorMethod::Euler;
@@ -37,6 +44,7 @@ namespace commands {
 		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
 	}
 
+	// Helper function to parse RGB colour from string format "{r,g,b}"
 	static Colour parseColourRGB(const std::string& str) {
 		if (!str.empty() && str.front() == '{' && str.back() == '}') {
 			Vec3 rgb = utils::parseVec3(str);
@@ -45,6 +53,7 @@ namespace commands {
 		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
 	}
 
+	// Helper function to parse RGB colour from hex format "#RRGGBB"
 	static Colour parseColourHex(const std::string& str) {
 		if (!str.empty() && str.starts_with('#')) {
 			std::string s = str.substr(1);
@@ -96,17 +105,13 @@ namespace commands {
 		return std::nullopt;
 	}
 
-	void SetCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
-	void SetCmd::markCompleted() { setResult({ CmdState::Executed, {}, "set() ran successfully" }); }
-	bool SetCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
-
-	// --- SetCmd Constructor ---
+	// Constructor
 	SetCmd::SetCmd(const std::string& id, const std::string& tokens)
 		: _id(id), _tokens(tokens) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
-	// --- SetCmd Method Implementations ---
+	// Execute the command
 	void SetCmd::execute() {
 		if (!getProgram()) {
 			std::string errMsg = "set() command has no program context.";
@@ -148,7 +153,7 @@ namespace commands {
 		markFailed("Unknown set target: " + _id);
 	}
 
-	// --- Free Function to Create SetCmd ---
+	// Factory function to create a SetCmd from arguments
 	std::unique_ptr<ICommand> CreateSetCmd(const std::string& id, const std::vector<std::string>& tokens) {
 		if (tokens.size() != 1) { D_FAIL("set(id, <val>) expects exactly 1 argument."); }
 		return std::make_unique<SetCmd>(id, tokens[0]);

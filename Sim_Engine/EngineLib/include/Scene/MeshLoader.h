@@ -33,9 +33,9 @@ namespace gui {
 		// Stores the meshes that have been imported during the loading process
 		std::vector<std::shared_ptr<scene::Mesh>> _imported;
 		// Helper method to process an Assimp mesh and convert it into a shared pointer to a scene::Mesh object
-		std::shared_ptr<scene::Mesh> processMesh(aiMesh* mesh);
+		std::shared_ptr<scene::Mesh> processMesh(aiMesh* mesh, const aiScene* scene);
 
 		// Helper method to recursively process an Assimp node and its children, applying the parent transformation to each mesh
 		void processNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform);
 	};
-}
+} // namespace gui

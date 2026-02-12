@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   UIContext.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/UIContext.h"
 #include "EngineLib/LogMacros.h"
 #include "Scene/SimulationManager.h"
@@ -15,11 +17,13 @@ using namespace constants;
 using namespace utils;
 
 namespace commands {
-	UIContext::UIContext(gui::simManager* sim, scene::ObjectID objID)
+	// Constructor
+	UIContext::UIContext(gui::SimManager* sim, scene::ObjectID objID)
 		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
+	// --- OBJECT RESOLUTION METHODS ---
 	scene::ObjectID UIContext::DefaultObjectID() const { return _defaultObjID; }
 	scene::ObjectID UIContext::ObjectID() const { return _objID; }
 
@@ -32,6 +36,9 @@ namespace commands {
 	scene::Object* UIContext::resolveCurrentObject() const { return resolveObject(_objID); }
 	scene::Object* UIContext::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
 
+	// --- GLOBAL STATE METHODS ---
+	
+	// Set the angular velocity of the current object, with unit conversion and optional clamping
 	OpResult UIContext::setOmega(const mathlib::Vec3& omega, AngularUnits units) {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
@@ -48,6 +55,7 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
+	// Set the fixed delta time for the simulation
 	OpResult UIContext::setFixedDt(double dt) {
 		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
 		if (dt <= 0.0) { return OpResult::Failure("Fixed dt must be positive."); }
@@ -78,6 +86,7 @@ namespace commands {
 
 	// --- OBJECT LOAD AND CLEAR METHODS ---
 
+	// Loads a new object from the specified file path and updates the context with the new object's ID
 	OpResult UIContext::loadObject(const std::string& objectPath) {
 		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
 		if (objectPath.empty()) { return OpResult::Failure("Object path is empty."); }
@@ -117,6 +126,7 @@ namespace commands {
 
 	// --- ROBOT LOAD AND CLEAR METHODS ---
 
+	// Loads a robot by name and updates the context with the new robot system
 	OpResult UIContext::loadRobot(const std::string& robotName) {
 		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
 		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
@@ -138,12 +148,14 @@ namespace commands {
 	// --- TEXTURE LOAD AND CLEAR METHODS ---
 	// (Texture loading/clearing not implemented yet)
 
-	const OpResult UIContext::loadTexture(const std::string& texturePath) const {
+	// Loads a texture from the specified file path and applies it to the current object
+	const OpResult UIContext::loadTexture(const std::string& /*texturePath*/) const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
 		return OpResult::Failure("Texture loading not implemented yet.");
 	}
 
+	// Clears the texture from the current object
 	const OpResult UIContext::clearTexture() const {
 		scene::Object* obj = resolveCurrentObject();
 		if (!obj) return OpResult::Failure("No object selected.");
@@ -151,6 +163,8 @@ namespace commands {
 	}
 
 	// --- OBJECT SELECTION METHOD ---
+
+	// Selects an object by its ID and updates the context with the new selected object ID
 	OpResult UIContext::selectObject(scene::ObjectID id) {
 		scene::Object* obj = resolveObject(id);
 		if (!obj) return OpResult::Failure("Object ID not found.");
@@ -159,6 +173,8 @@ namespace commands {
 	}
 
 	// --- PRIMARY SIMULATION COMMANDS ---
+
+	// Starts the simulation if the simulation manager is available
 	OpResult UIContext::startSim() {
 		if (!_sim) {
 			LOG_WARN("Simulation manager is null, cannot start simulation.");

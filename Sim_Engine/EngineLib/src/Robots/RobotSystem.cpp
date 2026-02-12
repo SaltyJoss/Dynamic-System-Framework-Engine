@@ -1,5 +1,6 @@
 #include "pch.h"
-
+// File:   RobotSystem.cpp
+// GitHub: SaltyJoss
 #include "Robots/RobotSystem.h"
 #include "Robots/RobotLoader.h"
 #include "Scene/Object.h"
@@ -38,15 +39,6 @@ namespace robots {
 			static_cast<float>(v.y()),
 			static_cast<float>(v.z())
 			);
-	}
-	// Converts an Eigen 4D vector to a glm::vec4
-	static glm::vec4 toGlm(const Vec4& v) { 
-		return glm::vec4(
-			static_cast<float>(v.x()),
-			static_cast<float>(v.y()),
-			static_cast<float>(v.z()),
-			static_cast<float>(v.w())
-		);
 	}
 	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
 	static glm::quat toGlm(const Quat& q) {
@@ -157,7 +149,7 @@ namespace robots {
 	}
 
 	// Method to compute the contribution of a single joint and its child link to the effective inertia I_eff of the joint
-	static double computeJointInertiaContribution(RobotMetrics& m, const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
+	static double computeJointInertiaContribution(const RobotJoint& joint, const RobotLink& link, const Pose& T_world ) {
 		const double mass = link.inertial.mass;
 
 		// Rotation from link frame to world frame
@@ -190,6 +182,50 @@ namespace robots {
 	void RobotSystem::instantiateRobotLinks() {
 		// For each link, load its visual mesh(es), apply the visual origin transform, and create a scene::Object
 		for (auto& link : _robot.links) {
+			link.attachedObjects.clear();
+
+			// Per-mesh material entries (new format with meshEntries)
+			if (!link.visual.meshEntries.empty()) {
+				for (const auto& entry : link.visual.meshEntries) {
+					const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile).string();
+					auto partObjs = _loadMeshReturn(fullPath);
+
+					// If no meshes were loaded for this entry, skip it
+					for (auto* obj : partObjs) {
+						scene::Mesh* mesh = obj->getMesh();
+						if (mesh) {
+							// Apply per-mesh material if specified, otherwise use link-level material
+							if (entry.hasMaterial) {
+								const Vec4& rgba = entry.material;
+								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+								mesh->setMetallic(entry.metallic);
+								mesh->setRoughness(entry.roughness);
+							}
+							// Fallback to link-level material
+							else {
+								const Vec4& rgba = link.visual.material;
+								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+								mesh->setMetallic(link.visual.metallic);
+								mesh->setRoughness(link.visual.roughness);
+							}
+							mesh->rebuildGPU();
+						}
+
+						// Set object properties
+						obj->name = link.name;
+						obj->category = scene::ObjectCategory::RobotLink;
+						obj->transform.scale = glm::vec3(_robot.scale);
+						link.attachedObjects.push_back(obj);
+					}
+				}
+
+				if (!link.attachedObjects.empty()) {
+					link.attachedObject = link.attachedObjects[0];
+				}
+				continue;
+			}
+
+			// If no mesh entries, fall back to legacy single mesh or multiple mesh files
 			std::vector<scene::Object*> objs;
 
 			// Explicit multiple meshes
@@ -238,6 +274,7 @@ namespace robots {
 				// Apply visual material properties
 				baseMesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
 				baseMesh->setMetallic(link.visual.metallic);
+				baseMesh->setRoughness(link.visual.roughness);
 
 				baseMesh->rebuildGPU();
 			}
@@ -246,6 +283,7 @@ namespace robots {
 			obj->category = scene::ObjectCategory::RobotLink;
 			obj->transform.scale = glm::vec3(_robot.scale);
 			link.attachedObject = obj;
+			link.attachedObjects.push_back(obj);
 		}
 
 		LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
@@ -408,8 +446,7 @@ namespace robots {
 		double I = 0.0;
 		// For each link, compute the contribution of joint i to the effective inertia at the end-effector
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
-			RobotMetrics tmp;
-			I += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+			I += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 		}
 
 		return std::max(I, 1e-6); // [kg*m^2], I_eff for joint i with floor to avoid singularities
@@ -447,8 +484,7 @@ namespace robots {
 			// Compute perturbed effective inertia for joint i
 			double I_pert = 0.0;
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_pert += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world_pert[k]);
+				I_pert += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world_pert[k]);
 			}
 			I_pert = std::max(I_pert, 1e-6);
 
@@ -508,7 +544,7 @@ namespace robots {
 
 	// Method to compute joint metrics for control
 	RobotMetrics RobotSystem::computeJointMetrics(
-		const RobotJoint& joint, const RobotLink& link, double I_eff, 
+		const RobotJoint& joint, const RobotLink& /*link*/, double I_eff, 
 		double theta, double omega, 
 		double thetaRef, double omegaRef, double alphaRef, 
 		double eta, double tau_coriolis, double tau_gravity
@@ -610,7 +646,7 @@ namespace robots {
 	}
 
 	// Derivative function for ODE integration
-	mathlib::VecX RobotSystem::deriv(const control::TrajectoryManager& traj, double t, const mathlib::VecX& x) const {
+	mathlib::VecX RobotSystem::deriv(double /*t*/, const mathlib::VecX& x) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
 		mathlib::VecX dx(3 * n);
 
@@ -628,8 +664,7 @@ namespace robots {
 		std::vector<double> I_eff(n, 0.0);
 		for (size_t i = 0; i < n; ++i) {
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
@@ -705,7 +740,7 @@ namespace robots {
 	}
 
 	// Method to advance the robot state by dt using the selected integrator
-	void RobotSystem::step(const control::TrajectoryManager& traj, double dt, double simTime) {
+	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
 		const size_t n = _robot.joints.size();
 		_simTime = simTime;
@@ -724,14 +759,13 @@ namespace robots {
 			qd[i] = _robot.joints[i].omegaRad_s;
 
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				RobotMetrics tmp;
-				I_eff[i] += computeJointInertiaContribution(tmp, _robot.joints[i], _robot.links[k], T_world[k]);
+				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
 
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(traj, t, xIn); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
 		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		// Unpack new state
@@ -908,15 +942,16 @@ namespace robots {
 
 		// Remove robot objects from _objects
 		for (auto& link : _robot.links) {
-			if (auto* dead = link.attachedObject) {
-				// find and erase matching object
+			for (auto* dead : link.attachedObjects) {
+				if (!dead) continue;
 				_objects.erase(
 					std::remove_if(_objects.begin(), _objects.end(),
 						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == dead; }),
 					_objects.end()
 				);
-				link.attachedObject = nullptr; // clear pointer
 			}
+			link.attachedObjects.clear();
+			link.attachedObject = nullptr;
 		}
 
 		_robot.links.clear();
@@ -1025,45 +1060,46 @@ namespace robots {
 		// Update attached objects (visuals) based on FK results
 		for (int i = 0; i < (int)_robot.links.size(); ++i) {
 			auto& link = _robot.links[i];
-			if (!link.attachedObject) continue;
+			if (link.attachedObjects.empty()) continue;
 
-			scene::Object* obj = link.attachedObject;
-			scene::Mesh* mesh = obj->getMesh();
-			if (!mesh) { continue; } 
+			for (auto* obj : link.attachedObjects) {
+				if (!obj) continue;
+				scene::Mesh* mesh = obj->getMesh();
+				if (!mesh) { continue; }
 
-			// Engine-aligned robots (CAD-authored):
-			// Mesh local frame already represents link frame.
-			// FK must be baked directly into the mesh, not the object.
-			if (_robot.baseFrameIsEngineAligned) {
-				mesh->localTransform = glm::mat4(1.0f);
-				mesh->localTransform = world[i];
-				continue;
+				// Engine-aligned robots (CAD-authored):
+				// Mesh local frame already represents link frame.
+				// FK must be baked directly into the mesh, not the object.
+				if (_robot.baseFrameIsEngineAligned) {
+					mesh->localTransform = glm::mat4(1.0f);
+					mesh->localTransform = world[i];
+					continue;
+				}
+
+				// FK: world -> link frame
+				const glm::mat4& T_link = world[i];
+
+				// Visual origin: link frame -> visual frame
+				const Vec3& vt = link.visual.origin_xyz;
+				const Vec3& vr = link.visual.origin_rpy;
+
+				glm::mat4 T_visual(1.0f);
+				T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
+				T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
+
+				glm::mat4 M = T_link * T_visual;
+
+				// Apply mesh-local ONCE
+				if (mesh->hasLocalTransform()) {
+					M = M * mesh->localTransform;
+				}
+
+				obj->transform.position = glm::vec3(M[3]);
+				obj->transform.rotQ = glm::quat_cast(M);
+
+				LOG_INFO_ONCE("Mesh local determinant: %.3f",
+					glm::determinant(mesh->localTransform));
 			}
-
-			// FK: world -> link frame
-			const glm::mat4& T_link = world[i];
-
-			// Visual origin: link frame -> visual frame
-			const Vec3& vt = link.visual.origin_xyz;
-			const Vec3& vr = link.visual.origin_rpy;
-
-			glm::mat4 T_visual(1.0f);
-			T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
-			T_visual *= glm::mat4_cast(toGlm(rpyRadToQuat(vr)));
-
-			glm::mat4 M = T_link * T_visual;
-
-			// Apply mesh-local ONCE
-			if (mesh->hasLocalTransform()) {
-				M = M * mesh->localTransform;
-			}
-
-			obj->transform.position = glm::vec3(M[3]);
-			obj->transform.rotQ = glm::quat_cast(M);
-
-			LOG_INFO_ONCE("Mesh local determinant: %.3f",
-				glm::determinant(mesh->localTransform));
-
 		}
 	}
 

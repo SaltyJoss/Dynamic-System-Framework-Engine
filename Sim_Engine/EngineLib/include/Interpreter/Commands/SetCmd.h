@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    SetCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>

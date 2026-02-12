@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    ParallelGroupCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "Interpreter/Command.h"
 #include <memory>
@@ -34,4 +35,4 @@ namespace commands {
 
 		CmdResult _result = { CmdState::NotStarted, {}, "" };
 	};
-}
+} // namespace commands

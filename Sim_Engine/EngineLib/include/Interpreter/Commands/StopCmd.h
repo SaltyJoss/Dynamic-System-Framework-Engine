@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    StopCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
@@ -40,4 +41,4 @@ namespace commands {
 	};
 
 	std::unique_ptr<ICommand> CreateStopCmd(const std::string& id, const std::vector<std::string>& args);
-}
+} // namespace commands

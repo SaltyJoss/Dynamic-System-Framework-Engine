@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    CommandContextMotion.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/Utils.h"
@@ -30,7 +31,7 @@ namespace commands {
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(gui::simManager* sim, scene::ObjectID objID);
+		CommandContextMotion(gui::SimManager* sim, scene::ObjectID objID);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -54,7 +55,7 @@ namespace commands {
 
 
 
-		gui::simManager* Sim() const { return _sim; }
+		gui::SimManager* Sim() const { return _sim; }
 		robots::RobotSystem* Robot() const { return _robot; }
 		scene::ObjectID DefaultObjectID() const;
 		scene::ObjectID ObjectID() const;
@@ -103,7 +104,7 @@ namespace commands {
 
 
 	private:
-		gui::simManager* _sim = nullptr;
+		gui::SimManager* _sim = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		robots::RobotSystem* _robot = nullptr;
 		scene::ObjectID _objID;

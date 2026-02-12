@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   SelectCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/SelectCmd.h"
 #include "Scene/SimulationManager.h"
 #include "Scene/ObjectID.h"
@@ -12,12 +14,12 @@ namespace commands {
 	void SelectCmd::markCompleted() { setResult({ CmdState::Executed, {}, "select() ran successfully" }); }
 	bool SelectCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
 
-	// --- SelectCmd Constructor ---
+	// Constructor
 	SelectCmd::SelectCmd(scene::ObjectID obj) : _objID(obj) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
-	// --- SelectCmd Method Implementations ---
+	// Execute the command
 	void SelectCmd::execute() {
 		if (!getProgram()) {
 			std::string errMsg = "select() command has no program context.";
@@ -52,6 +54,7 @@ namespace commands {
 		//}
 	}
 
+	// Factory function to create a SelectCmd from arguments
 	std::unique_ptr<ICommand> CreateSelectCmd(const std::string& id, const std::vector<std::string>& args) {
 		if (id.empty()) { D_FAIL("select(<objID>) expects exactly 1 argument."); }
 		scene::ObjectID objID = static_cast<scene::ObjectID>(std::stoul(id));

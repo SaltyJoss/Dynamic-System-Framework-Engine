@@ -1,8 +1,6 @@
-// ==================================================
-//				File: PhysicsSystem.cpp
-// ==================================================
-
 #include "pch.h"
+// File:   PhysicsSystem.cpp
+// GitHub: SaltyJoss
 #include "Physics/PhysicsSystem.h"
 #include "Scene/Object.h"
 #include "Scene/Mesh.h"
@@ -21,9 +19,7 @@ namespace physics {
 		if (!_integrator) { LOG_WARN("Physics got null IntegrationService*"); }
 	}
 
-// --------------------------------------------------
-//				  SIMULATION CONTROL
-// --------------------------------------------------
+	// Main update function that applies forces, updates translation and rotation, and handles collisions
 	void PhysicsSystem::update(double dt, scene::Object* obj) {
 		if (!obj) return;
 		// Apply forces (uses mass)
@@ -35,14 +31,7 @@ namespace physics {
 		// Rotate object (uses angular velocity)
 		//updateRotation(dt, obj);
 		updateRotation(dt, obj);
-
-		// Handle floor collision
-		//handleFloorCollision(dt, obj, 0.0f);
 	}
-
-// --------------------------------------------------
-//				  PER-SYSTEM UPDATES
-// --------------------------------------------------
 
 	// Updates an objects rotation using quaternions instead of Euler angles
 	void PhysicsSystem::updateRotation(double dt, scene::Object* obj) {
@@ -73,15 +62,6 @@ namespace physics {
 		s.q = Quat(next(0), next(1), next(2), next(3)).normalized();
 		s.angularVelocity = Vec3(next(4), next(5), next(6));
 		obj->transform.rotQ = glm::quat((float)s.q.w(), (float)s.q.x(), (float)s.q.y(), (float)s.q.z());
-
-		// update diagnostics if running
-		if (_diagRunning && obj == _diagObject) {
-			IntegratorDiagSample sample;
-			sample.t = _t;
-			sample.q_method = s.q;
-			sample.omega = s.angularVelocity;
-			_diagSamples.push_back(sample);
-		}
 	}
 
 	// Translation update

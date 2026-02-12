@@ -1,40 +1,6 @@
 #pragma once
-
-// =============================================
-//            File: Input.h
-// =============================================
-// Class for handling input from keyboard and mouse.
-//
-// Summary:
-// =============================================
-//
-// structures & enumeratiors:
-// --------------------------------------------
-// enum class eInputButton
-//      -> Enumeration for mouse buttons (Left, Right, Middle, None).
-// --------------------------------------------
-// 
-// public:
-// --------------------------------------------
-// eInputButton GetPressedButton(GLFWwindow* window)
-//      -> Returns the currently pressed mouse button.
-// bool IsKeyPressed(GLFWwindow* window, int key)
-//      -> Checks if a specific key is pressed.
-// bool IsMouseButtonPressed(GLFWwindow* window, eInputButton button)
-//      -> Checks if a specific mouse button is pressed.
-// --------------------------------------------
-//
-// private:
-// --------------------------------------------
-// Input()
-//      -> Private constructor for the Input class.
-// --------------------------------------------
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
-
-
+// File:   Input.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 
 #include <GLFW/glfw3.h>
@@ -62,4 +28,4 @@ namespace scene {
 		Input() = default;
 	};
 	
-}
+} // namespace scene

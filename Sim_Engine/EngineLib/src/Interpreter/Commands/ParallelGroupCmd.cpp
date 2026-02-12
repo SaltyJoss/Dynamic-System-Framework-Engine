@@ -1,14 +1,18 @@
 #include "pch.h"
+// File:   ParallelGroupCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/ParallelGroupCmd.h"
 #include "Robots/RobotSystem.h"
 
 #include <EngineLib/LogMacros.h>
 
 namespace commands {
+	// Constructor
 	ParallelGroupCmd::ParallelGroupCmd( Policy policy, std::vector<std::unique_ptr<ICommand>> cmds, double timeout)
 		: _policy(policy), _cmds(std::move(cmds)), _timeoutSec(timeout) {
 	}
 
+	// Update method
 	CmdResult ParallelGroupCmd::update(CommandContextMotion& cntx, double dt) {
 		if (_cmds.empty()) { _result = { CmdState::Executed, {}, "parallel: empty group" }; return _result; }
 		// Start the group if not already started
@@ -60,6 +64,7 @@ namespace commands {
 		}
 	}
 
+	// Execute method
 	void ParallelGroupCmd::execute() {
 		_started = false;
 		_elapsed = 0.0;

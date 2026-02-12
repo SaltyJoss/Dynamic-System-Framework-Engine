@@ -1,4 +1,6 @@
 #pragma once
+// File:    Telemetry.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <vector>
 #include <functional>

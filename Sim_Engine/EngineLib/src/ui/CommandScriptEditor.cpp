@@ -1,6 +1,8 @@
 #include "pch.h"
+// File:   CommandScriptEditor.cpp
+// GitHub: SaltyJoss
 #include <imgui.h>
-#include "Scene/CommandScriptEditor.h"
+#include "ui/CommandScriptEditor.h"
 #include "Interpreter/StoredProgram.h"
 #include "Platform/Paths.h"
 #include <io.h>
@@ -8,7 +10,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
-	CommandScriptEditor::CommandScriptEditor(gui::simManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
+	CommandScriptEditor::CommandScriptEditor(gui::SimManager* sim) : _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr) {
 		_script = std::vector<std::string>();
 		_sim->setScriptRunning(false);
 
@@ -142,9 +144,10 @@ namespace gui {
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
 				_sim->setActiveProgram(_program);
-				_sim->setScriptRunning(true);
+					_sim->setScriptRunning(true);
+					_sim->setLastScriptText(_scriptText);
 
-				// Remove trailing null character if present
+					// Remove trailing null character if present
 				std::string code = _scriptText;
 				if (!code.empty() && code.back() == '\0') code.pop_back();
 

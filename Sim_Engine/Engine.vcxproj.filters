@@ -105,10 +105,18 @@
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json">
       <Filter>Resource Files\configs</Filter>
     </None>
+    <None Include="Engine\assets\shaders\ssao.frag.glsl" />
+    <None Include="Engine\assets\shaders\ssao_blur.frag.glsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_iiwa14.dsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_panda.dsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_vispa.dsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\src\Main.cpp">
       <Filter>Source Files\Sim</Filter>
+    </ClCompile>
+    <ClCompile Include="External\stb\stb_image_write_impl.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

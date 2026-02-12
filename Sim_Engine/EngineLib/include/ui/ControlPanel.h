@@ -1,11 +1,8 @@
 #pragma once
 // File:    ControlPanel.h
 // GitHub:  SaltyJoss
-
-// Includes
 #include "EngineCore.h"
 #include <cmath>
-
 #include "Physics/PhysicsSystem.h"
 
 #include "Scene/Object.h"
@@ -69,10 +66,10 @@ namespace gui {
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
-        ControlPanel(simManager* sim);
+        ControlPanel(SimManager* sim);
 
-		void drawMenus(simManager* sim);
-        void render(simManager* sim);
+		void drawMenus(SimManager* sim);
+        void render(SimManager* sim);
         void setSimulationCallback(const std::function<void(bool)>& callback) { simCallback = callback; }
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
@@ -80,7 +77,7 @@ namespace gui {
 		// Internal Pointers
         std::shared_ptr<scene::Mesh> _mesh;
 
-        simManager* _sim = nullptr;
+        SimManager* _sim = nullptr;
         physics::PhysicsSystem* _phys;
         scene::Light* _light;
         scene::Object* _obj;
@@ -89,7 +86,7 @@ namespace gui {
         std::string _currentMeshFile;
         std::string _currentHDRFile;
 
-        simManager::ControlMode* _controlMode;
+        SimManager::ControlMode* _controlMode;
 
         std::function<void(const std::string&)> meshLoadCallback;
         std::function<void(bool)> simCallback;
@@ -109,9 +106,16 @@ namespace gui {
 
         void sceneObjectsTable();
 
-        void selectJointAndFollow(int jointIndex);
+		void selectJointAndFollow(int jointIndex);
 		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
-        void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+
+		void drawResultsTab();
+			void drawResultsWindow();
+			void exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h);
+			void exportTelemetryCSV(const char* filepath);
+			void runComparisonAllIntegrators();
+			void drawComparisonPlots();
 
 
 		// Helper Methods
@@ -133,13 +137,31 @@ namespace gui {
 		bool _qualityChanged = false;
 		bool _resChanged = false;
 
-        // Internal states
-        bool simulationRunning = false;
+		// Internal states
+		bool simulationRunning = false;
 		bool _jointSelected = false;
 		bool diagRunning = false;
-        bool _robotRequested = false;
-        bool _hasRobot = false;
-        bool _openStats = true;
+		bool _robotRequested = false;
+		bool _hasRobot = false;
+		bool _openStats = true;
+
+		// Results tab/window state
+		bool _showResultsWindow = false;
+		bool _simWasRunningLastFrame = false;
+		bool _resultsFocusNeeded = false;
+		bool _selectResultsTab = false;
+
+		// Integrator comparison state
+		struct ComparisonSnapshot {
+			std::string integratorName;
+			std::vector<float> time;
+			std::vector<float> errRms;
+			std::vector<float> errMax;
+			std::vector<std::vector<float>> jointErr;
+			int jointCount = 0;
+		};
+		std::vector<ComparisonSnapshot> _comparisonResults;
+		bool _comparisonReady = false;
 
 		std::string _requestedRobot;    // name of requested robot to load
 		std::string _currentObjectName; // name of currently selected object
@@ -151,7 +173,7 @@ namespace gui {
 
 		float simLength = 30.0f;  // ~30 seconds default
 		float diagLength = 15.0f; // ~15 seconds default
-        float deltaTime = 1 / 180; // ~180 FPS default
+        double deltaTime = 1.0f / 180.0f; // ~180 FPS default
 		float simTime = 0.0f;     // current simulation time
 		float diagTime = 0.0f;    // current diagnostic time
 
@@ -171,7 +193,7 @@ namespace gui {
 
 
     };
-}
+} // namespace gui
 
 // Helper Macros
 

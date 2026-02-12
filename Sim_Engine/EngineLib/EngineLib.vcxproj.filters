@@ -163,6 +163,12 @@
     <Filter Include="External\implot">
       <UniqueIdentifier>{8325ff8a-0bcb-4d8f-ac82-ef7f255dc0e7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\include\ui">
+      <UniqueIdentifier>{dcf1c138-d2d3-4752-ac33-7d87c3cd2401}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\src\ui">
+      <UniqueIdentifier>{8021d6bb-3a16-4d4e-8d07-28bcfb98e46e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -186,9 +192,6 @@
     <ClInclude Include="include\Platform\WindowManager.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="include\Rendering\Cubemap.h">
-      <Filter>Header Files\include\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="include\Rendering\GUIContext.h">
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
@@ -205,12 +208,6 @@
       <Filter>Header Files\include\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\Camera.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Scene\ControlPanel.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Scene\DebugPanel.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\Element.h">
@@ -232,9 +229,6 @@
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\Object.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Scene\Styles.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Scene\VertexHolder.h">
@@ -381,12 +375,6 @@
     <ClInclude Include="include\Scene\SimulationManager.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\RenderPreset.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Rendering\RenderPreeset.h">
-      <Filter>Header Files\include\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="include\Interpreter\StoredProgram.h">
       <Filter>Header Files\include\Interpreter</Filter>
     </ClInclude>
@@ -407,9 +395,6 @@
     </ClInclude>
     <ClInclude Include="include\Interpreter\RegisterCommand.h">
       <Filter>Header Files\include\Interpreter</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Scene\CommandScriptEditor.h">
-      <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Interpreter\RunWrapper.h">
       <Filter>Header Files\include\Interpreter</Filter>
@@ -525,6 +510,24 @@
     <ClInclude Include="include\Platform\Logger.h">
       <Filter>Header Files\include\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="include\ui\ControlPanel.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\RenderPreset.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\CommandScriptEditor.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\DebugPanel.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\Styles.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ui\DebugLogEntry.h">
+      <Filter>Header Files\include\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -536,20 +539,8 @@
     <ClCompile Include="src\Application.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Scene\ControlPanel.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene\DebugPanel.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="src\Scene\Mesh.cpp">
       <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene\Styles.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\Cubemap.cpp">
-      <Filter>Source Files\src\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\GUIContext.cpp">
       <Filter>Source Files\src\Rendering</Filter>
@@ -632,9 +623,6 @@
     <ClCompile Include="src\Scene\SimulationManager.cpp">
       <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="src\Scene\RenderPreset.cpp">
-      <Filter>Source Files\src\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="src\Interpreter\StoredProgram.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
     </ClCompile>
@@ -646,9 +634,6 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Parser.cpp">
       <Filter>Source Files\src\Interpreter\Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene\CommandScriptEditor.cpp">
-      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="include\Interpreter\RunWrapper.cpp">
       <Filter>Source Files\src\Interpreter</Filter>
@@ -736,6 +721,21 @@
     </ClCompile>
     <ClCompile Include="src\Platform\Logger.cpp">
       <Filter>Source Files\src\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\ControlPanel.cpp">
+      <Filter>Source Files\src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\CommandScriptEditor.cpp">
+      <Filter>Source Files\src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\RenderPreset.cpp">
+      <Filter>Source Files\src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\DebugPanel.cpp">
+      <Filter>Source Files\src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\Styles.cpp">
+      <Filter>Source Files\src\ui</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

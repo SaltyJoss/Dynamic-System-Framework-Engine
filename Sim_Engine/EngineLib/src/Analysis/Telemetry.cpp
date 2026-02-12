@@ -1,11 +1,13 @@
 #include "pch.h"
-
+// File:   Telemetry.cpp
+// GitHub: SaltyJoss
 #include "Analysis/Telemetry.h"
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"
 
 namespace diagnostics {
-	void TelemetryRecorder::record(double t, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel level) {
+	// Record telemetry data at time t
+	void TelemetryRecorder::record(double t, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel /*level*/) {
 		const int n = (int)robotSys.getRobot().joints().size();
 
 		// Begin write
@@ -22,6 +24,7 @@ namespace diagnostics {
 		int worstJ		= -1;	// index of worst joint
 		int clampSum	= 0;	// sum of clamping events
 
+		// Collect telemetry for each joint
 		for (int i = 0; i < n; ++i) {
 			const auto& j = robotSys.getRobot().joints()[i];
 

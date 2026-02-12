@@ -1,5 +1,7 @@
 #include "pch.h"
-#include "Scene/RenderPreset.h"
+// File:   RenderPreset.cpp
+// GitHub: SaltyJoss
+#include "ui/RenderPreset.h"
 
 namespace render {
 	RenderSettings MakeSettings(ResolutionPreset res, QualityPreset quality) {
@@ -24,7 +26,7 @@ namespace render {
 			s.ssao = true;
 			s.ssaoResDiv = 2;
 			s.ssaoSamples = 32;
-			s.ssaoStrength = 0.75f;
+			s.ssaoStrength = 0.35f;
 			s.bloom = true;
 			s.bloomThreshold = 0.5f;
 			s.envPreFilterRes = 256;
@@ -39,7 +41,7 @@ namespace render {
 			s.ssao = true;
 			s.ssaoResDiv = 2;
 			s.ssaoSamples = 64;
-			s.ssaoStrength = 1.0f;
+			s.ssaoStrength = 0.4f;
 			s.bloom = true;
 			s.bloomThreshold = 0.75f;
 			s.envPreFilterRes = 512;
@@ -54,7 +56,7 @@ namespace render {
 			s.ssao = true;
 			s.ssaoResDiv = 1;
 			s.ssaoSamples = 64;
-			s.ssaoStrength = 1.0f;
+			s.ssaoStrength = 0.4f;
 			s.bloom = true;
 			s.bloomThreshold = 1.0f;
 			s.envPreFilterRes = 512;
@@ -71,8 +73,8 @@ namespace render {
 			case ResolutionPreset::R_4K: s.renderScale = 1.0f; break;
 		}
 
-		s.exposure = 1.0f;
-		s.whitePoint = 1.675f;
+		s.exposure = 1.2f;
+		s.whitePoint = 1.5f;
 		s.grid = true;
 		s.axisOrientator = true;
 

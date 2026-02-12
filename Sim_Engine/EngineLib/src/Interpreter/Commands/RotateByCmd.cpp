@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   RotateByCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/RotateByCmd.h"
 #include "Interpreter/Utils.h"
 
@@ -13,6 +15,7 @@ namespace commands {
 	void RotateByCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateBy() ran successfully" }); }
 	bool RotateByCmd::hasStarted() const { return _started; }
 
+	// Constructor
 	RotateByCmd::RotateByCmd(scene::ObjectID objID, utils::AxisMask axes, double omegaDegPerSec, double deltaDeg)
 		: _objID(objID), _axes(axes), _omegaDeg(omegaDegPerSec), _deltaDeg(deltaDeg), _totalRotated(0.0), _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
@@ -25,6 +28,7 @@ namespace commands {
 			return CmdResult{ CmdState::Failed, {}, "rotateBy() not started." };
 		}
 
+		// Resolve target object (must be called after start() to ensure default object is set)
 		scene::Object* obj = cntx.resolveDefaultObject();
 		if (!obj) {
 			markFailed("rotateBy(<objID>,...) target but no current object selected.");
@@ -37,6 +41,7 @@ namespace commands {
 
 		const double stepDeg = _omegaDeg * dt;
 
+		// If the next step would overshoot the target angle, clamp it to the remaining angle
 		auto result = cntx.rotateObject(obj, mask, _omegaDeg, dt);
 		if (!result.ok) {
 			markFailed(result.message);
@@ -44,6 +49,7 @@ namespace commands {
 			return CmdResult{ CmdState::Failed, {}, result.message };
 		}
 
+		// Update total rotated angle
 		_totalRotated += stepDeg;
 		if (std::abs(_totalRotated) >= std::abs(_deltaDeg)) {
 			if (obj) { cntx.stopRotation(obj, mask); }
@@ -58,6 +64,7 @@ namespace commands {
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
 
+	// Execute the command
 	void RotateByCmd::execute() {
 		_started = true;
 		_totalRotated = 0.0;
@@ -65,6 +72,7 @@ namespace commands {
 		setResult({ CmdState::Executing, {}, "rotateBy() started" });
 	}
 
+	// Factory function to create RotateByCmd from command arguments
 	std::unique_ptr<ICommand> CreateRotateByCmd(const std::string& id, const std::vector<std::string>& args) {
 		// rotateBy(<objID>, <axes>, <omegaDeg>, <deltaDeg>)
 		if (args.size() != 3) {

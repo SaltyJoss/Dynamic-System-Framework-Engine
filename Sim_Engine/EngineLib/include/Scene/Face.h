@@ -1,30 +1,6 @@
 #pragma once
-#pragma warning(disable : 4251)
-
-// =============================================
-//            File: Face.h
-// =============================================
-// Class representing a face in a 3D mesh, defined by vertex indices.
-//
-// Summary:
-// =============================================
-// 
-// public:
-// --------------------------------------------
-// void addVertexIndex(GLuint index)
-//      -> Adds a vertex index to the face.
-// --------------------------------------------
-// 
-// private:
-// --------------------------------------------
-// std::vector<GLuint> _vertexIndices
-//      -> Vector storing the vertex indices that make up the face.
-// --------------------------------------------
-//
-// ============================================
-//			  GitHub: SaltyJoss
-// ============================================
-
+// File:   Face.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 
 #include <vector>
@@ -38,8 +14,7 @@ namespace scene {
     class ENGINE_API Face {
     public:
         void addVertexIndex(GLuint index) { _vertexIndices.push_back(index); }
-
     private:
         std::vector<GLuint> _vertexIndices;
     };
-}
+} // namespace scene

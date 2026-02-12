@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   RegisterCommand.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/RegisterCommand.h"
 #include "Interpreter/Commands/SpinCmd.h"
 #include "Interpreter/Commands/RotateToCmd.h"
@@ -17,6 +19,7 @@
 #include "Interpreter/Commands/SetCmd.h"
 
 namespace commands {
+	// Register all commands with the factory
 	void RegisterAllCommands(CommandFactory& factory) {
 		// Motion commands
 		factory.registerCommand("spin",				&commands::CreateSpinCmd);			// spin command

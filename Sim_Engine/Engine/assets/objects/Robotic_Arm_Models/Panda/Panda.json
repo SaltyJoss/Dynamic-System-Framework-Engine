@@ -9,7 +9,32 @@
     "scale": 1.0,
 
     "material": {
-        "White": [ 1.0, 1.0, 1.0, 1.0 ]
+        "Color": {
+            "Panda_White": [ 0.87, 0.87, 0.86, 1.0 ],
+            "Panda_LightGrey": [ 0.72, 0.72, 0.71, 1.0 ],
+            "Panda_MidGrey": [ 0.45, 0.45, 0.46, 1.0 ],
+            "Panda_DarkGrey": [ 0.22, 0.22, 0.23, 1.0 ],
+            "Panda_Charcoal": [ 0.10, 0.10, 0.11, 1.0 ]
+        },
+
+        "Presets": {
+            "PowderCoat": {
+                "Metallic": 0.15,
+                "Roughness": 0.55
+            },
+            "BrushedAluminium": {
+                "Metallic": 0.85,
+                "Roughness": 0.45
+            },
+            "Plastic": {
+                "Metallic": 0.0,
+                "Roughness": 0.6
+            },
+            "Rubber": {
+                "Metallic": 0.0,
+                "Roughness": 0.85
+            }
+        }
     },
 
     "base_frame": {
@@ -23,25 +48,101 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "meshes": [
-                    "Panda/meshes/link0_0.obj",
-                    "Panda/meshes/link0_1.obj",
-                    "Panda/meshes/link0_2.obj",
-                    "Panda/meshes/link0_3.obj",
-                    "Panda/meshes/link0_4.obj",
-                    "Panda/meshes/link0_5.obj",
-                    "Panda/meshes/link0_7.obj",
-                    "Panda/meshes/link0_8.obj",
-                    "Panda/meshes/link0_9.obj",
-                    "Panda/meshes/link0_10.obj",
-                    "Panda/meshes/link0_11.obj"
-                ],
-                "material": "White"
+                    {
+                        "mesh": "Panda/meshes/link0_0.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_1.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_2.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_3.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_4.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_5.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_7.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_8.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_9.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_10.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link0_11.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link0.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 }
             ],
             "inertial": {
@@ -64,13 +165,17 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "Panda/meshes/link1.obj",
-                "material": "White"
+                "material": {
+                    "Color": "Panda_White",
+                    "Metallic": 0.15,
+                    "Roughness": 0.55
+                }
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link1.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 }
             ],
             "inertial": {
@@ -93,13 +198,17 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "Panda/meshes/link2.obj",
-                "material": "White"
+                "material": {
+                    "Color": "Panda_White",
+                    "Metallic": 0.15,
+                    "Roughness": 0.55
+                }
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link2.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_LightGrey" }
                 }
             ],
             "inertial": {
@@ -121,14 +230,46 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link3_0.obj", "Panda/meshes/link3_1.obj", "Panda/meshes/link3_2.obj", "Panda/meshes/link3_3.obj" ],
-                "material": "White"
+                "meshes": [
+                    {
+                        "mesh": "Panda/meshes/link3_0.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link3_1.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link3_2.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link3_3.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link3.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 }
             ],
             "inertial": {
@@ -150,14 +291,46 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link4_0.obj", "Panda/meshes/link4_1.obj", "Panda/meshes/link4_2.obj", "Panda/meshes/link4_3.obj" ],
-                "material": "White"
+                "meshes": [
+                    {
+                        "mesh": "Panda/meshes/link4_0.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link4_1.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link4_2.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link4_3.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link4.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 }
             ],
             "inertial": {
@@ -179,24 +352,48 @@
             "visual": {
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
-                "meshes": [ "Panda/meshes/link5_0.obj", "Panda/meshes/link5_1.obj", "Panda/meshes/link5_2.obj" ],
-                "material": "White"
+                "meshes": [
+                    {
+                        "mesh": "Panda/meshes/link5_0.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link5_1.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link5_2.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link5_collision_0.obj",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 },
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link5_collision_1.obj",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 },
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link5_collision_2.obj",
-                    "material": "White"
+                    "material": { "Color": "Panda_White" }
                 }
             ],
             "inertial": {
@@ -219,31 +416,163 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "meshes": [
-                    "Panda/meshes/link6_0.obj",
-                    "Panda/meshes/link6_1.obj",
-                    "Panda/meshes/link6_2.obj",
-                    "Panda/meshes/link6_3.obj",
-                    "Panda/meshes/link6_4.obj",
-                    "Panda/meshes/link6_5.obj",
-                    "Panda/meshes/link6_6.obj",
-                    "Panda/meshes/link6_7.obj",
-                    "Panda/meshes/link6_8.obj",
-                    "Panda/meshes/link6_9.obj",
-                    "Panda/meshes/link6_10.obj",
-                    "Panda/meshes/link6_11.obj",
-                    "Panda/meshes/link6_12.obj",
-                    "Panda/meshes/link6_13.obj",
-                    "Panda/meshes/link6_14.obj",
-                    "Panda/meshes/link6_15.obj",
-                    "Panda/meshes/link6_16.obj"
-                ],
-                "material": "White"
+                    {
+                        "mesh": "Panda/meshes/link6_0.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link6_1.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_2.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_3.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_4.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_5.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_6.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_7.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_8.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link6_9.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_10.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_11.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_12.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_13.obj",
+                        "material": {
+                            "Color": "Panda_LightGrey",
+                            "Metallic": 0.2,
+                            "Roughness": 0.5
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_14.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_15.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+
+                    {
+                        "mesh": "Panda/meshes/link6_16.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link6.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_LightGrey" }
                 }
             ],
             "inertial": {
@@ -266,22 +595,77 @@
                 "origin_xyz": [ 0, 0, 0 ],
                 "origin_rpy": [ 0, 0, 0 ],
                 "meshes": [
-                    "Panda/meshes/link7_0.obj",
-                    "Panda/meshes/link7_1.obj",
-                    "Panda/meshes/link7_2.obj",
-                    "Panda/meshes/link7_3.obj",
-                    "Panda/meshes/link7_4.obj",
-                    "Panda/meshes/link7_5.obj",
-                    "Panda/meshes/link7_6.obj",
-                    "Panda/meshes/link7_7.obj"
-                ],
-                "material": "White"
+                    {
+                        "mesh": "Panda/meshes/link7_0.obj",
+                        "material": {
+                            "Color": "Panda_White",
+                            "Metallic": 0.15,
+                            "Roughness": 0.55
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_1.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_2.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_3.obj",
+                        "material": {
+                            "Color": "Panda_DarkGrey",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_4.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_5.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_6.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    },
+                    {
+                        "mesh": "Panda/meshes/link7_7.obj",
+                        "material": {
+                            "Color": "Panda_Charcoal",
+                            "Metallic": 0.0,
+                            "Roughness": 0.85
+                        }
+                    }
+                ]
             },
             "collision": [
                 {
                     "type": "mesh",
                     "mesh": "Panda/meshes/link7.stl",
-                    "material": "White"
+                    "material": { "Color": "Panda_MidGrey" }
                 }
             ],
             "inertial": {

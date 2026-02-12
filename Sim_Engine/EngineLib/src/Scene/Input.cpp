@@ -1,5 +1,6 @@
-
 #include "pch.h"
+// File:   Input.cpp
+// GitHub: SaltyJoss
 #include "Scene/Input.h"
 #include <GLFW/glfw3.h>
 
@@ -7,25 +8,21 @@
 
 using namespace scene;
 
-eInputButton Input::GetPressedButton(GLFWwindow* window)
-{
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-        return eInputButton::Left;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-        return eInputButton::Right;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
-        return eInputButton::Middle;
-
+// Get the currently pressed mouse button, if any
+eInputButton Input::GetPressedButton(GLFWwindow* window) {
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)   { return eInputButton::Left; }
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)  { return eInputButton::Right; }
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) { return eInputButton::Middle; }
     return eInputButton::None;
 }
 
-bool Input::IsKeyPressed(GLFWwindow* window, int key)
-{
+// Check if a specific key is currently pressed
+bool Input::IsKeyPressed(GLFWwindow* window, int key) {
     return glfwGetKey(window, key) == GLFW_PRESS;
 }
 
-bool Input::IsMouseButtonPressed(GLFWwindow* window, eInputButton button)
-{
+// Check if a specific mouse button is currently pressed
+bool Input::IsMouseButtonPressed(GLFWwindow* window, eInputButton button) {
     int glfwButton;
     switch (button) {
     case eInputButton::Left:

@@ -1,7 +1,6 @@
 #pragma once
-
-// ====
-
+// File:    importObj.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 
 #include "importBase.h"

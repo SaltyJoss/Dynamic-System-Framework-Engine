@@ -1,23 +1,6 @@
 #pragma once
-
-// ============================================
-//            File: Window.h
-// ============================================
-// Interface for a basic windowing system.
-//
-// Summary:
-// ============================================
-//
-// interface:
-// --------------------------------------------
-// IWindow
-//      -> Interface class defining basic window operations and callbacks.
-// --------------------------------------------
-// 
-// ============================================
-//			  GitHub: saltyjoss
-// ============================================
-
+// File:   Window.h
+// GitHub: SaltyJoss
 #include "EngineCore.h"
 
 #include <imgui.h>
@@ -27,6 +10,10 @@
 namespace window {
     class ENGINE_API IWindow {
     public:
+        // Destructor
+        virtual ~IWindow() = default;
+
+		// Initialization
         virtual bool init(int width, int height, const std::string& title) = 0;
 
         // Core windowing
@@ -46,10 +33,9 @@ namespace window {
 		virtual void onCursorPos(double xpos, double ypos) = 0;
         virtual void onClose() = 0;
 
-        virtual ~IWindow() = default;
-
+		// Getters
         virtual int getWidth() const = 0;
         virtual int getHeight() const = 0;
         virtual const std::string& getHeader() const = 0;
     };
-}
+} // namespace window

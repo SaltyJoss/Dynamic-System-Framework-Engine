@@ -1,11 +1,13 @@
 #pragma once
-
+// File:    IStoredProgram.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "ProgramData.h"
 #include "Interpreter/Utils.h"
 #include <string>
 #include <vector>
 
+// Forward declarations
 namespace commands { class ENGINE_API ICommand; }
 namespace scene { class ENGINE_API Object;  }
 

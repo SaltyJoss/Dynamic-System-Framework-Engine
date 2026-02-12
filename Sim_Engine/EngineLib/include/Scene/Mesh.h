@@ -4,8 +4,6 @@
 // -----
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 
 #include "Rendering/RenderBase.h"
@@ -54,14 +52,17 @@ namespace scene {
 		// Material Properties
 		float getMetallic() const { return _metallic; }
 		void setMetallic(float m) { _metallic = m; }
+		float getRoughness() const { return _roughness; }
+		void setRoughness(float r) { _roughness = r; }
 		glm::vec3 getAlbedo() const { return _albedo; }
 		void setAlbedo(const glm::vec3& a) { _albedo = a; }
-		
+
 		// Shader Update
 		const void update(shaders::Shader* shader) const {
-			shader->setVec3(_albedo, "albedo");		// Albedo
-			shader->setFlt1(_metallic, "metallic"); // Metallic
-			shader->setFlt1(1.0f, "ao");			// Ambient Occlusion
+			shader->setVec3(_albedo, "albedo");
+			shader->setFlt1(_metallic, "metallic");
+			shader->setFlt1(_roughness, "roughness");
+			shader->setFlt1(1.0f, "ao");
 		}
 
 		// Utility to append another mesh's geometry to this one, applying the other mesh's local transform to its vertices in the process
@@ -123,4 +124,4 @@ namespace scene {
 		float _roughness = 0.5f;
 
 	};
-}
+} // namespace scene

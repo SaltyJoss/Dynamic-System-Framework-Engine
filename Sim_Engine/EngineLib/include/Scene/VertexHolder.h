@@ -1,34 +1,9 @@
 #pragma once
-#pragma warning(disable : 4100)
-
-// =============================================
-//            File: VertexHolder.h
-// =============================================
-// Class representing a vertex with position, normal, and texture coordinates.
-//
-// Summary:
-// =============================================
-// public:
-// --------------------------------------------
-// VertexHolder()
-//      -> Default constructor initializing position, normal, and texture coordinates to zero.
-// VertexHolder(const std::vector<std::string> tokens)
-//      -> Constructor that initializes the vertex from a vector of string tokens.
-// VertexHolder(const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& texCoord = glm::vec2(0.0f))
-//      -> Constructor that initializes the vertex with given position, normal, and optional texture coordinates.
-// ~VertexHolder()
-//      -> Default destructor.
-// --------------------------------------------
-//
-// Built upon code from:
-// ============================================
-//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
-// ============================================
-// 
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
-
+// File:   VertexHolder.h
+// GitHub: SaltyJoss
+// -----
+// Initially templated off a tutorial:
+// GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
 #include "Platform/Logger.h"
 
@@ -39,7 +14,7 @@ namespace scene {
 	public:
 		VertexHolder() : _pos(), _normal(), _texCoord() {}
 
-		VertexHolder(const std::vector<std::string> tokens) {}
+		VertexHolder(const std::vector<std::string>& /*tokens*/) {}
 
 		VertexHolder(const glm::vec3& pos, 
 					 const glm::vec3& normal,
@@ -52,4 +27,4 @@ namespace scene {
 		glm::vec3 _normal = glm::vec3(0.0f);
 		glm::vec2 _texCoord = glm::vec2(0.0f);
 	};
-}
+} // namespace scene

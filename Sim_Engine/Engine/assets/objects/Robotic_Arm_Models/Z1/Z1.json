@@ -8,6 +8,35 @@
     "world_up": "Z",
     "scale": 1.0,
 
+    "material": {
+        "Color": {
+            "Z1_DarkGrey": [ 0.18, 0.18, 0.20, 1.0 ],
+            "Z1_Silver": [ 0.72, 0.73, 0.74, 1.0 ],
+            "Z1_Blue": [ 0.10, 0.36, 0.88, 1.0 ],
+            "Z1_Blue_D": [ 0.08, 0.26, 0.70, 1.0 ],
+            "Z1_Black": [ 0.04, 0.04, 0.05, 1.0 ]
+        },
+
+        "Presets": {
+            "BareMetal": {
+                "Metallic": 0.9,
+                "Roughness": 0.4
+            },
+            "AnodisedMetal": {
+                "Metallic": 0.85,
+                "Roughness": 0.45
+            },
+            "Plastic": {
+                "Metallic": 0.0,
+                "Roughness": 0.45
+            },
+            "Rubber": {
+                "Metallic": 0.0,
+                "Roughness": 0.9
+            }
+        }
+    },
+
     "base_frame": {
         "origin_xyz": [ 0.0, 0.0, 0.0 ],
         "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
@@ -19,7 +48,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link00.dae"
+                "mesh": "Z1/meshes/z1_Link00.dae",
+                "material": {
+                    "Color": "Z1_DarkGrey",
+                    "Metallic": 0.1,
+                    "Roughness": 0.5
+                }
             },
             "collision": [
                 {
@@ -48,7 +82,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link01.dae"
+                "mesh": "Z1/meshes/z1_Link01.dae",
+                "material": {
+                    "Color": "Z1_Blue",
+                    "Metallic": 0.0,
+                    "Roughness": 0.45
+                }
             },
             "inertial": {
                 "mass": 0.67332551,
@@ -68,7 +107,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link02.dae"
+                "mesh": "Z1/meshes/z1_Link02.dae",
+                "material": {
+                    "Color": "Z1_DarkGrey",
+                    "Metallic": 0.1,
+                    "Roughness": 0.5
+                }
             },
             "collision": [
                 {
@@ -111,7 +155,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link03.dae"
+                "mesh": "Z1/meshes/z1_Link03.dae",
+                "material": {
+                    "Color": "Z1_Blue",
+                    "Metallic": 0.1,
+                    "Roughness": 0.45
+                }
             },
             "collision": [
                 {
@@ -147,7 +196,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link04.dae"
+                "mesh": "Z1/meshes/z1_Link04.dae",
+                "material": {
+                    "Color": "Z1_DarkGrey",
+                    "Metallic": 0.1,
+                    "Roughness": 0.5
+                }
             },
             "collision": [
                 {
@@ -177,7 +231,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link05.dae"
+                "mesh": "Z1/meshes/z1_Link05.dae",
+                "material": {
+                    "Color": "Z1_Blue",
+                    "Metallic": 0.1,
+                    "Roughness": 0.45
+                }
             },
             "inertial": {
                 "mass": 0.38938492,
@@ -198,7 +257,12 @@
             "visual": {
                 "origin_xyz": [ 0.0, 0.0, 0.0 ],
                 "origin_rpy": [ 0.0, 0.0, 0.0 ],
-                "mesh": "Z1/meshes/z1_Link06.dae"
+                "mesh": "Z1/meshes/z1_Link06.dae",
+                "material": {
+                    "Color": "Z1_DarkGrey",
+                    "Metallic": 0.1,
+                    "Roughness": 0.5
+                }
             },
             "collision": [
                 {

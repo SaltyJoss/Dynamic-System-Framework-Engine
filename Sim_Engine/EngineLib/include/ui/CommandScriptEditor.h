@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    CommandScriptEditor.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>
@@ -18,7 +19,7 @@
 namespace gui {
 	class ENGINE_API CommandScriptEditor {
 	public:
-		CommandScriptEditor(gui::simManager* sims);
+		CommandScriptEditor(gui::SimManager* sims);
 		~CommandScriptEditor();
 
 		// Menu Render
@@ -31,7 +32,7 @@ namespace gui {
 
 	private:
 		// Simulation manager reference
-		gui::simManager* _sim;
+		gui::SimManager* _sim;
 
 		// Interpreter components
 		interpreter::Parser* _parser;
@@ -84,4 +85,4 @@ namespace gui {
 		const ImVec4 DESC_COL = ImVec4(0.60f, 0.60f, 0.60f, 1.0f); // grey
 
 	};
-}
+} // namespace gui

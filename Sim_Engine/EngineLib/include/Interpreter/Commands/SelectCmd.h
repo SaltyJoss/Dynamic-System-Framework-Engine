@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    SelectCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
@@ -41,4 +42,4 @@ namespace commands {
 	};
 
 	std::unique_ptr<ICommand> CreateSelectCmd(const std::string& id, const std::vector<std::string>& args);
-}
+} // namespace commands

@@ -1,19 +1,14 @@
 #pragma once
-
-// Built upon code from:
-// ============================================
-//	 GitHub: jayanam/jgl_demos/JGL_MeshLoader
-// ============================================
-
+// File:   str_utils.h
+// GitHub: SaltyJoss
+// -----
+// Initially templated off a tutorial:
+// GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
-
-namespace utils
-{
-  std::vector<uint32_t> tokenize(const std::string& line, const char token)
-  {
+namespace utils {
+  std::vector<uint32_t> tokenize(const std::string& line, const char token) {
     std::vector<uint32_t> result;
     
     std::stringstream ss(line);
@@ -24,4 +19,4 @@ namespace utils
 
     return result;
   }
-}
+} // namespace utils

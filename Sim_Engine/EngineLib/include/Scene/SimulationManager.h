@@ -1,7 +1,6 @@
 #pragma once
 // File:   MeshLoader.h
 // GitHub: SaltyJoss
-
 #include "EngineCore.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -10,7 +9,7 @@
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
-#include "Scene/RenderPreset.h"
+#include "ui/RenderPreset.h"
 #include "FpsCounter.h"
 
 #include "Analysis/Telemetry.h"
@@ -38,18 +37,19 @@ namespace interpreter { class ENGINE_API IStoredProgram; }
 namespace physics { class ENGINE_API PhysicsSystem; }
 namespace robots { class ENGINE_API RobotSystem; }
 namespace control { class ENGINE_API TrajectoryManager; }
+namespace integration { enum class eIntegrationMethod; }
 
 // I want to rename to more appropriate namespace later
 namespace gui {
     // View IDs
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
-	class AxisOrientator;
-	// simManager Class (Plan on renaming later)
-    class ENGINE_API simManager {
+	class ENGINE_API AxisOrientator;
+	// SimManager Class (Plan on renaming later)
+    class ENGINE_API SimManager {
     public:
-        simManager();
-        ~simManager();
+        SimManager();
+        ~SimManager();
 
 		// OpenGL Initialisation
         void initGL();
@@ -121,7 +121,9 @@ namespace gui {
             PBR = 2
         };
 
-        shaders::Shader* getActiveShader() const;
+        shaders::Shader* getCurrentShader() const;
+		void setCurrentShader(shaders::Shader* shader);
+
         ShaderMode currentShaderMode = ShaderMode::PBR;  // default
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
@@ -195,13 +197,21 @@ namespace gui {
         interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
 
 		// Telemetry
-        diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
+		diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
 		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
+
+		// Last script text (stored on run for comparison re-use)
+		void setLastScriptText(const std::string& text) { _lastScriptText = text; }
+		const std::string& lastScriptText() const { return _lastScriptText; }
+
+		// Run a script to completion synchronously with a specific integrator
+		// Returns true if telemetry was captured successfully
+		bool runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method);
 
     private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
-        void WorldGridRender(scene::Camera* cam);
+        void WorldGridRender(scene::Camera* cam, int rtW);
         void InitShadowResource(int baseRes);
         void InitIBL();
         void SkyboxRender(scene::Camera* cam);
@@ -253,7 +263,10 @@ namespace gui {
         std::unordered_map<scene::ObjectID, scene::Object*> _idToPtr;
 
 		// Active Script Program
-        interpreter::IStoredProgram* _activeProgram = nullptr;
+		interpreter::IStoredProgram* _activeProgram = nullptr;
+
+		// Last script text for comparison re-use
+		std::string _lastScriptText;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
@@ -285,4 +298,4 @@ namespace gui {
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
-}
+} // namespace gui

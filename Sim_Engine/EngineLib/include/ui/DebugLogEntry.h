@@ -1,5 +1,6 @@
 #pragma once
-
+// File:    DebugLogEntry.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include <string>
 #include <chrono>
@@ -14,9 +15,7 @@ struct logEntry {
 	std::chrono::system_clock::time_point timestamp;
 };
 
-class ENGINE_API DebugPanelLog {
-
-};
+class ENGINE_API DebugPanelLog {};
 
 // Global logger instance
 extern ENGINE_API DebugPanelLog dLog;

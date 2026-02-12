@@ -1,9 +1,7 @@
-
 #include "pch.h"
-
-#include "Scene/Styles.h"
-
-// ImGui
+// File:   Styles.cpp
+// GitHub: SaltyJoss
+#include "ui/Styles.h"
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>

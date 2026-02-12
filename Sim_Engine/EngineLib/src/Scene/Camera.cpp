@@ -1,12 +1,11 @@
-
 #include "pch.h"
-
+// File:   Camera.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include "Scene/Camera.h"
 
 #include "EngineLib/LogMacros.h"

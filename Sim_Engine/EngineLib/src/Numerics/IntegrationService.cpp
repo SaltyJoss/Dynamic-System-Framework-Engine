@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   IntegrationService.cpp
+// GitHub: SaltyJoss
 #include "Numerics/IntegrationService.h"
 
 #include "EngineLib/LogMacros.h"
@@ -6,8 +8,6 @@
 using namespace mathlib;
 
 namespace integration {
-	// --- HELPER METHODS ---
-
 	// Helper to trim whitespace from string
 	static inline std::string trimCopy(std::string s) {
 		auto notSpace = [](unsigned char c) { return !std::isspace(c); };
@@ -28,21 +28,6 @@ namespace integration {
 		std::transform(s.begin(), s.end(), s.begin(),
 			[](unsigned char c) { return (unsigned char)std::tolower(c); });
 		return s;
-	}
-
-	// Parse integration method from string
-	static bool tryParseMethod(std::string s, eIntegrationMethod& out) {
-		s = lowerCopy(trimCopy(std::move(s)));
-
-		if (s == "euler")		  { out = eIntegrationMethod::Euler; }
-		else if (s == "midpoint") { out = eIntegrationMethod::Midpoint; }
-		else if (s == "heun")	  { out = eIntegrationMethod::Heun; }
-		else if (s == "ralston")  { out = eIntegrationMethod::Ralston; }
-		else if (s == "rk4"  || s == "rk-4"  || s == "rungekutta4")   { s = "rk4";  out = eIntegrationMethod::RK4; }
-		else if (s == "rk45" || s == "dopri" || s == "dormandprince") { s = "rk45", out = eIntegrationMethod::RK45; }
-		else { return false; }
-
-		return true;
 	}
 
 	// Helper to convert integration method enum to string
@@ -67,8 +52,6 @@ namespace integration {
 
 	// Get integrator name
 	const std::string IntegrationService::IntegratorName(eIntegrationMethod m) { return std::string(toString(m)); }
-
-	// --- INTEGRATION SERVICE METHODS ---
 
 	// Constructor
 	IntegrationService::IntegrationService() 

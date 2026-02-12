@@ -1,6 +1,6 @@
-
 #include "pch.h"
-
+// File:   IBL.cpp
+// GitHub: SaltyJoss
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
@@ -16,20 +16,9 @@
 #include "EngineLib/LogMacros.h"
 
 namespace render {
-/*
-* ----------------------------------------------
-*					IBL METHODS
-* ----------------------------------------------
-* 
-* Summary:
-* ----------------------------------------------
-* IBL() -> Constructor that initializes the IBL object.
-* ~IBL() -> Destructor that cleans up IBL resources.
-* init(const std::string& hdrPath) -> Initializes the IBL by loading the HDR image and generating the necessary maps.
-* ----------------------------------------------
-*/
-	IBL::IBL() = default;
 
+	// Constructor and Destructor
+	IBL::IBL() = default;
 	IBL::~IBL() {
 		if (_envCubemap)	glDeleteTextures(1, &_envCubemap);
 		if (_irradianceMap)	glDeleteTextures(1, &_irradianceMap);
@@ -39,6 +28,7 @@ namespace render {
 
 	}
 
+	// Initialize IBL system with a given HDR environment map path
 	void IBL::init(const std::string& hdrPath) {
 		loadHDR(hdrPath);
 		generateCubemap();
@@ -49,17 +39,7 @@ namespace render {
 		D_SUCCESS("IBL built successfully.");
 	}
 
-/*
- * ----------------------------------------------
- *				   HDR LOADING
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * loadHDR() -> Loads an HDR image from the specified file path and creates an OpenGL texture for it.
- * ----------------------------------------------
- */
-
+	// Load an HDR equirectangular image and create an OpenGL texture from it
 	void IBL::loadHDR(const std::string& hdrPath) {
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, nrComponents;
@@ -84,17 +64,7 @@ namespace render {
 		LOG_INFO("HDR image loaded from %s", hdrPath.c_str(), width, height);
 	}
 
-/*
- * ----------------------------------------------
- *		EQUIRECTANGULAR TO CUBEMAP CONVERSION
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * generateCubemap() -> Converts the loaded equirectangular HDR texture into a cubemap texture for environment mapping.
- * ----------------------------------------------
- */
-
+	// Generate a cubemap from the loaded HDR equirectangular texture
 	void IBL::generateCubemap() {
 		glGenTextures(1, &_envCubemap);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
@@ -170,17 +140,7 @@ namespace render {
 		LOG_INFO("Generating environment cubemap from HDR texture");
 	}
 
-/*
- * ----------------------------------------------
- *		   IRRADIANCE MAP GENERATION
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * generateIrradianceMap() -> Generates the irradiance cubemap used for diffuse IBL by convolving the environment cubemap.
- * ----------------------------------------------
- */
-
+	// Generate the irradiance map by convolving the environment cubemap
 	void IBL::generateIrradianceMap() {
 		const unsigned int IRR_RES = 32;
 
@@ -255,17 +215,7 @@ namespace render {
 		LOG_INFO("Generating irradiance map");
 	}
 
-/*
- * ----------------------------------------------
- *			PREFILTER MAP GENERATION
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * generatePrefilterMap() -> Generates the prefilter cubemap used for specular IBL by convolving the environment cubemap at different roughness levels and storing them in mipmap levels.
- * ----------------------------------------------
- */
-
+	// Generate the prefilter map by importance sampling the environment cubemap for different roughness levels
 	void IBL::generatePrefilterMap() {
 		const unsigned int PREFILTER_RES = 128;
 
@@ -347,17 +297,7 @@ namespace render {
 		LOG_INFO("Generating prefilter map");
 	}
 
-/*
- * ----------------------------------------------
- *			  BRDF LUT GENERATION
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * generateBRDFLUT() -> Generates the BRDF lookup texture used for specular IBL.
- * ----------------------------------------------
- */
-
+	// Generate the BRDF LUT by rendering a fullscreen quad and integrating the BRDF over the hemisphere
 	void IBL::generateBRDFLUT() {
 		const unsigned int BRDF_LUT_RES = 512;
 
@@ -411,19 +351,7 @@ namespace render {
 		LOG_INFO("Generating BRDF LUT");
 	}
 
-/*
- * ----------------------------------------------
- *					GETTERS
- * ----------------------------------------------
- * 
- * Summary:
- * ----------------------------------------------
- * getIrradianceMap() -> Returns the OpenGL texture ID of the irradiance map.
- * getPrefilterMap() -> Returns the OpenGL texture ID of the prefilter map.
- * getBRDFLUT() -> Returns the OpenGL texture ID of the BRDF LUT.
- * ----------------------------------------------
- */
-
+	// Getters for the generated IBL resources
 	GLuint IBL::getIrradianceMap() const { return _irradianceMap; }
 	GLuint IBL::getPrefilterMap() const { return _prefilterMap; }
 	GLuint IBL::getBRDFLUT() const { return _brdfLUT; }

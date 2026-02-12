@@ -1,19 +1,10 @@
 #pragma once
-
-// =============================================
-//			File: DebugPanel.h
-// =============================================
-// GUI Debug Panel for displaying logs and errors.
-//
-// ============================================
-//              GitHub: SaltyJoss
-// ============================================
-
+// File:    DebugPanel.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
-
 #include "imgui.h"
 #include "Scene/SimulationManager.h"
-#include "Camera.h"
+#include "Scene/Camera.h"
 #include <unordered_set>
 
 #include "Platform/Logger.h"
@@ -67,4 +58,4 @@ namespace gui {
 		const ImVec4 rotateCol    = { 0.4666f,    1.0f,    0.0f, 1.0f };
 		const ImVec4 translateCol = { 0.2745f, 0.5098f, 0.7059f, 1.0f };
 	};
-}
+} // namespace gui

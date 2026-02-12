@@ -1,11 +1,10 @@
 #pragma once
-
+// File:    TrajClearCmd.h
+// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
-
-#include "Platform/Logger.h"
 
 namespace commands {
 
@@ -24,7 +23,7 @@ namespace commands {
         program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
         void execute() override;
 
-        gui::simManager* _sim = nullptr;
+        gui::SimManager* _sim = nullptr;
 
         bool _done = false;
         bool _started = false;

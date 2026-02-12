@@ -1,4 +1,6 @@
 #include "pch.h"
+// File:   LoadCmd.cpp
+// GitHub: SaltyJoss
 #include "Interpreter/Commands/LoadCmd.h"
 #include "Interpreter/Utils.h"
 
@@ -7,6 +9,11 @@
 using namespace utils;
 
 namespace commands {
+	// --- LoadCmd Method Implementations ---
+	void LoadCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
+	void LoadCmd::markCompleted() { setResult({ CmdState::Executed, {}, "load() ran successfully" }); }
+	bool LoadCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
+
 	// constructor
 	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
 		if (id == "obj") { _target.type = LoadTargetType::Object; }
@@ -29,11 +36,7 @@ namespace commands {
 		if (!tokens.empty()) { _path = tokens[0]; _target.path = tokens[0]; }
 	}
 
-	// --- LoadCmd Method Implementations ---
-	void LoadCmd::markFailed(const std::string& message) { setResult({ CmdState::Failed, {}, message }); }
-	void LoadCmd::markCompleted() { setResult({ CmdState::Executed, {}, "load() ran successfully" }); }
-	bool LoadCmd::hasStarted() const { return getResult().state != CmdState::NotStarted; }
-
+	// Execute the command
 	void LoadCmd::execute() {
 		if (_cntxUI == nullptr) {
 			std::string errMsg = "UI context is not set for load() command";
@@ -59,7 +62,7 @@ namespace commands {
 		D_SUCCESS("load() command executed successfully.");
 	}
 
-	// --- Free Function to Create LoadCmd ---
+	// Factory function to create a LoadCmd from arguments
 	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
 		if (tokens.empty()) return nullptr;
 		return std::make_unique<LoadCmd>(id, tokens);
