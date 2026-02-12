@@ -55,48 +55,81 @@ namespace integration {
 
 	// Constructor
 	IntegrationService::IntegrationService() 
-		: _ODE(std::make_unique<integration::ODE>()), method(eIntegrationMethod::Euler){}
+		: _ODE(std::make_unique<integration::ODE>()), method(eIntegrationMethod::RK4){}
 	
 	// Integration method dispatcher
-	VecX IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
+	StepOut IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
 		if (!f) {
 			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
-			return x;
+			return { _ODE->eulerStep(x, t, dt, f), /*dt_taken=*/dt, /*dt_sug=*/dt };
 		}
 
 		switch (m) {
-		case eIntegrationMethod::Euler:    return _ODE->eulerStep(x, t, dt, f);
-		case eIntegrationMethod::Midpoint: return _ODE->midpointStep(x, t, dt, f);
-		case eIntegrationMethod::Heun:     return _ODE->heunStep(x, t, dt, f);
-		case eIntegrationMethod::Ralston:  return _ODE->ralstonStep(x, t, dt, f);
-		case eIntegrationMethod::RK4:      return _ODE->rk4Step(x, t, dt, f);
+		case eIntegrationMethod::Euler:    return { _ODE->eulerStep(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::Midpoint: return { _ODE->midpointStep(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::Heun:     return { _ODE->heunStep(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::Ralston:  return { _ODE->ralstonStep(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::RK4:      return { _ODE->rk4Step(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::RK45: {
-			const double rtol = 1e-6;
-			const double atol = 1e-9;
-			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, rtol, atol).x_next;
+			const double rtol = 1e-3;
+			const double atol = 1e-6;
+			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, rtol, atol);
 		}
 		default:
-			LOG_WARN("Unknown integration method: %s. Defaulting to Euler.", toString(m));
-			return _ODE->eulerStep(x, t, dt, f);
+			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
+			return { _ODE->rk4Step(x, t, dt, f), dt, dt };
 		}
 	}
 
-	// Adaptive step size integration method dispatcher
+	// Adaptive mehod dispatcher (currently only RK45 implemented)
 	StepOut IntegrationService::stepAdaptiveODE(eIntegrationMethod m, VecX& x, double t, double dt_try, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
 		if (!f) {
 			D_WARN_ONCE("No derivative function provided for adaptive integration - returning state unchanged");
-			return { x, /*dt_taken=*/dt_try, /*dt_sug=*/dt_try }; // could also throw an error here, but feel this is better
+			return { x, dt_try, dt_try }; // could also throw an error here, but feel this is better
 		}
-		if (m == eIntegrationMethod::RK45) {
-			double dt = dt_try;
-			VecX x_next = _ODE->rk45Step(x, t, dt, f, rtol, atol);
-			return { x_next, /*dt_taken=*/dt_try, /*dt_sug=*/dt };
+		if (m != eIntegrationMethod::RK45) {
+			LOG_WARN("Adaptive step size integration is only implemented for RK45 method. Defaulting to RK45 Method", toString(m));
 		}
-		else {
-			LOG_WARN("Unknown or unsupported adaptive integration method: %s. Defaulting to RK45 Method", toString(m));
-			double dt = dt_try;
-			VecX x_next = _ODE->rk45Step(x, t, dt, f, rtol, atol);
-			return { x_next, /*dt_taken=*/dt_try, /*dt_sug=*/dt };
+
+		// Start with the cached step size if available, otherwise use the provided trial step size
+		double h = (_dt_adapt > 0.0) ? std::min(_dt_adapt, dt_try) : dt_try;
+
+		// Target end time for this adaptive step
+		const double t_end = t + dt_try;	 // target end time for this step
+		const double eps = 1e-12 * dt_try; // small epsilon to prevent division by zero
+
+		// Initialize current state and time for the adaptive stepping loop
+		VecX x_curr   = x;	  // current state during the adaptive step
+		double t_curr = t;	  // current time during the adaptive step
+		double t_total = 0.0; // total time taken for the step
+
+		// Limit the number of substeps to prevent infinite loop
+		int substeps = 0;
+		const int max_substeps = 500; // safety limit
+
+		// Loop until we reach the target end time or exceed the maximum number of substeps
+		while (t_curr < t_end && substeps < max_substeps) {
+			double h_try = std::min(h, t_end - t_curr);
+			double dt_used = 0.0;
+
+			VecX x_next = _ODE->rk45Step(x_curr, t_curr, h_try, dt_used, f, rtol, atol);
+
+			// Update rk45step
+			t_curr	+= dt_used; 
+			t_total += dt_used; 
+			x_curr	 = x_next;
+			h		 = h_try;
+
+			++substeps;
 		}
+
+		// If substep limit was reached, a warning is logged
+		if (substeps >= max_substeps) { 
+			LOG_WARN("Adaptive integration exceeded maximum substeps (%d) at time %f. Returning last computed state.", max_substeps, t_curr); 
+		} 
+		
+		// Persist the last good step size for next frame
+		_dt_adapt = h; // Cache the last successful step size
+		return { x_curr, t_total, h };
 	}
 } // namespace integration

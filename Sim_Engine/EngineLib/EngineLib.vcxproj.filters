@@ -528,6 +528,9 @@
     <ClInclude Include="include\ui\DebugLogEntry.h">
       <Filter>Header Files\include\ui</Filter>
     </ClInclude>
+    <ClInclude Include="..\External\stb\stb_image_write.h">
+      <Filter>External\stb</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -736,6 +739,9 @@
     </ClCompile>
     <ClCompile Include="src\ui\Styles.cpp">
       <Filter>Source Files\src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\External\stb\stb_image_write_impl.cpp">
+      <Filter>External\stb</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

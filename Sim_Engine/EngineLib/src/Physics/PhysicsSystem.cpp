@@ -58,7 +58,8 @@ namespace physics {
 		};
 
 		// Integrate to get next state
-		VecX next = _integrator->stepODE(_curIntMethod, x, 0.0, dt, f);
+		auto step = _integrator->stepODE(_curIntMethod, x, 0.0, dt, f);
+		VecX next = step.x_next; // Update state
 		s.q = Quat(next(0), next(1), next(2), next(3)).normalized();
 		s.angularVelocity = Vec3(next(4), next(5), next(6));
 		obj->transform.rotQ = glm::quat((float)s.q.w(), (float)s.q.x(), (float)s.q.y(), (float)s.q.z());
