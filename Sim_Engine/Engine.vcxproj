@@ -111,10 +111,8 @@ echo D | xcopy /E /Y /D "$(ProjectDir)Engine\configs\*" "$(TargetDir)configs\"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_iiwa14.dsl" />
-    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_panda.dsl" />
-    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_vispa.dsl" />
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json" />
+    <None Include="Engine\assets\objects\Robotic_Arm_Models\VISPA\VISPA.json" />
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json" />
     <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
     <None Include="Engine\assets\shaders\brdf_lut.vert.glsl" />

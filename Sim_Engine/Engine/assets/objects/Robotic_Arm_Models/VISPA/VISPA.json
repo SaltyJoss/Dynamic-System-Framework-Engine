@@ -61,8 +61,8 @@
                 "mesh": "VISPA/meshes/Link0-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "AnodisedGold",
-                    "Metallic": 0.85,
-                    "Roughness": 0.35
+                    "Metallic": 0.35,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -87,8 +87,8 @@
                 "mesh": "VISPA/meshes/Link1-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "ThermalWhite",
-                    "Metallic": 0.05,
-                    "Roughness": 0.75
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -113,8 +113,8 @@
                 "mesh": "VISPA/meshes/Link2-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "ThermalWhite",
-                    "Metallic": 0.05,
-                    "Roughness": 0.75
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -139,8 +139,8 @@
                 "mesh": "VISPA/meshes/Link3-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "ThermalWhite",
-                    "Metallic": 0.05,
-                    "Roughness": 0.75
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -165,8 +165,8 @@
                 "mesh": "VISPA/meshes/Link4-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "ThermalWhite",
-                    "Metallic": 0.05,
-                    "Roughness": 0.75
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -191,8 +191,8 @@
                 "mesh": "VISPA/meshes/Link5-DHReference-PublicRelease.stl",
                 "material": {
                     "Color": "ThermalWhite",
-                    "Metallic": 0.05,
-                    "Roughness": 0.75
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {
@@ -216,9 +216,9 @@
                 "origin_rpy": [ 0, 0, 0 ],
                 "mesh": "VISPA/meshes/Link6-DHReference-PublicRelease.stl",
                 "material": {
-                    "Color": "BrushedAluminium",
-                    "Metallic": 0.9,
-                    "Roughness": 0.45
+                    "Color": "AerospaceWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
                 }
             },
             "inertial": {

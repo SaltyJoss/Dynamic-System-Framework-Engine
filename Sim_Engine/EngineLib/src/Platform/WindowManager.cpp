@@ -115,13 +115,6 @@ namespace window {
     void GLWindow::onResize(int width, int height) {
         if (width <= 0 || height <= 0) return;
 
-        // Enforce 16:9 — derive width from height
-        int correctedW = (height * 16) / 9;
-        if (correctedW != width) {
-            glfwSetWindowSize(_window, correctedW, height);
-            width = correctedW;
-        }
-
         _width = width;
         _height = height;
 
