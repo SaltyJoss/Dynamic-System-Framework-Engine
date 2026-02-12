@@ -3,6 +3,8 @@
 # - Use to reveal drift, energy non-conservation, phase lag, noise amplification
 # - Only uses: set, load, start, stop, wait, trajClear, parallel, trajSet
 # - Respect joint limits (J1..J6) from spec
+#
+# Created by: SaltyJoss
 # ============================================================
 
 set(integrator, rk4)    # change integrator to compare runs
@@ -17,7 +19,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 0: Warmup -> centred benchmark pose (longer settle)
-# Centre(deg): [0, 85, -85, 0, 0, 0] but offset slightly for gravity bias
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,    5.0,  70.0, 140.0)
@@ -32,7 +33,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 1: Gravity-max pose A (long hold + micro-sine on wrist)
-# (elbow forward, shoulder biased) — hold to let drift accumulate
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,   25.0,  60.0, 120.0)
@@ -53,7 +53,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 2: Slow amplitude ramp (series of increasing SINE segments)
-# (reveals slow energy injection / damping)
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link02, SINE, 10.0, 125.0,  4.0, 0.12)
@@ -78,7 +77,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 3: Cross-joint MSINE cascade (long)
-# - multiple harmonics + strong phase offsets across shoulder/elbow/wrist
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link02, MSINE, 24.0, 120.0, 6.0, 0.18,   0.0, 5.0, 0.40, 120.0, 3.0, 0.85, 240.0)
@@ -91,7 +89,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 4: Rapid asymmetric TRAP swaps (energy injection)
-# - deliberate quick but safe transfers to test integrator stability
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,  -30.0,  80.0, 160.0)
@@ -117,7 +114,6 @@ wait(0.3)
 
 # ------------------------------------------------------------
 # Phase 5: Long asymmetric hang (drift detector) — extended
-# - hold different joints in offset poses for extended period
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,    0.0,  70.0, 140.0)
@@ -141,7 +137,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 6: High-frequency wrist/forearm stress bursts (short)
-# - inject noise, try to amplify numerical instability
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link04, SINE, 8.0,  55.0, 3.5, 1.60)
@@ -162,7 +157,6 @@ wait(0.5)
 
 # ------------------------------------------------------------
 # Phase 7: Gentle recovery sweep + long settle
-# (bring toward centre slowly to observe residual bias)
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,    0.0,  80.0, 160.0)
@@ -185,7 +179,6 @@ wait(0.6)
 
 # ------------------------------------------------------------
 # Phase 8: Final showcase + return to HOME (smooth)
-# Home (deg): [0, 45, -60, 0, 0, 0]
 # ------------------------------------------------------------
 parallel(0.0) {
 	trajSet(link01, TRAP,    10.0,  90.0, 180.0)
