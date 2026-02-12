@@ -106,9 +106,13 @@ namespace gui {
 
         void sceneObjectsTable();
 
-        void selectJointAndFollow(int jointIndex);
+		void selectJointAndFollow(int jointIndex);
 		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
-        void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+
+		void drawResultsTab();
+		void drawResultsWindow();
+		void exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h);
 
 
 		// Helper Methods
@@ -130,13 +134,19 @@ namespace gui {
 		bool _qualityChanged = false;
 		bool _resChanged = false;
 
-        // Internal states
-        bool simulationRunning = false;
+		// Internal states
+		bool simulationRunning = false;
 		bool _jointSelected = false;
 		bool diagRunning = false;
-        bool _robotRequested = false;
-        bool _hasRobot = false;
-        bool _openStats = true;
+		bool _robotRequested = false;
+		bool _hasRobot = false;
+		bool _openStats = true;
+
+		// Results tab/window state
+		bool _showResultsWindow = false;
+		bool _simWasRunningLastFrame = false;
+		bool _resultsFocusNeeded = false;
+		bool _selectResultsTab = false;
 
 		std::string _requestedRobot;    // name of requested robot to load
 		std::string _currentObjectName; // name of currently selected object
@@ -148,7 +158,7 @@ namespace gui {
 
 		float simLength = 30.0f;  // ~30 seconds default
 		float diagLength = 15.0f; // ~15 seconds default
-        float deltaTime = 1 / 180; // ~180 FPS default
+        double deltaTime = 1.0f / 180.0f; // ~180 FPS default
 		float simTime = 0.0f;     // current simulation time
 		float diagTime = 0.0f;    // current diagnostic time
 

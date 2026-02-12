@@ -113,6 +113,7 @@ echo D | xcopy /E /Y /D "$(ProjectDir)Engine\configs\*" "$(TargetDir)configs\"
   <ItemGroup>
     <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_iiwa14.dsl" />
     <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_panda.dsl" />
+    <None Include="bin\Engine\Release\assets\DSLScripts\integrator_test_vispa.dsl" />
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json" />
     <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json" />
     <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
@@ -140,6 +141,7 @@ echo D | xcopy /E /Y /D "$(ProjectDir)Engine\configs\*" "$(TargetDir)configs\"
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\src\Main.cpp" />
+    <ClCompile Include="External\stb\stb_image_write_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

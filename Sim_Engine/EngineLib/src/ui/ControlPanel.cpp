@@ -6,10 +6,16 @@
 #include "ui/ControlPanel.h"
 #include "Robots/RobotSystem.h"
 #include "Platform/Paths.h"
-#include <imgui.h>
 #include <chrono>
+#include <imgui.h>
 
 #include <implot.h>
+
+#ifdef __gl_h_
+#undef __gl_h_ 
+#endif
+#include <glad/glad.h>
+#include <stb/stb_image_write.h>
 
 #include "EngineLib/LogMacros.h"
 
@@ -290,7 +296,13 @@ namespace gui {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
             if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
-            //if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+
+            ImGui::Separator();
+            const bool canShowResults = (_sim->telemetry().ring.size() >= 2);
+            if (ImGui::MenuItem("View Results", nullptr, false, canShowResults)) {
+                _selectResultsTab = true;
+            }
 
             ImGui::EndMenu();
         }
@@ -315,21 +327,21 @@ namespace gui {
 
         const bool wasRunning = _sim->isSimRunning(); // snapshot
 
-        // Simulation Start/Stop Button
-        if (_sim->isSimRunning()) {
+		// Simulation Start/Stop Button
+		if (_sim->isSimRunning()) {
 		    if (wasRunning && !_sim->isSimRunning()) { _sim->setSimTime(0.0f); } // reset time if just stopped
-                LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
-                D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
-        }
+				LOG_INFO_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+				D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
+		}
 
 		beginControlPanel("ControlPanel"); // Begin Child Panel
 
-        roboticArmSelector();
+		roboticArmSelector();
 
 		if (ImGui::BeginTabBar("ControlPanelTabs")) {
             if (ImGui::BeginTabItem("Simulation Properties")) {
                 simulationProperties();
-                tempLightControls();
+                //tempLightControls();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Rigid Body Properties")) {
@@ -340,12 +352,20 @@ namespace gui {
                 jointProperties();
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Display Settings")) {
-                displaySettings();
-                ImGui::EndTabItem();
+			if (ImGui::BeginTabItem("Display Settings")) {
+				displaySettings();
+				ImGui::EndTabItem();
 			}
-            // Additional tabs can be added here
-            ImGui::EndTabBar();
+            ImGuiTabItemFlags resultsFlags = 0;
+            if (_selectResultsTab) {
+                resultsFlags |= ImGuiTabItemFlags_SetSelected;
+                _selectResultsTab = false;
+            }
+            if (ImGui::BeginTabItem("Results", nullptr, resultsFlags)) {
+                drawResultsTab();
+                ImGui::EndTabItem();
+            }
+			ImGui::EndTabBar();
         }
 
 		endControlPanel(); // End Child Panel
@@ -354,6 +374,19 @@ namespace gui {
         ImGui::PopStyleColor();
 
         sceneObjectsTable();
+
+        // Detect simulation completion: was running last frame, stopped this frame
+        {
+            const bool runningNow = _sim->isSimRunning();
+            if (_simWasRunningLastFrame && !runningNow) {
+                LOG_INFO("Simulation stopped detected (edge). Ring size: %zu", _sim->telemetry().ring.size());
+                if (_sim->telemetry().ring.size() >= 2) {
+                    _selectResultsTab = true;
+                    LOG_INFO("Auto-selecting Results tab.");
+                }
+            }
+            _simWasRunningLastFrame = runningNow;
+        }
 
         _meshLoad.Display();
         if (_meshLoad.HasSelected()) {
@@ -617,14 +650,14 @@ namespace gui {
 
         ImGui::EndDisabled();
 
-        drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
+		drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 
 		ImGui::Spacing();
 		ImGui::Text("Reset Robot:");
-        ImGui::Spacing();
+		ImGui::Spacing();
 
-        if (ImGui::Button("Reset")) {
-            if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
+		if (ImGui::Button("Reset")) {
+			if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
 
 			_sim->getRobotSystem()->resetRobot();
 
@@ -637,7 +670,21 @@ namespace gui {
 
 			D_INFO("Reset Robot to initial position and orientation.");
 			return;
-        }
+		}
+
+		// View Results button — enabled when telemetry data exists
+		ImGui::SameLine();
+		const bool hasTelemetry = (rec.ring.size() >= 2);
+		ImGui::BeginDisabled(!hasTelemetry);
+		if (ImGui::Button("View Results")) {
+			_showResultsWindow = true;
+			_resultsFocusNeeded = true;
+		}
+		ImGui::EndDisabled();
+		if (!hasTelemetry) {
+			ImGui::SameLine();
+			ImGui::TextDisabled("(run a simulation first)");
+		}
     }
 
     void ControlPanel::displaySettings() {
@@ -771,6 +818,8 @@ namespace gui {
         roboticCardDisplay("UR5e", "Universal Robots");
         roboticCardDisplay("Panda", "Franka Robotics");
         roboticCardDisplay("iiwa14", "KUKA");
+        roboticCardDisplay("VISPA", "Airbus");
+        roboticCardDisplay("H1", "Unitree Robotics");
 
         ImGui::End();
     }
@@ -1285,8 +1334,267 @@ namespace gui {
                 float err = (float)std::abs(s.j[i].thetaRefRad - s.j[i].thetaRad);
                 if (err > worstErr) { worstErr = err; worstIdx = i; }
             }
-            selectedJoint = worstIdx;
-            selectJointAndFollow(selectedJoint);
-        }
+			selectedJoint = worstIdx;
+			selectJointAndFollow(selectedJoint);
+		}
+	}
+
+	// --- PNG Export ---
+
+	void ControlPanel::exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h) {
+		if (w <= 0 || h <= 0) return;
+
+		std::vector<unsigned char> pixels(w * h * 3);
+		glReadPixels(x, y, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+		// OpenGL reads bottom-up; flip vertically for image file
+		const int rowBytes = w * 3;
+		std::vector<unsigned char> row(rowBytes);
+		for (int top = 0, bot = h - 1; top < bot; ++top, --bot) {
+			memcpy(row.data(),                    pixels.data() + top * rowBytes, rowBytes);
+			memcpy(pixels.data() + top * rowBytes, pixels.data() + bot * rowBytes, rowBytes);
+			memcpy(pixels.data() + bot * rowBytes, row.data(),                    rowBytes);
+		}
+
+		if (stbi_write_png(filepath, w, h, 3, pixels.data(), rowBytes)) {
+			D_SUCCESS("Telemetry exported to: %s", filepath);
+			LOG_INFO("Telemetry exported to: %s", filepath);
+		}
+		else {
+			D_FAIL("Failed to export telemetry to: %s", filepath);
+			LOG_ERROR("Failed to export telemetry to: %s", filepath);
+		}
+	}
+
+	// --- Results Tab (inline in Control Panel) ---
+
+	void ControlPanel::drawResultsTab() {
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+
+		if (ring.size() < 2) {
+			ImGui::TextDisabled("No results yet. Run a simulation to generate telemetry.");
+			return;
+		}
+
+		// --- Header ---
+		ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "Simulation Complete");
+		if (!_requestedRobot.empty()) {
+			ImGui::SameLine();
+			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
+		}
+
+		const auto& last = ring.at(ring.size() - 1);
+		ImGui::Text("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
+		ImGui::Separator();
+
+		// --- Rebuild series from ring ---
+		static std::vector<float> tX, tRms, tMax, tCs;
+		static std::vector<std::vector<float>> tY;
+
+		const int sampleCount = (int)ring.size();
+		const int jointCount = (int)last.j.size();
+
+		tX.resize(sampleCount);
+		tRms.resize(sampleCount);
+		tMax.resize(sampleCount);
+		tCs.resize(sampleCount);
+
+		if ((int)tY.size() != jointCount) tY.resize(jointCount);
+		for (int j = 0; j < jointCount; ++j) tY[j].resize(sampleCount);
+
+		for (int k = 0; k < sampleCount; ++k) {
+			const auto& s = ring.at(k);
+			tX[k]   = (float)s.timeSec;
+			tRms[k] = s.err_rms;
+			tMax[k] = s.err_max;
+			tCs[k]  = (float)s.clamp_sum;
+
+			const int m = std::min(jointCount, (int)s.j.size());
+			for (int j = 0; j < m; ++j) {
+				tY[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
+			}
+			for (int j = m; j < jointCount; ++j) {
+				tY[j][k] = 0.0f;
+			}
+		}
+
+		const ImVec2 plotSz(-1, 200);
+
+		// --- Error Plot ---
+		if (ImPlot::BeginPlot("Error (RMS, Max)##resultstab", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			ImPlot::PlotLine("RMS", tX.data(), tRms.data(), sampleCount);
+			ImPlot::PlotLine("Max", tX.data(), tMax.data(), sampleCount);
+			ImPlot::EndPlot();
+		}
+
+		// --- Clamp Events ---
+		if (ImPlot::BeginPlot("Clamp Events##resultstab", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			ImPlot::PlotStairs("Sum", tX.data(), tCs.data(), sampleCount);
+			ImPlot::EndPlot();
+		}
+
+		// --- Joint Error Overlay ---
+		if (ImPlot::BeginPlot("Joint Error Overlay##resultstab", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (int j = 0; j < jointCount; ++j) {
+				char label[16];
+				snprintf(label, sizeof(label), "J%02d", j + 1);
+				ImPlot::PlotLine(label, tX.data(), tY[j].data(), sampleCount);
+			}
+			ImPlot::EndPlot();
+		}
+	}
+
+	// --- Results Window (post-simulation) ---
+
+	void ControlPanel::drawResultsWindow() {
+		if (!_showResultsWindow) return;
+
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+		if (ring.size() < 2) {
+			_showResultsWindow = false;
+			return;
+		}
+
+		// Force focus on first frame the window opens
+		if (_resultsFocusNeeded) {
+			ImGui::SetNextWindowFocus();
+			_resultsFocusNeeded = false;
+		}
+
+		ImGui::SetNextWindowSize(ImVec2(900, 750), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(
+			ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f - 450, ImGui::GetIO().DisplaySize.y * 0.5f - 375),
+			ImGuiCond_FirstUseEver);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
+
+		bool open = true;
+		ImGui::Begin("Simulation Results", &open, ImGuiWindowFlags_NoDocking);
+		if (!open) {
+			_showResultsWindow = false;
+			ImGui::End();
+			ImGui::PopStyleColor();
+			return;
+		}
+
+		// --- Header ---
+		ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "Simulation Complete");
+		if (!_requestedRobot.empty()) {
+			ImGui::SameLine();
+			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
+		}
+
+		const auto& last = ring.at(ring.size() - 1);
+		ImGui::Text("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
+		ImGui::Separator();
+
+		// --- Export Button ---
+		ImGui::Spacing();
+
+		// Track the window rect for glReadPixels
+		static ImVec2 capturePos = { 0, 0 };
+		static ImVec2 captureSize = { 0, 0 };
+
+		if (ImGui::Button("Export as PNG")) {
+			// Build output path: runs/<robot>_results_<timestamp>.png
+			auto now = std::chrono::system_clock::now();
+			auto epoch = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+			std::string filename = _requestedRobot.empty() ? "results" : _requestedRobot;
+			filename += "_results_" + std::to_string(epoch) + ".png";
+
+			auto outPath = paths::runs() / filename;
+			std::filesystem::create_directories(paths::runs());
+
+			// Use the captured window rect from last frame
+			int wx = (int)capturePos.x;
+			int wy = (int)(ImGui::GetIO().DisplaySize.y - capturePos.y - captureSize.y); // flip Y for GL
+			int ww = (int)captureSize.x;
+			int wh = (int)captureSize.y;
+
+			exportPlotsAsPNG(outPath.string().c_str(), wx, wy, ww, wh);
+		}
+
+		ImGui::SameLine();
+		ImGui::TextDisabled("Saves to: assets/../runs/");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+
+		// --- Rebuild series from ring (reuse the same helpers) ---
+		static std::vector<float> rX, rRms, rMax, rCs;
+		static std::vector<std::vector<float>> rY;
+
+		const int sampleCount = (int)ring.size();
+		const int jointCount = (int)last.j.size();
+
+		rX.resize(sampleCount);
+		rRms.resize(sampleCount);
+		rMax.resize(sampleCount);
+		rCs.resize(sampleCount);
+
+		if ((int)rY.size() != jointCount) rY.resize(jointCount);
+		for (int j = 0; j < jointCount; ++j) rY[j].resize(sampleCount);
+
+		for (int k = 0; k < sampleCount; ++k) {
+			const auto& s = ring.at(k);
+			rX[k]   = (float)s.timeSec;
+			rRms[k] = s.err_rms;
+			rMax[k] = s.err_max;
+			rCs[k]  = (float)s.clamp_sum;
+
+			const int m = std::min(jointCount, (int)s.j.size());
+			for (int j = 0; j < m; ++j) {
+				rY[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
+			}
+			for (int j = m; j < jointCount; ++j) {
+				rY[j][k] = 0.0f;
+			}
+		}
+
+		const ImVec2 plotSz(-1, 200);
+
+		// --- Error Plot ---
+		if (ImPlot::BeginPlot("Error (RMS, Max)##results", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			ImPlot::PlotLine("RMS", rX.data(), rRms.data(), sampleCount);
+			ImPlot::PlotLine("Max", rX.data(), rMax.data(), sampleCount);
+			ImPlot::EndPlot();
+		}
+
+		// --- Clamp Events ---
+		if (ImPlot::BeginPlot("Clamp Events##results", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			ImPlot::PlotStairs("Sum", rX.data(), rCs.data(), sampleCount);
+			ImPlot::EndPlot();
+		}
+
+		// --- Joint Error Overlay ---
+		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (int j = 0; j < jointCount; ++j) {
+				char label[16];
+				snprintf(label, sizeof(label), "J%02d", j + 1);
+				ImPlot::PlotLine(label, rX.data(), rY[j].data(), sampleCount);
+			}
+			ImPlot::EndPlot();
+		}
+
+		// Capture window rect for next-frame export
+		capturePos = ImGui::GetWindowPos();
+		captureSize = ImGui::GetWindowSize();
+
+		ImGui::End();
+		ImGui::PopStyleColor();
 	}
 }
