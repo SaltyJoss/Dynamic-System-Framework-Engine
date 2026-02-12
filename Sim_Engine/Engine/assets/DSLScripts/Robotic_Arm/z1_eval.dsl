@@ -12,6 +12,9 @@
 #
 # Joint Omega limits (deg/s):
 # J1-J6: [0, +180]
+#
+# Created by: SaltyJoss
+# Double Checked using GitHub Copilot
 # ============================================================
 
 load(robot, Z1)

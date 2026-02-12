@@ -17,7 +17,7 @@
 # J1-J7: [0, +180]
 #
 # Created by: SaltyJoss
-# Assisted by: GitHub Copilot
+# Double Checked using GitHub Copilot
 # ============================================================
 
 set(integrator, rk4)

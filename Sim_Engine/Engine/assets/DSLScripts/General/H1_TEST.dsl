@@ -5,6 +5,9 @@
 #   - Right Leg Phase = Left Leg Phase + 0.5
 #   - Left Arm Phase  = Right Leg Phase (Counter-swing)
 #   - Right Arm Phase = Left Leg Phase (Counter-swing)
+#
+# Created by: SaltyJoss
+# Double Checked using GitHub Copilot
 # ============================================================
 
 load(robot, H1)

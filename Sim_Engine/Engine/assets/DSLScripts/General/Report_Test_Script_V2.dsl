@@ -1,5 +1,9 @@
 # -----------------------------
-# Pose definitions (degrees)
+# LEGACY SCRIPT (NOT USED)
+# -----------------------------
+
+# -----------------------------
+# REPORT TEST SCRIPT (Z1)
 # -----------------------------
 # Joint limits reminder (deg):
 # J1: [-150, +150]
@@ -8,6 +12,9 @@
 # J4: [ -87,  +87]
 # J5: [ -77,  +77]
 # J6: [-160, +160]
+#
+# Created by: SaltyJoss
+# -----------------------------
 
 load(robot, Z1)
 set(integrator, rk4)
@@ -18,7 +25,7 @@ start()
 wait(0.5)
 
 # -----------------------------
-# Phase 0: Move to a neutral HOME pose (2.5s)
+# Phase 0: Move to a neutral HOME pose
 # -----------------------------
 parallel(0.0) {
   trajSet(link01, TRAP,   0.0,  60.0, 120.0)
@@ -32,8 +39,7 @@ wait(2.5)
 wait(0.4)
 
 # -----------------------------
-# Phase 1: Approach pose above "pick" location (3.0s)
-# (Base turns, shoulder/elbow shape, wrist aligns)
+# Phase 1:
 # -----------------------------
 parallel(0.0) {
   trajSet(link01, TRAP,  35.0,  55.0, 110.0)
@@ -47,7 +53,7 @@ wait(3.0)
 wait(0.3)
 
 # -----------------------------
-# Phase 2: Lower to "pick" (fine motion, mostly shoulder/elbow) (1.8s)
+# Phase 2:
 # -----------------------------
 parallel(0.0) {
   trajSet(link02, TRAP,  82.0,  25.0,  60.0)
@@ -60,7 +66,7 @@ wait(1.8)
 wait(0.6)
 
 # -----------------------------
-# Phase 3: Lift slightly (1.5s)
+# Phase 3:
 # -----------------------------
 parallel(0.0) {
   trajSet(link02, TRAP,  72.0,  25.0,  60.0)
@@ -70,8 +76,7 @@ wait(1.5)
 wait(0.3)
 
 # -----------------------------
-# Phase 4: Transfer to "place" approach (3.2s)
-# (Base swing + elbow reshape, wrist re-orient)
+# Phase 4: 
 # -----------------------------
 parallel(0.0) {
   trajSet(link01, TRAP, -40.0,  55.0, 110.0)
@@ -85,7 +90,7 @@ wait(3.2)
 wait(0.3)
 
 # -----------------------------
-# Phase 5: Lower to "place" (1.8s)
+# Phase 5:
 # -----------------------------
 parallel(0.0) {
   trajSet(link02, TRAP,  75.0,  25.0,  60.0)
@@ -98,7 +103,7 @@ wait(1.8)
 wait(0.6)
 
 # -----------------------------
-# Phase 6: Retract to a safe mid pose (2.2s)
+# Phase 6:
 # -----------------------------
 parallel(0.0) {
   trajSet(link02, TRAP,  55.0,  40.0,  85.0)
@@ -110,7 +115,7 @@ wait(2.2)
 wait(0.3)
 
 # -----------------------------
-# Phase 6.1: small, low-frequency inspection sweep
+# Phase 6.1:
 # -----------------------------
 parallel(0.0) {
   trajSet(link01, MSINE, 8.0, 0.2, 3.0, 0.08, 10.0, 2.0, 0.16, 110.0, 1.0, 0.28, 210.0)
@@ -125,8 +130,7 @@ wait(0.3)
 
 
 # -----------------------------
-# Phase 7: Small inspection "wrist scan" (8s)
-# (Low amplitude, low frequency; realistic sensor sweep)
+# Phase 7:
 # -----------------------------
 parallel(0.0) {
   trajSet(link04, SINE, 8.0, 0.2,  6.0, 0.12, 0.0)
