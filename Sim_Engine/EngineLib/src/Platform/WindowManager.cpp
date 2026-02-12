@@ -180,7 +180,7 @@ namespace window {
     }
 
 	// Toggle mouse capture on Escape key press, and also toggle the control panel visibility
-    void window::GLWindow::onKey(int key, int scancode, int action, int mods) {
+    void window::GLWindow::onKey(int key, int /*scancode*/, int action, int /*mods*/) {
         if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
             setMouseCaptured(!_mouseCaptured);
 			// close control panel when key is pressed again

@@ -106,17 +106,16 @@ namespace gui {
 
         void sceneObjectsTable();
 
+		// Follow View Methods
 		void selectJointAndFollow(int jointIndex);
 		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
 		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
 
-		void drawResultsTab();
-			void drawResultsWindow();
-			void exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h);
-			void exportTelemetryCSV(const char* filepath);
-			void runComparisonAllIntegrators();
-			void drawComparisonPlots();
-
+		// Results Methods
+		void drawResultsWindow();
+		void exportTelemetryCSV(const char* filepath);
+		void runComparisonAllIntegrators();
+		void drawComparisonPlots();
 
 		// Helper Methods
         void beginControlPanel(const char* id, ImVec2 size = ImVec2(0, 0));
@@ -163,20 +162,32 @@ namespace gui {
 		std::vector<ComparisonSnapshot> _comparisonResults;
 		bool _comparisonReady = false;
 
+		// Currently selected items
 		std::string _requestedRobot;    // name of requested robot to load
 		std::string _currentObjectName; // name of currently selected object
 		std::string _currentLinkName;   // name of currently selected link
 		std::string _currentJointName;  // name of currently selected joint
 		std::string _lastLinkName;      // name of last selected link
 
+		// Store joint angles for display
         std::unordered_map<std::string, float> _linkAngles;
 
+		// Simulation and diagnostics timing
 		float simLength = 30.0f;  // ~30 seconds default
 		float diagLength = 15.0f; // ~15 seconds default
         double deltaTime = 1.0f / 180.0f; // ~180 FPS default
 		float simTime = 0.0f;     // current simulation time
 		float diagTime = 0.0f;    // current diagnostic time
 
+		// Plot heights for comparison
+		float _cPlotH1 = 250.0f;
+        float _cPlotH2 = 250.0f;
+
+        // Plot heights for results
+        float _plotH1 = 250.0f;
+        float _plotH2 = 250.0f;
+
+		// Camera properties
         int povMode = 0;
         float fov = 60.0f;
 
@@ -190,8 +201,6 @@ namespace gui {
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
         std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();
-
-
     };
 } // namespace gui
 

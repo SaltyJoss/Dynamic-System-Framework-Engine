@@ -216,7 +216,7 @@ namespace gui {
 
 		// Header info
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted("Script:");
+		ImGui::Text("Script:");
 		ImGui::SameLine();
 		ImGui::TextDisabled("%s", fileLabel.c_str());
 
@@ -359,9 +359,7 @@ namespace gui {
 
 		if (ImGui::InputText("Filename", filenameBuf, sizeof(filenameBuf))) { _pendingSaveName = filenameBuf; }
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		if (ImGui::Button("Save")) {
 			std::string fullPath = _pendingSavePath;
@@ -395,18 +393,13 @@ namespace gui {
 		ImGui::TextColored(color, "%s", text);
 	}
 
+	// Render the command syntax instructions
 	void CommandScriptEditor::renderCmdInstructions() {
 		ImGui::BeginChild("CmdInstructions", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
-		ImGui::Spacing();
-
-		ImGui::SeparatorText("DSL Command Format:");
 		
-		ImGui::Spacing();
-		ImGui::Separator();
+		ImGui::SectionHeader("DSL Command Format:");
 		ImGui::Spacing();
 
-
-		// New format: command(identifier, arg1, arg2, ...) # Description
 		ImGui::TextColored(CMD_COL, "command");
 		TextInlineColored(ARG_COL, "(identifier, arg1, arg2, ...)");
 		TextInlineColored(DESC_COL, " \'#\' Denotes a comment");
@@ -419,7 +412,7 @@ namespace gui {
 		ImGui::BulletText("Inline comments use '#': rotate(obj, 30, 0, 90) # quarter turn");
 
 		ImGui::Spacing();
-		ImGui::SeparatorText("DSL Command List:");
+		ImGui::SectionHeader("DSL Command List:");
 		ImGui::Spacing();
 		
 		// --- TRAJSET ---
@@ -436,9 +429,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- TRAJCLEAR ---
 		ImGui::TextColored(CMD_COL, "trajClear");
@@ -460,9 +451,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- ROTATEJOINTBY ---
 		ImGui::TextColored(CMD_COL, "rotateJointBy");
@@ -473,9 +462,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- ROTATETO ---
 		ImGui::TextColored(CMD_COL, "rotateTo");
@@ -486,9 +473,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- ROTATEBY ---
 		ImGui::TextColored(CMD_COL, "rotateBy");
@@ -499,9 +484,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- LOAD ---
 		ImGui::TextColored(CMD_COL, "load");
@@ -514,14 +497,12 @@ namespace gui {
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::TextDisabled("Identifiers & Arguments:");
-			ImGui::TextDisabled("	• \"Robot\" -> args: \"Z1\", \"UR5\", \"Panda\", \"KUKA iiwa\", \"some\\path\\to\\robot.json\"");
+			ImGui::TextDisabled("	• \"Robot\" -> args: \"Z1\", \"UR5e\", \"Panda\", \"iiwa14\", \"VISPA\", \"H1\", \"some\\path\\to\\robot.json\"");
 			ImGui::TextDisabled("	• \"Obj\"	-> args: \"cube\", \"circle\", \"some\\path\\to\\object\\location.fbx\"");
 			ImGui::EndTooltip(); 
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- SET ---
 		ImGui::TextColored(CMD_COL, "set");
@@ -541,9 +522,7 @@ namespace gui {
 			ImGui::EndTooltip();
 		}
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- START ---
 		ImGui::TextColored(CMD_COL, "start");
@@ -556,9 +535,7 @@ namespace gui {
 		}
 		TextInlineColored(ARG_COL, "()");
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- STOP ---
 		ImGui::TextColored(CMD_COL, "stop");
@@ -571,9 +548,7 @@ namespace gui {
 		}
 		TextInlineColored(ARG_COL, "()");
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- WAIT ---
 		ImGui::TextColored(CMD_COL, "wait");
@@ -585,9 +560,7 @@ namespace gui {
 		}
 		TextInlineColored(ARG_COL, "(<time_s>)");
 
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
 		// --- SELECT ---
 		ImGui::TextColored(CMD_COL, "select");
@@ -599,9 +572,7 @@ namespace gui {
 		}
 		TextInlineColored(ARG_COL, "(<id>)");
 
-		ImGui::Spacing();
-		ImGui::SeparatorText("DSL Parallel Execution:");
-		ImGui::Spacing();
+		ImGui::Text("DSL Parallel Execution:");
 
 		// --- PARALLEL ---
 		ImGui::TextColored(CMD_COL, "parallel");
