@@ -134,6 +134,13 @@ namespace robots {
 		// Compute the gravity torque for a joint based on the current state and robot configuration
 		std::vector<double> computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const;
 
+		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
+		double computeForwardDrive() const;
+		// Integrate the floating base translation based on the current state and robot configuration
+		void integrateBaseTranslation(double dt);
+		// Integrate the floating base rotation (yaw-only for now) based on the current state and robot configuration
+		void updateBaseRootPose();
+
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
@@ -175,6 +182,25 @@ namespace robots {
 
 		// Gravity acceleration (m/s^2)
 		double _gravity = 0.0;
+
+		// FLoating base state
+		bool _baseIsFree = false;
+
+		// Linear
+		Vec3 _basePos{ 0,0,0 };
+		Vec3 _baseVel{ 0,0,0 };
+		Vec3 _baseAcc{ 0,0,0 };
+
+		// Angular (yaw-only for now, extend later)
+		double _baseYaw = 0.0;
+		double _baseYawRate = 0.0;
+		double _baseYawAcc = 0.0;
+
+		// Tunables
+		double _baseMass = 62.0;          // kg (H1 ≈ 60–65)
+		double _baseLinearDamping = 6.0;   // Ns/m
+		double _baseYawDamping = 2.0;      // Nms/rad
+		double _lastBaseForwardForce = 0.0;
 	};
 } // namespace robot
 

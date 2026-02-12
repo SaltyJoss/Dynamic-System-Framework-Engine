@@ -20,7 +20,8 @@ namespace robots {
 	enum class eJointType {
 		FIXED = 0,
 		REVOLUTE = 1,
-		PRISMATIC = 2
+		PRISMATIC = 2,
+		FREE = 3
 	};
 	/// --- Visual Frame Options ---
 	enum class eVisualFrame {
