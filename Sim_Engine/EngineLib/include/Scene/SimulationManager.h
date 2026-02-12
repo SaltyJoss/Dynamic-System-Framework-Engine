@@ -37,6 +37,7 @@ namespace interpreter { class ENGINE_API IStoredProgram; }
 namespace physics { class ENGINE_API PhysicsSystem; }
 namespace robots { class ENGINE_API RobotSystem; }
 namespace control { class ENGINE_API TrajectoryManager; }
+namespace integration { enum class eIntegrationMethod; }
 
 // I want to rename to more appropriate namespace later
 namespace gui {
@@ -196,8 +197,16 @@ namespace gui {
         interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
 
 		// Telemetry
-        diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
+		diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
 		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
+
+		// Last script text (stored on run for comparison re-use)
+		void setLastScriptText(const std::string& text) { _lastScriptText = text; }
+		const std::string& lastScriptText() const { return _lastScriptText; }
+
+		// Run a script to completion synchronously with a specific integrator
+		// Returns true if telemetry was captured successfully
+		bool runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method);
 
     private:       
 		// Rendering Pipeline Methods
@@ -254,7 +263,10 @@ namespace gui {
         std::unordered_map<scene::ObjectID, scene::Object*> _idToPtr;
 
 		// Active Script Program
-        interpreter::IStoredProgram* _activeProgram = nullptr;
+		interpreter::IStoredProgram* _activeProgram = nullptr;
+
+		// Last script text for comparison re-use
+		std::string _lastScriptText;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder

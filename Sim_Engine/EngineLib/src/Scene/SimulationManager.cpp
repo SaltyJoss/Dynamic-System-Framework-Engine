@@ -25,6 +25,8 @@
 #include "Robots/TrajectoryManager.h"
 
 #include "Interpreter/IStoredProgram.h"
+#include "Interpreter/StoredProgram.h"
+#include "Interpreter/Parser.h"
 
 #include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
@@ -1178,10 +1180,122 @@ namespace gui {
 		_telemetryBegun = false;
 	}
 
+	// --------------------------------------------------
+	//		   SYNCHRONOUS SCRIPT EXECUTION
+	// --------------------------------------------------
+
+	// Helper to replace the integrator method in the script text
+	// A hacky approach my idea, but it works for me and honestly im starting to write up the dissertation so IT WILL DO :)
+	// PS:If anyone has any better solution msg me
+	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
+		std::string result = script;
+		// Find set(integrator, ...) and replace the method name
+		const std::string prefix = "set(integrator,";
+		auto pos = result.find(prefix);
+		if (pos == std::string::npos) {
+			// Also try with space variations
+			const std::string prefix2 = "set(integrator, ";
+			pos = result.find(prefix2);
+		}
+		if (pos != std::string::npos) {
+			auto end = result.find(')', pos);
+			if (end != std::string::npos) {
+				result.replace(pos, end - pos + 1, "set(integrator, " + methodName + ")");
+			}
+		}
+		return result;
+	}
+
+	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully.
+	// NOTE: this is a blocking call that runs a tight loop until the script finishes, so it should only be used for testing or non-interactive scenarios.
+	// IMPORTANT: I want to make this REALLY clear:
+	//		---> I have implemented this for short (<5 minute) test scripts where blocking is acceptable
+	//		---> IT IS NOT intended for general use and WILL CAUSE THE UI TO FREEZE if used with long-running scripts
+	bool SimManager::runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method) {
+		if (!hasRobot()) return false;
+
+		// Map method enum to string name
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
+		const std::string methodName = names[static_cast<int>(method)];
+
+		// Replace the integrator in the script text
+		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
+
+		// Reset robot state
+		resetRobot();
+		_impl->_traj.clearAll();
+		_simTime = 0.0;
+		_simRunning = false;
+		_telemetryBegun = false;
+		_accum = 0.0;
+
+		// Set integrator on both physics and robot systems
+		_impl->_robotSystem->setIntegrationMethod(method);
+		_impl->_physics->setIntegrationMethod(method);
+
+		// Create and parse program
+		auto program = std::make_unique<interpreter::StoredProgram>(this);
+		program->setDefaultObject(getObject());
+		auto parser = std::make_unique<interpreter::Parser>(program.get());
+
+		program->clear();
+		parser->parse(modifiedScript);
+		program->start();
+
+		_activeProgram = program.get();
+		_scriptRunning = true;
+
+		// Run tight simulation loop until program completes
+		const double dt = _dt;
+		const int maxSteps = 50000000; // safety limit (~77 hours at 180Hz)
+
+		for (int step = 0; step < maxSteps; ++step) {
+			// Check program completion
+			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
+				break;
+			}
+
+			// Step the program (DSL command execution)
+			program->step(dt);
+
+			// Step physics and robot if sim is running
+			if (_simRunning) {
+				_simTime += dt;
+				updatePhysics(dt);
+
+				if (hasRobot()) {
+					_impl->_robotSystem->stepReference(_impl->_traj, dt, _simTime);
+					_impl->_robotSystem->step(dt, _simTime);
+
+					if (!_telemetryBegun) {
+						_telemetry.beginRun(_simTime, 60.0, 300.0);
+						_telemetryBegun = true;
+					}
+					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
+				}
+			}
+		}
+
+		// Clean up
+		_activeProgram = nullptr;
+		_scriptRunning = false;
+		_simRunning = false;
+		_telemetryBegun = false;
+
+		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)",
+			methodName.c_str(), _simTime, _telemetry.ring.size());
+
+		return (_telemetry.ring.size() >= 2);
+	}
+
+	// Method to step the simulation with a fixed timestep
 	void SimManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
+
+	// Access the physics system (non-const and const versions)
 	physics::PhysicsSystem& SimManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
 	const physics::PhysicsSystem& SimManager::getPhysicsSystem() const { return *_impl->_physics; } // const
 
+	// Access the robot system (non-const and const versions)
 	control::TrajectoryManager& SimManager::traj() { return _impl->_traj; }
 	const control::TrajectoryManager& SimManager::traj() const { return _impl->_traj; }
 

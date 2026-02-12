@@ -144,9 +144,10 @@ namespace gui {
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
 				_sim->setActiveProgram(_program);
-				_sim->setScriptRunning(true);
+					_sim->setScriptRunning(true);
+					_sim->setLastScriptText(_scriptText);
 
-				// Remove trailing null character if present
+					// Remove trailing null character if present
 				std::string code = _scriptText;
 				if (!code.empty() && code.back() == '\0') code.pop_back();
 

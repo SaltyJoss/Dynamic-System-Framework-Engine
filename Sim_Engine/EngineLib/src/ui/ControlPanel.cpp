@@ -301,7 +301,8 @@ namespace gui {
             ImGui::Separator();
             const bool canShowResults = (_sim->telemetry().ring.size() >= 2);
             if (ImGui::MenuItem("View Results", nullptr, false, canShowResults)) {
-                _selectResultsTab = true;
+				_showResultsWindow = true;
+				_resultsFocusNeeded = true;
             }
 
             ImGui::EndMenu();
@@ -361,10 +362,6 @@ namespace gui {
                 resultsFlags |= ImGuiTabItemFlags_SetSelected;
                 _selectResultsTab = false;
             }
-            if (ImGui::BeginTabItem("Results", nullptr, resultsFlags)) {
-                drawResultsTab();
-                ImGui::EndTabItem();
-            }
 			ImGui::EndTabBar();
         }
 
@@ -382,13 +379,18 @@ namespace gui {
                 LOG_INFO("Simulation stopped detected (edge). Ring size: %zu", _sim->telemetry().ring.size());
                 if (_sim->telemetry().ring.size() >= 2) {
                     _selectResultsTab = true;
-                    LOG_INFO("Auto-selecting Results tab.");
+                    _showResultsWindow = true;
+                    _resultsFocusNeeded = true;
+                    LOG_INFO("Auto-opening Results window.");
                 }
             }
-            _simWasRunningLastFrame = runningNow;
-        }
+			_simWasRunningLastFrame = runningNow;
+		}
 
-        _meshLoad.Display();
+		// Draw separate results window (if open)
+		drawResultsWindow();
+
+		_meshLoad.Display();
         if (_meshLoad.HasSelected()) {
             auto file_path = _meshLoad.GetSelected().string();
             _currentMeshFile = file_path.substr(file_path.find_last_of("/\\") + 1);
@@ -501,6 +503,7 @@ namespace gui {
 		ImGui::Separator();
     }
 
+	// Object properties implementation
     void ControlPanel::objectProperties() {
         if (_sim->isSimRunning()) { 
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
@@ -579,6 +582,7 @@ namespace gui {
 		ImGui::Separator();
     }
 
+	// Joint properties implementation
     void ControlPanel::jointProperties() {
         if (!_hasRobot) { ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No robot model loaded."); return; }
         robots::RobotSystem* robot = _sim->getRobotSystem();
@@ -671,22 +675,9 @@ namespace gui {
 			D_INFO("Reset Robot to initial position and orientation.");
 			return;
 		}
-
-		// View Results button — enabled when telemetry data exists
-		ImGui::SameLine();
-		const bool hasTelemetry = (rec.ring.size() >= 2);
-		ImGui::BeginDisabled(!hasTelemetry);
-		if (ImGui::Button("View Results")) {
-			_showResultsWindow = true;
-			_resultsFocusNeeded = true;
-		}
-		ImGui::EndDisabled();
-		if (!hasTelemetry) {
-			ImGui::SameLine();
-			ImGui::TextDisabled("(run a simulation first)");
-		}
     }
 
+	// Display settings implementation
     void ControlPanel::displaySettings() {
         static float fovDeg = 70.0f;
         ImGui::BeginDisabled(_sim->isSimRunning());
@@ -1075,6 +1066,7 @@ namespace gui {
         ImGui::PopStyleColor();
 	}
 
+	// Select joint from table and set camera to follow it
     void ControlPanel::selectJointAndFollow(int jointIdx)
     {
         if (!_sim || !_sim->hasRobot()) return;
@@ -1341,6 +1333,7 @@ namespace gui {
 
 	// --- PNG Export ---
 
+	// Export the current telemetry plots as a PNG image (for sharing, reports, etc.)
 	void ControlPanel::exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h) {
 		if (w <= 0 || h <= 0) return;
 
@@ -1366,8 +1359,221 @@ namespace gui {
 		}
 	}
 
+	// --- CSV Export ---
+
+	// Export telemetry data to CSV for external analysis (e.g. Python, Excel)
+	void ControlPanel::exportTelemetryCSV(const char* filepath) {
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+		if (ring.size() < 2) return;
+
+		FILE* f = nullptr;
+		if (fopen_s(&f, filepath, "w") != 0 || !f) {
+			D_FAIL("Failed to export CSV to: %s", filepath);
+			LOG_ERROR("Failed to export CSV to: %s", filepath);
+			return;
+		}
+
+		const int sampleCount = (int)ring.size();
+		const int jointCount = (int)ring.at(sampleCount - 1).j.size();
+
+		// Header
+		fprintf(f, "time_s,err_rms,err_max,clamp_sum");
+		for (int j = 0; j < jointCount; ++j) {
+			fprintf(f, ",J%02d_theta,J%02d_omega,J%02d_torque,J%02d_theta_ref,J%02d_err", j+1, j+1, j+1, j+1, j+1);
+		}
+		fprintf(f, "\n");
+
+		// Data rows
+		for (int k = 0; k < sampleCount; ++k) {
+			const auto& s = ring.at(k);
+			fprintf(f, "%.6f,%.9f,%.9f,%d", s.timeSec, s.err_rms, s.err_max, s.clamp_sum);
+			const int m = std::min(jointCount, (int)s.j.size());
+			for (int j = 0; j < m; ++j) {
+				const auto& jt = s.j[j];
+				fprintf(f, ",%.9f,%.9f,%.9f,%.9f,%.9f",
+					jt.thetaRad, jt.omegaRad_s, jt.torqueNm, jt.thetaRefRad,
+					jt.thetaRefRad - jt.thetaRad);
+			}
+			fprintf(f, "\n");
+		}
+
+		fclose(f);
+		D_SUCCESS("Telemetry CSV exported to: %s", filepath);
+		LOG_INFO("Telemetry CSV exported to: %s", filepath);
+	}
+
+	// --- Integrator Comparison ---
+
+	// Run the loaded script with all integrators and capture telemetry for comparison plots
+	void ControlPanel::runComparisonAllIntegrators() {
+		const std::string& scriptText = _sim->lastScriptText();
+		if (scriptText.empty()) {
+			D_FAIL("No script loaded. Run a script first, then compare.");
+			return;
+		}
+		if (!_sim->hasRobot()) {
+			D_FAIL("No robot loaded. Cannot run comparison.");
+			return;
+		}
+
+		static const integration::eIntegrationMethod methods[] = {
+			integration::eIntegrationMethod::Euler,
+			integration::eIntegrationMethod::Midpoint,
+			integration::eIntegrationMethod::Heun,
+			integration::eIntegrationMethod::Ralston,
+			integration::eIntegrationMethod::RK4,
+			integration::eIntegrationMethod::RK45
+		};
+		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
+
+		_comparisonResults.clear();
+		_comparisonReady = false;
+
+		D_INFO("Starting integrator comparison (6 methods)...");
+
+		for (int i = 0; i < 6; ++i) {
+			D_INFO("  Running: %s ...", names[i]);
+
+			if (!_sim->runScriptToCompletion(scriptText, methods[i])) {
+				D_FAIL("  %s failed — skipping.", names[i]);
+				continue;
+			}
+
+			// Snapshot telemetry into comparison result
+			const auto& ring = _sim->telemetry().ring;
+			const int sampleCount = (int)ring.size();
+			if (sampleCount < 2) continue;
+
+			ComparisonSnapshot snap;
+			snap.integratorName = names[i];
+			snap.jointCount = (int)ring.at(sampleCount - 1).j.size();
+
+			snap.time.resize(sampleCount);
+			snap.errRms.resize(sampleCount);
+			snap.errMax.resize(sampleCount);
+			snap.jointErr.resize(snap.jointCount);
+			for (int j = 0; j < snap.jointCount; ++j) snap.jointErr[j].resize(sampleCount);
+
+			for (int k = 0; k < sampleCount; ++k) {
+				const auto& s = ring.at(k);
+				snap.time[k] = (float)s.timeSec;
+				snap.errRms[k] = (float)s.err_rms;
+				snap.errMax[k] = (float)s.err_max;
+				const int m = std::min(snap.jointCount, (int)s.j.size());
+				for (int j = 0; j < m; ++j) {
+					snap.jointErr[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
+				}
+			}
+
+			_comparisonResults.push_back(std::move(snap));
+		}
+
+		_comparisonReady = !_comparisonResults.empty();
+		D_SUCCESS("Integrator comparison complete: %d/%d methods captured.", (int)_comparisonResults.size(), 6);
+	}
+
+	// Draw comparison plots (overlays of all integrators)
+	void ControlPanel::drawComparisonPlots() {
+		if (!_comparisonReady || _comparisonResults.empty()) {
+			ImGui::TextDisabled("No comparison data. Click 'Compare All Integrators' first.");
+			return;
+		}
+
+		ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Integrator Comparison (%d methods)", (int)_comparisonResults.size());
+		ImGui::Separator();
+
+		const ImVec2 plotSz(-1, 250);
+
+		// --- RMS Error Overlay ---
+		if (ImPlot::BeginPlot("RMS Error — All Integrators##cmp", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "RMS error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (const auto& r : _comparisonResults) {
+				ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.errRms.data(), (int)r.time.size());
+			}
+			ImPlot::EndPlot();
+		}
+
+		// --- Max Error Overlay ---
+		if (ImPlot::BeginPlot("Max Error — All Integrators##cmp", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "Max error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (const auto& r : _comparisonResults) {
+				ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.errMax.data(), (int)r.time.size());
+			}
+			ImPlot::EndPlot();
+		}
+
+		// --- Per-joint error for worst joint (joint with max final error) ---
+		if (_comparisonResults.front().jointCount > 0) {
+			// Find which joint has the most variation across integrators
+			static int selectedCmpJoint = 0;
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Compare Joint##cmp", &selectedCmpJoint, 0, _comparisonResults.front().jointCount - 1, "J%02d");
+
+			char plotLabel[64];
+			snprintf(plotLabel, sizeof(plotLabel), "J%02d Error — All Integrators##cmpjoint", selectedCmpJoint + 1);
+			if (ImPlot::BeginPlot(plotLabel, plotSz)) {
+				ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+				ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+				for (const auto& r : _comparisonResults) {
+					if (selectedCmpJoint < (int)r.jointErr.size()) {
+						ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.jointErr[selectedCmpJoint].data(), (int)r.time.size());
+					}
+				}
+				ImPlot::EndPlot();
+			}
+		}
+
+		// --- Export comparison CSV ---
+		if (ImGui::Button("Export Comparison CSV")) {
+			auto now = std::chrono::system_clock::now();
+			auto epoch = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+			std::string filename = _requestedRobot.empty() ? "comparison" : _requestedRobot;
+			filename += "_comparison_" + std::to_string(epoch) + ".csv";
+
+			auto outPath = paths::runs() / filename;
+			std::filesystem::create_directories(paths::runs());
+
+			FILE* f = nullptr;
+			if (fopen_s(&f, outPath.string().c_str(), "w") == 0 && f) {
+				// Header: time, then rms/max for each integrator
+				fprintf(f, "time_s");
+				for (const auto& r : _comparisonResults) {
+					fprintf(f, ",%s_rms,%s_max", r.integratorName.c_str(), r.integratorName.c_str());
+				}
+				fprintf(f, "\n");
+
+				// Use longest time series
+				int maxSamples = 0;
+				for (const auto& r : _comparisonResults) maxSamples = std::max(maxSamples, (int)r.time.size());
+
+				for (int k = 0; k < maxSamples; ++k) {
+					// Use first result's time as reference
+					float t = (k < (int)_comparisonResults[0].time.size()) ? _comparisonResults[0].time[k] : 0.0f;
+					fprintf(f, "%.6f", t);
+					for (const auto& r : _comparisonResults) {
+						if (k < (int)r.time.size()) {
+							fprintf(f, ",%.9f,%.9f", r.errRms[k], r.errMax[k]);
+						} else {
+							fprintf(f, ",,");
+						}
+					}
+					fprintf(f, "\n");
+				}
+				fclose(f);
+				D_SUCCESS("Comparison CSV exported to: %s", outPath.string().c_str());
+			}
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Saves to: LocalAppData/DSFE/runs/");
+	}
+
 	// --- Results Tab (inline in Control Panel) ---
 
+	// After a simulation completes, this tab shows the telemetry plots directly in the control panel for quick review
 	void ControlPanel::drawResultsTab() {
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
@@ -1453,6 +1659,7 @@ namespace gui {
 
 	// --- Results Window (post-simulation) ---
 
+	// When a simulation completes, this modal window pops up with the telemetry plots and export options
 	void ControlPanel::drawResultsWindow() {
 		if (!_showResultsWindow) return;
 
@@ -1470,9 +1677,7 @@ namespace gui {
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(900, 750), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(
-			ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f - 450, ImGui::GetIO().DisplaySize.y * 0.5f - 375),
-			ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f - 450, ImGui::GetIO().DisplaySize.y * 0.5f - 375), ImGuiCond_FirstUseEver);
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
 
 		bool open = true;
@@ -1494,8 +1699,6 @@ namespace gui {
 		const auto& last = ring.at(ring.size() - 1);
 		ImGui::Text("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
 		ImGui::Separator();
-
-		// --- Export Button ---
 		ImGui::Spacing();
 
 		// Track the window rect for glReadPixels
@@ -1523,7 +1726,22 @@ namespace gui {
 		}
 
 		ImGui::SameLine();
-		ImGui::TextDisabled("Saves to: assets/../runs/");
+
+		if (ImGui::Button("Export as CSV")) {
+			auto now = std::chrono::system_clock::now();
+			auto epoch = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+			std::string filename = _requestedRobot.empty() ? "results" : _requestedRobot;
+			filename += "_results_" + std::to_string(epoch) + ".csv";
+
+			auto outPath = paths::runs() / filename;
+			std::filesystem::create_directories(paths::runs());
+
+			exportTelemetryCSV(outPath.string().c_str());
+		}
+
+		ImGui::SameLine();
+		ImGui::TextDisabled("Saves to: LocalAppData/DSFE/runs/");
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -1588,6 +1806,29 @@ namespace gui {
 				ImPlot::PlotLine(label, rX.data(), rY[j].data(), sampleCount);
 			}
 			ImPlot::EndPlot();
+		}
+
+		// --- Integrator Comparison Section ---
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		const bool hasScript = !_sim->lastScriptText().empty();
+		ImGui::BeginDisabled(!hasScript || _sim->isSimRunning());
+		if (ImGui::Button("Compare All Integrators")) {
+			runComparisonAllIntegrators();
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::TextDisabled("Runs Euler/Midpoint/Heun/Ralston/RK4/RK45 sequentially");
+		if (!hasScript) {
+			ImGui::SameLine();
+			ImGui::TextDisabled("(run a script first)");
+		}
+
+		if (_comparisonReady) {
+			ImGui::Spacing();
+			drawComparisonPlots();
 		}
 
 		// Capture window rect for next-frame export

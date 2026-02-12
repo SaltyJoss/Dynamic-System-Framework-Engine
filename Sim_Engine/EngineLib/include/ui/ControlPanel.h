@@ -111,8 +111,11 @@ namespace gui {
 		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
 
 		void drawResultsTab();
-		void drawResultsWindow();
-		void exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h);
+			void drawResultsWindow();
+			void exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h);
+			void exportTelemetryCSV(const char* filepath);
+			void runComparisonAllIntegrators();
+			void drawComparisonPlots();
 
 
 		// Helper Methods
@@ -147,6 +150,18 @@ namespace gui {
 		bool _simWasRunningLastFrame = false;
 		bool _resultsFocusNeeded = false;
 		bool _selectResultsTab = false;
+
+		// Integrator comparison state
+		struct ComparisonSnapshot {
+			std::string integratorName;
+			std::vector<float> time;
+			std::vector<float> errRms;
+			std::vector<float> errMax;
+			std::vector<std::vector<float>> jointErr;
+			int jointCount = 0;
+		};
+		std::vector<ComparisonSnapshot> _comparisonResults;
+		bool _comparisonReady = false;
 
 		std::string _requestedRobot;    // name of requested robot to load
 		std::string _currentObjectName; // name of currently selected object
