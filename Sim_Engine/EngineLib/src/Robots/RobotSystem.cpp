@@ -766,7 +766,8 @@ namespace robots {
 
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
-		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		mathlib::VecX x_Next = step.x_next;
 
 		// Unpack new state
 		unpackState(x_Next);
@@ -804,8 +805,9 @@ namespace robots {
 
 			HDF5_SIM_DATA(header, (data::FieldList{
 					// Simulation info
-					{"sim_time", simTime},
-					{"dt",       dt},
+					{"sim_time",   simTime},
+					{"dt_taken",   step.dt_taken},
+					{"dt_sug",	   step.dt_sug},
 					{"joint_name", std::string(joint.name)},
 					{"link_name",  std::string(joint.child)},
 					// States
@@ -931,6 +933,10 @@ namespace robots {
 			joint.omegaRefRad_s = 0.0f;
 			joint.alphaRefRad_s2 = 0.0f;
 		}
+
+		// Reset adaptive integrator so it doesn't carry a stale step size
+		_integrator->resetAdaptiveState();
+
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
 		D_SUCCESS("Robot reset to home position.");
