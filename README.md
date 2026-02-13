@@ -38,8 +38,7 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 <br />
 
 > **Disclaimer:**<br />
-> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, please submit and issue or comment if you find any major bugs/issues/errors within the software.
-
+> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, if you find any major bugs/issues/errors within the software feel free to submit and issue or comment on the repository.
 <!-- PROJECT INFO -->
 ## Project Info
 

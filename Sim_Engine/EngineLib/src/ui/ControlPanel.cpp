@@ -253,10 +253,11 @@ namespace gui {
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Layout")) {
-                ImGui::SaveIniSettingsToDisk((paths::configs() / "imgui_layout.ini").string().c_str());
+                ImGui::SaveIniSettingsToDisk((paths::configs() / "imgui.ini").string().c_str());
+				ImGui::SaveIniSettingsToDisk("imgui.ini");
             }
             if (ImGui::MenuItem("Load Layout")) {
-                ImGui::LoadIniSettingsFromDisk((paths::configs() / "imgui_layout.ini").string().c_str());
+                ImGui::LoadIniSettingsFromDisk((paths::configs() / "imgui.ini").string().c_str());
             }
 			ImGui::Separator();
 			if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }

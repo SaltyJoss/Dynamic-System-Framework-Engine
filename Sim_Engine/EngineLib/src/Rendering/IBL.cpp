@@ -13,7 +13,10 @@
 #include "Rendering/ShaderUtil.h"
 #include "Rendering/CubeVertices.h"
 
+#include "Platform/Paths.h"
+
 #include "EngineLib/LogMacros.h"
+#include "Platform/DataManager.h"
 
 namespace render {
 
@@ -109,7 +112,7 @@ namespace render {
 		};
 
 		shaders::Shader eqShader;
-		eqShader.load("Engine/assets/shaders/cubemap.vert.glsl", "Engine/assets/shaders/equirect_to_cubemap.frag.glsl");
+		eqShader.load((paths::assets() / "shaders" / "cubemap.vert.glsl").string(), (paths::assets() / "shaders" / "equirect_to_cubemap.frag.glsl").string());
 		eqShader.use();
 		eqShader.setInt1(0, "equirectMap");
 		eqShader.setMat4(captureProj, "projection");
@@ -186,7 +189,7 @@ namespace render {
 		};
 
 		shaders::Shader irrShader;
-		irrShader.load("Engine/assets/shaders/irradiance.vert.glsl", "Engine/assets/shaders/irradiance_convolution.frag.glsl");
+		irrShader.load((paths::assets() / "shaders" / "irradiance.vert.glsl").string(), (paths::assets() / "shaders" / "irradiance_convolution.frag.glsl").string());
 		irrShader.use();
 		irrShader.setInt1(0, "equirectMap");
 		irrShader.setMat4(captureProj, "projection");
@@ -259,7 +262,7 @@ namespace render {
 		};
 
 		shaders::Shader prefilterShader;
-		prefilterShader.load("Engine/assets/shaders/cubemap.vert.glsl", "Engine/assets/shaders/prefilter_cubemap.frag.glsl");
+		prefilterShader.load((paths::assets() / "shaders" / "cubemap.vert.glsl").string(), (paths::assets() / "shaders" / "prefilter_cubemap.frag.glsl").string());
 		prefilterShader.use();
 		prefilterShader.setInt1(0, "environmentMap");
 		prefilterShader.setMat4(captureProj, "projection");
@@ -332,7 +335,7 @@ namespace render {
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 		shaders::Shader brdfShader;
-		brdfShader.load("Engine/assets/shaders/brdf_lut.vert.glsl", "Engine/assets/shaders/brdf_lut.frag.glsl");
+		brdfShader.load((paths::assets() / "shaders" / "brdf_lut.vert.glsl").string(), (paths::assets() / "shaders" / "brdf_lut.frag.glsl").string());
 		brdfShader.use();
 
 		glViewport(0, 0, BRDF_LUT_RES, BRDF_LUT_RES);
