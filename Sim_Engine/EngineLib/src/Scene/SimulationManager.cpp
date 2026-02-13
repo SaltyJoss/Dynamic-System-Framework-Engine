@@ -174,7 +174,6 @@ namespace gui {
 			makeView(ViewID::Right, { 3.0f, 0.25f, 0.0f }, 20.0f, target, { 0.0f, 1.0f, 0.0f }); // Right
 			makeView(ViewID::Front, { 0.0f, 0.25f, 3.0f },  20.0f, target, { 0.0f, -1.0f, 0.0f }); // Front
 
-			// Now force their orientation using YOUR yaw/pitch system
 			{
 				// Top
 				auto* camTop = _views[(size_t)ViewID::Top].cam.get();

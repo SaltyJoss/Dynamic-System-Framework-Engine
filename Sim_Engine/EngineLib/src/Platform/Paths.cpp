@@ -39,8 +39,8 @@ namespace paths {
 		g_root	  = getExecDir();
 
 		// Set standard subdirectories
-		g_assets  = g_root / "assets";
-		g_configs = g_root / "configs";
+		g_assets  = g_root/ "assets";
+		g_configs = g_root/ "configs";
 
 		// Use LocalAppData for logs and runs
 		auto localAppData = localAppDataDir() / "DSFE";

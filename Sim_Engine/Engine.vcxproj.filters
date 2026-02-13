@@ -1,34 +1,87 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Engine\src\Main.cpp" />
-    <ClCompile Include="External\stb\stb_image_write_impl.cpp" />
+    <ClCompile Include="Engine\src\Main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="External\stb\stb_image_write_impl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json" />
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\VISPA\VISPA.json" />
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json" />
-    <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
-    <None Include="Engine\assets\shaders\brdf_lut.vert.glsl" />
-    <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl" />
-    <None Include="Engine\assets\shaders\cubemap.vert.glsl" />
-    <None Include="Engine\assets\shaders\fs_pbr.frag.glsl" />
-    <None Include="Engine\assets\shaders\irradiance_convolution.frag.glsl" />
-    <None Include="Engine\assets\shaders\irradiance.vert.glsl" />
-    <None Include="Engine\assets\shaders\mesh_basic.frag.glsl" />
-    <None Include="Engine\assets\shaders\mesh_lit.frag.glsl" />
-    <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl" />
-    <None Include="Engine\assets\shaders\post.frag.glsl" />
-    <None Include="Engine\assets\shaders\post.vert.glsl" />
-    <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
-    <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
-    <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />
-    <None Include="Engine\assets\shaders\skybox_render.frag.glsl" />
-    <None Include="Engine\assets\shaders\skybox_render.vert.glsl" />
-    <None Include="Engine\assets\shaders\ssao.frag.glsl" />
-    <None Include="Engine\assets\shaders\ssao_blur.frag.glsl" />
-    <None Include="Engine\assets\shaders\vs_pbr.vert.glsl" />
-    <None Include="Engine\assets\shaders\world_grid.frag.glsl" />
-    <None Include="Engine\assets\shaders\world_grid.vert.glsl" />
+    <Filter Include="src">
+      <UniqueIdentifier>{0b6781ff-ba8f-4aec-9a14-caa3d8b466be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{383daa6b-14af-40d3-b6df-31732d4d7a6a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders\brdf_lut.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\brdf_lut.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\cubemap.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\equirect_to_cubemap.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\fs_pbr.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\irradiance.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\irradiance_convolution.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\mesh_basic.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\mesh_lit.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\mesh_pbr.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\post.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\post.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\prefilter_cubemap.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\shadow_depth.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\shadow_depth.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\skybox_render.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\skybox_render.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\ssao.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\ssao_blur.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\vs_pbr.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\world_grid.frag.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\world_grid.vert.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

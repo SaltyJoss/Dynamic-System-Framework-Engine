@@ -111,35 +111,32 @@ echo D | xcopy /E /Y /D "$(ProjectDir)Engine\configs\*" "$(TargetDir)configs\"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\Panda\Panda.json" />
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\VISPA\VISPA.json" />
-    <None Include="Engine\assets\objects\Robotic_Arm_Models\Z1\Z1.json" />
-    <None Include="Engine\assets\shaders\brdf_lut.frag.glsl" />
-    <None Include="Engine\assets\shaders\brdf_lut.vert.glsl" />
-    <None Include="Engine\assets\shaders\equirect_to_cubemap.frag.glsl" />
-    <None Include="Engine\assets\shaders\cubemap.vert.glsl" />
-    <None Include="Engine\assets\shaders\fs_pbr.frag.glsl" />
-    <None Include="Engine\assets\shaders\irradiance_convolution.frag.glsl" />
-    <None Include="Engine\assets\shaders\irradiance.vert.glsl" />
-    <None Include="Engine\assets\shaders\mesh_basic.frag.glsl" />
-    <None Include="Engine\assets\shaders\mesh_lit.frag.glsl" />
-    <None Include="Engine\assets\shaders\mesh_pbr.frag.glsl" />
-    <None Include="Engine\assets\shaders\post.frag.glsl" />
-    <None Include="Engine\assets\shaders\post.vert.glsl" />
-    <None Include="Engine\assets\shaders\prefilter_cubemap.frag.glsl" />
-    <None Include="Engine\assets\shaders\shadow_depth.frag.glsl" />
-    <None Include="Engine\assets\shaders\shadow_depth.vert.glsl" />
-    <None Include="Engine\assets\shaders\skybox_render.frag.glsl" />
-    <None Include="Engine\assets\shaders\skybox_render.vert.glsl" />
-    <None Include="Engine\assets\shaders\ssao.frag.glsl" />
-    <None Include="Engine\assets\shaders\ssao_blur.frag.glsl" />
-    <None Include="Engine\assets\shaders\vs_pbr.vert.glsl" />
-    <None Include="Engine\assets\shaders\world_grid.frag.glsl" />
-    <None Include="Engine\assets\shaders\world_grid.vert.glsl" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Engine\src\Main.cpp" />
     <ClCompile Include="External\stb\stb_image_write_impl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders\brdf_lut.frag.glsl" />
+    <None Include="assets\shaders\brdf_lut.vert.glsl" />
+    <None Include="assets\shaders\cubemap.vert.glsl" />
+    <None Include="assets\shaders\equirect_to_cubemap.frag.glsl" />
+    <None Include="assets\shaders\fs_pbr.frag.glsl" />
+    <None Include="assets\shaders\irradiance.vert.glsl" />
+    <None Include="assets\shaders\irradiance_convolution.frag.glsl" />
+    <None Include="assets\shaders\mesh_basic.frag.glsl" />
+    <None Include="assets\shaders\mesh_lit.frag.glsl" />
+    <None Include="assets\shaders\mesh_pbr.frag.glsl" />
+    <None Include="assets\shaders\post.frag.glsl" />
+    <None Include="assets\shaders\post.vert.glsl" />
+    <None Include="assets\shaders\prefilter_cubemap.frag.glsl" />
+    <None Include="assets\shaders\shadow_depth.frag.glsl" />
+    <None Include="assets\shaders\shadow_depth.vert.glsl" />
+    <None Include="assets\shaders\skybox_render.frag.glsl" />
+    <None Include="assets\shaders\skybox_render.vert.glsl" />
+    <None Include="assets\shaders\ssao.frag.glsl" />
+    <None Include="assets\shaders\ssao_blur.frag.glsl" />
+    <None Include="assets\shaders\vs_pbr.vert.glsl" />
+    <None Include="assets\shaders\world_grid.frag.glsl" />
+    <None Include="assets\shaders\world_grid.vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
