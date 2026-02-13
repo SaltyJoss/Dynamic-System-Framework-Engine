@@ -529,6 +529,8 @@ namespace robots {
 				
 				// Gravitational force on the link (Z-down in world frame; .dae files show Z as up)
 				const Vec3 g_world = Vec3(0.0, -g, 0.0); // [m/s^2], gravity vector in world frame
+				// If the robot's base is free-floating, apply gravity in the -Z direction instead of -Y
+				if (_baseIsFree) { const Vec3 g_world = Vec3(0.0, 0.0, -g); }
 				const Vec3 F_g = m * g_world; // [N], gravitational force on the link in world frame
 				
 				// Torque contribution from this link's weight about joint i
@@ -611,6 +613,12 @@ namespace robots {
 		m.tau_gravity = tau_gravity;
 		m.tau_damping = tau_damping;
 		m.tau_friction = tau_friction;
+
+		// Hip reaction compensation (if base is free-floating, apply a fraction of the last measured base forward force as a counter-torque to the hip pitch joint to help stabilise the base)
+		if (_baseIsFree && joint.name.find("hip_pitch") != std::string::npos) {
+			const double hipReactionGain = 0.7;
+			m.tau -= hipReactionGain * _lastBaseForwardForce;
+		}
 
 		double tau_preSat = m.tau;
 
@@ -766,7 +774,8 @@ namespace robots {
 
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
-		mathlib::VecX x_Next = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		mathlib::VecX x_Next = step.x_next;
 
 		// Unpack new state
 		unpackState(x_Next);
@@ -804,8 +813,9 @@ namespace robots {
 
 			HDF5_SIM_DATA(header, (data::FieldList{
 					// Simulation info
-					{"sim_time", simTime},
-					{"dt",       dt},
+					{"sim_time",   simTime},
+					{"dt_taken",   step.dt_taken},
+					{"dt_sug",	   step.dt_sug},
 					{"joint_name", std::string(joint.name)},
 					{"link_name",  std::string(joint.child)},
 					// States
@@ -835,6 +845,12 @@ namespace robots {
 					{"traj_overspeed_flag", m.traj_overspeed_flag}
 				}) 
 			);
+		}
+
+		// Update base pose if free-floating
+		if (_baseIsFree) {
+			integrateBaseTranslation(dt);
+			updateBaseRootPose();
 		}
 
 		// Update kinematics
@@ -901,6 +917,15 @@ namespace robots {
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
 		_hasRobot = true;
 		_loadedName = name;
+		_baseIsFree = false;
+
+		// Check if any joint is free-floating to determine if the base is free
+		for (const auto& joint : _robot.joints) {
+			if (joint.type == eJointType::FREE) {
+				_baseIsFree = true;
+				break;
+			}
+		}
 
 		// Set base frame and home position
 		glm::mat4 baseFrameGLM = toGlm(_robot.baseFrame);
@@ -931,6 +956,20 @@ namespace robots {
 			joint.omegaRefRad_s = 0.0f;
 			joint.alphaRefRad_s2 = 0.0f;
 		}
+
+		// Reset base state if free-floating
+		_basePos = Vec3(0, 0, 0);
+		_baseVel = Vec3(0, 0, 0);
+		_baseAcc = Vec3(0, 0, 0);
+
+		// Assuming base orientation is represented as a yaw angle for simplicity
+		_baseYaw = 0.0;
+		_baseYawRate = 0.0;
+		_baseYawAcc = 0.0;
+
+		// Reset adaptive integrator so it doesn't carry a stale step size
+		_integrator->resetAdaptiveState();
+
 		updateRobotKinematics();
 		D_INFO("Robot reset to home position.");
 		D_SUCCESS("Robot reset to home position.");
@@ -940,6 +979,7 @@ namespace robots {
 	void RobotSystem::clearRobot() {
 		if (!_hasRobot) return;
 
+		// Remove robot objects from _objects
 		// Remove robot objects from _objects
 		for (auto& link : _robot.links) {
 			for (auto* dead : link.attachedObjects) {
@@ -1347,5 +1387,68 @@ namespace robots {
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 		return true;
+	}
+
+	// Method to set the default pose of the robot using joint angles in radians
+	double RobotSystem::computeForwardDrive() const {
+		double drive = 0.0;
+		for (const auto& j : _robot.joints) {
+			if (j.name.find("hip_pitch") != std::string::npos) {
+				drive += -j.omegaRad_s;
+			}
+		}
+		return drive;
+	}
+
+	// Method to integrate the base translation of the robot based on leg joint angles (for legged robots)
+	void RobotSystem::integrateBaseTranslation(double dt) {
+		double hipL = 0.0;
+		double hipR = 0.0;
+
+		tryGetJointAngleRad("left_hip_pitch_link", hipL);
+		tryGetJointAngleRad("right_hip_pitch_link", hipR);
+
+		// Positive when left leg is in stance
+		const double gaitPhase = hipR - hipL;
+
+		// Tunable gain: rad -> N
+		const double driveGain = 180.0;
+		double F_forward = -driveGain * gaitPhase;
+		_lastBaseForwardForce = F_forward;
+
+		Vec3 dampingForce = -_baseLinearDamping * _baseVel;
+		Vec3 F_world(F_forward, 0.0, 0.0);
+		F_world += dampingForce;
+		_baseAcc = F_world / _baseMass;
+
+		_baseVel += _baseAcc * dt;
+		_basePos += _baseVel * dt;
+
+		LOG_INFO_ONCE("hipL=%.3f hipR=%.3f gaitPhase=%.3f",
+			hipL, hipR, hipR - hipL
+		);
+		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)",
+			_baseVel.x(), _baseVel.y(), _baseVel.z()
+		);
+
+	}
+
+	// Method to update the robot root pose based on the integrated base translation (for legged robots)
+	void RobotSystem::updateBaseRootPose() {
+		glm::mat4 T = glm::translate(glm::mat4(1.0f),
+			glm::vec3(
+				(float)_basePos.x(),
+				(float)_basePos.y(),
+				(float)_basePos.z()
+			)
+		);
+
+		glm::mat4 R = glm::rotate(
+			glm::mat4(1.0f),
+			(float)_baseYaw,
+			glm::vec3(0, 1, 0)
+		);
+
+		_robotRootPose = T * R * _robotRootHome;
 	}
 } // namespace robots

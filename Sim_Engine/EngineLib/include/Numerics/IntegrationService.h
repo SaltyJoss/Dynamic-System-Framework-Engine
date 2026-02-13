@@ -36,7 +36,7 @@ namespace integration {
 		// Constructor 
 		IntegrationService();
 
-		mathlib::VecX stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
+		StepOut stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f);
 		StepOut stepAdaptiveODE(eIntegrationMethod m, VecX& x, double t, double dt_try, std::function<VecX(double, const VecX&)> f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
@@ -44,12 +44,17 @@ namespace integration {
 
 		const std::string IntegratorName(eIntegrationMethod m);
 
+		// Reset the cached adaptive step size (call on robot load/reset)
+		void resetAdaptiveState() { _dt_adapt = 0.0; }
+
 	private:
 		const char* toString(eIntegrationMethod m);
 
 		integration::eIntegrationMethod method;
 		std::unique_ptr<integration::ODE> _ODE;
 
-		std::string _methodStr = "Euler";
+		std::string _methodStr = "RK4";
+
+		double _dt_adapt = 0.0;
 	};
 } // namespace integration

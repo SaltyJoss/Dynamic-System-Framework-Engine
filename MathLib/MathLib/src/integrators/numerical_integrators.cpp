@@ -43,12 +43,12 @@ namespace integration {
 	}
 
 	// RK45 method with adaptive step size (Dormand-Prince)
-	VecX ODE::rk45Step(const VecX& x, double t, double& dt, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
-		const double safety = 0.9;
-		const double fac_min = 0.2;
-		const double fac_max = 5.0;
-		const double h_min = 1e-10;
-		const double h_max = 1.0;
+	VecX ODE::rk45Step(const VecX& x, double t, double& dt, double& dt_used, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
+		const double safety = 0.9;	// safety factor to prevent aggressive step size changes
+		const double fac_min = 0.2;	// minimum factor for reducing step size
+		const double fac_max = 5.0;	// maximum factor for increasing step size
+		const double h_min = 1e-10;	// minimum allowed step size
+		const double h_max = 1.0;	// maximum allowed step size
 
 		dt = std::clamp(dt, h_min, h_max);
 
@@ -127,18 +127,23 @@ namespace integration {
 			double err = std::sqrt(errNorm / e.size());
 
 			// Adaptive step size control
+
+			// Accept
 			if (err <= 1.0 && std::isfinite(err)) {
-				// accept
-				const double denom = std::max<double>(err, 1e-10);		// prevent division by zero
-				double fac = safety * std::pow(denom, -0.2);	// exponent for 5th order method
-				fac = std::clamp(fac, fac_min, fac_max);		// limit step size change
-				dt = std::clamp(dt * fac, h_min, h_max);		// update step size
+				dt_used = dt; // Store the actual step size used for this step
+
+				// Update step size for next iteration
+				const double denom = std::max<double>(err, 1e-10); // prevent division by zero
+				double fac = safety * std::pow(denom, -0.2);	   // exponent for 5th order method
+				fac = std::clamp(fac, fac_min, fac_max);		   // limit step size change
+				dt = std::clamp(dt * fac, h_min, h_max);		   // update step size
 				return y5;
 			}
+			// Reject
 			else {
-				// reject
-				double denom = (std::isfinite(err) ? std::max<double>(err, 1e-16) : 1e16);	// prevent division by zero & NaN
-				double fac = safety * std::pow(denom, -0.2);							// exponent for 4th order method
+				double denom = (std::isfinite(err) 
+					? std::max<double>(err, 1e-16) : 1e16);	 // prevent division by zero & NaN
+				double fac = safety * std::pow(denom, -0.2); // exponent for 4th order method
 				fac = std::clamp(fac, fac_min, fac_max);
 				dt = std::clamp(dt * fac, h_min, h_max);
 			}

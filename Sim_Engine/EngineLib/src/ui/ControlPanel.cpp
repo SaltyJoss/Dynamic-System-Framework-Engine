@@ -8,6 +8,8 @@
 #include "Platform/Paths.h"
 #include <chrono>
 #include <imgui.h>
+#include <imgui.h>
+#include "Platform/imguiWidgets.h"
 
 #include <implot.h>
 
@@ -22,49 +24,16 @@
 namespace gui {
 	// --- Helper Functions ---
 
-	// Segmented Button Row Helper
-    static bool SegmentedButtonRow(const char* label, const char* const* items, int itemCount, int& current, float buttonWidth) {
-        ImGui::TextUnformatted(label);
-
-        bool changed = false;
-        ImGui::PushID(label);
-
-        for (int i = 0; i < itemCount; ++i) {
-            if (i > 0) ImGui::SameLine();
-
-            const bool selected = (current == i);
-            if (selected) {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
-            }
-
-            if (ImGui::Button(items[i], ImVec2(buttonWidth, 0))) {
-                if (current != i) {
-                    current = i;
-                    changed = true;
-                }
-            }
-
-            if (selected) {
-                ImGui::PopStyleColor(3);
-            }
-        }
-
-        ImGui::PopID();
-        return changed;
-    }
-
 	// Get human-readable name for gravity level
-    static const char* gravityLevelName(GravityLevel level) {
-        switch (level) {
-        case GravityLevel::Root:        return "Presets";
-        case GravityLevel::SolarSystem: return "Solar System";
-        case GravityLevel::Planets:     return "Planets";
-        case GravityLevel::Moons:       return "Moons";
-        default:                        return "";
-        }
-    }
+	static const char* gravityLevelName(GravityLevel level) {
+		switch (level) {
+		case GravityLevel::Root:        return "Presets";
+		case GravityLevel::SolarSystem: return "Solar System";
+		case GravityLevel::Planets:     return "Planets";
+		case GravityLevel::Moons:       return "Moons";
+		default:                        return "";
+		}
+	}
 
 	// Gravity value lookup from preset
     static double gravityFromPreset(GravityPreset p) {
@@ -212,15 +181,6 @@ namespace gui {
         ImGui::PopStyleColor();
     }
 
-
-    // Helper to build telemetry series
-    static void buildSeries(const diagnostics::TelemetryRing& ring, std::vector<float>& out, std::function<float(const diagnostics::TelemetrySample&)> f) {
-        out.resize(ring.size());
-        for (size_t i = 0; i < ring.size(); ++i) {
-            out[i] = f(ring.at(i));
-        }
-    }
-
     // Begin Control Panel Helper
     void ControlPanel::beginControlPanel(const char* id, ImVec2 size) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
@@ -261,6 +221,29 @@ namespace gui {
         _hdrLoad.SetTitle("Load HDR Environment");
         _hdrLoad.SetDirectory((paths::assets() / "hdr").string());
         _hdrLoad.SetTypeFilters({ ".hdr", ".exr" });
+
+		// One-time ImPlot styling
+		static bool plotStyled = false;
+		if (!plotStyled) {
+			ImPlotStyle& style = ImPlot::GetStyle();
+			ImVec4* colors = style.Colors;
+
+			style.LineWeight = 1.1f;
+			style.PlotPadding = ImVec2(14, 12);
+			style.LabelPadding = ImVec2(6, 4);
+			style.LegendPadding = ImVec2(6, 4);
+			style.FitPadding = ImVec2(0.05f, 0.05f);
+
+			colors[ImPlotCol_PlotBg] = ImVec4(0.129f, 0.129f, 0.129f, 1.0f);
+			colors[ImPlotCol_PlotBorder] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+			colors[ImPlotCol_AxisGrid] = ImVec4(0.32f, 0.32f, 0.32f, 0.7f);
+			colors[ImPlotCol_AxisText] = ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
+			colors[ImPlotCol_AxisTick] = ImVec4(0.75f, 0.75f, 0.75f, 1.0f);
+			colors[ImPlotCol_LegendBg] = ImVec4(0.129f, 0.129f, 0.129f, 0.9f);
+			colors[ImPlotCol_LegendBorder] = ImVec4(0.4f, 0.4f, 0.4f, 0.6f);
+
+			plotStyled = true;
+		}
     }
 
     void ControlPanel::drawMenus(SimManager* sim) {
@@ -274,8 +257,9 @@ namespace gui {
             }
             if (ImGui::MenuItem("Load Layout")) {
                 ImGui::LoadIniSettingsFromDisk((paths::configs() / "imgui_layout.ini").string().c_str());
-
             }
+			ImGui::Separator();
+			if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
             ImGui::EndMenu();
         }
 
@@ -284,19 +268,19 @@ namespace gui {
                 _sim->resetView();
                 LOG_INFO("Scene view reset to default position and orientation.");
             }
-            if (ImGui::MenuItem("Properties")) {
-                // Placeholder for future properties dialog
-            }
-            /*if (ImGui::MenuItem("Reset HDR")) {
+            if (ImGui::MenuItem("Reset HDR")) {
                 _sim->resetHDRToPreset();
-            }*/
+            }
+			ImGui::Separator();
+			if (ImGui::MenuItem("Properties")) {
+				// Placeholder for future properties dialog
+			}
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
             if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
-            if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
 
             ImGui::Separator();
             const bool canShowResults = (_sim->telemetry().ring.size() >= 2);
@@ -340,28 +324,22 @@ namespace gui {
 		roboticArmSelector();
 
 		if (ImGui::BeginTabBar("ControlPanelTabs")) {
-            if (ImGui::BeginTabItem("Simulation Properties")) {
-                simulationProperties();
-                //tempLightControls();
-                ImGui::EndTabItem();
-            }
             if (ImGui::BeginTabItem("Rigid Body Properties")) {
+				simulationProperties();
                 objectProperties();
                 ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Multi-Body Properties")) {
+				simulationProperties();
                 jointProperties();
                 ImGui::EndTabItem();
             }
 			if (ImGui::BeginTabItem("Display Settings")) {
 				displaySettings();
+				// Temporary light controls (for testing)
+				// tempLightControls();
 				ImGui::EndTabItem();
 			}
-            ImGuiTabItemFlags resultsFlags = 0;
-            if (_selectResultsTab) {
-                resultsFlags |= ImGuiTabItemFlags_SetSelected;
-                _selectResultsTab = false;
-            }
 			ImGui::EndTabBar();
         }
 
@@ -434,9 +412,7 @@ namespace gui {
     }
 
     void ControlPanel::simulationProperties() {
-        ImGui::Text("Setup");
-        ImGui::Separator();
-
+        ImGui::SectionHeader("Simulation Settings");
 		ImGui::Spacing();
 
         ImGui::Text("Integration Method");
@@ -514,7 +490,7 @@ namespace gui {
             return;
         }
 
-        ImGui::SeparatorText("Physics Settings:");
+        ImGui::SectionHeader("Physics Settings:");
 
         ImGui::Separator();
 
@@ -610,14 +586,7 @@ namespace gui {
 		float f = (float)j.dynamics.friction;
 		double g = (double)robot->getGravity();
 
-		// Trajectory Inspector
-		ImGui::Text("Joint Telemetry:");
-        ImGui::Text("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
-        ImGui::Spacing();
-
         const auto& rec = _sim->telemetry();
-        drawTelemetryPlots(rec);
-
         ImGui::BeginDisabled(_sim->isSimRunning());
 
         ImGui::Text("Joint Dynamics:");
@@ -654,7 +623,11 @@ namespace gui {
 
         ImGui::EndDisabled();
 
+		ImGui::SectionHeader("Joint Telemetry:");
+
 		drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
+		ImGui::TextDisabled("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
+		ImGui::Spacing();
 
 		ImGui::Spacing();
 		ImGui::Text("Reset Robot:");
@@ -679,9 +652,13 @@ namespace gui {
 
 	// Display settings implementation
     void ControlPanel::displaySettings() {
+		ImGui::SectionHeader("Display Settings");
+		ImGui::Spacing();
+
         static float fovDeg = 70.0f;
         ImGui::BeginDisabled(_sim->isSimRunning());
 
+		ImGui::Spacing();
 		ImGui::Text("Camera Field of View (FOV):");
 		
         ImGui::SetNextItemWidth(150.0f);
@@ -702,7 +679,7 @@ namespace gui {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
 
 		// Quality Buttons
-        bool qualityChanged = SegmentedButtonRow("Graphics Settings:", qualityOptions, IM_ARRAYSIZE(qualityOptions), graphicsIndx, 70.0f);
+        bool qualityChanged = ImGui::SegmentedButtonRow("Graphics Settings:", qualityOptions, IM_ARRAYSIZE(qualityOptions), graphicsIndx, 70.0f);
 
 		ImGui::PopStyleVar(2);
 
@@ -739,7 +716,7 @@ namespace gui {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
 
 		// Resolution Buttons
-        bool resChanged = SegmentedButtonRow("Resolution Presets:", resOptions, IM_ARRAYSIZE(resOptions), resIndx, 90.0f);
+        bool resChanged = ImGui::SegmentedButtonRow("Resolution Presets:", resOptions, IM_ARRAYSIZE(resOptions), resIndx, 90.0f);
 
 		ImGui::PopStyleVar(2);
 
@@ -775,7 +752,7 @@ namespace gui {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
 
 		// Shader Buttons
-        bool shaderChanged = SegmentedButtonRow("Shader Mode:", shaderOptions, IM_ARRAYSIZE(shaderOptions), shaderIndx, 110.0f);
+        bool shaderChanged = ImGui::SegmentedButtonRow("Shader Mode:", shaderOptions, IM_ARRAYSIZE(shaderOptions), shaderIndx, 110.0f);
 
 		ImGui::PopStyleVar(2);
 
@@ -801,7 +778,7 @@ namespace gui {
 
         ImGui::Begin("Choose Robotic Arm", &_showRobotSelector, ImGuiWindowFlags_NoDocking);
 
-        ImGui::Text("Select a robotic arm model:");
+        ImGui::SectionHeader("Select a robotic arm model:");
         ImGui::Separator();
         ImGui::Spacing();
 
@@ -854,8 +831,8 @@ namespace gui {
 		auto& objs = _sim->getObjects();
 		int indexToDelete = -1;
 
-		ImGui::Text("Active Rigid-Bodies");
-		ImGui::Separator();
+		ImGui::SectionHeader("Active Rigid-Bodies");
+		ImGui::SectionDivider();
 
 		ImGuiTableFlags tableFlags =
 			ImGuiTableFlags_BordersV |
@@ -1067,8 +1044,7 @@ namespace gui {
 	}
 
 	// Select joint from table and set camera to follow it
-    void ControlPanel::selectJointAndFollow(int jointIdx)
-    {
+    void ControlPanel::selectJointAndFollow(int jointIdx) {
         if (!_sim || !_sim->hasRobot()) return;
 
         robots::RobotSystem* robot = _sim->getRobotSystem();
@@ -1101,161 +1077,6 @@ namespace gui {
     }
 	// --- Telemetry Plots ---
 
-	// Compute window by time(sec)
-    static void computeWindowByTime(const std::vector<float>& x, float windowSec, int& start, int& count) {
-		const int total = (int)x.size();
-		if (total <= 0) { start = 0; count = 0; return; }
-
-		windowSec = std::max(0.0f, windowSec);
-
-		const float tEnd = x[total - 1];
-		const float tStart = std::max(x.front(), tEnd - windowSec);
-
-		auto it = std::lower_bound(x.begin(), x.end(), tStart);
-		start = (int)std::distance(x.begin(), it);
-		start = std::clamp(start, 0, total - 1);
-
-		count = total - start;
-		count = std::max(1, count);
-    }
-
-	// Estimate Hz from time series
-	static float estHz(const std::vector<float>& x) {
-        const int n = (int)x.size();
-        if (n < 2) { return 60.0f; }
-        float dt = (x.back() - x.front()) / (float)(n - 1);
-        if (dt <= 1e-6f) { return 0.0f; }
-        return 1.0f/ dt;
-    }
-
-    // Utility: lock X axis to visible window (kills AutoFit jitter on X)
-    static void setupScrollingXAxis(const std::vector<float>& x, int start, int count, float rightPaddingFrac = 0.02f) {
-        const float tMin = x[start];
-        const float tMax = x[start + count - 1];
-
-        // Tiny padding so the newest point isn't glued to the border
-        const float span = std::max(1e-6f, tMax - tMin);
-        const float pad = span * rightPaddingFrac;
-
-        ImPlot::SetupAxisLimits(ImAxis_X1, tMin, tMax + pad, ImPlotCond_Always);
-    }
-
-	// Build series utility
-    void ControlPanel::drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec) {
-        const auto& ring = rec.ring;
-        if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry plots yet."); return; }
-        
-		static size_t lastSize = 0;
-
-		static std::vector<float> rms, mx, cs;    // root mean square, max, clamp sum
-		static std::vector<float> x;              // time series
-		static std::vector<std::vector<float>> y; // per-joint error series
-
-		const int sampleCount = (int)ring.size();
-		const int jointCount = (int)ring.at(sampleCount - 1).j.size();
-
-
-        if (ring.size() != lastSize) {
-			lastSize = ring.size();
-
-            // Build series
-            buildSeries(ring, rms, [](const diagnostics::TelemetrySample& s) { return s.err_rms; });
-            buildSeries(ring, mx,  [](const diagnostics::TelemetrySample& s) { return s.err_max; });
-            buildSeries(ring, cs,  [](const diagnostics::TelemetrySample& s) { return (float)s.clamp_sum; });
-
-			// Prepare data arrays
-			x.resize(sampleCount);
-
-			// Resize joint error arrays
-            if ((int)y.size() != jointCount) { y.resize(jointCount); }
-			for (int j = 0; j < jointCount; ++j) { y[j].resize(sampleCount); }
-
-			// Fill data arrays
-            for (int k = 0; k < sampleCount; ++k) {
-                const auto& s = ring.at(k);
-                x[k] = (float)s.timeSec;
-                const int m = std::min(jointCount, (int)s.j.size());
-                for (int j = 0; j < m; ++j) {
-                    y[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
-                }
-                for (int j = m; j < jointCount; ++j) {
-                    y[j][k] = 0.0f;
-                }
-			}
-        }
-        // Latest values
-        const auto& last = ring.at(ring.size() - 1);
-
-		// Time Window Slider
-		const float totalSec = (x.size() >= 2) ? (x.back() - x.front()) : 0.0f;
-		static float windowSec = 10.0f;
-		static bool autoScale = false;
-
-		// When auto-scale is on, lock the window to the full elapsed time
-		if (autoScale && totalSec > 0.25f) { windowSec = totalSec; }
-		windowSec = std::clamp(windowSec, 0.25f, std::max(0.25f, totalSec));
-
-		ImGui::BeginDisabled(autoScale);
-		ImGui::SetNextItemWidth(150.0f);
-		ImGui::SliderFloat("Time Window (s)", &windowSec, 0.25f, std::max(0.25f, totalSec), "%.2f s", ImGuiSliderFlags_Logarithmic);
-		ImGui::EndDisabled();
-
-		// Estimate Hz and approximate N
-		const float hz = estHz(x);
-		const int approxN = (int)std::round(windowSec * hz);
-		int start = 0, count = 0;
-		computeWindowByTime(x, windowSec, start, count);
-		ImGui::SameLine(); ImGui::TextDisabled("(~%d samples @~%.1fHz, t=%.3fs)", approxN, hz, last.timeSec);
-
-		// Follow toggle + auto-scale toggle + jump-to-latest
-		static bool follow = true;
-		ImGui::SameLine(); ImGui::Checkbox("Follow", &follow);
-		ImGui::SameLine(); ImGui::Checkbox("Auto Scale", &autoScale);
-		ImGui::SameLine(); 
-		if (ImGui::Button("Jump to latest")) {
-			follow = true;
-		}
-
-        ImGui::Spacing();
-
-        const ImVec2 plotSz(-1, 200); 
-
-		// ---------- Draw Plots ----------
-
-		// RMS & Error Max
-        if (ImPlot::BeginPlot("Error Plot (RMS, Max)", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
-            if (follow) { setupScrollingXAxis(x, start, count); }
-            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
-            ImPlot::PlotLine("RMS", x.data() + start, rms.data() + start, count);
-            ImPlot::PlotLine("Max", x.data() + start, mx.data() + start, count);
-            ImPlot::EndPlot();
-        }
-
-        // Clamp Sum
-        if (ImPlot::BeginPlot("Clamp Events", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
-            if (follow) { setupScrollingXAxis(x, start, count); }
-            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
-            ImPlot::PlotStairs("Sum", x.data() + start, cs.data() + start, count);
-            ImPlot::EndPlot();
-        }
-
-		// Joint Error
-        if (ImPlot::BeginPlot("Joint Error Overlay", plotSz)) {
-            ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
-            if (follow) { setupScrollingXAxis(x, start, count); }
-            ImPlot::SetupLegend(ImPlotLocation_NorthEast, ImPlotLegendFlags_None);
-            for (int j = 0; j < jointCount; ++j) {
-                char label[16];
-                snprintf(label, sizeof(label), "J%02d", j + 1);
-                ImPlot::PlotLine(label, x.data() + start, y[j].data() + start, count);
-            }
-            ImPlot::EndPlot();
-        }
-        ImGui::Spacing();
-    }
-
 	// Trajectory Inspector
     void ControlPanel::drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int /*jointCount*/, int& selectedJoint) {
         const auto& ring = rec.ring;
@@ -1285,26 +1106,26 @@ namespace gui {
         ImGui::TextDisabled("Selected Joint: %s", _currentJointName.c_str());
 
 		// --------------- Joint Inspector ----------------
-        ImGui::Separator();
+		ImGui::Spacing();
 		// Joint Info
-        ImGui::Text("State:");
+        ImGui::SectionHeader("State:");
 		ImGui::Text("theta:     %.6f rad",       j.thetaRad);
 		ImGui::Text("omega:     %.6f rad/s",     j.omegaRad_s);
 		ImGui::Text("damping:   %.6f kg·m^2/s",  j.damping);
         ImGui::Text("friction:  %.6f N·m",       j.friction);
         ImGui::Text("torque:    %.6f N·m",       j.torqueNm);
 
-        ImGui::Separator();
+		ImGui::Spacing();
 		// Reference Info
-		ImGui::Text("Reference:");
+		ImGui::SectionHeader("Reference:");
 		ImGui::Text("theta_ref: %.6f rad",     j.thetaRefRad);
 		ImGui::Text("omega_ref: %.6f rad/s",   j.omegaRefRad_s);
         ImGui::Text("alpha_ref: %.6f rad/s^2", j.alphaRefRad_s2);
 		ImGui::Text("error e:   %.6f drad",    e);
 
-		ImGui::Separator();
+		ImGui::Spacing();
 		// Control Info
-		ImGui::Text("Control:");
+		ImGui::SectionHeader("Control:");
 		ImGui::Text("Active: %s", j.traj_active ? "Yes" : "No");
         if (j.traj_active) {
             ImGui::Text("traj q:    %.6f", j.traj_q);
@@ -1312,9 +1133,9 @@ namespace gui {
 		    ImGui::Text("traj qdd:  %.6f", j.traj_qdd);
 		}
 
-		ImGui::Separator();
+		ImGui::SectionDivider();
 		// Limit Info
-        ImGui::Text("Limits:");
+		ImGui::SectionHeader("Limits:");
 		ImGui::Text("Clamp_theta:   %s", j.clampTheta ? "Yes" : "No");
 		ImGui::Text("Clamp_omega:   %s", j.clampOmega ? "Yes" : "No");
 
@@ -1328,34 +1149,6 @@ namespace gui {
             }
 			selectedJoint = worstIdx;
 			selectJointAndFollow(selectedJoint);
-		}
-	}
-
-	// --- PNG Export ---
-
-	// Export the current telemetry plots as a PNG image (for sharing, reports, etc.)
-	void ControlPanel::exportPlotsAsPNG(const char* filepath, int x, int y, int w, int h) {
-		if (w <= 0 || h <= 0) return;
-
-		std::vector<unsigned char> pixels(w * h * 3);
-		glReadPixels(x, y, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-
-		// OpenGL reads bottom-up; flip vertically for image file
-		const int rowBytes = w * 3;
-		std::vector<unsigned char> row(rowBytes);
-		for (int top = 0, bot = h - 1; top < bot; ++top, --bot) {
-			memcpy(row.data(),                    pixels.data() + top * rowBytes, rowBytes);
-			memcpy(pixels.data() + top * rowBytes, pixels.data() + bot * rowBytes, rowBytes);
-			memcpy(pixels.data() + bot * rowBytes, row.data(),                    rowBytes);
-		}
-
-		if (stbi_write_png(filepath, w, h, 3, pixels.data(), rowBytes)) {
-			D_SUCCESS("Telemetry exported to: %s", filepath);
-			LOG_INFO("Telemetry exported to: %s", filepath);
-		}
-		else {
-			D_FAIL("Failed to export telemetry to: %s", filepath);
-			LOG_ERROR("Failed to export telemetry to: %s", filepath);
 		}
 	}
 
@@ -1483,10 +1276,23 @@ namespace gui {
 		ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Integrator Comparison (%d methods)", (int)_comparisonResults.size());
 		ImGui::Separator();
 
-		const ImVec2 plotSz(-1, 250);
+		float totalAvail = ImGui::GetWindowHeight() - 200.0f;
+		float splitterThickness = 4.0f;
+
+		float reserved = 2.0f * splitterThickness;
+		float usable = totalAvail - reserved;
+		float minH = 150.0f;
+
+		_cPlotH1 = ImClamp(_cPlotH1, minH, usable - minH);
+		_cPlotH2 = ImClamp(_cPlotH2, minH, usable - _cPlotH1 - minH);
+
+		float _cPlotH3 = usable - _cPlotH1 - _cPlotH2;
+
+		float _plotWidth = -1;
 
 		// --- RMS Error Overlay ---
-		if (ImPlot::BeginPlot("RMS Error — All Integrators##cmp", plotSz)) {
+		const ImVec2 cPlotSz1(_plotWidth, _cPlotH1);
+		if (ImPlot::BeginPlot("RMS Error — All Integrators##cmp", cPlotSz1)) {
 			ImPlot::SetupAxes("t (s)", "RMS error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			for (const auto& r : _comparisonResults) {
@@ -1495,8 +1301,12 @@ namespace gui {
 			ImPlot::EndPlot();
 		}
 
+		// --- Splitter A ---
+		ImGui::hSplitter("##cSplit1", &_plotH2, minH, usable - _cPlotH2 - minH, splitterThickness);
+
 		// --- Max Error Overlay ---
-		if (ImPlot::BeginPlot("Max Error — All Integrators##cmp", plotSz)) {
+		const ImVec2 cPlotSz2(_plotWidth, _cPlotH2);
+		if (ImPlot::BeginPlot("Max Error — All Integrators##cmp", cPlotSz2)) {
 			ImPlot::SetupAxes("t (s)", "Max error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			for (const auto& r : _comparisonResults) {
@@ -1505,7 +1315,11 @@ namespace gui {
 			ImPlot::EndPlot();
 		}
 
+		// --- Splitter B ---
+		ImGui::hSplitter("##cSplit2", &_cPlotH2, minH, usable - _cPlotH1 - minH, splitterThickness);
+
 		// --- Per-joint error for worst joint (joint with max final error) ---
+		const ImVec2 cPlotSz3(_plotWidth, _cPlotH3);
 		if (_comparisonResults.front().jointCount > 0) {
 			// Find which joint has the most variation across integrators
 			static int selectedCmpJoint = 0;
@@ -1514,7 +1328,7 @@ namespace gui {
 
 			char plotLabel[64];
 			snprintf(plotLabel, sizeof(plotLabel), "J%02d Error — All Integrators##cmpjoint", selectedCmpJoint + 1);
-			if (ImPlot::BeginPlot(plotLabel, plotSz)) {
+			if (ImPlot::BeginPlot(plotLabel, cPlotSz3)) {
 				ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 				ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 				for (const auto& r : _comparisonResults) {
@@ -1571,92 +1385,6 @@ namespace gui {
 		ImGui::TextDisabled("Saves to: LocalAppData/DSFE/runs/");
 	}
 
-	// --- Results Tab (inline in Control Panel) ---
-
-	// After a simulation completes, this tab shows the telemetry plots directly in the control panel for quick review
-	void ControlPanel::drawResultsTab() {
-		const auto& rec = _sim->telemetry();
-		const auto& ring = rec.ring;
-
-		if (ring.size() < 2) {
-			ImGui::TextDisabled("No results yet. Run a simulation to generate telemetry.");
-			return;
-		}
-
-		// --- Header ---
-		ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "Simulation Complete");
-		if (!_requestedRobot.empty()) {
-			ImGui::SameLine();
-			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
-		}
-
-		const auto& last = ring.at(ring.size() - 1);
-		ImGui::Text("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
-		ImGui::Separator();
-
-		// --- Rebuild series from ring ---
-		static std::vector<float> tX, tRms, tMax, tCs;
-		static std::vector<std::vector<float>> tY;
-
-		const int sampleCount = (int)ring.size();
-		const int jointCount = (int)last.j.size();
-
-		tX.resize(sampleCount);
-		tRms.resize(sampleCount);
-		tMax.resize(sampleCount);
-		tCs.resize(sampleCount);
-
-		if ((int)tY.size() != jointCount) tY.resize(jointCount);
-		for (int j = 0; j < jointCount; ++j) tY[j].resize(sampleCount);
-
-		for (int k = 0; k < sampleCount; ++k) {
-			const auto& s = ring.at(k);
-			tX[k]   = (float)s.timeSec;
-			tRms[k] = s.err_rms;
-			tMax[k] = s.err_max;
-			tCs[k]  = (float)s.clamp_sum;
-
-			const int m = std::min(jointCount, (int)s.j.size());
-			for (int j = 0; j < m; ++j) {
-				tY[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
-			}
-			for (int j = m; j < jointCount; ++j) {
-				tY[j][k] = 0.0f;
-			}
-		}
-
-		const ImVec2 plotSz(-1, 200);
-
-		// --- Error Plot ---
-		if (ImPlot::BeginPlot("Error (RMS, Max)##resultstab", plotSz)) {
-			ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			ImPlot::PlotLine("RMS", tX.data(), tRms.data(), sampleCount);
-			ImPlot::PlotLine("Max", tX.data(), tMax.data(), sampleCount);
-			ImPlot::EndPlot();
-		}
-
-		// --- Clamp Events ---
-		if (ImPlot::BeginPlot("Clamp Events##resultstab", plotSz)) {
-			ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			ImPlot::PlotStairs("Sum", tX.data(), tCs.data(), sampleCount);
-			ImPlot::EndPlot();
-		}
-
-		// --- Joint Error Overlay ---
-		if (ImPlot::BeginPlot("Joint Error Overlay##resultstab", plotSz)) {
-			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			for (int j = 0; j < jointCount; ++j) {
-				char label[16];
-				snprintf(label, sizeof(label), "J%02d", j + 1);
-				ImPlot::PlotLine(label, tX.data(), tY[j].data(), sampleCount);
-			}
-			ImPlot::EndPlot();
-		}
-	}
-
 	// --- Results Window (post-simulation) ---
 
 	// When a simulation completes, this modal window pops up with the telemetry plots and export options
@@ -1665,6 +1393,8 @@ namespace gui {
 
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
+
+		// If telemetry is too short, don't show the window
 		if (ring.size() < 2) {
 			_showResultsWindow = false;
 			return;
@@ -1676,56 +1406,57 @@ namespace gui {
 			_resultsFocusNeeded = false;
 		}
 
+		// Set a reasonable default size and position (centered, but allow user to move/resize)
 		ImGui::SetNextWindowSize(ImVec2(900, 750), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f - 450, ImGui::GetIO().DisplaySize.y * 0.5f - 375), ImGuiCond_FirstUseEver);
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
 
 		bool open = true;
+		
+		// Rounded corners + accent title bar
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 12));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 4));
+		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.08f, 0.08f, 0.12f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.15f, 0.18f, 0.28f, 1.0f));
+		
 		ImGui::Begin("Simulation Results", &open, ImGuiWindowFlags_NoDocking);
 		if (!open) {
 			_showResultsWindow = false;
 			ImGui::End();
+			ImGui::PopStyleColor(2);
+			ImGui::PopStyleVar(3);
 			ImGui::PopStyleColor();
 			return;
 		}
 
 		// --- Header ---
-		ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "Simulation Complete");
+		const bool runningNow = _sim->isSimRunning();
+		if (runningNow) {
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "Running...");
+		}
+		else if (_comparisonReady && !runningNow) {
+			ImGui::TextColored(ImVec4(1.0f, 0.749f, 0.0f, 1.0f), "Comparison Ready");
+		}
+		else {
+			ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.2f, 1.0f), "Comparison Complete");
+		}
+
+		// Show robot name if available
 		if (!_requestedRobot.empty()) {
 			ImGui::SameLine();
 			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
 		}
 
 		const auto& last = ring.at(ring.size() - 1);
-		ImGui::Text("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
+
+		ImGui::TextDisabled("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
 		ImGui::Separator();
 		ImGui::Spacing();
 
 		// Track the window rect for glReadPixels
 		static ImVec2 capturePos = { 0, 0 };
 		static ImVec2 captureSize = { 0, 0 };
-
-		if (ImGui::Button("Export as PNG")) {
-			// Build output path: runs/<robot>_results_<timestamp>.png
-			auto now = std::chrono::system_clock::now();
-			auto epoch = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-
-			std::string filename = _requestedRobot.empty() ? "results" : _requestedRobot;
-			filename += "_results_" + std::to_string(epoch) + ".png";
-
-			auto outPath = paths::runs() / filename;
-			std::filesystem::create_directories(paths::runs());
-
-			// Use the captured window rect from last frame
-			int wx = (int)capturePos.x;
-			int wy = (int)(ImGui::GetIO().DisplaySize.y - capturePos.y - captureSize.y); // flip Y for GL
-			int ww = (int)captureSize.x;
-			int wh = (int)captureSize.y;
-
-			exportPlotsAsPNG(outPath.string().c_str(), wx, wy, ww, wh);
-		}
-
-		ImGui::SameLine();
 
 		if (ImGui::Button("Export as CSV")) {
 			auto now = std::chrono::system_clock::now();
@@ -1777,10 +1508,23 @@ namespace gui {
 			}
 		}
 
-		const ImVec2 plotSz(-1, 200);
+		float totalAvail = ImGui::GetWindowHeight() - 200.0f;
+		float splitterThickness = 4.0f;
+
+		float reserved = 2.0f * splitterThickness;
+		float usable = totalAvail - reserved;
+		float minH = 150.0f;
+
+		_plotH1 = ImClamp(_plotH1, minH, usable - minH);
+		_plotH2 = ImClamp(_plotH2, minH, usable - _plotH1 - minH);
+
+		float _plotH3 = usable - _plotH1 - _plotH2;
+
+		float _plotWidth = -1;
 
 		// --- Error Plot ---
-		if (ImPlot::BeginPlot("Error (RMS, Max)##results", plotSz)) {
+		const ImVec2 plotSz1(_plotWidth, _plotH1);
+		if (ImPlot::BeginPlot("Error (RMS, Max)##results", plotSz1)) {
 			ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			ImPlot::PlotLine("RMS", rX.data(), rRms.data(), sampleCount);
@@ -1788,16 +1532,25 @@ namespace gui {
 			ImPlot::EndPlot();
 		}
 
+		// --- Splitter A ---
+		ImGui::hSplitter("##split1", &_plotH1, minH, usable - _plotH2 - minH, splitterThickness);
+
+
 		// --- Clamp Events ---
-		if (ImPlot::BeginPlot("Clamp Events##results", plotSz)) {
+		const ImVec2 tPlotSz2(_plotWidth, _plotH2);
+		if (ImPlot::BeginPlot("Clamp Events##results", tPlotSz2)) {
 			ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			ImPlot::PlotStairs("Sum", rX.data(), rCs.data(), sampleCount);
 			ImPlot::EndPlot();
 		}
 
+		// --- Splitter B ---
+		ImGui::hSplitter("##split2", &_plotH2, minH, usable - _plotH1 - minH, splitterThickness);
+
 		// --- Joint Error Overlay ---
-		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz)) {
+		const ImVec2 plotSz3(_plotWidth, _plotH3);
+		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz3)) {
 			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			for (int j = 0; j < jointCount; ++j) {
@@ -1809,9 +1562,8 @@ namespace gui {
 		}
 
 		// --- Integrator Comparison Section ---
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
+		ImGui::SectionDivider();
+		ImGui::SectionHeader("Integrator Comparison", ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
 
 		const bool hasScript = !_sim->lastScriptText().empty();
 		ImGui::BeginDisabled(!hasScript || _sim->isSimRunning());
@@ -1834,6 +1586,9 @@ namespace gui {
 		// Capture window rect for next-frame export
 		capturePos = ImGui::GetWindowPos();
 		captureSize = ImGui::GetWindowSize();
+
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar(3);
 
 		ImGui::End();
 		ImGui::PopStyleColor();

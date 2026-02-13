@@ -264,6 +264,12 @@ namespace robots {
 			else if (typeStr == "prismatic" || typeStr == "PRISMATIC") {
 				joint.type = eJointType::PRISMATIC;
 			}
+			else if (typeStr == "fixed" || typeStr == "FIXED") {
+				joint.type = eJointType::FIXED;
+			}
+			else if (typeStr == "free" || typeStr == "FREE") {
+				joint.type = eJointType::FREE;
+			}
 			else {
 				LOG_WARN("Joint %s has unknown type '%s', defaulting to REVOLUTE", joint.name.c_str(), typeStr.c_str());
 			}
