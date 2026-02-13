@@ -8,6 +8,7 @@
 #include "Platform/Paths.h"
 #include <chrono>
 #include <imgui.h>
+#include <imgui.h>
 #include "Platform/imguiWidgets.h"
 
 #include <implot.h>

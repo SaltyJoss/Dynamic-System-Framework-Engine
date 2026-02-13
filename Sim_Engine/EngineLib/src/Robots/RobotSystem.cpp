@@ -982,15 +982,16 @@ namespace robots {
 		// Remove robot objects from _objects
 		// Remove robot objects from _objects
 		for (auto& link : _robot.links) {
-			if (auto* dead = link.attachedObject) {
-				// find and erase matching object
+			for (auto* dead : link.attachedObjects) {
+				if (!dead) continue;
 				_objects.erase(
 					std::remove_if(_objects.begin(), _objects.end(),
 						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == dead; }),
 					_objects.end()
 				);
-				link.attachedObject = nullptr; // clear pointer
 			}
+			link.attachedObjects.clear();
+			link.attachedObject = nullptr;
 		}
 
 		_robot.links.clear();
