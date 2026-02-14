@@ -15,7 +15,7 @@ using namespace utils;
 namespace commands {
 	// Constructor
 	CommandContextMotion::CommandContextMotion(gui::SimManager* sim, scene::ObjectID objID)
-		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
+		: _sim(sim), _phys(sim ? &sim->physicsSystem() : nullptr), _robot(sim ? sim->robotSystem() : nullptr),
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 

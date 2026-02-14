@@ -19,7 +19,7 @@ using namespace utils;
 namespace commands {
 	// Constructor
 	UIContext::UIContext(gui::SimManager* sim, scene::ObjectID objID)
-		: _sim(sim), _phys(sim ? &sim->getPhysicsSystem() : nullptr), _robot(sim ? sim->getRobotSystem() : nullptr),
+		: _sim(sim), _phys(sim ? &sim->physicsSystem() : nullptr), _robot(sim ? sim->robotSystem() : nullptr),
 		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
@@ -59,7 +59,7 @@ namespace commands {
 	OpResult UIContext::setFixedDt(double dt) {
 		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
 		if (dt <= 0.0) { return OpResult::Failure("Fixed dt must be positive."); }
-		_sim->setFixedDeltaTime(dt);
+		_sim->setFixedDt(dt);
 		return OpResult::Success(true);
 	}
 
@@ -132,7 +132,7 @@ namespace commands {
 		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
 
 		_sim->loadRobot(robotName);
-		_robot = _sim->getRobotSystem();
+		_robot = _sim->robotSystem();
 		if (!_robot) return OpResult::Failure("Robot system is null after load.");
 		return OpResult::Success(true);
 	}

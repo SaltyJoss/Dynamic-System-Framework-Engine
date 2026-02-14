@@ -130,8 +130,8 @@ namespace gui {
         bool scrollToBottom = false;
 
 		// Render Presets
-		render::ResolutionPreset r = render::ResolutionPreset::R_4K;
-        render::QualityPreset q = render::QualityPreset::Ultra;
+		render::ResolutionPreset r = render::ResolutionPreset::R_1080p;
+        render::QualityPreset q = render::QualityPreset::Medium;
         
 		bool _qualityChanged = false;
 		bool _resChanged = false;

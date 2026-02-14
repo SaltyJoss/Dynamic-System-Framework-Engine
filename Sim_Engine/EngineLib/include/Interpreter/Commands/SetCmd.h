@@ -18,16 +18,16 @@ namespace commands {
 		IntegratorMethod,
 		Omega,
 		FixedDt,
-		Function,// not implemented yet
+		Gravity,
 		Colour
 	};
 
 	struct ENGINE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
-		IntegratorMethod method = IntegratorMethod::Euler; // Default method
+		IntegratorMethod method = IntegratorMethod::RK4; // Default method
 		mathlib::Vec3 omega{ 0.0, 0.0, 0.0 };
 		double fixedDt = 0.0;
-		// function WOULD go here, not done yet
+		double gravity = 0.0;
 		Colour colour{ BlockColour::Red, mathlib::Vec3{ 1.0, 0.0, 0.0 } };
 	};
 
@@ -64,7 +64,7 @@ namespace commands {
 		std::string _id;
 		std::string _tokens;
 
-		IntegratorMethod _method = IntegratorMethod::Euler;		// Default - Euler
+		IntegratorMethod _method = IntegratorMethod::RK4;		// Default - Euler
 		mathlib::Vec3 _colRGB = mathlib::Vec3{ 1.0, 0.0, 0.0 };	// Default - RED
 		Colour _col{ BlockColour::Red };
 

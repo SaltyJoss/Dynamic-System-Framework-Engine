@@ -65,7 +65,6 @@ namespace interpreter {
 		virtual void setCurrentLineNumber(int lineNumber) = 0;
 		virtual int getCurrentLineNumber() const = 0;
 
-
 		// Set & Get Default Object
 		virtual void setDefaultObject(scene::Object* obj) = 0;
 		virtual scene::Object* defaultObject() const = 0;
@@ -80,6 +79,10 @@ namespace interpreter {
 		// Set & Get Fixed Dt
 		virtual void setFixedDt(double dt) = 0;
 		virtual double getFixedDt() const = 0;
+
+		// Set & Get Gravity
+		virtual void setGravity(double g) = 0;
+		virtual double getGravity() const = 0;
 
 		// Set & Get Colour
 		virtual void setColour(mathlib::Vec3 rgb) = 0;

@@ -113,7 +113,7 @@ namespace interpreter {
 	void StoredProgram::waitSim(double dt) {
 		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
 		double elapsed = 0.0;
-		const double stepDt = _sim ? _sim->getFixedDeltaTime() : static_cast<double>(1.0 / 120.0);
+		const double stepDt = _sim ? _sim->fixedDt() : static_cast<double>(1.0 / 180.0);
 		while (elapsed < dt) {
 			if (_sim) { _sim->updatePhysics(stepDt); }
 			elapsed += stepDt;
@@ -130,19 +130,20 @@ namespace interpreter {
 
 	// Step through the program by dt seconds
 	void StoredProgram::step(double dt) {
-		//LOG_INFO("prog step: state=%d PC=%d cmds=%zu", (int)_state, PC, _commands.size());
-
+		// State checks
 		if (_state == ProgramState::Paused) { return; }
 		if (_state == ProgramState::Stopped || _state == ProgramState::Completed || _state == ProgramState::Faulted) { return; }
 		if (_state != ProgramState::Running) { start(); }
 		if (_stopRequested) { stop(); return; }
-
+		// Command checks
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 
+		// Ensure default object is valid in context
 		scene::Object* o = _defaultObj ? _defaultObj : (_sim ? _sim->getObject() : nullptr);
 		_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
 
+		// Get current command
 		auto& cmd = _commands[PC];
 		cmd->setContext(_cntx.motion());
 		cmd->setContext(_cntx.ui());
@@ -161,6 +162,7 @@ namespace interpreter {
 		// Update command
 		CmdResult r = cmd->update(_cntx.motion(), dt);
 
+		// Check result
 		if (r.state == CmdState::Failed) { _state = ProgramState::Faulted; return; }
 		if (r.state == CmdState::Executed) {
 			PC++; // not ++PC because we may want to re-execute the same command
@@ -168,6 +170,7 @@ namespace interpreter {
 		}
 	}
 
+	// Update the command state
 	CmdResult StoredProgram::updateState() { return CmdResult{}; }
 
 	// Set Integrator Method
@@ -175,11 +178,11 @@ namespace interpreter {
 		_integratorMethod = method;
 		if (_sim) {
 			if (_sim->hasRobot()) {
-				robots::RobotSystem* robot = _sim->getRobotSystem();
+				robots::RobotSystem* robot = _sim->robotSystem();
 				if (robot) { robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method)); }
 			}
 
-			physics::PhysicsSystem& phys = _sim->getPhysicsSystem();
+			physics::PhysicsSystem& phys = _sim->physicsSystem();
 			phys.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
@@ -193,11 +196,38 @@ namespace interpreter {
 	}
 
 	// Set Fixed Dt
-	void StoredProgram::setFixedDt(double dt) { if (_sim) { _sim->setFixedDeltaTime(dt); } }
+	void StoredProgram::setFixedDt(double dt) { _dt = dt; if (_sim) { _sim->setFixedDt(dt); } }
 	// Get Fixed Dt
 	double StoredProgram::getFixedDt() const {
-		if (_sim) { return _sim->getFixedDeltaTime(); }
-		return 0.0;
+		if (_sim) { return _sim->fixedDt(); }
+		return _dt;
+	}
+
+	// Set Gravity
+	void StoredProgram::setGravity(double gravity) { 
+		_gravity = gravity;
+		if (_sim) {
+			if (_sim->hasRobot()) {
+				robots::RobotSystem* robot = _sim->robotSystem();
+				robot->setGravity(gravity);
+			}
+
+			physics::PhysicsSystem& phys = _sim->physicsSystem();
+			phys.setGravity(mathlib::Vec3(0.0f, static_cast<float>(gravity), 0.0f));
+		}
+	}
+	// Get Gravity
+	double StoredProgram::getGravity() const {
+		if (_sim) {
+			if (_sim->hasRobot()) {
+				robots::RobotSystem* robot = _sim->robotSystem();
+				return robot->getGravity();
+			}
+
+			physics::PhysicsSystem& phys = _sim->physicsSystem();
+			return phys.getGravity().y();
+		}
+		return _gravity;
 	}
 
 	// Set Colour

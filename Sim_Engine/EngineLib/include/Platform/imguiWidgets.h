@@ -1,7 +1,6 @@
 #pragma once
 // File:   imguiWidgets.h
 // GitHub: SaltyJoss
-
 #include "EngineCore.h"
 
 #include <imgui.h>
@@ -147,6 +146,147 @@ namespace ImGui {
 		ImGui::TextColored(color, "%s", text);
 		ImGui::Unindent(12.0f);
 		ImGui::Spacing();
+	}
+
+	// Draw a simple fraction (numerator over denominator) with a horizontal line in between
+	inline void DrawFraction(const char* numerator, const char* denom) {
+		ImDrawList* draw = ImGui::GetWindowDrawList();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+
+		// Calculate text sizes
+		ImVec2 numSize = ImGui::CalcTextSize(numerator);
+		ImVec2 denSize = ImGui::CalcTextSize(denom);
+
+		// Calculate positions
+		float lineY = pos.y + numSize.y + 2.0f;
+		float width = std::max(numSize.x, denSize.x) + 10.0f;
+
+		// Center numerator
+		draw->AddText(
+			ImVec2(pos.x + (width - numSize.x) * 0.5f, pos.y),
+			IM_COL32_WHITE, numerator
+		);
+
+		// Draw fraction bar
+		draw->AddLine(
+			ImVec2(pos.x, lineY), ImVec2(pos.x + width, lineY),
+			IM_COL32_WHITE, 1.5f
+		);
+
+		// Center denominator
+		draw->AddText(
+			ImVec2(pos.x + (width - denSize.x) * 0.5f, lineY + 2.0f),
+			IM_COL32_WHITE, denom
+		);
+
+		// Advance cursor so layout continues correctly
+		ImGui::Dummy(ImVec2(width, numSize.y + denSize.y + 6.0f));
+	}
+
+	// Interactive fraction where the denominator is 60 * k, and k can be adjusted by dragging horizontally
+	inline bool DragDtFraction(const char* id, int& k, bool isTelem = false) {
+		ImDrawList* draw = ImGui::GetWindowDrawList();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+
+		// Ensure k is at least 1 to avoid zero or negative denominators
+		k = std::max(k, 1);
+		int denom = 60 * k;
+
+		// Limits for k to prevent unreasonable values
+		const int MIN_K = 1;
+		const int MAX_K = isTelem ? 10 : 40;
+
+		// Format denominator text
+		char denomBuf[32];
+		snprintf(denomBuf, sizeof(denomBuf), "%d", denom);
+
+		// Calculate text sizes
+		ImVec2 numSize = ImGui::CalcTextSize("1");
+		ImVec2 denSize = ImGui::CalcTextSize(denomBuf);
+
+		// Calculate width and positions
+		float width = std::max(numSize.x, denSize.x) + 10.0f;
+		float lineY = pos.y + numSize.y + 2.0f;
+		float totalHeight = numSize.y + denSize.y + 6.0f;
+
+		// Numerator
+		draw->AddText(
+			ImVec2(pos.x + (width - numSize.x) * 0.5f, pos.y),
+			IM_COL32_WHITE, "1"
+		);
+
+		// Line
+		draw->AddLine(
+			ImVec2(pos.x, lineY), ImVec2(pos.x + width, lineY),
+			IM_COL32_WHITE, 1.5f
+		);
+
+		// Denominator position
+		ImVec2 denPos(pos.x + (width - denSize.x) * 0.5f, lineY + 2.0f);
+
+		// Interactive region
+		ImGui::SetCursorScreenPos(denPos);
+		ImVec2 hitSize(denSize.x + 10.0f, denSize.y + 6.0f);
+		ImGui::InvisibleButton(id, hitSize);
+
+		// Determine color based on interaction state
+		ImU32 colour = ImGui::IsItemActive()
+			? IM_COL32(255, 220, 120, 255) // active color
+			: ImGui::IsItemHovered()
+			? IM_COL32(200, 200, 255, 255) // hover color
+			: IM_COL32_WHITE;
+
+		// Draw denominator with state-aware color
+		draw->AddText(denPos, colour, denomBuf);
+
+		bool changed = false;
+		static float dragAccum = 0.0f;
+
+		if (ImGui::IsItemActive()) {
+			ImGuiIO& io = ImGui::GetIO();
+			dragAccum += io.MouseDelta.x;
+			int step = (int)dragAccum;
+
+			// Update k if drag has accumulated enough to cross a step threshold
+			if (step != 0) {
+				dragAccum -= step * 1.0f;
+				int newK = k + step;
+				newK = std::clamp(newK, MIN_K, MAX_K);
+				// Only update if k actually changes
+				if (newK != k) {
+					k = newK;
+					changed = true;
+				}
+			}
+		}
+		else { dragAccum = 0.0f; }
+
+		// Also allow adjusting k with the mouse wheel when hovering
+		if (ImGui::IsItemHovered()) {
+			ImGuiIO& io = ImGui::GetIO();
+
+			// Mouse wheel typically scrolls vertically, but we can interpret it as horizontal adjustment for this widget
+			if (io.MouseWheel != 0.0f) {
+				int newK = k + (int)io.MouseWheel;
+				newK = std::clamp(newK, MIN_K, MAX_K);
+				// Only update if k actually changes
+				if (newK != k) {
+					k = newK;
+					changed = true;
+				}
+
+				// Reset mouse wheel to prevent affecting other widgets
+				io.MouseWheel = 0.0f;
+			}
+		}
+
+		ImGui::NewLine();
+		float dt = 1.0f / (float)denom;
+		ImGui::Text("dt: %.6f s", dt);
+
+		// Advance cursor to account for the space taken by the fraction
+		ImGui::Dummy(ImVec2(width, totalHeight));
+		return changed;
 	}
 }
 

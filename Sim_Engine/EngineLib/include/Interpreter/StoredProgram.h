@@ -73,6 +73,10 @@ namespace interpreter {
 		void setFixedDt(double dt) override;
 		double getFixedDt() const override;
 
+		// Set & Get Gravity
+		void setGravity(double gravity) override;
+		double getGravity() const override;
+
 		// Set & Get Colour
 		void setColour(mathlib::Vec3 rgb) override;
 		mathlib::Vec3 getColour() const override;
@@ -96,7 +100,9 @@ namespace interpreter {
 
 		std::vector<std::unique_ptr<commands::ICommand>> _commands;
 
-		IntegratorMethod _integratorMethod = IntegratorMethod::Euler; // Default integrator method
+		IntegratorMethod _integratorMethod = IntegratorMethod::RK4; // Default integrator method
+		double _gravity = 0.0;
+		double _dt = 0.0;
 		mathlib::Vec3 _rgb = mathlib::Vec3{ 1.0f, 0.0f, 0.0f };
 	};
 } // namespace interpreter
