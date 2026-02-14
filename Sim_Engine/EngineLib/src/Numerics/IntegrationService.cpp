@@ -55,7 +55,7 @@ namespace integration {
 
 	// Constructor
 	IntegrationService::IntegrationService() 
-		: _ODE(std::make_unique<integration::ODE>()), method(eIntegrationMethod::RK4){}
+		: _ODE(std::make_unique<integration::ODE>()), method(eIntegrationMethod::RK4), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {}
 	
 	// Integration method dispatcher
 	StepOut IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
@@ -71,9 +71,7 @@ namespace integration {
 		case eIntegrationMethod::Ralston:  return { _ODE->ralstonStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::RK4:      return { _ODE->rk4Step(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::RK45: {
-			const double rtol = 1e-3;
-			const double atol = 1e-6;
-			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, rtol, atol);
+			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
 		}
 		default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
@@ -91,8 +89,14 @@ namespace integration {
 			LOG_WARN("Adaptive step size integration is only implemented for RK45 method. Defaulting to RK45 Method", toString(m));
 		}
 
-		// Start with the cached step size if available, otherwise use the provided trial step size
-		double h = (_dt_adapt > 0.0) ? std::min(_dt_adapt, dt_try) : dt_try;
+		// Start with the last successful step size or the initial guess
+		double h_init = (_dt_last > 0.0) ? _dt_last : dt_try;
+
+		// Enforce maximum step size if set
+		if (_dt_max > 0.0) {
+			h_init = std::min(h_init, _dt_max);
+		}
+		double h = std::min(h_init, dt_try);
 
 		// Target end time for this adaptive step
 		const double t_end = t + dt_try;	 // target end time for this step
@@ -129,7 +133,7 @@ namespace integration {
 		} 
 		
 		// Persist the last good step size for next frame
-		_dt_adapt = h; // Cache the last successful step size
+		_dt_last = h;
 		return { x_curr, t_total, h };
 	}
 } // namespace integration

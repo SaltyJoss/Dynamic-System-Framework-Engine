@@ -223,7 +223,8 @@ namespace gui {
 		ImGui::Separator();
 
 		const float statusH = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-		ImGui::BeginChild("EditorScroll", ImVec2(0, -statusH), false, 0);
+		ImGui::BeginChild("EditorScroll", ImVec2(0, -statusH), false,
+			ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 0.925f));
 		// Ensure _scriptText has at least 1 char so data() is valid for ImGui
@@ -231,9 +232,8 @@ namespace gui {
 
 
 		ImGuiInputTextFlags flags =
-			ImGuiInputTextFlags_AllowTabInput  |
-			ImGuiInputTextFlags_CallbackResize |
-			ImGuiInputTextFlags_CharsScientific;
+			ImGuiInputTextFlags_AllowTabInput |
+			ImGuiInputTextFlags_CallbackResize;
 
 		if (_scriptText.empty() || _scriptText.back() != '\0') { _scriptText.push_back('\0'); }
 

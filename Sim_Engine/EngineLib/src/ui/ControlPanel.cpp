@@ -1296,8 +1296,8 @@ namespace gui {
 		if (ImPlot::BeginPlot("RMS Error — All Integrators##cmp", cPlotSz1)) {
 			ImPlot::SetupAxes("t (s)", "RMS error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			for (const auto& r : _comparisonResults) {
-				ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.errRms.data(), (int)r.time.size());
+			for (const auto& res : _comparisonResults) {
+				ImPlot::PlotLine(res.integratorName.c_str(), res.time.data(), res.errRms.data(), (int)res.time.size());
 			}
 			ImPlot::EndPlot();
 		}
@@ -1310,8 +1310,8 @@ namespace gui {
 		if (ImPlot::BeginPlot("Max Error — All Integrators##cmp", cPlotSz2)) {
 			ImPlot::SetupAxes("t (s)", "Max error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			for (const auto& r : _comparisonResults) {
-				ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.errMax.data(), (int)r.time.size());
+			for (const auto& res : _comparisonResults) {
+				ImPlot::PlotLine(res.integratorName.c_str(), res.time.data(), res.errMax.data(), (int)res.time.size());
 			}
 			ImPlot::EndPlot();
 		}
@@ -1332,9 +1332,9 @@ namespace gui {
 			if (ImPlot::BeginPlot(plotLabel, cPlotSz3)) {
 				ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 				ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-				for (const auto& r : _comparisonResults) {
-					if (selectedCmpJoint < (int)r.jointErr.size()) {
-						ImPlot::PlotLine(r.integratorName.c_str(), r.time.data(), r.jointErr[selectedCmpJoint].data(), (int)r.time.size());
+				for (const auto& res : _comparisonResults) {
+					if (selectedCmpJoint < (int)res.jointErr.size()) {
+						ImPlot::PlotLine(res.integratorName.c_str(), res.time.data(), res.jointErr[selectedCmpJoint].data(), (int)res.time.size());
 					}
 				}
 				ImPlot::EndPlot();
@@ -1356,22 +1356,22 @@ namespace gui {
 			if (fopen_s(&f, outPath.string().c_str(), "w") == 0 && f) {
 				// Header: time, then rms/max for each integrator
 				fprintf(f, "time_s");
-				for (const auto& r : _comparisonResults) {
-					fprintf(f, ",%s_rms,%s_max", r.integratorName.c_str(), r.integratorName.c_str());
+				for (const auto& res : _comparisonResults) {
+					fprintf(f, ",%s_rms,%s_max", res.integratorName.c_str(), res.integratorName.c_str());
 				}
 				fprintf(f, "\n");
 
 				// Use longest time series
 				int maxSamples = 0;
-				for (const auto& r : _comparisonResults) maxSamples = std::max(maxSamples, (int)r.time.size());
+				for (const auto& res : _comparisonResults) { maxSamples = std::max(maxSamples, (int)res.time.size()); }
 
 				for (int k = 0; k < maxSamples; ++k) {
 					// Use first result's time as reference
 					float t = (k < (int)_comparisonResults[0].time.size()) ? _comparisonResults[0].time[k] : 0.0f;
 					fprintf(f, "%.6f", t);
-					for (const auto& r : _comparisonResults) {
-						if (k < (int)r.time.size()) {
-							fprintf(f, ",%.9f,%.9f", r.errRms[k], r.errMax[k]);
+					for (const auto& res : _comparisonResults) {
+						if (k < (int)res.time.size()) {
+							fprintf(f, ",%.9f,%.9f", res.errRms[k], res.errMax[k]);
 						} else {
 							fprintf(f, ",,");
 						}
