@@ -17,7 +17,7 @@
 
 #include "Platform/Logger.h"
 
-// Forward Declarations
+// Forward Declarations for Rendering
 namespace render {
     class ENGINE_API OpenGLFrameBuffer;
 	class ENGINE_API IBL;
@@ -25,6 +25,7 @@ namespace render {
 }
 namespace shaders { class ENGINE_API Shader; }
 
+// Forward Declarations for Scene
 namespace scene {
     enum class eInputButton;
     class ENGINE_API Light;
@@ -34,54 +35,66 @@ namespace scene {
     class ENGINE_API Object;
 }
 
+// Forward Declarations for Physics, Robots, Control, and Integration
 namespace interpreter { class ENGINE_API IStoredProgram; }
 namespace physics { class ENGINE_API PhysicsSystem; }
 namespace robots { class ENGINE_API RobotSystem; }
 namespace control { class ENGINE_API TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
-// I want to rename to more appropriate namespace later
 namespace gui {
     // View IDs
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
+	// Forward Declarations for Axis Orientator
 	class ENGINE_API AxisOrientator;
+
 	// SimManager Class (Plan on renaming later)
     class ENGINE_API SimManager {
     public:
+		// Constructor & Destructor
         SimManager();
         ~SimManager();
 
 		// OpenGL Initialisation
         void initGL();
 
-        // Light & Skybox
+		// Light
         scene::Light* getLight();
         void setLightColour(const glm::vec3& c);
 
-        bool isSkyboxEnabled() const { return skyboxEnabled; }
+		// Skybox & IBL
         void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
+        const bool isSkyboxEnabled() const { return skyboxEnabled; }
 
+		// HDR Environment Maps
         void loadNewHDR(const std::string& path);
         void loadNewHDR_UI(const std::string& path);
         void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
         void setInternalSize(const glm::vec2& size) { _internalSize = size; }
-        glm::vec2 getInternalSize() const { return _internalSize; }
+        glm::vec2 internalSize() const { return _internalSize; }
 
+		// Setter and getter for display size (used for post-processing and final output)
         void setDisplaySize(const glm::vec2& size) { _displaySize = size; }
-        glm::vec2 getDisplaySize() const { return _displaySize; }
+        glm::vec2 displaySize() const { return _displaySize; }
 
+		// Setter and getter for the "logical" scene size (used for camera projection and physics scaling)
         void setSize(const glm::vec2& size) { setInternalSize(size); }
-        glm::vec2 getSize() const { return getInternalSize(); }
+        glm::vec2 size() const { return internalSize(); }
 
+		// Setter and getter for background colour
         void setBackgroundColour(const glm::vec3& c) { _backgroundColour = c; }
-        void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
+        const glm::vec3 backgroundColour() const { return _backgroundColour; }
 
+		// Setter and getter for background alpha
+        void setBackgroundAlpha(float a) { _backgroundAlpha = a; }
+        float backgroundAlpha() const { return _backgroundAlpha; }
+
+		// Getter for the default HDR path
 		std::string getDefaultHDR() const;
-        glm::vec3 getBackgroundColour() const { return _backgroundColour; }
-        float getBackgroundAlpha() const { return _backgroundAlpha; }
+		// Getter plane height (y=0 plane for physics and object placement)
         float getPlaneHeight() const { return planeHeight; }
 
         // Control Modes & Camera
@@ -89,18 +102,23 @@ namespace gui {
             Camera,
             Object
         };
-
         ControlMode ctrlMode = ControlMode::Camera;
 
+		// Setter and getter for control mode
         void setControlMode(ControlMode mode) { ctrlMode = mode; }
-        ControlMode getControlMode() const { return ctrlMode; }
+        ControlMode controlMode() const { return ctrlMode; }
 
+		// Get the currently active camera (based on active view)
         scene::Camera* getCamera();
+
+		// Reset the active view camera to default position
         void resetView();
 
+		// Attach and detach the active view camera to an object (camera will follow the object's position and rotation)
         void attachCameraToObject(scene::Object* obj);
         void detachCameraFromObject();
 
+		// Follow a specific object in the Follow view (binds the view to that object's transform)
         void setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset = glm::vec3(0.0f, 0.25f, 1.0f));
         void clearViewFollowTarget(ViewID view);
 
@@ -115,21 +133,26 @@ namespace gui {
         std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);
         void setMesh(std::shared_ptr<scene::Mesh> mesh);
         std::shared_ptr<scene::Mesh> getMesh();
-
+        
+		// Shader Management
         enum class ShaderMode {
             Basic = 0,
             Lit = 1,
             PBR = 2
         };
-
-        shaders::Shader* getCurrentShader() const;
-		void setCurrentShader(shaders::Shader* shader);
-
         ShaderMode currentShaderMode = ShaderMode::PBR;  // default
+
+		// Setter and getter for the current shader
+        void setCurrentShader(shaders::Shader* shader);
+        const shaders::Shader* getCurrentShader() const;
+
+		// Render Settings & Profiles
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
-        //void rebuildRenderTargets();
+
+		// Reset HDR to default
 		void resetHDRToPreset();
+		// Reload shaders (e.g. after editing source files)
         void reloadAllShaders();
 
 		// Rendering Entry Points
@@ -153,24 +176,29 @@ namespace gui {
 		void stepFixed(double frame_dt);
 
 		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
-        physics::PhysicsSystem& getPhysicsSystem();
-        const physics::PhysicsSystem& getPhysicsSystem() const;
+        physics::PhysicsSystem& physicsSystem();
+        const physics::PhysicsSystem& physicsSystem() const;
 
-		// Robot System
+		// Robot System loading and management
         void loadRobot(const std::string& name);
+        void resetRobot();
+        void clearRobot();
+        const bool hasRobot() const;
+
+		// Setters for robot joint states (angle in radians)
         void setRobotLinkRotation(const std::string& linkName, double angle);
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
-        void resetRobot();
-        void clearRobot();
-        bool hasRobot() const;
 
-        robots::RobotSystem* getRobotSystem();
-        const robots::RobotSystem* getRobotSystem() const;
+		// Getters for the robot system (non-const and const versions)
+        robots::RobotSystem* robotSystem();
+        const robots::RobotSystem* robotSystem() const;
 
+		// Trajectory Manager
         control::TrajectoryManager& traj();
         const control::TrajectoryManager& traj() const;
 
+		// Simulation Integrators
 		void setupReferenceIntegrator();
         void setupSimulationIntegrator();
 
@@ -181,30 +209,42 @@ namespace gui {
         void onMouseMove(double x, double y, scene::eInputButton button);
         void onMouseWheel(double delta);
         void resetMouseDelta();
-        
-		// Simulation Control
-		double getFixedDeltaTime() const { return _dt; }
-		void setFixedDeltaTime(double dt) { _dt = dt; }
 
-		bool isSimRunning() const { return _simRunning; }
+		// Start or stop the simulation loop
         void startSimulation();
         void stopSimulation();
+        const bool isSimRunning() const { return _simRunning; }
+
+		// Export logged telemetry data to HDF5 files
 		void exportLogsToHDF5();
 		void exportRefsToHDF5();
 
-		double getSimTime() const { return _simTime; }
-		void setSimTime(double t) { _simTime = t; }
+		// Setter and getter for current simulation time (seconds)
+        void setSimTime(double t) { _simTime = t; }
+		const double simTime() const { return _simTime; }
+
+		// Increment simulation time by dt (used in the simulation loop)
 		void incrementSimTime(double dt) { _simTime += dt; }
 
-		bool isScriptRunning() const { return _scriptRunning; }
+		// Script Running State
 		void setScriptRunning(bool running) { _scriptRunning = running; }
+        const bool isScriptRunning() const { return _scriptRunning; }
 
+		// Set and get the active script program
         void setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
         interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
+
+		// Setter and getter for fixed timestep duration (seconds)
+		void setFixedDt(double dt) { _dt = dt; }
+		const double fixedDt() const { return _dt; }
 
 		// Telemetry
 		diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
 		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
+
+		// Setter and getter for telemetry frequency (Hz)
+		void setTelemetryHz(double hz) { _telHz = hz; }
+		const double telemetryHz() const { return _telHz; }
 
 		// Last script text (stored on run for comparison re-use)
 		void setLastScriptText(const std::string& text) { _lastScriptText = text; }
@@ -228,9 +268,8 @@ namespace gui {
 
         void drawMainDockspace();
         void drawViewportWindow();
-        //void drawSceneWindow();
-        //void drawInspectorWindow();
 
+        // Simulation Management
         void beginSimManager(const char* id);
 		void endSimManager();
 
@@ -241,20 +280,24 @@ namespace gui {
         bool _glReady = false;
         bool _scriptRunning = false;
 
-        glm::vec2 _internalSize = { 1920.0f, 1080.0f };
-		glm::vec2 _displaySize = { 1920.0f, 1080.0f };
-        glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f };
+		// Sizes & Display
+		glm::vec2 _internalSize = { 1920.0f, 1080.0f };  // Internal render target size
+		glm::vec2 _displaySize = { 1920.0f, 1080.0f };   // Actual display size
+		glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f }; // Background colour (default white, but can be changed by user)
 
+		// Cached display size for scaling calculations (updated on resize)
 		float _displayW = 0.0f, _displayH = 0.0f;
 		float _gridInternalScale = 1.0f;
         float _backgroundAlpha = 1.0f;
 
-        double _dt = 1.0f / 180.0f;
-        double _fixedDt = 1.0f / 180.0f;
-		double _accum = 0.0;   // Accumulator for fixed timestep
-		double _simTime = 0.0; // Current simulation time
-		bool _simRunning = false;
+		// Simulation Timing
+        double _dt       = 1.0 / 180.0;
+		double _telHz    = 120.0; // [Hz], controls how often telemetry updates during simulation runs
+		double _accum    = 0.0;   // Accumulator for fixed timestep
+		double _simTime  = 0.0;   // Current simulation time
+		bool _simRunning = false; // Whether the simulation loop is currently running
 
+		// Ground Plane
         static constexpr float planeHeight = -2.5f;
         float planeY = 2.5f;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
@@ -294,6 +337,7 @@ namespace gui {
         const unsigned int SHADOW_H = 8192;
         int _currentShaderIndex = 2; // 2 = PBR by default (atm)
 
+		// Flags for tracking initialization and settings state
         bool _settingsValid = false;
         bool _shadowsInit = false;
         bool _hdrUserOverride = false;
@@ -301,6 +345,7 @@ namespace gui {
         // Editor & UI
         gui::FpsCounter _fpsCounter;
 
+		// View management
         bool _isHovered = false;
         bool skyboxEnabled = true;
         bool _firstMouse = true;

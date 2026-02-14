@@ -83,7 +83,6 @@ namespace physics {
 		integration::eIntegrationMethod method = integration::eIntegrationMethod::Euler; // default method
 
 		// Simulation parameters
-		double _dt = 1.0f / 180.0f; // ~120 FPS
 		double _h = 1.0f;
 		double _t = 0.0f;
 	};

@@ -76,7 +76,7 @@ namespace commands {
 			return { CmdState::Failed, {}, "trajSet failed" };
 		}
 
-		const double t0 = sim->getSimTime();
+		const double t0 = sim->simTime();
 		const std::string typeU = upperCopy(trimCopy(_type));
 
 		// Get hardware max omega

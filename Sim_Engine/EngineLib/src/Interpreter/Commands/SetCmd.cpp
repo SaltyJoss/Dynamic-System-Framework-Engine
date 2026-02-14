@@ -80,6 +80,7 @@ namespace commands {
 	static std::optional<SetTarget> parseSetTarget(const std::string& id, const std::string& token) {
 		if (startsWith(toLower(id), "integrator")) { std::string s = toLower(token); return SetTarget{ SetTargetType::IntegratorMethod, parseMethod(s) }; }
 		if (startsWith(toLower(id), "dt")) { std::string s = token; return SetTarget{ SetTargetType::FixedDt, {}, {}, utils::parseDouble(s) }; }
+		if (startsWith(toLower(id), "gravity")) { std::string s = token; return SetTarget{ SetTargetType::Gravity, {}, {}, {}, utils::parseDouble(s)}; }
 		if (startsWith(toLower(id), "omega")) { 
 			std::string s = toLower(token); 
 
@@ -100,7 +101,7 @@ namespace commands {
 			else if (s.starts_with('{')) { c = parseColourRGB(s); }
 			else { c = parseColourBlock(toLower(s)); }
 
-			return SetTarget{ SetTargetType::Colour, {}, {}, {}, c };
+			return SetTarget{ SetTargetType::Colour, {}, {}, {}, {}, c };
 		}
 		return std::nullopt;
 	}
@@ -139,6 +140,13 @@ namespace commands {
 			auto t = parseSetTarget(_id, _tokens);
 			if (!t) { markFailed("Invalid fixed_dt"); return; }
 			getProgram()->setFixedDt(t->fixedDt);
+			markCompleted();
+			return;
+		}
+		if (_id == "gravity") {
+			auto t = parseSetTarget(_id, _tokens);
+			if (!t) { markFailed("Invalid gravity"); return; }
+			getProgram()->setGravity(t->gravity);
 			markCompleted();
 			return;
 		}

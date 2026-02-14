@@ -248,7 +248,7 @@ namespace gui {
 
     void ControlPanel::drawMenus(SimManager* sim) {
         _sim = sim;
-        _phys = &_sim->getPhysicsSystem();
+        _phys = &_sim->physicsSystem();
         _obj = _sim->getObject();
 
         if (ImGui::BeginMenu("File")) {
@@ -303,7 +303,7 @@ namespace gui {
         _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
 
-		_phys = &_sim->getPhysicsSystem();
+		_phys = &_sim->physicsSystem();
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
@@ -414,15 +414,19 @@ namespace gui {
 
     void ControlPanel::simulationProperties() {
         ImGui::SectionHeader("Simulation Settings");
-		ImGui::Spacing();
+		ImGui::SectionDivider();
 
-        ImGui::Text("Integration Method");
-        auto& phys = _sim->getPhysicsSystem();
+        ImGui::SectionHeader("Integration Method");
+        auto& phys = _sim->physicsSystem();
         auto currentEnum = phys.getIntegrationMethod();
 
         static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
         const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
         
+		// Disable controls while sim is running to prevent conflicts and ensure stability of the simulations
+		ImGui::BeginDisabled(_sim->isSimRunning());
+
+		// Integration method combo box
 		ImGui::SetNextItemWidth(150.0f);
         if (ImGui::BeginCombo("##", currentMethod)) {
             for (int n = 0; n < IM_ARRAYSIZE(methodNames); ++n) {
@@ -453,69 +457,96 @@ namespace gui {
             }
             ImGui::EndCombo();
         }
-
-        float step = 0.001f;
-        float stepFast = 0.01f;
-
-		ImGui::BeginDisabled(_sim->isSimRunning());
-        ImGui::Text("Delta Time (dt)");
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::InputScalar("seconds##dt", ImGuiDataType_Float, &deltaTime, &step, &stepFast, "%.5f");
 		ImGui::EndDisabled();
 
-        ImGui::Text("Current dt: %.5f seconds", _sim->getFixedDeltaTime());
+		// Delta time controls
+		ImGui::SectionHeader("Delta Time (dt) Settings:");
+		ImGui::Spacing();
+
+		ImGui::BeginDisabled(_sim->isSimRunning());
+		// Simulation dt controls
+		ImGui::BeginGroup();
+		ImGui::Text("Simulation dt:");
+
+		static int k = 3;
+		if (ImGui::DragDtFraction("##simDtDrag", k, false)) {
+			int x = 60 * k;
+			double dt = 1.0 / (double)x;
+			_sim->setFixedDt(dt);
+		}
+		ImGui::EndGroup();
+
+		// Add spacing between the two groups of controls (40px)
+		ImGui::SameLine(0.0f, 40.0f);
+
+		// Telemetry dt controls
+		ImGui::BeginGroup();
+		ImGui::Text("Telemetry dt:");
+		
+		static int k_tel = 2;
+		if (ImGui::DragDtFraction("##telDtDrag", k_tel, true)) {
+			int x = 60 * k_tel;
+			_sim->setTelemetryHz(x);
+		}
+		ImGui::EndGroup();
+		ImGui::EndDisabled();
 
         // Deals with simulation time tracking using chrono
         if (_sim->isSimRunning()) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Simulation Running...");
-            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->getSimTime());
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Elapsed Time: %.3f", _sim->simTime());
 
 			// make sure to stop sim when commands are finished
             if (!_sim->isSimRunning()) {
                 ImGui::Text("Simulation Stopped.");
-                ImGui::Text("Elapsed Time: %.3f", _sim->getSimTime());
+                ImGui::Text("Elapsed Time: %.3f", _sim->simTime());
             }
         }
-
 		ImGui::Separator();
     }
 
 	// Object properties implementation
     void ControlPanel::objectProperties() {
+		// Prevent editing properties while sim is running
         if (_sim->isSimRunning()) { 
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Cannot edit object properties while simulation is running.");
             return;
 		}
+		// Ensure we have an object to edit
         if (!_obj) {
             ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No object selected.");
             return;
         }
 
+		// Display object name
         ImGui::SectionHeader("Physics Settings:");
-
         ImGui::Separator();
 
+		// Mass, Damping, Gravity Controls
         double minMass    = 0.25; double maxMass    = 100.0; // mass limits
         float minDamping  =  0.0; float maxDamping  =   1.0; // damping limits
         double minGravity =  0.0; double maxGravity =  10.0; // gravity limits
 
+		// Disable controls while sim is running to prevent conflicts
 		ImGui::BeginDisabled(_sim->isSimRunning());
 
+		// Mass Control
 		ImGui::Text("Mass:");
 		ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg##mass", ImGuiDataType_Double, &_obj->state.mass, 0.025f, &minMass, &maxMass);
 		ImGui::Spacing();
 
+		// Damping Control
 		ImGui::Text("Damping:");
 		ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("kg/s##damp", ImGuiDataType_Double, &_obj->state.damping, 0.001f, &minDamping, &maxDamping);
 		ImGui::Spacing();
 
+		// Gravity Control
 		ImGui::Text("Gravity:");
 		ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("m/s^2##g", ImGuiDataType_Double, &_obj->state.gravity, 0.00005f, &minGravity, &maxGravity);
 		ImGui::Spacing();
 
 		ImGui::Separator();
 
-		ImGui::SetNextItemWidth(150.0f);
 		// Scale Controls
 		ImGui::Text("Scale:");
 		float minScale = 0.0001f; float maxScale = 100.0f;
@@ -542,16 +573,17 @@ namespace gui {
 		ImGui::SetNextItemWidth(150.0f); ImGui::DragScalar("Z##angVelZ", ImGuiDataType_Double, &_obj->state.angularVelocity.z(), 0.0025f, &minTorque, &maxTorque);
 
 		ImGui::Separator();
-
         ImGui::EndDisabled();
 
+		// Reset Object Button
         ImGui::Text("Reset Object:");
-        // Reset Object Button
         if (ImGui::Button("Reset")) {
+			// Should not happen since button is disabled when no object
             if (!_obj) {
                 LOG_WARN("No object selected to reset.");
                 return;
 			}
+			// Reset object state to initial conditions
             _obj->reset();
             LOG_INFO("Object reset to initial position and orientation.");
             D_INFO("Reset %s", _obj);
@@ -561,11 +593,15 @@ namespace gui {
 
 	// Joint properties implementation
     void ControlPanel::jointProperties() {
+		// Prevent editing properties while sim is running
         if (!_hasRobot) { ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "No robot model loaded."); return; }
-        robots::RobotSystem* robot = _sim->getRobotSystem();
+        robots::RobotSystem* robot = _sim->robotSystem();
 
+		// Get references to robot's links and joints for easy access
 		auto& links = robot->links();
 		auto& joints = robot->joints();
+
+		// Ensure we have joints to edit
         if (joints.empty()) {
             ImGui::TextDisabled("Robot has no joints.");
             return;
@@ -637,7 +673,7 @@ namespace gui {
 		if (ImGui::Button("Reset")) {
 			if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
 
-			_sim->getRobotSystem()->resetRobot();
+			_sim->robotSystem()->resetRobot();
 
 			// Clear selection
 			_selection.type = SelectionType::NONE;
@@ -673,7 +709,7 @@ namespace gui {
         ImGui::Spacing();
 
 		// Graphics Quality Presets
-        static int graphicsIndx = 3;
+        static int graphicsIndx = 1;
 		const char* qualityOptions[] = { "Low", "Medium", "High", "Ultra" };
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, ImGui::GetStyle().ItemSpacing.y));
@@ -710,7 +746,7 @@ namespace gui {
 		ImGui::Spacing();
 
 		// Resolution Presets
-		static int resIndx = 3;
+		static int resIndx = 1;
 		const char* resOptions[] = { "1280x720", "1920x1080", "2560x1440", "3840x2160" };
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, ImGui::GetStyle().ItemSpacing.y));
@@ -735,12 +771,12 @@ namespace gui {
             _sim->applyRenderProfile(s, r);
 
             LOG_INFO("Render resolution preset changed to %dx%d",
-                (int)(_sim->getSize().x * s.renderScale),
-                (int)(_sim->getSize().y * s.renderScale));
+                (int)(_sim->size().x * s.renderScale),
+                (int)(_sim->size().y * s.renderScale));
 
             D_INFO("Render resolution preset changed to %dx%d",
-                (int)(_sim->getSize().x * s.renderScale),
-                (int)(_sim->getSize().y * s.renderScale));
+                (int)(_sim->size().x * s.renderScale),
+                (int)(_sim->size().y * s.renderScale));
 		}
 
         ImGui::Spacing();
@@ -852,7 +888,7 @@ namespace gui {
 
 			// Robot section
 			if (_hasRobot) {
-				robots::RobotSystem* robotSys = _sim->getRobotSystem();
+				robots::RobotSystem* robotSys = _sim->robotSystem();
 				if (robotSys && robotSys->hasRobot()) {
 					const auto& links = robotSys->links();
 					const auto& joints = robotSys->joints();
@@ -1048,7 +1084,7 @@ namespace gui {
     void ControlPanel::selectJointAndFollow(int jointIdx) {
         if (!_sim || !_sim->hasRobot()) return;
 
-        robots::RobotSystem* robot = _sim->getRobotSystem();
+        robots::RobotSystem* robot = _sim->robotSystem();
         if (!robot) return;
 
         auto& joints = robot->joints();

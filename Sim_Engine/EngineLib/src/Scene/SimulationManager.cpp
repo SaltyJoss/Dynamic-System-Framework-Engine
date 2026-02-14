@@ -215,12 +215,13 @@ namespace gui {
 			}
 
 			// Shader Types A
+			// Basic shader with no lighting
 			_shaderBasic = std::make_shared<shaders::Shader>();
 			_shaderBasic->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_basic.frag.glsl").string());
-
+			// Lit shader with simple Blinn-Phong lighting
 			_shaderLit = std::make_shared<shaders::Shader>();
 			_shaderLit->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_lit.frag.glsl").string());
-
+			// PBR shader with full Physically Based Rendering (for release visuals)
 			_shaderPBR = std::make_shared<shaders::Shader>();
 			_shaderPBR->load((paths::assets() / "shaders" / "vs_pbr.vert.glsl").string(), (paths::assets() / "shaders" / "mesh_pbr.frag.glsl").string());
 
@@ -560,7 +561,7 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	SimManager::SimManager() : _internalSize(3840, 2160), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
+	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
 	}
 
@@ -579,7 +580,7 @@ namespace gui {
 		else if (dispH >= 900.0f) { bestPreset = render::ResolutionPreset::R_1080p; }
 		else { bestPreset = render::ResolutionPreset::R_720p; }
 
-		auto s = render::MakeSettings(bestPreset, render::QualityPreset::High);
+		auto s = render::MakeSettings(bestPreset, render::QualityPreset::Medium);
 		applyRenderProfile(s, bestPreset);
 	}
 
@@ -724,7 +725,7 @@ namespace gui {
 			return false;
 		}
 
-		robots::RobotSystem* rs = getRobotSystem();
+		robots::RobotSystem* rs = robotSystem();
 		if (!rs) return false;
 
 		auto& joints = rs->joints();
@@ -828,18 +829,23 @@ namespace gui {
 		return result;
 	}
 
+	// Setter and Getter for the active mesh
 	void SimManager::setMesh(std::shared_ptr<scene::Mesh> mesh) { _impl->_mesh = mesh; }
 	std::shared_ptr<scene::Mesh> SimManager::getMesh() { return _impl->_mesh; }
 
+	// Set the currently selected object (can be nullptr to deselect)
 	void SimManager::setSelectedObject(scene::Object* obj) { _impl->_selectedObject = obj; }
+	// Add a new object to the scene and select it
 	void SimManager::addObject(std::unique_ptr<scene::Object> obj) { _impl->_objects.push_back(std::move(obj)); } // Cache the unique_ptr
 
+	// Remove an object by index
 	void SimManager::deleteObject(int index) {
 		if (index < 0 || index >= _impl->_objects.size()) { return; }
 		if (_impl->_selectedObject == _impl->_objects[index].get()) { _impl->_selectedObject = nullptr; }
 		_impl->_objects.erase(_impl->_objects.begin() + index);
 	}
 
+	// Remove an object by pointer
 	void SimManager::removeObject(scene::Object* obj) {
 		if (!obj) return;
 
@@ -854,9 +860,12 @@ namespace gui {
 		_impl->_objects.erase(it, _impl->_objects.end());
 	}
 
+	// Access the objects as raw pointers for use in the rest of the codebase, while maintaining ownership in SimManager
 	std::vector<std::unique_ptr<scene::Object>>& SimManager::getObjects() { return _impl->_objects; }
+	// Get the currently selected object (can be nullptr)
 	scene::Object* SimManager::getObject() { return _impl->_selectedObject; }
 
+	// Helper to find an object by its ID (returns nullptr if not found)
 	scene::Object* SimManager::getObjectByID(scene::ObjectID id) {
 		for (auto& obj : _impl->_objects) {
 			if (obj && obj->id == id) {
@@ -869,6 +878,8 @@ namespace gui {
 	// --------------------------------------------------
 	//				RENDERING ENTRY POINTS
 	// --------------------------------------------------
+
+	// Main render function called by the application
 	void SimManager::render() {
 		ImGuiIO& io = ImGui::GetIO();
 		tick(io.DeltaTime);
@@ -1113,11 +1124,11 @@ namespace gui {
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 	}
-	bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
+	const bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
 
 	// Access the robot system (non-const and const versions)
-	robots::RobotSystem* SimManager::getRobotSystem() { return _impl->_robotSystem.get(); }
-	const robots::RobotSystem* SimManager::getRobotSystem() const { return _impl->_robotSystem.get(); }
+	robots::RobotSystem* SimManager::robotSystem() { return _impl->_robotSystem.get(); }
+	const robots::RobotSystem* SimManager::robotSystem() const { return _impl->_robotSystem.get(); }
 
 	// Simulation System
 	void SimManager::setupSimulationIntegrator() {
@@ -1144,7 +1155,7 @@ namespace gui {
 				const bool faulted = _activeProgram->isFaulted();
 
 				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f simTime=%.3f)", (int)completed, _dt, _simTime);
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, _simTime);
 
 					_scriptRunning = false;
 					_activeProgram = nullptr;
@@ -1153,7 +1164,7 @@ namespace gui {
 					D_RUNTIME("Program execution completed.");
 				}
 				else if (stopped || faulted) {
-					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f simTime=%.3f)",
+					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)",
 						(int)stopped, (int)faulted, _dt, _simTime);
 
 					_scriptRunning = false;
@@ -1180,8 +1191,9 @@ namespace gui {
 
 					// Telemetry update
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, 60.0, 120.0);
+						_telemetry.beginRun(_simTime, _telHz, 300.0);
 						_telemetryBegun = true;
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
 					}
 					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
 				}
@@ -1434,8 +1446,9 @@ namespace gui {
 
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, 60.0, 300.0);
+						_telemetry.beginRun(_simTime, _telHz, 300.0);
 						_telemetryBegun = true;
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
 					}
 
 					// Telemetry update
@@ -1462,8 +1475,8 @@ namespace gui {
 	void SimManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
 
 	// Access the physics system (non-const and const versions)
-	physics::PhysicsSystem& SimManager::getPhysicsSystem() { return *_impl->_physics; } // mutable
-	const physics::PhysicsSystem& SimManager::getPhysicsSystem() const { return *_impl->_physics; } // const
+	physics::PhysicsSystem& SimManager::physicsSystem() { return *_impl->_physics; } // mutable
+	const physics::PhysicsSystem& SimManager::physicsSystem() const { return *_impl->_physics; } // const
 
 	// Access the robot system (non-const and const versions)
 	control::TrajectoryManager& SimManager::traj() { return _impl->_traj; }
@@ -1797,7 +1810,7 @@ namespace gui {
 	std::string SimManager::getDefaultHDR() const { return (paths::assets() / "hdr"/ "default_white.hdr").string(); }
 
 	// Load a new HDR environment map for IBL
-	shaders::Shader* SimManager::getCurrentShader() const { return _impl->currentShader; }
+	const shaders::Shader* SimManager::getCurrentShader() const { return _impl->currentShader; }
 	void SimManager::applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r) { applyRenderProfile(s, r); }
 
 	void SimManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {

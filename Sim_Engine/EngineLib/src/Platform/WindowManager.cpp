@@ -31,11 +31,9 @@
 bool controlPanelOpen = false;
 
 namespace window {
-
-    GLWindow::GLWindow() {
-        _header = new std::string();
-    }
-
+	// Constructor
+    GLWindow::GLWindow() { _header = new std::string(); }
+    // Destructor
     GLWindow::~GLWindow() { 
         _renderCntx->end();
         _GUICntx->end();
