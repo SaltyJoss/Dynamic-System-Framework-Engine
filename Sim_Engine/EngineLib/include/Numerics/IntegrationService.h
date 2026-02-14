@@ -44,8 +44,11 @@ namespace integration {
 
 		const std::string IntegratorName(eIntegrationMethod m);
 
+		void setAdaptiveTolerances(double rtol, double atol) { _rtol = rtol; _atol = atol; }
+		void setMaxStep(double max_dt) { _dt_max = max_dt; }
+
 		// Reset the cached adaptive step size (call on robot load/reset)
-		void resetAdaptiveState() { _dt_adapt = 0.0; }
+		void resetAdaptiveState() { _dt_last = 0.0; }
 
 	private:
 		const char* toString(eIntegrationMethod m);
@@ -55,6 +58,10 @@ namespace integration {
 
 		std::string _methodStr = "RK4";
 
-		double _dt_adapt = 0.0;
+		double _rtol;
+		double _atol;
+
+		double _dt_last = 0.0; // last successful step
+		double _dt_max = 0.0;  // maximum allowed step size
 	};
 } // namespace integration

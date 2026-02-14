@@ -531,6 +531,9 @@
     <ClInclude Include="..\External\stb\stb_image_write.h">
       <Filter>External\stb</Filter>
     </ClInclude>
+    <ClInclude Include="include\Analysis\MetricLogger.h">
+      <Filter>Header Files\include\Analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

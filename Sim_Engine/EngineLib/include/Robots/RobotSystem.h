@@ -3,6 +3,7 @@
 // GitHub: SaltyJoss
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+#include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -11,7 +12,16 @@ namespace control { class ENGINE_API TrajectoryManager; }
 
 namespace robots {
 	// Joint state structure
-    struct ENGINE_API JointState { double theta; double omega; };
+    struct ENGINE_API JointState {
+		double theta;
+		double omega;
+	};
+
+	// Metrics structure
+	enum class eRole {
+		Simulation,
+		Baseline
+	};
 
 	class ENGINE_API RobotSystem {
 	public:
@@ -33,6 +43,7 @@ namespace robots {
 		std::vector<RobotJoint>& joints() { return _robot.joints; }
 
         std::size_t linkCount() const { return _robot.links.size(); }
+		std::size_t jointCount() const { return _robot.joints.size(); }
 
 		std::string findRootLink() const;
 
@@ -88,7 +99,7 @@ namespace robots {
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);
-		void stepReference(control::TrajectoryManager& traj, double dt, double t);
+		void updateTrajectoryInputs(control::TrajectoryManager& traj, double dt, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
 
@@ -103,7 +114,7 @@ namespace robots {
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
 		void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
-		bool setDefaultPoseDeg(const std::vector<double>& qDeg);
+		bool setDefaultPoseDeg();
 
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
@@ -111,17 +122,25 @@ namespace robots {
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
-
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+
+		integration::IntegrationService* getIntegrator();
+		const integration::IntegrationService* getIntegrator() const;
+
+		void setRefBuffer(robots::TrajRefBuffer* buf)  { _refBuffer = buf; }
+		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
+		void setRole(eRole role) { _role = role; }
 
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
 
-        std::unique_ptr < integration::IntegrationService> _integrator;
+        std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
 
 		std::vector<std::unique_ptr<scene::Object>>& _objects;
+
+		eRole _role = eRole::Simulation;
 
 		spawnFn _loadMeshReturn;
 
@@ -158,8 +177,12 @@ namespace robots {
 		// Simulation time
 		double _simTime = 0.0;
 
-		// Robot model and state
+		// Robot model and log buffer
         RobotModel _robot;
+		robots::JointLogBuffer* _logBuffer = nullptr;
+		robots::TrajRefBuffer*  _refBuffer = nullptr;
+
+		// Flags and precomputed data
         bool _hasRobot = false;
 		glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
 		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
@@ -175,6 +198,7 @@ namespace robots {
 		// Reference state
 		mathlib::VecX _xRef;
 		bool _refInit = false;
+		bool _isReference = false;
 
 		// precomputed clamp lookup tables
 		mutable std::vector<uint8_t> _clampTheta;

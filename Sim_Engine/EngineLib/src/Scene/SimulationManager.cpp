@@ -84,7 +84,7 @@ namespace gui {
 
 		// World Grid & Shadow Shaders
 		std::unique_ptr<shaders::Shader> _worldGridShader;
-     std::unique_ptr<shaders::Shader> _shadowShader;
+        std::unique_ptr<shaders::Shader> _shadowShader;
 		shaders::Shader* currentShader;
 
 		// Fullscreen Quad VAO
@@ -109,7 +109,9 @@ namespace gui {
 		// Physics System
 		std::unique_ptr<physics::PhysicsSystem> _physics;
 		// Robot System
-		std::unique_ptr<robots::RobotSystem> _robotSystem;
+		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
+
+		// Robot Follow Target
 		bool eeFollowBound = false;
 		scene::Object* eeObject = nullptr;
 
@@ -232,17 +234,23 @@ namespace gui {
 			_shadowShader = std::make_unique<shaders::Shader>();
 			_shadowShader->load((paths::assets() / "shaders" / "shadow_depth.vert.glsl").string(), (paths::assets() / "shaders" / "shadow_depth.frag.glsl").string());
 
+			// Light
 			_light = std::make_unique<scene::Light>();
 			_light->_isDirectional = true;
 
+			// Axis Orientator
 			_axisOrientator = std::make_unique<gui::AxisOrientator>();
 
+			// World Grid VAO
 			glGenVertexArrays(1, &_worldGridVAO);
-
+			
+			// Test Mesh
 			_mesh = std::make_shared<scene::Mesh>();
 			_mesh->init();
 
+			// Physics system
 			_physics = std::make_unique<physics::PhysicsSystem>();
+			// Robot system with mesh loading (for normal simulation)
 			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
 
 			// SSAO shaders
@@ -400,11 +408,6 @@ namespace gui {
 
 			LOG_INFO_ONCE("Rendering Viewport: RT Size = %dx%d, Display Size = %dx%d", rtW, rtH, displayW, displayH);
 
-			// Calculate internal scale for grid rendering
-			//const float internalScaleX = (float)rtW / (float)displayW;yes
-			//const float internalScaleY = (float)rtH / (float)displayH;
-			//const float internalScale = std::max(internalScaleX, internalScaleY);
-
 			// Resize only when internal RT changes OR display changes (post buffer)
 			const bool rtChanged = (v.w != rtW) || (v.h != rtH);
 			const bool displayChanged = (v.displayW != displayW) || (v.displayH != displayH);
@@ -462,7 +465,7 @@ namespace gui {
 				}
 			}
 
-
+			// Skybox (renders before all opaque geometry, doesn't write depth)
 			if (owner.skyboxEnabled) {
 				glDepthMask(GL_FALSE);
 				glDepthFunc(GL_LEQUAL);
@@ -471,6 +474,7 @@ namespace gui {
 				glDepthFunc(GL_LESS);
 			}
 
+			// Meshes & World Grid
 			GLint sampleBuffers = 0, samples = 0;
 			glGetIntegerv(GL_SAMPLE_BUFFERS, &sampleBuffers);
 			glGetIntegerv(GL_SAMPLES, &samples);
@@ -575,13 +579,11 @@ namespace gui {
 		else if (dispH >= 900.0f) { bestPreset = render::ResolutionPreset::R_1080p; }
 		else { bestPreset = render::ResolutionPreset::R_720p; }
 
-		auto s = render::MakeSettings(bestPreset, render::QualityPreset::Ultra);
+		auto s = render::MakeSettings(bestPreset, render::QualityPreset::High);
 		applyRenderProfile(s, bestPreset);
 	}
 
 	SimManager::~SimManager() {
-		//if (_impl->_frameBuffer) _impl->_frameBuffer->deleteBuffers();
-		//if (_impl->_postBuffer) _impl->_postBuffer->deleteBuffers();
 		if (_impl->_mesh) _impl->_mesh->clean();
 	}
 
@@ -673,6 +675,7 @@ namespace gui {
 		v.cam->updateViewMatrix();
 	}
 
+	// Attach camera to an object and start following it. The camera will maintain a fixed offset from the object's position and orientation.
 	void SimManager::attachCameraToObject(scene::Object* obj) {
 		if (!obj) return;
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
@@ -685,6 +688,7 @@ namespace gui {
 		cam->startFollow(pos, rot, glm::vec3(0, 2, 5));
 	}
 
+	// Detach camera from any object and stop following
 	void SimManager::detachCameraFromObject() {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		_impl->_cameraFollowTarget = nullptr;
@@ -713,6 +717,7 @@ namespace gui {
 		if (v.cam) { v.cam->clearFollow(); }
 	}
 
+	// Convenience for Follow view: set the follow target to the object attached to a robot joint (e.g. end-effector)
 	bool SimManager::setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset) {
 		if (!hasRobot()) {
 			LOG_WARN("setViewFollowRobotJoint: no robot loaded");
@@ -759,6 +764,7 @@ namespace gui {
 		return true;
 	}
 
+	// Convenience for Follow view
 	bool SimManager::followRobotJoint(const std::string& jointName, const glm::vec3& offset) {
 		return setViewFollowRobotJoint(gui::ViewID::Follow, jointName, offset);
 	}
@@ -766,6 +772,8 @@ namespace gui {
 	// --------------------------------------------------
 	//			    MESH LOADING & GEOMETRY
 	// --------------------------------------------------
+
+	// Load a mesh from file and create one Object per submesh. The last loaded mesh becomes the active selection.
 	void SimManager::loadMesh(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
@@ -801,6 +809,7 @@ namespace gui {
 		D_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 	}
 
+	// Returns the loaded objects so they can be used as targets for robot joints in the same frame (e.g. end-effector)
 	std::vector<scene::Object*> SimManager::loadMeshReturn(const std::string& filepath) {
 		gui::MeshLoader loader;
 		auto meshes = loader.load(filepath);
@@ -844,7 +853,6 @@ namespace gui {
 
 		_impl->_objects.erase(it, _impl->_objects.end());
 	}
-
 
 	std::vector<std::unique_ptr<scene::Object>>& SimManager::getObjects() { return _impl->_objects; }
 	scene::Object* SimManager::getObject() { return _impl->_selectedObject; }
@@ -1051,9 +1059,7 @@ namespace gui {
 	// --------------------------------------------------
 	void SimManager::loadRobot(const std::string& name) {
 		// Clear any existing robot first
-		if (hasRobot()) {
-			clearRobot();
-		}
+		if (hasRobot()) { clearRobot(); }
 
 		setSelectedObject(nullptr);
 		detachCameraFromObject();
@@ -1066,16 +1072,18 @@ namespace gui {
 		const size_t startIdx = _impl->_objects.size();
 		_impl->_robotSystem->loadRobot(name);
 
+		// Reset adaptive state for reference system
+		if (auto* simInteg = _impl->_robotSystem->getIntegrator()) { 
+			simInteg->resetAdaptiveState();
+		}
+
+		// Attempt to find an end-effector candidate among the newly added objects and bind the Follow view to it
 		scene::Object* ee = _impl->findEndEffectorFromRange(startIdx);
 		if (ee) {
 			_impl->eeObject = ee;
 			setViewFollowTarget(gui::ViewID::Follow, ee, glm::vec3(0.0f, 0.2f, 0.6f));
 			_impl->eeFollowBound = true;
-
 			LOG_INFO("Follow view bound to end-effector candidate: %s", ee->name.c_str());
-		}
-		else {
-			LOG_WARN("Could not find end-effector object to follow.");
 		}
 
 		// Auto-select the first object of the newly loaded robot
@@ -1083,12 +1091,20 @@ namespace gui {
 			setSelectedObject(_impl->_objects[startIdx].get());
 		}
 
-		//_impl->_robotSystem->setDefaultPoseDeg({ -45.0f, 33.5f, -42.5f, 12.5f, 0.0f, 0.0f });
+		//_impl->_robotSystem->setDefaultPoseDeg();
 	}
-	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); } }
-	void SimManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); } }
-	void SimManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) { if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); } }
-	void SimManager::resetRobot() { if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); } }
+	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) {
+		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); }
+	}
+	void SimManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
+		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); }
+	}
+	void SimManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
+		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); }
+	}
+	void SimManager::resetRobot() { 
+		if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); }
+	}
 	void SimManager::clearRobot() {
 		setSelectedObject(nullptr); // deselect any selected object
 		if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); }
@@ -1099,15 +1115,25 @@ namespace gui {
 	}
 	bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
 
+	// Access the robot system (non-const and const versions)
 	robots::RobotSystem* SimManager::getRobotSystem() { return _impl->_robotSystem.get(); }
 	const robots::RobotSystem* SimManager::getRobotSystem() const { return _impl->_robotSystem.get(); }
+
+	// Simulation System
+	void SimManager::setupSimulationIntegrator() {
+		if (!_impl->_robotSystem) return;
+		auto* integ = _impl->_robotSystem->getIntegrator();
+		integ->resetAdaptiveState();
+		integ->setAdaptiveTolerances(1e-3, 1e-6);
+		integ->setMaxStep(_dt);
+	}
 
 	// --------------------------------------------------
 	//					SIMULATION LOOP
 	// --------------------------------------------------
 
+	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimManager::stepFixed(double frame_dt) {
-		//LOG_INFO("tick: simRunning=%d scriptRunning=%d activeProg=%p", (int)_simRunning, (int)_scriptRunning, (void*)_activeProgram);
 		_accum += frame_dt;
 		while (_accum >= _dt) {
 			if (_scriptRunning && _activeProgram) {
@@ -1147,8 +1173,12 @@ namespace gui {
 
 				updatePhysics(_dt);
 				if (hasRobot()) {
-					_impl->_robotSystem->stepReference(_impl->_traj, _dt, _simTime);
+					// Update Trajector Inputs
+					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _dt, _simTime);
+					// Step robot system
 					_impl->_robotSystem->step(_dt, _simTime);
+
+					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(_simTime, 60.0, 120.0);
 						_telemetryBegun = true;
@@ -1160,23 +1190,142 @@ namespace gui {
 		}
 	}
 
+	// Start the simulation loop
 	void SimManager::startSimulation() {
 		if (_simRunning) return;
 		telemetry().clear();
-		SET_SIM_INTEGRATOR(_impl->_robotSystem->getIntegratorName());
 		D_RUNTIME("starting simulation");
+
 		_simTime = 0.0;
+		_accum = 0.0;
+
+		// Reset simulation system
+		if (_impl->_robotSystem) {
+			_impl->_robotSystem->resetRobot();
+
+			// Clear and reserve telemetry buffers based on expected simulation length and robot DOF
+			_trajRefBuffer.clear();
+			_jointLogBuffer.clear();
+
+			// Calculate the total number of entries needed for the buffers
+			size_t steps = static_cast<size_t>(120.0 / _dt);
+			size_t joints = _impl->_robotSystem->jointCount();
+			size_t total = steps * joints;
+
+			// Reserve capacity to avoid reallocations during the run
+			_trajRefBuffer.reserve(total);
+			_jointLogBuffer.reserve(total);
+
+			// IMPORTANT: inject buffer into robot
+			_impl->_robotSystem->setRefBuffer(&_trajRefBuffer);
+			_impl->_robotSystem->setLogBuffer(&_jointLogBuffer);
+		}
+
+		// Ensure reference sim system have their integrators configured for the new run
+		setupSimulationIntegrator();
+		SET_SIM_INTEGRATOR(_impl->_robotSystem->getIntegratorName());
+
 		_simRunning = true;
 		_telemetryBegun = true;
 		DATA_CAPTURE_ENABLE(true);
 	}
 
+	// Stop the simulation loop
 	void SimManager::stopSimulation() {
 		if (!_simRunning) return;
 		D_RUNTIME("stopping simulation");
+
+		D_RUNTIME("JointLogBuffer size = %zu", _jointLogBuffer.size());
+		D_RUNTIME("TrajRefBuffer size = %zu", _trajRefBuffer.size());
+
+		// Only export ref if we actually have samples
+		if (_trajRefBuffer.size() > 0) {
+			exportRefsToHDF5();
+		}
+		// Only export sim if we actually have samples
+		if (_jointLogBuffer.size() > 0) {
+			exportLogsToHDF5();
+		}
+
+		// Clear buffers to free memory and prepare for next run
 		DATA_CAPTURE_ENABLE(false);
 		_simRunning = false;
 		_telemetryBegun = false;
+	}
+
+	// Export the logged joint data to HDF5 format using the custom macro for each log entry
+	void SimManager::exportLogsToHDF5() {
+		// Construct a header for the HDF5 dataset based on the robot and integrator names
+		const std::string intName	= _impl->_robotSystem->getIntegratorName();
+		const std::string robotName = _impl->_robotSystem->hasRobot() ? _impl->_robotSystem->robotName() : "no_robot";
+		const std::string header	= robotName + "_sim_" + intName;
+
+		// Check if there are any log entries
+		const size_t N = _jointLogBuffer.size();
+		if (N == 0) return;
+
+		// For each log entry, create a field list and write to HDF5
+		for (size_t i = 0; i < N; ++i) {
+			// Create a list of fields for this log entry
+			data::FieldList fields;
+			// Sim Metadata
+			fields.emplace_back("sim_time",		(double)_jointLogBuffer.sim_time[i]);
+			fields.emplace_back("dt_taken",		(double)_jointLogBuffer.dt_taken[i]);
+			fields.emplace_back("dt_sug",		(double)_jointLogBuffer.dt_sug[i]);
+			// States
+			fields.emplace_back("theta",		(double)_jointLogBuffer.theta[i]);
+			fields.emplace_back("omega",		(double)_jointLogBuffer.omega[i]);
+			fields.emplace_back("alpha",		(double)_jointLogBuffer.alpha[i]);
+			fields.emplace_back("err",			(double)_jointLogBuffer.err[i]);
+			fields.emplace_back("err_d",		(double)_jointLogBuffer.err_d[i]);
+			// Dynamics
+			fields.emplace_back("I_eff",		(double)_jointLogBuffer.I_eff[i]);
+			fields.emplace_back("tau",			(double)_jointLogBuffer.tau[i]);
+			fields.emplace_back("tau_fb",		(double)_jointLogBuffer.tau_fb[i]);
+			fields.emplace_back("tau_coriolis", (double)_jointLogBuffer.tau_coriolis[i]);
+			fields.emplace_back("tau_gravity",	(double)_jointLogBuffer.tau_gravity[i]);
+			fields.emplace_back("tau_damping",	(double)_jointLogBuffer.tau_damping[i]);
+			fields.emplace_back("tau_friction",	(double)_jointLogBuffer.tau_friction[i]);
+			fields.emplace_back("tau_barrier",	(double)_jointLogBuffer.tau_barrier[i]);
+			fields.emplace_back("tau_sat",		(double)_jointLogBuffer.tau_sat[i]);
+			// Limit flags and info
+			fields.emplace_back("clamp_theta",	(double)_jointLogBuffer.clamp_theta[i]);
+			fields.emplace_back("clamp_omega",	(double)_jointLogBuffer.clamp_omega[i]);
+			fields.emplace_back("sat_flag",		(double)_jointLogBuffer.sat_flag[i]);
+			// Joint info
+			fields.emplace_back("joint_index",	(double)_jointLogBuffer.joint_index[i]);
+
+			// Write this entry to HDF5
+			HDF5_SIM_DATA(header, fields);
+		}
+	}
+
+
+	void SimManager::exportRefsToHDF5() {
+		const std::string robotName = _impl->_robotSystem->hasRobot() ? _impl->_robotSystem->robotName() : "no_robot";
+		const std::string header = robotName + "_traj_ref";
+
+		// Check if there are any log entries
+		const size_t N = _trajRefBuffer.size();
+		if (N == 0) return;
+
+		// For each ref entry, create a field list and write to HDF5
+		for (size_t i = 0; i < N; ++i) {
+			// Create a list of fields for this log entry
+			data::FieldList fields;
+			// Sim Metadata
+			fields.emplace_back("sim_time", (double)_trajRefBuffer.sim_time[i]);
+			// Reference values
+			fields.emplace_back("theta_ref", (double)_trajRefBuffer.theta_ref[i]);
+			fields.emplace_back("omega_ref", (double)_trajRefBuffer.omega_ref[i]);
+			fields.emplace_back("alpha_ref", (double)_trajRefBuffer.alpha_ref[i]);
+			// Joint info
+			fields.emplace_back("joint_index", (double)_trajRefBuffer.joint_index[i]);
+
+			// Write this entry to HDF5
+			HDF5_REF_DATA(header, fields);
+		}
+
 	}
 
 	// --------------------------------------------------
@@ -1223,6 +1372,15 @@ namespace gui {
 		// Reset robot state
 		resetRobot();
 		_impl->_traj.clearAll();
+
+		// Clear telemetry and log buffers
+		_trajRefBuffer.clear();
+		_jointLogBuffer.clear();
+
+		// Inject buffers BEFORE any stepping happens
+		_impl->_robotSystem->setRefBuffer(&_trajRefBuffer);
+		_impl->_robotSystem->setLogBuffer(&_jointLogBuffer);
+
 		_simTime = 0.0;
 		_simRunning = false;
 		_telemetryBegun = false;
@@ -1244,10 +1402,14 @@ namespace gui {
 		_activeProgram = program.get();
 		_scriptRunning = true;
 
+		// enable sim stepping and telemetry for synchronous run
+		startSimulation();
+
 		// Run tight simulation loop until program completes
 		const double dt = _dt;
-		const int maxSteps = 50000000; // safety limit (~77 hours at 180Hz)
+		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
 
+		// Main loop: step the program and simulation until completion
 		for (int step = 0; step < maxSteps; ++step) {
 			// Check program completion
 			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
@@ -1260,22 +1422,31 @@ namespace gui {
 			// Step physics and robot if sim is running
 			if (_simRunning) {
 				_simTime += dt;
+
 				updatePhysics(dt);
 
 				if (hasRobot()) {
-					_impl->_robotSystem->stepReference(_impl->_traj, dt, _simTime);
+					// Update Trajectory Inputs
+					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, dt, _simTime);
+
+					// Step robot system
 					_impl->_robotSystem->step(dt, _simTime);
 
+					// Telemetry beginRun
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(_simTime, 60.0, 300.0);
 						_telemetryBegun = true;
 					}
-					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
+
+					// Telemetry update
+					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL );
 				}
 			}
 		}
 
 		// Clean up
+		stopSimulation();
+
 		_activeProgram = nullptr;
 		_scriptRunning = false;
 		_simRunning = false;
@@ -1391,6 +1562,7 @@ namespace gui {
 		glDepthFunc(GL_LESS);
 	}
 
+	// Render the meshes in the scene using the currently selected shader mode, setting appropriate uniforms for each mode
 	void SimManager::MeshRender(scene::Camera* cam) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -1445,6 +1617,7 @@ namespace gui {
 		cam->update(shader);
 		_impl->_light->update(shader);
 
+		// Main mesh rendering loop
 		for (auto& obj : _impl->_objects) {
 			if (!obj || !obj->getMesh()) continue;
 
@@ -1503,6 +1676,7 @@ namespace gui {
 		}
 	}
 
+	// Render the shadow maps for each cascade by rendering the scene from the light's perspective into the depth textures
 	void SimManager::ShadowPass(scene::Camera* cam) {
 		float nearPlane = cam->getNear();
 		float farPlane = cam->getFar();

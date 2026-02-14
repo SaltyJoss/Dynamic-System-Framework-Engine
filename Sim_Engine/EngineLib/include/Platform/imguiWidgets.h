@@ -134,7 +134,6 @@ namespace ImGui {
 		// Get draw list and position for custom drawing
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		ImVec2 p = ImGui::GetCursorScreenPos();
-		float w = ImGui::GetContentRegionAvail().x;
 
 		// Subtle left accent bar
 		dl->AddRectFilled(

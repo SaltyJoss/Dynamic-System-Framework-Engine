@@ -13,6 +13,7 @@
 #include "FpsCounter.h"
 
 #include "Analysis/Telemetry.h"
+#include "Analysis/MetricLogger.h"
 
 #include "Platform/Logger.h"
 
@@ -170,6 +171,9 @@ namespace gui {
         control::TrajectoryManager& traj();
         const control::TrajectoryManager& traj() const;
 
+		void setupReferenceIntegrator();
+        void setupSimulationIntegrator();
+
 		// Input Handling
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
@@ -185,6 +189,8 @@ namespace gui {
 		bool isSimRunning() const { return _simRunning; }
         void startSimulation();
         void stopSimulation();
+		void exportLogsToHDF5();
+		void exportRefsToHDF5();
 
 		double getSimTime() const { return _simTime; }
 		void setSimTime(double t) { _simTime = t; }
@@ -228,6 +234,9 @@ namespace gui {
         void beginSimManager(const char* id);
 		void endSimManager();
 
+		// Telemetry
+        void prepareLogBuffer(size_t expectedSteps, size_t jointCount);
+
         // Misc Settings
         bool _glReady = false;
         bool _scriptRunning = false;
@@ -270,6 +279,8 @@ namespace gui {
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
+		robots::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
+		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
         bool _telemetryBegun = false;
 
 		// Environment & Lighting

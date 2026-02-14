@@ -25,7 +25,7 @@ using namespace constants;
 namespace robots {
 	// Constructor
 	RobotSystem::RobotSystem(std::vector<std::unique_ptr<scene::Object>>& objects, spawnFn meshLoader)
-		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::Euler), 
+		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4),
 		_objects(objects), _loadMeshReturn(std::move(meshLoader)) {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
@@ -528,9 +528,9 @@ namespace robots {
 				const Vec3 com_world = R_k * link.inertial.com_xyz + T_world[k].block<3, 1>(0, 3);
 				
 				// Gravitational force on the link (Z-down in world frame; .dae files show Z as up)
-				const Vec3 g_world = Vec3(0.0, -g, 0.0); // [m/s^2], gravity vector in world frame
+				Vec3 g_world = Vec3(0.0, -g, 0.0); // [m/s^2], gravity vector in world frame
 				// If the robot's base is free-floating, apply gravity in the -Z direction instead of -Y
-				if (_baseIsFree) { const Vec3 g_world = Vec3(0.0, 0.0, -g); }
+				if (_baseIsFree) { g_world = Vec3(0.0, 0.0, -g); }
 				const Vec3 F_g = m * g_world; // [N], gravitational force on the link in world frame
 				
 				// Torque contribution from this link's weight about joint i
@@ -713,7 +713,12 @@ namespace robots {
 			const RobotLink& link   = _robot.links[i+1];
 
 			// Fixed joints have no dynamics
-			if (joint.type == eJointType::FIXED) { continue; }
+			if (joint.type == eJointType::FIXED) {
+				dx[i] = 0.0;
+				dx[i + n] = 0.0;
+				dx[i + 2 * n] = 0.0;
+				continue;
+			}
 
 			// Use integrated reference (baseline truth)
 			const double thetaRef = joint.thetaRefRad;
@@ -755,22 +760,6 @@ namespace robots {
 
 		// FK needed for inertia
 		mathlib::VecX x = packState();
-		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
-
-		// Caches for inertia and Coriolis
-		std::vector<double> I_eff(n, 0.0);
-		std::vector<double> q(n), qd(n);
-
-		// Compute effective inertia for each joint at current state
-		for (size_t i = 0; i < n; ++i) {
-			q[i] = _robot.joints[i].thetaRad;
-			qd[i] = _robot.joints[i].omegaRad_s;
-
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
-			}
-			I_eff[i] = std::max(I_eff[i], 1e-6);
-		}
 
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return deriv(t, xIn); };
@@ -785,6 +774,26 @@ namespace robots {
 			const double wMax = j.limits.maxOmegaRad_s;
 			if (wMax > 0.0f) { j.omegaRad_s = glm::clamp(j.omegaRad_s, -wMax, wMax); }
 			enforceJointLimits(j);
+		}
+
+		// FK needed for inertia
+		mathlib::VecX x_f = packState();
+		std::vector<Pose> T_world = computeForwardKinematics_fromState(x_f);
+
+		// Compute effective inertia for each joint at the new state
+		std::vector<double> I_eff(n, 0.0);
+
+		// For each joint, compute the effective inertia by summing contributions from all links
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				I_eff[i] += computeJointInertiaContribution(
+					_robot.joints[i],
+					_robot.links[k],
+					T_world[k]
+				);
+			}
+			// Floor effective inertia to avoid singularities
+			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
 
 		for (size_t i = 0; i < n; ++i) {
@@ -808,43 +817,38 @@ namespace robots {
 				0.0, 0.0, 0.0
 			);
 
-			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
-			std::string header = _robot.name + "_sim_" + IntName;
+			// Log metrics to buffer if logging is enabled
+			auto* buf = _logBuffer;
 
-			HDF5_SIM_DATA(header, (data::FieldList{
-					// Simulation info
-					{"sim_time",   simTime},
-					{"dt_taken",   step.dt_taken},
-					{"dt_sug",	   step.dt_sug},
-					{"joint_name", std::string(joint.name)},
-					{"link_name",  std::string(joint.child)},
-					// States
-					{"theta", m.theta},
-					{"omega", m.omega},
-					{"alpha", m.alpha},
-					{"err",	  m.err},
-					{"err_d", m.err_d},
-					// Inertia and limits
-					{"I_eff",		   m.I_eff},
-					{"wMax_hw",		   m.wMax_hw},
-					{"wMax_traj",	   m.wMax_traj},
-					{"traj_overspeed", m.traj_overspeed},
-					// Torque values
-					{"torque",          m.tau},
-					{"torque_feedback", m.tau_fb},
-					{"torque_coriolis", m.tau_coriolis},
-					{"torque_gravity",	m.tau_gravity},
-					{"torque_damping",  m.tau_damping},
-					{"torque_friction", m.tau_friction},
-					{"torque_barrier",  m.tau_barrier},
-					{"torque_sat",	    m.tau_sat},
-					// Clamping flags
-					{"clamp_theta",			(double)_clampTheta[i]},
-					{"clamp_omega",			(double)_clampOmega[i]},
-					{"sat_flag",			m.sat_flag },
-					{"traj_overspeed_flag", m.traj_overspeed_flag}
-				}) 
-			);
+			// If logging is enabled, store metrics in the buffer for this joint
+			if (buf) {
+				// Sim Metadata
+				buf->sim_time.push_back(simTime);
+				buf->dt_taken.push_back(step.dt_taken);
+				buf->dt_sug.push_back(step.dt_sug);
+				// States
+				buf->theta.push_back(m.theta);
+				buf->omega.push_back(m.omega);
+				buf->alpha.push_back(m.alpha);
+				buf->err.push_back(m.err);
+				buf->err_d.push_back(m.err_d);
+				// Dynamics
+				buf->I_eff.push_back(m.I_eff);
+				buf->tau.push_back(m.tau);
+				buf->tau_fb.push_back(m.tau_fb);
+				buf->tau_coriolis.push_back(m.tau_coriolis);
+				buf->tau_gravity.push_back(m.tau_gravity);
+				buf->tau_damping.push_back(m.tau_damping);
+				buf->tau_friction.push_back(m.tau_friction);
+				buf->tau_barrier.push_back(m.tau_barrier);
+				buf->tau_sat.push_back(m.tau_sat);
+				// Limit flags and info
+				buf->clamp_theta.push_back((double)_clampTheta[i]);
+				buf->clamp_omega.push_back((double)_clampOmega[i]);
+				buf->sat_flag.push_back(m.sat_flag);
+				// Joint Index
+				buf->joint_index.push_back((int)i);
+			}
 		}
 
 		// Update base pose if free-floating
@@ -858,14 +862,14 @@ namespace robots {
 	}
 
 	// Method to step the reference trajectory and update joint reference states
-	void RobotSystem::stepReference(control::TrajectoryManager& traj, double dt, double t) {
+	void RobotSystem::updateTrajectoryInputs(control::TrajectoryManager& traj, double dt, double t) {
 		if (!_hasRobot) { return; }
 		
-		const int n = (int)_robot.joints.size();
+		const size_t n = _robot.joints.size();
 		if (n <= 0) { return; }
 
 		// Sample trajectories ("ground truth" inputs)
-		for (int i = 0; i < n; ++i) {
+		for (size_t i = 0; i < n; ++i) {
 			RobotJoint& j = _robot.joints[i];
 			control::TrajState s{};
 			// Try to evaluate trajectory
@@ -880,22 +884,17 @@ namespace robots {
 				j.omegaRefRad_s = 0.0f;
 			}
 
-			const std::string IntName = _integrator->IntegratorName(_curIntMethod);
-			std::string header = "reference_" + _robot.name + "_" + IntName;
-
-			// Store reference trajectory data
-			HDF5_REF_DATA(header,
-				(data::FieldList{
-					{"sim_time", t},
-					{"dt", dt},
-					{"joint_name", std::string(j.name)},
-					{"joint_child", std::string(j.child)},
-					{"joint_parent", std::string(j.parent)},
-					{"traj_theta_ref", j.thetaRefRad},
-					{"traj_omega_ref", j.omegaRefRad_s},
-					{"traj_alpha_ref", j.alphaRefRad_s2},
-					})
-			);
+			auto* buf = _refBuffer;
+			if (buf) {
+				// Sim Metadata
+				buf->sim_time.push_back(t);
+				// Reference states
+				buf->theta_ref.push_back(j.thetaRefRad);
+				buf->omega_ref.push_back(j.omegaRefRad_s);
+				buf->alpha_ref.push_back(j.alphaRefRad_s2);
+				// Joint Index
+				buf->joint_index.push_back((int)i);
+			}
 		}
 	}
 
@@ -980,7 +979,6 @@ namespace robots {
 		if (!_hasRobot) return;
 
 		// Remove robot objects from _objects
-		// Remove robot objects from _objects
 		for (auto& link : _robot.links) {
 			for (auto* dead : link.attachedObjects) {
 				if (!dead) continue;
@@ -1009,6 +1007,14 @@ namespace robots {
 			joint.omegaRad_s = 0.0f;
 			joint.thetaRefRad = joint.thetaRad;
 		}
+	}
+
+	integration::IntegrationService* RobotSystem::getIntegrator() {
+		return _integrator.get();
+	}
+
+	const integration::IntegrationService* RobotSystem::getIntegrator() const {
+		return _integrator.get();
 	}
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
@@ -1378,12 +1384,12 @@ namespace robots {
 	}
 
 	// Method to set the default pose of the robot using joint angles in degrees
-	bool RobotSystem::setDefaultPoseDeg(const std::vector<double>& qDeg) {
+	bool RobotSystem::setDefaultPoseDeg() {
 		if (!_hasRobot) { return false; }
-		if (qDeg.size() != _robot.joints.size()) { return false; }
-		for (size_t i = 0; i < _robot.joints.size(); ++i) {
-			_robot.joints[i].thetaRad = glm::radians(qDeg[i]);
-		}
+		//if (qDeg.size() != _robot.joints.size()) { return false; }
+		//for (size_t i = 0; i < _robot.joints.size(); ++i) {
+		//	_robot.joints[i].thetaRad = glm::radians(qDeg[i]);
+		//}
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 		return true;
