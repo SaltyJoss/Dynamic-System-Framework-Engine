@@ -1132,7 +1132,7 @@ namespace gui {
             selectJointAndFollow(selectedJoint);
         }
         else {
-            selectedJoint = currentJ - 1; // keep it in sync even if unchanged
+            selectedJoint = currentJ - 1;
         }
 
 		const diagnostics::JointTelemetry& j = s.j[selectedJoint];
@@ -1329,7 +1329,7 @@ namespace gui {
 
 		// --- RMS Error Overlay ---
 		const ImVec2 cPlotSz1(_plotWidth, _cPlotH1);
-		if (ImPlot::BeginPlot("RMS Error — All Integrators##cmp", cPlotSz1)) {
+		if (ImPlot::BeginPlot("RMS Error - All Integrators##cmp", cPlotSz1)) {
 			ImPlot::SetupAxes("t (s)", "RMS error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			for (const auto& res : _comparisonResults) {
@@ -1343,7 +1343,7 @@ namespace gui {
 
 		// --- Max Error Overlay ---
 		const ImVec2 cPlotSz2(_plotWidth, _cPlotH2);
-		if (ImPlot::BeginPlot("Max Error — All Integrators##cmp", cPlotSz2)) {
+		if (ImPlot::BeginPlot("Max Error - All Integrators##cmp", cPlotSz2)) {
 			ImPlot::SetupAxes("t (s)", "Max error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			for (const auto& res : _comparisonResults) {
@@ -1364,7 +1364,7 @@ namespace gui {
 			ImGui::SliderInt("Compare Joint##cmp", &selectedCmpJoint, 0, _comparisonResults.front().jointCount - 1, "J%02d");
 
 			char plotLabel[64];
-			snprintf(plotLabel, sizeof(plotLabel), "J%02d Error — All Integrators##cmpjoint", selectedCmpJoint + 1);
+			snprintf(plotLabel, sizeof(plotLabel), "J%02d Error - All Integrators##cmpjoint", selectedCmpJoint + 1);
 			if (ImPlot::BeginPlot(plotLabel, cPlotSz3)) {
 				ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 				ImPlot::SetupLegend(ImPlotLocation_NorthEast);
@@ -1428,6 +1428,7 @@ namespace gui {
 	void ControlPanel::drawResultsWindow() {
 		if (!_showResultsWindow) return;
 
+		// Get the latest telemetry record
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
 
@@ -1438,14 +1439,27 @@ namespace gui {
 		}
 
 		// Force focus on first frame the window opens
-		if (_resultsFocusNeeded) {
-			ImGui::SetNextWindowFocus();
-			_resultsFocusNeeded = false;
-		}
+		if (_resultsFocusNeeded) { ImGui::SetNextWindowFocus(); }
+		// Get display size for dynamic window sizing
+		ImVec2 display = ImGui::GetIO().DisplaySize;
 
-		// Set a reasonable default size and position (centered, but allow user to move/resize)
-		ImGui::SetNextWindowSize(ImVec2(900, 750), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f - 450, ImGui::GetIO().DisplaySize.y * 0.5f - 375), ImGuiCond_FirstUseEver);
+		// Use 75% of screen size, clamped to reasonable limits
+		ImVec2 desiredSize(display.x * 0.75f, display.y * 0.75f);
+
+		// Safety clamp for very large monitors (>4K or ultrawides)
+		desiredSize.x = ImClamp(desiredSize.x, 700.0f, 1200.0f);
+		desiredSize.y = ImClamp(desiredSize.y, 500.0f, 900.0f);
+
+		// Set the window size on first appearance
+		ImGui::SetNextWindowSize(desiredSize, ImGuiCond_Appearing);
+
+		// Center the window on screen
+		ImVec2 center((display.x - desiredSize.x) * 0.5f, (display.y - desiredSize.y) * 0.5f);
+		ImGui::SetNextWindowPos(center, ImGuiCond_FirstUseEver);
+
+		// Clear focus flag after using it
+		if (_resultsFocusNeeded) { _resultsFocusNeeded = false; }
+
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
 
 		bool open = true;
@@ -1600,7 +1614,7 @@ namespace gui {
 
 		// --- Integrator Comparison Section ---
 		ImGui::SectionDivider();
-		ImGui::SectionHeader("Integrator Comparison", ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
+		ImGui::SectionHeader("Integrator Comparison:", ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
 
 		const bool hasScript = !_sim->lastScriptText().empty();
 		ImGui::BeginDisabled(!hasScript || _sim->isSimRunning());
