@@ -22,7 +22,25 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About DSFE
+The **Dynamic Systems Framework Engine (DSFE)** is a final year Computer Science project developed to support the exploration and analysis of numerical integration methods under varying dynamic conditions.
 <br />
+
+Although physically grounded, DSFE **prioritises numerical-transparency first**, and visualisation second. The framework is designed for researching mathematic models through controlled numerical simulations, producing reproducible amd quantitative output data while remaining consistent with physically-valid system and enivronment parameters.
+<br />
+
+DSFE integrates real-time visualisation using **OpenGL**, **GLSL**, **GLM**, and **ImGui** to introduce interpretable representations of system behaviour. The visual layer is an addition with the intention of complementing, not replacing, the underlying numerical analysis.
+<br />
+
+The framework also includes the **Dynamic Systems Language (DSL)**, a domain-specific scripting langauge that enables exact experiment reproduction, parameter control, and determinisitic test execution - one of the biggest reasons for adding DSL.
+<br />
+
+As an independant an extensible final year project, DSFE allows users to:
+ * Define custom dynamic systems
+ * Import external models
+ * Design their own DSL scripts
+ * Build their own experimental regimes
+
+This open architecture intentionally avoids hidden "Black-Box" abstractions, and instead `favours transparency, reproducibility, and research flexibility`.
 <br />
 
 <!-- INSTALLATION -->
@@ -38,7 +56,7 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 <br />
 
 > **Disclaimer:**<br />
-> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, if you find any major bugs/issues/errors within the software feel free to submit and issue or comment on the repository.
+> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, if you find any major bugs/issues/errors within the software please submit or issue the relevant information. If you wish to reach out, feel free to comment on the repository, or get in touch with [@SaltyJoss](https://github.com/SaltyJoss).
 <!-- PROJECT INFO -->
 ## Project Info
 
@@ -50,13 +68,39 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 [![MATLAB][MATLAB]][MATLAB-url]
 [![JSON][JSON]][JSON-url]
 
-### Robotic Models Used:
+### Robotic Models used in DSFE:
   * [Google Deepmind's][mujoco-repo] open source models ([MuJoCo][mujoco-url]) of `Z1`, `UR5e`, `iiwa14`, `Panda`, and `H1` robotic systems
   * [StanforASL's][stanfordASL-repo] repo for `Panda` robotic arm
   * [Unitree Robotics's][unitree-ros-repo] repo for the `Z1` and `UR5e` robotic arms
-  * [Airbus's][vispa-repo] repo for the their `V`ersatile `I`n-`S`pace and `P`lanetary `A`rm (`VISPA`) URDF and model files
+  * [Airbus's][vispa-repo] repo for the their Versatile In-Space and Planetary Arm (`VISPA`) URDF and model files
 
 </div>
+
+<br />
+
+<!-- TODO -->
+## Roadmap Ideas:
+
+> **IMPORTANT**: <br />
+> As of Release `v0.6.0r-alpha`, I ([@SaltyJoss](https://github.com/SaltyJoss)) will be fully focusing on my dissertation for this project, my other modules, and ultimately finishing my degree. <br />
+> Therefore, I most likely will not make any updates until that period is over. <br />
+
+### Todo List:
+ * Implement `collision meshes` with existin dynamics pipeline
+ * Improve UI, making it `Research-Oriented`
+ * Add workspace layouts
+ * Support multiple concurrent sessions
+ * Move simulation data output to a `dedicated Data-specific thread` **(IMPORTANT)**
+ * Replace the current diagonal Coriolis approximation to the `full Coriolis matrix formulation`
+ * Support `multiple articulated systems` within a single simulation instance
+ * Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
+ * Further `extend physcial modelling` for different robot models (humanoid, legged)
+ * Seperate physics/mathematics core from the GUI and visualisation layers
+ * Explore migration to a `CMake-only` build system
+ * Explore `DX11` and `Vulkan` alternatives
+ * Get DSFE to work on `Linux`
+ * Explore `non-x64 systesm` support
+ * Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
 
 <br />
 
