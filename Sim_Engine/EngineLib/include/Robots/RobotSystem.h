@@ -198,7 +198,7 @@ namespace robots {
 
 		// Robot model, and robot mode
         RobotModel _robot;
-		eTorqueMode _torqueMode = eTorqueMode::CONTROLLED;
+		eTorqueMode _torqueMode = eTorqueMode::NONE;
 
 		// Buffers for logging and reference state (not owned by RobotSystem)
 		robots::JointLogBuffer* _logBuffer = nullptr;
@@ -211,9 +211,12 @@ namespace robots {
 		VecX _robotQHome;							// home/reset joint positions
 		bool _robotHomeValid = false;				// is home position valid
 
-		// Link name to index map
+		// Index maps for quick lookup of links and joints by name
 		std::unordered_map<std::string, int> _linkIndex;
 		std::unordered_map<std::string, int> _jointIndex;
+		// List of joint indices that correspond to the robot's degrees of freedom (excluding fixed joints)
+		std::vector<size_t> _dofJointIndices; 
+
         std::string _loadedName;
 		int _currentJointIndex = -1;
 

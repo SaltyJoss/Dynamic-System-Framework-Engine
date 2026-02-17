@@ -484,9 +484,12 @@ namespace robots {
 				if (j_i.type == eJointType::FIXED) { continue; }
 
 				// Rotation from joint i frame to world frame
-				const Mat3 R_i = T_world[i].block<3, 3>(0, 0); // rotation from joint i frame to world frame
+				const Mat3 R_i = T_world[i + 1].block<3, 3>(0, 0); // rotation from joint i frame to world frame
 				const Vec3 z_i = R_i * j_i.axis;			   // joint axis in world frame
-				const Vec3 p_i = T_world[i].block<3, 1>(0, 3); // joint position in world frame
+				const Vec3 p_i = T_world[i + 1].block<3, 1>(0, 3); // joint position in world frame
+
+				// Only include contribution if joint i affects link k
+				if (k <= i) continue;
 
 				// Jacobian columns for joint i
 				Vec3 J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
@@ -499,9 +502,12 @@ namespace robots {
 					if (j_j.type == eJointType::FIXED) { continue; }
 
 					// Rotation from joint j frame to world frame
-					const Mat3 R_j = T_world[j].block<3, 3>(0, 0); // rotation from joint j frame to world frame
+					const Mat3 R_j = T_world[j + 1].block<3, 3>(0, 0); // rotation from joint j frame to world frame
 					const Vec3 z_j = R_j * j_j.axis;			   // joint axis in world frame
-					const Vec3 p_j = T_world[j].block<3, 1>(0, 3); // joint position in world frame
+					const Vec3 p_j = T_world[j + 1].block<3, 1>(0, 3); // joint position in world frame
+
+					// Only include contribution if joint i affects link k
+					if (k <= j) continue;
 
 					// Jacobian columns for joints i and j
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
@@ -530,6 +536,9 @@ namespace robots {
 
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& j = _robot.joints[i];
+			if (j.type == eJointType::FIXED) { continue; }
+
 			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
 
 			const Vec3 p_i = T_world[i].block<3, 1>(0, 3);
@@ -577,7 +586,9 @@ namespace robots {
 		case eTorqueMode::PASSIVE:
 			// Compute passive damping and friction torques
 			for (size_t i = 0; i < n; ++i) {
-				const auto& j	   = _robot.joints[i];
+				const RobotJoint& j = _robot.joints[i];
+				if (j.type == eJointType::FIXED) { continue; }
+
 				const double c     = j.dynamics.damping;
 				const double mu	   = j.dynamics.friction;
 				const double v_eps = 1e-2; // small velocity threshold for friction model
@@ -588,7 +599,8 @@ namespace robots {
 			break;
 		case eTorqueMode::CONTROLLED:
 			for (size_t i = 0; i < n; ++i) {
-				const auto& j = _robot.joints[i];
+				const RobotJoint& j = _robot.joints[i];
+				if (j.type == eJointType::FIXED) { continue; }
 
 				RobotMetrics m = computeJointMetrics(
 					j, _robot.links[i + 1],
@@ -725,39 +737,88 @@ namespace robots {
 
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
-		// Compute mass matrix M(q) for the current configuration
-		MatX M = computeMassMatrix(q, T_world);
 
-		double rcond = M.fullPivLu().rcond();
-		LOG_INFO_ONCE("Mass matrix rcond: %.6e", rcond);
+		// Compute mass matrix M(q)
+		MatX M_full = computeMassMatrix(q, T_world);
 
-		// detect singularity
-		if (!std::isfinite(rcond) || rcond < 1e-12) {
-			LOG_WARN_ONCE("Mass matrix is near singular!");
-		}
-
-		Eigen::JacobiSVD<MatX> svd(M);
-		LOG_INFO_ONCE("Min singular value: %.6e", svd.singularValues().minCoeff());
-
-		// Compute gravity torques G(q) for each joint
+		// Compute gravity torque
 		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
-		// Compute applied torques from control law and passive dynamics
 		VecX tau = computeAppliedTorques(q, qd, T_world);
 
-		// Compute gravity torques G(q) for each joint
-		VecX G(n);
-		for (size_t i = 0; i < n; ++i) { G[i] = tau_gravity[i]; }
-
-		// Solve for joint accelerations using a robust linear solver to handle potential singularities in the mass matrix (a problem I am having)
-		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
-		// Compute joint accelerations using inverse dynamics: qdd = M^-1 * (tau - G)
-		Eigen::VectorXd qdd = cod.solve(tau - G);
-
-		// Fill derivative vector: dx = [qd, qdd, eta_dot]
+		// Build list of active (non-fixed) joints
+		std::vector<int> active;
 		for (size_t i = 0; i < n; ++i) {
-			dx[i]	  = qd[i];	 // dtheta/dt = omega
-			dx[i + n] = qdd[i];	 // domega/dt = alpha
-			dx[i + 2 * n] = 0.0; // No integral state for integrator analysis, may find a way to correctly handle both :)
+			if (_robot.joints[i].type != eJointType::FIXED) {
+				active.push_back((int)i);
+			}
+		}
+		const size_t m = active.size();
+
+		// Build reduced system
+		MatX M(m, m);
+		VecX tau_r(m);
+		VecX G_r(m);
+
+		// Fill reduced mass matrix and torque vectors for active joints
+		for (size_t r = 0; r < m; ++r) {
+			int i = active[r];
+
+			tau_r[r] = tau[i];
+			G_r[r] = tau_gravity[i];
+
+			for (size_t c = 0; c < m; ++c) {
+				int j = active[c];
+				M(r, c) = M_full(i, j);
+			}
+		}
+
+		// Debugging info about the mass matrix
+		for (int i = 0; i < M.rows(); ++i) {
+			double rowNorm = M.row(i).norm();
+			LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
+		}
+
+		// Debugging info about the reduced system
+		LOG_INFO_ONCE("Reduced system size = %zu", m);
+
+		double rcond = M.fullPivLu().rcond();
+		LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
+
+		Eigen::JacobiSVD<MatX> svd(M);
+		LOG_INFO_ONCE("Reduced min singular value: %.6e",
+			svd.singularValues().minCoeff());
+
+		// Solved for qdd
+		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
+		Eigen::VectorXd qdd_r = cod.solve(tau_r - G_r);
+
+		// Expand qdd back to full size, filling zeros for fixed joints
+		Eigen::VectorXd qdd = Eigen::VectorXd::Zero(n);
+		for (size_t r = 0; r < m; ++r) {
+			qdd[active[r]] = qdd_r[r];
+		}
+
+		LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
+		LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
+		LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
+		LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
+
+		// Fill in derivatives for all joints
+		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& joint = _robot.joints[i];
+
+			// For fixed joints, the derivative of angle and velocity is zero
+			if (joint.type == eJointType::FIXED) {
+				dx[i] = 0.0;
+				dx[i + n] = 0.0;
+				dx[i + 2 * n] = 0.0;
+				continue;
+			}
+
+			// For revolute and prismatic joints, fill in the derivatives
+			dx[i] = qd[i];
+			dx[i + n] = qdd[i];
+			dx[i + 2 * n] = 0.0;
 		}
 
 		return dx;
@@ -807,6 +868,14 @@ namespace robots {
 
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& joint = _robot.joints[i];
+			// Arbitrary nonzero to avoid divide-by-zero
+			if (joint.type == eJointType::FIXED) {
+				I_eff[i] = 1.0;   
+				continue;
+			}
+
+			// Sum contributions to effective inertia from all links for joint i
 			for (size_t k = 0; k < _robot.links.size(); ++k) {
 				I_eff[i] += computeJointInertiaContribution(
 					_robot.joints[i],
@@ -936,7 +1005,16 @@ namespace robots {
 
 		// Load robot model from JSON
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
-		_hasRobot = true;
+
+		//// Extract DOF joint indices (non-fixed joints)
+		//_dofJointIndices.clear();
+		//for (size_t i = 0; i < _robot.joints.size(); ++i) {
+		//	if (_robot.joints[i].type != eJointType::FIXED) {
+		//		_dofJointIndices.push_back((int)i);
+		//	}
+		//}
+		//LOG_INFO("DOF count = %zu", _dofJointIndices.size());
+
 		_loadedName = name;
 		_baseIsFree = false;
 
@@ -959,6 +1037,10 @@ namespace robots {
 
 		instantiateRobotLinks();
 		buildLinkIndex();
+	
+		// Declare that we have a robot loaded
+		_hasRobot = true;
+		// Reset robot
 		resetRobot();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
