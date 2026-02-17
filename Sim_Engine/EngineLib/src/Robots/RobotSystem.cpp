@@ -456,7 +456,7 @@ namespace robots {
 	MatX RobotSystem::computeMassMatrix(
 		const std::vector<double>& q,
 		const std::vector<Pose>& T_world
-	) {
+	) const {
 		const size_t n = _robot.joints.size();
 		MatX M = MatX::Zero(n, n); // mass matrix to be computed
 
