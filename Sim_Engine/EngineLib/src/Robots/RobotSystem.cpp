@@ -480,6 +480,8 @@ namespace robots {
 			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j_i = _robot.joints[i];
+				// Skip fixed joints since they don't contribute to the mass matrix
+				if (j_i.type == eJointType::FIXED) { continue; }
 
 				// Rotation from joint i frame to world frame
 				const Mat3 R_i = T_world[i].block<3, 3>(0, 0); // rotation from joint i frame to world frame
@@ -493,6 +495,8 @@ namespace robots {
 				// Computes the contribution to the mass matrix from this link for joints i and j
 				for (size_t j = 0; j < n; ++j) {
 					const RobotJoint& j_j = _robot.joints[j];
+					// Skip fixed joints since they don't contribute to the mass matrix
+					if (j_j.type == eJointType::FIXED) { continue; }
 
 					// Rotation from joint j frame to world frame
 					const Mat3 R_j = T_world[j].block<3, 3>(0, 0); // rotation from joint j frame to world frame
@@ -723,6 +727,18 @@ namespace robots {
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 		// Compute mass matrix M(q) for the current configuration
 		MatX M = computeMassMatrix(q, T_world);
+
+		double rcond = M.fullPivLu().rcond();
+		LOG_INFO_ONCE("Mass matrix rcond: %.6e", rcond);
+
+		// detect singularity
+		if (!std::isfinite(rcond) || rcond < 1e-12) {
+			LOG_WARN_ONCE("Mass matrix is near singular!");
+		}
+
+		Eigen::JacobiSVD<MatX> svd(M);
+		LOG_INFO_ONCE("Min singular value: %.6e", svd.singularValues().minCoeff());
+
 		// Compute gravity torques G(q) for each joint
 		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
 		// Compute applied torques from control law and passive dynamics
@@ -732,8 +748,10 @@ namespace robots {
 		VecX G(n);
 		for (size_t i = 0; i < n; ++i) { G[i] = tau_gravity[i]; }
 
+		// Solve for joint accelerations using a robust linear solver to handle potential singularities in the mass matrix (a problem I am having)
+		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
 		// Compute joint accelerations using inverse dynamics: qdd = M^-1 * (tau - G)
-		Eigen::VectorXd qdd = M.ldlt().solve(tau - G);
+		Eigen::VectorXd qdd = cod.solve(tau - G);
 
 		// Fill derivative vector: dx = [qd, qdd, eta_dot]
 		for (size_t i = 0; i < n; ++i) {
