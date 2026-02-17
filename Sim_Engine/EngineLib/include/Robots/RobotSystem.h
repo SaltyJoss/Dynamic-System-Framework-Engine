@@ -132,6 +132,7 @@ namespace robots {
 
 		// Set the torque mode for the robot system
 		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
+		eTorqueMode getTorqueMode() const { return _torqueMode; }
 
 	private:
         void instantiateRobotLinks();
@@ -152,7 +153,7 @@ namespace robots {
 		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
 
 		// Compute the full mass matrix M(q) based on the current state and robot configuration
-		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world);
+		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
 		// Compute the gravity torque for a joint based on the current state and robot configuration
 		std::vector<double> computeGravityTorque(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
 

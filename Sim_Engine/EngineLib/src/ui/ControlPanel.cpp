@@ -416,25 +416,31 @@ namespace gui {
         ImGui::SectionHeader("Simulation Settings");
 		ImGui::SectionDivider();
 
-        ImGui::SectionHeader("Integration Method");
-        auto& phys = _sim->physicsSystem();
-        auto currentEnum = phys.getIntegrationMethod();
+		robots::RobotSystem* robot = _sim->robotSystem();
+        auto currentIntEnum = robot->getIntegrationMethod();
+		auto currentTauEnum = robot->getTorqueMode();
 
-        static const char* methodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
-        const char* currentMethod = methodNames[static_cast<int>(currentEnum)];
+        static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
+        const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
+
+		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
+		const char* currentTorqueMode = torqueModeNames[static_cast<int>(currentTauEnum)];
+
         
 		// Disable controls while sim is running to prevent conflicts and ensure stability of the simulations
 		ImGui::BeginDisabled(_sim->isSimRunning());
 
 		// Integration method combo box
+		ImGui::SectionHeader("Integration Method");
 		ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##", currentMethod)) {
-            for (int n = 0; n < IM_ARRAYSIZE(methodNames); ++n) {
-                bool isSelected = (n == static_cast<int>(currentEnum));
+        if (ImGui::BeginCombo("##", currentIntMethod)) {
+            for (int n = 0; n < IM_ARRAYSIZE(intMethodNames); ++n) {
+                bool isSelected = (n == static_cast<int>(currentIntEnum));
 
-                if (ImGui::Selectable(methodNames[n], isSelected)) {
+				// When a new method is selected, update the robot's integration method and log the change
+                if (ImGui::Selectable(intMethodNames[n], isSelected)) {
                     auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
-                    phys.setIntegrationMethod(updatedMethod);
+                    robot->setIntegrationMethod(updatedMethod);
 
                     switch (updatedMethod) {
                     case integration::eIntegrationMethod::Euler:
@@ -457,6 +463,34 @@ namespace gui {
             }
             ImGui::EndCombo();
         }
+
+		// Torque mode combo box
+		ImGui::SectionHeader("Torque Mode");
+		ImGui::SetNextItemWidth(150.0f);
+		if (ImGui::BeginCombo("##tau_mode", currentTorqueMode)) {
+			for (int n = 0; n < IM_ARRAYSIZE(torqueModeNames); ++n) {
+				bool isSelected = (n == static_cast<int>(currentTauEnum));
+
+				// When a new mode is selected, update the robot's torque mode and log the change
+				if (ImGui::Selectable(torqueModeNames[n], isSelected)) {
+					auto updatedMode = static_cast<robots::eTorqueMode>(n);
+					robot->setTorqueMode(updatedMode);
+
+					switch (updatedMode) {
+					case robots::eTorqueMode::NONE:
+						D_INFO("Torque mode set to None"); break;
+					case robots::eTorqueMode::PASSIVE:
+						D_INFO("Torque mode set to Passive"); break;
+					case robots::eTorqueMode::CONTROLLED:
+						D_INFO("Torque mode set to Controlled"); break;
+					default:
+						break;
+					}
+				}
+				if (isSelected) { ImGui::SetItemDefaultFocus(); }
+			}
+			ImGui::EndCombo();
+		}
 		ImGui::EndDisabled();
 
 		// Delta time controls
