@@ -575,7 +575,8 @@ namespace robots {
 	VecX RobotSystem::computeAppliedTorques(
 		const std::vector<double>& q,
 		const std::vector<double>& qd,
-		const std::vector<Pose>& T_world
+		const std::vector<Pose>& T_world,
+		std::vector<double> I_eff
 	) const {
 		const size_t n = _robot.joints.size();
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
@@ -598,13 +599,16 @@ namespace robots {
 			}
 			break;
 		case eTorqueMode::CONTROLLED:
+			// State-Consistent effective inertia
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j = _robot.joints[i];
 				if (j.type == eJointType::FIXED) { continue; }
 
+				LOG_INFO("Joint %zu: I_eff = %.4f kg*m^2", i, I_eff[i]);
+
 				RobotMetrics m = computeJointMetrics(
 					j, _robot.links[i + 1],
-					1.0,
+					I_eff[i],
 					q[i], qd[i], 0.0,
 					j.thetaRefRad, j.omegaRefRad_s, j.alphaRefRad_s2,
 					0.0, 0.0
@@ -738,12 +742,21 @@ namespace robots {
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
+
+		std::vector<double> I_eff(n, 0.0);
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t k = 0; k < _robot.links.size(); ++k) {
+				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
+			}
+			I_eff[i] = std::max(I_eff[i], 1e-6);
+		}
+
 		// Compute mass matrix M(q)
 		MatX M_full = computeMassMatrix(q, T_world);
 
 		// Compute gravity torque
 		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
-		VecX tau = computeAppliedTorques(q, qd, T_world);
+		VecX tau = computeAppliedTorques(q, qd, T_world, I_eff);
 
 		// Build list of active (non-fixed) joints
 		std::vector<int> active;

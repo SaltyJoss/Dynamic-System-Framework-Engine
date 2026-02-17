@@ -161,7 +161,8 @@ namespace robots {
 		VecX computeAppliedTorques(
 			const std::vector<double>& q,
 			const std::vector<double>& qd,
-			const std::vector<Pose>& T_world
+			const std::vector<Pose>& T_world,
+			std::vector<double> I_eff
 		) const;
 
 		// Compute control and dynamics metrics for a specific joint based on the current state and reference
