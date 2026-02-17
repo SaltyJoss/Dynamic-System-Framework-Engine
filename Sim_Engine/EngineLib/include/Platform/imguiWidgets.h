@@ -9,7 +9,7 @@
 
 namespace ImGui {
 	// Draggable horizontal splitter for resizable panels
-	static float hSplitter(const char* id, float* h, float minH = 200.0f, float maxH = 0.0f, float thickness = 2.0f) {
+	inline float hSplitter(const char* id, float* h, float minH = 200.0f, float maxH = 0.0f, float thickness = 2.0f) {
 		if (maxH <= 0.0f) { maxH = GetContentRegionAvail().y; }
 
 		// Get the current cursor position in screen coordinates
@@ -47,7 +47,7 @@ namespace ImGui {
 	}
 
 	// Draggable vertical splitter for resizable panels
-	static float vSplitter(const char* id, float* w, float minW = 200.0f, float maxW = 0.0f, float thickness = 2.0f) {
+	inline float vSplitter(const char* id, float* w, float minW = 200.0f, float maxW = 0.0f, float thickness = 2.0f) {
 		if (maxW <= 0.0f) { maxW = GetContentRegionAvail().x; }
 
 		// Get the current cursor position in screen coordinates
@@ -85,14 +85,14 @@ namespace ImGui {
 	}
 
 	// Draw a section divider with spacing
-	static void SectionDivider() {
+	inline void SectionDivider() {
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 	}
 
 	// Segmented Button Row Helper
-	static bool SegmentedButtonRow(const char* label, const char* const* items, int itemCount, int& current, float buttonWidth) {
+	inline bool SegmentedButtonRow(const char* label, const char* const* items, int itemCount, int& current, float buttonWidth) {
 		ImGui::TextUnformatted(label);
 
 		// Track if selection changed
@@ -127,7 +127,7 @@ namespace ImGui {
 	}
 
 	// Reusable section header
-	static void SectionHeader(const char* text, const ImVec4& color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f)) {
+	inline void SectionHeader(const char* text, const ImVec4& color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f)) {
 		ImGui::Spacing();
 
 		// Get draw list and position for custom drawing
@@ -194,7 +194,7 @@ namespace ImGui {
 
 		// Limits for k to prevent unreasonable values
 		const int MIN_K = 1;
-		const int MAX_K = isTelem ? 10 : 40;
+		const int MAX_K = isTelem ? 10 : 100;
 
 		// Format denominator text
 		char denomBuf[32];

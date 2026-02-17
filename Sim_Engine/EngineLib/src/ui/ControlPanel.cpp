@@ -1546,8 +1546,8 @@ namespace gui {
 		for (int k = 0; k < sampleCount; ++k) {
 			const auto& s = ring.at(k);
 			rX[k]   = (float)s.timeSec;
-			rRms[k] = s.err_rms;
-			rMax[k] = s.err_max;
+			rRms[k] = (float) s.err_rms;
+			rMax[k] = (float)s.err_max;
 			rCs[k]  = (float)s.clamp_sum;
 
 			const int m = std::min(jointCount, (int)s.j.size());

@@ -99,7 +99,7 @@ namespace robots {
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);
-		void updateTrajectoryInputs(control::TrajectoryManager& traj, double dt, double t);
+		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
 

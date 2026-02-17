@@ -862,7 +862,7 @@ namespace robots {
 	}
 
 	// Method to step the reference trajectory and update joint reference states
-	void RobotSystem::updateTrajectoryInputs(control::TrajectoryManager& traj, double dt, double t) {
+	void RobotSystem::updateTrajectoryInputs(control::TrajectoryManager& traj, double t) {
 		if (!_hasRobot) { return; }
 		
 		const size_t n = _robot.joints.size();

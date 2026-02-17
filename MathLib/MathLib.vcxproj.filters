@@ -146,9 +146,6 @@
     <ClCompile Include="MathLib\src\integrators\Integration.cpp">
       <Filter>Source Files\src\integrators</Filter>
     </ClCompile>
-    <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp">
-      <Filter>Source Files\src\integrators</Filter>
-    </ClCompile>
     <ClCompile Include="MathLib\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
