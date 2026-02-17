@@ -452,49 +452,64 @@ namespace robots {
 		return std::max(I, 1e-6); // [kg*m^2], I_eff for joint i with floor to avoid singularities
 	}
 
-	// Method to compute the diagonal Coriolis/centrifugal term for each joint using finite differences on the effective inertia
-	std::vector<double> RobotSystem::computeCoriolisDiagonal( 
-		const std::vector<double>& theta,
-		const std::vector<double>& omega,
-		const std::vector<double>& I_eff
-	) const {
+	// Method to compute the full mass matrix M(q) for the robot using the composite rigid body algorithm
+	MatX RobotSystem::computeMassMatrix(
+		const std::vector<double>& q,
+		const std::vector<Pose>& T_world
+	) {
 		const size_t n = _robot.joints.size();
-		std::vector<double> tau_C(n, 0.0);
+		MatX M = MatX::Zero(n, n); // mass matrix to be computed
 
-		// Small perturbation for finite difference approximation
-		constexpr double eps = 1e-6;
+		// Compute its contribution to the mass matrix for each link - based on its mass, inertia, and Jacobian columns for each joint
+		for (size_t k = 0; k < _robot.links.size(); ++k) {
+			const RobotLink& link = _robot.links[k];
+			const double m = link.inertial.mass;
 
-		// Cache forward kinematics for current state
-		mathlib::VecX x = packState();
-		for (size_t k = 0; k < theta.size(); ++k) { x[k] = theta[k]; }
-		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
+			// Skip massless links
+			if (m <= 0.0) { continue; }
+			
+			// Rotation and position of the link in world frame
+			const Mat3 R   = T_world[k].block<3, 3>(0, 0);  // Rotation from link frame to world frame
+			const Vec3 p   = T_world[k].block<3, 1>(0, 3);  // Center of mass of the link in world frame
+			const Vec3 com = R * link.inertial.com_xyz + p; // Center of mass in world frame
 
-		// Computes the partial derivative of the effective inertia with respect to that joint angle using finite differences, then computes the diagonal Coriolis/centrifugal term
-		for (size_t i = 0; i < n; ++i) {
-			// Create a perturbed copy of the joint angles
-			std::vector<double> theta_pert = theta;
-			// Perturb joint i by a small amount
-			theta_pert[i] += eps;
+			// Inertia tensor of the link in world frame
+			Mat3 I_local = computeLinkInertiaTensor(link); // inertia tensor in link frame
+			Mat3 I_world = R * I_local * R.transpose();	   // inertia tensor in world frame
 
-			// Only perturb FK for joint i
-			mathlib::VecX x_pert = x;
-			x_pert[i] = theta_pert[i];
-			std::vector<Pose> T_world_pert = computeForwardKinematics_fromState(x_pert);
+			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
+			for (size_t i = 0; i < n; ++i) {
+				const RobotJoint& j_i = _robot.joints[i];
 
-			// Compute perturbed effective inertia for joint i
-			double I_pert = 0.0;
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				I_pert += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world_pert[k]);
+				// Rotation from joint i frame to world frame
+				const Mat3 R_i = T_world[i].block<3, 3>(0, 0); // rotation from joint i frame to world frame
+				const Vec3 z_i = R_i * j_i.axis;			   // joint axis in world frame
+				const Vec3 p_i = T_world[i].block<3, 1>(0, 3); // joint position in world frame
+
+				// Jacobian columns for joint i
+				Vec3 J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
+				Vec3 J_wi = z_i;				  // angular velocity Jacobian column for joint i
+
+				// Computes the contribution to the mass matrix from this link for joints i and j
+				for (size_t j = 0; j < n; ++j) {
+					const RobotJoint& j_j = _robot.joints[j];
+
+					// Rotation from joint j frame to world frame
+					const Mat3 R_j = T_world[j].block<3, 3>(0, 0); // rotation from joint j frame to world frame
+					const Vec3 z_j = R_j * j_j.axis;			   // joint axis in world frame
+					const Vec3 p_j = T_world[j].block<3, 1>(0, 3); // joint position in world frame
+
+					// Jacobian columns for joints i and j
+					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
+					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
+					// Mass matrix contribution from this link for joints i and j
+
+					// Mass matrix contribution from this link for joints i and j
+					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj;
+				}
 			}
-			I_pert = std::max(I_pert, 1e-6);
-
-			// Finite difference approximation of dI/dq_i
-			double dI_dqi = (I_pert - I_eff[i]) / eps;
-
-			// Coriolis/centrifugal torque contribution for joint i (diagonal term)
-			tau_C[i] = 0.5 * dI_dqi * omega[i] * omega[i];
 		}
-		return tau_C; // [Nm], diagonal Coriolis/centrifugal terms for each joint
+		return M; // [kg*m^2], mass matrix for the robot at configuration q
 	}
 
 	// Method to compute the gravity torque for each joint
@@ -544,12 +559,54 @@ namespace robots {
 		return tau_G; // [Nm], gravity torques for each joint
 	}
 
+	VecX RobotSystem::computeAppliedTorques(
+		const std::vector<double>& q,
+		const std::vector<double>& qd,
+		const std::vector<Pose>& T_world
+	) const {
+		const size_t n = _robot.joints.size();
+		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
+
+		switch (_torqueMode) {
+		case eTorqueMode::NONE:
+			break;
+		case eTorqueMode::PASSIVE:
+			// Compute passive damping and friction torques
+			for (size_t i = 0; i < n; ++i) {
+				const auto& j	   = _robot.joints[i];
+				const double c     = j.dynamics.damping;
+				const double mu	   = j.dynamics.friction;
+				const double v_eps = 1e-2; // small velocity threshold for friction model
+
+				tau[i] -= c * qd[i]; // viscous damping
+				tau[i] -= mu * std::tanh(qd[i] / v_eps); // Coulomb friction with a small velocity threshold
+			}
+			break;
+		case eTorqueMode::CONTROLLED:
+			for (size_t i = 0; i < n; ++i) {
+				const auto& j = _robot.joints[i];
+
+				RobotMetrics m = computeJointMetrics(
+					j, _robot.links[i + 1],
+					1.0,
+					q[i], qd[i], 0.0,
+					j.thetaRefRad, j.omegaRefRad_s, j.alphaRefRad_s2,
+					0.0, 0.0
+				);
+
+				tau[i] = m.tau;
+			}
+			break;
+		}
+		return tau; // [Nm], applied torques for each joint
+	}
+
 	// Method to compute joint metrics for control
 	RobotMetrics RobotSystem::computeJointMetrics(
 		const RobotJoint& joint, const RobotLink& /*link*/, double I_eff, 
-		double theta, double omega, 
+		double theta, double omega, double eta,
 		double thetaRef, double omegaRef, double alphaRef, 
-		double eta, double tau_coriolis, double tau_gravity
+		double tau_coriolis, double tau_gravity
 	) const {
 		RobotMetrics m{};
 
@@ -647,9 +704,6 @@ namespace robots {
 		m.traj_overspeed = std::max(0.0, std::abs(omega) - wMax_traj);
 		m.traj_overspeed_flag = (m.traj_overspeed > 0.05); // 0.05 rad/s threshold
 
-		// Final angular acceleration
-		m.alpha = m.tau / m.I_eff;
-
 		return m;
 	}
 
@@ -665,79 +719,29 @@ namespace robots {
 			qd[i] = x[i + n];
 		}
 
-		// FK at x
+		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
-
-		// State-Consistent effective inertia
-		std::vector<double> I_eff(n, 0.0);
-		for (size_t i = 0; i < n; ++i) {
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
-			}
-			I_eff[i] = std::max(I_eff[i], 1e-6);
-		}
-
-		// State-consistent Coriolis/centrifugal term
-		std::vector<double> tau_coriolis = computeCoriolisDiagonal(q, qd, I_eff);
-		
-		// State-consistent gravity term
+		// Compute mass matrix M(q) for the current configuration
+		MatX M = computeMassMatrix(q, T_world);
+		// Compute gravity torques G(q) for each joint
 		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
-		
-		// Log gravity torques for debugging
-		if (tau_gravity.size() >= 3) {
-			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f, %.3f",
-				(float)_gravity, tau_gravity[0], tau_gravity[1], tau_gravity[2]);
-		}
-		else if (tau_gravity.size() == 2) {
-			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f, %.3f",
-				(float)_gravity, tau_gravity[0], tau_gravity[1]);
-		}
-		else if (tau_gravity.size() == 1) {
-			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: %.3f",
-				(float)_gravity, tau_gravity[0]);
-		}
-		else {
-			LOG_INFO_ONCE("Gravity Constant: %.3f, Gravity Torque: (none)",
-				(float)_gravity);
-		}
+		// Compute applied torques from control law and passive dynamics
+		VecX tau = computeAppliedTorques(q, qd, T_world);
 
-		// Loop through each joint and compute derivatives
+		// Compute gravity torques G(q) for each joint
+		VecX G(n);
+		for (size_t i = 0; i < n; ++i) { G[i] = tau_gravity[i]; }
+
+		// Compute joint accelerations using inverse dynamics: qdd = M^-1 * (tau - G)
+		Eigen::VectorXd qdd = M.ldlt().solve(tau - G);
+
+		// Fill derivative vector: dx = [qd, qdd, eta_dot]
 		for (size_t i = 0; i < n; ++i) {
-			// Current states
-			const double theta = x[i];
-			const double omega = x[i + n];
-			const double eta   = x[i + 2 * n];
-
-			// Current joint
-			const RobotJoint& joint = _robot.joints[i];
-			const RobotLink& link   = _robot.links[i+1];
-
-			// Fixed joints have no dynamics
-			if (joint.type == eJointType::FIXED) {
-				dx[i] = 0.0;
-				dx[i + n] = 0.0;
-				dx[i + 2 * n] = 0.0;
-				continue;
-			}
-
-			// Use integrated reference (baseline truth)
-			const double thetaRef = joint.thetaRefRad;
-			const double omegaRef = joint.omegaRefRad_s;
-			const double alphaRef = joint.alphaRefRad_s2;
-
-			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(
-				joint, link, I_eff[i], 
-				theta, omega, 
-				thetaRef, omegaRef, alphaRef, 
-				eta, tau_coriolis[i], tau_gravity[i]
-			);
-
-			// Fill in derivatives
-			dx[i]		  = omega;	 // dtheta/dt = omega
-			dx[i + n]     = m.alpha; // domega/dt = alpha
-			dx[i + 2 * n] = m.err; 	 // deta/dt   = e(t)
+			dx[i]	  = qd[i];	 // dtheta/dt = omega
+			dx[i + n] = qdd[i];	 // domega/dt = alpha
+			dx[i + 2 * n] = 0.0; // No integral state for integrator analysis, may find a way to correctly handle both :)
 		}
+
 		return dx;
 	}
 

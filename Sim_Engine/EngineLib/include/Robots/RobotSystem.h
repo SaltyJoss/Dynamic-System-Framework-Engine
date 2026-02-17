@@ -23,6 +23,13 @@ namespace robots {
 		Baseline
 	};
 
+	// Dynamics Mode
+	enum class eTorqueMode {
+		NONE,		// No physics simulation, just kinematics (e.g., for testing, mathematical analysis, or kinematic control)
+		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
+		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
+	};
+
 	class ENGINE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
@@ -88,14 +95,6 @@ namespace robots {
 
 		bool tryZeroJointRefDerivatives();
 
-		// Compute control and dynamics metrics for a specific joint based on the current state and reference
-		RobotMetrics computeJointMetrics(
-			const RobotJoint& joint, const RobotLink& link, double I_eff,
-			double theta, double omega,
-			double thetaRef, double omegaRef, double alphaRef,
-			double eta, double tau_coriolis, double tau_gravity
-		) const;
-
 		// --- SIMULATION STEP METHOD ---
 
 		void step(double dt, double simTime);
@@ -131,6 +130,9 @@ namespace robots {
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
 		void setRole(eRole role) { _role = role; }
 
+		// Set the torque mode for the robot system
+		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -148,10 +150,26 @@ namespace robots {
 		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
 		// Compute the effective inertia for each joint based on the current state and robot configuration
 		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
-		// Compute the contribution of a link to the inertia of a joint based on the current state
-		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
+
+		// Compute the full mass matrix M(q) based on the current state and robot configuration
+		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world);
 		// Compute the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const;
+		std::vector<double> computeGravityTorque(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
+
+		// Computes the control torque for a joint based on the current state, reference, and robot configuration
+		VecX computeAppliedTorques(
+			const std::vector<double>& q,
+			const std::vector<double>& qd,
+			const std::vector<Pose>& T_world
+		) const;
+
+		// Compute control and dynamics metrics for a specific joint based on the current state and reference
+		RobotMetrics computeJointMetrics(
+			const RobotJoint& joint, const RobotLink& link, double I_eff,
+			double q, double qd,
+			double q_ref, double qd_ref, double qdd_ref,
+			double eta, double tau_coriolis, double tau_g
+		) const;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;
@@ -177,8 +195,11 @@ namespace robots {
 		// Simulation time
 		double _simTime = 0.0;
 
-		// Robot model and log buffer
+		// Robot model, and robot mode
         RobotModel _robot;
+		eTorqueMode _torqueMode = eTorqueMode::CONTROLLED;
+
+		// Buffers for logging and reference state (not owned by RobotSystem)
 		robots::JointLogBuffer* _logBuffer = nullptr;
 		robots::TrajRefBuffer*  _refBuffer = nullptr;
 
