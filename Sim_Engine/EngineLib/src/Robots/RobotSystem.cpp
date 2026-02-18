@@ -576,7 +576,8 @@ namespace robots {
 		const std::vector<double>& q,
 		const std::vector<double>& qd,
 		const std::vector<Pose>& T_world,
-		std::vector<double> I_eff
+		std::vector<double> I_eff,
+		std::vector<double> tau_gravity
 	) const {
 		const size_t n = _robot.joints.size();
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
@@ -602,16 +603,15 @@ namespace robots {
 				const RobotJoint& j = _robot.joints[i];
 				if (j.type == eJointType::FIXED) { continue; }
 
-				LOG_INFO("Joint %zu: I_eff = %.4f kg*m^2", i, I_eff[i]);
+				//LOG_INFO("Joint %zu: I_eff = %.4f kg*m^2", i, I_eff[i]);
 
 				RobotMetrics m = computeJointMetrics(
 					j, _robot.links[i + 1],
 					I_eff[i],
 					q[i], qd[i], 0.0,
 					j.thetaRefRad, j.omegaRefRad_s, j.alphaRefRad_s2,
-					0.0, 0.0
+					0.0, tau_gravity[i]
 				);
-
 				tau[i] = m.tau;
 			}
 			break;
@@ -628,6 +628,12 @@ namespace robots {
 	) const {
 		RobotMetrics m{};
 		if (_torqueMode == eTorqueMode::NONE) {
+			// Current states
+			m.theta = theta;	   // [rad]
+			m.omega = omega;	   // [rad/s]
+			// Effective inertia
+			m.I_eff = I_eff; // [kg*m^2]
+			// Control parameters
 			m.tau = 0.0;
 			m.tau_fb = 0.0;
 			m.tau_coriolis = 0.0;
@@ -639,7 +645,6 @@ namespace robots {
 
 			return m;
 		}
-
 
 		// Current states
 		m.theta = theta;	   // [rad]
@@ -756,11 +761,15 @@ namespace robots {
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = computeForwardKinematics_fromState(x);
 
-
+		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);
 		for (size_t i = 0; i < n; ++i) {
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				I_eff[i] += computeJointInertiaContribution(_robot.joints[i], _robot.links[k], T_world[k]);
+			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
+				I_eff[i] += computeJointInertiaContribution(
+					_robot.joints[i],
+					_robot.links[k],
+					T_world[k]
+				);
 			}
 			I_eff[i] = std::max(I_eff[i], 1e-6);
 		}
@@ -778,7 +787,7 @@ namespace robots {
 		VecX tau = VecX::Zero(n);
 		if (_torqueMode != eTorqueMode::NONE) {
 			// Compute applied torques based on control mode
-			tau = computeAppliedTorques(q, qd, T_world, I_eff);
+			tau = computeAppliedTorques(q, qd, T_world, I_eff, tau_gravity);
 		}
 
 		// Build list of active (non-fixed) joints
@@ -862,6 +871,10 @@ namespace robots {
 			dx[i + n] = qdd[i];
 			dx[i + 2 * n] = 0.0;
 		}
+
+		LOG_INFO_ONCE("qd[0] = %.6f", qd[0]);
+		LOG_INFO_ONCE("qd[1] = %.6f", qd[1]);
+		LOG_INFO_ONCE("qd[2] = %.6f", qd[2]);
 
 		return dx;
 	}
@@ -1346,6 +1359,25 @@ namespace robots {
 		}
 		return false;
 	}
+
+	// Method to directly inject an angular velocity into the state vector for a specific robot joint (bypassing any clamping or limits)
+	bool RobotSystem::injectJointOmegaRad(const std::string& childLink, double omega) {
+		if (!_hasRobot) return false;
+		const size_t n = _robot.joints.size();
+		// Find joint child matching childLink
+		for (size_t i = 0; i < n; ++i) {
+			if (_robot.joints[i].child == childLink) {
+				// Modify actual state vector
+				mathlib::VecX x = packState();
+				x[i + n] = omega;  // velocity slot
+				LOG_INFO("Injecting omega=%.3f rad/s into joint '%s'", omega, childLink.c_str());
+				unpackState(x);
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	// Method to get the target angle (reference) of a specific robot joint in radians
 	bool RobotSystem::tryGetJointTargetRad(const std::string& childLink, double& outTargetRad) const {

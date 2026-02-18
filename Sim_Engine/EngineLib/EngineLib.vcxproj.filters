@@ -534,6 +534,9 @@
     <ClInclude Include="include\Analysis\MetricLogger.h">
       <Filter>Header Files\include\Analysis</Filter>
     </ClInclude>
+    <ClInclude Include="include\Interpreter\Commands\SetOmegaCmd.h">
+      <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -745,6 +748,9 @@
     </ClCompile>
     <ClCompile Include="..\External\stb\stb_image_write_impl.cpp">
       <Filter>External\stb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Interpreter\Commands\SetOmegaCmd.cpp">
+      <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

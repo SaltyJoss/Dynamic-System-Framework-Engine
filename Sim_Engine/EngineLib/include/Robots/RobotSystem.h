@@ -73,6 +73,7 @@ namespace robots {
 
         bool tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, double omegaRad);
+		bool injectJointOmegaRad(const std::string& childLink, double omega);
 
 		bool tryGetJointTargetRad(const std::string& childLink, double& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, double targetRad);
@@ -162,7 +163,8 @@ namespace robots {
 			const std::vector<double>& q,
 			const std::vector<double>& qd,
 			const std::vector<Pose>& T_world,
-			std::vector<double> I_eff
+			std::vector<double> I_eff,
+			std::vector<double> tau_gravity
 		) const;
 
 		// Compute control and dynamics metrics for a specific joint based on the current state and reference
