@@ -582,8 +582,6 @@ namespace robots {
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
 
 		switch (_torqueMode) {
-		case eTorqueMode::NONE:
-			break;
 		case eTorqueMode::PASSIVE:
 			// Compute passive damping and friction torques
 			for (size_t i = 0; i < n; ++i) {
@@ -629,6 +627,19 @@ namespace robots {
 		double tau_coriolis, double tau_gravity
 	) const {
 		RobotMetrics m{};
+		if (_torqueMode == eTorqueMode::NONE) {
+			m.tau = 0.0;
+			m.tau_fb = 0.0;
+			m.tau_coriolis = 0.0;
+			m.tau_gravity = 0.0;
+			m.tau_damping = 0.0;
+			m.tau_friction = 0.0;
+			m.tau_sat = 0.0;
+			m.tau_barrier = 0.0;
+
+			return m;
+		}
+
 
 		// Current states
 		m.theta = theta;	   // [rad]
@@ -688,8 +699,8 @@ namespace robots {
 		m.tau_fb = tau_fb;
 		m.tau_coriolis = tau_coriolis;
 		m.tau_gravity = tau_gravity;
-		m.tau_damping = tau_damping;
-		m.tau_friction = tau_friction;
+		m.tau_damping = tau_damping;   // [+] viscous damping torque
+		m.tau_friction = tau_friction; // [+] Coulomb friction torque
 
 		// Hip reaction compensation (if base is free-floating, apply a fraction of the last measured base forward force as a counter-torque to the hip pitch joint to help stabilise the base)
 		if (_baseIsFree && joint.name.find("hip_pitch") != std::string::npos) {
@@ -697,32 +708,35 @@ namespace robots {
 			m.tau -= hipReactionGain * _lastBaseForwardForce;
 		}
 
-		double tau_preSat = m.tau;
+		if (_torqueMode == eTorqueMode::CONTROLLED) {
+			double tau_preSat = m.tau;
 
-		// Effort clamp
-		if (joint.limits.maxEffort > 0.0f) {
-			const double E_max = joint.limits.maxEffort;
-			m.tau = std::clamp(m.tau, -E_max, E_max);
+			// Effort clamp
+			if (joint.limits.maxEffort > 0.0f) {
+				const double E_max = joint.limits.maxEffort;
+				m.tau = std::clamp(m.tau, -E_max, E_max);
+			}
+
+
+			m.tau_sat = tau_preSat - m.tau;
+			m.sat_flag = (m.tau_sat != 0.0);
+
+			// Velocity soft limit
+			const double wMax_hw = std::abs(joint.limits.maxOmegaRad_s);
+			const double wMax_traj = std::abs(joint.limits.omegaRefMaxRad_s); // or derived from trajectory manager
+
+			double tau_preBarrier = m.tau;
+
+			// Apply soft velocity barrier
+			applyOmegaBarrier(m.tau, omega, wMax_hw, m.I_eff);
+
+			m.tau_barrier = tau_preBarrier - m.tau;
+
+			m.wMax_hw = wMax_hw;
+			m.wMax_traj = wMax_traj;
+			m.traj_overspeed = std::max(0.0, std::abs(omega) - wMax_traj);
+			m.traj_overspeed_flag = (m.traj_overspeed > 0.05); // 0.05 rad/s threshold
 		}
-
-		m.tau_sat = tau_preSat - m.tau;
-		m.sat_flag = (m.tau_sat != 0.0);
-
-		// Velocity soft limit
-		const double wMax_hw = std::abs(joint.limits.maxOmegaRad_s);
-		const double wMax_traj = std::abs(joint.limits.omegaRefMaxRad_s); // or derived from trajectory manager
-
-		double tau_preBarrier = m.tau;
-
-		// Apply soft velocity barrier
-		applyOmegaBarrier(m.tau, omega, wMax_hw, m.I_eff);
-
-		m.tau_barrier = tau_preBarrier - m.tau;
-
-		m.wMax_hw = wMax_hw;
-		m.wMax_traj = wMax_traj;
-		m.traj_overspeed = std::max(0.0, std::abs(omega) - wMax_traj);
-		m.traj_overspeed_flag = (m.traj_overspeed > 0.05); // 0.05 rad/s threshold
 
 		return m;
 	}
@@ -754,9 +768,18 @@ namespace robots {
 		// Compute mass matrix M(q)
 		MatX M_full = computeMassMatrix(q, T_world);
 
-		// Compute gravity torque
-		std::vector<double> tau_gravity = computeGravityTorque(q, T_world);
-		VecX tau = computeAppliedTorques(q, qd, T_world, I_eff);
+		std::vector<double> tau_gravity{ 0.0 };
+
+		if (_torqueMode != eTorqueMode::NONE) {
+			// Compute gravity torque
+			tau_gravity = computeGravityTorque(q, T_world);
+		}
+
+		VecX tau = VecX::Zero(n);
+		if (_torqueMode != eTorqueMode::NONE) {
+			// Compute applied torques based on control mode
+			tau = computeAppliedTorques(q, qd, T_world, I_eff);
+		}
 
 		// Build list of active (non-fixed) joints
 		std::vector<int> active;
@@ -769,8 +792,8 @@ namespace robots {
 
 		// Build reduced system
 		MatX M(m, m);
-		VecX tau_r(m);
-		VecX G_r(m);
+		VecX tau_r = VecX::Zero(m);
+		VecX G_r = VecX::Zero(m);
 
 		// Fill reduced mass matrix and torque vectors for active joints
 		for (size_t r = 0; r < m; ++r) {
@@ -803,7 +826,13 @@ namespace robots {
 
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
-		Eigen::VectorXd qdd_r = cod.solve(tau_r - G_r);
+		VecX qdd_r;
+		if (_torqueMode == eTorqueMode::NONE) {
+			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
+		}
+		else {
+			qdd_r = cod.solve(tau_r - G_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
+		}
 
 		// Expand qdd back to full size, filling zeros for fixed joints
 		Eigen::VectorXd qdd = Eigen::VectorXd::Zero(n);
@@ -1553,7 +1582,6 @@ namespace robots {
 		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)",
 			_baseVel.x(), _baseVel.y(), _baseVel.z()
 		);
-
 	}
 
 	// Method to update the robot root pose based on the integrated base translation (for legged robots)
