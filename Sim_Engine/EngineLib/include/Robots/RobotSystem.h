@@ -150,8 +150,6 @@ namespace robots {
 
 		// Forward kinematics computation
 		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
-		// Compute the effective inertia for each joint based on the current state and robot configuration
-		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
 
 		// Compute the full mass matrix M(q) based on the current state and robot configuration
 		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
@@ -162,6 +160,7 @@ namespace robots {
 		VecX computeAppliedTorques(
 			const std::vector<double>& q,
 			const std::vector<double>& qd,
+			const std::vector<double>& eta,
 			const std::vector<Pose>& T_world,
 			std::vector<double> I_eff,
 			std::vector<double> tau_gravity
@@ -170,9 +169,9 @@ namespace robots {
 		// Compute control and dynamics metrics for a specific joint based on the current state and reference
 		RobotMetrics computeJointMetrics(
 			const RobotJoint& joint, const RobotLink& link, double I_eff,
-			double q, double qd,
+			double q, double qd, double eta,
 			double q_ref, double qd_ref, double qdd_ref,
-			double eta, double tau_coriolis, double tau_g
+			double tau_coriolis, double tau_g
 		) const;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration

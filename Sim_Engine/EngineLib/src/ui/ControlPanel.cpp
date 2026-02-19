@@ -502,9 +502,9 @@ namespace gui {
 		ImGui::BeginGroup();
 		ImGui::Text("Simulation dt:");
 
-		static int k = 3;
+		static int k = 6;
 		if (ImGui::DragDtFraction("##simDtDrag", k, false)) {
-			int x = 60 * k;
+			int x = 30 * k;
 			double dt = 1.0 / (double)x;
 			_sim->setFixedDt(dt);
 		}
@@ -517,9 +517,9 @@ namespace gui {
 		ImGui::BeginGroup();
 		ImGui::Text("Telemetry dt:");
 		
-		static int k_tel = 2;
+		static int k_tel = 4;
 		if (ImGui::DragDtFraction("##telDtDrag", k_tel, true)) {
-			int x = 60 * k_tel;
+			int x = 30 * k_tel;
 			_sim->setTelemetryHz(x);
 		}
 		ImGui::EndGroup();
