@@ -401,7 +401,7 @@ namespace robots {
 		}
 
 		// Load robot scale (default 1.0)
-		robot.scale = data["scale"].get<double>();
+		robot.scale = data["scale"].get<float>();
 
 		// Load base frame if present
 		if (data.contains("base_frame")) {
@@ -510,8 +510,6 @@ namespace robots {
 				j.origin_xyz.z()
 			);
 		}
-
-
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

@@ -1185,7 +1185,7 @@ namespace gui {
 				updatePhysics(_dt);
 				if (hasRobot()) {
 					// Update Trajector Inputs
-					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _dt, _simTime);
+					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _simTime);
 					// Step robot system
 					_impl->_robotSystem->step(_dt, _simTime);
 
@@ -1439,7 +1439,7 @@ namespace gui {
 
 				if (hasRobot()) {
 					// Update Trajectory Inputs
-					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, dt, _simTime);
+					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _simTime);
 
 					// Step robot system
 					_impl->_robotSystem->step(dt, _simTime);

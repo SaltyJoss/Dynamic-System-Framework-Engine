@@ -2,7 +2,6 @@
 // File:   TrajSetCmd.cpp
 // GitHub: SaltyJoss
 #include "Interpreter/Commands/TrajSetCmd.h"
-#include "Interpreter/CommandContextMotion.h"
 #include "Scene/SimulationManager.h"
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"

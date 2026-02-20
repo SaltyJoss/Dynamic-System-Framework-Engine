@@ -143,7 +143,6 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClCompile Include="MathLib\src\dynamics\StateSpace.cpp" />
     <ClCompile Include="MathLib\src\integrators\Integration.cpp" />
     <ClCompile Include="MathLib\src\integrators\IntegrationAnalysis.cpp" />
-    <ClCompile Include="MathLib\src\integrators\numerical_integrators.cpp" />
     <ClCompile Include="MathLib\src\kinematics\DH_Params.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp" />
