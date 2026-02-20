@@ -194,7 +194,7 @@ namespace ImGui {
 
 		// Limits for k to prevent unreasonable values
 		const int MIN_K = 1;
-		const int MAX_K = isTelem ? 10 : 800;
+		const int MAX_K = isTelem ? 20 : 800;
 
 		// Format denominator text
 		char denomBuf[32];
