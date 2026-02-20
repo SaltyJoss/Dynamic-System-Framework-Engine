@@ -72,7 +72,7 @@ namespace robots {
 
 	// Computes the full mass matrix M(q) based on the current state and robot configuration
 	mathlib::MatX RobotDynamics::computeMassMatrix(
-		const std::vector<double>& q,
+		const std::vector<double>& /*q*/,
 		const std::vector<mathlib::Pose>& T_world
 	) const {
 		const size_t n = _robot.joints.size();
@@ -196,7 +196,7 @@ namespace robots {
 		const std::vector<double>& q,
 		const std::vector<double>& qd,
 		const std::vector<double>& eta,
-		const std::vector<mathlib::Pose>& T_world,
+		const std::vector<mathlib::Pose>& /*T_world*/,
 		std::vector<double> I_eff,
 		std::vector<double> tau_gravity
 	) const {
@@ -363,7 +363,7 @@ namespace robots {
 
 	// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
 	mathlib::VecX RobotDynamics::derivative(
-		double t,
+		double /*t*/,
 		const mathlib::VecX& x
 	) const {
 		const size_t n = static_cast<int>(_robot.joints.size());
