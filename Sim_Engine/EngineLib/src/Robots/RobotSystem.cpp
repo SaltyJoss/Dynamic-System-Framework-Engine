@@ -405,7 +405,7 @@ namespace robots {
 			const double alphaRef = joint.alphaRefRad_s2;
 
 			// Compute joint metrics
-			RobotMetrics m = computeJointMetrics(
+			RobotMetrics m = _dynamics->computeJointMetrics(
 				joint, link, I_eff[i],
 				theta, omega, eta,         
 				thetaRef, omegaRef, alphaRef,
