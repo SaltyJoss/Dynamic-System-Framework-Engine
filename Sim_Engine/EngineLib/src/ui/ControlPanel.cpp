@@ -5,6 +5,7 @@
 #include "Scene/Mesh.h"
 #include "ui/ControlPanel.h"
 #include "Robots/RobotSystem.h"
+#include "Robots/RobotCommon.h"
 #include "Platform/Paths.h"
 #include <chrono>
 #include <imgui.h>
