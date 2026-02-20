@@ -112,7 +112,7 @@ namespace core {
 			_jointLogBuffer.clear();
 
 			// Calculate the total number of entries needed for the buffers
-			size_t steps = static_cast<size_t>(120.0 / _dt);
+			size_t steps = static_cast<size_t>(300.0 / _dt); // Assuming a max simulation length of 300 seconds
 			size_t joints = _robot->jointCount();
 			size_t total = steps * joints;
 
@@ -130,7 +130,7 @@ namespace core {
 		SET_SIM_INTEGRATOR(_robot->getIntegratorName());
 
 		_simRunning = true;
-		_telemetryBegun = true;
+		_telemetryBegun = false;
 		DATA_CAPTURE_ENABLE(true);
 	}
 

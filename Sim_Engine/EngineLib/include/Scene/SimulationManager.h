@@ -287,19 +287,8 @@ namespace gui {
 		float _gridInternalScale = 1.0f;
         float _backgroundAlpha = 1.0f;
 
-		// Simulation Timing
-        double _dt       = 1.0 / 180.0;
-		double _telHz    = 120.0; // [Hz], controls how often telemetry updates during simulation runs
-		double _accum    = 0.0;   // Accumulator for fixed timestep
-		double _simTime  = 0.0;   // Current simulation time
-		bool _simRunning = false; // Whether the simulation loop is currently running
-        bool _scriptRunning = false;
-
         // Last script text for comparison re-use
         std::string _lastScriptText;
-
-        // Active Script Program
-        interpreter::IStoredProgram* _activeProgram = nullptr;
 
 		// Ground Plane
         static constexpr float planeHeight = -2.5f;
