@@ -1,5 +1,5 @@
 #pragma once
-// File:   MeshLoader.h
+// File:   SimManager.h
 // GitHub: SaltyJoss
 #include "EngineCore.h"
 #include <glm/glm.hpp>
@@ -33,7 +33,11 @@ namespace scene {
     class ENGINE_API Input;
     class ENGINE_API Mesh;
     class ENGINE_API Object;
+    class ENGINE_API SceneRenderer;
 }
+
+// Forward Declarations for Simulation Core
+namespace core { class ENGINE_API SimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
 namespace interpreter { class ENGINE_API IStoredProgram; }
@@ -170,14 +174,7 @@ namespace gui {
         scene::Object* getObject();
 		scene::Object* getObjectByID(scene::ObjectID id);
 
-        // Physics
         void updatePhysics(double dt);
-        void tick(double frame_dt);
-		void stepFixed(double frame_dt);
-
-		// Access to Physics System -> my attempt to fix the control panel integrtation method selector issue
-        physics::PhysicsSystem& physicsSystem();
-        const physics::PhysicsSystem& physicsSystem() const;
 
 		// Robot System loading and management
         void loadRobot(const std::string& name);
@@ -190,19 +187,62 @@ namespace gui {
         void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
         void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
 
-		// Getters for the robot system (non-const and const versions)
+        // Access to Physics System (non-const and const versions)
+        physics::PhysicsSystem* physicsSystem();
+        const physics::PhysicsSystem* physicsSystem() const;
+
+		// Accesors for the robot system (non-const and const versions)
         robots::RobotSystem* robotSystem();
         const robots::RobotSystem* robotSystem() const;
 
-		// Trajectory Manager
-        control::TrajectoryManager& traj();
-        const control::TrajectoryManager& traj() const;
+		// Accessors for the trajectory manager (non-const and const versions)
+        control::TrajectoryManager* traj();
+        const control::TrajectoryManager* traj() const;
 
-		// Simulation Integrators
-		void setupReferenceIntegrator();
-        void setupSimulationIntegrator();
+        // Simulation Control
+        void startSimulation();
+        void stopSimulation();
 
-		// Input Handling
+		// Simulation State
+        const bool isSimRunning() const;
+
+        // Setter and getter for current simulation time (seconds)
+        void setSimTime(double t);
+        const double simTime() const;
+
+        // Setter and getter for fixed timestep (seconds)
+        void setFixedDt(double dt);
+        const double fixedDt() const;
+
+        // Setter and getter for telemetry frequency (Hz)
+        void setTelemetryHz(double hz);
+        const double telemetryHz() const;
+
+		// Setters for script and simulation running states
+        void setScriptRunning(bool running);
+        const bool isScriptRunning() const;
+
+		// Setters and getters for last script text
+		void setLastScriptText(const std::string& text);
+		const std::string& lastScriptText() const;
+
+		// Accessors for the last script text
+        void setActiveProgram(interpreter::IStoredProgram* program);
+		interpreter::IStoredProgram* activeProgram();
+        const interpreter::IStoredProgram* activeProgram() const;
+        
+        // Run a script to completion synchronously with a specific integrator
+        bool runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method);
+
+        // Accesors for the telemetry recorder (non-const and const versions)
+        diagnostics::TelemetryRecorder& telemetry();
+        const diagnostics::TelemetryRecorder& telemetry() const;
+
+        // Accesor for Simulation Core (non-const and const versions)
+		core::SimulationCore* simCore();
+		const core::SimulationCore* simCore() const;
+
+        // Input Handling
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
         void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
@@ -210,49 +250,7 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
-		// Start or stop the simulation loop
-        void startSimulation();
-        void stopSimulation();
-        const bool isSimRunning() const { return _simRunning; }
 
-		// Export logged telemetry data to HDF5 files
-		void exportLogsToHDF5();
-		void exportRefsToHDF5();
-
-		// Setter and getter for current simulation time (seconds)
-        void setSimTime(double t) { _simTime = t; }
-		const double simTime() const { return _simTime; }
-
-		// Increment simulation time by dt (used in the simulation loop)
-		void incrementSimTime(double dt) { _simTime += dt; }
-
-		// Script Running State
-		void setScriptRunning(bool running) { _scriptRunning = running; }
-        const bool isScriptRunning() const { return _scriptRunning; }
-
-		// Set and get the active script program
-        void setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
-        interpreter::IStoredProgram* activeProgram() const { return _activeProgram; }
-
-		// Setter and getter for fixed timestep duration (seconds)
-		void setFixedDt(double dt) { _dt = dt; }
-		const double fixedDt() const { return _dt; }
-
-		// Telemetry
-		diagnostics::TelemetryRecorder& telemetry() { return _telemetry; }
-		const diagnostics::TelemetryRecorder& telemetry() const { return _telemetry; }
-
-		// Setter and getter for telemetry frequency (Hz)
-		void setTelemetryHz(double hz) { _telHz = hz; }
-		const double telemetryHz() const { return _telHz; }
-
-		// Last script text (stored on run for comparison re-use)
-		void setLastScriptText(const std::string& text) { _lastScriptText = text; }
-		const std::string& lastScriptText() const { return _lastScriptText; }
-
-		// Run a script to completion synchronously with a specific integrator
-		// Returns true if telemetry was captured successfully
-		bool runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method);
 
     private:       
 		// Rendering Pipeline Methods
@@ -278,7 +276,6 @@ namespace gui {
 
         // Misc Settings
         bool _glReady = false;
-        bool _scriptRunning = false;
 
 		// Sizes & Display
 		glm::vec2 _internalSize = { 1920.0f, 1080.0f };  // Internal render target size
@@ -296,6 +293,13 @@ namespace gui {
 		double _accum    = 0.0;   // Accumulator for fixed timestep
 		double _simTime  = 0.0;   // Current simulation time
 		bool _simRunning = false; // Whether the simulation loop is currently running
+        bool _scriptRunning = false;
+
+        // Last script text for comparison re-use
+        std::string _lastScriptText;
+
+        // Active Script Program
+        interpreter::IStoredProgram* _activeProgram = nullptr;
 
 		// Ground Plane
         static constexpr float planeHeight = -2.5f;
@@ -313,12 +317,6 @@ namespace gui {
 		// Name and ID mapping (for easy lookup)
         std::unordered_map<std::string, scene::ObjectID> _nameToId;
         std::unordered_map<scene::ObjectID, scene::Object*> _idToPtr;
-
-		// Active Script Program
-		interpreter::IStoredProgram* _activeProgram = nullptr;
-
-		// Last script text for comparison re-use
-		std::string _lastScriptText;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
@@ -353,5 +351,7 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
+
+        std::unique_ptr<core::SimulationCore> _core = nullptr;
     };
 } // namespace gui

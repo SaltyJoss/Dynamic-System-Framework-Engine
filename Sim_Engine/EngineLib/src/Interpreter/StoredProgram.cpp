@@ -179,11 +179,13 @@ namespace interpreter {
 		if (_sim) {
 			if (_sim->hasRobot()) {
 				robots::RobotSystem* robot = _sim->robotSystem();
-				if (robot) { robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method)); }
+				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
+				robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 			}
 
-			physics::PhysicsSystem& phys = _sim->physicsSystem();
-			phys.setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
+			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
+			phys->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
 	// Get Integrator Method
@@ -209,11 +211,13 @@ namespace interpreter {
 		if (_sim) {
 			if (_sim->hasRobot()) {
 				robots::RobotSystem* robot = _sim->robotSystem();
+				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
 				robot->setGravity(gravity);
 			}
 
-			physics::PhysicsSystem& phys = _sim->physicsSystem();
-			phys.setGravity(mathlib::Vec3(0.0f, static_cast<float>(gravity), 0.0f));
+			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
+			phys->setGravity(mathlib::Vec3(0.0f, 0.0f, static_cast<float>(gravity)));
 		}
 	}
 	// Get Gravity
@@ -221,11 +225,13 @@ namespace interpreter {
 		if (_sim) {
 			if (_sim->hasRobot()) {
 				robots::RobotSystem* robot = _sim->robotSystem();
+				if (!robot) { D_FAIL("No robot system found in simulation manager."); return _gravity; }
 				return robot->getGravity();
 			}
 
-			physics::PhysicsSystem& phys = _sim->physicsSystem();
-			return phys.getGravity().y();
+			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			if (!phys) { D_FAIL("No physics system found in simulation manager."); return _gravity; }
+			return phys->getGravity().y();
 		}
 		return _gravity;
 	}

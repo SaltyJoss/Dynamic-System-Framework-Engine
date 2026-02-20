@@ -249,7 +249,7 @@ namespace gui {
 
     void ControlPanel::drawMenus(SimManager* sim) {
         _sim = sim;
-        _phys = &_sim->physicsSystem();
+		_phys = _sim->physicsSystem();
         _obj = _sim->getObject();
 
         if (ImGui::BeginMenu("File")) {
@@ -304,7 +304,7 @@ namespace gui {
         _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
 
-		_phys = &_sim->physicsSystem();
+		_phys = _sim->physicsSystem();
 
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);

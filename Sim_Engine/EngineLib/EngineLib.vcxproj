@@ -125,6 +125,7 @@ if "$(Configuration)"=="Release" (
     <ClCompile Include="src\Interpreter\Commands\SetOmegaCmd.cpp" />
     <ClCompile Include="src\Robots\RobotDynamics.cpp" />
     <ClCompile Include="src\Robots\RobotKinematics.cpp" />
+    <ClCompile Include="src\Scene\SimulationCore.cpp" />
     <ClCompile Include="src\ui\CommandScriptEditor.cpp" />
     <ClCompile Include="src\ui\ControlPanel.cpp" />
     <ClCompile Include="src\ui\DebugPanel.cpp" />
@@ -245,6 +246,8 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
     <ClInclude Include="include\Scene\ObjectID.h" />
+    <ClInclude Include="include\Scene\SceneRenderer.h" />
+    <ClInclude Include="include\Scene\SimulationCore.h" />
     <ClInclude Include="include\Scene\SimulationManager.h" />
     <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="include\ui\CommandScriptEditor.h" />

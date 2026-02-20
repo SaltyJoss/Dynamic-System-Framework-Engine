@@ -546,6 +546,12 @@
     <ClInclude Include="include\Robots\RobotCommon.h">
       <Filter>Header Files\include\Robots</Filter>
     </ClInclude>
+    <ClInclude Include="include\Scene\SimulationCore.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\SceneRenderer.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -766,6 +772,9 @@
     </ClCompile>
     <ClCompile Include="src\Robots\RobotKinematics.cpp">
       <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\SimulationCore.cpp">
+      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
