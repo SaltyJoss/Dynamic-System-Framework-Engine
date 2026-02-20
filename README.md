@@ -86,21 +86,21 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 > Therefore, I most likely will not make any updates until that period is over. <br />
 
 ### Todo List:
- * Implement `collision meshes` with existin dynamics pipeline
- * Improve UI, making it `Research-Oriented`
- * Add workspace layouts
- * Support multiple concurrent sessions
- * Move simulation data output to a `dedicated Data-specific thread` **(IMPORTANT)**
- * Replace the current diagonal Coriolis approximation to the `full Coriolis matrix formulation`
- * Support `multiple articulated systems` within a single simulation instance
- * Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
- * Further `extend physcial modelling` for different robot models (humanoid, legged)
- * Seperate physics/mathematics core from the GUI and visualisation layers
- * Explore migration to a `CMake-only` build system
- * Explore `DX11` and `Vulkan` alternatives
- * Get DSFE to work on `Linux`
- * Explore `non-x64 systesm` support
- * Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
+ * [ ] Implement `collision meshes` with existin dynamics pipeline
+ * [ ] Improve UI, making it `Research-Oriented`
+ * [ ] Add workspace layouts
+ * [ ] Support multiple concurrent sessions
+ * [ ] Move simulation data output to a `dedicated Data-specific thread` **(IMPORTANT)**
+ * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model`</s>
+ * [ ] Support `multiple articulated systems` within a single simulation instance
+ * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
+ * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged)
+ * [ ] Seperate physics/mathematics core from the GUI and visualisation layers
+ * [ ] Explore migration to a `CMake-only` build system
+ * [ ] Explore `DX11` and `Vulkan` alternatives
+ * [ ] Get DSFE to work on `Linux`
+ * [ ] Explore `non-x64 systesm` support
+ * [ ] Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
 
 <br />
 
