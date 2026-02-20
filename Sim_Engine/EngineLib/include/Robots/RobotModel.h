@@ -156,7 +156,7 @@ namespace robots {
 		double k_i = 0.0f;	// integral gain (rad*s)
 		double k_d = 10.0f;	// velocity gain (rad/s)
 
-		double wn_target = 20.0f;   // rad/s
+		double wn_target = 5.0f;   // rad/s
 		double beta_target = 0.1f;  // overshoot ratio
 		double zeta_target = 1.1f;  // damping ratio
 
