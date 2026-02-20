@@ -27,6 +27,7 @@ namespace interpreter {
 				s == "translate"	 ||
 				s == "set"			 ||
 				s == "select" 		 ||
+				s == "setomega"		 ||
 				s == "load";
 	}
 

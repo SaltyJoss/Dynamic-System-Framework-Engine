@@ -190,7 +190,7 @@ namespace ImGui {
 
 		// Ensure k is at least 1 to avoid zero or negative denominators
 		k = std::max(k, 1);
-		int denom = 60 * k;
+		int denom = 30 * k;
 
 		// Limits for k to prevent unreasonable values
 		const int MIN_K = 1;

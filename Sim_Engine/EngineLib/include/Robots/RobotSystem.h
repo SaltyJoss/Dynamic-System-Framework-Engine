@@ -23,6 +23,13 @@ namespace robots {
 		Baseline
 	};
 
+	// Dynamics Mode
+	enum class eTorqueMode {
+		NONE,		// No physics simulation, just kinematics (e.g., for testing, mathematical analysis, or kinematic control)
+		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
+		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
+	};
+
 	class ENGINE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
@@ -66,6 +73,7 @@ namespace robots {
 
         bool tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, double omegaRad);
+		bool injectJointOmegaRad(const std::string& childLink, double omega);
 
 		bool tryGetJointTargetRad(const std::string& childLink, double& outTargetRad) const;
 		bool trySetJointTargetRad(const std::string& childLink, double targetRad);
@@ -87,14 +95,6 @@ namespace robots {
 		bool trySetJointOmegaRefMaxRad(const std::string& childLink, double omegaRefMaxRad);
 
 		bool tryZeroJointRefDerivatives();
-
-		// Compute control and dynamics metrics for a specific joint based on the current state and reference
-		RobotMetrics computeJointMetrics(
-			const RobotJoint& joint, const RobotLink& link, double I_eff,
-			double theta, double omega,
-			double thetaRef, double omegaRef, double alphaRef,
-			double eta, double tau_coriolis, double tau_gravity
-		) const;
 
 		// --- SIMULATION STEP METHOD ---
 
@@ -131,6 +131,10 @@ namespace robots {
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
 		void setRole(eRole role) { _role = role; }
 
+		// Set the torque mode for the robot system
+		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
+		eTorqueMode getTorqueMode() const { return _torqueMode; }
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -146,12 +150,29 @@ namespace robots {
 
 		// Forward kinematics computation
 		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
-		// Compute the effective inertia for each joint based on the current state and robot configuration
-		double computeSingleIeff(size_t i, const std::vector<double>& theta) const;
-		// Compute the contribution of a link to the inertia of a joint based on the current state
-		std::vector<double> computeCoriolisDiagonal(const std::vector<double>& theta, const std::vector<double>& omega, const std::vector<double>& I_eff) const;
+
+		// Compute the full mass matrix M(q) based on the current state and robot configuration
+		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
 		// Compute the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(const std::vector<double>& theta, const std::vector<Pose>& T_world) const;
+		std::vector<double> computeGravityTorque(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
+
+		// Computes the control torque for a joint based on the current state, reference, and robot configuration
+		VecX computeAppliedTorques(
+			const std::vector<double>& q,
+			const std::vector<double>& qd,
+			const std::vector<double>& eta,
+			const std::vector<Pose>& T_world,
+			std::vector<double> I_eff,
+			std::vector<double> tau_gravity
+		) const;
+
+		// Compute control and dynamics metrics for a specific joint based on the current state and reference
+		RobotMetrics computeJointMetrics(
+			const RobotJoint& joint, const RobotLink& link, double I_eff,
+			double q, double qd, double eta,
+			double q_ref, double qd_ref, double qdd_ref,
+			double tau_coriolis, double tau_g
+		) const;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;
@@ -177,8 +198,11 @@ namespace robots {
 		// Simulation time
 		double _simTime = 0.0;
 
-		// Robot model and log buffer
+		// Robot model, and robot mode
         RobotModel _robot;
+		eTorqueMode _torqueMode = eTorqueMode::NONE;
+
+		// Buffers for logging and reference state (not owned by RobotSystem)
 		robots::JointLogBuffer* _logBuffer = nullptr;
 		robots::TrajRefBuffer*  _refBuffer = nullptr;
 
@@ -189,9 +213,12 @@ namespace robots {
 		VecX _robotQHome;							// home/reset joint positions
 		bool _robotHomeValid = false;				// is home position valid
 
-		// Link name to index map
+		// Index maps for quick lookup of links and joints by name
 		std::unordered_map<std::string, int> _linkIndex;
 		std::unordered_map<std::string, int> _jointIndex;
+		// List of joint indices that correspond to the robot's degrees of freedom (excluding fixed joints)
+		std::vector<size_t> _dofJointIndices; 
+
         std::string _loadedName;
 		int _currentJointIndex = -1;
 

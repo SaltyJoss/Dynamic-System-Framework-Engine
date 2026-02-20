@@ -511,8 +511,6 @@ namespace robots {
 			);
 		}
 
-
-
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 
