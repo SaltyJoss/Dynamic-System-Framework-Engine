@@ -8,9 +8,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+// Forward declarations
 namespace control { class ENGINE_API TrajectoryManager; }
 
 namespace robots {
+	// Forward declarations
+	class ENGINE_API RobotKinematics;
+	class ENGINE_API RobotDynamics;
+	enum class eTorqueMode;
+
 	// Joint state structure
     struct ENGINE_API JointState {
 		double theta;
@@ -23,24 +29,16 @@ namespace robots {
 		Baseline
 	};
 
-	// Dynamics Mode
-	enum class eTorqueMode {
-		NONE,		// No physics simulation, just kinematics (e.g., for testing, mathematical analysis, or kinematic control)
-		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
-		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
-	};
-
 	class ENGINE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
+		~RobotSystem();
 
         // --- Utility Methods ---
 
         static double clampJointAngle(const RobotJoint& joint, double angleRad);
-        static double wrapToPi(double angleRad);
-        static double wrapRad(double angleRad);
 
         // ---- Accessors ---
 
@@ -58,8 +56,8 @@ namespace robots {
         const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }
 
+		void setGravity(double g);
 		double getGravity() const { return _gravity; }
-        void setGravity(double g) { _gravity = g; }
 
 		// Get pointer to this RobotSystem
 		const RobotSystem& getRobot() const { return *this; }
@@ -131,13 +129,16 @@ namespace robots {
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
 		void setRole(eRole role) { _role = role; }
 
-		// Set the torque mode for the robot system
-		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
+		// Setter and getter the torque mode for the robot system
+		void setTorqueMode(eTorqueMode mode);
 		eTorqueMode getTorqueMode() const { return _torqueMode; }
 
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
+
+		std::unique_ptr<RobotKinematics> _kinematics;
+		std::unique_ptr<RobotDynamics> _dynamics;
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
@@ -200,7 +201,7 @@ namespace robots {
 
 		// Robot model, and robot mode
         RobotModel _robot;
-		eTorqueMode _torqueMode = eTorqueMode::NONE;
+		eTorqueMode _torqueMode;
 
 		// Buffers for logging and reference state (not owned by RobotSystem)
 		robots::JointLogBuffer* _logBuffer = nullptr;

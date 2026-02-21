@@ -537,6 +537,15 @@
     <ClInclude Include="include\Interpreter\Commands\SetOmegaCmd.h">
       <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
     </ClInclude>
+    <ClInclude Include="include\Robots\RobotDynamics.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotKinematics.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotCommon.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -751,6 +760,12 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\SetOmegaCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotDynamics.cpp">
+      <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotKinematics.cpp">
+      <Filter>Source Files\src\Robots</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
