@@ -63,7 +63,8 @@ namespace robots {
 			const RobotJoint& joint, double I_eff,
 			double q, double qd, double eta,
 			double q_ref, double qd_ref, double qdd_ref,
-			double tau_coriolis, double tau_g
+			double tau_coriolis, double tau_g,
+			double dt
 		) const;
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration

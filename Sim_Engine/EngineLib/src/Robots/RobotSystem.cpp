@@ -379,10 +379,9 @@ namespace robots {
 			}
 
 			// Sum contributions to effective inertia from all links for joint i
-			for (size_t k = i; k < _robot.links.size(); ++k) {
+			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
 				I_eff[i] += _dynamics->computeJointInertiaContribution(
-					_robot.joints[i],
-					_robot.links[k],
+					_robot.joints[i], _robot.links[k],
 					jointWorldPose[i], // pose of joint i in world frame
 					T_world[k]
 				);
@@ -400,47 +399,29 @@ namespace robots {
 				j, I_eff[i],
 				j.q, j.qd, j.eta,
 				j.q_ref, j.qd_ref, j.qdd_ref,
-				0.0,tau_g[i]
+				0.0,tau_g[i], dt
 			);
 
 			// Log metrics to buffer if logging is enabled
 			auto* buf = _logBuffer;
 
-			// If logging is enabled, store metrics in the buffer for this joint
+			// inside joint loop
 			if (buf) {
-				// Sim Metadata
-				buf->sim_time.push_back(simTime);
-				buf->dt_taken.push_back(step.dt_taken);
-				buf->dt_sug.push_back(step.dt_sug);
-				// States
-				buf->theta.push_back(m.theta);
-				buf->omega.push_back(m.omega);
-				buf->alpha.push_back(m.alpha);
-				buf->err.push_back(m.err);
-				buf->err_d.push_back(m.err_d);
-				// Dynamics
-				buf->I_eff.push_back(m.I_eff);
-				buf->tau.push_back(m.tau);
-				buf->tau_fb.push_back(m.tau_fb);
-				buf->tau_coriolis.push_back(m.tau_coriolis);
-				buf->tau_gravity.push_back(m.tau_gravity);
-				buf->tau_damping.push_back(m.tau_damping);
-				buf->tau_friction.push_back(m.tau_friction);
-				buf->tau_barrier.push_back(m.tau_barrier);
-				buf->tau_sat.push_back(m.tau_sat);
-				// Energy, Work, & Power
-				buf->KE.push_back(m.KE);
-				buf->PE.push_back(m.PE);
-				buf->E_total.push_back(m.E_total);
-				buf->W_actuator.push_back(m.W_actuator);
-				buf->P_damping.push_back(m.P_damping);
-				buf->P_friction.push_back(m.P_friction);
-				// Limit flags and info
-				buf->clamp_theta.push_back((double)_clampTheta[i]);
-				buf->clamp_omega.push_back((double)_clampOmega[i]);
-				buf->sat_flag.push_back(m.sat_flag);
-				// Joint Index
-				buf->joint_index.push_back((int)i);
+				JointLogBuffer::JointLogEntry e{};
+				e.sim_time = simTime;
+				e.dt_taken = step.dt_taken;
+				e.dt_sug = step.dt_sug;
+				e.theta = m.theta; e.omega = m.omega; e.alpha = m.alpha;
+				e.err = m.err; e.err_d = m.err_d;
+				e.I_eff = m.I_eff; e.tau = m.tau; e.tau_fb = m.tau_fb;
+				e.tau_coriolis = m.tau_coriolis; e.tau_gravity = m.tau_gravity;
+				e.tau_damping = m.tau_damping; e.tau_friction = m.tau_friction;
+				e.tau_barrier = m.tau_barrier; e.tau_sat = m.tau_sat;
+				e.KE = m.KE; e.PE = m.PE; e.E_total = m.E_total;
+				e.W_actuator = m.W_actuator; e.P_damping = m.P_damping; e.P_friction = m.P_friction;
+				e.clamp_theta = (double)_clampTheta[i]; e.clamp_omega = (double)_clampOmega[i];
+				e.sat_flag = m.sat_flag; e.joint_index = (int)i;
+				buf->push_entry(e);
 			}
 		}
 

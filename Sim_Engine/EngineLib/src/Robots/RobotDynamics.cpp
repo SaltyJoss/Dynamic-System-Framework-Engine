@@ -227,7 +227,8 @@ namespace robots {
 					j, I_eff[i],
 					q[i], qd[i], eta[i],
 					j.q_ref, j.qd_ref, j.qdd_ref,
-					0.0, tau_g[i]
+					0.0, tau_g[i],
+					dt()
 				);
 				tau[i] = m.tau;
 			}
@@ -241,7 +242,8 @@ namespace robots {
 		const RobotJoint& joint, double I_eff,
 		double q, double qd, double eta,
 		double q_ref, double qd_ref, double qdd_ref,
-		double tau_c, double tau_g
+		double tau_c, double tau_g,
+		double dt
 	) const {
 		RobotMetrics m{};
 		if (_robot.torqueMode == eTorqueMode::NONE) {
@@ -259,7 +261,7 @@ namespace robots {
 			m.tau_friction = 0.0;
 			m.tau_sat = 0.0;
 			m.tau_barrier = 0.0;
-
+			// Return early
 			return m;
 		}
 
@@ -276,7 +278,7 @@ namespace robots {
 		// Energy metrics
 		m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
 		double P_grav = tau_g * qd; // [W], power due to gravity torque
-		m.PE += -P_grav * dt(); // [J], potential energy proxy based on gravity power (scaled down for interpretability)
+		m.PE += -P_grav * dt; // [J], potential energy proxy based on gravity power (scaled down for interpretability)
 		m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
 
 		// Control parameters
