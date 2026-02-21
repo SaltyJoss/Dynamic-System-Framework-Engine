@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include <memory>
 #include <string>
+#include "Platform/SimulationState.h"
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
 
@@ -18,6 +19,11 @@ namespace robots	  { class ENGINE_API RobotSystem; }
 namespace interpreter { class ENGINE_API IStoredProgram; }
 
 namespace core {
+	// configurable defaults (not part of class to allow tuning without recompilation)
+	constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
+	constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
+	constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
+
 	class ENGINE_API SimulationCore {
 	public:
 		SimulationCore();
@@ -116,6 +122,9 @@ namespace core {
 		physics::PhysicsSystem* _physics = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
 		std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
+
+		// Run mode (interactive vs synchronous)
+		eRunMode _runMode = eRunMode::Interactive;
 
 		// Last script text for comparison re-use
 		std::string _lastScriptText;
