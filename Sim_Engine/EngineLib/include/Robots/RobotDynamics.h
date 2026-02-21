@@ -60,8 +60,7 @@ namespace robots {
 
 		// Computes control and dynamics metrics for a specific joint based on the current state and reference
 		RobotMetrics computeJointMetrics(
-			const RobotJoint& joint, const RobotLink& link, 
-			double I_eff,
+			const RobotJoint& joint, double I_eff,
 			double q, double qd, double eta,
 			double q_ref, double qd_ref, double qdd_ref,
 			double tau_coriolis, double tau_g
@@ -73,22 +72,23 @@ namespace robots {
 			const mathlib::VecX& x
 		) const;
 
-		// Set the torque mode for the robot system
-		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
-		eTorqueMode getTorqueMode() const { return _torqueMode; }
-
 		// Accessor for the robot model
 		void setRobot(RobotModel& robot);
 
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
 
+		// Set the timestep for dynamics updates (used for energy calculations and integration)
+		void setDt(double dt) { _dt = dt; }
+		const double dt() const { return _dt; }
+
 	private:
 		// References and pointers
 		RobotModel& _robot;
 		std::unique_ptr<RobotKinematics> _kinematics;
 
-		eTorqueMode _torqueMode;
+		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
+
 		double _gravity{ 0.0 };
 		bool _baseIsFree = false;
 		double _lastBaseForwardForce{ 0.0 };

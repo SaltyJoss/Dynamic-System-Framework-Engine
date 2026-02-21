@@ -5,10 +5,8 @@
 #include "Scene/Mesh.h"
 #include "ui/ControlPanel.h"
 #include "Robots/RobotSystem.h"
-#include "Robots/RobotCommon.h"
 #include "Platform/Paths.h"
 #include <chrono>
-#include <imgui.h>
 #include <imgui.h>
 #include "Platform/imguiWidgets.h"
 
@@ -1013,8 +1011,8 @@ namespace gui {
 							ImGui::TextUnformatted(joint.name.c_str());
                             if (ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
-                                ImGui::TextDisabled("Angle(rad): %.2f\nOmega(rad/s): %.2f\nk_p: %.2f\nk_d: %.2f\nDamping: %.2f\nFriction: %.2f",
-                                    joint.thetaRad, joint.omegaRad_s, joint.k_p, joint.k_d, joint.dynamics.damping, joint.dynamics.friction);
+                                ImGui::TextDisabled("Angle(rad): %.2f\nOmega(rad/s): %.2f\nDamping: %.2f\nFriction: %.2f",
+                                    joint.q, joint.qd, joint.dynamics.damping, joint.dynamics.friction);
                                 ImGui::EndTooltip();
                             }
 							if (jointSelected) ImGui::PopStyleColor();
@@ -1171,7 +1169,7 @@ namespace gui {
         }
 
 		const diagnostics::JointTelemetry& j = s.j[selectedJoint];
-		const float e = (float)(j.thetaRefRad - j.thetaRad);
+		const float e = (float)(j.q_ref - j.q);
 
         ImGui::Separator();
         ImGui::TextDisabled("Robot loaded:   %s", _requestedRobot.c_str());
@@ -1181,8 +1179,8 @@ namespace gui {
 		ImGui::Spacing();
 		// Joint Info
         ImGui::SectionHeader("State:");
-		ImGui::Text("theta:     %.6f rad",       j.thetaRad);
-		ImGui::Text("omega:     %.6f rad/s",     j.omegaRad_s);
+		ImGui::Text("theta:     %.6f rad",       j.q);
+		ImGui::Text("omega:     %.6f rad/s",     j.qd);
 		ImGui::Text("damping:   %.6f kg·m^2/s",  j.damping);
         ImGui::Text("friction:  %.6f N·m",       j.friction);
         ImGui::Text("torque:    %.6f N·m",       j.torqueNm);
@@ -1190,9 +1188,9 @@ namespace gui {
 		ImGui::Spacing();
 		// Reference Info
 		ImGui::SectionHeader("Reference:");
-		ImGui::Text("theta_ref: %.6f rad",     j.thetaRefRad);
-		ImGui::Text("omega_ref: %.6f rad/s",   j.omegaRefRad_s);
-        ImGui::Text("alpha_ref: %.6f rad/s^2", j.alphaRefRad_s2);
+		ImGui::Text("theta_ref: %.6f rad",     j.q_ref);
+		ImGui::Text("omega_ref: %.6f rad/s",   j.qd_ref);
+        ImGui::Text("alpha_ref: %.6f rad/s^2", j.qdd_ref);
 		ImGui::Text("error e:   %.6f drad",    e);
 
 		ImGui::Spacing();
@@ -1216,7 +1214,7 @@ namespace gui {
             float worstErr = 0.0f;
             int worstIdx = 0;
             for (int i = 0; i < (int)s.j.size(); ++i) {
-                float err = (float)std::abs(s.j[i].thetaRefRad - s.j[i].thetaRad);
+                float err = (float)std::abs(s.j[i].q_ref - s.j[i].q);
                 if (err > worstErr) { worstErr = err; worstIdx = i; }
             }
 			selectedJoint = worstIdx;
@@ -1239,26 +1237,26 @@ namespace gui {
 			return;
 		}
 
-		const int sampleCount = (int)ring.size();
-		const int jointCount = (int)ring.at(sampleCount - 1).j.size();
+		const size_t sampleCount = ring.size();
+		const size_t jointCount  = ring.at(sampleCount - 1).j.size();
 
 		// Header
 		fprintf(f, "time_s,err_rms,err_max,clamp_sum");
-		for (int j = 0; j < jointCount; ++j) {
-			fprintf(f, ",J%02d_theta,J%02d_omega,J%02d_torque,J%02d_theta_ref,J%02d_err", j+1, j+1, j+1, j+1, j+1);
+		for (size_t j = 0; j < jointCount; ++j) {
+			fprintf(f, ",J%02d_theta,J%02d_omega,J%02d_torque,J%02d_theta_ref,J%02d_err", (int)j+1, (int)j+1, (int)j+1, (int)j+1, (int)j+1);
 		}
 		fprintf(f, "\n");
 
 		// Data rows
-		for (int k = 0; k < sampleCount; ++k) {
+		for (size_t k = 0; k < sampleCount; ++k) {
 			const auto& s = ring.at(k);
 			fprintf(f, "%.6f,%.9f,%.9f,%d", s.timeSec, s.err_rms, s.err_max, s.clamp_sum);
-			const int m = std::min(jointCount, (int)s.j.size());
-			for (int j = 0; j < m; ++j) {
+			const size_t m = std::min(jointCount, s.j.size());
+			for (size_t j = 0; j < m; ++j) {
 				const auto& jt = s.j[j];
 				fprintf(f, ",%.9f,%.9f,%.9f,%.9f,%.9f",
-					jt.thetaRad, jt.omegaRad_s, jt.torqueNm, jt.thetaRefRad,
-					jt.thetaRefRad - jt.thetaRad);
+					jt.q, jt.qd, jt.torqueNm, jt.q_ref,
+					jt.q_ref - jt.q);
 			}
 			fprintf(f, "\n");
 		}
@@ -1297,7 +1295,10 @@ namespace gui {
 
 		D_INFO("Starting integrator comparison (6 methods)...");
 
-		for (int i = 0; i < 6; ++i) {
+		const size_t methodCount = sizeof(methods) / sizeof(methods[0]);
+
+		// Loop through each integrator method, run the script, and capture telemetry for comparison
+		for (size_t i = 0; i < methodCount; ++i) {
 			D_INFO("  Running: %s ...", names[i]);
 
 			if (!_sim->runScriptToCompletion(scriptText, methods[i])) {
@@ -1307,33 +1308,34 @@ namespace gui {
 
 			// Snapshot telemetry into comparison result
 			const auto& ring = _sim->telemetry().ring;
-			const int sampleCount = (int)ring.size();
-			if (sampleCount < 2) continue;
+			const size_t sampleCount = ring.size();
 
+			// Need at least 2 samples to plot error over time
+			if (sampleCount < 2) { continue; }
+
+			// Create snapshot for this integrator
 			ComparisonSnapshot snap;
 			snap.integratorName = names[i];
-			snap.jointCount = (int)ring.at(sampleCount - 1).j.size();
+			snap.jointCount = ring.at(sampleCount - 1).j.size();
 
 			snap.time.resize(sampleCount);
 			snap.errRms.resize(sampleCount);
 			snap.errMax.resize(sampleCount);
 			snap.jointErr.resize(snap.jointCount);
-			for (int j = 0; j < snap.jointCount; ++j) snap.jointErr[j].resize(sampleCount);
+			for (size_t j = 0; j < snap.jointCount; ++j) { snap.jointErr[j].resize(sampleCount); }
 
-			for (int k = 0; k < sampleCount; ++k) {
+			for (size_t k = 0; k < sampleCount; ++k) {
 				const auto& s = ring.at(k);
 				snap.time[k] = (float)s.timeSec;
 				snap.errRms[k] = (float)s.err_rms;
 				snap.errMax[k] = (float)s.err_max;
-				const int m = std::min(snap.jointCount, (int)s.j.size());
-				for (int j = 0; j < m; ++j) {
-					snap.jointErr[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
+				const size_t m = std::min(snap.jointCount, s.j.size());
+				for (size_t j = 0; j < m; ++j) {
+					snap.jointErr[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
 				}
 			}
-
 			_comparisonResults.push_back(std::move(snap));
 		}
-
 		_comparisonReady = !_comparisonResults.empty();
 		D_SUCCESS("Integrator comparison complete: %d/%d methods captured.", (int)_comparisonResults.size(), 6);
 	}
@@ -1396,7 +1398,7 @@ namespace gui {
 			// Find which joint has the most variation across integrators
 			static int selectedCmpJoint = 0;
 			ImGui::SetNextItemWidth(150.0f);
-			ImGui::SliderInt("Compare Joint##cmp", &selectedCmpJoint, 0, _comparisonResults.front().jointCount - 1, "J%02d");
+			ImGui::SliderInt("Compare Joint##cmp", &selectedCmpJoint, 0, (int)_comparisonResults.front().jointCount - 1, "J%02d");
 
 			char plotLabel[64];
 			snprintf(plotLabel, sizeof(plotLabel), "J%02d Error - All Integrators##cmpjoint", selectedCmpJoint + 1);
@@ -1433,12 +1435,12 @@ namespace gui {
 				fprintf(f, "\n");
 
 				// Use longest time series
-				int maxSamples = 0;
-				for (const auto& res : _comparisonResults) { maxSamples = std::max(maxSamples, (int)res.time.size()); }
+				size_t maxSamples = 0;
+				for (const auto& res : _comparisonResults) { maxSamples = std::max(maxSamples, res.time.size()); }
 
-				for (int k = 0; k < maxSamples; ++k) {
+				for (size_t k = 0; k < maxSamples; ++k) {
 					// Use first result's time as reference
-					float t = (k < (int)_comparisonResults[0].time.size()) ? _comparisonResults[0].time[k] : 0.0f;
+					float t = (k < _comparisonResults[0].time.size()) ? _comparisonResults[0].time[k] : 0.0f;
 					fprintf(f, "%.6f", t);
 					for (const auto& res : _comparisonResults) {
 						if (k < (int)res.time.size()) {
@@ -1505,8 +1507,8 @@ namespace gui {
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 4));
 		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.08f, 0.08f, 0.12f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.15f, 0.18f, 0.28f, 1.0f));
-		
-		ImGui::Begin("Simulation Results", &open, ImGuiWindowFlags_NoDocking);
+		ImGui::Begin("Simulation Results", &open, ImGuiWindowFlags_NoTitleBar);
+
 		if (!open) {
 			_showResultsWindow = false;
 			ImGui::End();
@@ -1564,19 +1566,21 @@ namespace gui {
 		ImGui::Separator();
 
 		// --- Rebuild series from ring (reuse the same helpers) ---
-		static std::vector<float> rX, rRms, rMax, rCs;
+		static std::vector<float> rX, rRms, rMax, rCs, rCst, rCso;
 		static std::vector<std::vector<float>> rY;
 
-		const int sampleCount = (int)ring.size();
-		const int jointCount = (int)last.j.size();
+		const size_t sampleCount = ring.size();
+		const size_t jointCount  = last.j.size();
 
 		rX.resize(sampleCount);
 		rRms.resize(sampleCount);
 		rMax.resize(sampleCount);
 		rCs.resize(sampleCount);
+		rCst.resize(sampleCount);
+		rCso.resize(sampleCount);
 
-		if ((int)rY.size() != jointCount) rY.resize(jointCount);
-		for (int j = 0; j < jointCount; ++j) rY[j].resize(sampleCount);
+		if (rY.size() != jointCount) { rY.resize(jointCount); }
+		for (size_t j = 0; j < jointCount; ++j) { rY[j].resize(sampleCount); }
 
 		for (int k = 0; k < sampleCount; ++k) {
 			const auto& s = ring.at(k);
@@ -1584,12 +1588,14 @@ namespace gui {
 			rRms[k] = (float) s.err_rms;
 			rMax[k] = (float)s.err_max;
 			rCs[k]  = (float)s.clamp_sum;
+			rCst[k] = (float)s.clamp_theta;
+			rCso[k] = (float)s.clamp_omega;
 
-			const int m = std::min(jointCount, (int)s.j.size());
-			for (int j = 0; j < m; ++j) {
-				rY[j][k] = (float)(s.j[j].thetaRefRad - s.j[j].thetaRad);
+			const size_t m = std::min(jointCount, s.j.size());
+			for (size_t j = 0; j < m; ++j) {
+				rY[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
 			}
-			for (int j = m; j < jointCount; ++j) {
+			for (size_t j = m; j < jointCount; ++j) {
 				rY[j][k] = 0.0f;
 			}
 		}
@@ -1613,8 +1619,8 @@ namespace gui {
 		if (ImPlot::BeginPlot("Error (RMS, Max)##results", plotSz1)) {
 			ImPlot::SetupAxes("t (s)", "error (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			ImPlot::PlotLine("RMS", rX.data(), rRms.data(), sampleCount);
-			ImPlot::PlotLine("Max", rX.data(), rMax.data(), sampleCount);
+			ImPlot::PlotLine("RMS", rX.data(), rRms.data(), (int)sampleCount);
+			ImPlot::PlotLine("Max", rX.data(), rMax.data(), (int)sampleCount);
 			ImPlot::EndPlot();
 		}
 
@@ -1625,9 +1631,15 @@ namespace gui {
 		// --- Clamp Events ---
 		const ImVec2 tPlotSz2(_plotWidth, _plotH2);
 		if (ImPlot::BeginPlot("Clamp Events##results", tPlotSz2)) {
-			ImPlot::SetupAxes("t (s)", "Clamp Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupAxes("t (s)", "Sum", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			ImPlot::PlotStairs("Sum", rX.data(), rCs.data(), sampleCount);
+			ImPlot::PlotStairs("Clamp Theta", rX.data(), rCst.data(), (int)sampleCount);
+			ImPlot::PlotStairs("Clamp Omega", rX.data(), rCso.data(), (int)sampleCount);
+
+			ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+			ImPlot::PlotStairs("Clamp Sum",   rX.data(), rCs.data(), (int)sampleCount);
+			ImPlot::PopStyleColor();
+			
 			ImPlot::EndPlot();
 		}
 
@@ -1639,10 +1651,10 @@ namespace gui {
 		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz3)) {
 			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
-			for (int j = 0; j < jointCount; ++j) {
+			for (size_t j = 0; j < jointCount; ++j) {
 				char label[16];
-				snprintf(label, sizeof(label), "J%02d", j + 1);
-				ImPlot::PlotLine(label, rX.data(), rY[j].data(), sampleCount);
+				snprintf(label, sizeof(label), "J%02d", (int)j + 1);
+				ImPlot::PlotLine(label, rX.data(), rY[j].data(), (int)sampleCount);
 			}
 			ImPlot::EndPlot();
 		}

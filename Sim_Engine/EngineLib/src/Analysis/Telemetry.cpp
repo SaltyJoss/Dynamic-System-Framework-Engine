@@ -19,10 +19,12 @@ namespace diagnostics {
 		s.j.resize(joints.size());
 
 		// Accumulators for error statistics
-		double sum_e2	= 0.0;	// sum of squared errors
-		double max_abs_e = 0.0f; // max absolute error
-		int worstJ		= -1;	// index of worst joint
-		int clampSum	= 0;	// sum of clamping events
+		double sum_e2	  = 0.0;	// sum of squared errors
+		double max_abs_e  = 0.0; // max absolute error
+		int clampThetaSum = 0;	// sum of angle clamping events
+		int clampOmegaSum = 0;	// sum of velocity clamping events
+		int clampSum	  = 0;	// sum of clamping events
+		int worstJ		  = -1;	// index of worst joint
 
 		// Collect telemetry for each joint
 		for (int i = 0; i < n; ++i) {
@@ -31,22 +33,28 @@ namespace diagnostics {
 			JointTelemetry jt;
 
 			// Joint data
-			jt.eta		   = j.eta;
-			jt.thetaRad	   = j.thetaRad;
-			jt.omegaRad_s  = j.omegaRad_s;
-			jt.torqueNm	   = j.torque;
-			jt.damping	   = j.dynamics.damping;
-			jt.friction	   = j.dynamics.friction;
-			jt.effort = (j.limits.maxEffort > 0.0f) ? (j.torque / j.limits.maxEffort) : 0.0f;
+			jt.q   = j.q;
+			jt.qd  = j.qd;
+			jt.eta = j.eta;
 
 			// Reference data
-			jt.thetaRefRad	  = j.thetaRefRad;
-			jt.omegaRefRad_s  = j.omegaRefRad_s;
-			jt.alphaRefRad_s2 = j.alphaRefRad_s2;
+			jt.q_ref = j.q_ref;
+			jt.qd_ref = j.qd_ref;
+			jt.qdd_ref = j.qdd_ref;
+
+			// Dynamics Data
+			jt.torqueNm = j.torque;
+			jt.damping	= j.dynamics.damping;
+			jt.friction = j.dynamics.friction;
+			jt.effort	= (j.limits.maxEffort > 0.0f) ? (j.torque / j.limits.maxEffort) : 0.0f;
 
 			// Clamping flags
-			jt.clampTheta = (j.thetaRad <= j.limits.minAngle) || (j.thetaRad >= j.limits.maxAngle);
-			jt.clampOmega = (j.omegaRad_s <= 0.0f) || (j.omegaRad_s >= j.limits.maxOmegaRad_s);
+			jt.clampTheta = (j.q <= j.limits.minAngle) || (j.q >= j.limits.maxAngle);
+			jt.clampOmega = (std::abs(j.qd) >= j.limits.maxqd);
+
+			// Accumulate clamping events
+			clampThetaSum += (int)jt.clampTheta;
+			clampOmegaSum += (int)jt.clampOmega;
 			clampSum += (int)jt.clampTheta + (int)jt.clampOmega;
 
 			// Trajectory data
@@ -61,7 +69,7 @@ namespace diagnostics {
 			}
 
 			// Joint error
-			const double e = jt.thetaRefRad - jt.thetaRad;
+			const double e = jt.q_ref - jt.q;
 			sum_e2 += e * e;
 			
 			// Max absolute error and worst joint
@@ -72,10 +80,12 @@ namespace diagnostics {
 		}
 
 		// Error statistics
-		s.err_rms = (n > 0) ? std::sqrt(sum_e2 / (double)n) : 0.0f; // RMS error
-		s.err_max = max_abs_e;	// max error
-		s.worst_joint = worstJ; // index of worst joint
-		s.clamp_sum = clampSum; // total clamping events
+		s.err_rms	  = (n > 0) ? std::sqrt(sum_e2 / (double)n) : 0.0f; // RMS error
+		s.err_max	  = max_abs_e;	   // max error
+		s.clamp_theta = clampThetaSum; // total angle clamping events
+		s.clamp_omega = clampOmegaSum; // total velocity clamping events
+		s.clamp_sum	  = clampSum;	   // total clamping events
+		s.worst_joint = worstJ;		   // index of worst joint
 
 		// Finalize write
 		ring.endWrite();

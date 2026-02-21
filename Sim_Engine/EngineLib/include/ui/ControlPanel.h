@@ -108,7 +108,7 @@ namespace gui {
 
 		// Follow View Methods
 		void selectJointAndFollow(int jointIndex);
-		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
+		//void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
 		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
 
 		// Results Methods
@@ -157,7 +157,7 @@ namespace gui {
 			std::vector<float> errRms;
 			std::vector<float> errMax;
 			std::vector<std::vector<float>> jointErr;
-			int jointCount = 0;
+			size_t jointCount = 0;
 		};
 		std::vector<ComparisonSnapshot> _comparisonResults;
 		bool _comparisonReady = false;

@@ -1629,7 +1629,7 @@ namespace gui {
 	//					INPUT HANDLING
 	// --------------------------------------------------
 	void gui::SimManager::processMovementKey(int key, float delta) {
-		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No keyboard movement in quad view
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; }// No keyboard movement in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (ctrlMode == ControlMode::Camera) { cam->processKeyboard(key, delta); }
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
@@ -1650,12 +1650,12 @@ namespace gui {
 	}
 
 	void gui::SimManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
-		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No mouse look in quad view
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
-		if (!win || !win->isMouseCaptured()) return;
+		if (!win || !win->isMouseCaptured()) { return; }
 
-		bool captured = false;
+		bool captured = true;
 		if (win == static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
 
 		if (!captured && !_isHovered) {

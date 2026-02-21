@@ -26,6 +26,13 @@ namespace robots {
         std::vector<double> tau_friction;
         std::vector<double> tau_barrier;
         std::vector<double> tau_sat;
+        // Energy, Work, & Power
+		std::vector<double> KE;
+		std::vector<double> PE;
+		std::vector<double> E_total;
+        std::vector<double> W_actuator;
+		std::vector<double> P_damping;
+		std::vector<double> P_friction;
 		// Limit flags and info
         std::vector<double> clamp_theta;
         std::vector<double> clamp_omega;
@@ -55,6 +62,13 @@ namespace robots {
             tau_friction.clear();
             tau_barrier.clear();
             tau_sat.clear();
+            // Energy, Work, & Power
+			KE.clear();
+			PE.clear();
+			E_total.clear();
+            W_actuator.clear();
+			P_damping.clear();
+			P_friction.clear();
 			// Limit flags and info
             clamp_theta.clear();
             clamp_omega.clear();
@@ -85,6 +99,13 @@ namespace robots {
             tau_friction.reserve(n);
             tau_barrier.reserve(n);
             tau_sat.reserve(n);
+            // Energy, Work, & Power reserve
+			KE.reserve(n);
+			PE.reserve(n);
+			E_total.reserve(n);
+            W_actuator.reserve(n);
+			P_damping.reserve(n);
+			P_friction.reserve(n);
 			// Limit flags and info reserve
             clamp_theta.reserve(n);
             clamp_omega.reserve(n);

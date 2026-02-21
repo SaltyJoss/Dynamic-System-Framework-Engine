@@ -228,7 +228,6 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
     <ClInclude Include="include\Rendering\Texture.h" />
-    <ClInclude Include="include\Robots\RobotCommon.h" />
     <ClInclude Include="include\Robots\RobotDynamics.h" />
     <ClInclude Include="include\Robots\RobotKinematics.h" />
     <ClInclude Include="include\Robots\RobotLoader.h" />

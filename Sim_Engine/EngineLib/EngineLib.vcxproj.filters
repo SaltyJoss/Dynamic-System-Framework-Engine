@@ -543,11 +543,11 @@
     <ClInclude Include="include\Robots\RobotKinematics.h">
       <Filter>Header Files\include\Robots</Filter>
     </ClInclude>
-    <ClInclude Include="include\Robots\RobotCommon.h">
-      <Filter>Header Files\include\Robots</Filter>
-    </ClInclude>
     <ClInclude Include="include\Scene\SimulationCore.h">
       <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\SceneRenderer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

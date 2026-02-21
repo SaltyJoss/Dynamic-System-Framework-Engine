@@ -152,21 +152,27 @@ namespace window {
 	// Input handling
     void window::GLWindow::setMouseCaptured(bool captured) {
         _mouseCaptured = captured;
-
         GLFWwindow* w = _window;
-        if (!w) return;
+		if (!w) { return; }
 
+		// When mouse is captured, disable the cursor and enable raw mouse motion for high-precision input
         if (_mouseCaptured) {
+			// When mouse is captured, disable the cursor and enable raw mouse motion for high-precision input
             glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            if (glfwRawMouseMotionSupported())
+            if (glfwRawMouseMotionSupported()) {
                 glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            }
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
             // tell SimManager to reset its first-mouse state
-            if (_sim) _sim->resetMouseDelta();
+            if (_sim) { _sim->resetMouseDelta(); }
         }
         else {
+			// When mouse is released, show the cursor and disable raw mouse motion
             glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            if (glfwRawMouseMotionSupported())
+            if (glfwRawMouseMotionSupported()) {
                 glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+            }
+            ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
     }
 
@@ -174,9 +180,8 @@ namespace window {
     void window::GLWindow::onKey(int key, int /*scancode*/, int action, int /*mods*/) {
         if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
             setMouseCaptured(!_mouseCaptured);
-			// close control panel when key is pressed again
             controlPanelOpen = !controlPanelOpen;
-            ImGui::SetWindowFocus(nullptr);   // clear focus
+            ImGui::SetWindowFocus(nullptr);
             return;
         }
     }
