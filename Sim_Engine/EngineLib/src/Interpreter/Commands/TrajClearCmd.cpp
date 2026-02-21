@@ -30,8 +30,8 @@ namespace commands {
         gui::SimManager* sim = cntx.Sim();
         if (!sim) return { CmdState::Failed, {}, "trajClear: no sim in context." };
 
-        // Clear all trajectories
-		sim->traj().clearAll();
+		auto trajMgr = sim->traj();
+		trajMgr->clearAll(); // clear all trajectories
 
         // Zero qd/qdd refs for all joints so nothing lingers
         auto* robot = cntx.Robot();

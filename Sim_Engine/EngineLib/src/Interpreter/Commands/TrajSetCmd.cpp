@@ -99,7 +99,8 @@ namespace commands {
 			const double amax = degToRad(_params[2]);
 
 			auto traj = std::make_unique<control::TrapezoidTrajectory>(t0, q0, q1, vmax, amax);
-			sim->traj().set(_link, std::move(traj));
+			auto trajMgr = sim->traj();
+			trajMgr->set(_link, std::move(traj));
 	
 			double wMax_est = std::abs(vmax);
 			wMax_est = std::min(wMax_est, (double)wMax_hw);
@@ -148,7 +149,8 @@ namespace commands {
 			double phi = (_params.size() == 5) ? degToRad(_params[4]) : 0.0; // radians
 
 			auto traj = std::make_unique<control::SinusoidalTrajectory>(t0, t0 + dur, centre, amp, fHz, phi);
-			sim->traj().set(_link, std::move(traj));
+			auto trajMgr = sim->traj();
+			trajMgr->set(_link, std::move(traj));
 
 			double wMax_est = TWO_PI_d * fHz * amp;
 			wMax_est = std::min(wMax_est, wMax_hw);
@@ -217,7 +219,8 @@ namespace commands {
 			}
 
 			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, centre, std::move(comps));
-			sim->traj().set(_link, std::move(traj));
+			auto trajMgr = sim->traj();
+			trajMgr->set(_link, std::move(traj));
 
 			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu", _link.c_str(), centre, dur, nComps);
 
