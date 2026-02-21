@@ -403,9 +403,17 @@ namespace robots {
 			);
 
 			// Log metrics to buffer if logging is enabled
-			auto* buf = _logBuffer;
+			robots::JointLogBuffer* buf = nullptr;
 
-			// inside joint loop
+			// If using internal logging, get the active buffer
+			if (_useInternalLogging) {
+				int idx = _activeLogBufIdx.load(std::memory_order_acquire);
+				buf = &_logBuffers[idx];
+			}
+			// If using external logging, use the user-provided buffer
+			else { buf = _logBuffer; /*external buffer provided by user*/ }
+
+			// If we have a buffer, push the new entry
 			if (buf) {
 				JointLogBuffer::JointLogEntry e{};
 				e.sim_time = simTime;
@@ -1044,7 +1052,6 @@ namespace robots {
 				(float)_basePos.z()
 			)
 		);
-
 		glm::mat4 R = glm::rotate(
 			glm::mat4(1.0f),
 			(float)_baseYaw,
@@ -1064,4 +1071,31 @@ namespace robots {
 
 	// Set the torque mode for the robot system
 	void RobotSystem::setTorqueMode(eTorqueMode mode) { _robot.torqueMode = mode; }
+
+	// Method to claim the current active log buffer for exporting logged data (returns pointer to buffer active before swap)
+	robots::JointLogBuffer* RobotSystem::claimExportLogBuffer() {
+		// swap active buffer index
+		std::lock_guard<std::mutex> lk(_logSwapMutex);				 // ensure thread safety during swap
+		int prev = _activeLogBufIdx.load(std::memory_order_acquire); // get current active buffer index
+		int next = 1 - prev;										 // compute next buffer index (toggle between 0 and 1)
+		_activeLogBufIdx.store(next, std::memory_order_release);	 // set next buffer as active for logging
+		return &_logBuffers[prev]; // returns ptr to buffer active before swap
+	}
+
+	// Method to enable or disable the use of internal log buffers for recording joint metrics during simulation
+	void RobotSystem::useInternalLogBuffer(bool enable) {
+		_useInternalLogging = enable;
+		if (enable) {
+			_logBuffers[0].clear();	   // clear both buffers to start fresh
+			_logBuffers[1].clear();	   // clear both buffers to start fresh
+			_activeLogBufIdx.store(0); // reset active buffer index to 0
+		}
+	}
+
+	// Method to reserve capacity in the internal log buffers to optimize performance by avoiding reallocations during logging
+	void RobotSystem::reserveInternalLogBuffers(size_t expected) {
+		_logBuffers[0].reserve(expected); // reserve both buffers to avoid reallocations during logging
+		_logBuffers[1].reserve(expected); // reserve both buffers to avoid reallocations during logging
+	}
+
 } // namespace robots

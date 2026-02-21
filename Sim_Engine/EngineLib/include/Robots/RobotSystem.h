@@ -133,6 +133,15 @@ namespace robots {
 		void setTorqueMode(eTorqueMode mode);
 		eTorqueMode getTorqueMode() const { return _robot.torqueMode; }
 
+		// Swap for the current log buffer, returning a ptr to new active buffer
+		robots::JointLogBuffer* claimExportLogBuffer();
+
+		// Method to enable or disable the use of internal log buffers
+		void useInternalLogBuffer(bool enable);
+
+		// Reserve space in the internal log buffers for a certain number of samples (expected)
+		void reserveInternalLogBuffers(size_t expected);
+
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
@@ -173,11 +182,6 @@ namespace robots {
 		// Robot model, and robot mode
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
-
-		// Buffers for logging and reference state (not owned by RobotSystem)
-		robots::JointLogBuffer* _logBuffer = nullptr;
-
-		robots::TrajRefBuffer*  _refBuffer = nullptr;
 
 		// Flags and precomputed data
         bool _hasRobot = false;
@@ -221,10 +225,21 @@ namespace robots {
 		double _baseYawAcc = 0.0;
 
 		// Tunables
-		double _baseMass = 62.0;          // kg (H1 ≈ 60–65)
+		double _baseMass = 62.0;           // kg (H1 ~60–65)
 		double _baseLinearDamping = 6.0;   // Ns/m
 		double _baseYawDamping = 2.0;      // Nms/rad
 		double _lastBaseForwardForce = 0.0;
+
+		// Double-buffer design
+		std::array<robots::JointLogBuffer, 2> _logBuffers{};
+		std::atomic<int> _activeLogBufIdx{ 0 }; // index of the currently active log buffer for writing (0 or 1)
+		std::mutex _logSwapMutex; // mutex to protect swapping log buffers between simulation and logging thread
+		bool _useInternalLogging = true; // flag to determine whether to use internal log buffers or external one provided by setLogBuffer
+
+		// Pointers to external log and reference buffers (not owned by RobotSystem)
+		robots::JointLogBuffer* _logBuffer = nullptr;
+		robots::TrajRefBuffer* _refBuffer = nullptr;
+
 	};
 } // namespace robot
 

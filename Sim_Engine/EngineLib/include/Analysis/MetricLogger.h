@@ -107,6 +107,7 @@ namespace robots {
             return theta.size();
         }
 
+		// Struct representing a single log entry for a joint at a specific time step
         struct ENGINE_API JointLogEntry {
             double sim_time;
             double dt_taken;
@@ -118,6 +119,7 @@ namespace robots {
             int joint_index;
         };
 
+		// Push a new log entry into the buffer
         void push_entry(const JointLogEntry& e) {
             sim_time.push_back(e.sim_time);
             dt_sug.push_back(e.dt_sug);
@@ -146,6 +148,48 @@ namespace robots {
             clamp_omega.push_back(e.clamp_omega);
             sat_flag.push_back(e.sat_flag);
             joint_index.push_back(e.joint_index);
+        }
+
+		// Validate that all vectors have the same size
+        bool validate(std::string* outMsg) const {
+			size_t n = theta.size(); // ref size
+			// Lambda to check size of each vector against n
+            auto checkSize = [&](const auto& v, const char* name) -> bool {
+                if (v.size() != n) {
+                    if (outMsg) { *outMsg = "Size mismatch for " + std::string(name) + ": expected " + std::to_string(n) + ", got " + std::to_string(v.size()); }
+                    return false;
+                }
+                return true;
+            };
+			// Check that all vectors have the same size
+			if (!checkSize(sim_time, "sim_time")) return false;
+			if (!checkSize(dt_taken, "dt_taken")) return false;
+			if (!checkSize(dt_sug, "dt_sug")) return false;
+			if (!checkSize(theta, "theta")) return false;
+			if (!checkSize(omega, "omega")) return false;
+			if (!checkSize(alpha, "alpha")) return false;
+			if (!checkSize(err, "err")) return false;
+			if (!checkSize(err_d, "err_d")) return false;
+			if (!checkSize(I_eff, "I_eff")) return false;
+			if (!checkSize(tau, "tau")) return false;
+			if (!checkSize(tau_fb, "tau_fb")) return false;
+			if (!checkSize(tau_coriolis, "tau_coriolis")) return false;
+			if (!checkSize(tau_gravity, "tau_gravity")) return false;
+			if (!checkSize(tau_damping, "tau_damping")) return false;
+			if (!checkSize(tau_friction, "tau_friction")) return false;
+			if (!checkSize(tau_barrier, "tau_barrier")) return false;
+			if (!checkSize(tau_sat, "tau_sat")) return false;
+			if (!checkSize(KE, "KE")) return false;
+			if (!checkSize(PE, "PE")) return false;
+			if (!checkSize(E_total, "E_total")) return false;
+			if (!checkSize(W_actuator, "W_actuator")) return false;
+			if (!checkSize(P_damping, "P_damping")) return false;
+			if (!checkSize(P_friction, "P_friction")) return false;
+			if (!checkSize(clamp_theta, "clamp_theta")) return false;
+			if (!checkSize(clamp_omega, "clamp_omega")) return false;
+			if (!checkSize(sat_flag, "sat_flag")) return false;
+			if (!checkSize(joint_index, "joint_index")) return false;
+			return true; // all sizes match
         }
     };
 
