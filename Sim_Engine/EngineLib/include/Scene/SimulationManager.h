@@ -237,6 +237,10 @@ namespace gui {
         diagnostics::TelemetryRecorder& telemetry();
         const diagnostics::TelemetryRecorder& telemetry() const;
 
+		// Accessors for the Simulation Core interface (non-const and const versions)
+        core::ISimulationCore* simCoreInterface();
+        const core::ISimulationCore* simCoreInterface() const;
+
         // Accesor for Simulation Core (non-const and const versions)
 		core::SimulationCore* simCore();
 		const core::SimulationCore* simCore() const;
@@ -249,9 +253,9 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
+    private:
+        std::unique_ptr<core::SimulationCore> _core = nullptr;
 
-
-    private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
         void WorldGridRender(scene::Camera* cam, int rtW);
@@ -274,8 +278,8 @@ namespace gui {
         bool _glReady = false;
 
 		// Sizes & Display
-		glm::vec2 _internalSize = { 1920.0f, 1080.0f };  // Internal render target size
-		glm::vec2 _displaySize = { 1920.0f, 1080.0f };   // Actual display size
+		glm::vec2 _internalSize{ 1920.0f, 1080.0f };  // Internal render target size
+		glm::vec2 _displaySize{ 1920.0f, 1080.0f };   // Actual display size
 		glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f }; // Background colour (default white, but can be changed by user)
 
 		// Cached display size for scaling calculations (updated on resize)
@@ -336,7 +340,5 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
-
-        std::unique_ptr<core::SimulationCore> _core = nullptr;
     };
 } // namespace gui

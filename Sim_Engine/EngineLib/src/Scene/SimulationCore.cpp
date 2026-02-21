@@ -7,6 +7,8 @@
 #include "Robots/RobotModel.h"
 #include "Robots/TrajectoryManager.h"
 
+#include "Assets/MeshLoader.h"
+
 #include "Interpreter/StoredProgram.h"
 #include "Interpreter/Parser.h"
 
@@ -33,6 +35,16 @@ namespace core {
 		intgr->resetAdaptiveState();
 		intgr->setAdaptiveTolerances(1e-3, 1e-6);
 		intgr->setMaxStep(_dt);
+	}
+	// Set the integration method for the simulation (also updates the robot's integrator if it exists)
+	void SimulationCore::setIntegrationMethod(integration::eIntegrationMethod method) {
+		if (!_robot) { return; }
+		_robot->getIntegrator()->setIntegrationMethod(method);
+	}
+	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
+	std::string SimulationCore::integrationMethodName() const {
+		if (!_robot) { return "no_robot"; }
+		return _robot->getIntegrator()->IntegratorName(_robot->getIntegrator()->getIntegrationMethod());
 	}
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
@@ -367,6 +379,13 @@ namespace core {
 		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
 		return (_telemetry.ring.size() >= 2);
 	}
+	
+	// Setter for fixed timestep duration
+	void SimulationCore::setFixedDt(double dt) { _dt = dt; }
+	// Getter for fixed timestep duration
+	double SimulationCore::fixedDt() const { return _dt; }
+	// Getter for current simulation time
+	double SimulationCore::simTime() const { return _simTime; }
 
 	// Method to step the simulation with a fixed timestep
 	void SimulationCore::tick(double frame_dt) { stepFixed(frame_dt); }
@@ -380,13 +399,72 @@ namespace core {
 	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics; }
 	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics; }
 
+	// Accessor for the robot system (non-const and const versions)
+	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
+	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
+
 	// Setter and checker for Robot System
 	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
 	bool SimulationCore::hasRobot() const { return _robot && _robot->hasRobot(); }
 
-	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
-	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
+	// Loads a robot into the robot system by name
+	void SimulationCore::loadRobot(const std::string& name) {
+		if (!_robot) { D_FAIL("Cannot load robot: RobotSystem not set"); return; }
+		_robot->loadRobot(name);
+	}
+	// Clears the currently loaded robot from the robot system
+	void SimulationCore::clearRobot() {
+		if (!_robot) { D_FAIL("Cannot clear robot: RobotSystem not set"); return; }
+		_robot->clearRobot();
+	}
+
+	// Getter for the scene objects reference (used for script object lookup)
+	std::vector<std::unique_ptr<scene::Object>>& SimulationCore::getObjects() {
+		if (!_objects) { throw std::runtime_error("Scene objects pointer not set in SimulationCore"); }
+		return *_objects;
+	}
+	// Deletes an object from the scene by index, with bounds checking
+	void SimulationCore::deleteObject(int index) {
+		if (!_objects) { D_FAIL("Cannot delete object: Scene objects pointer not set"); return; }
+		if (index < 0 || index >= static_cast<int>(_objects->size())) {
+			D_FAIL("Cannot delete object: Index %d out of bounds (size=%zu)", index, _objects->size());
+			return;
+		}
+		_objects->erase(_objects->begin() + index);
+	}
+	// Loads a mesh from the given path, adds it to the scene objects, and returns raw pointers to the new objects for script access
+	std::vector<scene::Object*> SimulationCore::loadMeshReturn(const std::string& path) {
+		assets::MeshLoader loader;
+		auto meshes = loader.load(path);
+		std::vector<scene::Object*> result;
+		for (auto& m : meshes) {
+			auto obj = std::make_unique<scene::Object>(m);
+			auto raw = obj.get();
+			raw->internal = true;
+			_objects->push_back(std::move(obj));
+			result.push_back(raw);
+		}
+		return result;
+	}
+
+	// Setter for the scene objects pointer (used for script object lookup)
+	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects = objects; }
+	// Getter for object
+	scene::Object* SimulationCore::getObject() {
+		if (!_objects) { return nullptr; }
+		for (auto& obj : *_objects) {
+			if (obj) { return obj.get(); }
+		}
+		return nullptr;
+	}
+	// Getter for object by ID
+	scene::Object* SimulationCore::getObjectByID(scene::ObjectID id) {
+		if (!_objects) { return nullptr; }
+		for (auto& obj : *_objects) {
+			if (obj && obj->id == id) { return obj.get(); }
+		}
+		return nullptr;
+	}
 
 	// Setter for the trajectory manager
 	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj = traj; }
@@ -395,9 +473,6 @@ namespace core {
 	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj; }
 	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj; }
 
-	// Setter for the scene objects pointer (used for script object lookup)
-	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects = objects; }
-
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
 	void SimulationCore::setTrajRefBuffer(robots::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
@@ -405,6 +480,9 @@ namespace core {
 	// Accessor for the telemetry recorder (non-const and const versions)
 	diagnostics::TelemetryRecorder& SimulationCore::telemetry() { return _telemetry; }
 	const diagnostics::TelemetryRecorder& SimulationCore::telemetry() const { return _telemetry; }
+
+	// Get the current number of telemetry samples recorded
+	size_t SimulationCore::telemetrySampleCount() const { return _telemetry.ring.size(); }
 
 	// Setter and getter for the active script program
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }

@@ -9,7 +9,7 @@
 
 extern ENGINE_API Debug gLog;
 
-namespace scene {
+namespace assets {
 	class ENGINE_API VertexHolder {
 	public:
 		VertexHolder() : _pos(), _normal(), _texCoord() {}

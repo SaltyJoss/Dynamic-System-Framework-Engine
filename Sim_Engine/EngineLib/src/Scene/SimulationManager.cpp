@@ -15,7 +15,7 @@
 #include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
-#include "Scene/MeshLoader.h"
+#include "Assets/MeshLoader.h"
 #include "Scene/Light.h"
 #include "Scene/AxisOrientator.h"
 
@@ -779,7 +779,7 @@ namespace gui {
 
 	// Load a mesh from file and create one Object per submesh. The last loaded mesh becomes the active selection.
 	void SimManager::loadMesh(const std::string& filepath) {
-		gui::MeshLoader loader;
+		assets::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
 		if (meshes.empty()) {
@@ -815,17 +815,13 @@ namespace gui {
 
 	// Returns the loaded objects so they can be used as targets for robot joints in the same frame (e.g. end-effector)
 	std::vector<scene::Object*> SimManager::loadMeshReturn(const std::string& filepath) {
-		gui::MeshLoader loader;
+		assets::MeshLoader loader;
 		auto meshes = loader.load(filepath);
-
 		std::vector<scene::Object*> result;
-
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);
 			auto raw = obj.get();
-
 			raw->internal = true;
-
 			_impl->_objects.push_back(std::move(obj));
 			result.push_back(raw);
 		}
@@ -1175,7 +1171,11 @@ namespace gui {
 	interpreter::IStoredProgram* SimManager::activeProgram() { return _core->activeProgram(); }
 	const interpreter::IStoredProgram* SimManager::activeProgram() const { return _core->activeProgram(); }
 
-	// Access the simulation core for advanced users who want to run custom programs, etc.
+	// Access the simulation core interface (non-const and const versions)
+	core::ISimulationCore* SimManager::simCoreInterface() { return _core.get(); }
+	const core::ISimulationCore* SimManager::simCoreInterface() const { return _core.get(); }
+
+	// Access the concrete simulation core (non-const and const versions)
 	core::SimulationCore* SimManager::simCore() { return _core.get(); }
 	const core::SimulationCore* SimManager::simCore() const { return _core.get(); }
 
@@ -1215,20 +1215,15 @@ namespace gui {
 		// Replace the integrator method in the script text
 		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
 
-		// Create program and parser
-		auto program = std::make_unique<interpreter::StoredProgram>(this);
-		program->setDefaultObject(getObject());
+		// Create program and parser (bound to headless core)
+		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
+		if (scene::Object* o = getObject()) program->setDefaultObject(o);
 		auto parser = std::make_unique<interpreter::Parser>(program.get());
 
-		// Clear any existing program state
-		program->clear();
-		// Parse the modified script
+		// Parse the modified script and start the program
 		parser->parse(modifiedScript);
-		// Start the program
 		program->start();
-
-		// Run to completion
-		return _core->runScriptToCompletion(program.get(), method);
+		return _core->runScriptToCompletion(program.get(), method); // this will block until the script finishes
 	}
 
 	// --------------------------------------------------

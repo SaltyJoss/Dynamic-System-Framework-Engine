@@ -2,7 +2,7 @@
 // File:   StoredProgram.cpp
 // GitHub: SaltyJoss
 #include "Interpreter/StoredProgram.h"
-#include "Scene/SimulationManager.h"
+#include "Platform/ISimulationCore.h"
 #include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
 #include "Scene/ObjectID.h"
@@ -11,8 +11,13 @@
 #include "EngineLib/LogMacros.h"
 
 namespace interpreter {
-	StoredProgram::StoredProgram(gui::SimManager* sim) : _currentLineNumber(0), PC(0), _sim(sim), 
-		_cntx(sim, [&] { scene::Object* o = (sim ? sim->getObject() : nullptr); return o ? o->id : scene::ObjectID::INVALID_OBJECT_ID; }()) {
+	StoredProgram::StoredProgram(core::ISimulationCore* core)
+		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
+		// If necessary, set a default object by querying core->getObject()
+		if (_core) {
+			scene::Object* obj = _core->getObject();
+			_cntx.motion().setDefaultObjectID(obj ? obj->id : scene::ObjectID::INVALID_OBJECT_ID);
+		}
 	}
 	StoredProgram::~StoredProgram() { clear(); }
 
@@ -69,7 +74,7 @@ namespace interpreter {
 	// Start simulation
 	void StoredProgram::startSim() {
 		if (_state != ProgramState::Running) { start(); }
-		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
+		if (_core && !_core->isSimRunning()) { _core->startSimulation(); }
 	}
 
 	// Stop program execution
@@ -82,8 +87,8 @@ namespace interpreter {
 	
 	// Stop simulation
 	void StoredProgram::stopSim() {
-		if (!_sim) { return; }
-		if (_sim->isSimRunning()) { _sim->stopSimulation(); }
+		if (!_core) { return; }
+		if (_core->isSimRunning()) { _core->stopSimulation(); }
 
 		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
 		if (obj) {
@@ -92,7 +97,7 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
+		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	// Pause program execution
@@ -106,19 +111,19 @@ namespace interpreter {
 			_cntx.motion().stopTranslation(obj, all);
 		}
 
-		if (_sim->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
+		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	// Wait for simulation to run for dt seconds
 	void StoredProgram::waitSim(double dt) {
-		if (_sim && !_sim->isSimRunning()) { _sim->startSimulation(); }
+		if (_core && !_core->isSimRunning()) { _core->startSimulation(); }
 		double elapsed = 0.0;
-		const double stepDt = _sim ? _sim->fixedDt() : static_cast<double>(1.0 / 180.0);
+		const double stepDt = _core ? _core->fixedDt() : static_cast<double>(1.0 / 180.0);
 		while (elapsed < dt) {
-			if (_sim) { _sim->updatePhysics(stepDt); }
+			if (_core) { _core->updatePhysics(stepDt); }
 			elapsed += stepDt;
 		}
-		if (_sim && _sim->isSimRunning()) { _sim->stopSimulation(); }
+		if (_core && _core->isSimRunning()) { _core->stopSimulation(); }
 	}
 
 	// Get current program status
@@ -140,7 +145,7 @@ namespace interpreter {
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
 
 		// Ensure default object is valid in context
-		scene::Object* o = _defaultObj ? _defaultObj : (_sim ? _sim->getObject() : nullptr);
+		scene::Object* o = _defaultObj ? _defaultObj : (_core ? _core->getObject() : nullptr);
 		_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
 
 		// Get current command
@@ -176,14 +181,14 @@ namespace interpreter {
 	// Set Integrator Method
 	void StoredProgram::setIntegratorMethod(IntegratorMethod method) {
 		_integratorMethod = method;
-		if (_sim) {
-			if (_sim->hasRobot()) {
-				robots::RobotSystem* robot = _sim->robotSystem();
+		if (_core) {
+			if (_core->hasRobot()) {
+				robots::RobotSystem* robot = _core->robotSystem();
 				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
 				robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 			}
 
-			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			physics::PhysicsSystem* phys = _core->physicsSystem();
 			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
 			phys->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
@@ -198,38 +203,38 @@ namespace interpreter {
 	}
 
 	// Set Fixed Dt
-	void StoredProgram::setFixedDt(double dt) { _dt = dt; if (_sim) { _sim->setFixedDt(dt); } }
+	void StoredProgram::setFixedDt(double dt) { _dt = dt; if (_core) { _core->setFixedDt(dt); } }
 	// Get Fixed Dt
 	double StoredProgram::getFixedDt() const {
-		if (_sim) { return _sim->fixedDt(); }
+		if (_core) { return _core->fixedDt(); }
 		return _dt;
 	}
 
 	// Set Gravity
 	void StoredProgram::setGravity(double gravity) { 
 		_gravity = gravity;
-		if (_sim) {
-			if (_sim->hasRobot()) {
-				robots::RobotSystem* robot = _sim->robotSystem();
+		if (_core) {
+			if (_core->hasRobot()) {
+				robots::RobotSystem* robot = _core->robotSystem();
 				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
 				robot->setGravity(gravity);
 			}
-
-			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			 
+			physics::PhysicsSystem* phys = _core->physicsSystem();
 			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
 			phys->setGravity(mathlib::Vec3(0.0f, 0.0f, static_cast<float>(gravity)));
 		}
 	}
 	// Get Gravity
 	double StoredProgram::getGravity() const {
-		if (_sim) {
-			if (_sim->hasRobot()) {
-				robots::RobotSystem* robot = _sim->robotSystem();
+		if (_core) {
+			if (_core->hasRobot()) {
+				robots::RobotSystem* robot = _core->robotSystem();
 				if (!robot) { D_FAIL("No robot system found in simulation manager."); return _gravity; }
 				return robot->getGravity();
 			}
 
-			physics::PhysicsSystem* phys = _sim->physicsSystem();
+			physics::PhysicsSystem* phys = _core->physicsSystem();
 			if (!phys) { D_FAIL("No physics system found in simulation manager."); return _gravity; }
 			return phys->getGravity().y();
 		}
@@ -239,9 +244,10 @@ namespace interpreter {
 	// Set Colour
 	void StoredProgram::setColour(mathlib::Vec3 rgb) {
 		_rgb = rgb;
-		if (_sim) {
-			_sim->setLightColour(toGlm(rgb));
-			D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
+		if (_core) {
+			D_WARN("This method has not been integrated with the rendering system yet, so it has no effect.");
+		    // _core->setShaderAlbedo(toGlm(rgb));
+			// D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
 		}
 	}
 

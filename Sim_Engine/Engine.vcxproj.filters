@@ -7,6 +7,9 @@
     <ClCompile Include="External\stb\stb_image_write_impl.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\src\BatchMain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

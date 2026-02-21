@@ -1,9 +1,7 @@
 #include "pch.h"
 // File:   MeshLoader.cpp
 // GitHub: SaltyJoss
-#include "Scene/MeshLoader.h"
-#include "Scene/VertexHolder.h"
-
+#include "Assets/MeshLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -12,7 +10,7 @@
 
 #include "EngineLib/LogMacros.h"
 
-namespace gui {
+namespace assets {
 	// Load a mesh from the specified file path and return a vector of shared pointers to Mesh objects
 	std::vector<std::shared_ptr<scene::Mesh>> MeshLoader::load(const std::string& filepath) {
 		_imported.clear();
@@ -76,7 +74,7 @@ namespace gui {
 
 		// Get the vertices of the mesh and add them to the result mesh, applying the local transform to the vertex positions and normals
 		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
-			scene::VertexHolder vh;
+			assets::VertexHolder vh;
 			vh._pos = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 			vh._normal = mesh->mNormals
 				? glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z)

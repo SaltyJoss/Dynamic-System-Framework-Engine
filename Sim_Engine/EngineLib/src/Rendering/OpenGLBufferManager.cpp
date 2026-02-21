@@ -12,7 +12,7 @@
 
 namespace render {
 	// Creates the VAO, VBO, and EBO for this buffer using the provided vertex and index data
-	void OpenGLVertexIndexBuffer::createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
+	void OpenGLVertexIndexBuffer::createBuffers(const std::vector<assets::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
 		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
 
 		glGenVertexArrays(1, &_VAO);
@@ -24,19 +24,19 @@ namespace render {
 		glBindVertexArray(_VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(scene::VertexHolder), vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(assets::VertexHolder), vertices.data(), GL_STATIC_DRAW);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _pos));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(assets::VertexHolder), (void*)offsetof(assets::VertexHolder, _pos));
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _normal));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(assets::VertexHolder), (void*)offsetof(assets::VertexHolder, _normal));
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(scene::VertexHolder), (void*)offsetof(scene::VertexHolder, _texCoord));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(assets::VertexHolder), (void*)offsetof(assets::VertexHolder, _texCoord));
 
 		glBindVertexArray(0);
 

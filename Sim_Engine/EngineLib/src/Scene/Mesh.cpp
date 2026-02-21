@@ -1,7 +1,7 @@
 #include "pch.h"
 // File:   Mesh.cpp
 // GitHub: SaltyJoss
-#include "Scene/MeshLoader.h"
+#include "Assets/MeshLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -17,16 +17,14 @@ namespace scene {
 		createBuffers();
 	}
 
-	// Mesh Loading
+	// Load mesh data from file using MeshLoader
 	bool Mesh::load(const std::string& path) {
-		gui::MeshLoader loader;
+		assets::MeshLoader loader;
 		loader.load(path);
-		
 		if (loader.load(path).empty()) {
 			LOG_ERROR("Mesh load failed for file: %s", path.c_str());
 			return false;
 		}
-
 		return true;
 	}
 

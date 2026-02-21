@@ -12,7 +12,7 @@ namespace render {
 		public:
 			OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
 
-			void createBuffers(const std::vector<scene::VertexHolder>& vertices, const std::vector<unsigned int>& indices) override;
+			void createBuffers(const std::vector<assets::VertexHolder>& vertices, const std::vector<unsigned int>& indices) override;
 			void deleteBuffers() override;
 			void bind() override;
 			void unbind() override;

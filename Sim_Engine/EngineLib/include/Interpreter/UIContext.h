@@ -13,9 +13,9 @@ namespace interpreter { class ENGINE_API StoredProgram; }
 namespace commands {	
 	class ENGINE_API UIContext {
 	public:
-		UIContext(gui::SimManager* sim, scene::ObjectID obj);
+		UIContext(core::ISimulationCore* core);
 
-		gui::SimManager* Sim() const { return _sim; }
+		core::ISimulationCore* Core() const { return _core; }
 		robots::RobotSystem* Robot() const { return _robot; }
 		scene::ObjectID DefaultObjectID() const;
 		scene::ObjectID ObjectID() const;
@@ -47,7 +47,7 @@ namespace commands {
 		utils::OpResult startSim();
 
 	private:
-		gui::SimManager* _sim = nullptr;
+		core::ISimulationCore* _core = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		robots::RobotSystem* _robot = nullptr;
 		scene::ObjectID _objID;

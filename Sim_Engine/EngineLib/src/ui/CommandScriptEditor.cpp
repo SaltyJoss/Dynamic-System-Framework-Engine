@@ -133,30 +133,33 @@ namespace gui {
 				_sim->setScriptRunning(false);
 			}
 			else {
+				// If a script is already running, stop it and clean up before starting a new one
 				_sim->setActiveProgram(nullptr);
 				delete _wrapper; _wrapper = nullptr;
 				delete _parser;  _parser = nullptr;
 				delete _program; _program = nullptr;
 
-				_program = new interpreter::StoredProgram(_sim);
+				// Create new program, parser, and wrapper instances
+				_program = new interpreter::StoredProgram(_sim->simCoreInterface());
 				_program->setDefaultObject(_sim->getObject());
 				_parser = new interpreter::Parser(_program);
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 
+				// Set the active program in the simulation manager before running
 				_sim->setActiveProgram(_program);
-					_sim->setScriptRunning(true);
-					_sim->setLastScriptText(_scriptText);
+				_sim->setScriptRunning(true);
+				_sim->setLastScriptText(_scriptText);
 
-					// Remove trailing null character if present
+				// Remove trailing null character if present
 				std::string code = _scriptText;
 				if (!code.empty() && code.back() == '\0') code.pop_back();
 
 				_wrapper->runProgram(_scriptText);
 			}
 		}
-
+		// Pop button style colors if we pushed them
 		if (wasRunning) { ImGui::PopStyleColor(3); }
-
+		// Check script status and handle termination conditions
 		if (_sim->isScriptRunning()) {
 			auto* prog = _sim->activeProgram();
 			if (!prog) { terminateScript("Command script stopped -> active program is null.", true); return; }

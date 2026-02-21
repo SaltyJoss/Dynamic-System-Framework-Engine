@@ -4,7 +4,7 @@
 #include "Interpreter/Commands/TrajClearCmd.h"
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
-#include "Scene/SimulationManager.h"
+#include "Scene/SimulationCore.h"
 
 #include "EngineLib/LogMacros.h"
 #include "Interpreter/Utils.h"
@@ -27,10 +27,11 @@ namespace commands {
     program_data::CmdResult TrajClearCmd::update(CommandContextMotion& cntx, double /*dt*/) {
         if (_done) return { CmdState::Executed, {}, "" };
 
-        gui::SimManager* sim = cntx.Sim();
-        if (!sim) return { CmdState::Failed, {}, "trajClear: no sim in context." };
+        core::ISimulationCore* core = cntx.Core();
+        if (!core) return { CmdState::Failed, {}, "trajClear: no sim in context." };
 
-		auto trajMgr = sim->traj();
+		auto trajMgr = core->trajectoryManager();
+		if (!trajMgr) return { CmdState::Failed, {}, "trajClear: no trajectory manager in sim." };
 		trajMgr->clearAll(); // clear all trajectories
 
         // Zero qd/qdd refs for all joints so nothing lingers

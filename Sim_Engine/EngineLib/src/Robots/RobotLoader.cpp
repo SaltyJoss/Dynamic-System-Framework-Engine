@@ -6,7 +6,7 @@
 #include <MathLibAPI.h>
 #include <core/constants.h>
 #include "Scene/Object.h"
-#include "Scene/MeshLoader.h"
+#include "Assets/MeshLoader.h"
 #include "EngineLib/LogMacros.h"
 
 #include <nlohmann/json.hpp>

@@ -4,7 +4,7 @@
 #include "EngineCore.h"
 
 #include "Platform/Window.h"
-#include "Scene/VertexHolder.h"
+#include "Assets/VertexHolder.h"
 
 #include <cstdint>
 #include "Platform/Logger.h"
@@ -22,7 +22,7 @@ namespace render {
 		// Replaces and Centralises old VAO, VBO, EBO classes -> See OpenGLBufferManager
 		VertexIndexBuffer() : _VAO{ 0 }, _VBO{ 0 }, _EBO{ 0 } {}
 
-		virtual void createBuffers(const std::vector<scene::VertexHolder>& verticies, const std::vector<unsigned int>& indices) = 0;
+		virtual void createBuffers(const std::vector<assets::VertexHolder>& verticies, const std::vector<unsigned int>& indices) = 0;
 		virtual void deleteBuffers() = 0;
 		virtual void bind() = 0;
 		virtual void unbind() = 0;

@@ -7,7 +7,7 @@
 #include "EngineCore.h"
 
 #include "Rendering/RenderBase.h"
-#include "Scene/VertexHolder.h"
+#include "Assets/VertexHolder.h"
 #include "Scene/Element.h"
 
 #include "Scene/Face.h"	
@@ -26,11 +26,11 @@ namespace scene {
 		bool load(const std::string& filepath);
 
 		// CPU buffers
-		std::vector<VertexHolder> _vertices;
+		std::vector<assets::VertexHolder> _vertices;
 		std::vector<unsigned int> _indices;
 
 		// Utility methods for building mesh geometry
-		void addVertex(const VertexHolder& vertex) { _vertices.push_back(vertex); }
+		void addVertex(const assets::VertexHolder& vertex) { _vertices.push_back(vertex); }
 		void addVertexIndex(unsigned int vertexIndx) { _indices.push_back(vertexIndx); }
 
 		// GPU buffer management
@@ -72,7 +72,7 @@ namespace scene {
 
 			// Transform and append vertices
 			for (const auto& v : other._vertices) {
-				VertexHolder out = v;
+				assets::VertexHolder out = v;
 
 				// Apply the local transform to the vertex position and normal
 				glm::vec4 p = T * glm::vec4(v._pos, 1.0f);
