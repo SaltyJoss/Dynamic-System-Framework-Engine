@@ -549,9 +549,6 @@
     <ClInclude Include="include\Scene\SimulationCore.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\SceneRenderer.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
