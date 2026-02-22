@@ -12,7 +12,7 @@
 
 namespace robots {
 	// Constructor
-	RobotDynamics::RobotDynamics(RobotModel& robot, eTorqueMode mode)
+	RobotDynamics::RobotDynamics(RobotModel& robot)
 		: _robot(robot), _kinematics(std::make_unique<RobotKinematics>(robot)) {
 	}
 
@@ -128,8 +128,6 @@ namespace robots {
 					// Jacobian columns for joints i and j
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
-					// Mass matrix contribution from this link for joints i and j
-
 					// Mass matrix contribution from this link for joints i and j
 					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj;
 				}
@@ -445,7 +443,7 @@ namespace robots {
 
 			// Fill the reduced mass matrix row for active joint i
 			for (size_t c = 0; c < m; ++c) {
-				int j = active[c];
+				size_t j = active[c];
 				M(r, c) = M_full(i, j);
 			}
 		}

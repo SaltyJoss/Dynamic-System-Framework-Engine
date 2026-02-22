@@ -18,6 +18,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{383daa6b-14af-40d3-b6df-31732d4d7a6a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{146d8cfd-be4d-41a3-bc59-546deb084dc0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\brdf_lut.frag.glsl">
@@ -86,5 +89,10 @@
     <None Include="assets\shaders\world_grid.vert.glsl">
       <Filter>Shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Engine\include\BatchEntry.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

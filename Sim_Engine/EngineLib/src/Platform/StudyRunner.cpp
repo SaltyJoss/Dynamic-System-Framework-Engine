@@ -67,6 +67,13 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 			}
 			else { std::this_thread::sleep_for(std::chrono::milliseconds(5)); } // Sleep briefly to avoid busy-waiting if no futures are ready
 		}
+
+		fprintf(stdout,
+			"START thread %zu | tag=%s\n",
+			std::hash<std::thread::id>{}(std::this_thread::get_id()),
+			cfg.tag.c_str());
+		fflush(stdout);
+
 		// Start a new async run for this config, capturing the current config and program by value to make sure they are safely used in the async context
 		futures.push_back(std::async(std::launch::async, [this, cfg, scriptText]() -> StudyResult {
 			StudyResult result{};
@@ -109,6 +116,13 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 			catch (...) {
 				result.samples = 0;
 			}
+
+			fprintf(stdout,
+				"END   thread %zu | tag=%s\n",
+				std::hash<std::thread::id>{}(std::this_thread::get_id()),
+				cfg.tag.c_str());
+			fflush(stdout);
+
 			// Get the number of telemetry samples collected during this run (proxy for how much data we obtained)
 			return result; // Return the result of this study run
 		}));

@@ -22,7 +22,7 @@ namespace robots {
 	class ENGINE_API RobotDynamics {
 	public:
 		// Constructor
-		RobotDynamics(RobotModel& robot, eTorqueMode mode);
+		RobotDynamics(RobotModel& robot);
 
 		// Computes the inertia tensor of a robot link
 		mathlib::Mat3 computeLinkInertiaTensor(const RobotLink& link) const;
@@ -86,7 +86,7 @@ namespace robots {
 	private:
 		// References and pointers
 		RobotModel& _robot;
-		std::unique_ptr<RobotKinematics> _kinematics;
+		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 

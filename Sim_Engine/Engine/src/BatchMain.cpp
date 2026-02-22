@@ -1,11 +1,9 @@
 // BatchMain.cpp
 #include "pch.h"
 #include <EngineCore.h>
+#include "include/BatchEntry.h"
 #include "Platform/StudyRunner.h"
 #include "Numerics/IntegrationMethods.h"
-
-extern "C" core::ISimulationCore* CreateSimulationCore_v1();
-extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
 // Helper: create CorePtr (unique_ptr with std::function deleter)
 static CorePtr makeCoreFactory() {
@@ -18,6 +16,8 @@ static CorePtr makeCoreFactory() {
 }
 
 int runBatchMode() {
+    fprintf(stdout, "BATCH MODE ENTERED\n");
+    fflush(stdout);
     try {
 		// Define the configurations for the studies to run (combinations of integrator methods, timesteps, and run lengths)
         std::vector<StudyRunner::config> configs;

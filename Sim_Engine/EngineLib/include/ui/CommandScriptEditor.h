@@ -27,9 +27,6 @@ namespace gui {
 		// Main render function
 		void render();
 
-		// Run/Stop button handler
-		void runButtonHandler();
-
 	private:
 		// Simulation manager reference
 		gui::SimManager* _sim;

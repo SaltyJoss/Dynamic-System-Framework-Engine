@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MathLibAPI.h"
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 
 namespace mathlib {
 	// Basic type definitions

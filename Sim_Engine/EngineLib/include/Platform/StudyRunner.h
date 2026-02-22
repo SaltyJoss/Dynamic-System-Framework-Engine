@@ -15,17 +15,17 @@
 using CorePtr = std::unique_ptr<core::ISimulationCore, std::function<void(core::ISimulationCore*)>>;
 
 // Struct to hold the results of a study/research run
-struct StudyResult {
-	bool success;
-	std::string tag;	 // user tag for this run (I am so fed up of renaming in file explorer)
-	std::string intName; // integration method name
-	double dt;
-	double simTime;
-	size_t samples;
+struct ENGINE_API StudyResult {
+	bool success = false; // whether the run completed successfully
+	std::string tag = "N/A"; // user-provided tag for the run
+	std::string intName = "N/A"; // name of the integrator used
+	double dt = 0.0;
+	double simTime = 0.0;
+	size_t samples = 0;
 };
 
 // StudyRunner class to manage running batches of studies in parallel
-class StudyRunner {
+class ENGINE_API StudyRunner {
 public:
 	// Config for a run
 	struct config {
