@@ -5,7 +5,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
+#include <mutex>
 #include <vector>
+#include "Platform/StudyRunner.h"
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
@@ -56,6 +58,12 @@ namespace gui {
 	// SimManager Class (Plan on renaming later)
     class ENGINE_API SimManager {
     public:
+        // Called by background worker threads (via CommandScriptEditor) to hand finished results to the manager
+        void pushCompletedRun(StudyResult result);
+
+        // Get and clear completed runs for display (GUI calls this)
+        std::vector<StudyResult> takeCompletedRuns();
+
 		// Constructor & Destructor
         SimManager();
         ~SimManager();

@@ -20,9 +20,11 @@
 #include <ctime>
 #include <array>
 #include <iomanip>
+#include <thread>
 #include <mutex>
 #include <filesystem>
 #include <chrono>
+#include <regex>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

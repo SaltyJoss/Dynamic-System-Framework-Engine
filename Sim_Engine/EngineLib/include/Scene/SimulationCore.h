@@ -140,4 +140,4 @@ namespace core {
 		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
 		bool _telemetryBegun = false;
 	};
-}
+} // namespace core

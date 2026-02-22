@@ -43,7 +43,7 @@ public:
 	~StudyRunner() = default;
 
 	// Run a batch of studies in parallel using the script string as the "run" for each sim, returning the results when all are complete
-	std::vector<StudyResult> runStudies(const std::vector<config>& configs, std::string& scriptText);
+	std::vector<StudyResult> runStudies(const std::vector<config>& configs, const std::string& scriptText);
 
 private:
 	MakeCoreFn _makeCore;	// Factory function to create SimulationCore instances for each run

@@ -5,6 +5,10 @@
 #include "Platform/StudyRunner.h"
 #include "Numerics/IntegrationMethods.h"
 
+#include <chrono>   // ensure at top of file
+#include <cstdio>   // for fprintf
+
+
 // Helper: create CorePtr (unique_ptr with std::function deleter)
 static CorePtr makeCoreFactory() {
     core::ISimulationCore* raw = CreateSimulationCore_v1();
@@ -31,7 +35,7 @@ int runBatchMode() {
         };
         std::vector<double> dts = { 0.001, 0.002, 0.005 };
         std::vector<double> lengths_mins = { 0.5, 1.0, 5.0 };
-
+		// Create a config for each combination of method, dt, and length
         for (auto m : methods) {
             for (double dt : dts) {
                 for (double len : lengths_mins) {
@@ -45,18 +49,37 @@ int runBatchMode() {
             }
         }
 
-        // Build StudyRunner with factory
-        StudyRunner runner([]() { return makeCoreFactory(); }, /*maxConcurrency=*/ 0);
+		// Determine the number of worker threads to use based on hardware concurrency
+        size_t cores = std::thread::hardware_concurrency();
+        size_t workers = 0; // default: use all cores
+
+		// If not in batch mode only, reserve one core for the main thread
+#ifndef _BATCH_MODE_ONLY
+        workers = (cores > 1) ? cores - 1 : 1;
+#endif
+		// Build runner with factory and worker count
+        StudyRunner runner(makeCoreFactory, workers);
 
         // The script text for the run(s)
         std::string scriptText = R"(
-            // your DSL script here, example:
             set(integrator, rk4)
-            // ... more script ...
+            start()
         )";
 
-        // Run studies (note: runStudies signature expects std::string& in your header)
+		// Run the studies and time the total batch duration
+        auto T0 = std::chrono::high_resolution_clock::now();
         auto results = runner.runStudies(configs, scriptText);
+        auto T1 = std::chrono::high_resolution_clock::now();
+
+		// Log total batch time
+        double total = std::chrono::duration<double>(T1 - T0).count();
+        fprintf(stderr, "TOTAL BATCH TIME = %.3f sec\n", total);
+
+		// Sort results by tag for easier reading
+        std::sort(results.begin(), results.end(),
+            [](const StudyResult& a, const StudyResult& b) {
+                return a.tag < b.tag;
+            });
 
         // Print summary
         for (const auto& r : results) {

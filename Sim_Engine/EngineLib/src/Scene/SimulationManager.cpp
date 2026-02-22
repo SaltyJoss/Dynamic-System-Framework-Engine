@@ -12,6 +12,8 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 
+#include <random>
+
 #include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
@@ -42,6 +44,10 @@
 namespace gui {
 	// --- PIMPL Implementation ---
 	struct SimManager::Impl {
+		// Completed Simulation Runs (thread-safe)
+		std::mutex _completedRunsMutex;
+		std::vector<StudyResult> _completedRuns;
+
 		// View ID Alias
 		using VID = gui::ViewID;
 
@@ -267,36 +273,47 @@ namespace gui {
 			initSSAONoise();
 		}
 
+		// Random number generation for SSAO kernel and noise
+		std::mt19937 _rng{ std::random_device{}() };
+		std::uniform_real_distribution<float> _uni{ -1.0f, 1.0f };
+
+		// Helper to get random float in [a,b]
+		inline float rngFloat(float a, float b) {
+			std::uniform_real_distribution<float> d(a, b);
+			return d(_rng);
+		}
+
+		// Initialises the SSAO kernel with random samples in a hemisphere oriented along the positive Z axis, scaled to favor samples closer to the origin
 		void initSSAOKernel(int size) {
 			_ssaoKernel.clear();
 			_ssaoKernel.reserve(size);
 			for (int i = 0; i < size; ++i) {
 				glm::vec3 sample(
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX)  // hemisphere: z in [0,1]
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(0.0f, 1.0f) // hemisphere: z in [0,1]
 				);
 				sample = glm::normalize(sample);
-				sample *= ((float)rand() / RAND_MAX);
-
-				// Accelerating interpolation: cluster samples closer to origin
+				sample *= rngFloat(0.0f, 1.0f);
 				float scale = (float)i / (float)size;
-				scale = 0.1f + scale * scale * 0.9f; // lerp(0.1, 1.0, scale*scale)
+				scale = 0.1f + scale * scale * 0.9f;
 				sample *= scale;
-
 				_ssaoKernel.push_back(sample);
 			}
 		}
 
+		// Initializes the SSAO noise texture with random rotation vectors in the XY plane
 		void initSSAONoise() {
 			std::vector<glm::vec3> noise(16);
+			// Generate 16 random rotation vectors in the XY plane (Z=0)
 			for (int i = 0; i < 16; ++i) {
 				noise[i] = glm::vec3(
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(-1.0f, 1.0f),
 					0.0f
 				);
 			}
+			// Create OpenGL texture
 			glGenTextures(1, &_ssaoNoiseTex);
 			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, noise.data());
@@ -306,20 +323,20 @@ namespace gui {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 
+		// Ensures SSAO FBOs and textures are created and match the given size, recreating them if necessary
 		void ensureSSAOBuffers(int w, int h) {
 			if (_ssaoW == w && _ssaoH == h) return;
 			_ssaoW = w; _ssaoH = h;
-
-			// Cleanup old
+			// Delete old buffers if they exist
 			if (_ssaoFBO) { glDeleteFramebuffers(1, &_ssaoFBO); glDeleteTextures(1, &_ssaoTex); }
 			if (_ssaoBlurFBO) { glDeleteFramebuffers(1, &_ssaoBlurFBO); glDeleteTextures(1, &_ssaoBlurTex); }
-
+			// Lambda to create a single-channel floating point FBO and texture
 			auto makeSingleChannelFBO = [](GLuint& fbo, GLuint& tex, int w, int h) {
 				glGenFramebuffers(1, &fbo);
 				glGenTextures(1, &tex);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 				glBindTexture(GL_TEXTURE_2D, tex);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_FLOAT, nullptr);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, nullptr);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -327,22 +344,22 @@ namespace gui {
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			};
-
+			// Create SSAO and blur FBOs/textures
 			makeSingleChannelFBO(_ssaoFBO, _ssaoTex, w, h);
 			makeSingleChannelFBO(_ssaoBlurFBO, _ssaoBlurTex, w, h);
 		}
 
+		// Renders the SSAO pass and subsequent blur pass, writing results to SSAO FBOs. Should be called after rendering the scene to the view's framebuffer (to provide depth texture input).
 		void renderSSAO(SimManager& owner, Viewport& v) {
 			if (!owner._settingsCurrent.ssao) return;
-
+			// Determine SSAO buffer size based on division factor
 			int ssaoDiv = std::max(1, owner._settingsCurrent.ssaoResDiv);
 			int ssaoW = std::max(1, v.w / ssaoDiv);
 			int ssaoH = std::max(1, v.h / ssaoDiv);
 			ensureSSAOBuffers(ssaoW, ssaoH);
-
+			// Clamp kernel size to available samples
 			int kernelSize = std::min((int)_ssaoKernel.size(), owner._settingsCurrent.ssaoSamples);
-
-			// --- SSAO pass ---
+			// SSAO Pass
 			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoFBO);
 			glViewport(0, 0, ssaoW, ssaoH);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -355,11 +372,12 @@ namespace gui {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, v.fb->getDepthTexture());
 			_ssaoShader->setInt1(0, "gDepth");
-
+			// Noise texture
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
 			_ssaoShader->setInt1(1, "gNoise");
 
+			// Camera matrices and parameters
 			_ssaoShader->setMat4(v.cam->getProjection(), "projection");
 			_ssaoShader->setMat4(glm::inverse(v.cam->getProjection()), "invProjection");
 			_ssaoShader->setVec2(glm::vec2((float)ssaoW / 4.0f, (float)ssaoH / 4.0f), "noiseScale");
@@ -368,29 +386,28 @@ namespace gui {
 			_ssaoShader->setFlt1(0.035f, "bias");
 			_ssaoShader->setFlt1(owner._settingsCurrent.ssaoStrength, "strength");
 
-			for (int i = 0; i < kernelSize; ++i) {
-				_ssaoShader->setVec3(_ssaoKernel[i], "samples[" + std::to_string(i) + "]");
-			}
+			// SSAO kernel samples
+			for (int i = 0; i < kernelSize; ++i) { _ssaoShader->setVec3(_ssaoKernel[i], "samples[" + std::to_string(i) + "]"); }
 
 			glBindVertexArray(_fullscreenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 
-			// --- Blur pass ---
+			// Blur pass
 			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoBlurFBO);
 			glViewport(0, 0, ssaoW, ssaoH);
 			glClear(GL_COLOR_BUFFER_BIT);
 
+			// No need for depth test or blending for a simple fullscreen blur
 			_ssaoBlurShader->use();
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, _ssaoTex);
 			_ssaoBlurShader->setInt1(0, "ssaoInput");
-
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 			glBindVertexArray(0);
-
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		// Renders the given viewport to its framebuffer, handling dynamic resizing of the framebuffer and camera aspect ratio based on the provided display size
 		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
 			displayH = std::max(1, displayH);
@@ -568,6 +585,7 @@ namespace gui {
 		_core->setTrajectoryManager(&_impl->_traj);
 	}
 
+	// Initialises OpenGL resources, including framebuffers, shaders, and IBL. Also picks an internal resolution preset based on the display size to balance quality and performance.
 	void SimManager::initGL() {
 		if (_glReady) return;
 		_glReady = true;
@@ -587,12 +605,46 @@ namespace gui {
 		applyRenderProfile(s, bestPreset);
 	}
 
+	// Cleans up OpenGL resources
 	SimManager::~SimManager() {
-		if (_impl->_mesh) _impl->_mesh->clean();
+		// Clean up OpenGL resources
+		if (_impl) {
+			glDeleteFramebuffers(NUM_CASCADES, _impl->_cascadeFBO);
+			glDeleteTextures(NUM_CASCADES, _impl->_cascadeDepth);
+			if (_impl->_ssaoNoiseTex) glDeleteTextures(1, &_impl->_ssaoNoiseTex);
+			if (_impl->_ssaoTex) glDeleteTextures(1, &_impl->_ssaoTex);
+			if (_impl->_ssaoBlurTex) glDeleteTextures(1, &_impl->_ssaoBlurTex);
+			if (_impl->_fullscreenVAO) glDeleteVertexArrays(1, &_impl->_fullscreenVAO);
+			if (_impl->_worldGridVAO) glDeleteVertexArrays(1, &_impl->_worldGridVAO);
+		}
+		// Clean up scene objects and meshes if needed
+		if (_impl && _impl->_mesh) { _impl->_mesh->clean(); }
 	}
 
 	// Helper to get the next ObjectID
 	static inline scene::ObjectID next(scene::ObjectID id) { return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
+
+	// --------------------------------------------------
+	// 			THREAD-SAFE SIMULATION RESULTS
+	// --------------------------------------------------
+
+	// Add a completed simulation run to the list in a thread-safe manner
+	void SimManager::pushCompletedRun(StudyResult result) {
+		if (!_impl) { return; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		_impl->_completedRuns.push_back(std::move(result));
+	}
+
+	// Retrieve and clear completed runs in a thread-safe manner
+	std::vector<StudyResult> SimManager::takeCompletedRuns() {
+		std::vector<StudyResult> copy;
+		if (!_impl) { return copy; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		copy = std::move(_impl->_completedRuns);
+		_impl->_completedRuns.clear();
+		return copy;
+	}
+
 
 	// --------------------------------------------------
 	//				    LIGHT & SKYBOX
@@ -1182,26 +1234,12 @@ namespace gui {
 	// Helper to replace the integrator method in the script text
 	// A hacky approach my idea, but it works for me and honestly im starting to write up the dissertation so IT WILL DO :)
 	// PS:If anyone has any better solution msg me
+
+	// This seems to be the better solution?
 	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
-		std::string result = script;
-
-		// Find set(integrator, ...) and replace the method name
-		const std::string prefix = "set(integrator,";
-		auto pos = result.find(prefix);
-
-		// If not found, also check for "set(integrator, " with a space after the comma
-		if (pos == std::string::npos) {
-			const std::string prefix2 = "set(integrator, ";
-			pos = result.find(prefix2);
-		}
-		// If we found a set(integrator, ...), replace the method name inside the parentheses
-		if (pos != std::string::npos) {
-			auto end = result.find(')', pos);
-			if (end != std::string::npos) {
-				result.replace(pos, end - pos + 1, "set(integrator, " + methodName + ")");
-			}
-		}
-		return result;
+		std::regex re(R"((?i)set\s*\(\s*integrator\s*,\s*([a-z0-9_]+)\s*\))"); // case-insensitive regex to match my DSL command -> set(integrator, method)
+		std::string replacement = "set(integrator, " + methodName + ")";
+		return std::regex_replace(script, re, replacement);
 	}
 
 	// Run a script to completion synchronously with a specific integrator

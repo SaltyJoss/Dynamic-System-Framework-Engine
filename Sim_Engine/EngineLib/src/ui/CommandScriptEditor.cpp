@@ -3,6 +3,7 @@
 // GitHub: SaltyJoss
 #include <imgui.h>
 #include "ui/CommandScriptEditor.h"
+#include "Numerics/IntegrationMethods.h"
 #include "Interpreter/StoredProgram.h"
 #include "Platform/Paths.h"
 #include <io.h>
@@ -171,6 +172,45 @@ namespace gui {
 		}
 	}
 
+	void CommandScriptEditor::runButtonHandler() {
+		if (ImGui::Button("Run (background)")) {
+			// snapshot script text & tag
+			std::string code = _scriptText;
+			if (!code.empty() && code.back() == '\0') code.pop_back();
+			std::string tag = filenameOnly(_currentScriptFile);
+
+			// launch async task (by-value capture)
+			std::future<StudyResult> f = std::async(std::launch::async, [code, tag]() -> StudyResult {
+				StudyResult r{};
+				r.tag = tag;
+				// create a fresh sim core
+				core::ISimulationCore* raw = CreateSimulationCore_v1();
+				if (!raw) { r.success = false; return r; }
+				CorePtr core(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
+
+				// create program+parser bound to new core
+				auto program = std::make_unique<interpreter::StoredProgram>(core.get());
+				interpreter::Parser parser(program.get());
+				parser.parse(code);
+				program->start();
+
+				// run to completion (blocks inside worker thread)
+				bool ok = core->runScriptToCompletion(program.get(), integration::eIntegrationMethod::RK4 /*or read from script*/);
+
+				// gather result (you can use core->telemetry() etc to fill more fields)
+				r.success = ok;
+				r.intName = "background"; r.simTime = core->simTime();
+				return r;
+				});
+
+			// register active run
+			{
+				std::lock_guard<std::mutex> lk(_activeRunsMutex);
+				_activeRuns.push_back(ActiveRun{ std::move(f), tag });
+			}
+		}
+	}
+
 	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
 		_sim->setActiveProgram(nullptr);
 		_sim->stopSimulation();
@@ -327,6 +367,70 @@ namespace gui {
 		D_SUCCESS("Command script saved to file: %s", filepath.c_str());
 
 		return true;
+	}
+
+	// Poll active background runs for completion and forward results to SimManager
+	void CommandScriptEditor::pollRuns() {
+		std::lock_guard<std::mutex> lk(_activeRunsMutex);
+		// Iterate over active runs and check for completion
+		for (auto it = _activeRuns.begin(); it != _activeRuns.end(); ) {
+			auto& ar = *it;
+			if (ar.fut.valid() && ar.fut.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+				StudyResult r;
+				try { r = ar.fut.get(); }
+				catch (const std::exception& e) {
+					// convert exception into a failed StudyResult
+					r.success = false;
+					r.tag = ar.tag;
+				}
+				// forward to SimManager (thread-safe push)
+				if (_sim) { _sim->pushCompletedRun(std::move(r)); }
+				it = _activeRuns.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+	}
+
+	// Launch a background run of the current script (for studies) - captures code and tag by value for thread safety
+	void CommandScriptEditor::launchBackgroundRun(const std::string& code, const std::string& tag) {
+		// capture code and tag by value -> worker owns its own SimulationCore and program
+		std::future<StudyResult> f = std::async(std::launch::async, [code, tag]() -> StudyResult {
+			StudyResult r{};
+			r.tag = tag;
+
+			// Create fresh simulation core for worker thread
+			core::ISimulationCore* raw = CreateSimulationCore_v1();
+			if (!raw) { r.success = false; return r; }
+			CorePtr core(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
+
+			// bind program+parser to the new core
+			auto program = std::make_unique<interpreter::StoredProgram>(core.get());
+			interpreter::Parser parser(program.get());
+			parser.parse(code);
+			program->start();
+
+			// Choose integration method (could be read from script or set as default)
+			integration::eIntegrationMethod method = integration::eIntegrationMethod::RK4; // NOTE: we need to infer integrator from script or choose a default (RK4 is default everywhere!)
+
+			// Block inside worker thread until completion
+			bool ok = core->runScriptToCompletion(program.get(), method);
+
+			// Fill results
+			r.success = ok;
+			r.intName = core->integrationMethodName();
+			r.simTime = core->simTime();
+			try { r.samples = core->telemetrySampleCount(); }
+			catch (...) { r.samples = 0; }
+			return r;
+		});
+
+		// register active run
+		{
+			std::lock_guard<std::mutex> lk(_activeRunsMutex);
+			_activeRuns.push_back(ActiveRun{ std::move(f), tag });
+		}
 	}
 
 	void CommandScriptEditor::renderSaveAsPopup() {

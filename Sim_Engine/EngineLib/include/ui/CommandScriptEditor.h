@@ -2,6 +2,12 @@
 // File:    CommandScriptEditor.h
 // GitHub:  SaltyJoss
 #include "EngineCore.h"
+
+#include <future>
+#include <mutex>
+#include <vector>
+#include "Platform/StudyRunner.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include <unordered_set>
@@ -15,8 +21,14 @@
 
 #include "Platform/Logger.h"
 
+struct ENGINE_API StudyResult; // forward declaration to avoid circular dependency
 
 namespace gui {
+	struct ActiveRun {
+		std::future<StudyResult> fut;
+		std::string tag;
+	};
+
 	class ENGINE_API CommandScriptEditor {
 	public:
 		CommandScriptEditor(gui::SimManager* sims);
@@ -28,6 +40,10 @@ namespace gui {
 		void render();
 
 	private:
+		// Active runs management
+		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
+		std::vector<ActiveRun> _activeRuns; // Vector to hold active runs and their futures
+
 		// Simulation manager reference
 		gui::SimManager* _sim;
 
@@ -49,6 +65,8 @@ namespace gui {
 		std::string _pendingSavePath = "Engine/assets/scripts";
 		bool _requestSaveAsPopup = false;
 
+		void runButtonHandler();
+
 		void renderEnvironment();
 		void renderCmdInstructions();
 
@@ -56,6 +74,9 @@ namespace gui {
 
 		bool tryLoadFromDialog();
 		bool trySaveScriptToFile(const std::string& filepath);
+
+		void pollRuns();
+		void launchBackgroundRun(const std::string& code, const std::string& tag);
 
 		void renderSaveAsPopup();
 

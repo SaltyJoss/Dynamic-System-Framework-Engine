@@ -2,20 +2,26 @@
 // File:    ControlPanel.h
 // GitHub:  SaltyJoss
 #include "EngineCore.h"
+#include <future>
+#include <atomic>
+#include <mutex>
 #include <cmath>
-#include "Physics/PhysicsSystem.h"
-
-#include "Scene/Object.h"
-#include "Analysis/Telemetry.h"
-#include "Scene/SimulationManager.h"
-#include "Scene/Light.h"
-#include "Platform/Logger.h"
-#include "Platform/SimulationState.h"
 #include <unordered_map>
 
-#include <imgui.h>
-#include "Platform/imguiWidgets.h"
-#include <imfilebrowser.h>
+#include "Platform/SimulationState.h"
+#include "Platform/Logger.h"
+
+// Forward Declarations
+namespace scene {
+    class ENGINE_API Mesh;
+    class ENGINE_API Object;
+    class ENGINE_API Light;
+	class ENGINE_API Camera;
+    class ENGINE_API SimManager;
+}
+namespace physics     { class ENGINE_API PhysicsSystem; }
+namespace robots      { class ENGINE_API RobotSystem; }
+namespace diagnostics { class ENGINE_API TelemetryRecorder; }
 
 namespace gui {
 	// Gravity UI Modes
@@ -63,6 +69,16 @@ namespace gui {
     inline GravityLevel gravityLevel = GravityLevel::Root;
     inline GravityUIMode gravityMode = GravityUIMode::Preset;
 
+	// Struct to hold comparison results for integrator analysis
+    struct ComparisonSnapshot {
+        std::string integratorName;
+        std::vector<float> time;      // time samples
+        std::vector<float> errRms;    // RMS error time series
+        std::vector<float> errMax;    // Max error time series
+        std::vector<std::vector<float>> jointErr; // [joint][sample]
+        int jointCount = 0;
+    };
+
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
@@ -74,6 +90,11 @@ namespace gui {
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
     private:
+		// Comparison results management
+        std::vector<std::future<ComparisonSnapshot>> _comparisonFutures;
+        std::atomic<int> _comparisonPending{ 0 };
+        std::mutex _comparisonMutex;
+
 		// Internal Pointers
         std::shared_ptr<scene::Mesh> _mesh;
 
@@ -114,7 +135,8 @@ namespace gui {
 		// Results Methods
 		void drawResultsWindow();
 		void exportTelemetryCSV(const char* filepath);
-		void runComparisonAllIntegrators();
+		void runComparisonAllIntegratorsAsync();
+		void pollComparisonFutures();
 		void drawComparisonPlots();
 
 		// Helper Methods

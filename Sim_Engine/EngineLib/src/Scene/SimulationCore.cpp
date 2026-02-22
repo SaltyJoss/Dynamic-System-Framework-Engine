@@ -488,3 +488,16 @@ namespace core {
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
 }
+
+// DLL Exported factory Functions
+extern "C" {
+	// Create function
+	__declspec(dllexport) core::ISimulationCore* CreateSimulationCore_v1() {
+		try { return new core::SimulationCore(); }
+		catch (...) { return nullptr; }
+	}
+	// Delete function
+	__declspec(dllexport) void DestroySimulationCore(core::ISimulationCore* p) {
+		delete p; // free inside DLL
+	}
+} // extern "C"
