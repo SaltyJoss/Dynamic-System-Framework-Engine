@@ -5,6 +5,9 @@
 #include "Scene/SimulationManager.h"
 #include "Scene/SimulationCore.h"
 
+extern "C" core::ISimulationCore* CreateSimulationCore_v1();
+extern "C" void DestroySimulationCore(core::ISimulationCore*);
+
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
@@ -573,12 +576,23 @@ namespace gui {
 		}
 	};
 
+	// Helper: create CorePtr (unique_ptr with std::function deleter)
+	static CorePtr makeCoreFactory() {
+		core::ISimulationCore* raw = CreateSimulationCore_v1();
+		if (!raw) {
+			return CorePtr(nullptr, [](core::ISimulationCore*) {});
+		}
+		// std::function deleter is constructed from the lambda implicitly
+		return CorePtr(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
+	}
+
 	// --------------------------------------------------
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
 	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
-		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()) {
+		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
+		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
 		_core->setPhysicsSystem(_impl->_physics.get());
 		_core->setRobotSystem(_impl->_robotSystem.get());
 		_core->setObjects(&_impl->_objects);
@@ -627,21 +641,32 @@ namespace gui {
 	// --------------------------------------------------
 	// 			THREAD-SAFE SIMULATION RESULTS
 	// --------------------------------------------------
-
+	
 	// Add a completed simulation run to the list in a thread-safe manner
-	void SimManager::pushCompletedRun(StudyResult result) {
+	void SimManager::pushCompletedStudies(std::vector<StudyResult> results) {
+		if (!_impl) { return; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		_impl->_completedRuns.insert(_impl->_completedRuns.end(), results.begin(), results.end());
+		_hasCompletedStudy = true;
+	}
+	// Add a completed simulation run to the list in a thread-safe manner
+	void SimManager::pushCompletedStudy(StudyResult result) {
 		if (!_impl) { return; }
 		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
 		_impl->_completedRuns.push_back(std::move(result));
+		_hasCompletedStudy = true;
 	}
 
+	bool SimManager::hasCompletedStudy() const { return _hasCompletedStudy; }
+
 	// Retrieve and clear completed runs in a thread-safe manner
-	std::vector<StudyResult> SimManager::takeCompletedRuns() {
+	std::vector<StudyResult> SimManager::consumeCompletedStudy() {
 		std::vector<StudyResult> copy;
 		if (!_impl) { return copy; }
 		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
 		copy = std::move(_impl->_completedRuns);
 		_impl->_completedRuns.clear();
+		_hasCompletedStudy = false;
 		return copy;
 	}
 
@@ -932,6 +957,15 @@ namespace gui {
 
 	// Main render function called by the application
 	void SimManager::render() {
+		if (hasCompletedStudy()) {
+			auto results = consumeCompletedStudy();
+
+			for (const auto& r : results) {
+				LOG_INFO("Study completed: %s", r.tag.c_str());
+				// TODO: update plots, telemetry graphs, UI panels here
+			}
+		}
+
 		ImGuiIO& io = ImGui::GetIO();
 		_core->tick(io.DeltaTime);
 		_fpsCounter.update();

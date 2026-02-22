@@ -19,15 +19,11 @@
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Parser.h"
 
-#include "Analysis/Telemetry.h"
-
-#include "Platform/Paths.h"
-#include <chrono>
-#include <imgui.h>
 #include "Platform/imguiWidgets.h"
-#include <imfilebrowser.h>
 #include <implot.h>
 
+#include "Analysis/Telemetry.h"
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
@@ -208,8 +204,9 @@ namespace gui {
 
 	// --- ControlPanel Implementation ---
 
-    ControlPanel::ControlPanel(SimManager* sceneView) :
-		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
+    ControlPanel::ControlPanel(SimManager* sim) :
+		_sim(sim), _controlMode(&sim->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
+		r(render::ResolutionPreset::R_1080p), q(render::QualityPreset::Medium),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -1346,10 +1343,7 @@ namespace gui {
 
 					// Snapshot telemetry from the worker core
 					const auto& ring = core->telemetry().ring;
-					if (ring.size() < 2) {
-						// nothing to record
-						return snap;
-					}
+					if (ring.size() < 2) { return snap; }
 
 					const size_t sampleCount = ring.size();
 					snap.time.assign(sampleCount, 0.0f);
@@ -1357,13 +1351,13 @@ namespace gui {
 					snap.errMax.assign(sampleCount, 0.0f);
 
 					// infer joint count from last sample
-					size_t jointCount = ring.back().j.size();
+					size_t jointCount = ring.at(ring.size() - 1).j.size();
 					snap.jointCount = (int)jointCount;
 					snap.jointErr.resize(jointCount);
 					for (size_t j = 0; j < jointCount; ++j) snap.jointErr[j].assign(sampleCount, 0.0f);
 
 					for (size_t k = 0; k < sampleCount; ++k) {
-						const auto& s = ring[k];
+						const auto& s = ring.at(k);
 						snap.time[k] = (float)s.timeSec;
 						snap.errRms[k] = (float)s.err_rms;
 						snap.errMax[k] = (float)s.err_max;
@@ -1394,17 +1388,18 @@ namespace gui {
 		if (_comparisonFutures.empty()) return;
 		// Check all futures for completion, gather results, and remove completed ones from the list
 		for (auto it = _comparisonFutures.begin(); it != _comparisonFutures.end();) {
-			std::future<ComparisonSnapshot>& fut = *it;
+			auto& fut = *it;
 			if (fut.valid() && fut.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-				ComparisonSnapshot snap;
-				try { snap = fut.get(); }
+				try { 
+					auto snap = fut.get();
+					// If snapshot has data, add to results for plotting
+					{
+						std::lock_guard<std::mutex> lk(_comparisonMutex);
+						_comparisonResults.emplace_back(std::move(snap));
+					}
+				}
 				catch (const std::exception& e) { D_FAIL("pollComparisonFutures: future.get() threw: %s", e.what()); }
 				catch (...) { D_FAIL("pollComparisonFutures: unknown exception from future.get()"); }
-				// If snapshot has data, add to results for plotting
-				{
-					std::lock_guard<std::mutex> lk(_comparisonMutex);
-					_comparisonResults.push_back(std::move(snap));
-				}
 				// Remove this future from the list
 				it = _comparisonFutures.erase(it);
 				_comparisonPending.fetch_sub(1, std::memory_order_relaxed);

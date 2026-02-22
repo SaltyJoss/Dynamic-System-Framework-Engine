@@ -32,6 +32,7 @@ namespace core {
         // Integrator
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
 		virtual std::string integrationMethodName() const = 0;
+		virtual integration::eIntegrationMethod integrationMethod() const = 0;
         // Subsystems
         virtual physics::PhysicsSystem* physicsSystem() = 0;
         virtual robots::RobotSystem* robotSystem() = 0;

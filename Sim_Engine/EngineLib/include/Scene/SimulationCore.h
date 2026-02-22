@@ -45,6 +45,7 @@ namespace core {
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
+		integration::eIntegrationMethod integrationMethod() const override;
 
 		// Subsystems access
 		physics::PhysicsSystem* physicsSystem() override;

@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include "Scene/SimulationCore.h" // contains core::SimulationCore and core::ISimulationCore
 
+// Factory function definitions
 extern "C" {
 	// Factory function to create a SimulationCore instance
     ENGINE_API core::ISimulationCore* CreateSimulationCore_v1() {

@@ -8,7 +8,6 @@
 #include <chrono>   // ensure at top of file
 #include <cstdio>   // for fprintf
 
-
 // Helper: create CorePtr (unique_ptr with std::function deleter)
 static CorePtr makeCoreFactory() {
     core::ISimulationCore* raw = CreateSimulationCore_v1();
@@ -62,6 +61,7 @@ int runBatchMode() {
 
         // The script text for the run(s)
         std::string scriptText = R"(
+            load(robot, VISPA)
             set(integrator, rk4)
             start()
         )";

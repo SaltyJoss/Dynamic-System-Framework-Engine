@@ -14,7 +14,7 @@
 #endif
 
 // Forward declarations for core components
-namespace core { struct ISimulationCore; }
+namespace core { struct ENGINE_API ISimulationCore; }
 
 // Factory functions
 extern "C" {

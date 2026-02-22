@@ -55,15 +55,15 @@ namespace gui {
 	// Forward Declarations for Axis Orientator
 	class ENGINE_API AxisOrientator;
 
+    // Control Modes & Camera
+    enum class ControlMode {
+        Camera,
+        Object
+    };
+
 	// SimManager Class (Plan on renaming later)
     class ENGINE_API SimManager {
     public:
-        // Called by background worker threads (via CommandScriptEditor) to hand finished results to the manager
-        void pushCompletedRun(StudyResult result);
-
-        // Get and clear completed runs for display (GUI calls this)
-        std::vector<StudyResult> takeCompletedRuns();
-
 		// Constructor & Destructor
         SimManager();
         ~SimManager();
@@ -109,11 +109,6 @@ namespace gui {
 		// Getter plane height (y=0 plane for physics and object placement)
         float getPlaneHeight() const { return planeHeight; }
 
-        // Control Modes & Camera
-        enum class ControlMode {
-            Camera,
-            Object
-        };
         ControlMode ctrlMode = ControlMode::Camera;
 
 		// Setter and getter for control mode
@@ -253,6 +248,15 @@ namespace gui {
 		core::SimulationCore* simCore();
 		const core::SimulationCore* simCore() const;
 
+		// Access to the underlying StudyRunner for running batch studies from the GUI
+		StudyRunner* studyRunner() { return _studyRunner.get(); }
+
+		// Methods for handling completed studies from the background worker
+        void pushCompletedStudies(std::vector<StudyResult> results);
+		void pushCompletedStudy(StudyResult result);
+        bool hasCompletedStudy() const;
+        std::vector<StudyResult> consumeCompletedStudy();
+
         // Input Handling
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(GLFWwindow* window, float dt);
@@ -263,6 +267,8 @@ namespace gui {
 
     private:
         std::unique_ptr<core::SimulationCore> _core = nullptr;
+		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
+		bool _hasCompletedStudy = false;
 
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);

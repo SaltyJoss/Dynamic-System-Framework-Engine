@@ -158,6 +158,14 @@ namespace gui {
 				_wrapper->runProgram(_scriptText);
 			}
 		}
+		ImGui::SameLine();
+		// Background run button
+		if (ImGui::Button("Run (background)")) {
+			std::string code = _scriptText;
+			if (!code.empty() && code.back() == '\0') { code.pop_back(); }
+			std::string tag = filenameOnly(_currentScriptFile);
+			launchBackgroundRun(code, tag);
+		}
 		// Pop button style colors if we pushed them
 		if (wasRunning) { ImGui::PopStyleColor(3); }
 		// Check script status and handle termination conditions
@@ -172,43 +180,31 @@ namespace gui {
 		}
 	}
 
+	// Handler for the Run button -> launches the script in a background thread using the StudyRunner
 	void CommandScriptEditor::runButtonHandler() {
-		if (ImGui::Button("Run (background)")) {
-			// snapshot script text & tag
-			std::string code = _scriptText;
-			if (!code.empty() && code.back() == '\0') code.pop_back();
-			std::string tag = filenameOnly(_currentScriptFile);
+		if (!ImGui::Button("Run (background)")) { return; }
 
-			// launch async task (by-value capture)
-			std::future<StudyResult> f = std::async(std::launch::async, [code, tag]() -> StudyResult {
-				StudyResult r{};
-				r.tag = tag;
-				// create a fresh sim core
-				core::ISimulationCore* raw = CreateSimulationCore_v1();
-				if (!raw) { r.success = false; return r; }
-				CorePtr core(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
+		// Snapshot script text
+		std::string code = _scriptText;
+		if (!code.empty() && code.back() == '\0') { code.pop_back(); }
+		std::string tag = filenameOnly(_currentScriptFile);
 
-				// create program+parser bound to new core
-				auto program = std::make_unique<interpreter::StoredProgram>(core.get());
-				interpreter::Parser parser(program.get());
-				parser.parse(code);
-				program->start();
+		// Build single config (or multiple if desired)
+		std::vector<StudyRunner::config> configs;
+		StudyRunner::config c;
 
-				// run to completion (blocks inside worker thread)
-				bool ok = core->runScriptToCompletion(program.get(), integration::eIntegrationMethod::RK4 /*or read from script*/);
+		// Read integration method and dt from the sim core (defaults will be used if not set in the sim core)
+		c.method = _sim->simCoreInterface()->integrationMethod();
+		c.dt = _sim->simCoreInterface()->fixedDt();
+		c.len_min = 1.0;
+		c.tag = tag;
+		configs.push_back(c);
 
-				// gather result (you can use core->telemetry() etc to fill more fields)
-				r.success = ok;
-				r.intName = "background"; r.simTime = core->simTime();
-				return r;
-				});
-
-			// register active run
-			{
-				std::lock_guard<std::mutex> lk(_activeRunsMutex);
-				_activeRuns.push_back(ActiveRun{ std::move(f), tag });
-			}
-		}
+		// Launch background thread
+		std::thread([this, configs, code]() {
+			auto results = _sim->studyRunner()->runStudies(configs, code);
+			_sim->pushCompletedStudies(std::move(results));
+		}).detach();
 	}
 
 	void CommandScriptEditor::terminateScript(const char* reason, bool fault) {
@@ -384,7 +380,7 @@ namespace gui {
 					r.tag = ar.tag;
 				}
 				// forward to SimManager (thread-safe push)
-				if (_sim) { _sim->pushCompletedRun(std::move(r)); }
+				if (_sim) { _sim->pushCompletedStudy(std::move(r)); }
 				it = _activeRuns.erase(it);
 			}
 			else {

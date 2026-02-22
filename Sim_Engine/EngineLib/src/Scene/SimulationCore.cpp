@@ -46,6 +46,11 @@ namespace core {
 		if (!_robot) { return "no_robot"; }
 		return _robot->getIntegrator()->IntegratorName(_robot->getIntegrator()->getIntegrationMethod());
 	}
+	// Get the current integration method
+	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
+		if (!_robot) { return integration::eIntegrationMethod::RK4; }
+		return _robot->getIntegrator()->getIntegrationMethod();
+	}
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
@@ -488,16 +493,3 @@ namespace core {
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
 }
-
-// DLL Exported factory Functions
-extern "C" {
-	// Create function
-	__declspec(dllexport) core::ISimulationCore* CreateSimulationCore_v1() {
-		try { return new core::SimulationCore(); }
-		catch (...) { return nullptr; }
-	}
-	// Delete function
-	__declspec(dllexport) void DestroySimulationCore(core::ISimulationCore* p) {
-		delete p; // free inside DLL
-	}
-} // extern "C"
