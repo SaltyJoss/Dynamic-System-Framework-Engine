@@ -31,6 +31,8 @@ namespace core {
 		SimulationCore();
 		~SimulationCore();
 
+		SimulationCore(physics::PhysicsSystem& physics, robots::RobotSystem& robot, control::TrajectoryManager& traj, std::vector<std::unique_ptr<scene::Object>>& objects);
+
 		// Simulation control
 		void startSimulation() override;
 		void stopSimulation() override;
@@ -115,11 +117,17 @@ namespace core {
 		interpreter::IStoredProgram* activeProgram() const;
 
 	private:
-		// Core Systems
-		std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objects;
-		std::unique_ptr<robots::RobotSystem> _robot;
-		std::unique_ptr<physics::PhysicsSystem> _physics;
-		std::unique_ptr<control::TrajectoryManager> _traj;
+		// Owning storage (used only in owning mode)
+		std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
+		std::unique_ptr<robots::RobotSystem> _robotOwned;
+		std::unique_ptr<physics::PhysicsSystem> _physicsOwned;
+		std::unique_ptr<control::TrajectoryManager> _trajOwned;
+
+		// Non-owning access (always used by logic)
+		std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
+		robots::RobotSystem* _robot = nullptr;
+		physics::PhysicsSystem* _physics = nullptr;
+		control::TrajectoryManager* _traj = nullptr;
 
 		// Simulation Timing
 		double _dt = 1.0 / 180.0;		// [seconds], fixed timestep duration for physics updates

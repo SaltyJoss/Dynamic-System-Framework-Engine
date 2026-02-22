@@ -17,10 +17,40 @@
 #include "Platform/DataManager.h"
 
 namespace core {
-	// Constructor
-	SimulationCore::SimulationCore() {}
+	// Owned constructed subsystems (default)
+	SimulationCore::SimulationCore()
+		: _objectsOwned(std::make_unique<std::vector<std::unique_ptr<scene::Object>>>()), 
+		  _physicsOwned(std::make_unique<physics::PhysicsSystem>()), _trajOwned(std::make_unique<control::TrajectoryManager>()),
+		_robotOwned(std::make_unique<robots::RobotSystem>(
+			*_objectsOwned,
+			[objs = _objectsOwned.get()](const std::string& path) {
+				assets::MeshLoader loader;
+				auto meshes = loader.load(path);
+
+				std::vector<scene::Object*> result;
+				for (auto& m : meshes) {
+					auto obj = std::make_unique<scene::Object>(m);
+					auto raw = obj.get();
+					objs->push_back(std::move(obj));
+					result.push_back(raw);
+				}
+				return result;
+			}
+		))
+	{
+		_objects = _objectsOwned.get();
+		_physics = _physicsOwned.get();
+		_traj = _trajOwned.get();
+		_robot = _robotOwned.get();
+	}
+	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
 		printf("CORE DESTROYED\n"); 
+	}
+
+	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
+	SimulationCore::SimulationCore(physics::PhysicsSystem& physics, robots::RobotSystem& robot, control::TrajectoryManager& traj, std::vector<std::unique_ptr<scene::Object>>& objects)
+		: _physics(&physics), _robot(&robot), _traj(&traj), _objects(&objects) {
 	}
 
 	// Update physics for all objects in the scene using the physics system
@@ -293,7 +323,6 @@ namespace core {
 			// Write this entry to HDF5
 			_data.capture(data::Stream::Reference, header, fields);
 		}
-
 	}
 
 	// --------------------------------------------------
