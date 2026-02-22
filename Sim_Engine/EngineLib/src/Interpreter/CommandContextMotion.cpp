@@ -123,28 +123,28 @@ namespace commands {
 		return setJointTargetRad(link, targetRad);
 	}
 
-	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
+	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxqd) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { 
+		if (maxqd <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
+		if (!_robot->trySetJointOmegaMaxRad(link, maxqd)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	// Sets the reference angular velocity for a joint (rad/s)
-	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double omegaRefRad_s) {
+	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double qd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointOmegaRefRad(link, omegaRefRad_s)) { 
+		if (!_robot->trySetJointOmegaRefRad(link, qd_ref)) { 
 			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	// Sets the reference angular acceleration for a joint (rad/s^2)
-	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double alphaRefRad_s2) {
+	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointAlphaRefRad(link, alphaRefRad_s2)) { 
+		if (!_robot->trySetJointAlphaRefRad(link, qdd_ref)) { 
 			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);

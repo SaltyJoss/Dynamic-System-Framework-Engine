@@ -131,7 +131,7 @@ namespace robots {
 
 		// Setter and getter the torque mode for the robot system
 		void setTorqueMode(eTorqueMode mode);
-		eTorqueMode getTorqueMode() const { return _torqueMode; }
+		eTorqueMode getTorqueMode() const { return _robot.torqueMode; }
 
 	private:
         void instantiateRobotLinks();
@@ -201,7 +201,7 @@ namespace robots {
 
 		// Robot model, and robot mode
         RobotModel _robot;
-		eTorqueMode _torqueMode;
+		eTorqueMode _torqueMode = _robot.torqueMode;
 
 		// Buffers for logging and reference state (not owned by RobotSystem)
 		robots::JointLogBuffer* _logBuffer = nullptr;

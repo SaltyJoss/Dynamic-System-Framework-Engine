@@ -147,7 +147,6 @@ namespace gui {
         ShaderMode currentShaderMode = ShaderMode::PBR;  // default
 
 		// Setter and getter for the current shader
-        void setCurrentShader(shaders::Shader* shader);
         const shaders::Shader* getCurrentShader() const;
 
 		// Render Settings & Profiles
@@ -270,9 +269,6 @@ namespace gui {
         // Simulation Management
         void beginSimManager(const char* id);
 		void endSimManager();
-
-		// Telemetry
-        void prepareLogBuffer(size_t expectedSteps, size_t jointCount);
 
         // Misc Settings
         bool _glReady = false;

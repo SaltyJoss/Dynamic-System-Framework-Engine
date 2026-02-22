@@ -4,7 +4,6 @@
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotKinematics.h"
 #include "Robots/RobotModel.h"
-#include "Robots/RobotCommon.h"
 #include "Robots/TrajectoryManager.h"
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
@@ -14,8 +13,7 @@
 namespace robots {
 	// Constructor
 	RobotDynamics::RobotDynamics(RobotModel& robot, eTorqueMode mode)
-		: _robot(robot), _torqueMode(mode) {
-		_kinematics = std::make_unique<RobotKinematics>(robot);
+		: _robot(robot), _kinematics(std::make_unique<RobotKinematics>(robot)) {
 	}
 
 	// Computes the inertia tensor of a robot link
@@ -198,12 +196,12 @@ namespace robots {
 		const std::vector<double>& eta,
 		const std::vector<mathlib::Pose>& /*T_world*/,
 		std::vector<double> I_eff,
-		std::vector<double> tau_gravity
+		std::vector<double> tau_g
 	) const {
 		const size_t n = _robot.joints.size();
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
 
-		switch (_torqueMode) {
+		switch (_robot.torqueMode) {
 		case eTorqueMode::PASSIVE:
 			// Compute passive damping and friction torques
 			for (size_t i = 0; i < n; ++i) {
@@ -226,11 +224,10 @@ namespace robots {
 
 				// Compute control torque using the computed metrics for this joint
 				RobotMetrics m = computeJointMetrics(
-					j, _robot.links[i + 1],
-					I_eff[i],
+					j, I_eff[i],
 					q[i], qd[i], eta[i],
-					j.thetaRefRad, j.omegaRefRad_s, j.alphaRefRad_s2,
-					0.0, tau_gravity[i]
+					j.q_ref, j.qd_ref, j.qdd_ref,
+					0.0, tau_g[i]
 				);
 				tau[i] = m.tau;
 			}
@@ -241,14 +238,13 @@ namespace robots {
 
 	// Computes control and dynamics metrics for a specific joint based on the current state and reference
 	RobotMetrics RobotDynamics::computeJointMetrics(
-		const RobotJoint& joint, const RobotLink& link,
-		double I_eff,
+		const RobotJoint& joint, double I_eff,
 		double q, double qd, double eta,
 		double q_ref, double qd_ref, double qdd_ref,
-		double tau_coriolis, double tau_g
+		double tau_c, double tau_g
 	) const {
 		RobotMetrics m{};
-		if (_torqueMode == eTorqueMode::NONE) {
+		if (_robot.torqueMode == eTorqueMode::NONE) {
 			// Current states
 			m.theta = q;	   // [rad]
 			m.omega = qd;	   // [rad/s]
@@ -268,29 +264,33 @@ namespace robots {
 		}
 
 		// Current states
-		m.theta = qd;	   // [rad]
-		m.omega = qd;	   // [rad/s]
+		m.theta = q;  // [rad]
+		m.omega = qd; // [rad/s]
 		// Errors
-		m.err = q_ref - q; // [rad]
+		m.err = q_ref - q;	   // [rad]
 		m.err_d = qd_ref - qd; // [rad/s]
 
 		// Effective inertia
 		m.I_eff = I_eff; // [kg*m^2]
 
+		// Energy metrics
+		m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
+		double P_grav = tau_g * qd; // [W], power due to gravity torque
+		m.PE += -P_grav * dt(); // [J], potential energy proxy based on gravity power (scaled down for interpretability)
+		m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
+
 		// Control parameters
 		const double wn = joint.wn_target;	 // [rad/s], natural frequency
-		const double z = joint.zeta_target; // damping ratio
-		const double b = joint.beta_target; // overshoot ratio
+		const double z  = joint.zeta_target; // damping ratio
+		const double b  = joint.beta_target; // overshoot ratio
 
 		// Compute PID gains
 		double k_p = m.I_eff * wn * wn;		 // [Nm/rad],     proportional gain
 		double k_i = b * k_p * wn;			 // [Nm/(rad*s)], integral gain
 		double k_d = 2.0 * z * m.I_eff * wn; // [Nm/(rad/s)], derivative gain
 
-		// Integral term
+		// Integral term with anti-windup
 		double tau_i = k_i * eta;
-
-		// Integral anti-windup
 		if (joint.limits.maxEffort > 0.0f) {
 			const double rho = 0.3; // fraction of max effort allocated to I-term
 			const double tau_i_max = rho * joint.limits.maxEffort;
@@ -301,7 +301,8 @@ namespace robots {
 		double tau_fb = k_p * m.err + tau_i + k_d * m.err_d;
 
 		// Feedforward term based on reference acceleration and passive dynamics compensation
-		double tau_ff = m.I_eff * qdd_ref + tau_coriolis;
+		double tau_ff = m.I_eff * qdd_ref + tau_c;
+		if (_robot.torqueMode == eTorqueMode::CONTROLLED) { tau_ff += tau_g; }
 
 		// Passive dynamics
 		const double c = joint.dynamics.damping;
@@ -310,27 +311,33 @@ namespace robots {
 
 		// Friction model (viscous + Coulomb/Stribeck)
 		double tau_damping{ 0.0 }, tau_friction{ 0.0 };
-		tau_damping = c * qd; // viscous damping
-		tau_friction = mu * std::tanh(qd / v_eps); // Coulomb friction
+		tau_damping = c * qd;
+		tau_friction = mu * std::tanh(qd / v_eps);
 
 		// Net torque
 		m.tau = tau_fb + tau_ff - (tau_damping + tau_friction); // [Nm], net torque applied to the joint after passive dynamics
 
 		// Cache torques in metrics
-		m.tau_fb = tau_fb;
-		m.tau_coriolis = tau_coriolis;
-		m.tau_gravity = tau_g;
-		m.tau_damping = tau_damping;   // [+] viscous damping torque
-		m.tau_friction = tau_friction; // [+] Coulomb friction torque
+		m.tau_fb = tau_fb;			   // [Nm], feedback control torque
+		m.tau_coriolis = tau_c;		   // [Nm], Coriolis and centrifugal torque
+		m.tau_gravity = tau_g;		   // [Nm], gravity torque
+		m.tau_damping = tau_damping;   // [Nm], viscous damping torque
+		m.tau_friction = tau_friction; // [Nm], coulomb friction torque
 
-		// Hip reaction compensation (if base is free-floating, apply a fraction of the last measured base forward force as a counter-torque to the hip pitch joint to help stabilise the base)
+		// Cache Work and Power metrics
+		m.W_actuator = m.tau * qd;		  // [W], actuator power (positive for power generation, negative for power consumption)
+		m.P_damping  = tau_damping * qd;  // [W], power dissipated by damping
+		m.P_friction = tau_friction * qd; // [W], power dissipated by friction
+
+		// Hip reaction compensation
 		if (_baseIsFree && joint.name.find("hip_pitch") != std::string::npos) {
 			const double hipReactionGain = 0.7;
+			// If base is free-floating, apply a fraction of the last measured base forward force as a counter-torque to the hip pitch joint to help stabilise the base
 			m.tau -= hipReactionGain * _lastBaseForwardForce;
 		}
 
 		// Torque saturation and velocity soft limits only in CONTROLLED mode
-		if (_torqueMode == eTorqueMode::CONTROLLED) {
+		if (_robot.torqueMode == eTorqueMode::CONTROLLED) {
 			double tau_preSat = m.tau;
 
 			// Effort clamp
@@ -338,11 +345,12 @@ namespace robots {
 				const double E_max = joint.limits.maxEffort;
 				/*m.tau = std::clamp(m.tau, -E_max, E_max);*/
 			}
+
 			m.tau_sat = tau_preSat - m.tau;
 			m.sat_flag = (m.tau_sat != 0.0);
 
 			// Velocity soft limit
-			const double wMax_hw = std::abs(joint.limits.maxOmegaRad_s);
+			const double wMax_hw = std::abs(joint.limits.maxqd);
 			const double wMax_traj = std::abs(joint.limits.omegaRefMaxRad_s); // or derived from trajectory manager
 
 			double tau_preBarrier = m.tau;
@@ -350,8 +358,8 @@ namespace robots {
 			// Apply soft velocity barrier
 			/*applyOmegaBarrier(m.tau, omega, wMax_hw, m.I_eff);*/
 
+			// Cache barrier torque and overspeed metrics
 			m.tau_barrier = tau_preBarrier - m.tau;
-
 			m.wMax_hw = wMax_hw;
 			m.wMax_traj = wMax_traj;
 			m.traj_overspeed = std::max(0.0, std::abs(qd) - wMax_traj);
@@ -397,28 +405,26 @@ namespace robots {
 		}
 
 		// Compute mass matrix M(q)
-		MatX M_full = computeMassMatrix(q, T_world);
+		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute gravity torques for each joint
 		std::vector<double> tau_gravity(n, 0.0);
-		// Compute gravity torques if in a torque mode that requires it
-		if (_torqueMode != eTorqueMode::NONE) {
-			// Compute gravity torque
-			tau_gravity = computeGravityTorque(q, T_world, x);
-		}
-
 		// Compute applied torques based on control mode and current state
 		VecX tau = VecX::Zero(n);
-		if (_torqueMode != eTorqueMode::NONE) {
+
+		// Compute gravity torques if in a torque mode that requires it
+		if (_robot.torqueMode != eTorqueMode::NONE) {
+			// Compute gravity torque
+			tau_gravity = computeGravityTorque(q, T_world, x);
 			// Compute applied torques based on control mode
 			tau = computeAppliedTorques(q, qd, eta, T_world, I_eff, tau_gravity);
 		}
 
 		// Build list of active (non-fixed) joints
-		std::vector<int> active;
+		std::vector<size_t> active;
 		for (size_t i = 0; i < n; ++i) {
 			if (_robot.joints[i].type != eJointType::FIXED) {
-				active.push_back((int)i);
+				active.push_back(i);
 			}
 		}
 		const size_t m = active.size();
@@ -430,11 +436,12 @@ namespace robots {
 
 		// Fill reduced mass matrix and torque vectors for active joints
 		for (size_t r = 0; r < m; ++r) {
-			int i = active[r];
+			size_t i = active[r];
 
 			tau_r[r] = tau[i];		 // applied torque for active joint i
 			G_r[r] = tau_gravity[i]; // gravity torque for active joint i
 
+			// Fill the reduced mass matrix row for active joint i
 			for (size_t c = 0; c < m; ++c) {
 				int j = active[c];
 				M(r, c) = M_full(i, j);
@@ -449,18 +456,15 @@ namespace robots {
 
 		// Debugging info about the reduced system
 		LOG_INFO_ONCE("Reduced system size = %zu", m);
-
 		double rcond = M.fullPivLu().rcond();
 		LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
-
 		Eigen::JacobiSVD<MatX> svd(M);
-		LOG_INFO_ONCE("Reduced min singular value: %.6e",
-			svd.singularValues().minCoeff());
+		LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
 
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
 		VecX qdd_r;
-		if (_torqueMode == eTorqueMode::NONE) {
+		if (_robot.torqueMode == eTorqueMode::NONE) {
 			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
 		}
 		else {
@@ -491,7 +495,7 @@ namespace robots {
 			}
 
 			// Compute error for integral term
-			double err_i = _robot.joints[i].thetaRefRad - q[i];
+			double err_i = _robot.joints[i].q_ref - q[i];
 
 			// For revolute and prismatic joints, fill in the derivatives
 			dx[i] = qd[i];

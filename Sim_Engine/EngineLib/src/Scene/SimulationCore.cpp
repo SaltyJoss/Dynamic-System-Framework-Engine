@@ -192,6 +192,13 @@ namespace core {
 			fields.emplace_back("tau_friction", (double)_jointLogBuffer.tau_friction[i]);
 			fields.emplace_back("tau_barrier",	(double)_jointLogBuffer.tau_barrier[i]);
 			fields.emplace_back("tau_sat",		(double)_jointLogBuffer.tau_sat[i]);
+			// Energy, Work, & Power
+			fields.emplace_back("KE",			(double)_jointLogBuffer.KE[i]);
+			fields.emplace_back("PE",			(double)_jointLogBuffer.PE[i]);
+			fields.emplace_back("E_total",		(double)_jointLogBuffer.E_total[i]);
+			fields.emplace_back("W_actuator",	(double)_jointLogBuffer.W_actuator[i]);
+			fields.emplace_back("P_damping",	(double)_jointLogBuffer.P_damping[i]);
+			fields.emplace_back("P_friction",	(double)_jointLogBuffer.P_friction[i]);
 			// Limit flags and info
 			fields.emplace_back("clamp_theta",	(double)_jointLogBuffer.clamp_theta[i]);
 			fields.emplace_back("clamp_omega",	(double)_jointLogBuffer.clamp_omega[i]);
