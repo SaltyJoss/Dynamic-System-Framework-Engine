@@ -4,21 +4,35 @@
 #include "include/BatchEntry.h"
 #include "Platform/StudyRunner.h"
 #include "Numerics/IntegrationMethods.h"
+#include "Platform/Paths.h"
 
 #include <chrono>   // ensure at top of file
 #include <cstdio>   // for fprintf
 
 // Helper: create CorePtr (unique_ptr with std::function deleter)
 static CorePtr makeCoreFactory() {
+	// Create a raw pointer to ISimulationCore using the factory function from EngineCore
     core::ISimulationCore* raw = CreateSimulationCore_v1();
-    if (!raw) {
-        return CorePtr(nullptr, [](core::ISimulationCore*) {});
-    }
-    // std::function deleter is constructed from the lambda implicitly
+    if (!raw) { return CorePtr(nullptr, [](core::ISimulationCore*) {}); }
+
+	// Robot System check
+    std::cout << "[BATCH DEBUG] Core created: " << raw << "\n";
+    if (raw->robotSystem() == nullptr) { std::cout << "[BATCH DEBUG] robotSystem() is NULL\n"; }
+    else { std::cout << "[BATCH DEBUG] robotSystem() OK\n"; }
+
+    // Physics System check
+    if (raw->physicsSystem() == nullptr) { std::cout << "[BATCH DEBUG] physicsSystem() is NULL\n"; }
+    else { std::cout << "[BATCH DEBUG] physicsSystem() OK\n"; }
+
+	// Construct CorePtr with custom deleter that calls DestroySimulationCore
     return CorePtr(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
 }
 
 int runBatchMode() {
+    // initialises paths (required for loading robots, and any other file access in the core)
+    paths::init();
+
+	// Log batch mode entry
     fprintf(stdout, "BATCH MODE ENTERED\n");
     fflush(stdout);
     try {
@@ -56,6 +70,8 @@ int runBatchMode() {
 #ifndef _BATCH_MODE_ONLY
         workers = (cores > 1) ? cores - 1 : 1;
 #endif
+        assert(core->robotSystem() != nullptr);
+
 		// Build runner with factory and worker count
         StudyRunner runner(makeCoreFactory, workers);
 
@@ -63,7 +79,38 @@ int runBatchMode() {
         std::string scriptText = R"(
             load(robot, VISPA)
             set(integrator, rk4)
+
+            wait(2.5)
+            trajClear()
+            wait(0.25)
+
             start()
+
+            parallel(5.0) {
+                trajSet(link01, TRAP, -60.0, 45.0, 110.0)
+                trajSet(link02, TRAP,  50.0, 40.0, 100.0)
+                trajSet(link03, TRAP, -55.0, 45.0, 110.0)
+                trajSet(link04, TRAP,  40.0, 55.0, 130.0)
+                trajSet(link05, TRAP, -50.0, 60.0, 140.0)
+                trajSet(link06, TRAP,  60.0, 65.0, 150.0)
+            }
+
+            wait(5.0)
+
+            parallel(5.0) {
+                trajSet(link01, TRAP,  65.0, 55.0, 140.0)
+                trajSet(link02, TRAP, -55.0, 50.0, 130.0)
+                trajSet(link03, TRAP,  60.0, 55.0, 140.0)
+                trajSet(link04, TRAP, -75.0, 65.0, 160.0)
+                trajSet(link05, TRAP,  65.0, 70.0, 170.0)
+                trajSet(link06, TRAP, -60.0, 75.0, 180.0)
+            }
+
+            wait(55.0)
+            trajClear()
+            wait(0.25)
+
+            stop()
         )";
 
 		// Run the studies and time the total batch duration

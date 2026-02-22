@@ -28,6 +28,7 @@ namespace core {
 	class ENGINE_API SimulationCore : public ISimulationCore {
 	public:
 		SimulationCore();
+		~SimulationCore();
 
 		// Simulation control
 		void startSimulation() override;
@@ -112,6 +113,12 @@ namespace core {
 		interpreter::IStoredProgram* activeProgram() const;
 
 	private:
+		// Core Systems
+		std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objects;
+		std::unique_ptr<robots::RobotSystem> _robot;
+		std::unique_ptr<physics::PhysicsSystem> _physics;
+		std::unique_ptr<control::TrajectoryManager> _traj;
+
 		// Simulation Timing
 		double _dt = 1.0 / 180.0;		// [seconds], fixed timestep duration for physics updates
 		double _telHz = 120.0;			// [Hz], controls how often telemetry updates during simulation runs
@@ -119,12 +126,6 @@ namespace core {
 		double _simTime = 0.0;			// Current simulation time
 		bool _simRunning = false;		// Whether the simulation loop is currently running
 		bool _scriptRunning = false;	// Whether a script is currently running 
-
-		// Core Systems
-		robots::RobotSystem* _robot = nullptr;
-		physics::PhysicsSystem* _physics = nullptr;
-		control::TrajectoryManager* _traj = nullptr;
-		std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;

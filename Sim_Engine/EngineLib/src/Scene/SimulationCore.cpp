@@ -17,8 +17,8 @@
 
 namespace core {
 	// Constructor
-	SimulationCore::SimulationCore() {
-	}
+	SimulationCore::SimulationCore() {}
+	SimulationCore::~SimulationCore() = default;
 
 	// Update physics for all objects in the scene using the physics system
 	void SimulationCore::updatePhysics(double dt) {
@@ -96,7 +96,7 @@ namespace core {
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
 					}
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(_simTime, *_robot, _traj.get(), diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
@@ -298,8 +298,6 @@ namespace core {
 	//		---> I have implemented this for short (<5 minute) test scripts where blocking is acceptable
 	//		---> IT IS NOT intended for general use and WILL CAUSE THE UI TO FREEZE if used with long-running scripts
 	bool SimulationCore::runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) {
-		if (!hasRobot()) { return false; }
-
 		// Map method enum to string name, purely for logging purposes
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
 		const std::string methodName = names[static_cast<int>(method)];
@@ -367,7 +365,7 @@ namespace core {
 					}
 
 					// Telemetry update
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(_simTime, *_robot, _traj.get(), diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
@@ -398,18 +396,18 @@ namespace core {
 	// --- Setters and Getters for Systems and State ---
 
 	// Setter for the physics system
-	void SimulationCore::setPhysicsSystem(physics::PhysicsSystem* physics) { _physics = physics; }
+	void SimulationCore::setPhysicsSystem(physics::PhysicsSystem* physics) { _physics.reset(physics); }
 
 	// Accessor for the physics system (non-const and const versions)
-	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics; }
-	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics; }
+	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics.get(); }
+	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics.get(); }
 
 	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
-	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
+	robots::RobotSystem* SimulationCore::robotSystem() { return _robot.get(); }
+	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot.get(); }
 
 	// Setter and checker for Robot System
-	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
+	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot.reset(robot); }
 	bool SimulationCore::hasRobot() const { return _robot && _robot->hasRobot(); }
 
 	// Loads a robot into the robot system by name
@@ -453,7 +451,7 @@ namespace core {
 	}
 
 	// Setter for the scene objects pointer (used for script object lookup)
-	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects = objects; }
+	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects.reset(objects); }
 	// Getter for object
 	scene::Object* SimulationCore::getObject() {
 		if (!_objects) { return nullptr; }
@@ -472,11 +470,11 @@ namespace core {
 	}
 
 	// Setter for the trajectory manager
-	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj = traj; }
+	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj.reset(traj); }
 
 	// Accessor for the trajectory manager (non-const and const versions)
-	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj; }
-	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj; }
+	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj.get(); }
+	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj.get(); }
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
