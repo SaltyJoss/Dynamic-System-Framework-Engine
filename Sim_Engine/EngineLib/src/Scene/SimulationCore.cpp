@@ -12,6 +12,7 @@
 #include "Interpreter/StoredProgram.h"
 #include "Interpreter/Parser.h"
 
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 #include "Platform/DataManager.h"
 
@@ -44,8 +45,8 @@ namespace core {
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
-		return _robot->getIntegrator()->IntegratorName(_robot->getIntegrator()->getIntegrationMethod());
-	}
+		return _robot->getIntegratorName();
+	} 
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
 		if (!_robot) { return integration::eIntegrationMethod::RK4; }
@@ -139,13 +140,15 @@ namespace core {
 			_robot->setRefBuffer(&_trajRefBuffer);
 		}
 
+		_data.setParentFolder(paths::runs().string());
+
 		// Ensure reference sim system have their integrators configured for the new run
 		setupSimulationIntegrator();
-		SET_SIM_INTEGRATOR(_robot->getIntegratorName());
+		_data.setIntegratorName(integrationMethodName());
 
 		_simRunning = true;
 		_telemetryBegun = false;
-		DATA_CAPTURE_ENABLE(true);
+		_data.setEnabled(true);
 	}
 
 	// Stop the simulation loop
@@ -163,7 +166,7 @@ namespace core {
 		exportLogsToHDF5();
 
 		// Clear buffers to free memory and prepare for next run
-		DATA_CAPTURE_ENABLE(false);
+		_data.setEnabled(false);
 		_simRunning = false;
 		_telemetryBegun = false;
 	}
@@ -233,7 +236,7 @@ namespace core {
 			fields.emplace_back("joint_index", (double)exportBuf->joint_index[i]);
 
 			// Write entry to HDF5
-			HDF5_SIM_DATA(header, fields);
+			_data.capture(data::Stream::Simulation, header, fields);
 		}
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
@@ -283,7 +286,7 @@ namespace core {
 			fields.emplace_back("joint_index", (double)_trajRefBuffer.joint_index[i]);
 
 			// Write this entry to HDF5
-			HDF5_REF_DATA(header, fields);
+			_data.capture(data::Stream::Reference, header, fields);
 		}
 
 	}

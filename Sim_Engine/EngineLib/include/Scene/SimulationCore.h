@@ -8,6 +8,7 @@
 #include "Platform/SimulationState.h"
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
+#include "Platform/DataManager.h"
 
 #include "Platform/Logger.h"
 
@@ -141,5 +142,7 @@ namespace core {
 		robots::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
 		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
 		bool _telemetryBegun = false;
+
+		data::DataManager _data; // Data manager for handling telemetry data export and storage
 	};
 } // namespace core

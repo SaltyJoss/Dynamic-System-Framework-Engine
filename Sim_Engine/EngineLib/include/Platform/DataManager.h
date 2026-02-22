@@ -92,93 +92,18 @@ namespace data {
 
     class ENGINE_API DataManager {
     public:
-        // Singleton instance accessor
-        static DataManager& instance() {
-            static DataManager instance;
-            return instance;
-        }
-
-        // Enable or disable data logging
+		DataManager() = default;
         void setEnabled(bool enabled);
-
-		// Set the current integrator name for logging
 		void setIntegratorName(std::string name) { _integratorName = name; }
-
-		// Set parent folder for data logging
         void setParentFolder(std::string folder) { _parentFolder = folder; }
-
-		// Start data logging session
 		void capture(Stream s, std::string_view topic, const FieldList& fields);
-
-		// Check if data logging is enabled
 		bool enabled() const { return _enabled; }
 
-
     private:
-        DataManager() = default;
-
         bool _enabled = false;
-		std::string _integratorName = "Unknown";
+        std::string _integratorName = "Unknown";
         std::string _parentFolder = "Runs";
         HDF5StreamWriter _sim;
         HDF5StreamWriter _ref;
     };
 } // namespace data
-
-// ---macro definitions ---
-
-// DATA_CAPTURE_ENABLE
-#ifdef DATA_CAPTURE_ENABLE
-#error DATA_CAPTURE_ENABLE already defined before DataManager.h
-#endif
-// Enable or disable data capture
-#define DATA_CAPTURE_ENABLE(b) \
-    do { ::data::DataManager::instance().setEnabled((b)); } while(0)
-
-// SET_SIM_INTEGRATOR
-#ifdef SET_SIM_INTEGRATOR
-#error SET_SIM_INTEGRATOR already defined before DataManager.h
-#endif
-// Set the simulation integrator name for logging
-#define SET_SIM_INTEGRATOR(name) \
-    do { ::data::DataManager::instance().setIntegratorName((name)); } while(0)
-
-
-// --- HDF5 Macros ---
-
-// HDF5_SIM_DATA
-#ifdef HDF5_SIM_DATA
-#error HDF5_SIM_DATA already defined before DataManager.h
-#endif
-// Capture simulation data as HDF5
-#define HDF5_SIM_DATA(topic, fields) \
-    do { ::data::DataManager::instance().capture(::data::Stream::Simulation, (topic), (fields)); } while(0)
-
-// HDF5_REF_DATA
-#ifdef HDF5_REF_DATA
-#error HDF5_REF_DATA already defined before DataManager.h
-#endif
-// Capture reference data as HDF5
-#define HDF5_REF_DATA(topic, fields) \
-    do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
-
-// --- CSV Macros ---
-
-// CSV_SIM_DATA
-#ifdef CSV_SIM_DATA
-#error CSV_SIM_DATA already defined before DataManager.h
-#endif
-// Capture simulation data as CSV
-#define CSV_SIM_DATA(topic, fields) \
-    do { ::data::DataManager::instance().capture(::data::Stream::Simulation, (topic), (fields)); } while(0)
-
-// CSV_REF_DATA
-#ifdef CSV_REF_DATA
-#error CSV_REF_DATA already defined before DataManager.h
-#endif
-// Capture reference data as CSV
-#define CSV_REF_DATA(topic, fields) \
-    do { ::data::DataManager::instance().capture(::data::Stream::Reference, (topic), (fields)); } while(0)
-
-
-// --- end of macro definitions ---
