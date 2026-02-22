@@ -19,7 +19,9 @@
 namespace core {
 	// Constructor
 	SimulationCore::SimulationCore() {}
-	SimulationCore::~SimulationCore() = default;
+	SimulationCore::~SimulationCore() {
+		printf("CORE DESTROYED\n"); 
+	}
 
 	// Update physics for all objects in the scene using the physics system
 	void SimulationCore::updatePhysics(double dt) {
@@ -153,7 +155,7 @@ namespace core {
 
 	// Stop the simulation loop
 	void SimulationCore::stopSimulation() {
-		if (!_simRunning) return;
+		if (!_simRunning) { return; }
 		D_RUNTIME("stopping simulation");
 
 		// Export references
@@ -251,6 +253,8 @@ namespace core {
 		// Log success
 		D_SUCCESS("ExportLogs -> export completed successfully");
 		LOG_INFO("ExportLogs -> export completed successfully");
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry
@@ -295,11 +299,7 @@ namespace core {
 	//		   SYNCHRONOUS SCRIPT EXECUTION
 	// --------------------------------------------------
 
-	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully.
-	// NOTE: this is a blocking call that runs a tight loop until the script finishes, so it should only be used for testing or non-interactive scenarios.
-	// IMPORTANT: I want to make this REALLY clear:
-	//		---> I have implemented this for short (<5 minute) test scripts where blocking is acceptable
-	//		---> IT IS NOT intended for general use and WILL CAUSE THE UI TO FREEZE if used with long-running scripts
+	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully
 	bool SimulationCore::runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) {
 		// Map method enum to string name, purely for logging purposes
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };

@@ -142,7 +142,7 @@ namespace interpreter {
 		if (_stopRequested) { stop(); return; }
 		// Command checks
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
-		if (!commandsLeft()) { _state = ProgramState::Completed; return; }
+		if (!commandsLeft()) { _state = ProgramState::Completed; return; _core->stopSimulation(); }
 
 		// Ensure default object is valid in context
 		scene::Object* o = _defaultObj ? _defaultObj : (_core ? _core->getObject() : nullptr);

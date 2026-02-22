@@ -68,17 +68,14 @@ int runBatchMode() {
 
 		// If not in batch mode only, reserve one core for the main thread
 #ifndef _BATCH_MODE_ONLY
-        workers = (cores > 1) ? cores - 1 : 1;
+        workers = 1;
 #endif
-        assert(core->robotSystem() != nullptr);
-
 		// Build runner with factory and worker count
         StudyRunner runner(makeCoreFactory, workers);
 
         // The script text for the run(s)
         std::string scriptText = R"(
             load(robot, VISPA)
-            set(integrator, rk4)
 
             wait(2.5)
             trajClear()

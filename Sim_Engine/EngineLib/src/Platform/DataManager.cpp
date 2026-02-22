@@ -4,6 +4,38 @@
 #include "Platform/DataManager.h"
 
 namespace data {
+	// Debugging helpers for HDF5
+	static bool DM_DEBUG_HDF5() {
+		static bool v = []() {
+#ifdef _WIN32
+			char* buffer = nullptr;
+			size_t size = 0;
+			if (_dupenv_s(&buffer, &size, "DSFE_DATA_DEBUG") == 0 && buffer != nullptr) {
+				free(buffer);
+				return true;
+			}
+			if (buffer) free(buffer);
+			return false;
+#else
+			return (std::getenv("DSFE_DATA_DEBUG") != nullptr);
+#endif
+		}();
+		return v;
+	}
+
+	// Check HDF5 status and print error stack if there's an error, also print verbose info if debug env var is sets
+	static inline void hdf5_check(herr_t status, const char* msg) {
+		if (status < 0) {
+			std::cerr << "HDF5 ERROR: " << msg << " (status=" << status << ")\n";
+			// Print full HDF5 error stack
+			H5Eprint(H5E_DEFAULT, stderr);
+		}
+		else if (DM_DEBUG_HDF5()) {
+			// verbose when debug env var set
+			std::cerr << "HDF5 OK: " << msg << " (status=" << status << ")\n";
+		}
+	}
+
 	// Escape a string for CSV format
 	static inline std::string escape_csv(const std::string_view s) {
 		bool needQuotes = false;
@@ -76,6 +108,8 @@ namespace data {
 	// Get current timestamp as a compact string (e.g. "20240601_153045")
 	static inline std::string timestampCompact() {
 		auto now = std::chrono::system_clock::now();
+		auto secs = std::chrono::time_point_cast<std::chrono::seconds>(now);
+		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - secs).count();
 		std::time_t t = std::chrono::system_clock::to_time_t(now);
 		std::tm tm{};
 
@@ -86,7 +120,7 @@ namespace data {
 		localtime_r(&t, &tm);
 #endif
 		std::ostringstream oss;
-		oss << std::put_time(&tm, "%Y%m%d_%H%M%S");
+		oss << std::put_time(&tm, "%Y%m%d_%H%M%S") << "_" << std::setw(3) << std::setfill('0') << ms;
 		return oss.str();
 	}
 
@@ -360,15 +394,29 @@ namespace data {
 				<< " dir=" << dir.string() << "\n";
 		}
 
+		// Determine type string based on subfolder
 		std::string typeStr;
 
+		// Determine type string based on subfolder
 		if (subStr == "Simulation") { typeStr = "sim"; }
 		else if (subStr == "Reference") { typeStr = "ref"; }
 
-		_path = (dir / ("dsfe_" + typeStr + "_run_" + timestampCompact() + "_" + intName + ".h5")).string();
+		// Get thread ID as string
+		std::ostringstream tid;
+		tid << std::this_thread::get_id();
+
+		// Construct file path: parent/sub/dsfe_[type]_run_[timestamp]_[intName]_[threadid].h5
+		_path = (dir / ("dsfe_" + typeStr + "_run_" +
+			timestampCompact() + "_" +
+			intName + "_" +
+			tid.str() + ".h5")).string();
 
 		// Create HDF5 file
-		_fileID = H5Fcreate(_path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+		static std::mutex hdf5Mutex; // protect HDF5 library calls
+		{
+			std::lock_guard<std::mutex> hdf5Lock(hdf5Mutex);
+			_fileID = H5Fcreate(_path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+		}
 		// Check for errors
 		if (_fileID < 0) {
 			std::cerr << "Hdf5StreamWriter: failed to create file: " << _path << "\n";
@@ -406,6 +454,7 @@ namespace data {
 
 	// stop HDF5 stream writer
 	void HDF5StreamWriter::stop() {
+		printf("WRITER STOP\n");
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (!_active) return;
 
@@ -502,7 +551,6 @@ namespace data {
 			hid_t ds = ensureKey(key, value);
 			if (ds < 0) { continue; } // unsupported type
 
-			// Append value based on type
 			if (std::holds_alternative<std::string>(value)) {
 				appendString1D(ds, _vlenStrType, std::get<std::string>(value));
 			}
@@ -585,6 +633,16 @@ namespace data {
 				<< escape_csv(toString(val)) << "\n";
 		}
 		_file.flush(); // ensure data is written
+	}
+
+	DataManager::~DataManager() {
+		printf("DM DESTROYED\n");
+		finalise();
+	}
+
+	void DataManager::finalise() {
+		if (_sim.active()) { _sim.stop(); }
+		if (_ref.active()) { _ref.stop(); }
 	}
 
 	// Enable or disable data logging

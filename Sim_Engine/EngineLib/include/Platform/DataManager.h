@@ -93,6 +93,10 @@ namespace data {
     class ENGINE_API DataManager {
     public:
 		DataManager() = default;
+        ~DataManager();
+
+        void finalise();
+
         void setEnabled(bool enabled);
 		void setIntegratorName(std::string name) { _integratorName = name; }
         void setParentFolder(std::string folder) { _parentFolder = folder; }
