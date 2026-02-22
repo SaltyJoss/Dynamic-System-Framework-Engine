@@ -17,10 +17,40 @@
 #include "Platform/DataManager.h"
 
 namespace core {
-	// Constructor
-	SimulationCore::SimulationCore() {}
+	// Owned constructed subsystems (default)
+	SimulationCore::SimulationCore()
+		: _objectsOwned(std::make_unique<std::vector<std::unique_ptr<scene::Object>>>()), 
+		  _physicsOwned(std::make_unique<physics::PhysicsSystem>()), _trajOwned(std::make_unique<control::TrajectoryManager>()),
+		_robotOwned(std::make_unique<robots::RobotSystem>(
+			*_objectsOwned,
+			[objs = _objectsOwned.get()](const std::string& path) {
+				assets::MeshLoader loader;
+				auto meshes = loader.load(path);
+
+				std::vector<scene::Object*> result;
+				for (auto& m : meshes) {
+					auto obj = std::make_unique<scene::Object>(m);
+					auto raw = obj.get();
+					objs->push_back(std::move(obj));
+					result.push_back(raw);
+				}
+				return result;
+			}
+		))
+	{
+		_objects = _objectsOwned.get();
+		_physics = _physicsOwned.get();
+		_traj = _trajOwned.get();
+		_robot = _robotOwned.get();
+	}
+	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
 		printf("CORE DESTROYED\n"); 
+	}
+
+	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
+	SimulationCore::SimulationCore(physics::PhysicsSystem& physics, robots::RobotSystem& robot, control::TrajectoryManager& traj, std::vector<std::unique_ptr<scene::Object>>& objects)
+		: _physics(&physics), _robot(&robot), _traj(&traj), _objects(&objects) {
 	}
 
 	// Update physics for all objects in the scene using the physics system
@@ -99,7 +129,7 @@ namespace core {
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
 					}
-					_telemetry.update(_simTime, *_robot, _traj.get(), diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
@@ -293,7 +323,6 @@ namespace core {
 			// Write this entry to HDF5
 			_data.capture(data::Stream::Reference, header, fields);
 		}
-
 	}
 
 	// --------------------------------------------------
@@ -369,7 +398,7 @@ namespace core {
 					}
 
 					// Telemetry update
-					_telemetry.update(_simTime, *_robot, _traj.get(), diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
@@ -400,18 +429,18 @@ namespace core {
 	// --- Setters and Getters for Systems and State ---
 
 	// Setter for the physics system
-	void SimulationCore::setPhysicsSystem(physics::PhysicsSystem* physics) { _physics.reset(physics); }
+	void SimulationCore::setPhysicsSystem(physics::PhysicsSystem* physics) { _physics = physics; }
 
 	// Accessor for the physics system (non-const and const versions)
-	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics.get(); }
-	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics.get(); }
+	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics; }
+	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics; }
 
 	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem* SimulationCore::robotSystem() { return _robot.get(); }
-	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot.get(); }
+	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
+	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
 
 	// Setter and checker for Robot System
-	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot.reset(robot); }
+	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
 	bool SimulationCore::hasRobot() const { return _robot && _robot->hasRobot(); }
 
 	// Loads a robot into the robot system by name
@@ -455,7 +484,7 @@ namespace core {
 	}
 
 	// Setter for the scene objects pointer (used for script object lookup)
-	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects.reset(objects); }
+	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects = objects; }
 	// Getter for object
 	scene::Object* SimulationCore::getObject() {
 		if (!_objects) { return nullptr; }
@@ -474,11 +503,11 @@ namespace core {
 	}
 
 	// Setter for the trajectory manager
-	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj.reset(traj); }
+	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj = traj; }
 
 	// Accessor for the trajectory manager (non-const and const versions)
-	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj.get(); }
-	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj.get(); }
+	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj; }
+	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj; }
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
