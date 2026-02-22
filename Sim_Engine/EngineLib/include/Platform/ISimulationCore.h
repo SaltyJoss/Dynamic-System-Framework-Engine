@@ -33,6 +33,8 @@ namespace core {
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
 		virtual std::string integrationMethodName() const = 0;
 		virtual integration::eIntegrationMethod integrationMethod() const = 0;
+		// Setter for run tag name of current script
+		virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems
         virtual physics::PhysicsSystem* physicsSystem() = 0;
         virtual robots::RobotSystem* robotSystem() = 0;

@@ -147,6 +147,7 @@ namespace core {
 		// Ensure reference sim system have their integrators configured for the new run
 		setupSimulationIntegrator();
 		_data.setIntegratorName(integrationMethodName());
+		_data.setRunTag(_runTag);
 
 		_simRunning = true;
 		_telemetryBegun = false;

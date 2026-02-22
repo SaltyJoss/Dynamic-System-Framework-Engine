@@ -40,7 +40,7 @@ namespace data {
     public:
         HDF5StreamWriter() = default;
 
-        void start(std::string_view parentFolder, std::string_view subFolder, std::string intName);
+        void start(std::string_view parentFolder, std::string_view subFolder, std::string runTag);
         void stop();
 
         bool active() const { return _active; }
@@ -103,10 +103,13 @@ namespace data {
 		void capture(Stream s, std::string_view topic, const FieldList& fields);
 		bool enabled() const { return _enabled; }
 
+		void setRunTag(std::string t) { _runTag = t; }
+
     private:
         bool _enabled = false;
         std::string _integratorName = "Unknown";
         std::string _parentFolder = "Runs";
+		std::string _runTag = "N/A";
         HDF5StreamWriter _sim;
         HDF5StreamWriter _ref;
     };

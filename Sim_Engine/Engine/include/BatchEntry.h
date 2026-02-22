@@ -1,2 +1,3 @@
 #pragma once
-int runBatchMode();
+struct BatchArgs;
+int runBatchMode(const BatchArgs& args);

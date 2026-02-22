@@ -83,6 +83,7 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 					return result;
 				}
 				// Configure the SimulationCore for this run before building the program
+				simCore->setRunTag(cfg.tag);
 				simCore->setFixedDt(cfg.dt);
 				simCore->setIntegrationMethod(cfg.method);
 

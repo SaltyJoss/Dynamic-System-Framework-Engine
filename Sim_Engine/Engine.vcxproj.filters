@@ -94,5 +94,8 @@
     <ClInclude Include="Engine\include\BatchEntry.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\include\BatchArgs.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

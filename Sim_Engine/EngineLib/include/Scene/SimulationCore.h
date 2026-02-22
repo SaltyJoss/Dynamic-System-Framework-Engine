@@ -48,6 +48,7 @@ namespace core {
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
+		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
 		physics::PhysicsSystem* physicsSystem() override;
@@ -133,6 +134,7 @@ namespace core {
 
 		// Last script text for comparison re-use
 		std::string _lastScriptText;
+		std::string _runTag;
 
 		// Active Script Program
 		interpreter::IStoredProgram* _activeProgram = nullptr;

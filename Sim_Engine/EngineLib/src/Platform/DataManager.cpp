@@ -4,38 +4,6 @@
 #include "Platform/DataManager.h"
 
 namespace data {
-	// Debugging helpers for HDF5
-	static bool DM_DEBUG_HDF5() {
-		static bool v = []() {
-#ifdef _WIN32
-			char* buffer = nullptr;
-			size_t size = 0;
-			if (_dupenv_s(&buffer, &size, "DSFE_DATA_DEBUG") == 0 && buffer != nullptr) {
-				free(buffer);
-				return true;
-			}
-			if (buffer) free(buffer);
-			return false;
-#else
-			return (std::getenv("DSFE_DATA_DEBUG") != nullptr);
-#endif
-		}();
-		return v;
-	}
-
-	// Check HDF5 status and print error stack if there's an error, also print verbose info if debug env var is sets
-	static inline void hdf5_check(herr_t status, const char* msg) {
-		if (status < 0) {
-			std::cerr << "HDF5 ERROR: " << msg << " (status=" << status << ")\n";
-			// Print full HDF5 error stack
-			H5Eprint(H5E_DEFAULT, stderr);
-		}
-		else if (DM_DEBUG_HDF5()) {
-			// verbose when debug env var set
-			std::cerr << "HDF5 OK: " << msg << " (status=" << status << ")\n";
-		}
-	}
-
 	// Escape a string for CSV format
 	static inline std::string escape_csv(const std::string_view s) {
 		bool needQuotes = false;
@@ -378,7 +346,7 @@ namespace data {
 	// --- HDF5StreamWriter Methods ---
 
 	// start HDF5 stream writer
-	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder, std::string intName) {
+	void HDF5StreamWriter::start(std::string_view parentFolder, std::string_view subFolder, std::string runTag) {
 		std::lock_guard<std::mutex> lock(_mtx);
 		if (_active) return;
 
@@ -405,11 +373,8 @@ namespace data {
 		std::ostringstream tid;
 		tid << std::this_thread::get_id();
 
-		// Construct file path: parent/sub/dsfe_[type]_run_[timestamp]_[intName]_[threadid].h5
-		_path = (dir / ("dsfe_" + typeStr + "_run_" +
-			timestampCompact() + "_" +
-			intName + "_" +
-			tid.str() + ".h5")).string();
+		// Format file name to run tag
+		_path = (dir / (runTag + ".h5")).string();
 
 		// Create HDF5 file
 		static std::mutex hdf5Mutex; // protect HDF5 library calls
@@ -650,10 +615,11 @@ namespace data {
 		if (enabled == _enabled) return;
 		_enabled = enabled;
 		std::string intName = _integratorName.empty() ? "unknown" : _integratorName;
+		std::string runTag = _runTag.empty() ? (intName + "_" + timestampCompact()) : _runTag;
 
 		if (_enabled) {
-			_sim.start(_parentFolder, "Simulation", intName);
-			_ref.start(_parentFolder, "Reference", intName);
+			_sim.start(_parentFolder, "Simulation", runTag);
+			_ref.start(_parentFolder, "Reference", runTag);
 		}
 		else {
 			_sim.stop();
