@@ -1,0 +1,884 @@
+* c303050 (HEAD -> add/implement_energy_metrics) feat: added Headless core API, batch runner, and asset refactor
+* 3230a4c WIP: added simulation run modes and refactor log buffer handling
+* 2b0b7cc WIP: adding double-buffered joint metric logging to RobotSystem
+* 60c7afc update: going to add a basic double-buffer design to help testing runs
+* 2f83673 (origin/add/implement_energy_metrics) refactor: refactored robot joint state naming and add energy metrics
+* b5bb0ca (origin/Dev, Dev) Refactor/code seperation (#73)
+| *   1802df6 (origin/refactor/code_seperation) Merge branch 'Dev' into refactor/code_seperation
+| |\  
+| |/  
+|/|   
+* | 7ff6919 Refactor of RobotSystem.cpp (#72)
+* |   0cb1f90 Merge branch 'Dev' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Dev
+|\ \  
+* | | 29f18ab fixes
+* | | c2d9e8a fixes
+* | | 0b4371d fixes
+| | | * 5f80878 (refactor/code_seperation) fixes
+| | | * f93bee9 refactor: Introduce SceneRenderer abstraction
+| | |/  
+| | * 718ba5b fixes
+| | * 7816a26 refactor: moved all core simulator methods, logic, variables, and pointers into SimulationCore.cpp, making SimManage focused on actually MANAGING the simulator.
+| | *   3793fac Merge branch 'refactor/code_seperation' of https://github.com/SaltyJoss/RoboticArm_MathModelling into refactor/code_seperation
+| | |\  
+| | | *   84576d5 Merge branch 'refactor/code_seperation' of https://github.com/SaltyJoss/RoboticArm_MathModelling into refactor/code_seperation
+| | | |\  
+| | * | \   15f0f69 Merge branch 'refactor/code_seperation' of https://github.com/SaltyJoss/RoboticArm_MathModelling into refactor/code_seperation
+| | |\ \ \  
+| | | |/ /  
+| | |/| /   
+| | | |/    
+| | | * 7e21f60 fixes: fixed previous files to correctly function with new abstraction
+| | * | 8f8190b fixes: fixed previous files to correctly function with new abstraction
+| | |/  
+| | * 9ba9dfd feat: move robot kinematic and dynamic logic to seperate headers and compiler files respectively
+| |/  
+| *   36d193f Merge pull request #70 from SaltyJoss/SaltyJoss-patch-1
+| |\  
+| | * 170e339 Revise Todo List format and item status
+| * | b1316c7 Merge pull request #69 from SaltyJoss/Main
+| |\| 
+| * | 6d2b444 Merge pull request #68 from SaltyJoss/add/full_rigid-body_dynamics
+|/| | 
+| | | * 3d93f94 (origin/Main, origin/HEAD) Revise Todo List format and item status (#71)
+| | |/  
+| | *   8374665 (tag: v0.7.0r-alpha) Merge pull request #67 from SaltyJoss/add/full_rigid-body_dynamics
+| | |\  
+| | |/  
+| |/|   
+| * | aaab286 feat: improve robot inertia, control, and UI dt controls
+| * | 80d8e2b (tag: v0.6.3r-alpha) feat: added setOmega command for direct joint velocity injection
+| * | 942c8be feat: added explicit handling for eTorqueMode in RobotSystem.cpp, improving validity for integration study
+| * | 9ae344e fixes: physically fine, just not the best for the numerical integration test.
+| * | 9d801a2 fixes: fixed signularity in mass matrix
+| * | b1dce4a NOTE: realised I need to sort my mapping of joints so world joints are GENUINELY IGNORED.
+| * | c320208 fixes
+| * | 187127b fixes
+| * | cb66966 feat: add torque mode toggle into control panel
+| * | 28fb03f update
+| * | 94f3a0a refactor: moved from diagonal inertia and coriolis (using finite difference) rigid-body model to a more numerically transparent
+|/ /  
+| * c8647c0 Revise project details and roadmap in README (#66)
+| * 959658b (tag: v0.6.0r-alpha) fixes: telemetry results page fixes, improving first size, first position, and general pipeline (#65)
+| *   371d2b3 Merge pull request #64 from SaltyJoss/Dev
+| |\  
+| * \   336074a (tag: v0.5.3-alpha) Merge pull request #63 from SaltyJoss/Dev
+| |\ \  
+| * \ \   a9b79e7 (tag: v0.5.2-alpha) Merge pull request #62 from SaltyJoss/Dev
+| |\ \ \  
+| | | | | * be31e8f (fixes/improve_diagonal_use) feat: removed integral gain, torque saturation, and omega barrier
+| |_|_|_|/  
+|/| | | |   
+* | | | | e1b82c9 (origin/fixes/improve_diagonal_use) fixes
+* | | | | 71f1dab fixes: telemetry results page fixes, improving first size, first position, and general pipeline
+| |_|_|/  
+|/| | |   
+* | | | 0a4c0f5 refactor: improved sim settings and UI dt controls, added gravity param
+| |_|/  
+|/| |   
+* | | 8da1fa8 fixes: buffer-based logging for robot sim and trajectory refs
+| |/  
+|/|   
+* | b7ff992 readme fixes
+|\| 
+| * a0db7fd (tag: v0.5.1-alpha) merge(dev): integrate rendering updates, robotics models, and integrator fixes into main (#61)
+| * cde6fb1 Add H1 robotic system and VISPA model references (#58)
+* | 0849727 fixes: shader path changes corrected to suit the current program state
+* | 1004932 merge fixes: simplify filters, support multiple attached objects
+|\| 
+| * 24c4f71 (tag: v0.5.0-alpha, Main) Graphical and UI improvements / Comparitive analysis plots added (#57)
+* | 24a3c9c feat: added support for free-floating (floating base) robots
+* |   e8fe657 Merge pull request #60 from SaltyJoss/ui/tweak-plots-and-general-ui
+|\ \  
+| * | 859d097 fixes: DSFE is no longer capped at 16:9 aspect ratio, but upon first loading it will automatically size to 16:9
+| * | f1018bd refactor: added reusable ImGui widgets and a generally improve layout for GUI
+| * | 66f3db3 docs
+|/ /  
+* |   4aa6083 Merge pull request #59 from SaltyJoss/fix/rk45-method-corrections
+|\ \  
+| * | e15bc11 fixes: rk45 integration method implementation corrected to produce realstic and accurate results, improving numerical transparency.
+|/ /  
+* | 5353d03 Merge origin/Main into Dev: resolve all conflicts keeping Dev
+|\| 
+| * 2176511 Add robotic models section to README (#56)
+| * c4e6244 General house keeping improvements (#55)
+| * a6b3201 (tag: v0.4.0-alpha) Fixes/fix robotic arm model transforms + implementation of new robotic models (#54)
+* | 2e88249 feat: added integrator comparison and CSV export to GUI
+* | ade0c3b feat: addition of H1 and VISPA robot models, along with partial implementation of individual run plots
+* | 6deaeaa feat: added checkbox to allow realtime update for plots
+* | 999eec4 fixes: added colour to existing robotic models
+* | 5e17306 fixes: enforce 16:9 window, improve camera and viewport UX
+* | 2103964 fixes: fixed quad view follow target resetting to nothing on a new model following the currently loaded model
+* | 7b2eacb fixes: improve material appearence on differerent meshes, along with improved lighting
+* | 4f3047f refactor: improve PBR ambient control and quad view rendering, and add ssao rendering
+* | 56f71a0 refactor: move UI code to ui/ namespace, cleanup & docs
+* | 14446d6 fixes: removal of redundancy
+| | * e1fe60d (origin/feature/h1-addition) feat: basic additions to allows for simple mvement
+| | * adfaaed feat: addition of H1 humanoid robot
+| |/  
+|/|   
+* | 0e490a1 Fix Markdown formatting in README.md
+* | 4993123 Document robotic models used in the project
+* | d26d53b Fixes/fix robotic arm model transforms (#53)
+* | 12c7f2f Merge remote-tracking branch 'origin/Main' into Dev
+|\| 
+| * 34149c5 fixes: release build pipeline and assimp toolset mismatch (#51)
+| *   acc9624 (tag: v0.3.0-alpha) Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+| |\  
+| | * acc6554 Dev (#49)
+| * | e3692ba merge fixes
+| * | a1d9995 merge fixes
+| * | 5c7a152 merge fixes
+| * | 79de91f merge fixes
+| * | ed60ac4 fixes
+| * | b61465b fixes
+| * | a0485a0 feat: added a very basic selector for gravity values
+| * | 5c0c0c7 fixes: Inverse dynamics style feedforward corrected to be inline with the physically correct model.
+| * | ad9ba1d fixes: fixed gravity inconsistenties with robot root frame, and recomputation of FK
+| * | 8627599 fixes: fixed computational overestimation of wrist gravity in ComputeGravityTorque()
+| * | ce86dca feat: implemented basic computation of a joints gravity torque,
+| * | ad45a8a Refactor/robot metrics (#46)
+| |/  
+* |   42e95c8 Merge branch 'Dev' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Dev
+|\ \  
+| * | 26147e4 Remove latest update section from README
+| * | 09aa1f9 Remove libraries used section from README
+| * | c0e9e7a Revise disclaimer in README for clarity
+| * | f80547c Update README with installation and tools information
+* | | 1e9a047 fixes to robot loading
+* | | c179e87 feat: refactor robotsystem and loading to allow other robotic models.
+|/ /  
+* | 5f3d86b Merge remote-tracking branch 'origin/Main' into Dev
+|\| 
+| * c51d94c (tag: v0.2.0-alpha) Coriolis addition, Code cleanup and refactoring (#45)
+* | 76b3b3d Merge branch 'Main' into Dev
+|\| 
+| * 317591c Update Main with dev changes (#43)
+* | 4f7ad1a merge fixes
+* | bdc6042 merge fixes
+* | 4bb88a0 merge fixes
+* | 447a609 merge fixes
+* | 7364477 fixes
+* | 38b0607 fixes
+* | e4f5640 feat: added a very basic selector for gravity values
+* | e2dc073 fixes: Inverse dynamics style feedforward corrected to be inline with the physically correct model.
+* | fe40d9f fixes: fixed gravity inconsistenties with robot root frame, and recomputation of FK
+* | cfa2450 fixes: fixed computational overestimation of wrist gravity in ComputeGravityTorque()
+* | 56497ec feat: implemented basic computation of a joints gravity torque,
+* | 343f616 Refactor/robot metrics (#46)
+* | c57fdd0 Feature/joint friction remodel (#44)
+* | 04b7326 Merge branch 'Main' into Dev
+|\| 
+| * 0433771 alpha release v0.1.0 (#40)
+| * f546692 Update author information and release date (#41)
+| * 4a14b7b (tag: v0.1.0-alpha) Update citation link in README.md
+| *   de4efa6 Merge pull request #39 from SaltyJoss/Dev
+| |\  
+* | \   1656caa Merge branch 'Dev' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Dev
+|\ \ \  
+| * | | 1c8595f Remove badge section from README.md
+| * | | 0ca78ed update dev inline with Main branch (#42)
+* | | | bde36df fixes
+|/ / /  
+* | | 08c8a14 fixes: correct added postbuild copmmand for HDF5 dlls, along with 3rd party licenses in new release
+* | | 8e7d9f5 fixes
+* | | 0408409 fixes: plots now optionally follow, and can be scaled according to user choice
+* | |   8d76244 Merge branch 'Dev' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Dev
+|\ \ \  
+| | |/  
+| |/|   
+| * | 60788f9 Merge pull request #38 from SaltyJoss/Main
+| |\| 
+| | * 1320a9f Enhance installation script with exit code checks
+| * | 6f4a150 Update citation and author links in README.md
+| * | 02612e2 Merge pull request #37 from SaltyJoss/Main
+| |\| 
+| | * d2c96f4 feat: Citation Addition
+| | * c165864 feat: addition to README
+| | *   eee442f Merge pull request #36 from SaltyJoss/Dev
+| | |\  
+| | |/  
+| |/|   
+| | * 3727f40 Update build.yml
+| | * 1299017 Change Visual Studio build tools to 2026
+| | * 4512f0b Update build.yml to use Visual Studio 2017 components
+| | * dec5540 Update build.yml
+| | * 6231a8d Add step to install Visual Studio 2026 build tools
+| | * bbacb97 Specify PlatformToolset v145 in build.yml
+| | * b320349 Add build step for MathLib solution
+| | * 2950243 Update README.md
+| | * 4122bad Update build path for msbuild in workflow
+| | * eb04fd6 Revise README for new robotic arm integration details
+| | *   bcd49fb Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+| | |\  
+| | | *   fa85ece Merge pull request #35 from SaltyJoss/Dev
+| | | |\  
+| | | * | 30e7578 Clean up outdated robotic arm script entries in README
+| | | * | 43c13bf Revise README with enhanced robotic arm project notes
+| | | * | 33113db Update README with robotic arm script details
+| | | * |   ff8eaa2 Merge pull request #34 from SaltyJoss/Dev
+| | | |\ \  
+| | | * \ \   f715d60 Merge pull request #33 from SaltyJoss/Dev
+| | | |\ \ \  
+| | | * \ \ \   fae930f Merge pull request #32 from SaltyJoss/Dev
+| | | |\ \ \ \  
+| | | * \ \ \ \   743dd60 Merge pull request #31 from SaltyJoss/Dev
+| | | |\ \ \ \ \  
+| | | * \ \ \ \ \   cccfd0d Merge pull request #30 from SaltyJoss/Dev
+| | | |\ \ \ \ \ \  
+| | | * | | | | | | 75a653f Delete Sim_Engine/Runs directory
+| | | * | | | | | |   9ed43a5 Merge pull request #29 from SaltyJoss/Dev
+| | | |\ \ \ \ \ \ \  
+| | | * \ \ \ \ \ \ \   a34128e Merge pull request #28 from SaltyJoss/Dev
+| | | |\ \ \ \ \ \ \ \  
+| | * | | | | | | | | | 9f14945 refactor
+| | |/ / / / / / / / /  
+| | * | | | | | | | | bbb62b8 docs
+| | * | | | | | | | | 04220c0 Update README with new robotic arm script example
+| | * | | | | | | | |   92624af Merge pull request #27 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \   e800994 Merge pull request #26 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | 09d1a7b Update README with new robotic arm scripts and links
+| | * | | | | | | | | | |   f586263 Merge pull request #25 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | 5a84bac Update README with new robotic arm scripts
+| | * | | | | | | | | | | |   05680e8 Merge pull request #24 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | | be6482c Update README with robotic arm script information
+| | * | | | | | | | | | | | |   b9ef50e Merge pull request #23 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | | | aae72ec Revise README with updated Robotic Arm script examples
+| | * | | | | | | | | | | | | |   e461605 Merge pull request #22 from SaltyJoss/Dev - Mathematics and Physics fixes
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \   81f8d9c Merge pull request #21 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   6190936 Merge pull request #20 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | | | | | | 3b58ede Update README with examples of robotic arm scripts
+| | * | | | | | | | | | | | | | | | | b3c54a9 Rename project to Dynamic Systems Framework
+| | * | | | | | | | | | | | | | | | |   5fcb09f Merge pull request #11 from SaltyJoss/Dev -> POC it works!
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   2e5202b Merge pull request #10 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   447f7d8 Merge pull request #9 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   e84ff11 Merge pull request #8 from SaltyJoss/Dev - DSL update
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | | | | | | | | | | 874da82 Update README with new examples and formatting
+| | * | | | | | | | | | | | | | | | | | | | | 7d52a52 Add examples of new scripting language to README
+| | * | | | | | | | | | | | | | | | | | | | |   697cd85 Merge pull request #7 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   668efb7 Merge pull request #6 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * | | | | | | | | | | | | | | | | | | | | | | b2a2615 Update README for formatting consistency
+| | * | | | | | | | | | | | | | | | | | | | | | | 0d48f6c Update project status image and caption
+| | * | | | | | | | | | | | | | | | | | | | | | | 0115ecd Add current state image for project
+| | * | | | | | | | | | | | | | | | | | | | | | | 79e9583 Update current state image in README
+| | * | | | | | | | | | | | | | | | | | | | | | | 2aa077b Update README with current project state
+| | * | | | | | | | | | | | | | | | | | | | | | |   0a428b1 Merge pull request #5 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   0eaf151 Merge pull request #4 from SaltyJoss/Dev ~ WIP adding SCL language and interpreter to application
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   897187d Merge pull request to Main from Dev, PoC
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   cf7652f Visual overhaul, graphics settings, GUI additions, basic code fixes
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+| | * \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \   c98b249 Merge pull request #1 from SaltyJoss/Dev
+| | |\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  
+* | | | | | | | | | | | | | | | | | | | | | | | | | | | | | 80e2955 refactor: fixed and refactored path, plots, and small QoL bugs in preperation for release (first version)
+|/ / / / / / / / / / / / / / / / / / / / / / / / / / / / /  
+* | | | | | | | | | | | | | | | | | | | | | | | | | | | / 9976b90 fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | | | | | | edea558 fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | | | | | f503ce9 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 5e7e78f fixes: general fixes with bad implementation of pointers
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 231ff71 feat: added Integral Gain to existing PD controller in robot system (PID now)
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 8493b25 feat: added Integral Gain to existing PD controller in robot system (PID now)
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 68540e2 fixes: rerun error, bad pointer allocation / destruction
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 731bc6e fixes: fixed memory leak in GUIContext, ImPlot was initialised in the incorrect method.
+* | | | | | | | | | | | | | | | | | | | | | | | | | | d85621c docs
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 31f3a49 removal of docs folder
+* | | | | | | | | | | | | | | | | | | | | | | | | | | ccdd524 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | | aa1a539 feat: added integral gain into robotic arm controller, along with better clamping of omega and theta for more accurate simulation data
+* | | | | | | | | | | | | | | | | | | | | | | | | | | c7c445c fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 82cf1cb fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | | 5e47b2a fixes; dynamics updates
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | | | | f18d932 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | 8ce5431 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | | 717bed7 fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | | | 7a43e2f fixes
+* | | | | | | | | | | | | | | | | | | | | | | | | acee774 docs
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | | c39d93f feat: add ImPlot plotting for robotic arm telemetry plots
+* | | | | | | | | | | | | | | | | | | | | | | | e6b8940 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | 42af208 fixes
+* | | | | | | | | | | | | | | | | | | | | | | | f970a27 fixes: telemetry output fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | | 3ee2d45 fixes
+* | | | | | | | | | | | | | | | | | | | | | | 5378430 feat: camera following corrrection
+* | | | | | | | | | | | | | | | | | | | | | | 1d7e481 fixes: additiion of mipmap into rendering
+* | | | | | | | | | | | | | | | | | | | | | | 917906d fixes
+* | | | | | | | | | | | | | | | | | | | | | | f356ba0 feat: add basic joint telemetry for simulation runs into control panel
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | | 793100d fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | | 26f5c95 fixes
+* | | | | | | | | | | | | | | | | | | | | dedb6e7 feat: improve GUI, single and quad views
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | | 07a7593 fixes
+* | | | | | | | | | | | | | | | | | | | 9fdd376 feat: add RK45 adaptive integration path, visually and numerically a selectable integration method for simulations
+* | | | | | | | | | | | | | | | | | | | a3e1578 fixes: fixed reference step -> apply trajectory outputs directly directly as ground truth
+* | | | | | | | | | | | | | | | | | | | 1f483fb fixes: parallel command continuation error fix
+* | | | | | | | | | | | | | | | | | | | d86c7ca fixes
+* | | | | | | | | | | | | | | | | | | | 5f7364d docs
+* | | | | | | | | | | | | | | | | | | | 05194a6 fixes: QoL fixes
+* | | | | | | | | | | | | | | | | | | | fec8f36 fixes: updates trajectory usage in derivative, correcting omega,theta,alpha reference states
+* | | | | | | | | | | | | | | | | | | | bace059 fixes
+* | | | | | | | | | | | | | | | | | | | 67af883 docs
+* | | | | | | | | | | | | | | | | | | | 679f6dd feat: added HDF5 as external library
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | | f8ec1b8 docs
+* | | | | | | | | | | | | | | | | | | fc1ab9d refactor: refactored joint control: dynamic gains and soft velocity limit
+* | | | | | | | | | | | | | | | | | | 9926eaa feat: added simulation and reference data capture for HDF5 files (CODE FOR THIS IS ADAPTED FROM MULTIPLE RESOURCES, NOT REALLY ORIGINAL IN ANY SENSE)
+* | | | | | | | | | | | | | | | | | | b979df2 feat: added simulation and reference data capture for HDF5 files (CODE FOR THIS IS ADAPTED FROM MULTIPLE RESOURCES, NOT REALLY ORIGINAL IN ANY SENSE)
+* | | | | | | | | | | | | | | | | | | 3db8897 feat: added HDF5 dependancy
+* | | | | | | | | | | | | | | | | | | 64f47dc fixes
+* | | | | | | | | | | | | | | | | | | dc10292 feat: added ref logic and dataoutput
+* | | | | | | | | | | | | | | | | | | 7e6ef1b docs
+* | | | | | | | | | | | | | | | | | | 90bb472 fixes: ref model added, not implemented in sim  step
+* | | | | | | | | | | | | | | | | | | 642482d docs
+* | | | | | | | | | | | | | | | | | | e3ae288 fixes
+* | | | | | | | | | | | | | | | | | | 23cf41d runs
+* | | | | | | | | | | | | | | | | | | 084c285 feat: basic CSV logging using new macro
+* | | | | | | | | | | | | | | | | | | f0e2465 feat: basic csv writer for data capture of simulation model
+* | | | | | | | | | | | | | | | | | | f80d0b2 feat: added correct Effective Inertia for physically correct dynamic simulation (no gravity yet, im planning that right now)
+* | | | | | | | | | | | | | | | | | | 00d48f9 fixes: trajectory functionality fixes
+* | | | | | | | | | | | | | | | | | | d1adde3 docs
+* | | | | | | | | | | | | | | | | | | d6c21dd fixes: fixed runtime errors with commands
+* | | | | | | | | | | | | | | | | | | 865f4f6 fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | | 727efb9 docs
+* | | | | | | | | | | | | | | | | | f7966ea WIP: fixes in command parsing of trajectory commands
+* | | | | | | | | | | | | | | | | | ec7c258 feat(WIP): add joint trajectory framework with reference tracking
+* | | | | | | | | | | | | | | | | | 8bfa37f feat: added 3 basic trajectory models into mathlib
+* | | | | | | | | | | | | | | | | | 2bf7948 fixes
+* | | | | | | | | | | | | | | | | | dc2ea7e feat: basic tuning to current timeout and controller use in joint commands
+* | | | | | | | | | | | | | | | | | ad6d564 fixes: refactor and fix rotateJointBy to correct utilise the PD controller, depending on pos error and vecloity to control the action
+* | | | | | | | | | | | | | | | | | 9b57610 docs
+* | | | | | | | | | | | | | | | | | ab1fbcd fixes
+* | | | | | | | | | | | | | | | | | bab7320 feat: added basic simulation log to seperate simulation run logs from general program logs
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | | 1999660 docs
+* | | | | | | | | | | | | | | | | df77678 fixes: separated parse-time data from runtime commands
+* | | | | | | | | | | | | | | | | 17ade27 feat(WIP): added basic parallel command execution blocks
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | | 7c32748 docs
+* | | | | | | | | | | | | | | | 9b04fa3 fixes
+* | | | | | | | | | | | | | | | e2c0a19 wip: NEW URDF and CORRECT FK with integration methods work! simulator reacts correctly using PD, and controller just needs refining & tuning (not sure which way I should do that)
+* | | | | | | | | | | | | | | | 330947e wip: correcting DSL to correctly interpret and output new logic onto robotic arm, creating consistent and coherent simulation environmetn
+* | | | | | | | | | | | | | | | 7d4a7c6 feat: update RobotSystem to utilise new joint and lnk params
+* | | | | | | | | | | | | | | | f722940 docs
+| |_|_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | | |   
+* | | | | | | | | | | | | | | c08b501 fixes: improved robotic arm manual use, and state statistics for all current objects
+* | | | | | | | | | | | | | | 54627d3 refactor: refactor robotLoader and RobotModel to correctly parse and log new parameters from JSON.
+* | | | | | | | | | | | | | | d2fa98d refactor: update Z1 JSON to represent URDF better, add collision, inertial, visual!
+* | | | | | | | | | | | | | | 0414f68 fixes
+* | | | | | | | | | | | | | | 69b84b7 fixes: update FK in MathLib to contain URDF-style FK methods
+* | | | | | | | | | | | | | | 1e0eba3 fixes: removed DH params currently (Current robot has NO trace of them on any documentation), moving to full URDF style, refactored with Z1 exact documentation
+* | | | | | | | | | | | | | | 5548eb6 wip: still having issues with DH params mixing into visual world params.
+* | | | | | | | | | | | | | | 730720a wip: RoboticSystem brief fixes for running, IT RUNS
+* | | | | | | | | | | | | | | 01fbff7 fixes
+* | | | | | | | | | | | | | | f577338 fixes: renaming fixes, will most likely have a few of thsese, indecisive and tired!
+* | | | | | | | | | | | | | | a420a3e fixes
+* | | | | | | | | | | | | | | beae2e5 wip: loader refactor to align with new logic (NEEDS TESTING)
+* | | | | | | | | | | | | | | 92dc141 wip: refactor robotModel to match URDF and new JSON
+* | | | | | | | | | | | | | | 2695758 wip: refactor Z1 json to match Z1 URDF
+* | | | | | | | | | | | | | | 324365f wip: Issue with correct parameters of robotic arm, need to refactor JSON, and loading to correct prexisting issues
+* | | | | | | | | | | | | | | 190065f fixes
+* | | | | | | | | | | | | | | c4720ca refactor: changed quat in Z1.json to mesh alignment, not rotation.
+* | | | | | | | | | | | | | | b10126d WIP: Integrate robot joint ODE state with IntegrationService
+* | | | | | | | | | | | | | | 08218f2 docs
+* | | | | | | | | | | | | | | c5601cb fixes
+* | | | | | | | | | | | | | | 2dbef21 feat: new commands for simulation logging, and function
+* | | | | | | | | | | | | | | 24fb8fc fixes
+* | | | | | | | | | | | | | | 59fc781 feat: added basic dt and omega set commands, along with base for consistent sim running, data collection, and visualisation
+* | | | | | | | | | | | | | | 8c5fdcb wip
+* | | | | | | | | | | | | | | da187dc fixes: PBR correction, no longer harsh lighting
+* | | | | | | | | | | | | | | 6654bad feat: correct graphical scaling
+* | | | | | | | | | | | | | | f4b356e fixes: worldgrid "fixes"
+* | | | | | | | | | | | | | | 323bda4 fixes: basic shader fixes
+* | | | | | | | | | | | | | | c1d7519 docs
+* | | | | | | | | | | | | | | a15591b fixes
+* | | | | | | | | | | | | | | c9a0aa2 fixes
+| |_|_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | | |   
+* | | | | | | | | | | | | | b2908a9 refactor robotics architecture, decouple SimulationManager, and reorganise DSL assets
+* | | | | | | | | | | | | | a8f87ca docs
+| |_|_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | | |   
+* | | | | | | | | | | | | b293165 fixes: improved location of angle fix (align), added new methods to prepare for reset ability
+* | | | | | | | | | | | | 9a389ee fixes
+* | | | | | | | | | | | | 86464a3 fixes
+* | | | | | | | | | | | | d443907 fixes: visual scaling sorted
+* | | | | | | | | | | | | acce287 fixes: world grid scale, 0.1 (10cm) to relate scale correct so all objects / robots can be correct scaled
+* | | | | | | | | | | | | a3c0869 feat: new script
+* | | | | | | | | | | | | 321bccd fixes: scaling in robotic arm FK, and use of quat in robotic arm loader -> robot model
+* | | | | | | | | | | | | 4e1d603 fixes: naming correction for max speed
+* | | | | | | | | | | | | a61bd25 fixes: tweak Z1 json to contain correct joint limits based Unitree's own Z1 specification
+* | | | | | | | | | | | | ac3daf1 docs
+| |_|_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | | |   
+* | | | | | | | | | | | 637f931 feat: add joint-based rotation commands and robotics DSL demo
+| |_|_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | | |   
+* | | | | | | | | | | c3a1286 fixes: set integrator, colour command
+* | | | | | | | | | | 93a21ef wip: robotic script
+* | | | | | | | | | | 6a3ee10 docs
+| |_|_|_|_|_|_|_|_|/  
+|/| | | | | | | | |   
+* | | | | | | | | | af3ee92 feat: ADDED QUATERNIONS, WORKING!
+* | | | | | | | | | cf6f864 docs: Initial commit to change from Euler Angles to quaternions - necessary
+* | | | | | | | | | 28c9b0f fixes
+| |_|_|_|_|_|_|_|/  
+|/| | | | | | | |   
+* | | | | | | | | 8215f5b fixes: added correct termination of a script run, loading functionality, and QoL changed.
+* | | | | | | | | 7714510 fixes: fixed inheritance issues, nearly done with UI based stuff - onto the fun part!
+* | | | | | | | | 05c220b WIP: QoL fixes for Panels, additional fixes for Script Environment Open/Save/SaveAs functionality
+* | | | | | | | | c08e908 feat: new scripts to test
+* | | | | | | | | 6439b7b fixes: CommandFactory correction to creator function, and logic inside create() method
+* | | | | | | | | 6c53e5b fixes: correction to DSL language instructions, updated to new syntax (still subject to change)
+* | | | | | | | | 2ae4f3b fixes: corrected logic in rotate command to align with new syntax
+* | | | | | | | | d822d72 refactor: corrections made to parser methods for improve tokenisation and classification of a script
+* | | | | | | | | 80d749a fixes: significant fixes to existing logic for new syntax:
+* | | | | | | | | 376fca2 WIP: part way through fixing and refactoring langauge syntax
+* | | | | | | | | 4f598c9 feat: refactor parser to suit new syntax
+* | | | | | | | | aac2b96 wip: add logic for new commands
+* | | | | | | | | 69a8053 feat: add new commands for scripting language
+* | | | | | | | | 0789aa3 feat: add UIContext for basic object/robot mesh visual logic for scripting language
+* | | | | | | | | 648e264 fixes: basic FK working
+| |_|_|_|_|_|_|/  
+|/| | | | | | |   
+* | | | | | | | 5842dff docs: added small example videos for readme
+* | | | | | | | c406004 fixes
+| |_|_|_|_|_|/  
+|/| | | | | |   
+* | | | | | | 41c66fe WIP: add frame-based execution, proper stop semantics, and correct angular units
+* | | | | | | 1a6cebb feat: first PoC, rotating cube along Z-axis (doesnt stop)
+* | | | | | | c9228a9 wip: language intergrator semi functional with engine
+* | | | | | | f3e5d82 fixes: small refactor of command and storedprogram classes
+| |_|_|_|_|/  
+|/| | | | |   
+* | | | | | def29d3 fixes: re-added accidental end catcher in setRoboticLinkRotation
+| |_|_|_|/  
+|/| | | |   
+* | | | | 926e86a fixes
+* | | | | 4bd3585 feat: add basic instructions and formatting to syntax tab
+* | | | | 1d88c27 fixes: remove old fopen method use, replaced by fopen_s method in CommandScriptEditor
+* | | | | e9d94c0 fixes: fix memory allocation, types, and other small code bugs for CommandScriptEditor
+* | | | | b0fd010 wip: Interpreter logic corrections, and method definitions for testing
+* | | | | f1c3bea wip: add Command Script Editor into existing simulation
+* | | | | 666bd84 wip: addition of a single command - "ROTATE" - with basic logic.
+* | | | | 4153ae2 wip: add logic in commandcontext for all commands, testing different methods to see which works best with me
+* | | | | 3718f0d feat: add basic functionality to all classes
+* | | | | a5edb2b fixes
+* | | | | 2b7b890 fixes
+* | | | | 57ddc5f refactor: research and refactor exsiting headers for simple simulator language
+* | | | | e40145d fixes: add parser foundation
+* | | | | d97626c WIP: add basic language functionality
+* | | | | 6d2894f wip: add basic language with interpreter for simulation code loading and saving. WIP
+| |_|_|/  
+|/| | |   
+* | | | d4d40c2 feat: PoC for comparisons using reference model
+* | | | 9368878 fixes: add selectable lines in debugger, removed broken logic
+* | | | 975e23e wip: integration of a reference model that outputs existing results for comparison
+* | | | 0c5955b fixes: RK45 adaptive step logic and error handling corrections
+* | | | 957ea34 fixes: fixed lack of numerical definition for double in rk45step method
+* | | | 7a41df9 wip: add reference intergration method for error analysis, acting as a setpoint to compare other methods too
+* | | | fe3eabc refactor: MathLib corrected to work inside current solution, MSE added, RMSE changed to sqrt of MSE, no repeated logic
+| |_|/  
+|/| |   
+* | | 0629de8 fixes
+* | | 7b5ec6a refactor: moved menu bar from control panel into the dockign window (main window)
+* | | e3abe58 feat: added main taskbar
+* | | e7ca8a9 fixes
+* | | f18b45c WIP: graphical simulator settings
+* | | 7121511 feat: add fxaa, aiming to add msaa difference
+* | | e875936 fixes: fix cut issue with msaa addition
+* | | ae0246e fixes
+* | | 9a7c6cc WIP: add MSAA to simulator, continue fixing graphical errors and bad code logic
+* | | 228a44f feat: Add basic Post-Processing and WorldGrid processing, HUGE IMPROVEMENT GRAPHICALLY
+* | | 074f8b0 fixes: remove checkered floor, work on improving current pbr for new grid logic, and object lighting
+* | | aa9dff4 WIP: shader fixes for simulation space
+* | | 74659f8 feat: refactor and add new lighting to simulation WIP
+* | | 4dcb0c1 feat: add graphic settings foundation
+* | | 40dc466 refactor: Fix a few parts of WorldGrid, needs tweaking
+* | | f8b9a69 re-enable worldgrid (refer back if next commit breaks the program)
+* | | 72509b6 fixes
+* | | e8467bd WIP: CMake foundations
+| |/  
+|/|   
+* | a181c8c fixes: reverted updateKineamtics back to pre-existing logic for correct loading.
+* | ab776a7 WIP: Introduction or correct Forward Kineamtics for the robotics arm fuinctionality. Plan to build upon this
+|/  
+* f06aa9e fixes
+* a22f3e3 feat(ControlPanel): added basic diagnostics functionality.
+* 7134c9b fixes: diagnotistic runs display correct time instead of constantly running
+* 9019775 general fixes
+* 3ae2584 WIP fixes
+* fb762e0 fixes
+* 78bb3fd feat(MathLib): add control methods for eval and error analysis
+* 777cd36 fixes
+* 7808f7a fixes
+* d050853 feat(MathLib): add basic dynamic methods for mathLib
+* 14d04cb feat(MathLib): add basic kineamtic methods to mathLib kinematics.
+* 8649cc3 fixes
+* f9a2a71 fixes(General): update code comments and naming styles
+* e3dafad fixes
+* 5edcb8e feat(GUI): add orientation "gizmo" to SceneView rendering pipeline
+* 19b59a8 fixes
+* 944693a feat(Physics): improved the `PhysicsSystem` with integration diagnostics
+* c2da00e fixes: update EngineLib to add new integration methods
+* 8cfecc5 feat(MathLib): add new integration and analysis methods to improve understanding and availablility for testing.
+* 18c131d fixes
+* bf65589 feat(Physics): integrated the numerical methods, add damping coefficient, improved derivative usage in updateRotation()
+* b0cd9da fixes: Improved ControlPanel UI
+* b0b874c refactor(PhysicsSystem): refactor `eIntegrationMethod` enum to be publicly accessible, enabling dynamic integration method selection in the GUI. Replaced `_method` with a public `method` variable in `PhysicsSystem` and updated default timestep to 120 FPS. Enhanced `integrationMethod` to support RK2/RK4 with derivative functions.
+* 6ffcfc0 feat(General): add joint limits, selection tracking, and logging updates
+* f9bf93b fixes(ControlPanel): move scene tables (Objects etc.) into a single table
+* a7608f3 - General code cleanup
+* 41f926a feat(ControlPanel): improve the UI for the ControlPanel
+* 2e470c3 feat(SceneView): add `setRobotLinkRotation` in `SceneView` to update robot link angles.
+* 89b4276 refactor(PhysicSystem): refactor the physics system to support dynamic integration method selection
+* eb61f25 refactor(General): enhance logging, simulation, and documentation
+* a8827b2 feat(Control Panel): Added robot link table
+* 9be0ff1 fixes
+* 5df52dc fixes:
+* a5cbda3 fixes
+* 18cdf14 fixes
+* dd23a25 Refactor: Introduce reloadable shader system and expand rendering pipeline (debugged with GPT)
+* 052a435 fixes(Robot): Fix robot orientation: apply Z-up → Y-up conversion at base transform
+* e3809d4 feat(ROBOT): Add RobotLoader pipeline with JSON robot model reader and mesh loading
+* 8bab1fc fixes(State): Fixed objects scale rotation and position
+* 27ca639 feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+* 588f75d feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+* 8d1ca40 feat(Mesh): Refactor MeshLoader to support multi-mesh import with local transforms
+* 46a3ce1 refactory(Meshes): Overhauled the mesh handling system to separate geometry loading, scene transforms, and rendering responsibilities.
+* 0308228 fixes: QOL fixes, UI fixes.
+* f5babd4 refactor(Obj): Created collection of objects instead of only allowing one object, loading objects pushes to collection.
+* 5e482da feat(Phys): Updated PhysicsSystems to correctly calculate rotation within -360 and 360 degree range, using MathLib constants and EulerStep
+* 149aa34 feat(Physics): Added basic camera tracking of the rigid-body object
+* 5d2d3ca feat(Physics): Added user input to objects linear and angular velocities, the objects mass, and the a reset button for all object state.
+* 5dbaa22 feat(Physics): Added new variables, matricies and vectors to PhysicsState
+* 52662a1 feat(PhysicsSystem): MESHES NOW ROTATE! BASIC refactoring of physicsSystem, in preparation for pipeline plan to inact robotic arm aspect.
+* 1cbd647 fixes
+* 1d8ff11 removals
+* 571c277 refactor(SceneView): Reorganised SceneView for redability and logically correct pipeline
+* 517e0c4 fixes: Prepartion for code refactor, making object physics easier to manage
+* 64ff0f4 removals
+* 8132e9a Attempted FIxes
+* 6a4c884 fixes(Shader): Some fixes to shader issues
+* 24e5732 added Eigen to externals
+* 88a51eb feat(MathLib): Added MathLib dll into SimEngine, basic method created to test
+* 44e670b fixes(Shader): Fixed lighting map, mesh normals inverted to correct colour
+*   2aa1401 Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+|\  
+| * 96bf217 Update project title and add subtitle
+* | 037ac72 removals
+* | ffddca2 refactor(MathLib): Moved MathCore to MathLib DLL, tweaked existing file names, and logic to function within the mathlib scope.
+* | 80d2103 feat(Positioning): Added up and down functionality into the camera movement
+|/  
+* 2f9f852 fixes
+* 44b652b removals: old file structure
+*   eafc1d8 Add 'Sim_Engine/' from commit '261a901b789ddc05c2bfc2a1480ef5ba371ca704'
+|\  
+| | * 75a9a94 (SimEngine/Main, SimEngine/HEAD) feat: added basic axis orientator for debugging
+| |/  
+| * 261a901 feat(Shaders): Improved IBL and PBR shader logic, shader files and c++ / header files now all work together
+| * 82a2420 feat(Shaders): Improved IBL and PBR shader logic, shader files and c++ / header files now all work together
+| * 1750a00 fixes: fixed IBL not allowing meshes to be visible
+| * 73b31d3 fixes
+| * 380957c fixes
+| * 75e1ce3 fixes
+| * 7d45a12 feat(IBL): Image Base Lighting implemented
+| * 4fae869 fixes
+| * 8f96666 fixes
+| * 5f30c5c feat(IBL): Added equirect cubemap shader logic (fragment)
+| * 7536104 feat(IBL): Added Irradiance glsl shader logic
+| * cab85a1 feat(IBL): Added Equirectangular Cubemap glsl shaders
+| * ece48c1 fixes
+| * d2ec064 feat(IBL): added shader logic for BRDF-LUT
+| * 4e55238 feat(IBL): Added IBL header and cpp file, along with BASIC logic for IBL integration
+| * b0356ec fixes
+| * 3756d94 feat(CSM): Moved from PCF-only shader to CMS & PCF shader
+| * e7ddf71 general commit: Attempting to add cascading shadows
+| * 20a8417 fixes: movement stuttering
+| * 9042cab fixes & tweaks
+| * d693e2b feat: HUGE FEAT, FUNCTIONAL WALKING AND JUMPING OF PLAYER CAMERA
+| * 351246f feat: Added gravity logic, basic implementation (DISFUNCTIONAL)
+| *   2c979fb fixes: Release support fixes, functional.
+| |\  
+| | *   78202a3 Merge pull request #6 from SaltyJoss/Salty/Dev
+| | |\  
+| | | *   7aaf076 Merge pull request #3 from SaltyJoss/Salty/Playground
+| | | |\  
+| | * | \   54df47a EngineLib DLL integration, input/movement updates, and CI runtime fixes
+| | |\ \ \  
+| | | * | | 622baaf fixes to .vcxproj
+| | | * | | 07bff66 fixes
+| | | * | | de9dbee Sync CI workflow from main
+| | | * | | f122530 gitignore update
+| | | * | |   f2ed95a Resolved merge conflict, kept local dll porject structure
+| | | |\ \ \  
+| | | | | |/  
+| | | | |/|   
+| | | | * | 2e59858 Merge branch 'Salty/Dev' into Salty/Playground
+| | | | |\| 
+| | | | | * dd5cfdb fixes
+| | | | | * 2cae0ec tests: Added foundation for testing
+| | | * | | 6f9df09 feat(movement): added WASD movement, along realtime mouse input
+| | | * | | e28dd10 refactor(DLL): build to DLL/EXE structure - fix GLAD integration and Win32 architecture issues
+| | | * | | e0883ac fixes(DLL): Sorted build config along with header and cpp fixes
+| | | * | | 5ff1072 fixes(DLL): sorted all errors from move to DLL.
+| | | * | | 36ac104 fixes
+| | | * | | 1586e1f removals
+| | | * | | 5e99bb1 refactor(DLL): moved all cpp and h files to a dll library (Engine
+| | | |/ /  
+| | | * | f1f4dbf Resolve merge: keep test files
+| | * | | a7143cb Simplify msbuild command in build workflow
+| | * | | a8b7c4e Add clean and rebuild steps to build workflow
+| | * | | 6ff7d44 Update README with GitHub badges
+| | * | | c6880ba Create build script to use Engine.sln
+| | * | | 1100a21 Add images section with intro image
+| * | | | 7a475cb Release IS WORKING!
+| |/ / /  
+| * | |   6a5693e Merge branch 'Main' of https://github.com/SaltyJoss/Project-Pulsar into Main
+| |\ \ \  
+| | * \ \   c6d95e0 Merge pull request from SaltyJoss/Salty/Dev for FPS Counter addition and UI tweak
+| | |\ \ \  
+| | | |/ /  
+| | |/| /   
+| | | |/    
+| | | * c099bb8 added fps counter, and semi-translusent docking stations
+| | |/  
+| * / dd8591c tweak
+| |/  
+| * 9840607 fixes
+| * 9c2c729 fixes
+| * 6ca156d fixes
+| * 0235ae9 feat(skybox): Added fully fucnctional skybox to engine
+| * 025152c fixes: Update gitignore to exclude External/*/bin and their dlls
+| * da39928 fixes
+| * c2c96fa fixes: Shader filepaths sorted. IT RUNS
+| * babf35b fixes: correctly added paths for include, library and other linked dependencies
+| * c788bc6 refactor: Solution created,  folders intiialised
+| * 70a3233 refactor(repo): cleanup
+| * 2462a74 refactor(repo): migrate simulator + reorganize into Engine/Game structre
+| *   bf1c0dd Add 'GameSim/' from commit '5e562dbc6304bc29cdda8e0a9e4039231588b495'
+| |\  
+| | * 5e562db feat(Shders): Add directional shadow shaders
+| | * 33d4458 fixes
+| | * 40376a5 feat: FIRST SUCCESFULL WORLD GRID RUN
+| | * fbe1d89 feat: World Grid now ouputs as an a basic interpolation
+| | * a0e6701 fixes
+| | * 2e8e833 feat: Initialised new shared pointer of shaderUtil, WorldGridShader
+| | * 145f702 fixes
+| | * 5ce85e9 feat(Object): Added object.h to deal with object specific movements
+| | * 29ac662 fixes
+| | * f651156 feat(Looger): Added mutex lock in Debug::logCentral for thread-safe logging to file and console
+| | * 315b9f9 fixes: Removed unused files in elements
+| | * 792d7b1 fixes: Position of Camera AND Object no longer moves right when mouse is centered
+| | * bf41b21 fixes: Moved objects into Objects Folder, with subfolders for types
+| | * 04a2e14 fixes
+| | * 5a8dcd7 fixes: Simulator no longer moves when mouse is not within its frame
+| | * 4f3f7dd feat(Camera Focus Changer): Add buttons to change from Camera focus to Obejct focus when changing position relative to the world
+| | * b157a85 feat(Checkered Plane): Added basic checkered plane to act as a "0" layer for objects.
+| | * acf426f fixes: MEMORY LEAK
+| | * b9d861e feat(Logs): Added logging to files.
+| | * 7b2ee5e fixes
+| | * a028a34 feat(Logs): Added Logger.h thats a global header for debugging logs, using 3 distinct type {WARN, ERROR, INFO}
+| | * 58280fc fixes: OBJECT CREATION NOW WORKS!
+| | * 501169d fixes
+| | * d92ebb8 fixes
+| | * 54c0a82 tweaks: adjust GUI panel positions, docking behavior, and initial layouts
+| | * 5fecab0 fixes: OpenGLContext init, correct window pointer handling, prevent NULL this/window deref
+| | * e607254 fixes: Stub unused logic files - commented-out placeholders for future implementation
+| | * 434396b Added ASSIMP library
+| | * e77c82d fixes
+| | * ffbb440 feat(Scene View): Add scene view logic, will change to adapt my old logic, this is BAREBONES
+| | * df7307b feat(ShaderUtil): Moved basic shader logic over to ShaderUtil
+| | * 8088767 fixes
+| | * d2939d5 fixes
+| | * 8d68084 feat(Scene View): SceneView initialisation
+| | * 5054d4e feat(Elements): Addition of elements into Element folder
+| | * 1ef9007 fixes
+| | * d98c259 feat(GUIContext): Add logic into GUIContext.cpp
+| | * 2d73706 Add ImGui Docking libraries
+| | * 224947e feat(OpenGLContext): Add logic to OpenGLContext.cpp
+| | * 73271a6 Added GLEW library into includes
+| | * d948bc0 feat(Buffer Management): Added method logic for VertexIndexBuffers and FrameBuffers
+| | * 64a086d fixes
+| | * 4bb34f5 feat(Mesh): Initialised a mesh header and cpp file  for all stages of the rendering a mesh object into the sim
+| | * 6ef8176 feat(Window Manager): Updated WindowManager.h to function inline with current idea of project structure
+| | * 63b6235 feat(Render Base):  introduced centeralised base for render operations in Render/
+| | * e86c0d5 refactor(File structure): Finally refactored files, not pushing to main until code works
+| | * bf2c287 feat(Simulator): Reintroduce Basic object initialisation (but in 3D)
+| | * a25bd85 fixes
+| | * ccb6006 fixes
+| | * a1d41b0 libs(GLM): Added OpenGL's Mathematics library, DOES NOT REPLACE MY OWN LOGIC TO BE LATER INCOPERATED
+| | * 9c7bdce feat(Simulation Manager): Initialised basic structure of Simulation Manager Files.
+| | * ac8473d fixes
+| | * 2f1b0fb feat(Styles): Added Two styles into Style header, and cpp file
+| | * f40d005 fixes(GUI): Improved overall placements of each section of the GUI
+| | * 5263940 refactore(GUI): Refactored the present GUI so it is sized correctly
+| | * e262268 fixes(GUI): Commented out calls to TitleBarPanel.h, may revist in the future if I have time!
+| | * 20b50dc fixes
+| | * b3ba659 fixes: Corrected "Exception thrown: read access violation. **this** was nullptr." due to mismatched objects
+| | * 07d1c84 feat(GUI): Added TaskBarPanel, removed GLFW OS border. Bugs currently needing fixing.
+| | * 8ac7f65 fixes
+| | * c74b767 refactor(Application): Application and GUIManager initialisation refactored to improve stability, state persistence, and lifetime management.
+| | * 114ffc7 feat(DebugLog): Add basic GUI for Debug Logging and Error Handling
+| | * b9352a1 fixes
+| | * e5dda9e fixes
+| | * eed6503 feat(SimulationPanels): Added basic simulator panels (DUMMY PANELS FOR NOW), improving GUI layout
+| | * 348b913 feat(SimulationPanels): Initialisation of simulation panels in header and cpp files
+| | * 82d20f4 additions: general
+| | * ca3e712 feat(Simulator): Addition of ControlPanel header and cpp file
+| | * aecd9ed fixes
+| | * c6cbf58 feat(Simulation_Core): Added Application class and header file to deal the central application
+| | * 482f08e feat(GUI Manager): Add GUI Manager class and header, updated main.cpp
+| | * 8678a8f feat(ImGui): Basic initilisation and implementation of ImGui into GLFW window
+| | * 43983c8 feat(ImGui library): Added relevant ImGui files into lib folder
+| | * 69c3859 fixes: Restrcuture of MathCore for better readablility and seperation between Solutions!
+| | * e0c05e9 chore(shaderClass): Add basic error handingling for compilation and linking of shaders
+| | * 2932571 feat(OpenGL Sim): Add basic uniform shader
+| | * a738176 feat(OpenGL Sim): Added basic Shader for current triangle object using interpolation
+| | * bb3e6cd chore(OpenGL Sim): Update main file to use new classes, and their functions
+| | * becd363 feat(OpenGL Sim): Created VAO, VBO, and EBO classes
+| | * 000616b feat(OpenGL): Added Basic Shader class and header
+| | * 99f4f0f feat(OpenGL Sim): Basic test for drawing a triangle onto gl program
+| | * 225087f fixes
+| | * c4c9507 feat(OpenGL Sim): Added basic test window, intiialisation check for the new libs included.
+| | * 3cfbc70 feat(OpenGL): Setup basic simulation folder structure. Inlucdes OpenGL libraries.
+| * be97154 Update README.md
+| * 3ad6f60 Initial commit
+| * ba5f7ce (refs/stash) On Main: temp-before-subtree
+|/| 
+| * d5486d4 index on Main: d922350 refactor(Solution): Refactored entire solution to flow a bit better, more organised (QoL and futureproofing)
+|/  
+* d922350 refactor(Solution): Refactored entire solution to flow a bit better, more organised (QoL and futureproofing)
+* 1387e79 fixes: Corrected dependencies in old Libraries folder, relocated to External, and split by file not lib and include
+* 655fb2d feat(Shders): Add directional shadow shaders
+* 74fb1d5 fixes
+* 03fd5e1 feat: FIRST SUCCESFULL WORLD GRID RUN
+* d31d2ff feat: World Grid now ouputs as an a basic interpolation
+* a621362 fixes
+* f219cef feat: Initialised new shared pointer of shaderUtil, WorldGridShader
+* 35a3e86 fixes
+* eabdf87 feat(Object): Added object.h to deal with object specific movements
+* 3f42023 fixes
+* e1ce07a feat(Looger): Added mutex lock in Debug::logCentral for thread-safe logging to file and console
+* ee48a46 fixes: Removed unused files in elements
+* b927341 fixes: Position of Camera AND Object no longer moves right when mouse is centered
+* 8ca2539 fixes: Moved objects into Objects Folder, with subfolders for types
+* 043427d fixes
+* 9cbb87f fixes: Simulator no longer moves when mouse is not within its frame
+* 8f259af feat(Camera Focus Changer): Add buttons to change from Camera focus to Obejct focus when changing position relative to the world
+* bb5dd37 feat(Checkered Plane): Added basic checkered plane to act as a "0" layer for objects.
+* 7199b8f fixes: MEMORY LEAK
+* fa0686f feat(Logs): Added logging to files.
+* e042200 fixes
+* 92ff672 feat(Logs): Added Logger.h thats a global header for debugging logs, using 3 distinct type {WARN, ERROR, INFO}
+* 6e6b418 fixes: OBJECT CREATION NOW WORKS!
+* 27fc6ec fixes
+* 49fb90b fixes
+* 4964669 tweaks: adjust GUI panel positions, docking behavior, and initial layouts
+* 124ff01 fixes: OpenGLContext init, correct window pointer handling, prevent NULL this/window deref
+* f4e7242 fixes: Stub unused logic files - commented-out placeholders for future implementation
+* 0fbcf86 Added ASSIMP library
+* 77d9920 fixes
+* fd6adb7 feat(Scene View): Add scene view logic, will change to adapt my old logic, this is BAREBONES
+* 9bad0af feat(ShaderUtil): Moved basic shader logic over to ShaderUtil
+* 07f07bc fixes
+* 01c1396 fixes
+* 6275fef feat(Scene View): SceneView initialisation
+* 042bee2 feat(Elements): Addition of elements into Element folder
+* eabd03e fixes
+* b4027e6 feat(GUIContext): Add logic into GUIContext.cpp
+* bb0f740 Add ImGui Docking libraries
+* 8fc7dd3 feat(OpenGLContext): Add logic to OpenGLContext.cpp
+* 5564670 Added GLEW library into includes
+* 29aa976 feat(Buffer Management): Added method logic for VertexIndexBuffers and FrameBuffers
+* c1bd4e4 fixes
+* 827de47 feat(Mesh): Initialised a mesh header and cpp file  for all stages of the rendering a mesh object into the sim
+* 6d8230d feat(Window Manager): Updated WindowManager.h to function inline with current idea of project structure
+* b90a704 feat(Render Base):  introduced centeralised base for render operations in Render/
+* 9d4e172 refactor(File structure): Finally refactored files, not pushing to main until code works
+* 5fc04ec feat(Simulator): Reintroduce Basic object initialisation (but in 3D)
+* 182bbb6 fixes
+* 371be02 fixes
+* b7fa57c libs(GLM): Added OpenGL's Mathematics library, DOES NOT REPLACE MY OWN LOGIC TO BE LATER INCOPERATED
+* c243baf feat(Simulation Manager): Initialised basic structure of Simulation Manager Files.
+* d8f792a fixes
+* 4829149 feat(Styles): Added Two styles into Style header, and cpp file
+* 04b284f fixes(GUI): Improved overall placements of each section of the GUI
+* ef24297 refactore(GUI): Refactored the present GUI so it is sized correctly
+* a7aca65 fixes(GUI): Commented out calls to TitleBarPanel.h, may revist in the future if I have time!
+* 8a02ab0 fixes
+* 451804d fixes: Corrected "Exception thrown: read access violation. **this** was nullptr." due to mismatched objects
+* 95461c6 feat(GUI): Added TaskBarPanel, removed GLFW OS border. Bugs currently needing fixing.
+* f125a8b fixes
+* 8a8408e refactor(Application): Application and GUIManager initialisation refactored to improve stability, state persistence, and lifetime management.
+* 87f5698 feat(DebugLog): Add basic GUI for Debug Logging and Error Handling
+* df45a40 fixes
+* 51259e6 fixes
+* edd07d7 feat(SimulationPanels): Added basic simulator panels (DUMMY PANELS FOR NOW), improving GUI layout
+* 3aa9a0f feat(SimulationPanels): Initialisation of simulation panels in header and cpp files
+* 26f30b3 additions: general
+* c964391 feat(Simulator): Addition of ControlPanel header and cpp file
+* f46d2c8 fixes
+* 1a4b1bd feat(Simulation_Core): Added Application class and header file to deal the central application
+* 6cfb78e feat(GUI Manager): Add GUI Manager class and header, updated main.cpp
+* 9c11d32 feat(ImGui): Basic initilisation and implementation of ImGui into GLFW window
+* 21c86b6 feat(ImGui library): Added relevant ImGui files into lib folder
+* f67132d fixes: Restrcuture of MathCore for better readablility and seperation between Solutions!
+* 770e797 chore(shaderClass): Add basic error handingling for compilation and linking of shaders
+* d3d40e3 feat(OpenGL Sim): Add basic uniform shader
+* 7a1c558 feat(OpenGL Sim): Added basic Shader for current triangle object using interpolation
+* c7add94 chore(OpenGL Sim): Update main file to use new classes, and their functions
+* b24f263 feat(OpenGL Sim): Created VAO, VBO, and EBO classes
+* eb840bd feat(OpenGL): Added Basic Shader class and header
+* 731bb38 feat(OpenGL Sim): Basic test for drawing a triangle onto gl program
+* ef5e205 fixes
+* 0c82f0c feat(OpenGL Sim): Added basic test window, intiialisation check for the new libs included.
+*   283d8e5 Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+|\  
+| * 529c683 Remove duplicate entry
+| * ca4afbe Update .gitignore to include .out directory
+| * f65c84c Fix duplicate entry for '*.VC.VC.opendb' in .gitignore
+* | b097d5a feat(OpenGL): Setup basic simulation folder structure. Inlucdes OpenGL libraries.
+* | 1b4bb18 feat: Add Eigen-based numerical integration header with Euler, RK2, and RK4
+|/  
+*   100de0d Merge branch 'Main' of https://github.com/SaltyJoss/RoboticArm_MathModelling into Main
+|\  
+| * c4e8bee Update README.md
+* | 8ed245a Initial project setup: folder structure, CMakeLists.txt, vcpkg Eigen3 integration, placeholder src/main.cpp
+|/  
+* ee90cf0 Initial commit

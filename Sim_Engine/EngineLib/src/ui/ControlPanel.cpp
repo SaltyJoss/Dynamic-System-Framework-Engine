@@ -1,16 +1,7 @@
 #include "pch.h"
 // File:    ControlPanel.cpp
 // GitHub:  SaltyJoss
-#include "Scene/Camera.h"
-#include "Scene/Mesh.h"
 #include "ui/ControlPanel.h"
-#include "Robots/RobotSystem.h"
-#include "Platform/Paths.h"
-#include <chrono>
-#include <imgui.h>
-#include "Platform/imguiWidgets.h"
-
-#include <implot.h>
 
 #ifdef __gl_h_
 #undef __gl_h_ 
@@ -18,6 +9,21 @@
 #include <glad/glad.h>
 #include <stb/stb_image_write.h>
 
+#include "Scene/Mesh.h"
+#include "Scene/Object.h"
+#include "Scene/Light.h"
+#include "Scene/Camera.h"
+
+#include "Scene/SimulationManager.h"
+#include "Physics/PhysicsSystem.h"
+#include "Robots/RobotSystem.h"
+#include "Interpreter/Parser.h"
+
+#include "Platform/imguiWidgets.h"
+#include <implot.h>
+
+#include "Analysis/Telemetry.h"
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
@@ -198,8 +204,9 @@ namespace gui {
 
 	// --- ControlPanel Implementation ---
 
-    ControlPanel::ControlPanel(SimManager* sceneView) :
-		_sim(sceneView), _controlMode(&sceneView->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
+    ControlPanel::ControlPanel(SimManager* sim) :
+		_sim(sim), _controlMode(&sim->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
+		r(render::ResolutionPreset::R_1080p), q(render::QualityPreset::Medium),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
     {
@@ -294,22 +301,22 @@ namespace gui {
     }
 
     void ControlPanel::render(SimManager* sceneView) {
-        // Initialize pointers to scene scene
-        _sim = sceneView;
+		_sim = sceneView; // update internal pointer to current SimManager
+		pollComparisonFutures(); // poll any pending comparison results and update state accordingly
         fov = _sim->getCamera()->getFOVRadians();
+
+		// Update pointers to current scene data
         _mesh = _sim->getMesh();
         _obj = _sim->getObject();
         _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
-
 		_phys = _sim->physicsSystem();
 
+		// Begin Control Panel Window
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
-
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.129f, 0.129f, 0.129f, 0.8f));
         ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-
         const bool wasRunning = _sim->isSimRunning(); // snapshot
 
 		// Simulation Start/Stop Button
@@ -319,10 +326,10 @@ namespace gui {
 				D_RUNTIME_ONCE("Simulation %s", _sim->isSimRunning() ? "started" : "stopped");
 		}
 
-		beginControlPanel("ControlPanel"); // Begin Child Panel
+		beginControlPanel("ControlPanel"); // Begin Decorative Child Panel
 
-		roboticArmSelector();
-
+		// Tab bar for organizing control sections
+		roboticArmSelector(); // Draw robotic arm selector (if enabled)
 		if (ImGui::BeginTabBar("ControlPanelTabs")) {
             if (ImGui::BeginTabItem("Rigid Body Properties")) {
 				simulationProperties();
@@ -342,8 +349,7 @@ namespace gui {
 			}
 			ImGui::EndTabBar();
         }
-
-		endControlPanel(); // End Child Panel
+		endControlPanel(); // End Decorative Child Panel
 
         ImGui::End();
         ImGui::PopStyleColor();
@@ -364,10 +370,9 @@ namespace gui {
             }
 			_simWasRunningLastFrame = runningNow;
 		}
+		drawResultsWindow(); // Draw separate results window (if open)
 
-		// Draw separate results window (if open)
-		drawResultsWindow();
-
+		// Handle file dialogs for mesh loading
 		_meshLoad.Display();
         if (_meshLoad.HasSelected()) {
             auto file_path = _meshLoad.GetSelected().string();
@@ -378,7 +383,7 @@ namespace gui {
 
             _meshLoad.ClearSelected();
         }
-
+		// Handle file dialog for HDR loading
         _hdrLoad.Display();
         if (_hdrLoad.HasSelected()) {
             auto file_path = _hdrLoad.GetSelected().string();
@@ -390,7 +395,7 @@ namespace gui {
         }
     }
 
-
+	// Temporary light controls for testing and debugging
     void ControlPanel::tempLightControls() {
         if (!_light) return;
         ImGui::SeparatorText("Light Settings:");
@@ -411,6 +416,7 @@ namespace gui {
         ImGui::Separator();
     }
 
+	// Simulation properties controls, including integration method, torque mode, and delta time settings
     void ControlPanel::simulationProperties() {
         ImGui::SectionHeader("Simulation Settings");
 		ImGui::SectionDivider();
@@ -639,19 +645,22 @@ namespace gui {
             ImGui::TextDisabled("Robot has no joints.");
             return;
         }
-
+		// Display joint properties header
         float minDamping  = 0.0; float maxDamping  = 1.0;   // damping limits
         float minFriction = 0.0; float maxFriction = 10.0;  // friction limits
         double minGravity = 0.0; double maxGravity = 100.0;  // gravity limits
 
+		// Clamp current joint index to valid range to prevent out-of-bounds access
         static int currentJointIndex = 0;
         currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
 
+		// Get references to currently selected joint and its corresponding link
 		auto& j = joints[currentJointIndex];
 		int linkIndex = currentJointIndex;
 		linkIndex = std::clamp(linkIndex, 0, (int)links.size() - 1);
 		auto& L = links[linkIndex];
 
+		// Copy joint properties to local variables for editing
 		float c = (float)j.dynamics.damping;
 		float f = (float)j.dynamics.friction;
 		double g = (double)robot->getGravity();
@@ -660,52 +669,52 @@ namespace gui {
         ImGui::BeginDisabled(_sim->isSimRunning());
 
         ImGui::Text("Joint Dynamics:");
-
+		// Damping controls
         ImGui::Text("Damping:");
         ImGui::SetNextItemWidth(150.0f);
         if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
         ImGui::Spacing();
-
+		// Friction controls
         ImGui::Text("Friction:");
         ImGui::SetNextItemWidth(150.0f);
         if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f; }
         ImGui::Spacing();
 
+		// Gravity controls with preset menu
         ImGui::Text("Gravity:");
-        
-        static GravityPreset gravityPreset = PRESET_EARTH;
+		static GravityPreset gravityPreset = PRESET_MICRO_G; // default preset
 
+		// Draw gravity preset menu and update gravity value based on selection
 		drawGravityChoiceMenu(gravityPreset, g);
-
+		// If in custom gravity mode, allow direct editing of gravity value
         if (gravityMode == GravityUIMode::Custom) {
             ImGui::SetNextItemWidth(150.0f);
             if (ImGui::DragScalar("m/s²##g", ImGuiDataType_Double, &g, 0.005f, &minGravity, &maxGravity)) {
                 robot->setGravity(g);
             }
         }
-        else {
-            robot->setGravity(g);
-        }
+        else { robot->setGravity(g); }
         ImGui::TextDisabled("Gravity: %.3f", g);
 
         ImGui::Spacing();
         ImGui::Separator();
-
         ImGui::EndDisabled();
 
+		// Telemetry inspector for currently selected joint
 		ImGui::SectionHeader("Joint Telemetry:");
-
+		// Draw telemetry inspector for the selected joint, showing its state over time
 		drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 		ImGui::TextDisabled("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
 		ImGui::Spacing();
-
+		// Reset joint properties to initial conditions
 		ImGui::Spacing();
 		ImGui::Text("Reset Robot:");
 		ImGui::Spacing();
 
+		// Reset button to reset the entire robot to its initial state, including all joints and links
+		ImGui::SetNextItemWidth(150.0f);
 		if (ImGui::Button("Reset")) {
 			if (!_hasRobot) { LOG_WARN("No robot selected to reset."); return; } // should not happen
-
 			_sim->robotSystem()->resetRobot();
 
 			// Clear selection
@@ -1269,8 +1278,8 @@ namespace gui {
 	// --- Integrator Comparison ---
 
 	// Run the loaded script with all integrators and capture telemetry for comparison plots
-	void ControlPanel::runComparisonAllIntegrators() {
-		const std::string& scriptText = _sim->lastScriptText();
+	void ControlPanel::runComparisonAllIntegratorsAsync() {
+		const std::string scriptText = _sim->lastScriptText();
 		if (scriptText.empty()) {
 			D_FAIL("No script loaded. Run a script first, then compare.");
 			return;
@@ -1290,54 +1299,142 @@ namespace gui {
 		};
 		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
 
-		_comparisonResults.clear();
-		_comparisonReady = false;
+		// Clear previous state
+		{
+			std::lock_guard<std::mutex> lk(_comparisonMutex);
+			_comparisonResults.clear();
+			_comparisonReady = false;
+			_comparisonFutures.clear();
+			_comparisonPending = 0;
+		}
 
-		D_INFO("Starting integrator comparison (6 methods)...");
+		D_INFO("Starting integrator comparison (parallel, %zu methods)...", (size_t)(sizeof(methods) / sizeof(methods[0])));
 
 		const size_t methodCount = sizeof(methods) / sizeof(methods[0]);
 
-		// Loop through each integrator method, run the script, and capture telemetry for comparison
+		// Launch one async worker per integrator
 		for (size_t i = 0; i < methodCount; ++i) {
-			D_INFO("  Running: %s ...", names[i]);
+			const auto method = methods[i];
+			const std::string methodName = names[i];
+			_comparisonPending.fetch_add(1, std::memory_order_relaxed);
 
-			if (!_sim->runScriptToCompletion(scriptText, methods[i])) {
-				D_FAIL("  %s failed — skipping.", names[i]);
-				continue;
-			}
+			// Capture by value: scriptText and methodName
+			_comparisonFutures.emplace_back(std::async(std::launch::async, [scriptText, method, methodName]() -> ComparisonSnapshot {
+				ComparisonSnapshot snap;
+				snap.integratorName = methodName;
+				try {
+					// Create fresh simulation core local to this worker
+					core::ISimulationCore* raw = CreateSimulationCore_v1();
+					if (!raw) { D_FAIL("Worker: failed to CreateSimulationCore_v1 for %s", methodName.c_str()); return snap; }
+					CorePtr core(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
 
-			// Snapshot telemetry into comparison result
-			const auto& ring = _sim->telemetry().ring;
-			const size_t sampleCount = ring.size();
+					// Program and parser bound to new core
+					auto program = std::make_unique<interpreter::StoredProgram>(core.get());
+					interpreter::Parser parser(program.get());
+					parser.parse(scriptText);
+					program->start();
 
-			// Need at least 2 samples to plot error over time
-			if (sampleCount < 2) { continue; }
+					// Run to completion with this integrator
+					bool ok = core->runScriptToCompletion(program.get(), method);
+					if (!ok) {
+						D_WARN("Worker: integrator %s returned failure.", methodName.c_str());
+						// still try to gather telemetry if any
+					}
 
-			// Create snapshot for this integrator
-			ComparisonSnapshot snap;
-			snap.integratorName = names[i];
-			snap.jointCount = ring.at(sampleCount - 1).j.size();
+					// Snapshot telemetry from the worker core
+					const auto& ring = core->telemetry().ring;
+					if (ring.size() < 2) { return snap; }
 
-			snap.time.resize(sampleCount);
-			snap.errRms.resize(sampleCount);
-			snap.errMax.resize(sampleCount);
-			snap.jointErr.resize(snap.jointCount);
-			for (size_t j = 0; j < snap.jointCount; ++j) { snap.jointErr[j].resize(sampleCount); }
+					const size_t sampleCount = ring.size();
+					snap.time.assign(sampleCount, 0.0f);
+					snap.errRms.assign(sampleCount, 0.0f);
+					snap.errMax.assign(sampleCount, 0.0f);
 
-			for (size_t k = 0; k < sampleCount; ++k) {
-				const auto& s = ring.at(k);
-				snap.time[k] = (float)s.timeSec;
-				snap.errRms[k] = (float)s.err_rms;
-				snap.errMax[k] = (float)s.err_max;
-				const size_t m = std::min(snap.jointCount, s.j.size());
-				for (size_t j = 0; j < m; ++j) {
-					snap.jointErr[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
+					// infer joint count from last sample
+					size_t jointCount = ring.at(ring.size() - 1).j.size();
+					snap.jointCount = (int)jointCount;
+					snap.jointErr.resize(jointCount);
+					for (size_t j = 0; j < jointCount; ++j) snap.jointErr[j].assign(sampleCount, 0.0f);
+
+					for (size_t k = 0; k < sampleCount; ++k) {
+						const auto& s = ring.at(k);
+						snap.time[k] = (float)s.timeSec;
+						snap.errRms[k] = (float)s.err_rms;
+						snap.errMax[k] = (float)s.err_max;
+						const size_t m = std::min(jointCount, s.j.size());
+						for (size_t j = 0; j < m; ++j) {
+							snap.jointErr[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
+						}
+					}
+
+					// optional: record integrator name already set
+					return snap;
 				}
-			}
-			_comparisonResults.push_back(std::move(snap));
+				catch (const std::exception& ex) {
+					D_FAIL("Worker exception for %s: %s", methodName.c_str(), ex.what());
+					return snap;
+				}
+				catch (...) {
+					D_FAIL("Worker unknown exception for %s", methodName.c_str());
+					return snap;
+				}
+			}));
 		}
-		_comparisonReady = !_comparisonResults.empty();
-		D_SUCCESS("Integrator comparison complete: %d/%d methods captured.", (int)_comparisonResults.size(), 6);
+		// Results are polled by pollComparisonFutures()
+	}
+
+	// Poll the async comparison workers for completion, gather results, and mark ready when all done
+	void ControlPanel::pollComparisonFutures() {
+		if (_comparisonFutures.empty()) return;
+		// Check all futures for completion, gather results, and remove completed ones from the list
+		for (auto it = _comparisonFutures.begin(); it != _comparisonFutures.end();) {
+			auto& fut = *it;
+			if (fut.valid() && fut.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+				try { 
+					auto snap = fut.get();
+					// If snapshot has data, add to results for plotting
+					{
+						std::lock_guard<std::mutex> lk(_comparisonMutex);
+						_comparisonResults.emplace_back(std::move(snap));
+					}
+				}
+				catch (const std::exception& e) { D_FAIL("pollComparisonFutures: future.get() threw: %s", e.what()); }
+				catch (...) { D_FAIL("pollComparisonFutures: unknown exception from future.get()"); }
+				// Remove this future from the list
+				it = _comparisonFutures.erase(it);
+				_comparisonPending.fetch_sub(1, std::memory_order_relaxed);
+			}
+			else ++it;
+		}
+
+		// When all workers finished, mark ready so UI plotting code can run
+		if (_comparisonFutures.empty()) {
+			// sort results into canonical integrator order so UI & CSV are deterministic
+			if (!_comparisonResults.empty()) {
+				// canonical order for display
+				static const std::vector<std::string> canonical = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
+				std::unordered_map<std::string, int> order;
+				for (int i = 0; i < (int)canonical.size(); ++i) order[canonical[i]] = i;
+				// sort by canonical order if both integrators are known, otherwise keep order of completion
+				std::stable_sort(_comparisonResults.begin(), _comparisonResults.end(),
+					[&order](const ComparisonSnapshot& a, const ComparisonSnapshot& b) {
+						auto ia = order.find(a.integratorName);
+						auto ib = order.find(b.integratorName);
+						if (ia == order.end() && ib == order.end()) return false;
+						if (ia == order.end()) return false;
+						if (ib == order.end()) return true;
+						return ia->second < ib->second;
+					});
+				// mark ready for plotting
+				_comparisonReady = true;
+				D_INFO("Integrator comparison complete: %d methods captured.", (int)_comparisonResults.size());
+			}
+			// if no results, still mark ready to avoid indefinite "loading" state in UI
+			else {
+				_comparisonReady = true;
+				D_WARN("Integrator comparison complete: no usable results.");
+			}
+		}
 	}
 
 	// Draw comparison plots (overlays of all integrators)
@@ -1665,9 +1762,7 @@ namespace gui {
 
 		const bool hasScript = !_sim->lastScriptText().empty();
 		ImGui::BeginDisabled(!hasScript || _sim->isSimRunning());
-		if (ImGui::Button("Compare All Integrators")) {
-			runComparisonAllIntegrators();
-		}
+		if (ImGui::Button("Compare All Integrators")) { runComparisonAllIntegratorsAsync(); }
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::TextDisabled("Runs Euler/Midpoint/Heun/Ralston/RK4/RK45 sequentially");

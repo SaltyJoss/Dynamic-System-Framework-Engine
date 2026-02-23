@@ -12,7 +12,7 @@
 
 namespace robots {
 	// Constructor
-	RobotDynamics::RobotDynamics(RobotModel& robot, eTorqueMode mode)
+	RobotDynamics::RobotDynamics(RobotModel& robot)
 		: _robot(robot), _kinematics(std::make_unique<RobotKinematics>(robot)) {
 	}
 
@@ -129,8 +129,6 @@ namespace robots {
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
 					// Mass matrix contribution from this link for joints i and j
-
-					// Mass matrix contribution from this link for joints i and j
 					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj;
 				}
 			}
@@ -227,7 +225,8 @@ namespace robots {
 					j, I_eff[i],
 					q[i], qd[i], eta[i],
 					j.q_ref, j.qd_ref, j.qdd_ref,
-					0.0, tau_g[i]
+					0.0, tau_g[i],
+					dt()
 				);
 				tau[i] = m.tau;
 			}
@@ -241,7 +240,8 @@ namespace robots {
 		const RobotJoint& joint, double I_eff,
 		double q, double qd, double eta,
 		double q_ref, double qd_ref, double qdd_ref,
-		double tau_c, double tau_g
+		double tau_c, double tau_g,
+		double dt
 	) const {
 		RobotMetrics m{};
 		if (_robot.torqueMode == eTorqueMode::NONE) {
@@ -259,7 +259,7 @@ namespace robots {
 			m.tau_friction = 0.0;
 			m.tau_sat = 0.0;
 			m.tau_barrier = 0.0;
-
+			// Return early
 			return m;
 		}
 
@@ -276,7 +276,7 @@ namespace robots {
 		// Energy metrics
 		m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
 		double P_grav = tau_g * qd; // [W], power due to gravity torque
-		m.PE += -P_grav * dt(); // [J], potential energy proxy based on gravity power (scaled down for interpretability)
+		m.PE += -P_grav * dt; // [J], potential energy proxy based on gravity power (scaled down for interpretability)
 		m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
 
 		// Control parameters
@@ -443,7 +443,7 @@ namespace robots {
 
 			// Fill the reduced mass matrix row for active joint i
 			for (size_t c = 0; c < m; ++c) {
-				int j = active[c];
+				size_t j = active[c];
 				M(r, c) = M_full(i, j);
 			}
 		}

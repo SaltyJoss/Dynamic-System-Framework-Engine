@@ -31,7 +31,7 @@ namespace commands {
 	// Class representing the command context
 	class ENGINE_API CommandContextMotion {
 	public:
-		CommandContextMotion(gui::SimManager* sim, scene::ObjectID objID);
+		CommandContextMotion(core::ISimulationCore* core);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -52,10 +52,7 @@ namespace commands {
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
 
 		// --- HELPER METHODS ---
-
-
-
-		gui::SimManager* Sim() const { return _sim; }
+		core::ISimulationCore* Core() const { return _core; }
 		robots::RobotSystem* Robot() const { return _robot; }
 		scene::ObjectID DefaultObjectID() const;
 		scene::ObjectID ObjectID() const;
@@ -104,7 +101,7 @@ namespace commands {
 
 
 	private:
-		gui::SimManager* _sim = nullptr;
+		core::ISimulationCore* _core = nullptr;
 		physics::PhysicsSystem* _phys = nullptr;
 		robots::RobotSystem* _robot = nullptr;
 		scene::ObjectID _objID;

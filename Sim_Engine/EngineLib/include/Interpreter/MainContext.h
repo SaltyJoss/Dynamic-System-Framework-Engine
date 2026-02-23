@@ -10,8 +10,8 @@ namespace commands {
 	// Main context combining motion and UI contexts
 	class ENGINE_API MainContext {
 	public:
-        MainContext(gui::SimManager* sim, scene::ObjectID objID)
-            : _motion(sim, objID), _ui(sim, objID) {}
+        MainContext(core::ISimulationCore* core)
+            : _motion(core), _ui(core) {}
 
         // Accessors
         commands::CommandContextMotion& motion() { return _motion; }

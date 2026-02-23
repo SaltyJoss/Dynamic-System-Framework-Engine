@@ -21,10 +21,21 @@ enum class SelectionSource {
 };
 
 // Current selection state
-struct Selection {
+struct ENGINE_API Selection {
 	SelectionType type = SelectionType::NONE;
 	SelectionSource source = SelectionSource::NONE;
 	int index = -1; // Index of the selected link or robot
+};
+
+// Current simulation run mode (e.g., interactive with real-time rendering vs. synchronous for
+enum class eRunMode {
+	Interactive,
+	Synchronous
+};
+
+// Struct to hold the current simulation mode and related settings
+struct ENGINE_API modes {
+	eRunMode _runMode = eRunMode::Interactive;
 };
 
 

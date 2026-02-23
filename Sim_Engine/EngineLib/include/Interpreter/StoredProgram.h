@@ -13,7 +13,7 @@ namespace interpreter {
 	class ENGINE_API StoredProgram : public IStoredProgram {
 	public:
 		// Constructor
-		StoredProgram(gui::SimManager* sim);
+		StoredProgram(core::ISimulationCore* core);
 		~StoredProgram() override;
 
 		// Delete copy constructor and assignment operator to prevent copies
@@ -82,7 +82,7 @@ namespace interpreter {
 		mathlib::Vec3 getColour() const override;
 
 	private:
-		gui::SimManager* _sim = nullptr;
+		core::ISimulationCore* _core = nullptr;
 		commands::MainContext _cntx;
 		scene::Object* _defaultObj = nullptr;
 

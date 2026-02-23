@@ -16,6 +16,6 @@ namespace scene {
 	enum class ObjectID : std::uint32_t;
 	class ENGINE_API Object;
 }
-namespace gui { class ENGINE_API SimManager; }
+namespace core { struct ENGINE_API ISimulationCore; }
 namespace robots { class ENGINE_API RobotSystem; }
 namespace physics { class ENGINE_API PhysicsSystem; }

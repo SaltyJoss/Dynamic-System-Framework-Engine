@@ -2,7 +2,7 @@
 // File:   importObj.cpp
 // GitHub: SaltyJoss
 #include "Assets/importObj.h"
-#include "Scene/VertexHolder.h"
+#include "Assets/VertexHolder.h"
 #include "Platform/str_utils.h"
 
 #include "EngineLib/LogMacros.h"

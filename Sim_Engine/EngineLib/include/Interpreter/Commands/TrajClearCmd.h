@@ -23,7 +23,7 @@ namespace commands {
         program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
         void execute() override;
 
-        gui::SimManager* _sim = nullptr;
+		core::ISimulationCore* _core = nullptr;
 
         bool _done = false;
         bool _started = false;

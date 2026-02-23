@@ -5,7 +5,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
+#include <mutex>
 #include <vector>
+#include "Platform/StudyRunner.h"
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
@@ -52,6 +54,12 @@ namespace gui {
 
 	// Forward Declarations for Axis Orientator
 	class ENGINE_API AxisOrientator;
+
+    // Control Modes & Camera
+    enum class ControlMode {
+        Camera,
+        Object
+    };
 
 	// SimManager Class (Plan on renaming later)
     class ENGINE_API SimManager {
@@ -101,11 +109,6 @@ namespace gui {
 		// Getter plane height (y=0 plane for physics and object placement)
         float getPlaneHeight() const { return planeHeight; }
 
-        // Control Modes & Camera
-        enum class ControlMode {
-            Camera,
-            Object
-        };
         ControlMode ctrlMode = ControlMode::Camera;
 
 		// Setter and getter for control mode
@@ -237,9 +240,22 @@ namespace gui {
         diagnostics::TelemetryRecorder& telemetry();
         const diagnostics::TelemetryRecorder& telemetry() const;
 
+		// Accessors for the Simulation Core interface (non-const and const versions)
+        core::ISimulationCore* simCoreInterface();
+        const core::ISimulationCore* simCoreInterface() const;
+
         // Accesor for Simulation Core (non-const and const versions)
 		core::SimulationCore* simCore();
 		const core::SimulationCore* simCore() const;
+
+		// Access to the underlying StudyRunner for running batch studies from the GUI
+		StudyRunner* studyRunner() { return _studyRunner.get(); }
+
+		// Methods for handling completed studies from the background worker
+        void pushCompletedStudies(std::vector<StudyResult> results);
+		void pushCompletedStudy(StudyResult result);
+        bool hasCompletedStudy() const;
+        std::vector<StudyResult> consumeCompletedStudy();
 
         // Input Handling
         void processMovementKey(int key, float delta);
@@ -249,9 +265,11 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
+    private:
+        std::unique_ptr<core::SimulationCore> _core = nullptr;
+		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
+		bool _hasCompletedStudy = false;
 
-
-    private:       
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
         void WorldGridRender(scene::Camera* cam, int rtW);
@@ -274,8 +292,8 @@ namespace gui {
         bool _glReady = false;
 
 		// Sizes & Display
-		glm::vec2 _internalSize = { 1920.0f, 1080.0f };  // Internal render target size
-		glm::vec2 _displaySize = { 1920.0f, 1080.0f };   // Actual display size
+		glm::vec2 _internalSize{ 1920.0f, 1080.0f };  // Internal render target size
+		glm::vec2 _displaySize{ 1920.0f, 1080.0f };   // Actual display size
 		glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f }; // Background colour (default white, but can be changed by user)
 
 		// Cached display size for scaling calculations (updated on resize)
@@ -336,7 +354,5 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
-
-        std::unique_ptr<core::SimulationCore> _core = nullptr;
     };
 } // namespace gui

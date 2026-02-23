@@ -7,7 +7,7 @@
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
-
+#include "Assets/VertexHolder.h"
 #include <assimp/scene.h>
 #include <vector>
 #include <memory>
@@ -23,7 +23,7 @@ namespace ai {
 // Forward Declarations for Mesh.h
 namespace scene { class ENGINE_API Mesh; }
 
-namespace gui {
+namespace assets {
 	class ENGINE_API MeshLoader {
 	public:
 		// Loads a mesh from the specified file path and returns a vector of shared pointers to Mesh objects
