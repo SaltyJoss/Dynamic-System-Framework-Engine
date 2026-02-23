@@ -3,6 +3,10 @@
 // GitHub: SaltyJoss
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
+#include "Scene/SimulationCore.h"
+
+extern "C" core::ISimulationCore* CreateSimulationCore_v1();
+extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -11,16 +15,16 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 
+#include <random>
+
 #include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
-#include "Scene/MeshLoader.h"
+#include "Assets/MeshLoader.h"
 #include "Scene/Light.h"
 #include "Scene/AxisOrientator.h"
 
 #include "Physics/PhysicsSystem.h"
-#include "Robots/RobotLoader.h"
-#include "Robots/RobotModel.h"
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"
 
@@ -43,6 +47,10 @@
 namespace gui {
 	// --- PIMPL Implementation ---
 	struct SimManager::Impl {
+		// Completed Simulation Runs (thread-safe)
+		std::mutex _completedRunsMutex;
+		std::vector<StudyResult> _completedRuns;
+
 		// View ID Alias
 		using VID = gui::ViewID;
 
@@ -268,36 +276,47 @@ namespace gui {
 			initSSAONoise();
 		}
 
+		// Random number generation for SSAO kernel and noise
+		std::mt19937 _rng{ std::random_device{}() };
+		std::uniform_real_distribution<float> _uni{ -1.0f, 1.0f };
+
+		// Helper to get random float in [a,b]
+		inline float rngFloat(float a, float b) {
+			std::uniform_real_distribution<float> d(a, b);
+			return d(_rng);
+		}
+
+		// Initialises the SSAO kernel with random samples in a hemisphere oriented along the positive Z axis, scaled to favor samples closer to the origin
 		void initSSAOKernel(int size) {
 			_ssaoKernel.clear();
 			_ssaoKernel.reserve(size);
 			for (int i = 0; i < size; ++i) {
 				glm::vec3 sample(
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX)  // hemisphere: z in [0,1]
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(0.0f, 1.0f) // hemisphere: z in [0,1]
 				);
 				sample = glm::normalize(sample);
-				sample *= ((float)rand() / RAND_MAX);
-
-				// Accelerating interpolation: cluster samples closer to origin
+				sample *= rngFloat(0.0f, 1.0f);
 				float scale = (float)i / (float)size;
-				scale = 0.1f + scale * scale * 0.9f; // lerp(0.1, 1.0, scale*scale)
+				scale = 0.1f + scale * scale * 0.9f;
 				sample *= scale;
-
 				_ssaoKernel.push_back(sample);
 			}
 		}
 
+		// Initializes the SSAO noise texture with random rotation vectors in the XY plane
 		void initSSAONoise() {
 			std::vector<glm::vec3> noise(16);
+			// Generate 16 random rotation vectors in the XY plane (Z=0)
 			for (int i = 0; i < 16; ++i) {
 				noise[i] = glm::vec3(
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
-					((float)rand() / RAND_MAX) * 2.0f - 1.0f,
+					rngFloat(-1.0f, 1.0f),
+					rngFloat(-1.0f, 1.0f),
 					0.0f
 				);
 			}
+			// Create OpenGL texture
 			glGenTextures(1, &_ssaoNoiseTex);
 			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, noise.data());
@@ -307,20 +326,20 @@ namespace gui {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 
+		// Ensures SSAO FBOs and textures are created and match the given size, recreating them if necessary
 		void ensureSSAOBuffers(int w, int h) {
 			if (_ssaoW == w && _ssaoH == h) return;
 			_ssaoW = w; _ssaoH = h;
-
-			// Cleanup old
+			// Delete old buffers if they exist
 			if (_ssaoFBO) { glDeleteFramebuffers(1, &_ssaoFBO); glDeleteTextures(1, &_ssaoTex); }
 			if (_ssaoBlurFBO) { glDeleteFramebuffers(1, &_ssaoBlurFBO); glDeleteTextures(1, &_ssaoBlurTex); }
-
+			// Lambda to create a single-channel floating point FBO and texture
 			auto makeSingleChannelFBO = [](GLuint& fbo, GLuint& tex, int w, int h) {
 				glGenFramebuffers(1, &fbo);
 				glGenTextures(1, &tex);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 				glBindTexture(GL_TEXTURE_2D, tex);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_FLOAT, nullptr);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, nullptr);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -328,22 +347,22 @@ namespace gui {
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			};
-
+			// Create SSAO and blur FBOs/textures
 			makeSingleChannelFBO(_ssaoFBO, _ssaoTex, w, h);
 			makeSingleChannelFBO(_ssaoBlurFBO, _ssaoBlurTex, w, h);
 		}
 
+		// Renders the SSAO pass and subsequent blur pass, writing results to SSAO FBOs. Should be called after rendering the scene to the view's framebuffer (to provide depth texture input).
 		void renderSSAO(SimManager& owner, Viewport& v) {
 			if (!owner._settingsCurrent.ssao) return;
-
+			// Determine SSAO buffer size based on division factor
 			int ssaoDiv = std::max(1, owner._settingsCurrent.ssaoResDiv);
 			int ssaoW = std::max(1, v.w / ssaoDiv);
 			int ssaoH = std::max(1, v.h / ssaoDiv);
 			ensureSSAOBuffers(ssaoW, ssaoH);
-
+			// Clamp kernel size to available samples
 			int kernelSize = std::min((int)_ssaoKernel.size(), owner._settingsCurrent.ssaoSamples);
-
-			// --- SSAO pass ---
+			// SSAO Pass
 			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoFBO);
 			glViewport(0, 0, ssaoW, ssaoH);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -356,11 +375,12 @@ namespace gui {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, v.fb->getDepthTexture());
 			_ssaoShader->setInt1(0, "gDepth");
-
+			// Noise texture
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTex);
 			_ssaoShader->setInt1(1, "gNoise");
 
+			// Camera matrices and parameters
 			_ssaoShader->setMat4(v.cam->getProjection(), "projection");
 			_ssaoShader->setMat4(glm::inverse(v.cam->getProjection()), "invProjection");
 			_ssaoShader->setVec2(glm::vec2((float)ssaoW / 4.0f, (float)ssaoH / 4.0f), "noiseScale");
@@ -369,29 +389,28 @@ namespace gui {
 			_ssaoShader->setFlt1(0.035f, "bias");
 			_ssaoShader->setFlt1(owner._settingsCurrent.ssaoStrength, "strength");
 
-			for (int i = 0; i < kernelSize; ++i) {
-				_ssaoShader->setVec3(_ssaoKernel[i], "samples[" + std::to_string(i) + "]");
-			}
+			// SSAO kernel samples
+			for (int i = 0; i < kernelSize; ++i) { _ssaoShader->setVec3(_ssaoKernel[i], "samples[" + std::to_string(i) + "]"); }
 
 			glBindVertexArray(_fullscreenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 
-			// --- Blur pass ---
+			// Blur pass
 			glBindFramebuffer(GL_FRAMEBUFFER, _ssaoBlurFBO);
 			glViewport(0, 0, ssaoW, ssaoH);
 			glClear(GL_COLOR_BUFFER_BIT);
 
+			// No need for depth test or blending for a simple fullscreen blur
 			_ssaoBlurShader->use();
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, _ssaoTex);
 			_ssaoBlurShader->setInt1(0, "ssaoInput");
-
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 			glBindVertexArray(0);
-
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		// Renders the given viewport to its framebuffer, handling dynamic resizing of the framebuffer and camera aspect ratio based on the provided display size
 		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
 			displayH = std::max(1, displayH);
@@ -557,14 +576,30 @@ namespace gui {
 		}
 	};
 
+	// Helper: create CorePtr (unique_ptr with std::function deleter)
+	static CorePtr makeCoreFactory() {
+		core::ISimulationCore* raw = CreateSimulationCore_v1();
+		if (!raw) {
+			return CorePtr(nullptr, [](core::ISimulationCore*) {});
+		}
+		// std::function deleter is constructed from the lambda implicitly
+		return CorePtr(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
+	}
+
 	// --------------------------------------------------
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
 	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
-		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)) {
+		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
+		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
+		_core->setPhysicsSystem(_impl->_physics.get());
+		_core->setRobotSystem(_impl->_robotSystem.get());
+		_core->setObjects(&_impl->_objects);
+		_core->setTrajectoryManager(&_impl->_traj);
 	}
 
+	// Initialises OpenGL resources, including framebuffers, shaders, and IBL. Also picks an internal resolution preset based on the display size to balance quality and performance.
 	void SimManager::initGL() {
 		if (_glReady) return;
 		_glReady = true;
@@ -584,12 +619,57 @@ namespace gui {
 		applyRenderProfile(s, bestPreset);
 	}
 
+	// Cleans up OpenGL resources
 	SimManager::~SimManager() {
-		if (_impl->_mesh) _impl->_mesh->clean();
+		// Clean up OpenGL resources
+		if (_impl) {
+			glDeleteFramebuffers(NUM_CASCADES, _impl->_cascadeFBO);
+			glDeleteTextures(NUM_CASCADES, _impl->_cascadeDepth);
+			if (_impl->_ssaoNoiseTex) glDeleteTextures(1, &_impl->_ssaoNoiseTex);
+			if (_impl->_ssaoTex) glDeleteTextures(1, &_impl->_ssaoTex);
+			if (_impl->_ssaoBlurTex) glDeleteTextures(1, &_impl->_ssaoBlurTex);
+			if (_impl->_fullscreenVAO) glDeleteVertexArrays(1, &_impl->_fullscreenVAO);
+			if (_impl->_worldGridVAO) glDeleteVertexArrays(1, &_impl->_worldGridVAO);
+		}
+		// Clean up scene objects and meshes if needed
+		if (_impl && _impl->_mesh) { _impl->_mesh->clean(); }
 	}
 
 	// Helper to get the next ObjectID
 	static inline scene::ObjectID next(scene::ObjectID id) { return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
+
+	// --------------------------------------------------
+	// 			THREAD-SAFE SIMULATION RESULTS
+	// --------------------------------------------------
+	
+	// Add a completed simulation run to the list in a thread-safe manner
+	void SimManager::pushCompletedStudies(std::vector<StudyResult> results) {
+		if (!_impl) { return; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		_impl->_completedRuns.insert(_impl->_completedRuns.end(), results.begin(), results.end());
+		_hasCompletedStudy = true;
+	}
+	// Add a completed simulation run to the list in a thread-safe manner
+	void SimManager::pushCompletedStudy(StudyResult result) {
+		if (!_impl) { return; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		_impl->_completedRuns.push_back(std::move(result));
+		_hasCompletedStudy = true;
+	}
+
+	bool SimManager::hasCompletedStudy() const { return _hasCompletedStudy; }
+
+	// Retrieve and clear completed runs in a thread-safe manner
+	std::vector<StudyResult> SimManager::consumeCompletedStudy() {
+		std::vector<StudyResult> copy;
+		if (!_impl) { return copy; }
+		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
+		copy = std::move(_impl->_completedRuns);
+		_impl->_completedRuns.clear();
+		_hasCompletedStudy = false;
+		return copy;
+	}
+
 
 	// --------------------------------------------------
 	//				    LIGHT & SKYBOX
@@ -776,7 +856,7 @@ namespace gui {
 
 	// Load a mesh from file and create one Object per submesh. The last loaded mesh becomes the active selection.
 	void SimManager::loadMesh(const std::string& filepath) {
-		gui::MeshLoader loader;
+		assets::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
 		if (meshes.empty()) {
@@ -812,17 +892,13 @@ namespace gui {
 
 	// Returns the loaded objects so they can be used as targets for robot joints in the same frame (e.g. end-effector)
 	std::vector<scene::Object*> SimManager::loadMeshReturn(const std::string& filepath) {
-		gui::MeshLoader loader;
+		assets::MeshLoader loader;
 		auto meshes = loader.load(filepath);
-
 		std::vector<scene::Object*> result;
-
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);
 			auto raw = obj.get();
-
 			raw->internal = true;
-
 			_impl->_objects.push_back(std::move(obj));
 			result.push_back(raw);
 		}
@@ -881,8 +957,17 @@ namespace gui {
 
 	// Main render function called by the application
 	void SimManager::render() {
+		if (hasCompletedStudy()) {
+			auto results = consumeCompletedStudy();
+
+			for (const auto& r : results) {
+				LOG_INFO("Study completed: %s", r.tag.c_str());
+				// TODO: update plots, telemetry graphs, UI panels here
+			}
+		}
+
 		ImGuiIO& io = ImGui::GetIO();
-		tick(io.DeltaTime);
+		_core->tick(io.DeltaTime);
 		_fpsCounter.update();
 
 		drawMainDockspace();
@@ -1055,19 +1140,10 @@ namespace gui {
 		LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
-	// --------------------------------------------------
-	//						PHYSICS
-	// --------------------------------------------------
-	void gui::SimManager::updatePhysics(double dt) {
-		// Update each object's physics state
-		for (auto& obj : _impl->_objects) {
-			if (obj) { _impl->_physics->update(dt, obj.get()); }
-		}
-	}
-
-	// --------------------------------------------------
-	//						ROBOTS
-	// --------------------------------------------------
+	// Accessor to core's updatePhysics for use in the main application loop
+	void SimManager::updatePhysics(double dt) { _core->updatePhysics(dt); }
+	
+	// Load a robot by name from the robot system
 	void SimManager::loadRobot(const std::string& name) {
 		// Clear any existing robot first
 		if (hasRobot()) { clearRobot(); }
@@ -1126,361 +1202,101 @@ namespace gui {
 	}
 	const bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
 
+	// Access the physics system (non-const and const versions)
+	physics::PhysicsSystem* SimManager::physicsSystem() { return _core->physicsSystem(); }
+	const physics::PhysicsSystem* SimManager::physicsSystem() const { return _core->physicsSystem(); }
+
 	// Access the robot system (non-const and const versions)
-	robots::RobotSystem* SimManager::robotSystem() { return _impl->_robotSystem.get(); }
-	const robots::RobotSystem* SimManager::robotSystem() const { return _impl->_robotSystem.get(); }
+	robots::RobotSystem* SimManager::robotSystem() { return _core->robotSystem(); }
+	const robots::RobotSystem* SimManager::robotSystem() const { return _core->robotSystem(); }
 
-	// Simulation System
-	void SimManager::setupSimulationIntegrator() {
-		if (!_impl->_robotSystem) return;
-		auto* integ = _impl->_robotSystem->getIntegrator();
-		integ->resetAdaptiveState();
-		integ->setAdaptiveTolerances(1e-3, 1e-6);
-		integ->setMaxStep(_dt);
-	}
+	// Access the trajectory manager (non-const and const versions)
+	control::TrajectoryManager* SimManager::traj() { return _core->trajectoryManager(); }
+	const control::TrajectoryManager* SimManager::traj() const { return _core->trajectoryManager(); }
 
-	// --------------------------------------------------
-	//					SIMULATION LOOP
-	// --------------------------------------------------
-
-	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
-	void SimManager::stepFixed(double frame_dt) {
-		_accum += frame_dt;
-		while (_accum >= _dt) {
-			if (_scriptRunning && _activeProgram) {
-				_activeProgram->step(_dt);
-
-				const bool completed = _activeProgram->isCompleted();
-				const bool stopped = _activeProgram->isStopped();
-				const bool faulted = _activeProgram->isFaulted();
-
-				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, _simTime);
-
-					_scriptRunning = false;
-					_activeProgram = nullptr;
-
-					stopSimulation();
-					D_RUNTIME("Program execution completed.");
-				}
-				else if (stopped || faulted) {
-					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)",
-						(int)stopped, (int)faulted, _dt, _simTime);
-
-					_scriptRunning = false;
-					_activeProgram = nullptr;
-
-					stopSimulation();
-					D_RUNTIME("Program execution completed.");
-				}
-			}
-			else if (_scriptRunning && !_activeProgram) {
-				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
-				_scriptRunning = false;
-			}
-
-			if (_simRunning) {
-				_simTime += _dt;
-
-				updatePhysics(_dt);
-				if (hasRobot()) {
-					// Update Trajector Inputs
-					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _simTime);
-					// Step robot system
-					_impl->_robotSystem->step(_dt, _simTime);
-
-					// Telemetry update
-					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
-						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
-					}
-					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL);
-				}
-			}
-			_accum -= _dt;
-		}
-	}
-
-	// Start the simulation loop
+	// Start the simulation
 	void SimManager::startSimulation() {
-		if (_simRunning) return;
-		telemetry().clear();
-		D_RUNTIME("starting simulation");
-
-		_simTime = 0.0;
-		_accum = 0.0;
-
-		// Reset simulation system
-		if (_impl->_robotSystem) {
-			_impl->_robotSystem->resetRobot();
-
-			// Clear and reserve telemetry buffers based on expected simulation length and robot DOF
-			_trajRefBuffer.clear();
-			_jointLogBuffer.clear();
-
-			// Calculate the total number of entries needed for the buffers
-			size_t steps = static_cast<size_t>(120.0 / _dt);
-			size_t joints = _impl->_robotSystem->jointCount();
-			size_t total = steps * joints;
-
-			// Reserve capacity to avoid reallocations during the run
-			_trajRefBuffer.reserve(total);
-			_jointLogBuffer.reserve(total);
-
-			// IMPORTANT: inject buffer into robot
-			_impl->_robotSystem->setRefBuffer(&_trajRefBuffer);
-			_impl->_robotSystem->setLogBuffer(&_jointLogBuffer);
+		if (!hasRobot()) {
+			LOG_WARN("Cannot start simulation: no robot loaded");
+			return;
 		}
-
-		// Ensure reference sim system have their integrators configured for the new run
-		setupSimulationIntegrator();
-		SET_SIM_INTEGRATOR(_impl->_robotSystem->getIntegratorName());
-
-		_simRunning = true;
-		_telemetryBegun = true;
-		DATA_CAPTURE_ENABLE(true);
+		_core->startSimulation();
 	}
+	// Stop the simulation
+	void SimManager::stopSimulation() { _core->stopSimulation(); }
 
-	// Stop the simulation loop
-	void SimManager::stopSimulation() {
-		if (!_simRunning) return;
-		D_RUNTIME("stopping simulation");
+	// Check if the simulation is currently running
+	const bool SimManager::isSimRunning() const { return _core->isSimRunning(); }
 
-		D_RUNTIME("JointLogBuffer size = %zu", _jointLogBuffer.size());
-		D_RUNTIME("TrajRefBuffer size = %zu", _trajRefBuffer.size());
+	// Setter for current simulation time (in seconds)
+	void SimManager::setSimTime(double time) { _core->setSimTime(time); }
+	const double SimManager::simTime() const { return _core->simTime(); }
 
-		// Only export ref if we actually have samples
-		if (_trajRefBuffer.size() > 0) {
-			exportRefsToHDF5();
-		}
-		// Only export sim if we actually have samples
-		if (_jointLogBuffer.size() > 0) {
-			exportLogsToHDF5();
-		}
+	// Setter and gettter for fixed timstep (in seconds)
+	void SimManager::setFixedDt(double dt) { _core->setFixedDt(dt); }
+	const double SimManager::fixedDt() const { return _core->fixedDt(); }
 
-		// Clear buffers to free memory and prepare for next run
-		DATA_CAPTURE_ENABLE(false);
-		_simRunning = false;
-		_telemetryBegun = false;
-	}
+	// Setter and getter for telemetry frequency (in Hz)
+	void SimManager::setTelemetryHz(double hz) { _core->setTelemetryHz(hz); }
+	const double SimManager::telemetryHz() const { return _core->telemetryHz(); }
 
-	// Export the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimManager::exportLogsToHDF5() {
-		// Construct a header for the HDF5 dataset based on the robot and integrator names
-		const std::string intName	= _impl->_robotSystem->getIntegratorName();
-		const std::string robotName = _impl->_robotSystem->hasRobot() ? _impl->_robotSystem->robotName() : "no_robot";
-		const std::string header	= robotName + "_sim_" + intName;
+	// Set whether a script is currently running (used to disable UI elements, etc.)
+	void SimManager::setScriptRunning(bool running) { _core->setScriptRunning(running); }
+	const bool SimManager::isScriptRunning() const { return _core->isScriptRunning(); }
 
-		// Check if there are any log entries
-		const size_t N = _jointLogBuffer.size();
-		if (N == 0) return;
+	// Setters and getters for last script text
+	void SimManager::setLastScriptText(const std::string& text) { _core->setLastScriptText(text); }
+	const std::string& SimManager::lastScriptText() const { return _core->lastScriptText(); }
 
-		// For each log entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			// Create a list of fields for this log entry
-			data::FieldList fields;
-			// Sim Metadata
-			fields.emplace_back("sim_time",		(double)_jointLogBuffer.sim_time[i]);
-			fields.emplace_back("dt_taken",		(double)_jointLogBuffer.dt_taken[i]);
-			fields.emplace_back("dt_sug",		(double)_jointLogBuffer.dt_sug[i]);
-			// States
-			fields.emplace_back("theta",		(double)_jointLogBuffer.theta[i]);
-			fields.emplace_back("omega",		(double)_jointLogBuffer.omega[i]);
-			fields.emplace_back("alpha",		(double)_jointLogBuffer.alpha[i]);
-			fields.emplace_back("err",			(double)_jointLogBuffer.err[i]);
-			fields.emplace_back("err_d",		(double)_jointLogBuffer.err_d[i]);
-			// Dynamics
-			fields.emplace_back("I_eff",		(double)_jointLogBuffer.I_eff[i]);
-			fields.emplace_back("tau",			(double)_jointLogBuffer.tau[i]);
-			fields.emplace_back("tau_fb",		(double)_jointLogBuffer.tau_fb[i]);
-			fields.emplace_back("tau_coriolis", (double)_jointLogBuffer.tau_coriolis[i]);
-			fields.emplace_back("tau_gravity",	(double)_jointLogBuffer.tau_gravity[i]);
-			fields.emplace_back("tau_damping",	(double)_jointLogBuffer.tau_damping[i]);
-			fields.emplace_back("tau_friction",	(double)_jointLogBuffer.tau_friction[i]);
-			fields.emplace_back("tau_barrier",	(double)_jointLogBuffer.tau_barrier[i]);
-			fields.emplace_back("tau_sat",		(double)_jointLogBuffer.tau_sat[i]);
-			// Limit flags and info
-			fields.emplace_back("clamp_theta",	(double)_jointLogBuffer.clamp_theta[i]);
-			fields.emplace_back("clamp_omega",	(double)_jointLogBuffer.clamp_omega[i]);
-			fields.emplace_back("sat_flag",		(double)_jointLogBuffer.sat_flag[i]);
-			// Joint info
-			fields.emplace_back("joint_index",	(double)_jointLogBuffer.joint_index[i]);
+	// Accessors for the Simulation Core's telemetry data
+	diagnostics::TelemetryRecorder& SimManager::telemetry() { return _core->telemetry(); }
+	const diagnostics::TelemetryRecorder& SimManager::telemetry() const { return _core->telemetry(); }
 
-			// Write this entry to HDF5
-			HDF5_SIM_DATA(header, fields);
-		}
-	}
+	// Accesors for the active program (if any)
+	void SimManager::setActiveProgram(interpreter::IStoredProgram* program) { _core->setActiveProgram(program); }
+	interpreter::IStoredProgram* SimManager::activeProgram() { return _core->activeProgram(); }
+	const interpreter::IStoredProgram* SimManager::activeProgram() const { return _core->activeProgram(); }
 
+	// Access the simulation core interface (non-const and const versions)
+	core::ISimulationCore* SimManager::simCoreInterface() { return _core.get(); }
+	const core::ISimulationCore* SimManager::simCoreInterface() const { return _core.get(); }
 
-	void SimManager::exportRefsToHDF5() {
-		const std::string robotName = _impl->_robotSystem->hasRobot() ? _impl->_robotSystem->robotName() : "no_robot";
-		const std::string header = robotName + "_traj_ref";
-
-		// Check if there are any log entries
-		const size_t N = _trajRefBuffer.size();
-		if (N == 0) return;
-
-		// For each ref entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			// Create a list of fields for this log entry
-			data::FieldList fields;
-			// Sim Metadata
-			fields.emplace_back("sim_time", (double)_trajRefBuffer.sim_time[i]);
-			// Reference values
-			fields.emplace_back("theta_ref", (double)_trajRefBuffer.theta_ref[i]);
-			fields.emplace_back("omega_ref", (double)_trajRefBuffer.omega_ref[i]);
-			fields.emplace_back("alpha_ref", (double)_trajRefBuffer.alpha_ref[i]);
-			// Joint info
-			fields.emplace_back("joint_index", (double)_trajRefBuffer.joint_index[i]);
-
-			// Write this entry to HDF5
-			HDF5_REF_DATA(header, fields);
-		}
-
-	}
-
-	// --------------------------------------------------
-	//		   SYNCHRONOUS SCRIPT EXECUTION
-	// --------------------------------------------------
+	// Access the concrete simulation core (non-const and const versions)
+	core::SimulationCore* SimManager::simCore() { return _core.get(); }
+	const core::SimulationCore* SimManager::simCore() const { return _core.get(); }
 
 	// Helper to replace the integrator method in the script text
 	// A hacky approach my idea, but it works for me and honestly im starting to write up the dissertation so IT WILL DO :)
 	// PS:If anyone has any better solution msg me
+
+	// This seems to be the better solution?
 	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
-		std::string result = script;
-		// Find set(integrator, ...) and replace the method name
-		const std::string prefix = "set(integrator,";
-		auto pos = result.find(prefix);
-		if (pos == std::string::npos) {
-			// Also try with space variations
-			const std::string prefix2 = "set(integrator, ";
-			pos = result.find(prefix2);
-		}
-		if (pos != std::string::npos) {
-			auto end = result.find(')', pos);
-			if (end != std::string::npos) {
-				result.replace(pos, end - pos + 1, "set(integrator, " + methodName + ")");
-			}
-		}
-		return result;
+		std::regex re(R"((?i)set\s*\(\s*integrator\s*,\s*([a-z0-9_]+)\s*\))"); // case-insensitive regex to match my DSL command -> set(integrator, method)
+		std::string replacement = "set(integrator, " + methodName + ")";
+		return std::regex_replace(script, re, replacement);
 	}
 
-	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully.
-	// NOTE: this is a blocking call that runs a tight loop until the script finishes, so it should only be used for testing or non-interactive scenarios.
-	// IMPORTANT: I want to make this REALLY clear:
-	//		---> I have implemented this for short (<5 minute) test scripts where blocking is acceptable
-	//		---> IT IS NOT intended for general use and WILL CAUSE THE UI TO FREEZE if used with long-running scripts
+	// Run a script to completion synchronously with a specific integrator
 	bool SimManager::runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method) {
-		if (!hasRobot()) return false;
+		if (!hasRobot()) { return false; }
 
 		// Map method enum to string name
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
 		const std::string methodName = names[static_cast<int>(method)];
 
-		// Replace the integrator in the script text
+		// Replace the integrator method in the script text
 		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
 
-		// Reset robot state
-		resetRobot();
-		_impl->_traj.clearAll();
-
-		// Clear telemetry and log buffers
-		_trajRefBuffer.clear();
-		_jointLogBuffer.clear();
-
-		// Inject buffers BEFORE any stepping happens
-		_impl->_robotSystem->setRefBuffer(&_trajRefBuffer);
-		_impl->_robotSystem->setLogBuffer(&_jointLogBuffer);
-
-		_simTime = 0.0;
-		_simRunning = false;
-		_telemetryBegun = false;
-		_accum = 0.0;
-
-		// Set integrator on both physics and robot systems
-		_impl->_robotSystem->setIntegrationMethod(method);
-		_impl->_physics->setIntegrationMethod(method);
-
-		// Create and parse program
-		auto program = std::make_unique<interpreter::StoredProgram>(this);
-		program->setDefaultObject(getObject());
+		// Create program and parser (bound to headless core)
+		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
+		if (scene::Object* o = getObject()) program->setDefaultObject(o);
 		auto parser = std::make_unique<interpreter::Parser>(program.get());
 
-		program->clear();
+		// Parse the modified script and start the program
 		parser->parse(modifiedScript);
 		program->start();
-
-		_activeProgram = program.get();
-		_scriptRunning = true;
-
-		// enable sim stepping and telemetry for synchronous run
-		startSimulation();
-
-		// Run tight simulation loop until program completes
-		const double dt = _dt;
-		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
-
-		// Main loop: step the program and simulation until completion
-		for (int step = 0; step < maxSteps; ++step) {
-			// Check program completion
-			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
-				break;
-			}
-
-			// Step the program (DSL command execution)
-			program->step(dt);
-
-			// Step physics and robot if sim is running
-			if (_simRunning) {
-				_simTime += dt;
-
-				updatePhysics(dt);
-
-				if (hasRobot()) {
-					// Update Trajectory Inputs
-					_impl->_robotSystem->updateTrajectoryInputs(_impl->_traj, _simTime);
-
-					// Step robot system
-					_impl->_robotSystem->step(dt, _simTime);
-
-					// Telemetry beginRun
-					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
-						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
-					}
-
-					// Telemetry update
-					_telemetry.update(_simTime, *_impl->_robotSystem, &_impl->_traj, diagnostics::eTelemetryLevel::FULL );
-				}
-			}
-		}
-
-		// Clean up
-		stopSimulation();
-
-		_activeProgram = nullptr;
-		_scriptRunning = false;
-		_simRunning = false;
-		_telemetryBegun = false;
-
-		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)",
-			methodName.c_str(), _simTime, _telemetry.ring.size());
-
-		return (_telemetry.ring.size() >= 2);
+		return _core->runScriptToCompletion(program.get(), method); // this will block until the script finishes
 	}
-
-	// Method to step the simulation with a fixed timestep
-	void SimManager::tick(double frame_dt) { /*D_DEBUG("tick frame_dt=%.6f", frame_dt);*/ stepFixed(frame_dt); }
-
-	// Access the physics system (non-const and const versions)
-	physics::PhysicsSystem& SimManager::physicsSystem() { return *_impl->_physics; } // mutable
-	const physics::PhysicsSystem& SimManager::physicsSystem() const { return *_impl->_physics; } // const
-
-	// Access the robot system (non-const and const versions)
-	control::TrajectoryManager& SimManager::traj() { return _impl->_traj; }
-	const control::TrajectoryManager& SimManager::traj() const { return _impl->_traj; }
 
 	// --------------------------------------------------
 	//			 INTERNAL REDNDERING PIPELINE
@@ -1880,7 +1696,7 @@ namespace gui {
 	//					INPUT HANDLING
 	// --------------------------------------------------
 	void gui::SimManager::processMovementKey(int key, float delta) {
-		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No keyboard movement in quad view
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; }// No keyboard movement in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (ctrlMode == ControlMode::Camera) { cam->processKeyboard(key, delta); }
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
@@ -1901,12 +1717,12 @@ namespace gui {
 	}
 
 	void gui::SimManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
-		if (_impl->viewMode == Impl::ViewMode::Quad) return; // No mouse look in quad view
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
-		if (!win || !win->isMouseCaptured()) return;
+		if (!win || !win->isMouseCaptured()) { return; }
 
-		bool captured = false;
+		bool captured = true;
 		if (win == static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
 
 		if (!captured && !_isHovered) {

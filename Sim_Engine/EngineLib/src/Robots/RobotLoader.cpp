@@ -6,7 +6,7 @@
 #include <MathLibAPI.h>
 #include <core/constants.h>
 #include "Scene/Object.h"
-#include "Scene/MeshLoader.h"
+#include "Assets/MeshLoader.h"
 #include "EngineLib/LogMacros.h"
 
 #include <nlohmann/json.hpp>
@@ -281,7 +281,7 @@ namespace robots {
 		joint.limits.continuous		= false;
 		joint.limits.minAngle		= 0.0f;
 		joint.limits.maxAngle		= 0.0f;
-		joint.limits.maxOmegaRad_s	= 0.0f;
+		joint.limits.maxqd	= 0.0f;
 		joint.limits.maxEffort		= 0.0f;
 
 		if (!jointData.contains("limits") || !jointData["limits"].is_object()) { LOG_WARN("Joint %s missing 'limits' block", joint.name.c_str()); return; }
@@ -289,7 +289,7 @@ namespace robots {
 		const auto& L = jointData["limits"];
 
 		joint.limits.continuous = L.value("continuous", false);
-		joint.limits.maxOmegaRad_s = L.value("velocity", joint.limits.maxOmegaRad_s);
+		joint.limits.maxqd = L.value("velocity", joint.limits.maxqd);
 		joint.limits.maxEffort = L.value("effort", joint.limits.maxEffort);
 
 		if (!joint.limits.continuous) {
@@ -320,24 +320,6 @@ namespace robots {
 
 		if (joint.dynamics.damping < 0.0f) { joint.dynamics.damping = 0.0f; }
 		if (joint.dynamics.friction < 0.0f) { joint.dynamics.friction = 0.0f; }
-	}
-
-	// Parse joint control parameters
-	static void parseJointControl(const json& jointData, RobotJoint& joint) {
-		joint.k_p = 25.0f;
-		joint.k_d = 8.0f;
-		joint.thetaRefRad = 0.0f;
-
-		if (!jointData.contains("control") || !jointData["control"].is_object()) return;
-
-		const auto& C = jointData["control"];
-		joint.k_p = C.value("k_p", joint.k_p);
-		joint.k_d = C.value("k_d", joint.k_d);
-
-		if (C.contains("maxOmega") && C["maxOmega"].is_number()) {
-			double maxOmega = C["maxOmega"].get<double>();
-			if (maxOmega > 0.0f) joint.limits.maxOmegaRad_s = maxOmega;
-		}
 	}
 
 	// Check if a joint is fixed based on its type string
@@ -472,7 +454,6 @@ namespace robots {
 				parseJointAxis(jointData, joint);
 				parseJointLimits(jointData, joint);
 				parseJointDynamics(jointData, joint);
-				parseJointControl(jointData, joint);
 			}
 
 			robot.joints.push_back(joint);
@@ -491,9 +472,9 @@ namespace robots {
 			}
 
 			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxOmegaRad_s, joint.limits.minAngle, joint.limits.maxAngle);
+				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
 			D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxOmegaRad_s, joint.limits.minAngle, joint.limits.maxAngle);
+				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
 
 		}
 

@@ -16,19 +16,25 @@ namespace robots {
 		URDF,
 		DH
 	};
-	/// --- URDF Joint Types ---
+	// --- URDF Joint Types ---
 	enum class eJointType {
 		FIXED = 0,
 		REVOLUTE = 1,
 		PRISMATIC = 2,
 		FREE = 3
 	};
-	/// --- Visual Frame Options ---
+	// --- Visual Frame Options ---
 	enum class eVisualFrame {
 		NONE,
 		JOINT,
 		LINK,
 		WORLD
+	};
+	// --- Torque Modes for Simulation ---
+	enum class eTorqueMode {
+		NONE,		// No physics simulation, just kinematics (e.g., for testing)
+		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
+		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
 	};
 
 	// --- Robot Model Links ---
@@ -104,7 +110,7 @@ namespace robots {
 		bool continuous = false;
 		double minAngle = 0.0f;
 		double maxAngle = 0.0f;
-		double maxOmegaRad_s = glm::radians(180.0f);
+		double maxqd = glm::radians(180.0f);
 		double maxEffort = 0.0f; // max torque/force
 		// Soft limits
 		double omegaRefMaxRad_s = 0.0;
@@ -143,19 +149,17 @@ namespace robots {
 		JointDynamics dynamics;
 
 		// --- State ---
-		double thetaRad = 0.0f;	 // rad
-		double omegaRad_s = 0.0f; // rad/s
+		double q = 0.0f;	 // rad
+		double qd = 0.0f; // rad/s
 		double torque = 0.0f;	 // Nm or N
 		double eta = 0.0f;		 // Integral state
 
 		// --- Control ---
-		double thetaRefRad = 0.0f;	 // rad
-		double omegaRefRad_s = 0.0f;  // rad/s
-		double alphaRefRad_s2 = 0.0f; // rad/s^2
-		double k_p = 10.0f;	// position gain (rad)
-		double k_i = 0.0f;	// integral gain (rad*s)
-		double k_d = 10.0f;	// velocity gain (rad/s)
+		double q_ref = 0.0f;	 // rad
+		double qd_ref = 0.0f;  // rad/s
+		double qdd_ref = 0.0f; // rad/s^2
 
+		//
 		double wn_target = 5.0f;   // rad/s
 		double beta_target = 0.1f;  // overshoot ratio
 		double zeta_target = 1.1f;  // damping ratio
@@ -176,6 +180,9 @@ namespace robots {
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
 
+		// Torque Mode for simulation
+		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
+
 		// Kinematics model (URDF or DH)
 		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;
 		std::vector<kinematics::DH_Params> dhParams;
@@ -192,7 +199,7 @@ namespace robots {
 			const int n = static_cast<int>(joints.size());
 			LOG_INFO_ONCE("Making joint vector of size %d", n);
 			VecX q(n);
-			for (int i = 0; i < n; ++i) { q(i) = joints[i].thetaRad; }
+			for (int i = 0; i < n; ++i) { q(i) = joints[i].q; }
 			return q;
 		}
 
@@ -206,7 +213,7 @@ namespace robots {
 			}
 			for (int i = 0; i < n; ++i) {
 				double a = q(i);
-				joints[i].thetaRad = a;
+				joints[i].q = a;
 			}
 		}
 	};
@@ -237,6 +244,14 @@ namespace robots {
 		double wMax_hw{ 0.0 };
 		double wMax_traj{ 0.0 };
 		double traj_overspeed{ 0.0 };
+
+		// Energy, Work, & Power
+		double KE{ 0.0 };
+		double PE{ 0.0 };
+		double E_total{ 0.0 };
+		double W_actuator{ 0.0 };
+		double P_damping{ 0.0 };
+		double P_friction{ 0.0 };
 
 		// Stability flags
 		bool sat_flag{ false };

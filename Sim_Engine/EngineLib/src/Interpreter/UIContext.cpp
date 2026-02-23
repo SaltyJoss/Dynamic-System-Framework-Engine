@@ -3,7 +3,7 @@
 // GitHub: SaltyJoss
 #include "Interpreter/UIContext.h"
 #include "EngineLib/LogMacros.h"
-#include "Scene/SimulationManager.h"
+#include "Scene/SimulationCore.h"
 #include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
 #include "Scene/ObjectID.h"
@@ -18,9 +18,11 @@ using namespace utils;
 
 namespace commands {
 	// Constructor
-	UIContext::UIContext(gui::SimManager* sim, scene::ObjectID objID)
-		: _sim(sim), _phys(sim ? &sim->physicsSystem() : nullptr), _robot(sim ? sim->robotSystem() : nullptr),
-		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
+	UIContext::UIContext(core::ISimulationCore* core)
+		: _core(core), _phys(core ? core->physicsSystem() : nullptr), 
+		_robot(core ? core->robotSystem() : nullptr), _angularUnits(AngularUnits::DegPerSec) {
+		_defaultObjID = scene::ObjectID::INVALID_OBJECT_ID;
+		_objID = _core->getObjectByID(_defaultObjID) ? _defaultObjID : scene::ObjectID::INVALID_OBJECT_ID;
 	}
 
 	// --- OBJECT RESOLUTION METHODS ---
@@ -28,9 +30,9 @@ namespace commands {
 	scene::ObjectID UIContext::ObjectID() const { return _objID; }
 
 	scene::Object* UIContext::resolveObject(scene::ObjectID id) const {
-		if (!_sim) return nullptr;
+		if (!_core) return nullptr;
 		if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
-		return _sim->getObjectByID(id);
+		return _core->getObjectByID(id);
 	}
 
 	scene::Object* UIContext::resolveCurrentObject() const { return resolveObject(_objID); }
@@ -57,9 +59,9 @@ namespace commands {
 
 	// Set the fixed delta time for the simulation
 	OpResult UIContext::setFixedDt(double dt) {
-		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 		if (dt <= 0.0) { return OpResult::Failure("Fixed dt must be positive."); }
-		_sim->setFixedDt(dt);
+		_core->setFixedDt(dt);
 		return OpResult::Success(true);
 	}
 
@@ -88,10 +90,10 @@ namespace commands {
 
 	// Loads a new object from the specified file path and updates the context with the new object's ID
 	OpResult UIContext::loadObject(const std::string& objectPath) {
-		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 		if (objectPath.empty()) { return OpResult::Failure("Object path is empty."); }
 
-		auto spawned = _sim->loadMeshReturn(objectPath);
+		auto spawned = _core->loadMeshReturn(objectPath);
 		if (spawned.empty() || !spawned[0]) { return OpResult::Failure("No objects loaded from specified path."); }
 
 		_objID = spawned[0]->id;
@@ -101,11 +103,11 @@ namespace commands {
 
 	// Removes the current object based on its index
 	OpResult UIContext::clearObject() {
-		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 		if (_objID == scene::ObjectID::INVALID_OBJECT_ID) { return OpResult::Failure("No object selected."); }
 
 		// Finds the index of the current object
-		auto& objects = _sim->getObjects();
+		auto& objects = _core->getObjects();
 		auto it = std::find_if(objects.begin(), objects.end(), [this](const std::unique_ptr<scene::Object>& o) { return o && o->id == _objID; });
 
 		if (it == objects.end()) { return OpResult::Failure("Selected object ID not found."); }
@@ -113,7 +115,7 @@ namespace commands {
 		const int index = (int)std::distance(objects.begin(), it);
 		const scene::ObjectID deletedId = _objID;
 
-		_sim->deleteObject(index);
+		_core->deleteObject(index);
 
 		// Clear context IDs safely
 		_objID = scene::ObjectID::INVALID_OBJECT_ID;
@@ -128,20 +130,20 @@ namespace commands {
 
 	// Loads a robot by name and updates the context with the new robot system
 	OpResult UIContext::loadRobot(const std::string& robotName) {
-		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
 
-		_sim->loadRobot(robotName);
-		_robot = _sim->robotSystem();
+		_core->loadRobot(robotName);
+		_robot = _core->robotSystem();
 		if (!_robot) return OpResult::Failure("Robot system is null after load.");
 		return OpResult::Success(true);
 	}
 
 	OpResult UIContext::clearRobot() {
-		if (!_sim) { return OpResult::Failure("Simulation manager is null."); }
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 
 		_robot = nullptr;
-		_sim->clearRobot();
+		_core->clearRobot();
 		return OpResult::Success(true);
 	}
 
@@ -176,11 +178,11 @@ namespace commands {
 
 	// Starts the simulation if the simulation manager is available
 	OpResult UIContext::startSim() {
-		if (!_sim) {
+		if (!_core) {
 			LOG_WARN("Simulation manager is null, cannot start simulation.");
 			return OpResult::Failure("Simulation manager is null.");
 		}
-		_sim->startSimulation();
+		_core->startSimulation();
 		return OpResult::Success();
 	}
 } // namespace commands

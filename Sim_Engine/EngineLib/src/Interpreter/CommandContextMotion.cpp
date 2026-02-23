@@ -2,7 +2,7 @@
 // File:   CommandContextMotion.cpp
 // GitHub: SaltyJoss
 #include "Interpreter/CommandContextMotion.h"
-#include "Scene/SimulationManager.h"
+#include "Scene/SimulationCore.h"
 #include "Scene/ObjectID.h"
 #include "Robots/RobotSystem.h"
 
@@ -14,9 +14,11 @@ using namespace utils;
 
 namespace commands {
 	// Constructor
-	CommandContextMotion::CommandContextMotion(gui::SimManager* sim, scene::ObjectID objID)
-		: _sim(sim), _phys(sim ? &sim->physicsSystem() : nullptr), _robot(sim ? sim->robotSystem() : nullptr),
-		  _objID(objID), _defaultObjID(objID), _angularUnits(AngularUnits::DegPerSec) {
+	CommandContextMotion::CommandContextMotion(core::ISimulationCore* core)
+		: _core(core), _phys(core ? core->physicsSystem() : nullptr),
+		_robot(core ? core->robotSystem() : nullptr), _angularUnits(AngularUnits::DegPerSec) {
+		_defaultObjID = scene::ObjectID::INVALID_OBJECT_ID;
+		_objID = _core->getObjectByID(_defaultObjID) ? _defaultObjID : scene::ObjectID::INVALID_OBJECT_ID;
 	}
 
 	// --- OBJECT RESOLUTION METHODS ---
@@ -24,9 +26,9 @@ namespace commands {
 	scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
 
 	scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
-		if (!_sim) return nullptr;
+		if (!_core) return nullptr;
 		if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
-		return _sim->getObjectByID(id);
+		return _core->getObjectByID(id);
 	}
 
 	scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
@@ -123,28 +125,28 @@ namespace commands {
 		return setJointTargetRad(link, targetRad);
 	}
 
-	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxOmegaRad_s) {
+	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxqd) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (maxOmegaRad_s <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-		if (!_robot->trySetJointOmegaMaxRad(link, maxOmegaRad_s)) { 
+		if (maxqd <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
+		if (!_robot->trySetJointOmegaMaxRad(link, maxqd)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	// Sets the reference angular velocity for a joint (rad/s)
-	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double omegaRefRad_s) {
+	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double qd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointOmegaRefRad(link, omegaRefRad_s)) { 
+		if (!_robot->trySetJointOmegaRefRad(link, qd_ref)) { 
 			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	// Sets the reference angular acceleration for a joint (rad/s^2)
-	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double alphaRefRad_s2) {
+	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointAlphaRefRad(link, alphaRefRad_s2)) { 
+		if (!_robot->trySetJointAlphaRefRad(link, qdd_ref)) { 
 			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);

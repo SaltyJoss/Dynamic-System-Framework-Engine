@@ -7,7 +7,6 @@
 #include "Scene/Camera.h"
 #include <filesystem>
 #include "EngineLib/LogMacros.h"
-#include "Platform/DataManager.h"
 
 #ifdef __gl_h_
 #undef __gl_h_
@@ -15,13 +14,12 @@
 #include <GLFW/glfw3.h>
 
 namespace fs = std::filesystem;
-// Initialize the static instance pointer to nullptr
+// Initialise the static instance pointer to nullptr
 Application* Application::sInstance = nullptr;
 
-// Constructor: Initializes paths, sets up data manager, and creates the main application window
+// Constructor: Initialises paths, sets up data manager, and creates the main application window
 Application::Application(const std::string& appName) {
 	paths::init();
-	data::DataManager::instance().setParentFolder(paths::runs().string());
 
 	LOG_INFO("Root path: %s", paths::root().string().c_str());
 	LOG_INFO("Assets path: %s", paths::assets().string().c_str());

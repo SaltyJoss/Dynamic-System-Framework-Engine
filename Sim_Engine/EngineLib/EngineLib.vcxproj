@@ -122,7 +122,13 @@ if "$(Configuration)"=="Release" (
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\MeshLoader.cpp" />
+    <ClCompile Include="src\EngineCore.cpp" />
     <ClCompile Include="src\Interpreter\Commands\SetOmegaCmd.cpp" />
+    <ClCompile Include="src\Platform\StudyRunner.cpp" />
+    <ClCompile Include="src\Robots\RobotDynamics.cpp" />
+    <ClCompile Include="src\Robots\RobotKinematics.cpp" />
+    <ClCompile Include="src\Scene\SimulationCore.cpp" />
     <ClCompile Include="src\ui\CommandScriptEditor.cpp" />
     <ClCompile Include="src\ui\ControlPanel.cpp" />
     <ClCompile Include="src\ui\DebugPanel.cpp" />
@@ -173,6 +179,8 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Application.h" />
     <ClInclude Include="include\Assets\importBase.h" />
     <ClInclude Include="include\Assets\importObj.h" />
+    <ClInclude Include="include\Assets\MeshLoader.h" />
+    <ClInclude Include="include\Assets\VertexHolder.h" />
     <ClInclude Include="include\EngineCore.h" />
     <ClInclude Include="include\EngineLib\LogMacros.h" />
     <ClInclude Include="include\Interpreter\Command.h" />
@@ -204,15 +212,18 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Interpreter\Token.h" />
     <ClInclude Include="include\Interpreter\UIContext.h" />
     <ClInclude Include="include\Interpreter\Utils.h" />
+    <ClInclude Include="include\Numerics\IntegrationMethods.h" />
     <ClInclude Include="include\Numerics\IntegrationService.h" />
     <ClInclude Include="include\Physics\PhysicsState.h" />
     <ClInclude Include="include\Physics\PhysicsSystem.h" />
     <ClInclude Include="include\Platform\DataManager.h" />
     <ClInclude Include="include\Platform\imguiWidgets.h" />
+    <ClInclude Include="include\Platform\ISimulationCore.h" />
     <ClInclude Include="include\Platform\Logger.h" />
     <ClInclude Include="include\Platform\Paths.h" />
     <ClInclude Include="include\Platform\SimulationState.h" />
     <ClInclude Include="include\Platform\str_utils.h" />
+    <ClInclude Include="include\Platform\StudyRunner.h" />
     <ClInclude Include="include\Platform\Window.h" />
     <ClInclude Include="include\Platform\WindowManager.h" />
     <ClInclude Include="include\Rendering\CubeVertices.h" />
@@ -225,6 +236,8 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Rendering\ShaderUtil.h" />
     <ClInclude Include="include\Rendering\SkyboxRenderer.h" />
     <ClInclude Include="include\Rendering\Texture.h" />
+    <ClInclude Include="include\Robots\RobotDynamics.h" />
+    <ClInclude Include="include\Robots\RobotKinematics.h" />
     <ClInclude Include="include\Robots\RobotLoader.h" />
     <ClInclude Include="include\Robots\RobotModel.h" />
     <ClInclude Include="include\Robots\RobotSystem.h" />
@@ -237,11 +250,11 @@ if "$(Configuration)"=="Release" (
     <ClInclude Include="include\Scene\Input.h" />
     <ClInclude Include="include\Scene\Light.h" />
     <ClInclude Include="include\Scene\Mesh.h" />
-    <ClInclude Include="include\Scene\MeshLoader.h" />
     <ClInclude Include="include\Scene\Object.h" />
     <ClInclude Include="include\Scene\ObjectID.h" />
+    <ClInclude Include="include\Scene\SceneRenderer.h" />
+    <ClInclude Include="include\Scene\SimulationCore.h" />
     <ClInclude Include="include\Scene\SimulationManager.h" />
-    <ClInclude Include="include\Scene\VertexHolder.h" />
     <ClInclude Include="include\ui\CommandScriptEditor.h" />
     <ClInclude Include="include\ui\ControlPanel.h" />
     <ClInclude Include="include\ui\DebugLogEntry.h" />
@@ -377,7 +390,6 @@ if "$(Configuration)"=="Release" (
     <ClCompile Include="src\Scene\Camera.cpp" />
     <ClCompile Include="src\Scene\Input.cpp" />
     <ClCompile Include="src\Scene\Mesh.cpp" />
-    <ClCompile Include="src\Scene\MeshLoader.cpp" />
     <ClCompile Include="src\Scene\Object.cpp" />
     <ClCompile Include="src\Scene\SimulationManager.cpp" />
   </ItemGroup>

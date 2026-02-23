@@ -70,7 +70,7 @@ namespace window {
 		std::unique_ptr<gui::CommandScriptEditor> _cmdEditor;
 
         bool _isHovered = false;
-        bool _mouseCaptured = false;
+        bool _mouseCaptured = true;
         
 		// Window properties
         int _width = 0;

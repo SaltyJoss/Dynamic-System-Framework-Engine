@@ -2,22 +2,39 @@
 // File:    ControlPanel.h
 // GitHub:  SaltyJoss
 #include "EngineCore.h"
+#include <future>
+#include <atomic>
+#include <mutex>
 #include <cmath>
-#include "Physics/PhysicsSystem.h"
-
-#include "Scene/Object.h"
-#include "Analysis/Telemetry.h"
-#include "Scene/SimulationManager.h"
-#include "Scene/Light.h"
-#include "Platform/Logger.h"
-#include "Platform/SimulationState.h"
 #include <unordered_map>
 
+#include <chrono>
 #include <imgui.h>
-#include "Platform/imguiWidgets.h"
 #include <imfilebrowser.h>
 
+#include "Platform/SimulationState.h"
+#include "Platform/Logger.h"
+
+// Forward Declarations
+namespace scene {
+    class ENGINE_API Mesh;
+    class ENGINE_API Object;
+    class ENGINE_API Light;
+	class ENGINE_API Camera;
+}
+namespace render {
+    enum class ResolutionPreset;
+    enum class QualityPreset;
+}
+namespace physics     { class ENGINE_API PhysicsSystem; }
+namespace robots      { class ENGINE_API RobotSystem; }
+namespace diagnostics { class ENGINE_API TelemetryRecorder; }
+
 namespace gui {
+	// Forward Declaration for SimManager
+    class ENGINE_API SimManager;
+	enum class ControlMode;
+
 	// Gravity UI Modes
     enum class GravityUIMode {
         Preset,
@@ -63,6 +80,16 @@ namespace gui {
     inline GravityLevel gravityLevel = GravityLevel::Root;
     inline GravityUIMode gravityMode = GravityUIMode::Preset;
 
+	// Struct to hold comparison results for integrator analysis
+    struct ComparisonSnapshot {
+        std::string integratorName;
+        std::vector<float> time;      // time samples
+        std::vector<float> errRms;    // RMS error time series
+        std::vector<float> errMax;    // Max error time series
+        std::vector<std::vector<float>> jointErr; // [joint][sample]
+        int jointCount = 0;
+    };
+
 	// ControlPanel Class
     class ENGINE_API ControlPanel {
     public:
@@ -74,19 +101,25 @@ namespace gui {
         void setMeshLoadCallback(const std::function<void(const std::string&)>& callback) { meshLoadCallback = callback; }
 
     private:
-		// Internal Pointers
-        std::shared_ptr<scene::Mesh> _mesh;
+		// Comparison results management
+        std::vector<ComparisonSnapshot> _comparisonResults;
+        std::vector<std::future<ComparisonSnapshot>> _comparisonFutures;
+        std::atomic<int> _comparisonPending{ 0 };
+        std::mutex _comparisonMutex;
+        bool _comparisonReady = false;
 
+		// Internal Pointers
         SimManager* _sim = nullptr;
-        physics::PhysicsSystem* _phys;
-        scene::Light* _light;
-        scene::Object* _obj;
+		std::shared_ptr<scene::Mesh> _mesh = nullptr;
+		physics::PhysicsSystem* _phys = nullptr;
+		scene::Light* _light = nullptr;
+		scene::Object* _obj = nullptr;
         ImGui::FileBrowser _meshLoad;
         ImGui::FileBrowser _hdrLoad;
         std::string _currentMeshFile;
         std::string _currentHDRFile;
 
-        SimManager::ControlMode* _controlMode;
+        ControlMode* _controlMode;
 
         std::function<void(const std::string&)> meshLoadCallback;
         std::function<void(bool)> simCallback;
@@ -108,13 +141,14 @@ namespace gui {
 
 		// Follow View Methods
 		void selectJointAndFollow(int jointIndex);
-		void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
+		//void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
 		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
 
 		// Results Methods
 		void drawResultsWindow();
 		void exportTelemetryCSV(const char* filepath);
-		void runComparisonAllIntegrators();
+		void runComparisonAllIntegratorsAsync();
+		void pollComparisonFutures();
 		void drawComparisonPlots();
 
 		// Helper Methods
@@ -130,8 +164,8 @@ namespace gui {
         bool scrollToBottom = false;
 
 		// Render Presets
-		render::ResolutionPreset r = render::ResolutionPreset::R_1080p;
-        render::QualityPreset q = render::QualityPreset::Medium;
+        render::ResolutionPreset r;
+        render::QualityPreset q;
         
 		bool _qualityChanged = false;
 		bool _resChanged = false;
@@ -149,18 +183,6 @@ namespace gui {
 		bool _simWasRunningLastFrame = false;
 		bool _resultsFocusNeeded = false;
 		bool _selectResultsTab = false;
-
-		// Integrator comparison state
-		struct ComparisonSnapshot {
-			std::string integratorName;
-			std::vector<float> time;
-			std::vector<float> errRms;
-			std::vector<float> errMax;
-			std::vector<std::vector<float>> jointErr;
-			int jointCount = 0;
-		};
-		std::vector<ComparisonSnapshot> _comparisonResults;
-		bool _comparisonReady = false;
 
 		// Currently selected items
 		std::string _requestedRobot;    // name of requested robot to load

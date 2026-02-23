@@ -8,27 +8,17 @@
 #include <core/Types.h>
 #include <core/constants.h>
 #include <integrators/numerical_integrators.h>
+#include "Numerics/IntegrationMethods.h"
 
 #include "Platform/Logger.h"
 
 namespace integration {
-	// Integrator Methods
-	enum class eIntegrationMethod {
-		Euler = 0,		// First-Order Euler Method
-		Midpoint = 1,	// Second-Order Runge-Kutta (Midpoint)
-		Heun = 2,		// Second-Order Runge-Kutta (Heun)
-		Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
-		RK4 = 4,		// Fourth-Order Runge-Kutta 
-		RK45 = 5		// RK45 Method with Adaptive Step Size (Dormand-Prince)
-	};
-
 	// Struct representing the result of a single integration step
 	struct ENGINE_API StepOut {
 		VecX x_next;			// next state vector
 		double dt_taken = 0.0;	// actual step size taken
 		double dt_sug = 0.0;	// suggested next step size
 	};
-
 
 	// Class representing the integration service
 	class ENGINE_API IntegrationService {

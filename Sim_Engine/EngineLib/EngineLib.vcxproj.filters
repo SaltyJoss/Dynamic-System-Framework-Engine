@@ -231,9 +231,6 @@
     <ClInclude Include="include\Scene\Object.h">
       <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\Scene\VertexHolder.h">
-      <Filter>Header Files\include\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="include\Assets\importBase.h">
       <Filter>Header Files\include\Assets</Filter>
     </ClInclude>
@@ -299,9 +296,6 @@
     </ClInclude>
     <ClInclude Include="include\Physics\PhysicsState.h">
       <Filter>Header Files\include\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Scene\MeshLoader.h">
-      <Filter>Header Files\include\Scene</Filter>
     </ClInclude>
     <ClInclude Include="include\Rendering\ModelGroup.h">
       <Filter>Header Files\include\Rendering</Filter>
@@ -537,6 +531,33 @@
     <ClInclude Include="include\Interpreter\Commands\SetOmegaCmd.h">
       <Filter>Header Files\include\Interpreter\Commands\PrimaryFunc</Filter>
     </ClInclude>
+    <ClInclude Include="include\Robots\RobotDynamics.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Robots\RobotKinematics.h">
+      <Filter>Header Files\include\Robots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\SimulationCore.h">
+      <Filter>Header Files\include\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Scene\SceneRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Platform\StudyRunner.h">
+      <Filter>Header Files\include\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Platform\ISimulationCore.h">
+      <Filter>Header Files\include\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Numerics\IntegrationMethods.h">
+      <Filter>Header Files\include\Numerics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Assets\MeshLoader.h">
+      <Filter>Header Files\include\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Assets\VertexHolder.h">
+      <Filter>Header Files\include\Analysis</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -616,9 +637,6 @@
     </ClCompile>
     <ClCompile Include="src\Physics\PhysicsSystem.cpp">
       <Filter>Source Files\src\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene\MeshLoader.cpp">
-      <Filter>Source Files\src\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene\Object.cpp">
       <Filter>Source Files\src\Scene</Filter>
@@ -751,6 +769,24 @@
     </ClCompile>
     <ClCompile Include="src\Interpreter\Commands\SetOmegaCmd.cpp">
       <Filter>Source Files\src\Interpreter\Commands\PrimaryFunc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotDynamics.cpp">
+      <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Robots\RobotKinematics.cpp">
+      <Filter>Source Files\src\Robots</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene\SimulationCore.cpp">
+      <Filter>Source Files\src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\StudyRunner.cpp">
+      <Filter>Source Files\src\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EngineCore.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Assets\MeshLoader.cpp">
+      <Filter>Source Files\src\Assets</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

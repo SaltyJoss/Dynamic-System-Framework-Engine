@@ -14,51 +14,53 @@ namespace control { class ENGINE_API TrajectoryManager; }
 namespace diagnostics {
 	// Enum for telemetry levels
 	enum class eTelemetryLevel {
-		NONE = 0,       // No telemetry data
-		BASIC = 1,      // Basic telemetry data
-		FULL = 2    // Detailed telemetry data
+		NONE  = 0,	// No telemetry data
+		BASIC = 1,	// Basic telemetry data
+		FULL  = 2	// Detailed telemetry data
 	};
 
 	// Struct for joint telemetry data
 	struct ENGINE_API JointTelemetry{
 		// Actual data
-		double thetaRad = 0.0f;		 // Joint angle in radians
-		double omegaRad_s = 0.0f;	 // Joint angular velocity in radians per second
-		double eta = 0.0f;			 // 
+		double q   = 0.0f; // Joint angle in radians
+		double qd  = 0.0f; // Joint angular velocity in radians per second
+		double eta = 0.0f; // 
 
 		// Additional dynamics data
-		double torqueNm = 0.0f;		 // Joint torque (N·m)
-		double damping = 0.0f;		 // Joint damping coefficient  (kg·m²/s)
-		double friction = 0.0f;		 // Joint friction coefficient (Coulomb friction - N·m)
-		double effort = 0.0f;		 // Normalized effort (0 to 1)
+		double torqueNm = 0.0f; // Joint torque (N·m)
+		double damping  = 0.0f; // Joint damping coefficient  (kg·m²/s)
+		double friction = 0.0f; // Joint friction coefficient (Coulomb friction - N·m)
+		double effort   = 0.0f; // Normalized effort (0 to 1)
 
 		// Reference data
-		double thetaRefRad = 0.0f;	 // Reference joint angle in radians
-		double omegaRefRad_s = 0.0f;	 // Reference joint angular velocity in radians per second
-		double alphaRefRad_s2 = 0.0f; // Reference joint angular acceleration in radians per second squared
+		double q_ref   = 0.0f; // Reference joint angle in radians
+		double qd_ref  = 0.0f; // Reference joint angular velocity in radians per second
+		double qdd_ref = 0.0f; // Reference joint angular acceleration in radians per second squared
 
 		// Trajectory data
-		double traj_q = 0.0f;		 // Trajectory joint position
-		double traj_qd = 0.0f;		 // Trajectory joint velocity
-		double traj_qdd = 0.0f;		 // Trajectory joint acceleration
-		bool traj_active = false;	 // Trajectory active state for a joint
+		double traj_q    = 0.0f;  // Trajectory joint position
+		double traj_qd   = 0.0f;  // Trajectory joint velocity
+		double traj_qdd  = 0.0f;  // Trajectory joint acceleration
+		bool traj_active = false; // Trajectory active state for a joint
 
 		// Limit clamping flags
-		bool clampTheta = false;	 // Whether the joint angle is clamped to limits
-		bool clampOmega = false;	 // Whether the joint velocity is clamped to limits
+		bool clampTheta = false; // Whether the joint angle is clamped to limits
+		bool clampOmega = false; // Whether the joint velocity is clamped to limits
 	};
 
 	// Struct for a single telemetry sample
 	struct ENGINE_API TelemetrySample {
 		// Timestamp and joint data
-		double timeSec = 0.0;			// Timestamp of the sample in seconds
-		std::vector<JointTelemetry> j;	// Vector of joint telemetry data
+		double timeSec = 0.0;		   // Timestamp of the sample in seconds
+		std::vector<JointTelemetry> j; // Vector of joint telemetry data
 
 		// Summary statistics (precomputed to relieve analysis load)
-		double err_rms = 0.0f;			// RMS error across all joints
-		double err_max = 0.0f;			// Maximum error across all joints
-		int clamp_sum = 0;				// Sum of clamping events across all joints
-		int worst_joint = -1;			// Index of the joint with max |e|
+		double err_rms	= 0.0f;	// RMS error across all joints
+		double err_max	= 0.0f;	// Maximum error across all joints
+		int clamp_theta = 0;	// Sum of angle clamping events across all joints
+		int clamp_omega = 0;	// Sum of velocity clamping events across all joints
+		int clamp_sum	= 0;	// Sum of clamping events across all joints
+		int worst_joint = -1;	// Index of the joint with max |e|
 	};
 
 	// Ring buffer for storing telemetry samples

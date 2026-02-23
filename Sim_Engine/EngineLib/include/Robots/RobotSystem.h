@@ -8,9 +8,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+// Forward declarations
 namespace control { class ENGINE_API TrajectoryManager; }
 
 namespace robots {
+	// Forward declarations
+	class ENGINE_API RobotKinematics;
+	class ENGINE_API RobotDynamics;
+	enum class eTorqueMode;
+
 	// Joint state structure
     struct ENGINE_API JointState {
 		double theta;
@@ -23,24 +29,16 @@ namespace robots {
 		Baseline
 	};
 
-	// Dynamics Mode
-	enum class eTorqueMode {
-		NONE,		// No physics simulation, just kinematics (e.g., for testing, mathematical analysis, or kinematic control)
-		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
-		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
-	};
-
 	class ENGINE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
 
 		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
+		~RobotSystem();
 
         // --- Utility Methods ---
 
         static double clampJointAngle(const RobotJoint& joint, double angleRad);
-        static double wrapToPi(double angleRad);
-        static double wrapRad(double angleRad);
 
         // ---- Accessors ---
 
@@ -58,8 +56,8 @@ namespace robots {
         const std::string& robotName() const { return _robot.name; }
         bool hasRobot() const { return _hasRobot; }
 
+		void setGravity(double g);
 		double getGravity() const { return _gravity; }
-        void setGravity(double g) { _gravity = g; }
 
 		// Get pointer to this RobotSystem
 		const RobotSystem& getRobot() const { return *this; }
@@ -131,13 +129,25 @@ namespace robots {
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
 		void setRole(eRole role) { _role = role; }
 
-		// Set the torque mode for the robot system
-		void setTorqueMode(eTorqueMode mode) { _torqueMode = mode; }
-		eTorqueMode getTorqueMode() const { return _torqueMode; }
+		// Setter and getter the torque mode for the robot system
+		void setTorqueMode(eTorqueMode mode);
+		eTorqueMode getTorqueMode() const { return _robot.torqueMode; }
+
+		// Swap for the current log buffer, returning a ptr to new active buffer
+		robots::JointLogBuffer* claimExportLogBuffer();
+
+		// Method to enable or disable the use of internal log buffers
+		void useInternalLogBuffer(bool enable);
+
+		// Reserve space in the internal log buffers for a certain number of samples (expected)
+		void reserveInternalLogBuffers(size_t expected);
 
 	private:
         void instantiateRobotLinks();
         void buildLinkIndex();
+
+		std::unique_ptr<RobotKinematics> _kinematics;
+		std::unique_ptr<RobotDynamics> _dynamics;
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
@@ -147,32 +157,6 @@ namespace robots {
 		eRole _role = eRole::Simulation;
 
 		spawnFn _loadMeshReturn;
-
-		// Forward kinematics computation
-		std::vector<Pose> computeForwardKinematics_fromState(const VecX& q) const;
-
-		// Compute the full mass matrix M(q) based on the current state and robot configuration
-		mathlib::MatX computeMassMatrix(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
-		// Compute the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(const std::vector<double>& q, const std::vector<Pose>& T_world) const;
-
-		// Computes the control torque for a joint based on the current state, reference, and robot configuration
-		VecX computeAppliedTorques(
-			const std::vector<double>& q,
-			const std::vector<double>& qd,
-			const std::vector<double>& eta,
-			const std::vector<Pose>& T_world,
-			std::vector<double> I_eff,
-			std::vector<double> tau_gravity
-		) const;
-
-		// Compute control and dynamics metrics for a specific joint based on the current state and reference
-		RobotMetrics computeJointMetrics(
-			const RobotJoint& joint, const RobotLink& link, double I_eff,
-			double q, double qd, double eta,
-			double q_ref, double qd_ref, double qdd_ref,
-			double tau_coriolis, double tau_g
-		) const;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;
@@ -189,9 +173,6 @@ namespace robots {
 		mathlib::VecX packRefState() const;
 		void unpackRefState(const mathlib::VecX& xr);
 
-		// Compute state derivatives
-		mathlib::VecX deriv(double t, const mathlib::VecX& x) const;
-
 		// Enforce joint limits after integration
 		void enforceJointLimits(RobotJoint& j);
 
@@ -200,11 +181,7 @@ namespace robots {
 
 		// Robot model, and robot mode
         RobotModel _robot;
-		eTorqueMode _torqueMode = eTorqueMode::NONE;
-
-		// Buffers for logging and reference state (not owned by RobotSystem)
-		robots::JointLogBuffer* _logBuffer = nullptr;
-		robots::TrajRefBuffer*  _refBuffer = nullptr;
+		eTorqueMode _torqueMode = _robot.torqueMode;
 
 		// Flags and precomputed data
         bool _hasRobot = false;
@@ -248,10 +225,21 @@ namespace robots {
 		double _baseYawAcc = 0.0;
 
 		// Tunables
-		double _baseMass = 62.0;          // kg (H1 ≈ 60–65)
+		double _baseMass = 62.0;           // kg (H1 ~60–65)
 		double _baseLinearDamping = 6.0;   // Ns/m
 		double _baseYawDamping = 2.0;      // Nms/rad
 		double _lastBaseForwardForce = 0.0;
+
+		// Double-buffer design
+		std::array<robots::JointLogBuffer, 2> _logBuffers{};
+		std::atomic<int> _activeLogBufIdx{ 0 }; // index of the currently active log buffer for writing (0 or 1)
+		std::mutex _logSwapMutex; // mutex to protect swapping log buffers between simulation and logging thread
+		bool _useInternalLogging = true; // flag to determine whether to use internal log buffers or external one provided by setLogBuffer
+
+		// Pointers to external log and reference buffers (not owned by RobotSystem)
+		robots::JointLogBuffer* _logBuffer = nullptr;
+		robots::TrajRefBuffer* _refBuffer = nullptr;
+
 	};
 } // namespace robot
 

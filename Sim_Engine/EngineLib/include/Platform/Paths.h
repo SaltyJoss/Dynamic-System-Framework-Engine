@@ -1,15 +1,17 @@
 #pragma once
 // File:   Paths.h
 // GitHub: SaltyJoss
+#include "EngineCore.h"
 #include <string>
 #include <filesystem>
 
 namespace paths {
-	void init();
-
-	const std::filesystem::path& root();
-	const std::filesystem::path& assets();
-	const std::filesystem::path& configs();
-	const std::filesystem::path& logs();
-	const std::filesystem::path& runs();
+	/// Initialises the paths system
+	ENGINE_API void init();
+	// Accessors for the various paths used by the application
+	ENGINE_API const std::filesystem::path& root();
+	ENGINE_API const std::filesystem::path& assets();
+	ENGINE_API const std::filesystem::path& configs();
+	ENGINE_API const std::filesystem::path& logs();
+	ENGINE_API const std::filesystem::path& runs();
 } // namespace paths
