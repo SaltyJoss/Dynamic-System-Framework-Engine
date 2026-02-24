@@ -82,7 +82,7 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 ## Roadmap Ideas:
 
 > **IMPORTANT**: <br />
-> As of Release `v0.6.0r-alpha`, I ([@SaltyJoss](https://github.com/SaltyJoss)) will be fully focusing on my dissertation for this project, my other modules, and ultimately finishing my degree. <br />
+> As of Release `v0.7.1r-alpha`, I will be fully focusing on my dissertation for this project, my other modules, and ultimately finishing my degree. <br />
 > Therefore, I most likely will not make any updates until that period is over. <br />
 
 ### Todo List:
