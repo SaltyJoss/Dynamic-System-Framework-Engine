@@ -95,12 +95,15 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
  * [ ] Support `multiple articulated systems` within a single simulation instance
  * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
  * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged)
- * [ ] Seperate physics/mathematics core from the GUI and visualisation layers
+ * [x] Seperate physics/mathematics core from the GUI and visualisation layers
  * [ ] Explore migration to a `CMake-only` build system
  * [ ] Explore `DX11` and `Vulkan` alternatives
  * [ ] Get DSFE to work on `Linux`
  * [ ] Explore `non-x64 systesm` support
  * [ ] Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
+ * [ ] Implement unit tests for each method relevant to numerical analysis.
+ * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`
+ * [ ] Need to look at using CRBA instead of just looping through a mass matrix loop
 
 <br />
 
@@ -137,6 +140,7 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 * [nlohmann Json][Nlohmann-Json-url] for integration of .json files within c++, allowing robots to have defined properties that can be easily retrieved upon loading
 * [HDF5][HDF5-url] for storing structured time-series data from robotic arm simulation runs for post-analysis and comparisons of integration methods performance and stability
 * [stb image][stb-image-url] for lightweight loading of png and jpgs files previously used in cubemaps
+* [SSAO logic][SSAO_url] was taken and derived from [SemiWaker][SemiWaker_url]'s SSAO repo - please remember this for any logic SSAO-related.
 
 <p align="center">(<a href="#readme-top">back to top</a>)</p>
 
@@ -188,3 +192,5 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 [vispa-repo]: https://github.com/AirbusDefenceAndSpace/vispa
 [saltyjoss]: https://github.com/SaltyJoss
 [citation-url]: https://github.com/SaltyJoss/RoboticArm_MathModelling/blob/Main/CITATION.cff
+[SSAO_url]: https://github.com/semiwaker/SSAO_term_project
+[SemiWaker_url]: https://github.com/semiwaker
