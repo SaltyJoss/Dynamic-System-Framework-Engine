@@ -39,6 +39,8 @@ As an independant an extensible final year project, DSFE allows users to:
  * Import external models
  * Design their own DSL scripts
  * Build their own experimental regimes
+ * Run in either batch or GUI mode
+ * Run parallel instances without file restrictions
 
 This open architecture intentionally avoids hidden "Black-Box" abstractions, and instead `favours transparency, reproducibility, and research flexibility`.
 <br />
@@ -57,6 +59,23 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 
 > **Disclaimer:**<br />
 > The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, if you find any major bugs/issues/errors within the software please submit or issue the relevant information. If you wish to reach out, feel free to comment on the repository, or get in touch with [@SaltyJoss](https://github.com/SaltyJoss).
+<!-- RUNNING DSFE -->
+## Running DSFE
+
+### As an executable
+Download and extract the files from the [latest release of DSFE](https://github.com/SaltyJoss/RoboticArm_MathModelling/releases) and run the executable (`Engine.exe` on Windows) as you would any other binary!
+
+### Batch mode (CLI)
+Open a terminal in the extracted release folder and run the engine in ```--batch``` mode to execute a DSL script that automates simulation sweeps.
+
+```bash
+# Show help / usage
+PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe -h
+
+# Example: one of the commands used to run my tests:
+PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t assets/DSLScripts/vispa_report_test_1.dsl --name vispa_rA_t1 --basedt 1/960 --baseint rk4 --dt 1/30,1/60,1/120,1/240,1/480 --int euler,midpoint,heun,ralston,rk4,rk45
+```
+
 <!-- PROJECT INFO -->
 ## Project Info
 
