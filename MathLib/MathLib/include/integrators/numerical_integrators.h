@@ -167,6 +167,7 @@ namespace integration {
 			//return x;
 		}
 
+		// Backward Euler method (implicit, requires solving nonlinear equation)
 		template<typename Func>
 		inline VecX backward_eulerStep(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
@@ -180,6 +181,23 @@ namespace integration {
 				x_new = x + dt * f(t + dt, x_new);
 			}
 			throw std::runtime_error("Backward Euler failed to converge");
+		}
+
+		// Implicit Midpoint method (implicit, requires solving nonlinear equation)
+		template<typename Func>
+		inline VecX implicit_midpointStep(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+			VecX x_new = x; // Initial guess
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Residual
+				if (g.norm() < tol) {
+					return x_new; // Converged
+				}
+				// Simple fixed-point iteration (not the most efficient, but straightforward)
+				x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
+			}
+			throw std::runtime_error("Implicit Midpoint failed to converge");
+			return x;
 		}
 	};
 
