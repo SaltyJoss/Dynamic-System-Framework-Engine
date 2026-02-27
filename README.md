@@ -123,15 +123,15 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
  * [ ] Support `multiple articulated systems` within a single simulation instance
  * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
  * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged)
- * [x] Seperate physics/mathematics core from the GUI and visualisation layers
+ * [x] <s>Seperate `physics/mathematics core` from the `GUI and visualisation layers`</s>
  * [ ] Explore migration to a `CMake-only` build system
  * [ ] Explore `DX11` and `Vulkan` alternatives
  * [ ] Get DSFE to work on `Linux`
  * [ ] Explore `non-x64 systesm` support
  * [ ] Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
- * [ ] Implement unit tests for each method relevant to numerical analysis.
- * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`
- * [ ] Need to look at using CRBA instead of just looping through a mass matrix loop
+ * [ ] Implement `unit tests` for each method relevant to `numerical analysis`
+ * [ ] Implement solution to current `friction model` (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`
+ * [ ] Need to look at using `CRBA` instead of just looping through a mass matrix loop
 
 <br />
 
@@ -178,7 +178,8 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 > AI tool were used in limited and defined ways throughout this project:<br />
 > * Assisstance in finalising PBR and IBL GLSL shader implementations
 > * Debugging support after my own attempts using logical analysis, documentation, academic references, and technical forums
-> * Early-stage resource discovery and outline (e.g. helping identify relevant literature and refine search queries)<br />
+> * Early-stage resource discovery and outline (e.g. helping identify relevant literature and refine search queries)
+>
 > Outside of the GLSL shader implementations, any AI-assisted output was limited to implementation guidance and debugging suggestions. All such suggestions were ritically evaluated and verified prior to usage, with any fixes being developed and implemented by myself.
 
 <!-- PROJECT BADGES -->
