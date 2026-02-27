@@ -45,6 +45,17 @@ As an independant an extensible final year project, DSFE allows users to:
 This open architecture intentionally avoids hidden "Black-Box" abstractions, and instead `favours transparency, reproducibility, and research flexibility`.
 <br />
 
+> **Disclaimer:**<br />
+> The DSFE software has been developed, released, and maintained soley by me([@SaltyJoss](https://github.com/SaltyJoss)). <br />
+> If you identify any significant bugs, logical inconsistencies, implementation errors, or any citation issues, please open an Issue or contact me directly via GitHub.<br />
+> Constructive feedback and technical corrections are welcomed, as they contribute to improving both the software and my understanding of the subject matter.
+
+<!-- Project Motivation -->
+## Project Motivation:
+While DSFE originated as a final-year project, it reflects a sustained interest in computational mathematics, computational physics, and their application to space-oriented dynamical systems.<br />
+I hope that this repository will continue to evolve as the underlying numerical methods, modelling strategies, and experimental frameworks are refined and extended.
+This project forms part of a broader and continuing exploration into how mathematical models govern the behaviour of physically motivated dynamical simulation environments.<br />
+
 <!-- INSTALLATION -->
 ## Installation
 
@@ -57,8 +68,6 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 * <a href="https://github.com/SaltyJoss/RoboticArm_MathModelling/releases">Latest Release of DSFE</a> <br />
 <br />
 
-> **Disclaimer:**<br />
-> The DSFE software has been developed, maintained, and released by [@SaltyJoss](https://github.com/SaltyJoss). As it is still under development, if you find any major bugs/issues/errors within the software please submit or issue the relevant information. If you wish to reach out, feel free to comment on the repository, or get in touch with [@SaltyJoss](https://github.com/SaltyJoss).
 <!-- RUNNING DSFE -->
 ## Running DSFE
 
@@ -101,7 +110,7 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 ## Roadmap Ideas:
 
 > **IMPORTANT**: <br />
-> As of Release `v0.7.1r-alpha`, I will be fully focusing on my dissertation for this project, my other modules, and ultimately finishing my degree. <br />
+> As of Release `v0.7.1r-alpha`, I will be focusing on my dissertation for this project and coursework for my other modules, as I am finishing my degree. <br />
 > Therefore, I most likely will not make any updates until that period is over. <br />
 
 ### Todo List:
@@ -130,7 +139,7 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 <div align="center">
 
 ## Citations
-If you use this software in academic work, please cite it. <br />
+If you use this software in academic work or any published research, please cite it. <br />
 See [`CITATION.cff`][citation-url].
 
 ## License
@@ -162,6 +171,15 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 * [SSAO logic][SSAO_url] was taken and derived from [SemiWaker][SemiWaker_url]'s SSAO repo - please remember this for any logic SSAO-related.
 
 <p align="center">(<a href="#readme-top">back to top</a>)</p>
+
+## Other Disclaimers:
+
+> **AI Usage Disclaimer:**<br />
+> AI tool were used in limited and defined ways throughout this project:<br />
+> * Assisstance in finalising PBR and IBL GLSL shader implementations
+> * Debugging support after my own attempts using logical analysis, documentation, academic references, and technical forums
+> * Early-stage resource discovery and outline (e.g. helping identify relevant literature and refine search queries)<br />
+> Outside of the GLSL shader implementations, any AI-assisted output was limited to implementation guidance and debugging suggestions. All such suggestions were ritically evaluated and verified prior to usage, with any fixes being developed and implemented by myself.
 
 <!-- PROJECT BADGES -->
 [build-shield]: https://img.shields.io/github/actions/workflow/status/SaltyJoss/RoboticArm_MathModelling/build.yml?style=for-the-badge
