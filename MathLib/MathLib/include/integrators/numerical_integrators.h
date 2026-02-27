@@ -166,6 +166,21 @@ namespace integration {
 			throw std::runtime_error("RK45 failed to converge after maximum attempts");
 			//return x;
 		}
+
+		template<typename Func>
+		inline VecX backward_eulerStep(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+			VecX x_new = x; // Initial guess
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
+				if (g.norm() < tol) {
+					return x_new; // Converged
+				}
+				// Simple fixed-point iteration (not the most efficient, but straightforward)
+				x_new = x + dt * f(t + dt, x_new);
+			}
+			throw std::runtime_error("Backward Euler failed to converge");
+		}
 	};
 
 	// Partial Differential Equation (PDE) solvers --> Not going to use really in my current scope, just thought to include for completeness
