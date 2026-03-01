@@ -44,7 +44,9 @@ namespace program_data {
 		Heun,
 		Ralston,
 		RK4,
-		RK45
+		RK45,
+		BackwardEuler,
+		ImplicitMidpoint
 	};
 
 	// Enum for preset colours
