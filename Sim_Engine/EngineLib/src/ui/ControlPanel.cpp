@@ -425,7 +425,7 @@ namespace gui {
         auto currentIntEnum = robot->getIntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
-        static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45"};
+		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Backward Euler", "Implicit Midpoint" };
         const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
 
 		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
