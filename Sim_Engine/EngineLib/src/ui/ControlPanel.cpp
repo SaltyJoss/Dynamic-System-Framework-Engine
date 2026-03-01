@@ -460,6 +460,10 @@ namespace gui {
                         D_INFO("Integrator set to RK4"); break;
                     case integration::eIntegrationMethod::RK45:
 						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
+					case integration::eIntegrationMethod::BackwardEuler:
+						D_INFO("Integrator set to Backward Euler (implicit)"); break;
+					case integration::eIntegrationMethod::ImplicitMidpoint:
+						D_INFO("Integrator set to Implicit Midpoint (implicit)"); break;
                     default:
                         break;
                     }
