@@ -101,13 +101,13 @@ namespace integration {
 
 				// Weights for 4th and 5th order estimates
 				const double b1 = 35.0 / 384.0;
-				const double b2 = 0.0; // not reffed but included for completeness
+				const double b2 = 0.0;
 				const double b3 = 500.0 / 1113.0;
 				const double b4 = 125.0 / 192.0;
 				const double b5 = -2187.0 / 6784.0;
 				const double b6 = 11.0 / 84.0;
 				const double b1s = 5179.0 / 57600.0;
-				const double b2s = 0.0; // not reffed but included for completeness
+				const double b2s = 0.0;
 				const double b3s = 7571.0 / 16695.0;
 				const double b4s = 393.0 / 640.0;
 				const double b5s = -92097.0 / 339200.0;
@@ -165,6 +165,39 @@ namespace integration {
 			// Just putting this here as a policy choice honestly, return the best effort or throw
 			throw std::runtime_error("RK45 failed to converge after maximum attempts");
 			//return x;
+		}
+
+		// Backward Euler method (implicit, requires solving nonlinear equation)
+		template<typename Func>
+		inline VecX backward_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+			VecX x_new = x; // Initial guess
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
+				if (g.norm() < tol) {
+					return x_new; // Converged
+				}
+				// Simple fixed-point iteration (not the most efficient, but straightforward)
+				x_new = x + dt * f(t + dt, x_new);
+			}
+			throw std::runtime_error("Backward Euler failed to converge");
+		}
+
+		// Implicit Midpoint method (implicit, requires solving nonlinear equation)
+		template<typename Func>
+		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+			VecX x_new = x; // Initial guess
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Residual
+				if (g.norm() < tol) {
+					return x_new; // Converged
+				}
+				// Simple fixed-point iteration (not the most efficient, but straightforward)
+				x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
+			}
+			throw std::runtime_error("Implicit Midpoint failed to converge");
+			return x;
 		}
 	};
 

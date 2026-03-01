@@ -169,7 +169,7 @@ namespace integration {
 
 		// Backward Euler method (implicit, requires solving nonlinear equation)
 		template<typename Func>
-		inline VecX backward_eulerStep(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+		inline VecX backward_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
 			for (int iter = 0; iter < maxIter; ++iter) {
@@ -185,7 +185,7 @@ namespace integration {
 
 		// Implicit Midpoint method (implicit, requires solving nonlinear equation)
 		template<typename Func>
-		inline VecX implicit_midpointStep(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
 			for (int iter = 0; iter < maxIter; ++iter) {
