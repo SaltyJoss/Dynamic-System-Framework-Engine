@@ -45,6 +45,10 @@ namespace integration {
 				return "rk4";
 			case eIntegrationMethod::RK45:
 				return "rk45";
+			case eIntegrationMethod::BackwardEuler:
+				return "backward_euler";
+			case eIntegrationMethod::ImplicitMidpoint:
+				return "implicit_midpoint";
 			default:
 				return "Unknown";
 		}
@@ -73,6 +77,8 @@ namespace integration {
 		case eIntegrationMethod::RK45: {
 			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
 		}
+		case eIntegrationMethod::BackwardEuler:    return { _ODE->backward_euler(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, f), dt, dt };
 		default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 			return { _ODE->rk4Step(x, t, dt, f), dt, dt };

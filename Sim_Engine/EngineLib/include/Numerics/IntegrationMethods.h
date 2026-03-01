@@ -7,6 +7,8 @@ namespace integration {
 		Heun = 2,		// Second-Order Runge-Kutta (Heun)
 		Ralston = 3,	// Second-Order Runge-Kutta (Ralston)
 		RK4 = 4,		// Fourth-Order Runge-Kutta 
-		RK45 = 5		// RK45 Method with Adaptive Step Size (Dormand-Prince)
+		RK45 = 5,		// RK45 Method with Adaptive Step Size (Dormand-Prince)
+		BackwardEuler = 6, // Backward Euler Method (implicit)
+		ImplicitMidpoint = 7 // Implicit Midpoint Method (implicit)
 	};
 }
