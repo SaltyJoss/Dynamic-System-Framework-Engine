@@ -77,6 +77,8 @@ namespace integration {
 		case eIntegrationMethod::RK45: {
 			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
 		}
+		// Note: Backward Euler and Implicit Midpoint are currently implemented as fixed step methods for simplicity
+		// These will not work as expected, so please use without real expectatoions until I actually have time to do a full implementation.
 		case eIntegrationMethod::BackwardEuler:    return { _ODE->backward_euler(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, f), dt, dt };
 		default:
