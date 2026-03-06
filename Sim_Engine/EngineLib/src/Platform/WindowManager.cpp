@@ -81,8 +81,6 @@ namespace window {
         _height = height;
         *_header = header;
 
-        LOG_INFO("Window resized: Width=%d, Height=%d", getWidth(), getHeight());
-
         // Context layers
         _renderCntx = std::make_unique<render::OpenGLContext>();
         _renderCntx->init(this);
@@ -124,7 +122,7 @@ namespace window {
     bool GLWindow::shouldClose() const { return glfwWindowShouldClose(_window); }
     void GLWindow::pollEvents() { glfwPollEvents(); }
     void GLWindow::swapBuffers() { glfwSwapBuffers(_window); }
-    void* window::GLWindow::getNativeWin() { return _window; }
+    void* window::GLWindow::getNativeWin() { return static_cast<void*>(_window); }
     void window::GLWindow::setNativeWin(void* window) { _window = static_cast<GLFWwindow*>(window);}
     int window::GLWindow::getWidth() const { return _width; }
     int window::GLWindow::getHeight() const { return _height; }

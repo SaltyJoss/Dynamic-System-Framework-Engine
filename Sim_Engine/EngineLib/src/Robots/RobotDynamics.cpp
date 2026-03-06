@@ -385,6 +385,14 @@ namespace robots {
 			eta[i] = x[i + 2 * n];
 		}
 
+		// Check for state leakage by comparing the input state x with the robot's internal joint states. If they differ significantly, log a warning.
+		for (size_t i = 0; i < n; ++i) {
+			if (std::abs(_robot.joints[i].q - q[i]) > 1e-12) {
+				LOG_INFO("STATE LEAKAGE DETECTED\n");
+				break;
+			}
+		}
+
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(x);
 		// Compute world poses of each joint for inertia calculations

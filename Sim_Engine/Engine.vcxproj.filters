@@ -10,6 +10,10 @@
     <ClCompile Include="Engine\src\BatchMain.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="IntegrationTests\src\ExplicitMethodTests.cpp" />
+    <ClCompile Include="IntegrationTests\src\ImplicitMethodTests.cpp" />
+    <ClCompile Include="IntegrationTests\src\AdaptiveMethodTests.cpp" />
+    <ClCompile Include="IntegrationTests\src\ConvergenceOrderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -89,6 +93,7 @@
     <None Include="assets\shaders\world_grid.vert.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="IntegrationTests\IntegrationTests.vcxproj" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\include\BatchEntry.h">
