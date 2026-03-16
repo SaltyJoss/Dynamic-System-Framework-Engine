@@ -41,6 +41,14 @@ namespace robots {
 			const std::vector<mathlib::Pose>& T_world
 		) const;
 
+		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
+		mathlib::VecX computeCoriolisVector(
+			const std::vector<double>& q,
+			const std::vector<double>& qd,
+			const std::vector<mathlib::Pose>& T_world,
+			const mathlib::MatX& M
+		) const;
+
 		// Computes the gravity torque for a joint based on the current state and robot configuration
 		std::vector<double> computeGravityTorque(
 			const std::vector<double>& q,

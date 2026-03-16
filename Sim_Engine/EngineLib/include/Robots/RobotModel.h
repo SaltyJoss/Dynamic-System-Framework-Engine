@@ -159,7 +159,7 @@ namespace robots {
 		double qd_ref = 0.0f;  // rad/s
 		double qdd_ref = 0.0f; // rad/s^2
 
-		//
+		// --- Control Parameters ---
 		double wn_target = 5.0f;   // rad/s
 		double beta_target = 0.1f;  // overshoot ratio
 		double zeta_target = 1.1f;  // damping ratio

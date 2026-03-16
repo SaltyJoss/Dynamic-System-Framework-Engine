@@ -136,6 +136,52 @@ namespace robots {
 		return M; // [kg*m^2], mass matrix for the robot at configuration q
 	}
 
+	// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
+	mathlib::VecX RobotDynamics::computeCoriolisVector(
+		const std::vector<double>& q,
+		const std::vector<double>& qd,
+		const std::vector<mathlib::Pose>& T_world,
+		const mathlib::MatX& M
+	) const {
+		const size_t n = _robot.joints.size();
+		const double eps = 1e-6; // small value to prevent division by zero
+		std::vector<double> q_eps = q;
+
+		std::vector<MatX> dM_dq(n, MatX::Zero(n, n)); // partial derivatives of M with respect to each joint angle
+
+		// Finite difference approximation of dM/dq for each joint
+		for (size_t k = 0; k < n; ++k) {
+			q_eps = q; // reset to original configuration for each joint perturbation
+			q_eps[k] += eps; // perturb joint k by a small amount
+			VecX x_eps(3 * n); // state vector for kinematics
+
+			// Construct the state vector for the perturbed configuration
+			for (size_t i = 0; i < n; ++i) {
+				x_eps[i] = q_eps[i];
+				x_eps[n + i] = qd[i];
+				x_eps[2 * n + i] = 0.0; // eta is not used for Coriolis computation
+			}
+
+			// Compute forward kinematics for the perturbed state
+			std::vector<Pose> T_world_eps = _kinematics->computeForwardKinematics_fromState(x_eps);
+			MatX M_plus = computeMassMatrix(q_eps, T_world_eps); // mass matrix for the perturbed configuration
+			
+			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
+		}
+
+		// Compute Coriolis and centrifugal bias vector h using Christoffel symbols of the first kind
+		VecX h = VecX::Zero(n);
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t j = 0; j < n; ++j) {
+				for (size_t k = 0; k < n; ++k) {
+					double C_ijk = 0.5 * (dM_dq[k](i, j) + dM_dq[j](i, k) - dM_dq[i](j, k)) * qd[k]; // Christoffel symbol of the first kind for indices (i, j, k)
+					h(i) += C_ijk * qd[j] * qd[k]; // contribution to Coriolis and centrifugal bias for joint i from joints j and k
+				}
+			}
+		}
+		return h; // [Nm], Coriolis and centrifugal bias vector for the robot at configuration q and velocity qd
+	}
+
 	// Computes the gravity torque for a joint based on the current state and robot configuration
 	std::vector<double> RobotDynamics::computeGravityTorque(
 		const std::vector<double>& q,
@@ -385,14 +431,6 @@ namespace robots {
 			eta[i] = x[i + 2 * n];
 		}
 
-		// Check for state leakage by comparing the input state x with the robot's internal joint states. If they differ significantly, log a warning.
-		for (size_t i = 0; i < n; ++i) {
-			if (std::abs(_robot.joints[i].q - q[i]) > 1e-12) {
-				LOG_INFO("STATE LEAKAGE DETECTED\n");
-				break;
-			}
-		}
-
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(x);
 		// Compute world poses of each joint for inertia calculations
@@ -414,6 +452,9 @@ namespace robots {
 
 		// Compute mass matrix M(q)
 		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+
+		// Compute Coriolis bias for active joints
+		VecX h_full = computeCoriolisVector(q, qd, T_world, M_full); // [Nm], full Coriolis and centrifugal torque vector
 
 		// Compute gravity torques for each joint
 		std::vector<double> tau_gravity(n, 0.0);
@@ -441,6 +482,7 @@ namespace robots {
 		MatX M(m, m);
 		VecX tau_r = VecX::Zero(m);
 		VecX G_r = VecX::Zero(m);
+		VecX h_r = VecX::Zero(m);
 
 		// Fill reduced mass matrix and torque vectors for active joints
 		for (size_t r = 0; r < m; ++r) {
@@ -454,7 +496,11 @@ namespace robots {
 				size_t j = active[c];
 				M(r, c) = M_full(i, j);
 			}
+
+			// Fill the reduced Coriolis vector for active joint i
+			h_r[r] = h_full[active[r]];
 		}
+		
 
 		// Debugging info about the mass matrix
 		for (int i = 0; i < M.rows(); ++i) {
@@ -476,7 +522,7 @@ namespace robots {
 			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
 		}
 		else {
-			qdd_r = cod.solve(tau_r - G_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
+			qdd_r = cod.solve(tau_r - G_r - h_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
 		}
 
 		// Expand qdd back to full size, filling zeros for fixed joints
