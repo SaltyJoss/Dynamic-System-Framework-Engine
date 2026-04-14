@@ -415,7 +415,7 @@ namespace robots {
 		return m;
 	}
 
-	// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
+	// Computes the derivative of the state vector (q, qd, eta) based on the current state and robot configurations
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
 		const mathlib::VecX& x

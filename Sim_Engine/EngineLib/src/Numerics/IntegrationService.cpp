@@ -110,7 +110,7 @@ namespace integration {
 		const double t_end = t + dt_try;	 // target end time for this step
 		const double eps = 1e-12 * dt_try; // small epsilon to prevent division by zero
 
-		// Initialize current state and time for the adaptive stepping loop
+		// Initialise current state and time for the adaptive stepping loop
 		VecX x_curr   = x;	  // current state during the adaptive step
 		double t_curr = t;	  // current time during the adaptive step
 		double t_total = 0.0; // total time taken for the step

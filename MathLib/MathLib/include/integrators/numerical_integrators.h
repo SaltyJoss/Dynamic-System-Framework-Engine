@@ -4,7 +4,9 @@
 #include "MathLibAPI.h"
 
 #include "core/Types.h"
+#include <string>
 #include <functional>
+#include <iostream>
 
 using namespace mathlib;
 
@@ -164,28 +166,54 @@ namespace integration {
 			// If it reaches here, it failed to converge after many attempts
 			// Just putting this here as a policy choice honestly, return the best effort or throw
 			throw std::runtime_error("RK45 failed to converge after maximum attempts");
-			//return x;
 		}
 
-		// Backward Euler method (implicit, requires solving nonlinear equation)
+		// Backward Euler method
 		template<typename Func>
-		inline VecX backward_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+		inline VecX backward_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
 			for (int iter = 0; iter < maxIter; ++iter) {
 				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
+
+				// Numerical Jacobian for Newton-Raphson
+				auto J = [&](const VecX& x_guess) -> MatX {
+					const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
+					VecX f_0 = f(t + dt, x_guess);
+
+					int n = (int)x_guess.size();
+					MatX J_full = MatX::Zero(n, n);
+
+					for (int i = 0; i < n; ++i) {
+						VecX x_pert = x_guess;
+						double h = eps_rel * std::max(1.0, std::abs(x_guess(i)));
+						x_pert(i) += h;
+						VecX f_i = f(t + dt, x_pert);
+						J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
+					}
+
+					return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
+					};
+
+				// Newton-Raphson update: x_new = x_new - J^{-1} * g
+				x_new -= J(x_new).ldlt().solve(g); // Solve J * delta = g for delta, then update x_new
+
 				if (g.norm() < tol) {
+					std::cout << "Backward Euler converged in " << iter + 1 << " iterations." << std::endl;
 					return x_new; // Converged
 				}
 				// Simple fixed-point iteration (not the most efficient, but straightforward)
 				x_new = x + dt * f(t + dt, x_new);
+				std::cout << "Backward Euler iteration " << iter + 1 << ", residual norm: " << g.norm() << std::endl;
 			}
+			std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt, x_new)).norm() << std::endl;
 			throw std::runtime_error("Backward Euler failed to converge");
+			// max iterations 
 		}
 
-		// Implicit Midpoint method (implicit, requires solving nonlinear equation)
+		// Implicit Midpoint method
 		template<typename Func>
-		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-6) {
+		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
 			for (int iter = 0; iter < maxIter; ++iter) {
@@ -197,13 +225,14 @@ namespace integration {
 				x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
 			}
 			throw std::runtime_error("Implicit Midpoint failed to converge");
-			return x;
 		}
 	};
 
 	// Partial Differential Equation (PDE) solvers --> Not going to use really in my current scope, just thought to include for completeness
 	class MATHLIB_API PDE {
 	public:
+
+		// Explicit finite difference method for 1D heat equation: u_t = alpha * u_xx
 		inline VecX fdmStep(const VecX& u, double dx, double dt, double alpha) {
 			int n = (int)u.size();
 			VecX u_new = u;
