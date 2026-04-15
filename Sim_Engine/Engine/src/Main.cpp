@@ -50,17 +50,18 @@ int main(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
             std::string arg(argv[i]);
             if (arg == "--about") {
-                std::cout
-                    << "DSFE (Dynamic Systems Framework Engine)\n"
-                    << " > A research-focused simulation engine for numerically modelling dynamic systems with different integration methods (explicit and implicit).\n"
-                    << " > Version 0.7.2r-alpha\n"
-                    << " > Developed by Joss Salton\n";
+                std::cout << "DSFE - Dynamic Systems Framework Engine\n";
                 return 0;
             }
             else if (arg == "--help" || arg == "-h") {
-                std::cout 
-                    << "GUI mode usage:\n"
-                    << " No options to run this version of DSFE";
+                std::cout << "Batch mode usage:\n";
+                std::cout << "  --batch -t <script> [options]\n";
+                std::cout << "Options:\n";
+                std::cout << "  --basedt <value>       Baseline timestep (required)\n";
+                std::cout << "  --baseint <method>    Baseline integrator (required)\n";
+                std::cout << "  --dt <list>           Comma-separated list of timesteps to sweep\n";
+                std::cout << "  --int <list>          Comma-separated list of integrators to sweep\n";
+                std::cout << "  --name <value>        Run name for output organization\n";
                 return 0;
             }
             else if (arg.starts_with("--")) {
@@ -134,30 +135,16 @@ int main(int argc, char** argv) {
             args.runName = argv[++i];
         }
         else if (arg == "--help" || arg == "-h") {
-            std::cout
-                << "Batch mode usage:\n"
-                << "  --batch -t <script> [options]\n"
-                << "Options:\n"
-                << "  --basedt <value>      Baseline timestep (required)\n"
-                << "  --baseint <method>    Baseline integrator (required)\n"
-                << "  --dt <list>           Comma-separated list of timesteps to sweep\n"
-                << "  --int <list>          Comma-separated list of integrators to sweep\n"
-                << "  --name <value>        Run name for output organization\n"
-				<< "----------\n"
-			    << " Supported Integrators:\n"
-                << "  Explicit:\n"
-                << "    > euler\n"
-                << "    > midpoint\n"
-                << "    > heun\n"
-                << "    > ralston\n"
-                << "    > rk4\n"
-                << "    > rk45\n"
-				<< "  Implicit:\n"
-                << "    > implicit euler\n"
-                << "    > implicit midpoint\n"
-                << "----------\n"
-			    << " Example:\n"
-                << " Engine.exe --batch -t tests/balance_test.dsl --basedt 0.01 --baseint rk4 --dt 0.01,0.005,0.001 --int rk4,rk45 --name balance_sweep\n";
+            std::cout << "Batch mode usage:\n";
+            std::cout << "  --batch -t <script> [options]\n";
+            std::cout << "Options:\n";
+            std::cout << "  --basedt <value>      Baseline timestep (required)\n";
+            std::cout << "  --baseint <method>    Baseline integrator (required)\n";
+            std::cout << "  --dt <list>           Comma-separated list of timesteps to sweep\n";
+            std::cout << "  --int <list>          Comma-separated list of integrators to sweep\n";
+            std::cout << "  --name <value>        Run name for output organization\n";
+			std::cout << " Example:\n";
+			std::cout << " Engine.exe --batch -t tests/balance_test.dsl --basedt 0.01 --baseint rk4 --dt 0.01,0.005,0.001 --int rk4,rk45 --name balance_sweep\n";
             return 0;
         }
         else {
