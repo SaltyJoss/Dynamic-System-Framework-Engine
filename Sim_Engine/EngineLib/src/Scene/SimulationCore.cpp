@@ -45,7 +45,7 @@ namespace core {
 	}
 	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
-		printf("CORE DESTROYED\n"); 
+		std::cout << "CORE DESTROYED\n"; 
 	}
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
@@ -278,12 +278,12 @@ namespace core {
 
 		// Clear exported buffer
 		exportBuf->clear();
-		D_RUNTIME("ExportLogs -> export buffer cleared");
 		LOG_INFO("ExportLogs -> export buffer cleared");
-
+		D_RUNTIME("ExportLogs -> export buffer cleared");
+		
 		// Log success
-		D_SUCCESS("ExportLogs -> export completed successfully");
 		LOG_INFO("ExportLogs -> export completed successfully");
+		D_SUCCESS("ExportLogs -> export completed successfully");
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}

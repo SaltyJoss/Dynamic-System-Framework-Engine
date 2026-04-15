@@ -12,11 +12,11 @@ namespace interpreter {
 	// Constructor
 	RunWrapper::RunWrapper(Parser* parser, IStoredProgram* program) : _parser(parser), _program(program) {
 		if (_parser == nullptr) {
-			D_FAIL("RunWrapper initialised with null Parser pointer.");
+			LOG_ERROR("RunWrapper initialised with null Parser pointer.");
 			throw std::invalid_argument("RunWrapper initialised with null Parser pointer.");
 		}
 		if (_program == nullptr) {
-			D_FAIL("RunWrapper initialised with null IStoredProgram pointer.");
+			LOG_ERROR("RunWrapper initialised with null IStoredProgram pointer.");
 			throw std::invalid_argument("RunWrapper initialised with null IStoredProgram pointer.");
 		}
 	}
@@ -24,7 +24,7 @@ namespace interpreter {
 	// Parse and store the program from a code string
 	void RunWrapper::runProgram(const std::string& code) {
 		if (!_program || !_parser) {
-			D_FAIL("RunWrapper has null Parser pointer.");
+			LOG_ERROR("RunWrapper has null Parser pointer.");
 			throw std::runtime_error("RunWrapper has null Parser pointer.");
 		}
 		// Clear any existing program and parse new code

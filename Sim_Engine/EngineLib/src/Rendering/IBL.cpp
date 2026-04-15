@@ -27,7 +27,7 @@ namespace render {
 		if (_irradianceMap)	glDeleteTextures(1, &_irradianceMap);
 		if (_prefilterMap)	glDeleteTextures(1, &_prefilterMap);
 		if (_brdfLUT)		glDeleteTextures(1, &_brdfLUT);
-		LOG_INFO("IBL resources deleted in destructor");
+		//LOG_INFO("IBL resources deleted in destructor");
 
 	}
 

@@ -64,7 +64,7 @@ namespace integration {
 	// Integration method dispatcher
 	StepOut IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
 		if (!f) {
-			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
+			D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
 			return { _ODE->eulerStep(x, t, dt, f), /*dt_taken=*/dt, /*dt_sug=*/dt };
 		}
 

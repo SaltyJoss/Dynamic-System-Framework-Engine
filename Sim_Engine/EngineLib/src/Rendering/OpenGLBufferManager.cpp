@@ -13,7 +13,7 @@
 namespace render {
 	// Creates the VAO, VBO, and EBO for this buffer using the provided vertex and index data
 	void OpenGLVertexIndexBuffer::createBuffers(const std::vector<assets::VertexHolder>& vertices, const std::vector<unsigned int>& indices) {
-		LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
+		//LOG_INFO("Called createBuffers() with %zu vertices and %zu indices", vertices.size(), indices.size());
 
 		glGenVertexArrays(1, &_VAO);
 		glGenBuffers(1, &_EBO);
@@ -40,12 +40,12 @@ namespace render {
 
 		glBindVertexArray(0);
 
-		LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
+		//LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
 	// Deletes the VAO, VBO, and EBO associated with this buffer
 	void OpenGLVertexIndexBuffer::deleteBuffers() {
-		LOG_INFO("Deleting OpenGLVertexIndexBuffer buffers");
+		//LOG_INFO("Deleting OpenGLVertexIndexBuffer buffers");
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
@@ -55,7 +55,7 @@ namespace render {
 		glDeleteBuffers(1, &_VBO);
 		glDeleteVertexArrays(1, &_VAO);
 
-		LOG_INFO("Buffers deleted");
+		//LOG_INFO("Buffers deleted");
 	}
 
 	// Binds the VAO for this buffer, making it active for rendering
@@ -72,7 +72,7 @@ namespace render {
 
 	// Creates the framebuffer and its associated color and depth attachments, with optional MSAA support
 	void OpenGLFrameBuffer::createBuffers(int32_t width, int32_t height, int samples) {
-		LOG_INFO("Creating framebuffer buffers with size %dx%d (samples=%d)", width, height, samples);
+		//LOG_INFO("Creating framebuffer buffers with size %dx%d (samples=%d)", width, height, samples);
 		_width = width;
 		_height = height;
 
@@ -170,9 +170,9 @@ namespace render {
 
 		endSetup();
 
-		LOG_INFO_ONCE("frame tex=%u (samples=%d)", _texID, _samples);
-		LOG_INFO_ONCE("msaaFBO=%u resolveFBO=%u", _msaaFBO, _FBO);
-		LOG_INFO("Framebuffer buffers created successfully");
+		//LOG_INFO_ONCE("frame tex=%u (samples=%d)", _texID, _samples);
+		//LOG_INFO_ONCE("msaaFBO=%u resolveFBO=%u", _msaaFBO, _FBO);
+		//LOG_INFO("Framebuffer buffers created successfully");
 	}
 
 	// Deletes the framebuffer and its associated attachments
@@ -195,7 +195,7 @@ namespace render {
 			_texID = 0;
 			_depthID = 0;
 
-			LOG_INFO("Framebuffer buffers deleted");
+			//LOG_INFO("Framebuffer buffers deleted");
 		}
 		else { LOG_WARN("Attempted to delete framebuffer buffers but none exist"); }
 	}
@@ -216,7 +216,7 @@ namespace render {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
 
-		LOG_INFO_ONCE("FB bind target=%u (msaaFBO=%u resolveFBO=%u samples=%d)", target, _msaaFBO, _FBO, _samples);
+		//LOG_INFO_ONCE("FB bind target=%u (msaaFBO=%u resolveFBO=%u samples=%d)", target, _msaaFBO, _FBO, _samples);
 	}
 
 	// Unbinds the framebuffer, resolving MSAA if necessary, and restores default backbuffer state

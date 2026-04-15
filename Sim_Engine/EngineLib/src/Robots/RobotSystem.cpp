@@ -166,7 +166,7 @@ namespace robots {
 				objs = _loadMeshReturn(fullPath);
 			}
 			else {
-				LOG_WARN("Link %s has no visual meshes defined", link.name.c_str());
+				//LOG_WARN("Link %s has no visual meshes defined", link.name.c_str()); -> dont really have a fix for this as its too early to know if its intentional or not
 				continue;
 			}
 
@@ -585,7 +585,6 @@ namespace robots {
 		_linkIndex.clear();
 		_hasRobot = false;
 
-		LOG_INFO("Old robot model removed");
 		D_WARN("Old robot model removed");
 	}
 

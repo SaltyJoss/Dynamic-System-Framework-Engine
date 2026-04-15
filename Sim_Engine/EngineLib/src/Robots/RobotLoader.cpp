@@ -361,7 +361,7 @@ namespace robots {
 
 		std::ifstream file(filepath);
 		if (!file.is_open()) { 
-			LOG_ERROR("Failed to open JSON file: %s", filepath.c_str()); 
+			LOG_ERROR("Failed to open JSON file: %s", filepath.c_str());
 			D_FAIL("Failed to open JSON file: %s", filepath.c_str());
 			return robot; 
 		}
@@ -399,7 +399,7 @@ namespace robots {
 			robot.baseFrame.block<3, 3>(0, 0) = q.toRotationMatrix();
 			robot.baseFrame.block<3, 1>(0, 3) = t;
 
-			LOG_INFO("Base frame loaded from JSON: translation=(%.3f, %.3f, %.3f), rotation_r	py=(%.3f, %.3f, %.3f)", 
+			LOG_INFO("Base frame loaded from JSON: translation=(%.3f, %.3f, %.3f), rotation_rpy=(%.3f, %.3f, %.3f)", 
 				t.x(), t.y(), t.z(), 
 				r.x(), r.y(), r.z());
 		}
@@ -471,26 +471,21 @@ namespace robots {
 				}
 			}
 
-			LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
-			D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-				joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
-
+			if (abs(joint.limits.minAngle) == abs(joint.limits.maxAngle) && !joint.limits.continuous) {
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
+			}
+			else {
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
+			}
 		}
 
-		// If we forced URDF mid-way, ensure DH is empty
-		if (robot.kinematicsModel == eKinematicsModel::URDF) {
-			robot.dhParams.clear();
-		}
-
-		for (auto& j : robot.joints) {
-			LOG_INFO("%s | type=%d | origin=(%.3f %.3f %.3f)",
-				j.name.c_str(), (int)j.type,
-				j.origin_xyz.x(),
-				j.origin_xyz.y(),
-				j.origin_xyz.z()
-			);
-		}
+		if (robot.kinematicsModel == eKinematicsModel::URDF) { robot.dhParams.clear(); }
 
 		LOG_INFO("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());
 		D_SUCCESS("Robot loaded: %d links, %d joints", (int)robot.links.size(), (int)robot.joints.size());

@@ -33,7 +33,7 @@ TEST("Backward Euler Method", BackwardEuler_ExponentialDecay)
 {
 	VecX x(1); x << 1.0;
 	double dt = 1.0 / 1000, t = 0.0;
-	for (int i = 0; i < 1000; ++i) { x = ode.backward_euler(x, t, dt, impExpDecay); t += dt; }
+	for (int i = 0; i < 1000; ++i) { x = ode.implicit_euler(x, t, dt, impExpDecay); t += dt; }
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < 1e-2, "Backward Euler exponential decay error too large");
 }
 // Linear Decay Test
@@ -41,7 +41,7 @@ TEST("Backward Euler Method", BackwardEuler_LinearDecay)
 {
 	VecX x(1); x << 1.0;
 	double dt = 0.5 / 500, t = 0.0;
-	for (int i = 0; i < 500; ++i) { x = ode.backward_euler(x, t, dt, linearDecay); t += dt; }
+	for (int i = 0; i < 500; ++i) { x = ode.implicit_euler(x, t, dt, linearDecay); t += dt; }
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < 1e-2, "Backward Euler linear decay error too large");
 }
 // Stability Test with Large Time Step
@@ -49,7 +49,7 @@ TEST("Backward Euler Method", BackwardEuler_Stability_LargeStep)
 {
 	VecX x(1); x << 1.0;
 	double dt = 2.0 / 20, t = 0.0;
-	for (int i = 0; i < 20; ++i) { x = ode.backward_euler(x, t, dt, impExpDecay); t += dt; }
+	for (int i = 0; i < 20; ++i) { x = ode.implicit_euler(x, t, dt, impExpDecay); t += dt; }
 	ASSERT_TRUE(x(0) > 0.0,          "Backward Euler should produce positive result for decay");
 	ASSERT_TRUE(x(0) < 1.0,          "Backward Euler result should be less than initial value");
 	ASSERT_TRUE(std::isfinite(x(0)), "Backward Euler result should be finite");

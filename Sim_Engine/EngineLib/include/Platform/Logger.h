@@ -12,7 +12,7 @@
 #include <sstream>
 
 // Log levels for debug panel and sim log
-enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
+enum class LogLevel { Trace, Debug, Info, Export, Warning, Error, Success, Fail, Runtime, Output };
 enum class simLogLevel { Error, Fail, Success, Runtime, Rotate, Translate };
 enum class LogType { General, Simulation };
 
@@ -85,7 +85,14 @@ public:
 	void logInfo(const char* type, const char* format, ...) {
 		va_list args;
 		va_start(args, format);
-		logCentral("INFO", type, format, args);
+		logCentral("INFO", nullptr, format, args);
+		va_end(args);
+	}
+
+	void logExport(const char* type, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		logCentral("EXPORT", nullptr, format, args);
 		va_end(args);
 	}
 
@@ -148,8 +155,14 @@ private:
 		std::tm tm_data;
 		localtime_s(&tm_data, &now_time);
 		std::ostringstream oss;
+
+		std::string contents = level;
+		if (type != nullptr) {
+			contents += ' / ' + type;
+		}
+
 		oss << "[" << std::put_time(&tm_data, "%Y-%m-%d %H:%M:%S") << "] "
-			<< "[" << level << " / " << type << "]: "
+			<< "[" << contents << "]: "
 			<< buffer;
 
 		// Lock for thread safety - construct log line outside lock to minimize lock time

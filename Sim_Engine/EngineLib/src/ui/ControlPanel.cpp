@@ -425,7 +425,7 @@ namespace gui {
         auto currentIntEnum = robot->getIntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
-		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Backward Euler", "Implicit Midpoint" };
+		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint" };
         const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
 
 		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
@@ -460,10 +460,10 @@ namespace gui {
                         D_INFO("Integrator set to RK4"); break;
                     case integration::eIntegrationMethod::RK45:
 						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
-					case integration::eIntegrationMethod::BackwardEuler:
-						D_INFO("Integrator set to Backward Euler (implicit)"); break;
+					case integration::eIntegrationMethod::ImplicitEuler:
+						D_INFO("Integrator set to Implicit Euler"); break;
 					case integration::eIntegrationMethod::ImplicitMidpoint:
-						D_INFO("Integrator set to Implicit Midpoint (implicit)"); break;
+						D_INFO("Integrator set to Implicit Midpoint"); break;
                     default:
                         break;
                     }

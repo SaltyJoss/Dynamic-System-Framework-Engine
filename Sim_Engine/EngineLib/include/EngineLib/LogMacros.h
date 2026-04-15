@@ -15,6 +15,8 @@
 // --------------------------------------------
 // LOG_INFO(fmt, ...)
 //      -> Logs an informational message with file and function context.
+// LOG_EXPORT(fmt, ...)
+//      -> Logs an export-related message with file and function context (e.g., for data export milestones, performance, etc.).
 // LOG_WARN(fmt, ...)
 //      -> Logs a warning message with file and function context.
 // LOG_ERROR(fmt, ...)
@@ -121,6 +123,7 @@ extern ENGINE_API Debug gLog;
 // Global logging macros
 // --------------------------------------------
 #define LOG_INFO(fmt, ...) gLog.logInfo((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_EXPORT(fmt, ...) gLog.logExport((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)).c_str(), fmt, ##__VA_ARGS__)
 #define LOG_WARN(fmt, ...)  gLog.logWarning((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...) gLog.logError((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
 // --------------------------------------------
@@ -132,6 +135,15 @@ extern ENGINE_API Debug gLog;
         if (!_logged) { \
             LOG_INFO(fmt, ##__VA_ARGS__); \
             _logged = true; \
+        } \
+    } while(0)
+// -----
+#define LOG_EXPORT_ONCE(fmt, ...) \
+    do { \
+        static bool _exported = false; \
+        if (!_exported) { \
+            LOG_EXPORT(fmt, ##__VA_ARGS__); \
+            _exported = true; \
         } \
     } while(0)
 // -----
