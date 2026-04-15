@@ -45,8 +45,8 @@ namespace integration {
 				return "rk4";
 			case eIntegrationMethod::RK45:
 				return "rk45";
-			case eIntegrationMethod::BackwardEuler:
-				return "backward_euler";
+			case eIntegrationMethod::ImplicitEuler:
+				return "implicit_euler";
 			case eIntegrationMethod::ImplicitMidpoint:
 				return "implicit_midpoint";
 			default:
@@ -79,7 +79,7 @@ namespace integration {
 		}
 		// Note: Backward Euler and Implicit Midpoint are currently implemented as fixed step methods for simplicity
 		// These will not work as expected, so please use without real expectatoions until I actually have time to do a full implementation.
-		case eIntegrationMethod::BackwardEuler:    return { _ODE->backward_euler(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::ImplicitEuler:    return { _ODE->implicit_euler(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, f), dt, dt };
 		default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));

@@ -502,18 +502,18 @@ namespace robots {
 		}
 		
 
-		// Debugging info about the mass matrix
-		for (int i = 0; i < M.rows(); ++i) {
-			double rowNorm = M.row(i).norm();
-			LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
-		}
+		//// Debugging info about the mass matrix
+		//for (int i = 0; i < M.rows(); ++i) {
+		//	double rowNorm = M.row(i).norm();
+		//	LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
+		//}
 
-		// Debugging info about the reduced system
-		LOG_INFO_ONCE("Reduced system size = %zu", m);
-		double rcond = M.fullPivLu().rcond();
-		LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
-		Eigen::JacobiSVD<MatX> svd(M);
-		LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
+		//// Debugging info about the reduced system
+		//LOG_INFO_ONCE("Reduced system size = %zu", m);
+		//double rcond = M.fullPivLu().rcond();
+		//LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
+		//Eigen::JacobiSVD<MatX> svd(M);
+		//LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
 
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);

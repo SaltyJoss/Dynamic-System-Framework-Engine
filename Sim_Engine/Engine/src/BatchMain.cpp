@@ -21,6 +21,8 @@ static integration::eIntegrationMethod parseMethod(const std::string& name) {
     if (name == "ralston")  return integration::eIntegrationMethod::Ralston;
     if (name == "rk4")      return integration::eIntegrationMethod::RK4;
     if (name == "rk45")     return integration::eIntegrationMethod::RK45;
+    if (name == "implicit_euler") return integration::eIntegrationMethod::ImplicitEuler;
+    if (name == "implicit_midpoint") return integration::eIntegrationMethod::ImplicitMidpoint;
     throw std::runtime_error("Unknown integrator: " + name);
 }
 

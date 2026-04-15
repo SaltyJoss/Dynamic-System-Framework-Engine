@@ -168,71 +168,104 @@ namespace integration {
 			throw std::runtime_error("RK45 failed to converge after maximum attempts");
 		}
 
-		// Backward Euler method
+		// Implicit Euler method
 		template<typename Func>
-		inline VecX backward_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
+		inline VecX implicit_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
+
+			// Numerical Jacobian for Newton-Raphson
+			auto J = [&](const VecX& x_guess) -> MatX {
+				const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
+				VecX f_0 = f(t + dt, x_guess);
+
+				int n = (int)x_guess.size();
+				MatX J_full = MatX::Zero(n, n);
+
+				for (int i = 0; i < n; ++i) {
+					VecX x_pert = x_guess;
+					double h = eps_rel * std::max(1.0, std::abs(x_guess(i)));
+					x_pert(i) += h;
+					VecX f_i = f(t + dt, x_pert);
+					J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
+				}
+
+				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
+			};
+
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
 			for (int iter = 0; iter < maxIter; ++iter) {
 				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
 
-				// Numerical Jacobian for Newton-Raphson
-				auto J = [&](const VecX& x_guess) -> MatX {
-					const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
-					VecX f_0 = f(t + dt, x_guess);
-
-					int n = (int)x_guess.size();
-					MatX J_full = MatX::Zero(n, n);
-
-					for (int i = 0; i < n; ++i) {
-						VecX x_pert = x_guess;
-						double h = eps_rel * std::max(1.0, std::abs(x_guess(i)));
-						x_pert(i) += h;
-						VecX f_i = f(t + dt, x_pert);
-						J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
-					}
-
-					return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
-				};
+				if (g.norm() < tol) {
+					return x_new; // Converged
+				}
 
 				MatX A = J(x_new);
-
 				Eigen::FullPivLU<MatX> lu(A);
 				if (!lu.isInvertible()) {
-					//std::cout << "Warning: Jacobian is singular during Backward Euler iteration " << iter + 1 << std::endl;
-					// Fall back to fixed-point iteration
+					std::cout << "Warning: Jacobian is singular during Backward Euler iteration " << iter + 1 << std::endl;
 					x_new = x + dt * f(t + dt, x_new);
 				} else {
 					VecX delta = lu.solve(-g);
 					x_new += delta;
 				}
 
-				if (g.norm() < tol) {
-					//std::cout << "Backward Euler converged in " << iter + 1 << " iterations." << std::endl;
-					return x_new; // Converged
-				}
-				// Simple fixed-point iteration (not the most efficient, but straightforward)
-				x_new = x + dt * f(t + dt, x_new);
 				//std::cout << "Backward Euler iteration " << iter + 1 << ", residual norm: " << g.norm() << std::endl;
 			}
-			//std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt, x_new)).norm() << std::endl;
+			std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt, x_new)).norm() << std::endl;
 			throw std::runtime_error("Backward Euler failed to converge");
 			// max iterations 
 		}
 
 		// Implicit Midpoint method
 		template<typename Func>
-		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 5, double tol = 1e-6) {
+		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
 			VecX x_new = x; // Initial guess
+
+			// Numerical Jacobian for Newton-Raphson
+			auto J = [&](const VecX& x_guess) -> MatX {
+				const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
+				VecX f_0 = f(t + dt / 2.0, (x + x_guess) / 2.0);
+
+				int n = (int)x_guess.size();
+				MatX J_full = MatX::Zero(n, n);
+
+				for (int i = 0; i < n; ++i) {
+					VecX x_pert = x_guess;
+					double h = eps_rel * std::max(1.0, std::abs(x_guess(i)));
+					x_pert(i) += h;
+					VecX f_i = f(t + dt / 2.0, (x + x_pert) / 2.0);
+					J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
+				}
+
+				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
+			};
+
+
 			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
 			for (int iter = 0; iter < maxIter; ++iter) {
 				VecX g = x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Residual
+
 				if (g.norm() < tol) {
 					return x_new; // Converged
 				}
+
+				MatX A = J(x_new);
+				Eigen::FullPivLU<MatX> lu(A);
+				if (!lu.isInvertible()) {
+					std::cout << "Warning: Jacobian is singular during Implicit Midpoint iteration " << iter + 1 << std::endl;
+					// Fall back to fixed-point iteration
+					x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
+				}
+				else {
+					VecX delta = lu.solve(-g);
+					x_new += delta;
+				}
+
 				// Simple fixed-point iteration (not the most efficient, but straightforward)
 				x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
 			}
+			std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0)).norm() << std::endl;
 			throw std::runtime_error("Implicit Midpoint failed to converge");
 		}
 	};
