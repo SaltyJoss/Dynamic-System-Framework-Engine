@@ -273,16 +273,16 @@ namespace core {
 		}
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
-		LOG_INFO("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
+		LOG_EXPORT("Wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 		D_RUNTIME("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 
 		// Clear exported buffer
 		exportBuf->clear();
-		LOG_INFO("ExportLogs -> export buffer cleared");
+		LOG_EXPORT("Export buffer cleared");
 		D_RUNTIME("ExportLogs -> export buffer cleared");
 		
 		// Log success
-		LOG_INFO("ExportLogs -> export completed successfully");
+		LOG_EXPORT("Export completed successfully");
 		D_SUCCESS("ExportLogs -> export completed successfully");
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));

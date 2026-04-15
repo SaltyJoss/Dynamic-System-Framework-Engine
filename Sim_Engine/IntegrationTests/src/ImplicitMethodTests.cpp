@@ -1,6 +1,6 @@
 // File:   ImplicitMethodTests.cpp
 // GitHub: SaltyJoss
-// Tests for implicit integration methods: Backward Euler, Implicit Midpoint
+// Tests for implicit integration methods: Implicit Euler, Implicit Midpoint
 
 #include "TestHarness.h"
 #include <integrators/numerical_integrators.h>

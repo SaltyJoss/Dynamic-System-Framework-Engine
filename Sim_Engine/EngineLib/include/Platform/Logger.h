@@ -82,14 +82,14 @@ public:
 		va_end(args);
 	}
 
-	void logInfo(const char* type, const char* format, ...) {
+	void logInfo(const char* format, ...) {
 		va_list args;
 		va_start(args, format);
 		logCentral("INFO", nullptr, format, args);
 		va_end(args);
 	}
 
-	void logExport(const char* type, const char* format, ...) {
+	void logExport(const char* format, ...) {
 		va_list args;
 		va_start(args, format);
 		logCentral("EXPORT", nullptr, format, args);
