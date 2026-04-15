@@ -1280,7 +1280,7 @@ namespace gui {
 		if (!hasRobot()) { return false; }
 
 		// Map method enum to string name
-		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint"};
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
 		const std::string methodName = names[static_cast<int>(method)];
 
 		// Replace the integrator method in the script text

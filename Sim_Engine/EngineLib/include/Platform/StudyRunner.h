@@ -30,9 +30,9 @@ public:
 	// Config for a run
 	struct config {
 		integration::eIntegrationMethod method;
-		double dt = 0.0;		// timestep (secs)
-		double len_min = 0.0;	// length of run (mins)
-		std::string tag;		// user-provided id for run
+		double dt;		 // timestep (secs)
+		double len_min;	 // length of run (mins)
+		std::string tag; // user-provided id for run
 	};
 
 	// Factory that creates a full configured SimulationCore for a run (its a fresh instance)

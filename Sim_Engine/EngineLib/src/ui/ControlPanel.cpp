@@ -1299,11 +1299,9 @@ namespace gui {
 			integration::eIntegrationMethod::Heun,
 			integration::eIntegrationMethod::Ralston,
 			integration::eIntegrationMethod::RK4,
-			integration::eIntegrationMethod::RK45,
-			integration::eIntegrationMethod::ImplicitEuler,
-			integration::eIntegrationMethod::ImplicitMidpoint
+			integration::eIntegrationMethod::RK45
 		};
-		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint"};
+		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
 
 		// Clear previous state
 		{
