@@ -18,6 +18,14 @@ namespace ImGui {
 
 		// Push a unique ID for this splitter to avoid conflicts with other widgets
 		PushID(id);
+
+		// Position the invisible button for the splitter
+		if (w <= 0.0f) {
+			ImGui::Dummy(ImVec2(0.0f, thickness));
+			PopID();
+			return *h;
+		}
+
 		InvisibleButton("##hsplit", ImVec2(w, thickness));
 
 		// Handle dragging
@@ -41,7 +49,7 @@ namespace ImGui {
 		}
 
 		// Restore cursor position and ID stack
-		ImGui::Dummy(ImVec2(0, thickness));
+		if (w > 0.0f) { ImGui::Dummy(ImVec2(0, thickness)); }
 		PopID();
 		return *h;
 	}

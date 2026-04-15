@@ -332,8 +332,10 @@ namespace core {
 	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully
 	bool SimulationCore::runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) {
 		// Map method enum to string name, purely for logging purposes
-		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint"};
 		const std::string methodName = names[static_cast<int>(method)];
+
+		LOG_INFO("SimulationCore::runScriptToCompletion -> START method=%s dt=%.6f hasRobot=%d", methodName.c_str(), _dt, (int)hasRobot());
 
 		// Reset robot state
 		_robot->resetRobot();
@@ -363,6 +365,8 @@ namespace core {
 		// enable sim stepping and telemetry for synchronous run
 		startSimulation();
 
+		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime);
+
 		// Run tight simulation loop until program completes
 		const double dt = _dt;
 		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
@@ -371,7 +375,8 @@ namespace core {
 		for (int step = 0; step < maxSteps; ++step) {
 			// Check program completion
 			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
-				break;
+			LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped());
+			break;
 			}
 
 			// Step the program (DSL command execution)
@@ -404,6 +409,8 @@ namespace core {
 		}
 		// Clean up
 		stopSimulation();
+
+		LOG_INFO("SimulationCore::runScriptToCompletion -> stopSimulation called; simTime=%.6f telemetry_samples=%zu", _simTime, _telemetry.ring.size());
 		// Reset run mode to interactive (default)
 		_runMode = eRunMode::Interactive;
 
@@ -412,8 +419,9 @@ namespace core {
 		_simRunning = false;
 		_telemetryBegun = false;
 
-		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
-		return (_telemetry.ring.size() >= 2);
+	D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
+	LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime, _telemetry.ring.size());
+	return (_telemetry.ring.size() >= 2);
 	}
 	
 	// Setter for fixed timestep duration

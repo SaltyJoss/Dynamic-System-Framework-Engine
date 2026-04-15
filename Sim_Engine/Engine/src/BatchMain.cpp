@@ -12,17 +12,26 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 
 // Integration method parser from string (throws if unknown)
 static integration::eIntegrationMethod parseMethod(const std::string& name) {
-    if (name == "euler")    return integration::eIntegrationMethod::Euler;
-    if (name == "midpoint") return integration::eIntegrationMethod::Midpoint;
-    if (name == "heun")     return integration::eIntegrationMethod::Heun;
-    if (name == "ralston")  return integration::eIntegrationMethod::Ralston;
-    if (name == "rk4")      return integration::eIntegrationMethod::RK4;
-    if (name == "rk45")     return integration::eIntegrationMethod::RK45;
-    if (name == "implicit_euler") return integration::eIntegrationMethod::ImplicitEuler;
-    if (name == "implicit_midpoint") return integration::eIntegrationMethod::ImplicitMidpoint;
+    // Normalize input: lower-case, convert spaces and dashes to underscores
+    std::string s;
+    s.reserve(name.size());
+    for (unsigned char c : name) {
+        if (c == ' ' || c == '-') s.push_back('_');
+        else s.push_back(static_cast<char>(std::tolower(c)));
+    }
+
+    if (s == "euler")    return integration::eIntegrationMethod::Euler;
+    if (s == "midpoint") return integration::eIntegrationMethod::Midpoint;
+    if (s == "heun")     return integration::eIntegrationMethod::Heun;
+    if (s == "ralston")  return integration::eIntegrationMethod::Ralston;
+    if (s == "rk4")      return integration::eIntegrationMethod::RK4;
+    if (s == "rk45")     return integration::eIntegrationMethod::RK45;
+    if (s == "implicit_euler" || s == "implicit_euler") return integration::eIntegrationMethod::ImplicitEuler;
+    if (s == "implicit_midpoint" || s == "implicit_midpoint") return integration::eIntegrationMethod::ImplicitMidpoint;
     throw std::runtime_error("Unknown integrator: " + name);
 }
 
@@ -32,7 +41,7 @@ static std::string formatDtForFile(const std::string& raw) {
     out.reserve(raw.size() + 4);
     for (char c : raw) {
         if (c == '.') { out += "p"; }
-        if (c == '/') { out += "over"; }
+        else if (c == '/') { out += "over"; }
         else { out += c; }
     }
     return out;

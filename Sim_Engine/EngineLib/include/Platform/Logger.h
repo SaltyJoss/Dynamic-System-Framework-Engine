@@ -85,14 +85,14 @@ public:
 	void logInfo(const char* type, const char* format, ...) {
 		va_list args;
 		va_start(args, format);
-		logCentral("INFO", nullptr, format, args);
+		logCentral("INFO", type, format, args);
 		va_end(args);
 	}
 
 	void logExport(const char* type, const char* format, ...) {
 		va_list args;
 		va_start(args, format);
-		logCentral("EXPORT", nullptr, format, args);
+		logCentral("EXPORT", type, format, args);
 		va_end(args);
 	}
 
@@ -156,13 +156,8 @@ private:
 		localtime_s(&tm_data, &now_time);
 		std::ostringstream oss;
 
-		std::string contents = level;
-		if (type != nullptr) {
-			contents += ' / ' + type;
-		}
-
 		oss << "[" << std::put_time(&tm_data, "%Y-%m-%d %H:%M:%S") << "] "
-			<< "[" << contents << "]: "
+			<< "[" << level << " / " << type << "]: "
 			<< buffer;
 
 		// Lock for thread safety - construct log line outside lock to minimize lock time

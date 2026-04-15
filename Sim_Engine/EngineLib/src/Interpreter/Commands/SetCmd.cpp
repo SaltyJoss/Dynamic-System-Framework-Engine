@@ -24,7 +24,7 @@ namespace commands {
 		if (s == "ralston")  return IntegratorMethod::Ralston;
 		if (s == "rk4")      return IntegratorMethod::RK4;
 		if (s == "rk45")     return IntegratorMethod::RK45;
-		if (s == "backward_euler") return IntegratorMethod::BackwardEuler;
+		if (s == "implicit_euler") return IntegratorMethod::ImplicitEuler;
 		if (s == "implicit_midpoint") return IntegratorMethod::ImplicitMidpoint;
 		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s.c_str());
 		return IntegratorMethod::Euler;

@@ -1299,9 +1299,11 @@ namespace gui {
 			integration::eIntegrationMethod::Heun,
 			integration::eIntegrationMethod::Ralston,
 			integration::eIntegrationMethod::RK4,
-			integration::eIntegrationMethod::RK45
+			integration::eIntegrationMethod::RK45,
+			integration::eIntegrationMethod::ImplicitEuler,
+			integration::eIntegrationMethod::ImplicitMidpoint
 		};
-		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
+		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint"};
 
 		// Clear previous state
 		{
@@ -1416,7 +1418,7 @@ namespace gui {
 			// sort results into canonical integrator order so UI & CSV are deterministic
 			if (!_comparisonResults.empty()) {
 				// canonical order for display
-				static const std::vector<std::string> canonical = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45" };
+				static const std::vector<std::string> canonical = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint" };
 				std::unordered_map<std::string, int> order;
 				for (int i = 0; i < (int)canonical.size(); ++i) order[canonical[i]] = i;
 				// sort by canonical order if both integrators are known, otherwise keep order of completion
@@ -1769,7 +1771,7 @@ namespace gui {
 		if (ImGui::Button("Compare All Integrators")) { runComparisonAllIntegratorsAsync(); }
 		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::TextDisabled("Runs Euler/Midpoint/Heun/Ralston/RK4/RK45 sequentially");
+		ImGui::TextDisabled("Runs Euler/Midpoint/Heun/Ralston/RK4/RK45/ImplicitEuler/ImplicitMidpoint sequentially");
 		if (!hasScript) {
 			ImGui::SameLine();
 			ImGui::TextDisabled("(run a script first)");

@@ -45,7 +45,7 @@ namespace program_data {
 		Ralston,
 		RK4,
 		RK45,
-		BackwardEuler,
+		ImplicitEuler,
 		ImplicitMidpoint
 	};
 
