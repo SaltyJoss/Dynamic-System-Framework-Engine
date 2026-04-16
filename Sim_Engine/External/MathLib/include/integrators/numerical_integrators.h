@@ -170,8 +170,11 @@ namespace integration {
 
 		// Implicit Euler method
 		template<typename Func>
-		inline VecX implicit_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
-			VecX x_new = x; // Initial guess
+		inline VecX implicit_euler(const VecX& x, double t, double dt, Func&& f, int maxIter = 8, double tol = 1e-6) {
+			VecX x_new = x + dt * f(t, x); // Initial guess
+
+			// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
+			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f(t + dt, x_guess); };
 
 			// Numerical Jacobian for Newton-Raphson
 			auto J = [&](const VecX& x_guess) -> MatX {
@@ -190,22 +193,45 @@ namespace integration {
 				}
 
 				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
-				};
+			};
 
-			// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
-			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f(t + dt, x_guess); };
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
 
-			// Use Newton-Raphson to solve for x_new such that g(x_new) = 0
-			newton_raphson(g, J, x_new, maxIter, tol);
+				// Check for convergence
+				if (g.norm() < tol) {
+					return x_new;
+				}
 
-			x_new = x + dt * f(t + dt, x_new); // Final update using the implicit Euler formula
-			return x_new;
+				// Solve J * delta = -g for the Newton step
+				MatX A = J(x_new);
+				Eigen::FullPivLU<MatX> lu(A);
+
+				// Check if the Jacobian is invertible
+				if (!lu.isInvertible()) {
+					throw std::runtime_error("Jacobian is singular during Implicit Midpoint iteration " + std::to_string(iter + 1));
+				}
+
+				// Update the guess
+				VecX delta = lu.solve(-g);
+				x_new += delta;
+			}
+			throw std::runtime_error(
+				std::string("Implicit Euler failed to converge after ") +
+				std::to_string(maxIter) +
+				" iterations, final residual norm: " +
+				std::to_string((x_new - x - dt * f(t + dt, x_new)).norm())
+			);
 		}
 
 		// Implicit Midpoint method
 		template<typename Func>
-		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
-			VecX x_new = x; // Initial guess
+		inline VecX implicit_midpoint(const VecX& x, double t, double dt, Func&& f, int maxIter = 10, double tol = 1e-7) {
+			VecX x_new = x + dt * f((t + dt) / 2.0, x); // Initial guess
+
+			// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
+			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f((t + dt) / 2.0, (x + x_guess) / 2.0); };
 
 			// Numerical Jacobian for Newton-Raphson
 			auto J = [&](const VecX& x_guess) -> MatX {
@@ -219,170 +245,285 @@ namespace integration {
 					VecX x_pert = x_guess;
 					double h = eps_rel * std::max(1.0, std::abs(x_guess(i)));
 					x_pert(i) += h;
-					VecX f_i = f(t + dt / 2.0, (x + x_pert) / 2.0);
+					VecX f_i = f((t + dt) / 2.0, (x + x_pert) / 2.0);
 					J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
 				}
 
-				return MatX::Identity(n, n) - 0.5 * dt * J_full; // J = I - dt * df/dx
-				};
+				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
+			};
 
-			// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
-			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f(t + dt / 2.0, (x + x_guess) / 2.0); };
+			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX g = x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Residual
 
-			// Use Newton-Raphson to solve for x_new such that g(x_new) = 0
-			newton_raphson(g, J, x_new, maxIter, tol);
+				// Check for convergence
+				if (g.norm() < tol) {
+					return x_new;
+				}
 
-			x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Final update using the implicit midpoint formula
-			return x_new;
+				// Solve J * delta = -g for the Newton step
+				MatX A = J(x_new);
+				Eigen::FullPivLU<MatX> lu(A);
+
+				// Check if the Jacobian is invertible
+				if (!lu.isInvertible()) {
+					throw std::runtime_error("Jacobian is singular during Implicit Midpoint iteration " + std::to_string(iter + 1));
+				}
+
+				// Update the guess
+				VecX delta = lu.solve(-g);
+				x_new += delta;
+			}
+			throw std::runtime_error(
+				std::string("Implicit Midpoint failed to converge after ") +
+				std::to_string(maxIter) +
+				" iterations, final residual norm: " +
+				std::to_string((x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0)).norm())
+			);
 		}
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
 		template<typename Func>
-		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
+		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-8) {
 			size_t n = x.size();
 
 			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
-			const VecX c{ 0.5 - std::sqrt(3.0) / 6.0, 0.5 + std::sqrt(3.0) / 6.0 }; // Stage time fractions
-			const double b = 0.5; // Weights for final update
+			VecX c(2);
+			c << 0.5 - std::sqrt(3.0) / 6.0, 0.5 + std::sqrt(3.0) / 6.0; // Stage time fractions
+
 			Mat2 A = Mat2::Zero();
 			A << 0.25, 0.25 - std::sqrt(3.0) / 6.0,
 				0.25 + std::sqrt(3.0) / 6.0, 0.25;
 
+			const double b = 0.5; // Weights for final update
+
 			// Initial guess for the stage values k1, k2, k3
-			VecX k = VecX::Zero(n * 2); // 3 stages
-			for (int i = 0; i < 2; ++i) {
-				VecX x_i = x + dt * (A(i, 0) * k.segment(0, n) + A(i, 1) * k.segment(n, n)); // Initial guess for stage i
-				k.segment(i * n, n) = f(t + c(i) * dt, x_i);
-			}
+			VecX k = VecX::Zero(2 * n); // 2 stages
+			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
+			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
+			k.segment(0, n) = k1_0;
+			k.segment(n, n) = k2_0;
 
-			// System of equations to solve for the stage values k1, k2:
-			auto g = [&](const VecX& k_guess) {
-				VecX x1_guess = x + dt * (A(0, 0) * k_guess.segment(0, n) + A(0, 1) * k_guess.segment(n, n));
-				VecX x2_guess = x + dt * (A(1, 0) * k_guess.segment(0, n) + A(1, 1) * k_guess.segment(n, n));
-				VecX g1 = k_guess.segment(0, n) - f(t + c(0) * dt, x1_guess);
-				VecX g2 = k_guess.segment(n, n) - f(t + c(1) * dt, x2_guess);
-				VecX g(k_guess.size());
-				g << g1, g2;
-				return g;
-				};
+			auto eval = [&](const VecX& k_guess, VecX& g, MatX& J) {
+				// Extract the stage values k1, k2 from the guess vector
+				VecX k1 = k_guess.segment(0, n);
+				VecX k2 = k_guess.segment(n, n);
+				// Compute the stage points x1, x2 based on the current guess for k1, k2
+				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
+				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
+				// Evaluate f at the stage points
+				VecX f1 = f(t + c(0) * dt, x1);
+				VecX f2 = f(t + c(1) * dt, x2);
 
-			auto J = [&](const VecX& k_guess) { return J_GLRK(k_guess, g); };
+				// Compute the residual g(k) = 0 for the stage equations
+				g.resize(2 * n);
+				g.segment(0, n) = k1 - f1;
+				g.segment(n, n) = k2 - f2;
 
-			newton_raphson(g, J, k, maxIter, tol);
+				// Numerical Jacobian of f with respect to x at the stage points
+				MatX F1 = finite_difference_jacobian(
+					[&](double /*t*/, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); },
+					t + c(0) * dt,
+					x1
+				);
+				MatX F2 = finite_difference_jacobian(
+					[&](double /*t*/, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); },
+					t + c(1) * dt,
+					x2
+				);
 
-			VecX x_f = x + dt * (b * k.segment(0, n) + b * k.segment(n, n));
+				// Jacobian of g with respect to k has a block structure due to the coupling of k1 and k2 through the stages
+				J = MatX::Zero(2 * n, 2 * n);
+				// The Jacobian has a block structure due to the coupling of k1 and k2 through the stages
+				J.block(0, 0, n, n) = MatX::Identity(n, n) - dt * A(0, 0) * F1;
+				J.block(0, n, n, n) = -dt * A(0, 1) * F1;
+				J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
+				J.block(n, n, n, n) = MatX::Identity(n, n) - dt * A(1, 1) * F2;
+			};
+
+			// Solve the nonlinear system for the stage values using Newton-Raphson
+			k = newton_raphson(eval, k, maxIter, tol);
+
+			// Compute the final update for x using the stage values
+			VecX k1 = k.segment(0, n);
+			VecX k2 = k.segment(n, n);
+			VecX x_f = x + dt * b * (k1 + k2);
+
+			// Precautionary check for divergence (NaN or Inf)
+			if (!x_f.allFinite()) { throw std::runtime_error("GLRK2 diverged"); }
+
 			return x_f;
 		}
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-9) {
 			size_t n = x.size();
 
 			// Coefficients for the 3-stage Gauss-Legendre method (6th order)
-			const VecX c{ 0.5 - std::sqrt(15.0) / 10.0, 0.5, 0.5 + std::sqrt(15.0) / 10.0 }; // Stage time fractions
-			const VecX b{ 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0 }; // Weights for final update
+			VecX c(3);
+			c << 0.5 - std::sqrt(15.0) / 10.0, 0.5, 0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
+
 			Mat3 A = Mat3::Zero();
 			A << 5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 1.0 / 36.0 - std::sqrt(15.0) / 30.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 30.0, 2.0 / 9.0 + std::sqrt(15.0) / 15.0, 5.0 / 36.0;
 
+			VecX b(3);
+			b << 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0; // Weights for final update
+
 			// Initial guess for the stage values k1, k2, k3
-			VecX k = VecX::Zero(n * 3); // 3 stages
-			for (int iter = 0; iter < 1; ++iter) { // Picard iteration to refine initial guess
-				for (int i = 0; i < 3; ++i) {
-					VecX x_i = x + dt * (A(i, 0) * k.segment(0, n) + A(i, 1) * k.segment(n, n) + A(i, 2) * k.segment(2 * n, n)); // Initial guess for stage i
-					k.segment(i * n, n) = f(t + c(i) * dt, x_i);
-				}
-			}
+			VecX k = VecX::Zero(3 * n); // 3 stages
+			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
+			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
+			VecX k3_0 = f(t + c(2) * dt, x + 0.5 * (x_pred - x));
+			k.segment(0, n) = k1_0;
+			k.segment(n, n) = k2_0;
+			k.segment(2 * n, n) = k3_0;
 
-			// System of equations to solve for the stage values k1, k2, k3:
-			auto g = [&](const VecX& k_guess) {
-				VecX x1_guess = x + dt * (A(0, 0) * k_guess.segment(0, n) + A(0, 1) * k_guess.segment(n, n) + A(0, 2) * k_guess.segment(2 * n, n));
-				VecX x2_guess = x + dt * (A(1, 0) * k_guess.segment(0, n) + A(1, 1) * k_guess.segment(n, n) + A(1, 2) * k_guess.segment(2 * n, n));
-				VecX x3_guess = x + dt * (A(2, 0) * k_guess.segment(0, n) + A(2, 1) * k_guess.segment(n, n) + A(2, 2) * k_guess.segment(2 * n, n));
-				VecX g1 = k_guess.segment(0, n) - f(t + c(0) * dt, x1_guess);
-				VecX g2 = k_guess.segment(n, n) - f(t + c(1) * dt, x2_guess);
-				VecX g3 = k_guess.segment(2 * n, n) - f(t + c(2) * dt, x3_guess);
-				VecX g(k_guess.size());
-				g << g1, g2, g3;
-				return g;
-				};
+			auto eval = [&](const VecX& k_guess, VecX& g, MatX& J) {
+				// Extract the stage values k1, k2, k3 from the guess vector
+				VecX k1 = k_guess.segment(0, n);
+				VecX k2 = k_guess.segment(n, n);
+				VecX k3 = k_guess.segment(2 * n, n);
+				// Compute the stage points x1, x2, x3 based on the current guess for k1, k2, k3
+				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2 + A(0, 2) * k3);
+				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
+				VecX x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
+				// Evaluate f at the stage points
+				VecX f1 = f(t + c(0) * dt, x1);
+				VecX f2 = f(t + c(1) * dt, x2);
+				VecX f3 = f(t + c(2) * dt, x3);
 
-			// Jacobian of the system g(k) = 0 with respect to k
-			auto J = [&](const VecX& k_guess) { return J_GLRK(k_guess, g); };
+				// Compute the residual g(k) = 0 for the stage equations
+				g.resize(3 * n);
+				g.segment(0, n) = k1 - f1;
+				g.segment(n, n) = k2 - f2;
+				g.segment(2 * n, n) = k3 - f3;
+
+				// Numerical Jacobian of f with respect to x at the stage points
+				MatX F1 = finite_difference_jacobian(
+					[&](double /*t*/, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); },
+					t + c(0) * dt,
+					x1
+				);
+				MatX F2 = finite_difference_jacobian(
+					[&](double /*t*/, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); },
+					t + c(1) * dt,
+					x2
+				);
+				MatX F3 = finite_difference_jacobian(
+					[&](double /*t*/, const VecX& x_pert) { return f(t + c(2) * dt, x_pert); },
+					t + c(2) * dt,
+					x3
+				);
+
+				// Jacobian of g with respect to k has a block structure due to the coupling of k1, k2, k3 through the stages
+				J = MatX::Zero(3 * n, 3 * n);
+				// The Jacobian has a block structure due to the coupling of k1, k2, k3 through the stages
+				J.block(0, 0, n, n) = MatX::Identity(n, n) - dt * A(0, 0) * F1;
+				J.block(0, n, n, n) = -dt * A(0, 1) * F1;
+				J.block(0, 2 * n, n, n) = -dt * A(0, 2) * F1;
+				J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
+				J.block(n, n, n, n) = MatX::Identity(n, n) - dt * A(1, 1) * F2;
+				J.block(n, 2 * n, n, n) = -dt * A(1, 2) * F2;
+				J.block(2 * n, 0, n, n) = -dt * A(2, 0) * F3;
+				J.block(2 * n, n, n, n) = -dt * A(2, 1) * F3;
+				J.block(2 * n, 2 * n, n, n) = MatX::Identity(n, n) - dt * A(2, 2) * F3;
+			};
 
 			// Solve the nonlinear system for the stage values using Newton-Raphson
-			newton_raphson(g, J, k, maxIter, tol);
+			k = newton_raphson(eval, k, maxIter, tol);
 
 			// Compute the final update for x using the stage values
-			VecX x_f = x + dt * (b(0) * k.segment(0, n) + b(1) * k.segment(n, n) + b(2) * k.segment(2 * n, n));
+			VecX k1 = k.segment(0, n);
+			VecX k2 = k.segment(n, n);
+			VecX k3 = k.segment(2 * n, n);
+			VecX x_f = x + dt * (b(0) * k1 + b(1) * k2 + b(2) * k3);
+
+			// Precautionary check for divergence (NaN or Inf)
+			if (!x_f.allFinite()) { throw std::runtime_error("GLRK3 diverged"); }
+
 			return x_f;
 		}
 
 	private:
 
-		// Generic Newton-Raphson solver for systems of nonlinear equations g(k) = 0
-		template<typename G, typename J>
-		VecX newton_raphson(G&& g, J&& Jf, VecX x0, int maxIter, double tol) {
+		// Newton-Raphson solver for systems of nonlinear equations g(x) = 0
+		template<typename Eval>
+		VecX newton_raphson(Eval&& eval, VecX x0, int maxIter, double tol) {
 			VecX x = x0;
 			for (int iter = 0; iter < maxIter; ++iter) {
-				VecX gx = g(x);
-				if (gx.norm() < tol) {
+				VecX g;
+				MatX J;
+
+				eval(x, g, J);
+
+				if (!g.allFinite() || !J.allFinite()) {
+					throw std::runtime_error("Newton received non-finite residual/Jacobian");
+				}
+
+				if (g.norm() < tol) {
 					return x;
 				}
-				MatX Jx = Jf(x);
-				Eigen::FullPivLU<MatX> lu(Jx);
+
+				Eigen::FullPivLU<MatX> lu(J);
 				if (!lu.isInvertible()) {
 					throw std::runtime_error("Jacobian is singular during Newton-Raphson iteration " + std::to_string(iter + 1));
 				}
-				VecX delta = lu.solve(-gx);
+
+				VecX delta = lu.solve(-g);
 
 				double lambda = 1.0; // Line search parameter
-				double norm_gx = gx.norm(); // Norm of the residual before the update
-
+				double norm_g = g.norm();
 				VecX x_trial;
 
 				// Backtracking line search to ensure we are making progress (convergence)
 				while (lambda > 1e-6) {
 					x_trial = x + lambda * delta;
-					VecX gx_trial = g(x_trial);
+
+					VecX g_trial;
+					MatX J_dummy;
+					eval(x_trial, g_trial, J_dummy);
 
 					// Check if the new guess has a smaller residual norm
-					if (gx_trial.norm() < norm_gx) {
+					if (g_trial.norm() < norm_g) {
 						x = x_trial; // Accept the update
 						break;
 					}
 					lambda *= 0.5; // Reduce step size
 				}
-				if (lambda <= 1e-6) {
-					throw std::runtime_error("Line search failed during Newton-Raphson iteration " + std::to_string(iter + 1));
+				if (lambda <= 1e-4) {
+					x += 0.1 * delta;  // force small step instead of failing
 				}
 			}
-			VecX gx = g(x);
-			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations, final residual norm: " + std::to_string(g(x).norm()));
+
+			VecX g_final;
+			MatX J_final;
+			eval(x, g_final, J_final);
+
+			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations, final residual norm: " + std::to_string(g_final.norm()));
 		}
 
-		// Numerical Jacobian for the system g(k) = 0
-		template<typename GFunc>
-		MatX J_GLRK(const VecX& k_guess, GFunc&& g) {
-			// Numerical Jacobian for the system g(k) = 0
+		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
+		template<typename Func>
+		MatX finite_difference_jacobian(Func&& f, double t, const VecX& x) {
 			const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
-			VecX g_0 = g(k_guess);
-			int n = (int)k_guess.size();
-			MatX J_full = MatX::Zero(n, n);
-
-			// Compute the Jacobian matrix using finite differences
+			VecX f_0 = f(t, x);
+			int n = (int)x.size();
+			MatX J = MatX::Zero(f_0.size(), n);
+			// Compute the Jacobian column by column using finite differences
 			for (int i = 0; i < n; ++i) {
-				VecX k_pert = k_guess;
-				double h = eps_rel * std::max(1.0, std::abs(k_guess(i)));
-				k_pert(i) += h;
-				VecX g_i = g(k_pert);
-				J_full.col(i) = (g_i - g_0) / h; // FDA of dg/dk column i
+				VecX x_pert = x;
+				double h = eps_rel * std::max(1.0, std::abs(x(i)));
+				x_pert(i) += h;
+				VecX f_i = f(t, x_pert);
+				J.col(i) = (f_i - f_0) / h;
 			}
-			return J_full;
+			return J;
 		}
-
 	};
 
 	// Partial Differential Equation (PDE) solvers

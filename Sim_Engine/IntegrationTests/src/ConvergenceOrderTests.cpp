@@ -6,6 +6,7 @@
 #include <integrators/numerical_integrators.h>
 #include <cmath>
 #include <functional>
+#include <string>
 
 using namespace mathlib;
 
@@ -25,12 +26,15 @@ namespace {
 
 	// Verifies that the observed convergence order is close to the expected order within a tolerance
 	template<typename StepFn>
-	void verifyOrder(StepFn stepFn, double T, int Nc, double expected, double tol, const char* msg) {
+	void verifyOrder(StepFn stepFn, double T, int Nc, double expected, double tol, const std::string& msg = "") {
 		double ec = computeError(stepFn, T, Nc);
 		double ef = computeError(stepFn, T, Nc * 2);
-		if (ef < 1e-15) return;
+		if (ef < 1e-15) test::assertTrue(false, "Error too small to measure convergence");
 		double observed = std::log2(ec / ef);
-		test::assertTrue(std::abs(observed - expected) < tol, msg);
+		std::string fullMsg;
+		if (!msg.empty()) fullMsg = msg + std::string(", observed: ") + std::to_string(observed);
+		else fullMsg = std::string("Observed order: ") + std::to_string(observed);
+		test::assertTrue(std::abs(observed - expected) < tol, fullMsg.c_str());
 	}
 
 	integration::ODE ode;
@@ -38,32 +42,56 @@ namespace {
 
 // Convergence Order Tests
 // Forward Euler Convergence Order Test
-TEST("Convergence Order", Euler_Order1)
+TEST("Explicit Euler Convergence Order", Euler_Order1)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.eulerStep(x, t, dt, convExpDecay); },
-	1.0, 500, 1.0, 0.3, "Euler should be order 1");
+		1.0, 500, 1.0, 0.3, "Euler should be order 1");
 }
 // Midpoint (RK2) Convergence Order Test
-TEST("Convergence Order", Midpoint_Order2)
+TEST("Explicit Midpoint Convergence Order", Midpoint_Order2)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.midpointStep(x, t, dt, convExpDecay); },
-	1.0, 200, 2.0, 0.3, "Midpoint should be order 2");
+		1.0, 200, 2.0, 0.3, "Midpoint should be order 2");
 }
 // Heun (RK2) Convergence Order Test
-TEST("Convergence Order", Heun_Order2)
+TEST("Heun Convergence Order", Heun_Order2)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.heunStep(x, t, dt, convExpDecay); },
-	1.0, 200, 2.0, 0.3, "Heun should be order 2");
+		1.0, 200, 2.0, 0.3, "Heun should be order 2");
 }
 // Ralston (RK2) Convergence Order Test
-TEST("Convergence Order", Ralston_Order2)
+TEST("Ralston Convergence Order", Ralston_Order2)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.ralstonStep(x, t, dt, convExpDecay); },
-	1.0, 200, 2.0, 0.3, "Ralston should be order 2");
+		1.0, 200, 2.0, 0.3, "Ralston should be order 2");
 }
 // RK4 Convergence Order Test
-TEST("Convergence Order", RK4_Order4)
+TEST("RK4 Convergence Order", RK4_Order4)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.rk4Step(x, t, dt, convExpDecay); },
-	1.0, 50, 4.0, 0.3, "RK4 should be order 4");
+		1.0, 50, 4.0, 0.3, "RK4 should be order 4");
+}
+// Implicit Euler Convergence Order Test
+TEST("Implicit Euler Convergence Order", ImplicitEuler_Order1)
+{
+	verifyOrder([](const VecX& x, double t, double dt) { return ode.implicit_euler(x, t, dt, convExpDecay); },
+		1.0, 500, 1.0, 0.3, "Implicit Euler should be order 1");
+}
+// Implicit Midpoint Convergence Order Test
+TEST("Implicit Midpoint Convergence Order", ImplicitMidpoint_Order2)
+{
+	verifyOrder([](const VecX& x, double t, double dt) { return ode.implicit_midpoint(x, t, dt, convExpDecay); },
+		1.0, 200, 2.0, 0.3, "Implicit Midpoint should be order 2");
+}
+// GLRK2 Convergence Order Test
+TEST("GLRK2 Convergence Order", GLRK2_Order4)
+{
+	verifyOrder([](const VecX& x, double t, double dt) { return ode.GLRK2(x, t, dt, convExpDecay); },
+		1.0, 50, 4.0, 0.3, "GLRK2 should be order 4");
+}
+// GLRK3 Convergence Order Test
+TEST("GLRK3 Convergence Order", GLRK3_Order6)
+{
+	verifyOrder([](const VecX& x, double t, double dt) { return ode.GLRK3(x, t, dt, convExpDecay); },
+		1.0, 50, 6.0, 0.3, "GLRK3 should be order 6");
 }
