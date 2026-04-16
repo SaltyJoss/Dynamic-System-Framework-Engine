@@ -12,9 +12,11 @@ namespace mathlib {
 	using ullong = unsigned long long;
 
 	// Eigen type aliases
+	using Vec2 = Eigen::Vector2d;	// A 2D vector, often used to represent positions, directions, or other 2D quantities in space
 	using Vec3 = Eigen::Vector3d;	// A 3D vector, often used to represent positions, directions, or other 3D quantities in space
 	using Vec4 = Eigen::Vector4d;	// A 4D vector, often used to represent homogeneous coordinates (x, y, z, w) in 3D graphics and transformations
 	using VecX = Eigen::VectorXd;	// A dynamic-size vector, where the number of elements can be determined at runtime
+	using Mat2 = Eigen::Matrix2d;	// A 2x2 matrix, often used to represent linear transformations in 2D space
 	using Mat3 = Eigen::Matrix3d;	// A 3x3 matrix, often used to represent rotations in 3D space
 	using Mat4 = Eigen::Matrix4d;	// A 4x4 matrix, often used to represent transformations (rotation + translation) in 3D space
 	using MatX = Eigen::MatrixXd;	// A dynamic-size matrix, where the number of rows and columns can be determined at runtime

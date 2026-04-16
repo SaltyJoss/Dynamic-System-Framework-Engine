@@ -190,31 +190,16 @@ namespace integration {
 				}
 
 				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
-			};
+				};
 
-			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt, x_new)
-			for (int iter = 0; iter < maxIter; ++iter) {
-				VecX g = x_new - x - dt * f(t + dt, x_new); // Residual
+			// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
+			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f(t + dt, x_guess); };
 
-				if (g.norm() < tol) {
-					return x_new; // Converged
-				}
+			// Use Newton-Raphson to solve for x_new such that g(x_new) = 0
+			newton_raphson(g, J, x_new, maxIter, tol);
 
-				MatX A = J(x_new);
-				Eigen::FullPivLU<MatX> lu(A);
-				if (!lu.isInvertible()) {
-					std::cout << "Warning: Jacobian is singular during Backward Euler iteration " << iter + 1 << std::endl;
-					x_new = x + dt * f(t + dt, x_new);
-				} else {
-					VecX delta = lu.solve(-g);
-					x_new += delta;
-				}
-
-				//std::cout << "Backward Euler iteration " << iter + 1 << ", residual norm: " << g.norm() << std::endl;
-			}
-			std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt, x_new)).norm() << std::endl;
-			throw std::runtime_error("Backward Euler failed to converge");
-			// max iterations 
+			x_new = x + dt * f(t + dt, x_new); // Final update using the implicit Euler formula
+			return x_new;
 		}
 
 		// Implicit Midpoint method
@@ -238,39 +223,169 @@ namespace integration {
 					J_full.col(i) = (f_i - f_0) / h; // Finite difference approximationof df/dx column i
 				}
 
-				return MatX::Identity(n, n) - dt * J_full; // J = I - dt * df/dx
-			};
+				return MatX::Identity(n, n) - 0.5 * dt * J_full; // J = I - dt * df/dx
+				};
 
+			// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
+			auto g = [&](const VecX& x_guess) { return x_guess - x - dt * f(t + dt / 2.0, (x + x_guess) / 2.0); };
 
-			// Simple fixed-point iteration to solve the implicit equation: x_new = x + dt * f(t + dt/2, (x + x_new)/2)
-			for (int iter = 0; iter < maxIter; ++iter) {
-				VecX g = x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Residual
+			// Use Newton-Raphson to solve for x_new such that g(x_new) = 0
+			newton_raphson(g, J, x_new, maxIter, tol);
 
-				if (g.norm() < tol) {
-					return x_new; // Converged
-				}
-
-				MatX A = J(x_new);
-				Eigen::FullPivLU<MatX> lu(A);
-				if (!lu.isInvertible()) {
-					std::cout << "Warning: Jacobian is singular during Implicit Midpoint iteration " << iter + 1 << std::endl;
-					// Fall back to fixed-point iteration
-					x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
-				}
-				else {
-					VecX delta = lu.solve(-g);
-					x_new += delta;
-				}
-
-				// Simple fixed-point iteration (not the most efficient, but straightforward)
-				x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0);
-			}
-			std::cout << "Backward Euler failed to converge after " << maxIter << " iterations, final residual norm" << (x_new - x - dt * f(t + dt / 2.0, (x + x_new) / 2.0)).norm() << std::endl;
-			throw std::runtime_error("Implicit Midpoint failed to converge");
+			x_new = x + dt * f(t + dt / 2.0, (x + x_new) / 2.0); // Final update using the implicit midpoint formula
+			return x_new;
 		}
+
+		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
+		template<typename Func>
+		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
+			size_t n = x.size();
+
+			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
+			const VecX c{ 0.5 - std::sqrt(3.0) / 6.0, 0.5 + std::sqrt(3.0) / 6.0 }; // Stage time fractions
+			const double b = 0.5; // Weights for final update
+			Mat2 A = Mat2::Zero();
+			A << 0.25, 0.25 - std::sqrt(3.0) / 6.0,
+				0.25 + std::sqrt(3.0) / 6.0, 0.25;
+
+			// Initial guess for the stage values k1, k2, k3
+			VecX k = VecX::Zero(n * 2); // 3 stages
+			for (int i = 0; i < 2; ++i) {
+				VecX x_i = x + dt * (A(i, 0) * k.segment(0, n) + A(i, 1) * k.segment(n, n)); // Initial guess for stage i
+				k.segment(i * n, n) = f(t + c(i) * dt, x_i);
+			}
+
+			// System of equations to solve for the stage values k1, k2:
+			auto g = [&](const VecX& k_guess) {
+				VecX x1_guess = x + dt * (A(0, 0) * k_guess.segment(0, n) + A(0, 1) * k_guess.segment(n, n));
+				VecX x2_guess = x + dt * (A(1, 0) * k_guess.segment(0, n) + A(1, 1) * k_guess.segment(n, n));
+				VecX g1 = k_guess.segment(0, n) - f(t + c(0) * dt, x1_guess);
+				VecX g2 = k_guess.segment(n, n) - f(t + c(1) * dt, x2_guess);
+				VecX g(k_guess.size());
+				g << g1, g2;
+				return g;
+				};
+
+			auto J = [&](const VecX& k_guess) { return J_GLRK(k_guess, g); };
+
+			newton_raphson(g, J, k, maxIter, tol);
+
+			VecX x_f = x + dt * (b * k.segment(0, n) + b * k.segment(n, n));
+			return x_f;
+		}
+
+		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
+		template<typename Func>
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 100, double tol = 1e-6) {
+			size_t n = x.size();
+
+			// Coefficients for the 3-stage Gauss-Legendre method (6th order)
+			const VecX c{ 0.5 - std::sqrt(15.0) / 10.0, 0.5, 0.5 + std::sqrt(15.0) / 10.0 }; // Stage time fractions
+			const VecX b{ 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0 }; // Weights for final update
+			Mat3 A = Mat3::Zero();
+			A << 5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 1.0 / 36.0 - std::sqrt(15.0) / 30.0,
+				5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
+				5.0 / 36.0 + std::sqrt(15.0) / 30.0, 2.0 / 9.0 + std::sqrt(15.0) / 15.0, 5.0 / 36.0;
+
+			// Initial guess for the stage values k1, k2, k3
+			VecX k = VecX::Zero(n * 3); // 3 stages
+			for (int iter = 0; iter < 1; ++iter) { // Picard iteration to refine initial guess
+				for (int i = 0; i < 3; ++i) {
+					VecX x_i = x + dt * (A(i, 0) * k.segment(0, n) + A(i, 1) * k.segment(n, n) + A(i, 2) * k.segment(2 * n, n)); // Initial guess for stage i
+					k.segment(i * n, n) = f(t + c(i) * dt, x_i);
+				}
+			}
+
+			// System of equations to solve for the stage values k1, k2, k3:
+			auto g = [&](const VecX& k_guess) {
+				VecX x1_guess = x + dt * (A(0, 0) * k_guess.segment(0, n) + A(0, 1) * k_guess.segment(n, n) + A(0, 2) * k_guess.segment(2 * n, n));
+				VecX x2_guess = x + dt * (A(1, 0) * k_guess.segment(0, n) + A(1, 1) * k_guess.segment(n, n) + A(1, 2) * k_guess.segment(2 * n, n));
+				VecX x3_guess = x + dt * (A(2, 0) * k_guess.segment(0, n) + A(2, 1) * k_guess.segment(n, n) + A(2, 2) * k_guess.segment(2 * n, n));
+				VecX g1 = k_guess.segment(0, n) - f(t + c(0) * dt, x1_guess);
+				VecX g2 = k_guess.segment(n, n) - f(t + c(1) * dt, x2_guess);
+				VecX g3 = k_guess.segment(2 * n, n) - f(t + c(2) * dt, x3_guess);
+				VecX g(k_guess.size());
+				g << g1, g2, g3;
+				return g;
+				};
+
+			// Jacobian of the system g(k) = 0 with respect to k
+			auto J = [&](const VecX& k_guess) { return J_GLRK(k_guess, g); };
+
+			// Solve the nonlinear system for the stage values using Newton-Raphson
+			newton_raphson(g, J, k, maxIter, tol);
+
+			// Compute the final update for x using the stage values
+			VecX x_f = x + dt * (b(0) * k.segment(0, n) + b(1) * k.segment(n, n) + b(2) * k.segment(2 * n, n));
+			return x_f;
+		}
+
+	private:
+
+		// Generic Newton-Raphson solver for systems of nonlinear equations g(k) = 0
+		template<typename G, typename J>
+		VecX newton_raphson(G&& g, J&& Jf, VecX x0, int maxIter, double tol) {
+			VecX x = x0;
+			for (int iter = 0; iter < maxIter; ++iter) {
+				VecX gx = g(x);
+				if (gx.norm() < tol) {
+					return x;
+				}
+				MatX Jx = Jf(x);
+				Eigen::FullPivLU<MatX> lu(Jx);
+				if (!lu.isInvertible()) {
+					throw std::runtime_error("Jacobian is singular during Newton-Raphson iteration " + std::to_string(iter + 1));
+				}
+				VecX delta = lu.solve(-gx);
+
+				double lambda = 1.0; // Line search parameter
+				double norm_gx = gx.norm(); // Norm of the residual before the update
+
+				VecX x_trial;
+
+				// Backtracking line search to ensure we are making progress (convergence)
+				while (lambda > 1e-6) {
+					x_trial = x + lambda * delta;
+					VecX gx_trial = g(x_trial);
+
+					// Check if the new guess has a smaller residual norm
+					if (gx_trial.norm() < norm_gx) {
+						x = x_trial; // Accept the update
+						break;
+					}
+					lambda *= 0.5; // Reduce step size
+				}
+				if (lambda <= 1e-6) {
+					throw std::runtime_error("Line search failed during Newton-Raphson iteration " + std::to_string(iter + 1));
+				}
+			}
+			VecX gx = g(x);
+			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations, final residual norm: " + std::to_string(g(x).norm()));
+		}
+
+		// Numerical Jacobian for the system g(k) = 0
+		template<typename GFunc>
+		MatX J_GLRK(const VecX& k_guess, GFunc&& g) {
+			// Numerical Jacobian for the system g(k) = 0
+			const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
+			VecX g_0 = g(k_guess);
+			int n = (int)k_guess.size();
+			MatX J_full = MatX::Zero(n, n);
+
+			// Compute the Jacobian matrix using finite differences
+			for (int i = 0; i < n; ++i) {
+				VecX k_pert = k_guess;
+				double h = eps_rel * std::max(1.0, std::abs(k_guess(i)));
+				k_pert(i) += h;
+				VecX g_i = g(k_pert);
+				J_full.col(i) = (g_i - g_0) / h; // FDA of dg/dk column i
+			}
+			return J_full;
+		}
+
 	};
 
-	// Partial Differential Equation (PDE) solvers --> Not going to use really in my current scope, just thought to include for completeness
+	// Partial Differential Equation (PDE) solvers
 	class MATHLIB_API PDE {
 	public:
 
