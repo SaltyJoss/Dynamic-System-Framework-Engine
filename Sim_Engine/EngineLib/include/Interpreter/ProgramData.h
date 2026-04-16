@@ -46,7 +46,9 @@ namespace program_data {
 		RK4,
 		RK45,
 		ImplicitEuler,
-		ImplicitMidpoint
+		ImplicitMidpoint,
+		GLRK2,
+		GLRK3
 	};
 
 	// Enum for preset colours

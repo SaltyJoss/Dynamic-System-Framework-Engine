@@ -49,6 +49,10 @@ namespace integration {
 				return "implicit_euler";
 			case eIntegrationMethod::ImplicitMidpoint:
 				return "implicit_midpoint";
+			case eIntegrationMethod::GLRK2:
+				return "glrk2";
+			case eIntegrationMethod::GLRK3:
+				return "glrk3";
 			default:
 				return "Unknown";
 		}
@@ -69,18 +73,20 @@ namespace integration {
 		}
 
 		switch (m) {
+		// Explicit methods
+		//  * currently all explicit methods use fixed step size, apart from RK45 as it is an adaptive method
 		case eIntegrationMethod::Euler:    return { _ODE->eulerStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Midpoint: return { _ODE->midpointStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Heun:     return { _ODE->heunStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Ralston:  return { _ODE->ralstonStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::RK4:      return { _ODE->rk4Step(x, t, dt, f), dt, dt };
-		case eIntegrationMethod::RK45: {
-			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
-		}
-		// Note: Backward Euler and Implicit Midpoint are currently implemented as fixed step methods for simplicity
-		// These will not work as expected, so please use without real expectatoions until I actually have time to do a full implementation.
+		case eIntegrationMethod::RK45:	   return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
+		// Implicit methods
+		//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
 		case eIntegrationMethod::ImplicitEuler:    return { _ODE->implicit_euler(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::GLRK2:			   return { _ODE->GLRK2(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::GLRK3:			   return { _ODE->GLRK3(x, t, dt, f), dt, dt };
 		default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 			return { _ODE->rk4Step(x, t, dt, f), dt, dt };

@@ -16,7 +16,7 @@
 
 // Integration method parser from string (throws if unknown)
 static integration::eIntegrationMethod parseMethod(const std::string& name) {
-    // Normalize input: lower-case, convert spaces and dashes to underscores
+    // Normalise input: lower-case, convert spaces and dashes to underscores
     std::string s;
     s.reserve(name.size());
     for (unsigned char c : name) {
@@ -24,14 +24,18 @@ static integration::eIntegrationMethod parseMethod(const std::string& name) {
         else s.push_back(static_cast<char>(std::tolower(c)));
     }
 
+	// Explicit
     if (s == "euler")    return integration::eIntegrationMethod::Euler;
     if (s == "midpoint") return integration::eIntegrationMethod::Midpoint;
     if (s == "heun")     return integration::eIntegrationMethod::Heun;
     if (s == "ralston")  return integration::eIntegrationMethod::Ralston;
     if (s == "rk4")      return integration::eIntegrationMethod::RK4;
     if (s == "rk45")     return integration::eIntegrationMethod::RK45;
-    if (s == "implicit_euler" || s == "implicit_euler") return integration::eIntegrationMethod::ImplicitEuler;
-    if (s == "implicit_midpoint" || s == "implicit_midpoint") return integration::eIntegrationMethod::ImplicitMidpoint;
+    // Implicit
+    if (s == "implicit_euler")    return integration::eIntegrationMethod::ImplicitEuler;
+    if (s == "implicit_midpoint") return integration::eIntegrationMethod::ImplicitMidpoint;
+	if (s == "glrk2")             return integration::eIntegrationMethod::GLRK2;
+	if (s == "glrk3")             return integration::eIntegrationMethod::GLRK3;
     throw std::runtime_error("Unknown integrator: " + name);
 }
 

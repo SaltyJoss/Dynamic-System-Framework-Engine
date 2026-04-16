@@ -425,7 +425,7 @@ namespace gui {
         auto currentIntEnum = robot->getIntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
-		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint" };
+		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint", "GLRK2", "GLRK3" };
         const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
 
 		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
@@ -464,6 +464,10 @@ namespace gui {
 						D_INFO("Integrator set to Implicit Euler"); break;
 					case integration::eIntegrationMethod::ImplicitMidpoint:
 						D_INFO("Integrator set to Implicit Midpoint"); break;
+					case integration::eIntegrationMethod::GLRK2:
+						D_INFO("Integrator set to GLRK2 (Gauss-Legendre Runge-Kutta 2-stage)"); break;
+					case integration::eIntegrationMethod::GLRK3:
+						D_INFO("Integrator set to GLRK3 (Gauss-Legendre Runge-Kutta 3-stage)"); break;
                     default:
                         break;
                     }
@@ -1301,9 +1305,11 @@ namespace gui {
 			integration::eIntegrationMethod::RK4,
 			integration::eIntegrationMethod::RK45,
 			integration::eIntegrationMethod::ImplicitEuler,
-			integration::eIntegrationMethod::ImplicitMidpoint
+			integration::eIntegrationMethod::ImplicitMidpoint,
+			integration::eIntegrationMethod::GLRK2,
+			integration::eIntegrationMethod::GLRK3
 		};
-		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint"};
+		static const char* names[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint", "GLRK2", "GLRK3" };
 
 		// Clear previous state
 		{
@@ -1418,7 +1424,7 @@ namespace gui {
 			// sort results into canonical integrator order so UI & CSV are deterministic
 			if (!_comparisonResults.empty()) {
 				// canonical order for display
-				static const std::vector<std::string> canonical = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint" };
+				static const std::vector<std::string> canonical = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "ImplicitEuler", "ImplicitMidpoint", "GLRK2", "GLRK3"};
 				std::unordered_map<std::string, int> order;
 				for (int i = 0; i < (int)canonical.size(); ++i) order[canonical[i]] = i;
 				// sort by canonical order if both integrators are known, otherwise keep order of completion
@@ -1771,7 +1777,7 @@ namespace gui {
 		if (ImGui::Button("Compare All Integrators")) { runComparisonAllIntegratorsAsync(); }
 		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::TextDisabled("Runs Euler/Midpoint/Heun/Ralston/RK4/RK45/ImplicitEuler/ImplicitMidpoint sequentially");
+		ImGui::TextDisabled("Runs All integration methods sequentially");
 		if (!hasScript) {
 			ImGui::SameLine();
 			ImGui::TextDisabled("(run a script first)");

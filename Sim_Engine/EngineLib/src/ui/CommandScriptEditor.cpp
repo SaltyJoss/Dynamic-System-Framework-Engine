@@ -618,7 +618,7 @@ namespace gui {
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::TextDisabled("Identifiers & Arguments:");
-			ImGui::TextDisabled("	• \"integrator\" -> args: \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\", \"rk45\"");
+			ImGui::TextDisabled("	• \"integrator\" -> args:\n\t\t\t\t # (Explicit) \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\", \"rk45\"\n\t\t\t\t # (Implicit) \"implicit_euler\", \"implicit_midpoint\", \"glrk2\", \"glrk3\",");
 			ImGui::TextDisabled("	• \"dt\"         -> args: \"numerical val\"");
 			ImGui::TextDisabled("	• \"omega\"      -> args: \"numerical val\"");
 			ImGui::TextDisabled("	• \"colour\"		-> args: \"{0.0-1.0, 0.0-1.0, 0.0-1.0}\", \"#ffffff\", \"red\"");

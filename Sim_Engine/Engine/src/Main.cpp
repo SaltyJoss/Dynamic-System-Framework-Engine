@@ -158,8 +158,10 @@ int main(int argc, char** argv) {
                 << "    > rk4\n"
                 << "    > rk45\n"
                 << "  Implicit:\n"
-                << "    > implicit euler\n"
-                << "    > implicit midpoint\n"
+                << "    > implicit_euler\n"
+                << "    > implicit_midpoint\n"
+                << "    > glrk2\n"
+                << "    > glrk3\n"
                 << "----------\n"
                 << " Example:\n"
                 << " Engine.exe --batch -t tests/balance_test.dsl --basedt 0.01 --baseint rk4 --dt 0.01,0.005,0.001 --int rk4,rk45 --name balance_sweep\n";

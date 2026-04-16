@@ -332,7 +332,7 @@ namespace core {
 	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully
 	bool SimulationCore::runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) {
 		// Map method enum to string name, purely for logging purposes
-		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint"};
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
 		const std::string methodName = names[static_cast<int>(method)];
 
 		LOG_INFO("SimulationCore::runScriptToCompletion -> START method=%s dt=%.6f hasRobot=%d", methodName.c_str(), _dt, (int)hasRobot());
