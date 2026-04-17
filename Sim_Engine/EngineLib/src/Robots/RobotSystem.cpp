@@ -395,12 +395,33 @@ namespace robots {
 
 		tau_g = _dynamics->computeGravityTorque(q, T_world, x);
 
+		// Compute effective inertia for each joint at the new state
+		std::vector<double> I_eff(n, 0.0);
+
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
-			const RobotJoint& j = _robot.joints[i];
-			
-			// Effective inertia for joint i is the (i, i) element of the mass matrix M(q)
-			double I_eff = (j.type == eJointType::FIXED) ? 1.0 : std::max(M_full(i, i), 1e-6);
+			const RobotJoint& joint = _robot.joints[i];
+			// Arbitrary nonzero to avoid divide-by-zero
+			if (joint.type == eJointType::FIXED) {
+				I_eff[i] = 1.0;   
+				continue;
+			}
+
+			// Sum contributions to effective inertia from all links for joint i
+			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
+				I_eff[i] += _dynamics->computeJointInertiaContribution(
+					_robot.joints[i], _robot.links[k],
+					jointWorldPose[i], // pose of joint i in world frame
+					T_world[k]
+				);
+			}
+			// Floor effective inertia to avoid singularities
+			I_eff[i] = std::max(I_eff[i], 1e-6);
+		}
+
+		// Compute and log metrics for each joint at the new state
+		for (size_t i = 0; i < n; ++i) {
+			const auto& j = _robot.joints[i];
 
 			// Compute joint metrics
 			RobotMetrics m = _dynamics->computeJointMetrics(
