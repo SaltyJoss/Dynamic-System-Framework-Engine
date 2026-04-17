@@ -87,6 +87,7 @@ namespace robots {
 
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
+		const double getGravity() const { return _gravity; }
 
 		// Set the timestep for dynamics updates (used for energy calculations and integration)
 		void setDt(double dt) { _dt = dt; }
