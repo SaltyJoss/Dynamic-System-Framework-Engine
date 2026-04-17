@@ -73,6 +73,13 @@ namespace robots {
 		return g; // (4x4)
 	}
 
+	// Helper function to convert std::vector<double> to Eigen::VectorXd
+	static VecX toVecX(const std::vector<double>& a) {
+		VecX v(a.size());
+		for (size_t i = 0; i < a.size(); ++i) { v(i) = a[i]; }
+		return v;
+	}
+
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
@@ -362,45 +369,50 @@ namespace robots {
 
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);
-		std::vector<double> q(n);
-		for (size_t i = 0; i < n; ++i) q[i] = _robot.joints[i].q;
-		tau_g = _dynamics->computeGravityTorque(q, T_world, x);
+		std::vector<double> q(n), qd(n);
+		for (size_t i = 0; i < n; ++i) {
+			q[i] = _robot.joints[i].q;
+			qd[i] = _robot.joints[i].qd;
+		}
+		VecX qd_vec = toVecX(qd);
 
-		// Compute effective inertia for each joint at the new state
-		std::vector<double> I_eff(n, 0.0);
+		// Compute mass matrix M(q)
+		MatX M_full = _dynamics->computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+
+		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
+		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
+
+		// Compute system potential energy at configuration q (relative to gravity)
+		double sys_PE = 0.0;
+		double g = _dynamics->getGravity();
+		for (size_t k = 0; k < _robot.links.size(); ++k) {
+			const RobotLink& link = _robot.links[k];
+			double m = link.inertial.mass;
+			if (m <= 0.0) { continue; }
+			Vec3 com_world = (T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + T_world[k].block<3, 1>(0, 3); // COM position in world frame
+			sys_PE += m * g * com_world.z(); // PE = m * g * h, where h is the height (z) of the COM in world frame
+		}
+
+		tau_g = _dynamics->computeGravityTorque(q, T_world, x);
 
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
-			const RobotJoint& joint = _robot.joints[i];
-			// Arbitrary nonzero to avoid divide-by-zero
-			if (joint.type == eJointType::FIXED) {
-				I_eff[i] = 1.0;   
-				continue;
-			}
-
-			// Sum contributions to effective inertia from all links for joint i
-			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
-				I_eff[i] += _dynamics->computeJointInertiaContribution(
-					_robot.joints[i], _robot.links[k],
-					jointWorldPose[i], // pose of joint i in world frame
-					T_world[k]
-				);
-			}
-			// Floor effective inertia to avoid singularities
-			I_eff[i] = std::max(I_eff[i], 1e-6);
-		}
-
-		// Compute and log metrics for each joint at the new state
-		for (size_t i = 0; i < n; ++i) {
-			const auto& j = _robot.joints[i];
+			const RobotJoint& j = _robot.joints[i];
+			
+			// Effective inertia for joint i is the (i, i) element of the mass matrix M(q)
+			double I_eff = (j.type == eJointType::FIXED) ? 1.0 : std::max(M_full(i, i), 1e-6);
 
 			// Compute joint metrics
 			RobotMetrics m = _dynamics->computeJointMetrics(
-				j, I_eff[i],
+				j, I_eff,
 				j.q, j.qd, j.eta,
 				j.q_ref, j.qd_ref, j.qdd_ref,
 				0.0,tau_g[i], dt
 			);
+
+			m.KE = sys_KE;
+			m.PE = sys_PE;
+			m.E_total = sys_KE + sys_PE;
 
 			// Log metrics to buffer if logging is enabled
 			robots::JointLogBuffer* buf = nullptr;
