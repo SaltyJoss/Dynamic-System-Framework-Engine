@@ -16,6 +16,13 @@ namespace robots {
 		: _robot(robot), _kinematics(std::make_unique<RobotKinematics>(robot)) {
 	}
 
+	// Helper function to convert std::vector<double> to Eigen::VectorXd
+	static VecX toVecX(const std::vector<double>& a) {
+		VecX v(a.size());
+		for (size_t i = 0; i < a.size(); ++i) { v(i) = a[i]; }
+		return v;
+	}
+
 	// Computes the inertia tensor of a robot link
 	mathlib::Mat3 RobotDynamics::computeLinkInertiaTensor(const RobotLink& link) const {
 		const robots::Inertia& I = link.inertial.inertia;
@@ -239,6 +246,7 @@ namespace robots {
 		const std::vector<double>& qd,
 		const std::vector<double>& eta,
 		const std::vector<mathlib::Pose>& /*T_world*/,
+		const double E_kin,
 		std::vector<double> I_eff,
 		std::vector<double> tau_g
 	) const {
@@ -275,6 +283,7 @@ namespace robots {
 					dt()
 				);
 				tau[i] = m.tau;
+				m.E_total = E_kin; // cache kinetic energy in metrics for logging and analysis
 			}
 			break;
 		}
@@ -319,11 +328,11 @@ namespace robots {
 		// Effective inertia
 		m.I_eff = I_eff; // [kg*m^2]
 
-		// Energy metrics
-		m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
-		double P_grav = tau_g * qd; // [W], power due to gravity torque
-		m.PE += -P_grav * dt; // [J], potential energy proxy based on gravity power (scaled down for interpretability)
-		m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
+		//// Energy metrics
+		//m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
+		//double P_grav = tau_g * qd; // [W], power due to gravity torque
+		//m.PE += -P_grav * dt; // [J], potential energy proxy based on gravity power (scaled down for interpretability)
+		//m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
 
 		// Control parameters
 		const double wn = joint.wn_target;	 // [rad/s], natural frequency
@@ -436,22 +445,25 @@ namespace robots {
 		// Compute world poses of each joint for inertia calculations
 		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
 
+		// Compute mass matrix M(q)
+		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+
+		VecX qd_vec = toVecX(qd);
+		double E_kin = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
+
 		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);
 		for (size_t i = 0; i < n; ++i) {
-			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
-				I_eff[i] += computeJointInertiaContribution(
-					_robot.joints[i],
-					_robot.links[k],
-					jointWorldPose[i], // pose of joint i in world frame
-					T_world[k]
-				);
-			}
-			I_eff[i] = std::max(I_eff[i], 1e-6);
+			//for (size_t k = i + 1; k < _robot.links.size(); ++k) {
+			//	I_eff[i] += computeJointInertiaContribution(
+			//		_robot.joints[i],
+			//		_robot.links[k],
+			//		jointWorldPose[i], // pose of joint i in world frame
+			//		T_world[k]
+			//	);
+			//}
+			I_eff[i] = std::max(M_full(i,i), 1e-6);
 		}
-
-		// Compute mass matrix M(q)
-		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute Coriolis bias for active joints
 		VecX h_full = computeCoriolisVector(q, qd, T_world, M_full); // [Nm], full Coriolis and centrifugal torque vector
@@ -466,7 +478,7 @@ namespace robots {
 			// Compute gravity torque
 			tau_gravity = computeGravityTorque(q, T_world, x);
 			// Compute applied torques based on control mode
-			tau = computeAppliedTorques(q, qd, eta, T_world, I_eff, tau_gravity);
+			tau = computeAppliedTorques(q, qd, eta, T_world, E_kin, I_eff, tau_gravity);
 		}
 
 		// Build list of active (non-fixed) joints

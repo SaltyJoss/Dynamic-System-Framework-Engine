@@ -139,7 +139,7 @@ namespace robots {
 		// URDF joint frame (parent → joint)
 		Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
 		Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
-		Quat origin_q{ 1,0,0,0 };         // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
+		Quat origin_q{ 1,0,0,0 };		  // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
 		Vec3 axis{ 0.0, 0.0, 1.0 };
@@ -149,20 +149,20 @@ namespace robots {
 		JointDynamics dynamics;
 
 		// --- State ---
-		double q = 0.0f;	 // rad
-		double qd = 0.0f; // rad/s
-		double torque = 0.0f;	 // Nm or N
-		double eta = 0.0f;		 // Integral state
+		double q = 0.0f;	  // rad
+		double qd = 0.0f;	  // rad/s
+		double torque = 0.0f; // Nm or N
+		double eta = 0.0f;	  // Integral state
 
 		// --- Control ---
-		double q_ref = 0.0f;	 // rad
+		double q_ref = 0.0f;   // rad
 		double qd_ref = 0.0f;  // rad/s
 		double qdd_ref = 0.0f; // rad/s^2
 
 		// --- Control Parameters ---
-		double wn_target = 5.0f;   // rad/s
-		double beta_target = 0.046f;  // overshoot ratio
-		double zeta_target = 0.7f;  // damping ratio
+		double wn_target = 5.0f;	 // rad/s
+		double beta_target = 0.046f; // overshoot ratio
+		double zeta_target = 0.7f;	 // damping ratio
 
 		// --- Precomputed transforms ---
 		Mat4 jointToChildRest = Mat4::Identity();

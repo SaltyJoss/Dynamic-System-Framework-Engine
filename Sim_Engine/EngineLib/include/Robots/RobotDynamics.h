@@ -62,6 +62,7 @@ namespace robots {
 			const std::vector<double>& qd,
 			const std::vector<double>& eta,
 			const std::vector<mathlib::Pose>& T_world,
+			const double E_kin,
 			std::vector<double> I_eff,
 			std::vector<double> tau_gravity
 		) const;
