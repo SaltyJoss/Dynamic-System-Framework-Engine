@@ -543,10 +543,10 @@ namespace robots {
 			qdd[active[r]] = qdd_r[r];
 		}
 
-		LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
-		LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
-		LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
-		LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
+		//LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
+		//LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
+		//LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
+		//LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
 
 		// Fill in derivatives for all joints
 		for (size_t i = 0; i < n; ++i) {
