@@ -74,7 +74,7 @@ namespace render {
 
 		// Free the image data from CPU memory after uploading to GPU
 		stbi_image_free(data);
-		LOG_INFO("Texture loaded from %s (ID: %d, Size: %dx%d, Channels: %d)", path.c_str(), texID, width, height, channels);
+		//LOG_INFO("Texture loaded from %s (ID: %d, Size: %dx%d, Channels: %d)", path.c_str(), texID, width, height, channels);
 		
 		return texID;
 	}

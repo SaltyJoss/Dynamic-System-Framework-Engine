@@ -90,7 +90,7 @@ namespace mesh_import {
             }
         }
 
-        LOG_INFO("OBJ import finished. Vertices: %zu  Indices: %zu", pMesh->_vertices.size(), pMesh->_indices.size());
+        //LOG_INFO("OBJ import finished. Vertices: %zu  Indices: %zu", pMesh->_vertices.size(), pMesh->_indices.size());
         return true;
     }
 }

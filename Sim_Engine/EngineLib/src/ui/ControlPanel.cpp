@@ -266,7 +266,7 @@ namespace gui {
                 ImGui::LoadIniSettingsFromDisk((paths::configs() / "imgui.ini").string().c_str());
             }
 			ImGui::Separator();
-			if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); LOG_INFO("HDR file dialog opened"); }
+			if (ImGui::MenuItem("Load HDR")) { _hdrLoad.Open(); /*LOG_INFO("HDR file dialog opened");*/ }
             ImGui::EndMenu();
         }
 
@@ -286,8 +286,8 @@ namespace gui {
         }
 
         if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); LOG_INFO("File dialog opened"); }
-            if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; LOG_INFO("Robotic Arm Menu Opened"); }
+            if (ImGui::MenuItem("Load Obj")) { _meshLoad.Open(); /*LOG_INFO("File dialog opened");*/ }
+            if (ImGui::MenuItem("Load Robotic Arm")) { _showRobotSelector = true; /*LOG_INFO("Robotic Arm Menu Opened");*/ }
 
             ImGui::Separator();
             const bool canShowResults = (_sim->telemetry().ring.size() >= 2);

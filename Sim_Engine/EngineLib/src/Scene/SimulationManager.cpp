@@ -838,8 +838,8 @@ namespace gui {
 		// 3) Bind the view follow target
 		setViewFollowTarget(view, targetObj, offset);
 
-		LOG_INFO("Follow view=%d bound to joint='%s' -> child='%s' -> obj='%s'",
-			(int)view, jointName.c_str(), jPtr->child.c_str(), targetObj->name.c_str());
+		/*LOG_INFO("Follow view=%d bound to joint='%s' -> child='%s' -> obj='%s'",
+			(int)view, jointName.c_str(), jPtr->child.c_str(), targetObj->name.c_str());*/
 
 		return true;
 	}
@@ -1058,7 +1058,7 @@ namespace gui {
 				v.displayW = 0;
 				v.displayH = 0;
 			}
-			LOG_INFO("Viewport display size updated to %dx%d", vpW, vpH);
+			//LOG_INFO("Viewport display size updated to %dx%d", vpW, vpH);
 		}
 
 		// --- Render + Present ---
@@ -1136,7 +1136,7 @@ namespace gui {
 			v.displayW = 0; v.displayH = 0;
 		}
 
-		LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
+		//LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
 	// Accessor to core's updatePhysics for use in the main application loop
