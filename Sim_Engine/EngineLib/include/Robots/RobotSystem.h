@@ -59,6 +59,24 @@ namespace robots {
 		void setGravity(double g);
 		double getGravity() const { return _gravity; }
 
+		void setNaturalFrequency(double wn) { _wn = wn; }
+		double getNaturalFrequency() const { return _wn; }
+		void resetNaturalFrequencyToTarget() {
+			for (auto& joint : _robot.joints) { joint.wn_target = _wn; }
+		}
+
+		void setDampingRatio(double zeta) { _zeta = zeta; }
+		double getDampingRatio() const { return _zeta; }
+		void resetDampingRatioToTarget() {
+			for (auto& joint : _robot.joints) { joint.zeta_target = _zeta; }
+		}
+
+		void setOvershootRatio(double beta) { _beta = beta; }
+		double getOvershootRatio() const { return _beta; }
+		void resetOvershootRatioToTarget() {
+			for (auto& joint : _robot.joints) { joint.beta_target = _beta; }
+		}
+
 		// Get pointer to this RobotSystem
 		const RobotSystem& getRobot() const { return *this; }
 
@@ -157,6 +175,10 @@ namespace robots {
 		eRole _role = eRole::Simulation;
 
 		spawnFn _loadMeshReturn;
+
+		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
+		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
+		double _beta = 0.0; // configurable overshoot ratio for PD control (unitless)
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;

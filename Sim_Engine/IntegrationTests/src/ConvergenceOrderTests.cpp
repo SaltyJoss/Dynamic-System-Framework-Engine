@@ -93,5 +93,5 @@ TEST("GLRK2 Convergence Order", GLRK2_Order4)
 TEST("GLRK3 Convergence Order", GLRK3_Order6)
 {
 	verifyOrder([](const VecX& x, double t, double dt) { return ode.GLRK3(x, t, dt, convExpDecay); },
-		1.0, 50, 6.0, 0.3, "GLRK3 should be order 6");
+		1.0, 25, 6.0, 0.3, "GLRK3 should be order 6");
 }

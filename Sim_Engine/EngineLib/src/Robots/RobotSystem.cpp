@@ -485,6 +485,9 @@ namespace robots {
 	// Method to load a robot model by name
 	void RobotSystem::loadRobot(const std::string& name) {
 		clearRobot();
+		resetNaturalFrequencyToTarget();
+		resetDampingRatioToTarget();
+		resetOvershootRatioToTarget();
 
 		// Construct path to robot JSON file
 		const std::filesystem::path jsonPath = paths::assets() / "objects" / "Robotic_Arm_Models" / name / (name + ".json");

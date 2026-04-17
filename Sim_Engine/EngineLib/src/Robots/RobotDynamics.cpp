@@ -332,7 +332,7 @@ namespace robots {
 
 		// Compute PID gains
 		double k_p = m.I_eff * wn * wn;		 // [Nm/rad],     proportional gain
-		double k_i = b * k_p * wn;			 // [Nm/(rad*s)], integral gain
+		double k_i = 0.0;			 // [Nm/(rad*s)], integral gain
 		double k_d = 2.0 * z * m.I_eff * wn; // [Nm/(rad/s)], derivative gain
 
 		// Integral term with anti-windup

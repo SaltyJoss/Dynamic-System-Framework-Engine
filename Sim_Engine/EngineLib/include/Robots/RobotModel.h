@@ -161,8 +161,8 @@ namespace robots {
 
 		// --- Control Parameters ---
 		double wn_target = 5.0f;   // rad/s
-		double beta_target = 0.1f;  // overshoot ratio
-		double zeta_target = 1.1f;  // damping ratio
+		double beta_target = 0.046f;  // overshoot ratio
+		double zeta_target = 0.7f;  // damping ratio
 
 		// --- Precomputed transforms ---
 		Mat4 jointToChildRest = Mat4::Identity();
