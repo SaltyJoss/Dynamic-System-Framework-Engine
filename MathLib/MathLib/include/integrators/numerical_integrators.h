@@ -284,7 +284,7 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
 		template<typename Func>
-		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 12, double tol = 1e-7) {
+		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-8) {
 			size_t n = x.size();
 
 			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
@@ -299,8 +299,9 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(2 * n); // 2 stages
-			VecX k1_0 = f(t + c(0) * dt, x); // Initial guess for stage 1
-			VecX k2_0 = f(t + c(1) * dt, x); // Initial guess for stage 2
+			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
+			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
 			k.segment(0, n) = k1_0;
 			k.segment(n, n) = k2_0;
 
@@ -342,7 +343,7 @@ namespace integration {
 				};
 
 			// Solve the nonlinear system for the stage values using Newton-Raphson
-			newton_raphson(eval, k, maxIter, tol);
+			k = newton_raphson(eval, k, maxIter, tol);
 
 			// Compute the final update for x using the stage values
 			VecX k1 = k.segment(0, n);
@@ -357,7 +358,7 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 15, double tol = 1e-6) {
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-9) {
 			size_t n = x.size();
 
 			// Coefficients for the 3-stage Gauss-Legendre method (6th order)
@@ -374,9 +375,10 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(3 * n); // 3 stages
-			VecX k1_0 = f(t + c(0) * dt, x); // Initial guess for stage 1
-			VecX k2_0 = f(t + c(1) * dt, x); // Initial guess for stage 2
-			VecX k3_0 = f(t + c(2) * dt, x); // Initial guess for stage 3
+			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
+			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
+			VecX k3_0 = f(t + c(2) * dt, x + 0.5 * (x_pred - x));
 			k.segment(0, n) = k1_0;
 			k.segment(n, n) = k2_0;
 			k.segment(2 * n, n) = k3_0;
@@ -433,7 +435,7 @@ namespace integration {
 				};
 
 			// Solve the nonlinear system for the stage values using Newton-Raphson
-			newton_raphson(eval, k, maxIter, tol);
+			k = newton_raphson(eval, k, maxIter, tol);
 
 			// Compute the final update for x using the stage values
 			VecX k1 = k.segment(0, n);
@@ -493,8 +495,8 @@ namespace integration {
 					}
 					lambda *= 0.5; // Reduce step size
 				}
-				if (lambda <= 1e-6) {
-					throw std::runtime_error("Line search failed during Newton-Raphson iteration " + std::to_string(iter + 1));
+				if (lambda <= 1e-4) {
+					x += 0.1 * delta;  // force small step instead of failing
 				}
 			}
 
