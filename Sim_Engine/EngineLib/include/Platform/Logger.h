@@ -12,7 +12,7 @@
 #include <sstream>
 
 // Log levels for debug panel and sim log
-enum class LogLevel { Trace, Debug, Info, Warning, Error, Success, Fail, Runtime, Output };
+enum class LogLevel { Trace, Debug, Info, Export, Warning, Error, Success, Fail, Runtime, Output };
 enum class simLogLevel { Error, Fail, Success, Runtime, Rotate, Translate };
 enum class LogType { General, Simulation };
 
@@ -89,6 +89,13 @@ public:
 		va_end(args);
 	}
 
+	void logExport(const char* type, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		logCentral("EXPORT", type, format, args);
+		va_end(args);
+	}
+
 	void logWarning(const char* type, const char* format, ...) {
 		va_list args;
 		va_start(args, format);
@@ -148,6 +155,7 @@ private:
 		std::tm tm_data;
 		localtime_s(&tm_data, &now_time);
 		std::ostringstream oss;
+
 		oss << "[" << std::put_time(&tm_data, "%Y-%m-%d %H:%M:%S") << "] "
 			<< "[" << level << " / " << type << "]: "
 			<< buffer;

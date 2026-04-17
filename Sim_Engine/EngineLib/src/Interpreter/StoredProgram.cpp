@@ -13,7 +13,7 @@
 namespace interpreter {
 	StoredProgram::StoredProgram(core::ISimulationCore* core)
 		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
-		// If necessary, set a default object by querying core->getObject()
+		// If necessary, can set a default object by querying core->getObject()
 		if (_core) {
 			scene::Object* obj = _core->getObject();
 			_cntx.motion().setDefaultObjectID(obj ? obj->id : scene::ObjectID::INVALID_OBJECT_ID);
@@ -27,7 +27,6 @@ namespace interpreter {
 	// Add a command to the program
 	void StoredProgram::add(std::unique_ptr<commands::ICommand> cmd) {
 		if (cmd == nullptr) {
-			D_FAIL("Attempted to add null command to StoredProgram.");
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
 		}
 
@@ -40,7 +39,6 @@ namespace interpreter {
 	// Add a command to the program
 	void StoredProgram::add(commands::ICommand* cmd) {
 		if (cmd == nullptr) {
-			D_FAIL("Attempted to add null command to StoredProgram.");
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
 		}
 		cmd->setContext(_cntx.motion());
@@ -184,12 +182,12 @@ namespace interpreter {
 		if (_core) {
 			if (_core->hasRobot()) {
 				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
+				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
 				robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 			}
 
 			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
+			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return; }
 			phys->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
@@ -216,12 +214,12 @@ namespace interpreter {
 		if (_core) {
 			if (_core->hasRobot()) {
 				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { D_FAIL("No robot system found in simulation manager."); return; }
+				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
 				robot->setGravity(gravity);
 			}
 			 
 			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { D_FAIL("No physics system found in simulation manager."); return; }
+			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return; }
 			phys->setGravity(mathlib::Vec3(0.0f, 0.0f, static_cast<float>(gravity)));
 		}
 	}
@@ -230,12 +228,12 @@ namespace interpreter {
 		if (_core) {
 			if (_core->hasRobot()) {
 				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { D_FAIL("No robot system found in simulation manager."); return _gravity; }
+				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return _gravity; }
 				return robot->getGravity();
 			}
 
 			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { D_FAIL("No physics system found in simulation manager."); return _gravity; }
+			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return _gravity; }
 			return phys->getGravity().y();
 		}
 		return _gravity;
@@ -245,7 +243,7 @@ namespace interpreter {
 	void StoredProgram::setColour(mathlib::Vec3 rgb) {
 		_rgb = rgb;
 		if (_core) {
-			D_WARN("This method has not been integrated with the rendering system yet, so it has no effect.");
+			LOG_WARN("This method has not been integrated with the rendering system yet, so it has no effect.");
 		    // _core->setShaderAlbedo(toGlm(rgb));
 			// D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
 		}

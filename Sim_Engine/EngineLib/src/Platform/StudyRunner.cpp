@@ -43,6 +43,50 @@ static int findReadyIndex(std::vector<std::future<StudyResult>>& futures) {
 
 // Run a batch of studies in parallel using the script string as the "run" for each sim, returning the results when all are complete
 std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& configs, const std::string& scriptText) {
+	// If concurrency is 1 or less, run synchronously on the current thread to avoid thread-related init issues
+	if (_maxConcurrency <= 1) {
+		std::vector<StudyResult> results;
+		results.reserve(configs.size());
+		for (size_t i = 0; i < configs.size(); ++i) {
+			const config& cfg = configs[i];
+			StudyResult result{};
+			result.tag = cfg.tag;
+			result.dt = cfg.dt;
+			try {
+				printf("StudyRunner: running sync for tag='%s' dt=%.6f", cfg.tag.c_str(), cfg.dt);
+				auto simCore = _makeCore();
+				if (!simCore) {
+					result.success = false; result.intName = "N/A"; result.simTime = 0.0; result.samples = 0;
+					printf("StudyRunner: failed to create SimulationCore for tag='%s'", cfg.tag.c_str());
+					results.push_back(result);
+					continue;
+				}
+				simCore->setRunTag(cfg.tag);
+				simCore->setFixedDt(cfg.dt);
+				simCore->setIntegrationMethod(cfg.method);
+
+				auto program = std::make_unique<interpreter::StoredProgram>(simCore.get());
+				interpreter::Parser parser(program.get());
+				parser.parse(scriptText);
+				program->start();
+
+				bool ok = simCore->runScriptToCompletion(program.get(), cfg.method);
+				result.success = ok;
+				result.intName = simCore->integrationMethodName();
+				result.simTime = simCore->simTime();
+				try { result.samples = simCore->telemetrySampleCount(); } catch (...) { result.samples = 0; }
+				printf("StudyRunner: sync finished for tag='%s' success=%d simTime=%.3f samples=%zu", cfg.tag.c_str(), (int)ok, result.simTime, result.samples);
+				results.push_back(result);
+			}
+			catch (const std::exception& e) {
+				printf("StudyRunner: exception in sync run for tag='%s': %s", cfg.tag.c_str(), e.what());
+				result.success = false; result.intName = "exception"; result.simTime = 0.0; result.samples = 0;
+				results.push_back(result);
+			}
+		}
+		return results;
+	}
+
 	std::vector<std::future<StudyResult>> futures; // Vector to hold the futures for each async run
 	futures.reserve(configs.size());
 	
@@ -67,48 +111,60 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 		}
 
 		// Start a new async run for this config, capturing the current config and program by value to make sure they are safely used in the async context
+		printf("StudyRunner: scheduling async run for tag='%s' dt=%.6f", cfg.tag.c_str(), cfg.dt);
 		futures.push_back(std::async(std::launch::async,
 			[this, cfg, script = scriptText]() -> StudyResult {
 				StudyResult result{};
 				result.tag = cfg.tag;
 				result.dt = cfg.dt;
 
-				auto simCore = _makeCore();
+				try {
+					printf("StudyRunner: async start for tag='%s'", cfg.tag.c_str());
+					auto simCore = _makeCore();
 				// If we couldn't create a SimulationCore, return a failed result immediately
-				if (!simCore) {
+					if (!simCore) {
+						result.success = false;
+						result.intName = "N/A";
+						result.simTime = 0.0;
+						result.samples = 0;
+						printf("StudyRunner: failed to create SimulationCore for tag='%s'", cfg.tag.c_str());
+						return result;
+					}
+					// Configure the SimulationCore for this run before building the program
+					simCore->setRunTag(cfg.tag);
+					simCore->setFixedDt(cfg.dt);
+					simCore->setIntegrationMethod(cfg.method);
+
+					// Create a program and parser for this run, bound to the SimulationCore we just created
+				auto program = std::make_unique<interpreter::StoredProgram>(simCore.get());
+				interpreter::Parser parser(program.get());
+				// Parse the script text to build the program for this run
+				parser.parse(script);
+				// start it
+				program->start();
+
+					// Run synchronously (blocking inside thread)
+					bool ok = simCore->runScriptToCompletion(program.get(), cfg.method); // Run the provided program/script to completion with method, blocking until it finishes.
+					printf("StudyRunner: async finished for tag='%s' success=%d simTime=%.3f samples=%zu", cfg.tag.c_str(), (int)ok, simCore->simTime(), simCore->telemetrySampleCount());
+					// Get telemetry data for results
+					result.success = ok;
+					result.intName = simCore->integrationMethodName(); // Get the name of the current integration method for reporting
+					result.simTime = simCore->simTime(); // Get the total simulation time that elapsed during this run
+					// Telemetry sample count is implementation-defined -> guarded for availability
+					try { result.samples = simCore->telemetrySampleCount(); }
+					// If telemetry is not available or throws an exception, it is caught and samples to 0 to indicate no data was collected
+					catch (...) { result.samples = 0; }
+
+					return result; // Return the result of this study run
+				}
+				catch (const std::exception& e) {
+					printf("StudyRunner: exception in async run for tag='%s': %s", cfg.tag.c_str(), e.what());
 					result.success = false;
-					result.intName = "N/A";
+					result.intName = "exception";
 					result.simTime = 0.0;
 					result.samples = 0;
 					return result;
 				}
-				// Configure the SimulationCore for this run before building the program
-				simCore->setRunTag(cfg.tag);
-				simCore->setFixedDt(cfg.dt);
-				simCore->setIntegrationMethod(cfg.method);
-
-				// Create a program and parser for this run, bound to the SimulationCore we just created
-				auto program = std::make_unique<interpreter::StoredProgram>(simCore.get());
-				interpreter::Parser parser(program.get());
-				// Parse the script text to build the program for this run, and start it
-				parser.parse(script);
-				program->start();
-
-				// Run synchronously (blocking inside thread)
-				bool ok = simCore->runScriptToCompletion(program.get(), cfg.method); // Run the provided program/script to completion with method, blocking until it finishes.
-				// NOTE: This is where the actual study run happens, it is block because it is inside the async thread, so it will not block the main thread (OR other runs), and allows DSFE to have multiple runs in parallel!!! <- EXACTLY what I want
-
-				// Get telemetry data for results
-				result.success = ok;
-				result.intName = simCore->integrationMethodName(); // Get the name of the current integration method for reporting
-				result.simTime = simCore->simTime(); // Get the total simulation time that elapsed during this run
-				// Telemetry sample count is implementation-defined -> guarded for availability
-				try { result.samples = simCore->telemetrySampleCount(); }
-				// If telemetry is not available or throws an exception, it is caught and samples to 0 to indicate no data was collected
-				catch (...) { result.samples = 0; }
-
-				// Get the number of telemetry samples collected during this run (proxy for how much data we obtained)
-				return result; // Return the result of this study run
 			}));
 	}
 

@@ -526,7 +526,7 @@ namespace gui {
 			TextInlineColored(DESC_COL, "# Sets a trajectory for robotic arm joint (J_i) of some type with parameters");
 			ImGui::TextDisabled("Types and parameters:");
 			ImGui::TextDisabled("	• <type>: TRAP, SINE, MSINE");
-			ImGui::TextDisabled("	• TRAP, <params...>: q1(°), vmax(°/s), amax(°/s²)");
+			ImGui::TextDisabled("	• TRAP, <params...>: q(°), vmax(°/s), amax(°/s²)");
 			ImGui::TextDisabled("	• SINE, <params...>:  duration(s), center(°), amp(°), freq(Hz) [, phase(°)]");
 			ImGui::TextDisabled("	• MSINE, <params...>: duration(s), center(°) amp1(°), f1(Hz), ph1(°), amp2, f2, ph2, ...");
 			ImGui::EndTooltip();
@@ -618,7 +618,7 @@ namespace gui {
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::TextDisabled("Identifiers & Arguments:");
-			ImGui::TextDisabled("	• \"integrator\" -> args: \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\", \"rk45\"");
+			ImGui::TextDisabled("	• \"integrator\" -> args:\n\t\t\t\t # (Explicit) \"euler\", \"midpoint\", \"heun\", \"ralston\", \"rk4\", \"rk45\"\n\t\t\t\t # (Implicit) \"implicit_euler\", \"implicit_midpoint\", \"glrk2\", \"glrk3\",");
 			ImGui::TextDisabled("	• \"dt\"         -> args: \"numerical val\"");
 			ImGui::TextDisabled("	• \"omega\"      -> args: \"numerical val\"");
 			ImGui::TextDisabled("	• \"colour\"		-> args: \"{0.0-1.0, 0.0-1.0, 0.0-1.0}\", \"#ffffff\", \"red\"");

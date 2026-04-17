@@ -44,7 +44,6 @@ namespace render {
 
 	// Initialize OpenGL context and create GLFW window
 	bool render::OpenGLContext::init(window::IWindow* window) {
-		LOG_INFO("init() Called!");
 		__super::init(window);
 
 		if (!window->getWidth() || !window->getHeight()) {
@@ -91,8 +90,6 @@ namespace render {
 		}
 
 		glEnable(GL_DEPTH_TEST);
-		LOG_INFO("GL_DEPTH_TEST enabled");
-
 		return true;
 	}
 
@@ -112,6 +109,5 @@ namespace render {
 	void render::OpenGLContext::end() {
 		glfwDestroyWindow((GLFWwindow*)_window->getNativeWin());
 		glfwTerminate();
-		LOG_INFO("GLFW window destroyed and context terminated successfully.");
 	}
 }
