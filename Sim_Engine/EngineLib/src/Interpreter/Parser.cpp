@@ -229,7 +229,7 @@ namespace interpreter {
 					size_t close = innerLine.rfind(')');
 
 					if (open == std::string_view::npos || close == std::string_view::npos || close < open) {
-						D_FAIL("Invalid DSL syntax in parallel block (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+						LOG_ERROR("Invalid DSL syntax in parallel block (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
 						_program->stop(); return;
 					}
 
@@ -240,7 +240,7 @@ namespace interpreter {
 
 					if (requiresIdentifier(cmd.cmdName)) {
 						if (parts.empty()) {
-							D_FAIL("Command '%s' requires identifier inside parallel (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+							LOG_ERROR("Command '%s' requires identifier inside parallel (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
 							_program->stop(); return;
 						}
 						cmd.identifier = std::string(toLower(parts[0]));
@@ -256,7 +256,7 @@ namespace interpreter {
 				}
 
 				if (braceDepth != 0) {
-					D_FAIL("parallel block missing closing '}'");
+					LOG_ERROR("parallel block missing closing '}'");
 					_program->stop(); 
 					return;
 				}
@@ -283,7 +283,7 @@ namespace interpreter {
 
 				// Validate positions
 				if (open == std::string_view::npos || close == std::string_view::npos || close < open) {
-					D_WARN("Invalid DSL syntax (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+					LOG_WARN("Invalid DSL syntax (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
 					_program->stop();
 					return;
 				}
@@ -291,7 +291,7 @@ namespace interpreter {
 				// Extract command name
 				cmd.cmdName = std::string(toLower(trim(line.substr(0, open))));
 				if (cmd.cmdName.empty()) {
-					D_WARN("Missing command name (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
+					LOG_WARN("Missing command name (line %d): %s", cmd.lineNumber, cmd.rawLine.c_str());
 					_program->stop();
 					return;
 				}
@@ -303,7 +303,7 @@ namespace interpreter {
 				// Process parts based on whether an identifier is required
 				if (requiresIdentifier(cmd.cmdName)) {
 					if (parts.empty()) {
-						D_WARN("Command '%s' requires an identifier (line %d): %s", cmd.cmdName.c_str(), cmd.lineNumber, cmd.rawLine.c_str());
+						LOG_WARN("Command '%s' requires an identifier (line %d): %s", cmd.cmdName.c_str(), cmd.lineNumber, cmd.rawLine.c_str());
 						_program->stop();
 						return;
 					}
@@ -315,7 +315,7 @@ namespace interpreter {
 					cmd.tokens = std::move(parts);
 				}
 
-				LOG_INFO("PARSE cmdName='%s' raw='%s'", cmd.cmdName.c_str(), cmd.rawLine.c_str());
+				//LOG_INFO("PARSE cmdName='%s' raw='%s'", cmd.cmdName.c_str(), cmd.rawLine.c_str());
 
 				_programData.cmd.push_back(std::move(cmd)); // Store the command
 			}
@@ -342,7 +342,7 @@ namespace interpreter {
 				auto group = std::make_unique<commands::ParallelGroupCmd>(commands::ParallelGroupCmd::Policy::All, std::move(innerCmds), cmd.timeoutSec );
 				_program->add(std::move(group));
 
-				LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
+				//LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
 				continue;
 			}
 			buildCommand(cmd);
@@ -351,21 +351,21 @@ namespace interpreter {
 
 	void Parser::buildCommand(Command& cmd) {
 		if (cmd.cmdName.empty()) {
-			D_WARN("Invalid command fields at line %d", cmd.lineNumber);
+			LOG_WARN("Invalid command fields at line %d", cmd.lineNumber);
 			_program->stop();
 			return;
 		}
 
 		// Prepare identifier and tokens
 		if (requiresIdentifier(cmd.cmdName) && cmd.identifier.empty()) {
-			D_FAIL("Command '%s' requires an identifier (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+			LOG_ERROR("Command '%s' requires an identifier (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
 			_program->stop();
 			return;
 		}
 
 		// Check if command is registered
 		if (!commands::CommandFactory::Instance().hasCommand(cmd.cmdName)) {
-			D_FAIL("Unknown command: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
+			LOG_ERROR("Unknown command: %s (line %d)", cmd.cmdName.c_str(), cmd.lineNumber);
 			_program->stop();
 			return;
 		}
@@ -373,15 +373,15 @@ namespace interpreter {
 		// Create command instance
 		auto* command = commands::CommandFactory::Instance().create(cmd.cmdName, cmd.identifier, cmd.tokens);
 
-		LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
+		//LOG_INFO("CREATE CMD: %s | target=%s | args=%d | inner cmds=%zu", cmd.cmdName.c_str(), "", 0, cmd.inner.size());
 
 		if (command) {
 			D_DEBUG("SCRIPT: %s | target=%s | args=%d", cmd.cmdName.c_str(), cmd.identifier.c_str(), cmd.tokens.size());
 			_program->add(command);
-			D_INFO("Added command: %s()", cmd.cmdName.c_str());
+			//D_INFO("Added command: %s()", cmd.cmdName.c_str());
 		}
 		else {
-			D_FAIL("Failed to create command: %s()", cmd.cmdName.c_str());
+			LOG_ERROR("Failed to create command: %s()", cmd.cmdName.c_str());
 			_program->stop();
 			return;
 		}
@@ -392,10 +392,10 @@ namespace interpreter {
 		static const bool interpreterInit = [] {
 			commands::RegisterAllCommands(commands::CommandFactory::Instance());
 			return true;
-			}();
+		}();
 
 		if (!_program) {
-			D_FAIL("Parser initialized with null IStoredProgram pointer.");
+			LOG_ERROR("Parser initialised with null IStoredProgram pointer.");
 			throw std::invalid_argument("Parser initialized with null IStoredProgram pointer.");
 		}
 	}
@@ -404,7 +404,7 @@ namespace interpreter {
 
 	void Parser::parse(std::string code) {
 		if (code.empty()) {
-			D_WARN("Cannot parse empty code string.");
+			LOG_WARN("Cannot parse empty code string.");
 			_program->stop();
 			return;
 		}

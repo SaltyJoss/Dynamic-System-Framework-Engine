@@ -136,6 +136,52 @@ namespace robots {
 		return M; // [kg*m^2], mass matrix for the robot at configuration q
 	}
 
+	// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
+	mathlib::VecX RobotDynamics::computeCoriolisVector(
+		const std::vector<double>& q,
+		const std::vector<double>& qd,
+		const std::vector<mathlib::Pose>& T_world,
+		const mathlib::MatX& M
+	) const {
+		const size_t n = _robot.joints.size();
+		const double eps = 1e-6; // small value to prevent division by zero
+		std::vector<double> q_eps = q;
+
+		std::vector<MatX> dM_dq(n, MatX::Zero(n, n)); // partial derivatives of M with respect to each joint angle
+
+		// Finite difference approximation of dM/dq for each joint
+		for (size_t k = 0; k < n; ++k) {
+			q_eps = q; // reset to original configuration for each joint perturbation
+			q_eps[k] += eps; // perturb joint k by a small amount
+			VecX x_eps(3 * n); // state vector for kinematics
+
+			// Construct the state vector for the perturbed configuration
+			for (size_t i = 0; i < n; ++i) {
+				x_eps[i] = q_eps[i];
+				x_eps[n + i] = qd[i];
+				x_eps[2 * n + i] = 0.0; // eta is not used for Coriolis computation
+			}
+
+			// Compute forward kinematics for the perturbed state
+			std::vector<Pose> T_world_eps = _kinematics->computeForwardKinematics_fromState(x_eps);
+			MatX M_plus = computeMassMatrix(q_eps, T_world_eps); // mass matrix for the perturbed configuration
+			
+			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
+		}
+
+		// Compute Coriolis and centrifugal bias vector h using Christoffel symbols of the first kind
+		VecX h = VecX::Zero(n);
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t j = 0; j < n; ++j) {
+				for (size_t k = 0; k < n; ++k) {
+					double C_ijk = 0.5 * (dM_dq[k](i, j) + dM_dq[j](i, k) - dM_dq[i](j, k)) * qd[k]; // Christoffel symbol of the first kind for indices (i, j, k)
+					h(i) += C_ijk * qd[j] * qd[k]; // contribution to Coriolis and centrifugal bias for joint i from joints j and k
+				}
+			}
+		}
+		return h; // [Nm], Coriolis and centrifugal bias vector for the robot at configuration q and velocity qd
+	}
+
 	// Computes the gravity torque for a joint based on the current state and robot configuration
 	std::vector<double> RobotDynamics::computeGravityTorque(
 		const std::vector<double>& q,
@@ -273,12 +319,6 @@ namespace robots {
 		// Effective inertia
 		m.I_eff = I_eff; // [kg*m^2]
 
-		// Energy metrics
-		m.KE = 0.5 * I_eff * qd * qd; // [J], kinetic energy of the joint
-		double P_grav = tau_g * qd; // [W], power due to gravity torque
-		m.PE += -P_grav * dt; // [J], potential energy proxy based on gravity power (scaled down for interpretability)
-		m.E_total = m.KE + m.PE;	  // [J], total mechanical energy of the joint
-
 		// Control parameters
 		const double wn = joint.wn_target;	 // [rad/s], natural frequency
 		const double z  = joint.zeta_target; // damping ratio
@@ -286,7 +326,7 @@ namespace robots {
 
 		// Compute PID gains
 		double k_p = m.I_eff * wn * wn;		 // [Nm/rad],     proportional gain
-		double k_i = b * k_p * wn;			 // [Nm/(rad*s)], integral gain
+		double k_i = 0.0;			 // [Nm/(rad*s)], integral gain
 		double k_d = 2.0 * z * m.I_eff * wn; // [Nm/(rad/s)], derivative gain
 
 		// Integral term with anti-windup
@@ -369,7 +409,7 @@ namespace robots {
 		return m;
 	}
 
-	// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
+	// Computes the derivative of the state vector (q, qd, eta) based on the current state and robot configurations
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
 		const mathlib::VecX& x
@@ -390,22 +430,17 @@ namespace robots {
 		// Compute world poses of each joint for inertia calculations
 		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
 
+		// Compute mass matrix M(q)
+		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+
 		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);
 		for (size_t i = 0; i < n; ++i) {
-			for (size_t k = i + 1; k < _robot.links.size(); ++k) {
-				I_eff[i] += computeJointInertiaContribution(
-					_robot.joints[i],
-					_robot.links[k],
-					jointWorldPose[i], // pose of joint i in world frame
-					T_world[k]
-				);
-			}
-			I_eff[i] = std::max(I_eff[i], 1e-6);
+			I_eff[i] = std::max(M_full(i,i), 1e-6);
 		}
 
-		// Compute mass matrix M(q)
-		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		// Compute Coriolis bias for active joints
+		VecX h_full = computeCoriolisVector(q, qd, T_world, M_full); // [Nm], full Coriolis and centrifugal torque vector
 
 		// Compute gravity torques for each joint
 		std::vector<double> tau_gravity(n, 0.0);
@@ -433,6 +468,7 @@ namespace robots {
 		MatX M(m, m);
 		VecX tau_r = VecX::Zero(m);
 		VecX G_r = VecX::Zero(m);
+		VecX h_r = VecX::Zero(m);
 
 		// Fill reduced mass matrix and torque vectors for active joints
 		for (size_t r = 0; r < m; ++r) {
@@ -446,20 +482,24 @@ namespace robots {
 				size_t j = active[c];
 				M(r, c) = M_full(i, j);
 			}
-		}
 
-		// Debugging info about the mass matrix
-		for (int i = 0; i < M.rows(); ++i) {
-			double rowNorm = M.row(i).norm();
-			LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
+			// Fill the reduced Coriolis vector for active joint i
+			h_r[r] = h_full[active[r]];
 		}
+		
 
-		// Debugging info about the reduced system
-		LOG_INFO_ONCE("Reduced system size = %zu", m);
-		double rcond = M.fullPivLu().rcond();
-		LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
-		Eigen::JacobiSVD<MatX> svd(M);
-		LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
+		//// Debugging info about the mass matrix
+		//for (int i = 0; i < M.rows(); ++i) {
+		//	double rowNorm = M.row(i).norm();
+		//	LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
+		//}
+
+		//// Debugging info about the reduced system
+		//LOG_INFO_ONCE("Reduced system size = %zu", m);
+		//double rcond = M.fullPivLu().rcond();
+		//LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
+		//Eigen::JacobiSVD<MatX> svd(M);
+		//LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
 
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
@@ -468,7 +508,7 @@ namespace robots {
 			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
 		}
 		else {
-			qdd_r = cod.solve(tau_r - G_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
+			qdd_r = cod.solve(tau_r - G_r - h_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
 		}
 
 		// Expand qdd back to full size, filling zeros for fixed joints
@@ -477,10 +517,10 @@ namespace robots {
 			qdd[active[r]] = qdd_r[r];
 		}
 
-		LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
-		LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
-		LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
-		LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
+		//LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
+		//LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
+		//LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
+		//LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
 
 		// Fill in derivatives for all joints
 		for (size_t i = 0; i < n; ++i) {

@@ -45,6 +45,14 @@ namespace integration {
 				return "rk4";
 			case eIntegrationMethod::RK45:
 				return "rk45";
+			case eIntegrationMethod::ImplicitEuler:
+				return "implicit_euler";
+			case eIntegrationMethod::ImplicitMidpoint:
+				return "implicit_midpoint";
+			case eIntegrationMethod::GLRK2:
+				return "glrk2";
+			case eIntegrationMethod::GLRK3:
+				return "glrk3";
 			default:
 				return "Unknown";
 		}
@@ -60,19 +68,25 @@ namespace integration {
 	// Integration method dispatcher
 	StepOut IntegrationService::stepODE(eIntegrationMethod m, VecX& x, double t, double dt, std::function<VecX(double, const VecX&)> f) {
 		if (!f) {
-			D_WARN_ONCE("No derivative function provided for RK2/RK4 integration - Assuming constant derivative (Euler step)");
+			D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
 			return { _ODE->eulerStep(x, t, dt, f), /*dt_taken=*/dt, /*dt_sug=*/dt };
 		}
 
 		switch (m) {
+		// Explicit methods
+		//  * currently all explicit methods use fixed step size, apart from RK45 as it is an adaptive method
 		case eIntegrationMethod::Euler:    return { _ODE->eulerStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Midpoint: return { _ODE->midpointStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Heun:     return { _ODE->heunStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::Ralston:  return { _ODE->ralstonStep(x, t, dt, f), dt, dt };
 		case eIntegrationMethod::RK4:      return { _ODE->rk4Step(x, t, dt, f), dt, dt };
-		case eIntegrationMethod::RK45: {
-			return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
-		}
+		case eIntegrationMethod::RK45:	   return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, f, _rtol, _atol);
+		// Implicit methods
+		//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
+		case eIntegrationMethod::ImplicitEuler:    return { _ODE->implicit_euler(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::GLRK2:			   return { _ODE->GLRK2(x, t, dt, f), dt, dt };
+		case eIntegrationMethod::GLRK3:			   return { _ODE->GLRK3(x, t, dt, f), dt, dt };
 		default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 			return { _ODE->rk4Step(x, t, dt, f), dt, dt };
@@ -102,7 +116,7 @@ namespace integration {
 		const double t_end = t + dt_try;	 // target end time for this step
 		const double eps = 1e-12 * dt_try; // small epsilon to prevent division by zero
 
-		// Initialize current state and time for the adaptive stepping loop
+		// Initialise current state and time for the adaptive stepping loop
 		VecX x_curr   = x;	  // current state during the adaptive step
 		double t_curr = t;	  // current time during the adaptive step
 		double t_total = 0.0; // total time taken for the step

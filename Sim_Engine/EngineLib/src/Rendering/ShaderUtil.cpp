@@ -29,7 +29,7 @@ namespace shaders {
 
 			LOG_ERROR("Shader compilation failed: %s", infoLog);
 			delete[] infoLog;
-		} else { LOG_INFO("Shader compiled successfully"); }
+		} else { /*LOG_INFO("Shader compiled successfully");*/ }
 
 		return shaderID;
 	}
@@ -76,7 +76,7 @@ namespace shaders {
 			LOG_ERROR("Shader program linking failed: %s", infoLog);
 			delete[] infoLog;
 		}
-		else { LOG_INFO("Shader program linked successfully"); }
+		else { /*LOG_INFO("Shader program linked successfully");*/ }
 
 		// Validate the shader program
 		glValidateProgram(_programID);

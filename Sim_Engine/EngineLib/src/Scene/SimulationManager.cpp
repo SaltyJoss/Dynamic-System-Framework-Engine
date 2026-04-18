@@ -552,8 +552,7 @@ namespace gui {
 				s.begin(), s.end(),
 				sub, sub + std::strlen(sub),
 				[](char a, char b) {
-					return std::tolower((unsigned char)a)
-						== std::tolower((unsigned char)b);
+					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
 				}
 			);
 			return it != s.end();
@@ -636,7 +635,9 @@ namespace gui {
 	}
 
 	// Helper to get the next ObjectID
-	static inline scene::ObjectID next(scene::ObjectID id) { return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
+	static inline scene::ObjectID next(scene::ObjectID id) {
+		return static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1);
+	}
 
 	// --------------------------------------------------
 	// 			THREAD-SAFE SIMULATION RESULTS
@@ -677,7 +678,6 @@ namespace gui {
 	scene::Light* SimManager::getLight() { return _impl->_light.get(); }
 
 	void SimManager::loadNewHDR(const std::string& path) {
-		LOG_INFO("Loading new HDR: %s", path.c_str());
 		D_INFO("Loading new HDR: %s", path.c_str());
 
 		// Make sure IBL system exists
@@ -695,7 +695,6 @@ namespace gui {
 
 		_activeHDRPath = path;
 
-		LOG_INFO("HDR updated successfully.");
 		D_SUCCESS("Loaded HDR successfully.");
 	}
 
@@ -839,8 +838,8 @@ namespace gui {
 		// 3) Bind the view follow target
 		setViewFollowTarget(view, targetObj, offset);
 
-		LOG_INFO("Follow view=%d bound to joint='%s' -> child='%s' -> obj='%s'",
-			(int)view, jointName.c_str(), jPtr->child.c_str(), targetObj->name.c_str());
+		/*LOG_INFO("Follow view=%d bound to joint='%s' -> child='%s' -> obj='%s'",
+			(int)view, jointName.c_str(), jPtr->child.c_str(), targetObj->name.c_str());*/
 
 		return true;
 	}
@@ -1059,7 +1058,7 @@ namespace gui {
 				v.displayW = 0;
 				v.displayH = 0;
 			}
-			LOG_INFO("Viewport display size updated to %dx%d", vpW, vpH);
+			//LOG_INFO("Viewport display size updated to %dx%d", vpW, vpH);
 		}
 
 		// --- Render + Present ---
@@ -1137,7 +1136,7 @@ namespace gui {
 			v.displayW = 0; v.displayH = 0;
 		}
 
-		LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
+		//LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
 	// Accessor to core's updatePhysics for use in the main application loop
@@ -1281,7 +1280,7 @@ namespace gui {
 		if (!hasRobot()) { return false; }
 
 		// Map method enum to string name
-		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45" };
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
 		const std::string methodName = names[static_cast<int>(method)];
 
 		// Replace the integrator method in the script text
@@ -1652,7 +1651,7 @@ namespace gui {
 		_internalSize = px;
 		for (auto& v : _impl->_views) { v.w = v.h = 0; } // internal invalidation
 
-		LOG_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
+		//LOG_INFO("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
 		D_RUNTIME("Render settings applied: resPreset=%d shadowRes=%d msaa=%d renderScale=%.2f", (int)r, _settingsCurrent.shadowMapRes, _settingsCurrent.msaaSamples, _settingsCurrent.renderScale);
 
 		_settingsValid = true;
@@ -1686,7 +1685,7 @@ namespace gui {
 		_impl->_ssaoShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao.frag.glsl").string());
 		_impl->_ssaoBlurShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao_blur.frag.glsl").string());
 
-		LOG_INFO("All shaders reloaded from disk.");
+		//LOG_INFO("All shaders reloaded from disk.");
 		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 

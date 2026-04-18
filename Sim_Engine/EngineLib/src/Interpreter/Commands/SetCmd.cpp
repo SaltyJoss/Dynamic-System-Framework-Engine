@@ -18,12 +18,16 @@ namespace commands {
 
 	// Helper function to parse the integration method
 	static IntegratorMethod parseMethod(const std::string& s) {
-		if (s == "euler")    return IntegratorMethod::Euler;
-		if (s == "midpoint") return IntegratorMethod::Midpoint;
-		if (s == "heun")     return IntegratorMethod::Heun;
-		if (s == "ralston")  return IntegratorMethod::Ralston;
-		if (s == "rk4")      return IntegratorMethod::RK4;
-		if (s == "rk45")     return IntegratorMethod::RK45;
+		if (s == "euler")			  return IntegratorMethod::Euler;
+		if (s == "midpoint")		  return IntegratorMethod::Midpoint;
+		if (s == "heun")			  return IntegratorMethod::Heun;
+		if (s == "ralston")			  return IntegratorMethod::Ralston;
+		if (s == "rk4")				  return IntegratorMethod::RK4;
+		if (s == "rk45")			  return IntegratorMethod::RK45;
+		if (s == "implicit_euler")	  return IntegratorMethod::ImplicitEuler;
+		if (s == "implicit_midpoint") return IntegratorMethod::ImplicitMidpoint;
+		if (s == "glrk2")			  return IntegratorMethod::GLRK2;
+		if (s == "glrk3")			  return IntegratorMethod::GLRK3;
 		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s.c_str());
 		return IntegratorMethod::Euler;
 	}
