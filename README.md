@@ -22,7 +22,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About DSFE
-The **Dynamic Systems Framework Engine (DSFE)** is a final year Computer Science project developed to support the exploration and analysis of numerical integration methods under varying dynamic conditions.
+The **Dynamic Systems Framework Engine (DSFE)** is a final year Computer Science project developed to support the design, simulation, and analysis of numerical integration methods under varying dynamic conditions in single or many-body systems.
 <br />
 
 Although physically grounded, DSFE **prioritises numerical-transparency first**, and visualisation second. The framework is designed for researching mathematic models through controlled numerical simulations, producing reproducible amd quantitative output data while remaining consistent with physically-valid system and enivronment parameters.
@@ -91,19 +91,25 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
  * [ ] Add workspace layouts
  * [ ] Support multiple concurrent sessions
  * [ ] Move simulation data output to a `dedicated Data-specific thread` **(IMPORTANT)**
+ * [ ] Similar to the above, but multithread DSFE, not just batch parallelisation (running into bottlenecks on a single thread already)
  * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model`</s>
  * [ ] Support `multiple articulated systems` within a single simulation instance
  * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
  * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged)
- * [x] Seperate physics/mathematics core from the GUI and visualisation layers
- * [ ] Explore migration to a `CMake-only` build system
- * [ ] Explore `DX11` and `Vulkan` alternatives
+ * [x] <s>Sepearate core physics/mathematics logic from the GUI and visualisation layers</s>
+ * [ ] Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers
+ * [x] <s>Explore migration to a `CMake-only` build system</s>
+ * [ ] Migrate to a `CMake-only` build system
+ * [ ] Explore `DX11` and `Vulkan` alternatives, not necessarily a good idea but could improve usability on specific systems
  * [ ] Get DSFE to work on `Linux`
- * [ ] Explore `non-x64 systesm` support
- * [ ] Explore the adoption of `standardised URDF XML` in place of the current DSFE json format
- * [ ] Implement unit tests for each method relevant to numerical analysis.
+ * [ ] Explore `non-x86(x64) instruction set` support (`ARM64`, `RISC-V`)
+ * [ ] Integrate the `standardised URDF XML` alongside or in place of the current DSFE json format
+ * [x] <s>Implement unit tests for each method relevant to numerical analysis.</s>
  * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`
+ * [x] <s>Implemented `basic implicit/structure-preserving integrators` (`Implicit Euler`, `Implicit Midpoint`, `GLRK-variants`)</s>
+ * [ ] Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, even `higher-stage(and therefore order) GLRK methods`)
  * [ ] Need to look at using CRBA instead of just looping through a mass matrix loop
+ * [ ] Rework DSL to be fully independent of the framework, rather used by the DSFE framework in a specific way via a internal libraries to further integrate specific features.
 
 <br />
 
