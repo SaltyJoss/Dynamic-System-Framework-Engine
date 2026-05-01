@@ -103,4 +103,9 @@
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="MathLib\CMakeLists.txt" />
+    <Text Include="Engine\CMakeLists.txt" />
+  </ItemGroup>
 </Project>

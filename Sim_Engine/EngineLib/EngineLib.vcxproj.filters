@@ -789,4 +789,7 @@
       <Filter>Source Files\src\Assets</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
 </Project>

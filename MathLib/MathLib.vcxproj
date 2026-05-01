@@ -147,6 +147,9 @@ xcopy /Y /D "$(TargetDir)$(TargetName).lib" "$(SolutionDir)..\Sim_Engine\Externa
     <ClCompile Include="MathLib\src\kinematics\Jacobian.cpp" />
     <ClCompile Include="MathLib\src\kinematics\Transform_Utils.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

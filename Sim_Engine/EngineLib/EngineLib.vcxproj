@@ -401,6 +401,9 @@ if "$(Configuration)"=="Release" (
       <Project>{8386b042-89f5-4101-b6a0-f6af305c7427}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
