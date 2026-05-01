@@ -1,19 +1,23 @@
-add_library(MathLib STATIC)
+add_library(MathLib STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/pch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/control/Error.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/control/PID.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/dynamics/MassMatrix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/dynamics/Nonlinear_Terms.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/dynamics/StateSpace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/integrators/Integration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/integrators/IntegrationAnalysis.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/kinematics/DH_Params.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/kinematics/Jacobian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/kinematics/Transform_Utils.cpp
+)
 
-# Find all source files in the src directory and add them to the target
-file(GLOB_RECURSE MATHLIB_SOURCES "src/*.cpp")
-target_sources(MathLib PRIVATE ${MATHLIB_SOURCES})
+target_precompile_headers(MathLib PRIVATE "MathLib/pch.h")
 
 target_include_directories(MathLib 
     PUBLIC 
-        # Expose the 'include' directory to other targets that link against MathLib
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MathLib/include>
+        ${eigen_SOURCE_DIR}
     PRIVATE
-        # Add the 'src' directory for MathLib's own implementation files
-        src
+        ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/
 )
-
-# Link to Eigen, which is provided by FetchContent in the root CMakeLists.txt
-# This will also handle including Eigen's headers.
-target_link_libraries(MathLib PUBLIC Eigen::eigen)

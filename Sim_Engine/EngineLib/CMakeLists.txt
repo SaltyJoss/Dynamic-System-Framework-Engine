@@ -1,8 +1,11 @@
 # Define a library for GLAD from the existing source file
 add_library(glad STATIC ../External/GLAD/glad.c)
-target_include_directories(glad PUBLIC ../External/GLAD)
+target_include_directories(glad PUBLIC 
+    ../External/GLAD 
+    ../External # Add the parent External directory
+)
 find_package(OpenGL REQUIRED)
-target_link_libraries(glad PRIVATE OpenGL::GL)
+target_link_libraries(glad PRIVATE OpenGL::GL glfw)
 
 # Define an INTERFACE library for stb (header-only)
 add_library(stb INTERFACE)
@@ -40,6 +43,8 @@ target_include_directories(EngineLib PRIVATE
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
     ${implot_SOURCE_DIR}
+    ${glm_SOURCE_DIR}/glm # For glm
+    ${assimp_SOURCE_DIR}/include # For assimp
 )
 
 # Use precompiled headers
@@ -53,4 +58,6 @@ target_link_libraries(EngineLib PUBLIC
     implot
     glad
     stb
+    glm
+    assimp::assimp
 )

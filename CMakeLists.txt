@@ -1,0 +1,68 @@
+# RoboticArm_MathModelling/CMakeLists.txt
+cmake_minimum_required(VERSION 3.14)
+project(DSFE_app)
+
+# Set common output directories for all targets
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+include(FetchContent)
+
+# --- External Dependencies ---
+FetchContent_Declare(
+  eigen
+  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+  GIT_TAG 5.0.0
+)
+FetchContent_MakeAvailable(eigen)
+
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+  GIT_TAG 3.4
+)
+FetchContent_MakeAvailable(glfw)
+
+# Fetch GLM from GitHub
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG 1.0.3
+)
+FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG  v6.0.4
+)
+FetchContent_MakeAvailable(assimp)
+
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.14.0
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(googletest)
+
+FetchContent_Declare(
+  imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui.git
+  GIT_TAG v1.92.5
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(imgui)
+
+FetchContent_Declare(
+  implot
+  GIT_REPOSITORY https://github.com/epezent/implot.git
+  GIT_TAG v0.17
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(implot)
+
+# --- Project Subdirectories ---
+add_subdirectory(MathLib)
+add_subdirectory(Sim_Engine)
