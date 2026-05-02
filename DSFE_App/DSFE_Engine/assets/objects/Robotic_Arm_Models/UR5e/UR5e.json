@@ -1,0 +1,629 @@
+{
+    "name": "UR5e",
+    "visual_frame": "joint",
+    "units": {
+        "length": "m",
+        "angle": "rad"
+    },
+    "world_up": "Z",
+    "scale": 1.0,
+
+    "material": {
+        "Color": {
+            "UR_Aluminium": [ 0.76, 0.77, 0.78, 1.0 ],
+            "UR_Aluminium_D": [ 0.70, 0.72, 0.74, 1.0 ],
+            "UR_Blue": [ 0.66, 0.82, 0.93, 1.0 ],
+            "UR_Blue_D": [ 0.10, 0.44, 0.75, 1.0 ],
+            "UR_Rubber": [ 0.08, 0.08, 0.09, 1.0 ],
+            "UR_Dark": [ 0.15, 0.15, 0.15, 1.0 ],
+            "UR_Matte": [ 0.5137, 0.5176, 0.5137, 1.0 ]
+        },
+
+        "Presets": {
+            "BareMetal": {
+                "Metallic": 0.9,
+                "Roughness": 0.4
+            },
+            "PaintedMetal": {
+                "Metallic": 0.3,
+                "Roughness": 0.7
+            },
+            "AnodisedMetal": {
+                "Metallic": 0.85,
+                "Roughness": 0.45
+            },
+            "Plastic": {
+                "Metallic": 0.1,
+                "Roughness": 0.5
+            },
+            "Rubber": {
+                "Metallic": 0.1,
+                "Roughness": 0.9
+            }
+        }
+    },
+
+    "base_frame": {
+        "origin_xyz": [ 0.0, 0.0, 0.0 ],
+        "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
+    },
+    "links": [
+        {
+            "name": "link00",
+            "visual": {
+                "material": {
+                    "Color": "UR_Rubber",
+                    "Metallic": 0.1,
+                    "Roughness": 0.9
+                }
+            },
+            "collision": [
+                { "mesh": "UR5e/meshes/base_0.obj" }
+            ],
+            "inertial": {
+                "mass": 0,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0,
+                    "iyy": 0,
+                    "izz": 0,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link01",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 3.141592653589793 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/base_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/base_1.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.7,
+                            "Roughness": 0.3
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/base_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 4.0,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.00443333156,
+                    "iyy": 0.00443333156,
+                    "izz": 0.0072,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link02",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 3.141592653589793 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/shoulder_0.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.2,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/shoulder_1.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/shoulder_2.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/shoulder_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 3.7,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.010267495893,
+                    "iyy": 0.010267495893,
+                    "izz": 0.00666,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link03",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0.138 ],
+                "origin_rpy": [ 1.5707963267948966, 0, -1.5707963267948966 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/upperarm_0.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_1.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/upperarm_3.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.2,
+                            "Roughness": 0.6
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/upperarm_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 8.393,
+                "com_xyz": [ -0.2125, 0, 0.138 ],
+                "inertia": {
+                    "ixx": 0.1338857818623325,
+                    "iyy": 0.1338857818623325,
+                    "izz": 0.0151074,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link04",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0.007 ],
+                "origin_rpy": [ 1.5707963267948966, 0, -1.5707963267948966 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/forearm_0.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_1.obj",
+                        "material": {
+                            "Color": "UR_Aluminium_D",
+                            "Metallic": 0.4,
+                            "Roughness": 0.2
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_2.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/forearm_3.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/forearm_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 2.275,
+                "com_xyz": [ -0.1961, 0, 0.007 ],
+                "inertia": {
+                    "ixx": 0.031209355099586295,
+                    "iyy": 0.031209355099586295,
+                    "izz": 0.004095,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link05",
+            "visual": {
+                "origin_xyz": [ 0, 0, -0.127 ],
+                "origin_rpy": [ 1.5707963267948966, 0, 0 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/wrist1_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist1_1.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist1_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist1_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 1.219,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.00255989897604,
+                    "iyy": 0.00255989897604,
+                    "izz": 0.0021942,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link06",
+            "visual": {
+                "origin_xyz": [ 0, 0, -0.0997 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/wrist2_0.obj",
+                        "material": {
+                            "Color": "UR_Dark",
+                            "Metallic": 0.85,
+                            "Roughness": 0.35
+                        } 
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist2_1.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    },
+                    {
+                        "mesh": "UR5e/meshes/wrist2_2.obj",
+                        "material": {
+                            "Color": "UR_Matte",
+                            "Metallic": 0.75,
+                            "Roughness": 0.9
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist2_0.obj" ] }
+            ],
+            "inertial": {
+                "mass": 1.219,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.00255989897604,
+                    "iyy": 0.00255989897604,
+                    "izz": 0.0021942,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link07",
+            "visual": {
+                "origin_xyz": [ 0, 0, -0.0989 ],
+                "origin_rpy": [ 1.5707963267948966, 0, 0 ],
+                "meshes": [
+                    {
+                        "mesh": "UR5e/meshes/wrist3.obj",
+                        "material": {
+                            "Color": "UR_Blue_D",
+                            "Metallic": 0.1,
+                            "Roughness": 0.6
+                        }
+                    }
+                ]
+            },
+            "collision": [
+                { "meshes": [ "UR5e/meshes/wrist3.obj" ] }
+            ],
+            "inertial": {
+                "mass": 0.1879,
+                "com_xyz": [ 0, 0, -0.0229 ],
+                "inertia": {
+                    "ixx": 9.890410052167731e-05,
+                    "iyy": 9.890410052167731e-05,
+                    "izz": 0.0001321171875,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link08",
+            "visual": {},
+            "collision": [],
+            "inertial": {
+                "mass": 0,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0,
+                    "iyy": 0,
+                    "izz": 0,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+        {
+            "name": "link09",
+            "visual": {},
+            "collision": [],
+            "inertial": {
+                "mass": 0,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0,
+                    "iyy": 0,
+                    "izz": 0,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        }
+    ],
+
+    "joints": [
+        {
+            "name": "joint00",
+            "type": "fixed",
+            "parent": "link00",
+            "child": "link01",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 3.141592653589793 ]
+            }
+        },
+
+        {
+            "name": "joint01",
+            "type": "revolute",
+            "parent": "link01",
+            "child": "link02",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.1625 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -6.283185307179586,
+                "upper": 6.283185307179586,
+                "velocity": 3.141592653589793,
+                "effort": 150
+            },
+            "dynamics": {
+                "damping": 1.6,
+                "friction": 0.05
+            }
+        },
+
+        {
+            "name": "joint02",
+            "type": "revolute",
+            "parent": "link02",
+            "child": "link03",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 1.570796327, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.141592653589793,
+                "upper": 0.0,
+                "velocity": 3.141592653589793,
+                "effort": 150
+            },
+            "dynamics": {
+                "damping": 3.0,
+                "friction": 0.08
+            }
+        },
+
+        {
+            "name": "joint03",
+            "type": "revolute",
+            "parent": "link03",
+            "child": "link04",
+            "origin": {
+                "origin_xyz": [ -0.425, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.141592653589793,
+                "upper": 3.141592653589793,
+                "velocity": 3.141592653589793,
+                "effort": 150
+            },
+            "dynamics": {
+                "damping": 2.8,
+                "friction": 0.06
+            }
+        },
+
+        {
+            "name": "joint04",
+            "type": "revolute",
+            "parent": "link04",
+            "child": "link05",
+            "origin": {
+                "origin_xyz": [ -0.3922, 0, 0.1333 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -6.283185307179586,
+                "upper": 6.283185307179586,
+                "velocity": 3.141592653589793,
+                "effort": 28
+            },
+            "dynamics": {
+                "damping": 0.5,
+                "friction": 0.05
+            }
+        },
+
+        {
+            "name": "joint05",
+            "type": "revolute",
+            "parent": "link05",
+            "child": "link06",
+            "origin": {
+                "origin_xyz": [ 0, -0.0997, 0 ],
+                "origin_rpy": [ 1.570796327, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -6.283185307179586,
+                "upper": 6.283185307179586,
+                "velocity": 3.141592653589793,
+                "effort": 28
+            },
+            "dynamics": {
+                "damping": 0.35,
+                "friction": 0.02
+            }
+        },
+
+        {
+            "name": "joint06",
+            "type": "revolute",
+            "parent": "link06",
+            "child": "link07",
+            "origin": {
+                "origin_xyz": [ 0, 0.0996, 0 ],
+                "origin_rpy": [ 1.570796326589793, 3.141592653589793, 3.141592653589793 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -6.283185307179586,
+                "upper": 6.283185307179586,
+                "velocity": 3.141592653589793,
+                "effort": 28
+            },
+            "dynamics": {
+                "damping": 0.25,
+                "friction": 0.02
+            }
+        },
+
+        {
+            "name": "joint07",
+            "type": "fixed",
+            "parent": "link07",
+            "child": "joint08",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, -1.5707963267948966, -1.5707963267948966 ]
+            }
+        },
+
+        {
+            "name": "joint08",
+            "type": "fixed",
+            "parent": "link08",
+            "child": "link09",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 1.5707963267948966, 0, 1.5707963267948966 ]
+            }
+        }
+    ],
+
+    "load_pose": {
+        "active": "default",
+        "default": {
+            "joints": {
+                "joint01": 0.0,
+                "joint02": -1.5707963268,
+                "joint03": 1.5707963268,
+                "joint04": 0.0,
+                "joint05": 0.0,
+                "joint06": 0.0
+            }
+        }
+    }
+}
+
