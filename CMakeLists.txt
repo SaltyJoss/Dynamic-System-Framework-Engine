@@ -74,4 +74,4 @@ FetchContent_MakeAvailable(implot)
 
 # --- Project Subdirectories ---
 add_subdirectory(MathLib)
-add_subdirectory(Sim_Engine)
+add_subdirectory(DSFE_App)
