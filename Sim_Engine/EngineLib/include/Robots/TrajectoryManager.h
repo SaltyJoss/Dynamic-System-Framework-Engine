@@ -9,11 +9,11 @@
 #include <core/Types.h>
 #include <Control/IJointTrajectory.h>
 
-namespace robots { class ENGINE_API RobotSystem; }
+namespace robots { class DSFE_API RobotSystem; }
 
 namespace control {
 	// Trajectory Manager Class
-	class ENGINE_API TrajectoryManager {
+	class DSFE_API TrajectoryManager {
 	public:
 		TrajectoryManager() = default;
 		~TrajectoryManager() = default;

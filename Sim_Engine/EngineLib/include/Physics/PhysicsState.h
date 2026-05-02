@@ -8,7 +8,7 @@
 
 namespace physics {
 	// public struct for physical states
-	struct ENGINE_API PhysicsState {
+	struct DSFE_API PhysicsState {
 		Quat q = Quat::Identity();			 // default to no rotation
 		Vec3 linearVelocity = Vec3::Zero();  // default to no movement
 		Vec3 angularVelocity = Vec3::Zero(); // default to no rotation

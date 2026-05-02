@@ -6,20 +6,20 @@
 #include "core/Types.h"
 
 // Forward declarations
-namespace control { class ENGINE_API TrajectoryManager; }
-namespace integration { class ENGINE_API IntegrationService; enum class eIntegrationMethod; }
+namespace control { class DSFE_API TrajectoryManager; }
+namespace integration { class DSFE_API IntegrationService; enum class eIntegrationMethod; }
 
 namespace robots {
 	// Forward declarations
-	class ENGINE_API RobotKinematics;
-	struct ENGINE_API RobotModel;
-	struct ENGINE_API RobotLink;
-	struct ENGINE_API RobotJoint;
-	struct ENGINE_API RobotMetrics;
+	class DSFE_API RobotKinematics;
+	struct DSFE_API RobotModel;
+	struct DSFE_API RobotLink;
+	struct DSFE_API RobotJoint;
+	struct DSFE_API RobotMetrics;
 	enum class eTorqueMode;
 
 	// Dynamics class responsible for computing inertia, mass matrix, gravity torque, control torques, and state derivatives
-	class ENGINE_API RobotDynamics {
+	class DSFE_API RobotDynamics {
 	public:
 		// Constructor
 		RobotDynamics(RobotModel& robot);

@@ -8,8 +8,8 @@
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-namespace robots { class ENGINE_API RobotSystem; }
-namespace control { class ENGINE_API TrajectoryManager; }
+namespace robots { class DSFE_API RobotSystem; }
+namespace control { class DSFE_API TrajectoryManager; }
 
 namespace diagnostics {
 	// Enum for telemetry levels
@@ -20,7 +20,7 @@ namespace diagnostics {
 	};
 
 	// Struct for joint telemetry data
-	struct ENGINE_API JointTelemetry{
+	struct DSFE_API JointTelemetry{
 		// Actual data
 		double q   = 0.0f; // Joint angle in radians
 		double qd  = 0.0f; // Joint angular velocity in radians per second
@@ -49,7 +49,7 @@ namespace diagnostics {
 	};
 
 	// Struct for a single telemetry sample
-	struct ENGINE_API TelemetrySample {
+	struct DSFE_API TelemetrySample {
 		// Timestamp and joint data
 		double timeSec = 0.0;		   // Timestamp of the sample in seconds
 		std::vector<JointTelemetry> j; // Vector of joint telemetry data
@@ -64,7 +64,7 @@ namespace diagnostics {
 	};
 
 	// Ring buffer for storing telemetry samples
-	class ENGINE_API TelemetryRing {
+	class DSFE_API TelemetryRing {
 	public:
 		// Constructor with specified capacity
 		explicit TelemetryRing(size_t cap = 10000) : _cap(cap) { _buf.resize(cap); }
@@ -110,7 +110,7 @@ namespace diagnostics {
 	};
 
 	// Interface for recording telemetry data
-	class ENGINE_API TelemetryRecorder {
+	class DSFE_API TelemetryRecorder {
 	public:
 		// Constructor
 		TelemetryRecorder() = default;

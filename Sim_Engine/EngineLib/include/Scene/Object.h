@@ -19,12 +19,12 @@
 
 namespace scene {
 	enum class eInputButton;
-	class ENGINE_API Input;
-	class ENGINE_API Mesh;
+	class DSFE_API Input;
+	class DSFE_API Mesh;
 
 	enum class ObjectCategory { General, RobotLink };
 
-	//struct ENGINE_API ObjLookup {
+	//struct DSFE_API ObjLookup {
 	//	std::unordered_map<std::string, scene::Object*> objMap;
 
 	//	void incrementObjectID(scene::ObjectID& id) { id = static_cast<scene::ObjectID>(static_cast<std::uint32_t>(id) + 1); }
@@ -69,13 +69,13 @@ namespace scene {
 	//	void logObjectCount() { D_INFO("Total Objects in ObjLookup: %zu", objMap.size()); }
 	//};
 
-	struct ENGINE_API AssetSource {
+	struct DSFE_API AssetSource {
 		std::string filename;
 		std::string filepath;
 	};
 
 	// Represents the position, rotation, and scale of an object in 3D space.
-	struct ENGINE_API Transform {
+	struct DSFE_API Transform {
 		glm::vec3 position{ 0.0f };
 		glm::quat rotQ{ 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
@@ -85,7 +85,7 @@ namespace scene {
 	};
 
 	// Represents a 3D object in the scene with a mesh, transform, and physics state.
-	class ENGINE_API Object : public Element {
+	class DSFE_API Object : public Element {
 	public:
 		// Unique identifier for the object
 		scene::ObjectID id = scene::ObjectID::INVALID_OBJECT_ID;

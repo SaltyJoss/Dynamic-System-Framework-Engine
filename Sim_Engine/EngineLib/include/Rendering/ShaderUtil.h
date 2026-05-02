@@ -5,7 +5,7 @@
 #include "Platform/Logger.h"
 
 namespace shaders {
-	class ENGINE_API Shader {
+	class DSFE_API Shader {
 	public:
 		Shader() = default;
 

@@ -5,7 +5,7 @@
 
 namespace robots {
 	// Struct for logging joint data each step (for later analysis)
-    struct ENGINE_API JointLogBuffer {
+    struct DSFE_API JointLogBuffer {
 		// Sim Metadata
         std::vector<double> sim_time;
         std::vector<double> dt_taken;
@@ -108,7 +108,7 @@ namespace robots {
         }
 
 		// Struct representing a single log entry for a joint at a specific time step
-        struct ENGINE_API JointLogEntry {
+        struct DSFE_API JointLogEntry {
             double sim_time;
             double dt_taken;
             double dt_sug;
@@ -194,7 +194,7 @@ namespace robots {
     };
 
 	// Struct for logging reference trajectory data
-    struct ENGINE_API TrajRefBuffer {
+    struct DSFE_API TrajRefBuffer {
 		// Sim Metadata
         std::vector<double> sim_time;
 		// Reference states

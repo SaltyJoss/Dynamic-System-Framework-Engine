@@ -15,7 +15,7 @@
 using CorePtr = std::unique_ptr<core::ISimulationCore, std::function<void(core::ISimulationCore*)>>;
 
 // Struct to hold the results of a study/research run
-struct ENGINE_API StudyResult {
+struct DSFE_API StudyResult {
 	bool success = false; // whether the run completed successfully
 	std::string tag = "N/A"; // user-provided tag for the run
 	std::string intName = "N/A"; // name of the integrator used
@@ -25,7 +25,7 @@ struct ENGINE_API StudyResult {
 };
 
 // StudyRunner class to manage running batches of studies in parallel
-class ENGINE_API StudyRunner {
+class DSFE_API StudyRunner {
 public:
 	// Config for a run
 	struct config {

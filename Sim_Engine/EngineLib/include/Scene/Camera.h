@@ -17,7 +17,7 @@
 #include "Platform/Logger.h"
 
 namespace scene {
-	class ENGINE_API Camera : public Element {
+	class DSFE_API Camera : public Element {
 	public:
 		Camera(const glm::vec3& position, float fov, float aspect, float zNear, float zFar) {
 			_position = position;

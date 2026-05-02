@@ -6,10 +6,10 @@
 #include <string>
 
 // forward declarations
-namespace window { class ENGINE_API GLWindow; }
-namespace scene { class ENGINE_API Camera; }
+namespace window { class DSFE_API GLWindow; }
+namespace scene { class DSFE_API Camera; }
 
-class ENGINE_API Application {
+class DSFE_API Application {
 public:
 	Application(const std::string& name);
 	~Application();

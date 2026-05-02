@@ -11,7 +11,7 @@ namespace commands {
 	using Creator = std::unique_ptr<commands::ICommand>(*)(const std::string&, const std::vector<std::string>&);
 
 	// CommandFactory class for registering and creating commands
-	class ENGINE_API CommandFactory {
+	class DSFE_API CommandFactory {
 	public:
 		// Get the singleton instance of CommandFactory
 		static CommandFactory& Instance();

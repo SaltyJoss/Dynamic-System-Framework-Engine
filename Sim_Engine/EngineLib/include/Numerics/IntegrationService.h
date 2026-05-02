@@ -14,14 +14,14 @@
 
 namespace integration {
 	// Struct representing the result of a single integration step
-	struct ENGINE_API StepOut {
+	struct DSFE_API StepOut {
 		VecX x_next;			// next state vector
 		double dt_taken = 0.0;	// actual step size taken
 		double dt_sug = 0.0;	// suggested next step size
 	};
 
 	// Class representing the integration service
-	class ENGINE_API IntegrationService {
+	class DSFE_API IntegrationService {
 	public:
 		// Constructor 
 		IntegrationService();

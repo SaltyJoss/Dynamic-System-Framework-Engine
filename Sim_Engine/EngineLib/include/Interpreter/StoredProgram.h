@@ -10,7 +10,7 @@
 
 namespace interpreter {
 	// Class representing a stored program in the interpreter.
-	class ENGINE_API StoredProgram : public IStoredProgram {
+	class DSFE_API StoredProgram : public IStoredProgram {
 	public:
 		// Constructor
 		StoredProgram(core::ISimulationCore* core);

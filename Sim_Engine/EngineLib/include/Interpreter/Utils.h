@@ -8,7 +8,7 @@
 
 namespace utils {
 	// Struct for operation result
-	struct ENGINE_API OpResult {
+	struct DSFE_API OpResult {
 		bool ok = true;
 		std::string message;
 		bool done = false;
@@ -18,7 +18,7 @@ namespace utils {
 	};
 
 	// Struct for axis mask
-	struct ENGINE_API AxisMask {
+	struct DSFE_API AxisMask {
 		bool x = false;
 		bool y = false;
 		bool z = false;

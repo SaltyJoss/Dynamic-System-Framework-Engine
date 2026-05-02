@@ -6,7 +6,7 @@
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace interpreter {
 	// Constructor

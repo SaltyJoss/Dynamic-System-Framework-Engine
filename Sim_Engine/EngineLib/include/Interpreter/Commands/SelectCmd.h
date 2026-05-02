@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace commands {
-	class ENGINE_API SelectCmd final : public Command {
+	class DSFE_API SelectCmd final : public Command {
 	public:
 		// Constructor
 		SelectCmd(scene::ObjectID obj);

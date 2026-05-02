@@ -6,12 +6,12 @@
 #include <vector>
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 using GLuint = unsigned int;
 
 namespace scene {
-    class ENGINE_API Face {
+    class DSFE_API Face {
     public:
         void addVertexIndex(GLuint index) { _vertexIndices.push_back(index); }
     private:

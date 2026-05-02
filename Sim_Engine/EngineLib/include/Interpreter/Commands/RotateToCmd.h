@@ -10,7 +10,7 @@
 namespace commands {
 
 	// Class representing the ROTATE command
-	class ENGINE_API RotateToCmd final : public Command {
+	class DSFE_API RotateToCmd final : public Command {
 	public:
 		// Constructor
 		RotateToCmd(scene::ObjectID obj, utils::AxisMask axes, double maxOmegaDeg, double angleDeg);

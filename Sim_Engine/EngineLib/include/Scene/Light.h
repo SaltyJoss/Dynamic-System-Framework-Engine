@@ -7,10 +7,10 @@
 #include "Rendering/ShaderUtil.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace scene {
-	class ENGINE_API Light : public Element {
+	class DSFE_API Light : public Element {
     public:
 
 		Light() {

@@ -14,12 +14,12 @@
 #include "Platform/Logger.h"
 
 namespace scene {
-	class ENGINE_API Mesh;
-	class ENGINE_API Object;
+	class DSFE_API Mesh;
+	class DSFE_API Object;
 }
 
 namespace physics {
-	struct ENGINE_API RefTrack {
+	struct DSFE_API RefTrack {
 		VecX x;
 		double t = 0.0;
 		double dt = 1e-3; // adaptive step size suggestion found, more research may show me a better default?
@@ -31,7 +31,7 @@ namespace physics {
 		Body
 	};
 
-	class ENGINE_API PhysicsSystem {
+	class DSFE_API PhysicsSystem {
 	public:
 		PhysicsSystem();
 		

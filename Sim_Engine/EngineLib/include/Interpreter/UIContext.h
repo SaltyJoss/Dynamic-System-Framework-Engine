@@ -8,10 +8,10 @@
 #include "Platform/Logger.h"
 
 // Forward declarations
-namespace interpreter { class ENGINE_API StoredProgram; }
+namespace interpreter { class DSFE_API StoredProgram; }
 
 namespace commands {	
-	class ENGINE_API UIContext {
+	class DSFE_API UIContext {
 	public:
 		UIContext(core::ISimulationCore* core);
 

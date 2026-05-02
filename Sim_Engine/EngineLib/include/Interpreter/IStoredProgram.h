@@ -8,14 +8,14 @@
 #include <vector>
 
 // Forward declarations
-namespace commands { class ENGINE_API ICommand; }
-namespace scene { class ENGINE_API Object;  }
+namespace commands { class DSFE_API ICommand; }
+namespace scene { class DSFE_API Object;  }
 
 using namespace program_data;
 
 namespace interpreter {
 	// IStoredProgram interface
-	class ENGINE_API IStoredProgram { 
+	class DSFE_API IStoredProgram { 
 	public:
 		// Virtual destructor
 		virtual ~IStoredProgram() = default;

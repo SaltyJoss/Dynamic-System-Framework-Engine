@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace commands {
-	class ENGINE_API StopCmd final : public Command {
+	class DSFE_API StopCmd final : public Command {
 	public:
 		// Constructor
 		StopCmd();

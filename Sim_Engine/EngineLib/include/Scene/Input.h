@@ -7,7 +7,7 @@
 #include <cstdint>
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace scene {
 	enum class eInputButton {
@@ -17,7 +17,7 @@ namespace scene {
 		None = 9
 	};
 
-	class ENGINE_API Input {
+	class DSFE_API Input {
 	public:
 		static eInputButton GetPressedButton(GLFWwindow* window);
 

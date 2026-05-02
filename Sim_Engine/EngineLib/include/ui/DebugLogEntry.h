@@ -15,7 +15,7 @@ struct logEntry {
 	std::chrono::system_clock::time_point timestamp;
 };
 
-class ENGINE_API DebugPanelLog {};
+class DSFE_API DebugPanelLog {};
 
 // Global logger instance
-extern ENGINE_API DebugPanelLog dLog;
+extern DSFE_API DebugPanelLog dLog;

@@ -9,13 +9,13 @@
 #include <cstdint>
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 using GLuint = std::uint32_t;
 
 namespace render {
 	// This file defines the base interfaces for rendering components, including VertexIndexBuffer, FrameBuffer, and RenderContext.
-	class ENGINE_API VertexIndexBuffer {
+	class DSFE_API VertexIndexBuffer {
 	public:
 		virtual ~VertexIndexBuffer() = default;
 
@@ -35,7 +35,7 @@ namespace render {
 	};
 
 	// This was NOT working in previous version, so revised code with docs and research -> See OpenGLBufferManager
-	class ENGINE_API FrameBuffer {
+	class DSFE_API FrameBuffer {
 	public:
 		virtual ~FrameBuffer() = default;
 
@@ -64,7 +64,7 @@ namespace render {
 	};
 
 	// Centralised way to gain context on the renders' process -> see OpenGLContext
-	class ENGINE_API RenderContext {
+	class DSFE_API RenderContext {
 	public:
 		virtual ~RenderContext() = default;
 

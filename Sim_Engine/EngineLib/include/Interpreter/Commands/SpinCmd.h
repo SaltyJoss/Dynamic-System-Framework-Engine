@@ -10,7 +10,7 @@
 namespace commands {
 
 	// Class representing the ROTATE command
-	class ENGINE_API SpinCmd final : public Command {
+	class DSFE_API SpinCmd final : public Command {
 	public:
 		// Constructor
 		SpinCmd(scene::ObjectID obj, utils::AxisMask axes, double omegaDeg, double duration);

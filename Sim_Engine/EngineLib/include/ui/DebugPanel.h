@@ -9,7 +9,7 @@
 
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace gui {
 	struct debugLogEntry {
@@ -24,7 +24,7 @@ namespace gui {
 		std::string text;
 	};
 
-	class ENGINE_API DebugPanel {
+	class DSFE_API DebugPanel {
 	public:
 		void render();
 		void clearSimLog() { gLog.Instance().clearSimLog(); simSelectedLines.clear(); }

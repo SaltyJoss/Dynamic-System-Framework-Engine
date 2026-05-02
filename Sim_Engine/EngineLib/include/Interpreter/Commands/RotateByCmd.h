@@ -11,7 +11,7 @@
 namespace commands {
 
 	// Class representing the ROTATE command
-	class ENGINE_API RotateByCmd final : public Command {
+	class DSFE_API RotateByCmd final : public Command {
 	public:
 		// Constructor
 		RotateByCmd(scene::ObjectID obj, utils::AxisMask axis, double maxOmegaDeg, double deltaDeg);

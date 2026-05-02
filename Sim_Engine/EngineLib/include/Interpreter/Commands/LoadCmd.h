@@ -16,13 +16,13 @@ namespace commands {
 	};
 
 	// Struct for load target
-	struct ENGINE_API LoadTarget {
+	struct DSFE_API LoadTarget {
 		LoadTargetType type = LoadTargetType::Object;
 		std::string path;
 	};
 
 	// Class representing the LOAD command
-	class ENGINE_API LoadCmd final : public Command {
+	class DSFE_API LoadCmd final : public Command {
 	public:
 		// Constructor
 		LoadCmd(const std::string& id, const std::vector<std::string>& tokens);

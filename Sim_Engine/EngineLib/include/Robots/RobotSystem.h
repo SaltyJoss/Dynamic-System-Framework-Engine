@@ -9,16 +9,16 @@
 #include <glm/gtc/quaternion.hpp>
 
 // Forward declarations
-namespace control { class ENGINE_API TrajectoryManager; }
+namespace control { class DSFE_API TrajectoryManager; }
 
 namespace robots {
 	// Forward declarations
-	class ENGINE_API RobotKinematics;
-	class ENGINE_API RobotDynamics;
+	class DSFE_API RobotKinematics;
+	class DSFE_API RobotDynamics;
 	enum class eTorqueMode;
 
 	// Joint state structure
-    struct ENGINE_API JointState {
+    struct DSFE_API JointState {
 		double theta;
 		double omega;
 	};
@@ -29,7 +29,7 @@ namespace robots {
 		Baseline
 	};
 
-	class ENGINE_API RobotSystem {
+	class DSFE_API RobotSystem {
 	public:
 		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
 

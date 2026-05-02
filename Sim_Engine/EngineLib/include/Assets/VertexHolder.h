@@ -7,10 +7,10 @@
 #include "EngineCore.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace assets {
-	class ENGINE_API VertexHolder {
+	class DSFE_API VertexHolder {
 	public:
 		VertexHolder() : _pos(), _normal(), _texCoord() {}
 

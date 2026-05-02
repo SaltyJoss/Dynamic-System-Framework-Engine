@@ -13,7 +13,7 @@
 
 namespace interpreter {
 	// Class representing a parsed command
-	class ENGINE_API Parser {
+	class DSFE_API Parser {
 	public:
 		Parser(IStoredProgram* program);
 		void parse(std::string code);

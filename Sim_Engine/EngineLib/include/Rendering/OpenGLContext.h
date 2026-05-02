@@ -8,7 +8,7 @@
 #include "Platform/Logger.h"
 
 namespace render {
-	class ENGINE_API OpenGLContext : public RenderContext {
+	class DSFE_API OpenGLContext : public RenderContext {
 	public:
 		bool init(window::IWindow* window) override;
 		void preRender() override;

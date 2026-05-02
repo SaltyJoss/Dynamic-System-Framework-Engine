@@ -20,6 +20,8 @@ target_include_directories(stb INTERFACE ../External/stb)
 # --- EngineLib Target ---
 add_library(DSFE_core SHARED)
 
+target_compile_definitions(DSFE_core PRIVATE DSFE_CORE_EXPORTS)
+
 # Glob for all source files within the EngineLib project directory
 file(GLOB_RECURSE DSFE_CORE_SOURCES 
     "src/*.cpp"

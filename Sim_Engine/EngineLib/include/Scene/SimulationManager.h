@@ -21,31 +21,31 @@
 
 // Forward Declarations for Rendering
 namespace render {
-    class ENGINE_API OpenGLFrameBuffer;
-	class ENGINE_API IBL;
+    class DSFE_API OpenGLFrameBuffer;
+	class DSFE_API IBL;
     class SkyboxRenderer;
 }
-namespace shaders { class ENGINE_API Shader; }
+namespace shaders { class DSFE_API Shader; }
 
 // Forward Declarations for Scene
 namespace scene {
     enum class eInputButton;
-    class ENGINE_API Light;
-    class ENGINE_API Camera;
-    class ENGINE_API Input;
-    class ENGINE_API Mesh;
-    class ENGINE_API Object;
-    class ENGINE_API SceneRenderer;
+    class DSFE_API Light;
+    class DSFE_API Camera;
+    class DSFE_API Input;
+    class DSFE_API Mesh;
+    class DSFE_API Object;
+    class DSFE_API SceneRenderer;
 }
 
 // Forward Declarations for Simulation Core
-namespace core { class ENGINE_API SimulationCore; }
+namespace core { class DSFE_API SimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
-namespace interpreter { class ENGINE_API IStoredProgram; }
-namespace physics { class ENGINE_API PhysicsSystem; }
-namespace robots { class ENGINE_API RobotSystem; }
-namespace control { class ENGINE_API TrajectoryManager; }
+namespace interpreter { class DSFE_API IStoredProgram; }
+namespace physics { class DSFE_API PhysicsSystem; }
+namespace robots { class DSFE_API RobotSystem; }
+namespace control { class DSFE_API TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
 namespace gui {
@@ -53,7 +53,7 @@ namespace gui {
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
 	// Forward Declarations for Axis Orientator
-	class ENGINE_API AxisOrientator;
+	class DSFE_API AxisOrientator;
 
     // Control Modes & Camera
     enum class ControlMode {
@@ -62,7 +62,7 @@ namespace gui {
     };
 
 	// SimManager Class (Plan on renaming later)
-    class ENGINE_API SimManager {
+    class DSFE_API SimManager {
     public:
 		// Constructor & Destructor
         SimManager();

@@ -21,7 +21,7 @@ namespace interpreter {
 	};
 
 	// Struct representing a token in the parser
-	struct ENGINE_API Token {
+	struct DSFE_API Token {
 		TokenType type = TokenType::Unknown;
 		std::string value;
 		double numberValue = 0.0;

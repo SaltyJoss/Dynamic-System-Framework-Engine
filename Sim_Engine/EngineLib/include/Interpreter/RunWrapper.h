@@ -7,7 +7,7 @@
 
 namespace interpreter {
 	// Class that wraps the parsing and storing of a program
-	class ENGINE_API RunWrapper {
+	class DSFE_API RunWrapper {
 	public:
 		RunWrapper(Parser* parser, IStoredProgram* program);
 		// Parse and store the program from a code string

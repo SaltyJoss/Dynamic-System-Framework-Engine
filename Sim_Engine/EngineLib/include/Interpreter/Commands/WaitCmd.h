@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace commands {
-	class ENGINE_API WaitCmd final : public Command {
+	class DSFE_API WaitCmd final : public Command {
 	public:
 		// Constructor
 		WaitCmd(double t);

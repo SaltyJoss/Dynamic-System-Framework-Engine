@@ -3,4 +3,4 @@
 // GitHub: SaltyJoss
 #include "Platform/Logger.h"
 
-ENGINE_API Debug gLog;
+DSFE_API Debug gLog;

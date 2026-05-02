@@ -9,7 +9,7 @@
 
 namespace commands {
 	// Class representing the ROTATE command
-	class ENGINE_API RotateJointToCmd final : public Command {
+	class DSFE_API RotateJointToCmd final : public Command {
 	public:
 		// Constructor
 		RotateJointToCmd(std::string link, double maxOmegaDeg, double angleDeg);

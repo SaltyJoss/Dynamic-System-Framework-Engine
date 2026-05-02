@@ -8,7 +8,7 @@
 
 //Basic window interface
 namespace window {
-    class ENGINE_API IWindow {
+    class DSFE_API IWindow {
     public:
         // Destructor
         virtual ~IWindow() = default;

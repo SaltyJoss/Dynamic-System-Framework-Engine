@@ -7,13 +7,13 @@
 
 namespace robots {
 	// Forward declarations
-	struct ENGINE_API RobotModel;
-	struct ENGINE_API RobotLink;
-	struct ENGINE_API RobotJoint;
-	struct ENGINE_API RobotMetrics;
+	struct DSFE_API RobotModel;
+	struct DSFE_API RobotLink;
+	struct DSFE_API RobotJoint;
+	struct DSFE_API RobotMetrics;
 
 	// Kinematics class responsible for computing forward kinematics and related transformations
-	class ENGINE_API RobotKinematics {
+	class DSFE_API RobotKinematics {
 	public:
 		// Constructor
 		RobotKinematics(RobotModel& robot);

@@ -37,7 +37,7 @@ namespace data {
     enum class Stream { Simulation, Reference };
 
 	// HDF5StreamWriter class to handle writing telemetry data to HDF5 files
-    class ENGINE_API HDF5StreamWriter {
+    class DSFE_API HDF5StreamWriter {
     public:
         HDF5StreamWriter() = default;
 
@@ -68,7 +68,7 @@ namespace data {
     };
 
 	// Simple CSV writer for quick debugging and compatibility with spreadsheet software
-    class ENGINE_API CsvStreamWriter {
+    class DSFE_API CsvStreamWriter {
     public:
         CsvStreamWriter() = default;
 
@@ -93,7 +93,7 @@ namespace data {
     };
 
 	// DataManager class to manage multiple data streams and handle writing to HDF5 and CSV
-    class ENGINE_API DataManager {
+    class DSFE_API DataManager {
     public:
 		DataManager() = default;
         ~DataManager();

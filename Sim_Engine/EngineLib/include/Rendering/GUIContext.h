@@ -7,7 +7,7 @@
 #include "Platform/Logger.h"
 
 namespace render {
-	class ENGINE_API GUIContext : public RenderContext {
+	class DSFE_API GUIContext : public RenderContext {
 	public:
 		GUIContext() {}
 

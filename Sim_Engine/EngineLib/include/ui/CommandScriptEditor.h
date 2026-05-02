@@ -21,7 +21,7 @@
 
 #include "Platform/Logger.h"
 
-struct ENGINE_API StudyResult; // forward declaration to avoid circular dependency
+struct DSFE_API StudyResult; // forward declaration to avoid circular dependency
 
 namespace gui {
 	struct ActiveRun {
@@ -29,7 +29,7 @@ namespace gui {
 		std::string tag;
 	};
 
-	class ENGINE_API CommandScriptEditor {
+	class DSFE_API CommandScriptEditor {
 	public:
 		CommandScriptEditor(gui::SimManager* sims);
 		~CommandScriptEditor();

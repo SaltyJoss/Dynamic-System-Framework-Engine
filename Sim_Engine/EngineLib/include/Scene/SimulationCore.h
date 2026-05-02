@@ -14,11 +14,11 @@
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; }
-namespace control	  { class ENGINE_API TrajectoryManager; }
-namespace scene		  { class ENGINE_API Object; }
-namespace physics	  { class ENGINE_API PhysicsSystem; }
-namespace robots	  { class ENGINE_API RobotSystem; }
-namespace interpreter { class ENGINE_API IStoredProgram; }
+namespace control	  { class DSFE_API TrajectoryManager; }
+namespace scene		  { class DSFE_API Object; }
+namespace physics	  { class DSFE_API PhysicsSystem; }
+namespace robots	  { class DSFE_API RobotSystem; }
+namespace interpreter { class DSFE_API IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
@@ -26,7 +26,7 @@ namespace core {
 	constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
 	constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
 
-	class ENGINE_API SimulationCore : public ISimulationCore {
+	class DSFE_API SimulationCore : public ISimulationCore {
 	public:
 		SimulationCore();
 		~SimulationCore();

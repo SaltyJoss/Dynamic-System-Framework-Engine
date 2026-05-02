@@ -14,8 +14,8 @@
 // Forward declarations for the main classes used in the interpreter
 namespace scene { 
 	enum class ObjectID : std::uint32_t;
-	class ENGINE_API Object;
+	class DSFE_API Object;
 }
-namespace core { struct ENGINE_API ISimulationCore; }
-namespace robots { class ENGINE_API RobotSystem; }
-namespace physics { class ENGINE_API PhysicsSystem; }
+namespace core { struct DSFE_API ISimulationCore; }
+namespace robots { class DSFE_API RobotSystem; }
+namespace physics { class DSFE_API PhysicsSystem; }

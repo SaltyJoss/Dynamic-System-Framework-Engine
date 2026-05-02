@@ -8,7 +8,7 @@
 
 namespace commands {
 	// Main context combining motion and UI contexts
-	class ENGINE_API MainContext {
+	class DSFE_API MainContext {
 	public:
         MainContext(core::ISimulationCore* core)
             : _motion(core), _ui(core) {}

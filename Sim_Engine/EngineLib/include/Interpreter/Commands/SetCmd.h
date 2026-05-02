@@ -22,7 +22,7 @@ namespace commands {
 		Colour
 	};
 
-	struct ENGINE_API SetTarget {
+	struct DSFE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
 		IntegratorMethod method = IntegratorMethod::RK4; // Default method
 		mathlib::Vec3 omega{ 0.0, 0.0, 0.0 };
@@ -32,7 +32,7 @@ namespace commands {
 	};
 
 	// Class representing the SET command
-	class ENGINE_API SetCmd final : public Command {
+	class DSFE_API SetCmd final : public Command {
 	public:
 		// Constructor
 		SetCmd(const std::string& id, const std::string& tokens);

@@ -113,7 +113,7 @@
 
 // Forward declaration of Debug class
 class Debug;
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 // ============================================
 //         GLOBAL EXCEPTION HANDLING

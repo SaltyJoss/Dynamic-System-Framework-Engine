@@ -17,22 +17,22 @@
 
 // Forward Declarations
 namespace scene {
-    class ENGINE_API Mesh;
-    class ENGINE_API Object;
-    class ENGINE_API Light;
-	class ENGINE_API Camera;
+    class DSFE_API Mesh;
+    class DSFE_API Object;
+    class DSFE_API Light;
+	class DSFE_API Camera;
 }
 namespace render {
     enum class ResolutionPreset;
     enum class QualityPreset;
 }
-namespace physics     { class ENGINE_API PhysicsSystem; }
-namespace robots      { class ENGINE_API RobotSystem; }
-namespace diagnostics { class ENGINE_API TelemetryRecorder; }
+namespace physics     { class DSFE_API PhysicsSystem; }
+namespace robots      { class DSFE_API RobotSystem; }
+namespace diagnostics { class DSFE_API TelemetryRecorder; }
 
 namespace gui {
 	// Forward Declaration for SimManager
-    class ENGINE_API SimManager;
+    class DSFE_API SimManager;
 	enum class ControlMode;
 
 	// Gravity UI Modes
@@ -91,7 +91,7 @@ namespace gui {
     };
 
 	// ControlPanel Class
-    class ENGINE_API ControlPanel {
+    class DSFE_API ControlPanel {
     public:
         ControlPanel(SimManager* sim);
 

@@ -8,7 +8,7 @@
 #include "Platform/Logger.h"
 
 namespace commands {
-	struct ENGINE_API ActiveRigidRot {
+	struct DSFE_API ActiveRigidRot {
 		scene::Object* obj = nullptr;
 		mathlib::Vec3 axisUnit{ 0.0, 0.0, 0.0 };
 		mathlib::Quat qStart{ 1.0, 0.0, 0.0, 0.0 };
@@ -18,7 +18,7 @@ namespace commands {
 		bool active = false;
 	};
 
-	struct ENGINE_API ActiveJointRot {
+	struct DSFE_API ActiveJointRot {
 		std::string link;
 		double start = 0.0;
 		double target = 0.0; // rad
@@ -29,7 +29,7 @@ namespace commands {
 	};
 
 	// Class representing the command context
-	class ENGINE_API CommandContextMotion {
+	class DSFE_API CommandContextMotion {
 	public:
 		CommandContextMotion(core::ISimulationCore* core);
 

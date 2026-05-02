@@ -12,14 +12,14 @@
 
 namespace program_data {
 	// Struct representing source location
-	struct ENGINE_API SrcLocation {
+	struct DSFE_API SrcLocation {
 		std::string filename; // Name of the source file
 		int line = 0;             // Line number in the source file
 		int column = 0;           // Column number in the source file
 	};
 
 	// Struct representing a single instruction
-	struct ENGINE_API Command {
+	struct DSFE_API Command {
 		std::string rawLine;				// The original line of code
 		std::string cmdName;				// The command name
 		std::string identifier;				// The command identifier
@@ -33,7 +33,7 @@ namespace program_data {
 	};
 
 	// Struct representing program data
-	struct ENGINE_API ProgramData {
+	struct DSFE_API ProgramData {
 		std::vector<Command> cmd; // Vector storing the instructions
 	};
 
@@ -67,7 +67,7 @@ namespace program_data {
 	};
 
 	// Struct for colour mapping
-	struct ENGINE_API Colour {
+	struct DSFE_API Colour {
 		BlockColour col = BlockColour::Red;
 		mathlib::Vec3 rgb = { 1.0f, 0.0f, 0.0f };
 	};
@@ -83,7 +83,7 @@ namespace program_data {
 	};
 
 	// Struct for program status
-	struct ENGINE_API ProgramStatus{
+	struct DSFE_API ProgramStatus{
 		ProgramState state = ProgramState::Empty;
 		size_t pc = 0;
 	};
@@ -107,13 +107,13 @@ namespace program_data {
 	};
 
 	// Command signal data struct
-	struct ENGINE_API CmdSignalData {
+	struct DSFE_API CmdSignalData {
 		CmdSignalType signal = CmdSignal_None;
 		size_t jumpTarget = 0; // for jump signals
 	};
 
 	// Command result struct
-	struct ENGINE_API CmdResult {
+	struct DSFE_API CmdResult {
 		CmdState state = CmdState::NotStarted;
 		CmdSignalData signalData;
 		std::string message;

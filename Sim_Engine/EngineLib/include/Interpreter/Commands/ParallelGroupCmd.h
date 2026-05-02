@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace commands {
-	class ENGINE_API ParallelGroupCmd final : public Command {
+	class DSFE_API ParallelGroupCmd final : public Command {
 	public:
 		// Any: succeed if any command succeeds; All: succeed only if all commands succeed
 		enum class Policy { Any, All };

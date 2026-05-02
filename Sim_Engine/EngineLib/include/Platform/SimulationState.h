@@ -21,7 +21,7 @@ enum class SelectionSource {
 };
 
 // Current selection state
-struct ENGINE_API Selection {
+struct DSFE_API Selection {
 	SelectionType type = SelectionType::NONE;
 	SelectionSource source = SelectionSource::NONE;
 	int index = -1; // Index of the selected link or robot
@@ -34,7 +34,7 @@ enum class eRunMode {
 };
 
 // Struct to hold the current simulation mode and related settings
-struct ENGINE_API modes {
+struct DSFE_API modes {
 	eRunMode _runMode = eRunMode::Interactive;
 };
 

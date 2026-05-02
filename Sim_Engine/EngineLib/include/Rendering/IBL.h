@@ -5,7 +5,7 @@
 #include "Platform/Logger.h"
 
 namespace render {
-	class ENGINE_API IBL {
+	class DSFE_API IBL {
 	public:
 		IBL();
 		~IBL();

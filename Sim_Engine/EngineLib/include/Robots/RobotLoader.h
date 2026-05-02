@@ -5,7 +5,7 @@
 #include "Robots/RobotModel.h"
 
 namespace robots {
-	class ENGINE_API RobotLoader {
+	class DSFE_API RobotLoader {
 	public:
 		static RobotModel loadFromJSON(const std::string& filepath);
 	};

@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 
 namespace gui {
-	class ENGINE_API AxisOrientator
+	class DSFE_API AxisOrientator
 	{
 	public:
 		void render(const glm::mat4& viewMatrix);

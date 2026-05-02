@@ -4,21 +4,21 @@
 
 // Conditional compilation for cross-platform symbol export/import
 #ifdef _WIN32
-  #ifdef ENGINE_LIB_BUILD
-    #define ENGINE_API __declspec(dllexport)
+  #ifdef DSFE_CORE_EXPORTS
+    #define DSFE_API __declspec(dllexport)
   #else
-    #define ENGINE_API __declspec(dllimport)
+    #define DSFE_API __declspec(dllimport)
   #endif
 #else
-  #define ENGINE_API
+  #define DSFE_API
 #endif
 
 // Forward declarations for core components
-namespace core { struct ENGINE_API ISimulationCore; }
+namespace core { struct DSFE_API ISimulationCore; }
 
 // Factory functions
 extern "C" {
     // Create / destroy factory declarations (no definitions in header)
-    ENGINE_API core::ISimulationCore* CreateSimulationCore_v1();
-    ENGINE_API void DestroySimulationCore(core::ISimulationCore* p);
+    DSFE_API core::ISimulationCore* CreateSimulationCore_v1();
+    DSFE_API void DestroySimulationCore(core::ISimulationCore* p);
 }

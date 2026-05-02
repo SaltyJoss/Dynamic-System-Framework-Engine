@@ -11,7 +11,7 @@ using namespace interpreter;
 
 namespace commands {
 	// Class representing a generic command
-	class ENGINE_API Command : public ICommand {
+	class DSFE_API Command : public ICommand {
 	public:
 		// Set the command context
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }

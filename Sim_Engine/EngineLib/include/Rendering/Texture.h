@@ -8,7 +8,7 @@
 #include "Platform/Logger.h"
 
 namespace render {
-	class ENGINE_API Texture {
+	class DSFE_API Texture {
 	public:
 		GLuint ID = 0;
 		

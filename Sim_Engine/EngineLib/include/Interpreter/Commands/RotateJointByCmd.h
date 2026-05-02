@@ -8,7 +8,7 @@
 #include "Interpreter/CommandContextMotion.h"
 
 namespace commands {
-	class ENGINE_API RotateJointByCmd final : public Command {
+	class DSFE_API RotateJointByCmd final : public Command {
 	public:
 		// Constructor
 		RotateJointByCmd(std::string link, double omegaDeg, double deltaDeg);

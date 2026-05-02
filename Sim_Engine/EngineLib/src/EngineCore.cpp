@@ -15,7 +15,7 @@
 // Factory function definitions
 extern "C" {
 	// Factory function to create a SimulationCore instance
-    ENGINE_API core::ISimulationCore* CreateSimulationCore_v1() {
+    DSFE_API core::ISimulationCore* CreateSimulationCore_v1() {
         try { 
             auto* core = new core::SimulationCore();
 
@@ -42,7 +42,7 @@ extern "C" {
         catch (...) { return nullptr; /*Avoids throwing exceptions across C ABI boundary by return null on failure*/ }
     }
 	// Destroys a SimulationCore instance
-    ENGINE_API void DestroySimulationCore(core::ISimulationCore* p) {
+    DSFE_API void DestroySimulationCore(core::ISimulationCore* p) {
         delete p; // makes sure that deletion happens in the dll that created it.
     }
 } // extern "C"

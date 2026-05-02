@@ -24,13 +24,13 @@ struct LogEntry {
 };
 
 // Simulation log entries, separate from debug panel logs, for storing sim-specific logs that can be cleared separately and have different log levels
-struct ENGINE_API simEntry {
+struct DSFE_API simEntry {
 	simLogLevel level = simLogLevel::Runtime;
 	std::string type;
 	std::string message;
 };
 
-class ENGINE_API Debug {
+class DSFE_API Debug {
 public:
 	Debug() {
 		std::cerr << "CWD: " << std::filesystem::current_path().string() << "\n";
@@ -171,6 +171,6 @@ private:
 }; // namespace Debug
 
 // Global logger instance
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 

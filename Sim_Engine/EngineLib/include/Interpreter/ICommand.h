@@ -8,11 +8,11 @@
 
 namespace commands {
 	// Forward declaration of ICommand for use in IStoredProgram
-	class ENGINE_API CommandContextMotion;
-	class ENGINE_API UIContext;
+	class DSFE_API CommandContextMotion;
+	class DSFE_API UIContext;
 
 	// ICommand interface
-	class ENGINE_API ICommand {
+	class DSFE_API ICommand {
 	public:
 		// Virtual destructor
 		virtual ~ICommand() = default;

@@ -14,10 +14,10 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations for VertexIndexBuffer.h
-namespace render { class ENGINE_API VertexIndexBuffer; }
+namespace render { class DSFE_API VertexIndexBuffer; }
 
 namespace scene {
-	class ENGINE_API Mesh {
+	class DSFE_API Mesh {
 	public:
 		// Constructors & Destructor
 		Mesh() = default;

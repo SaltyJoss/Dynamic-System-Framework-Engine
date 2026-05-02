@@ -6,20 +6,20 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations
-struct ENGINE_API GLFWwindow;
+struct DSFE_API GLFWwindow;
 namespace render { 
-    class ENGINE_API GUIContext;
-    class ENGINE_API OpenGLContext;
+    class DSFE_API GUIContext;
+    class DSFE_API OpenGLContext;
 }
 namespace gui { 
-    class ENGINE_API SimManager;
-    class ENGINE_API ControlPanel;
-    class ENGINE_API DebugPanel;
-	class ENGINE_API CommandScriptEditor;
+    class DSFE_API SimManager;
+    class DSFE_API ControlPanel;
+    class DSFE_API DebugPanel;
+	class DSFE_API CommandScriptEditor;
 }
 
 namespace window {
-    class ENGINE_API GLWindow : public IWindow {
+    class DSFE_API GLWindow : public IWindow {
     public:
         GLWindow();
         ~GLWindow();

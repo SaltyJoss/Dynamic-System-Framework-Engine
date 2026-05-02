@@ -21,10 +21,10 @@ namespace ai {
 }
 
 // Forward Declarations for Mesh.h
-namespace scene { class ENGINE_API Mesh; }
+namespace scene { class DSFE_API Mesh; }
 
 namespace assets {
-	class ENGINE_API MeshLoader {
+	class DSFE_API MeshLoader {
 	public:
 		// Loads a mesh from the specified file path and returns a vector of shared pointers to Mesh objects
 		std::vector<std::shared_ptr<scene::Mesh>> load(const std::string& filepath);

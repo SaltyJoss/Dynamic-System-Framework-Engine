@@ -7,17 +7,17 @@
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; }
-namespace physics { class ENGINE_API PhysicsSystem; }
-namespace robots { class ENGINE_API RobotSystem; }
-namespace control { class ENGINE_API TrajectoryManager; }
-namespace scene { class ENGINE_API Object; enum class ObjectID : std::uint32_t; }
-namespace diagnostics { class ENGINE_API TelemetryRecorder; }
-namespace interpreter { class ENGINE_API IStoredProgram; }
+namespace physics { class DSFE_API PhysicsSystem; }
+namespace robots { class DSFE_API RobotSystem; }
+namespace control { class DSFE_API TrajectoryManager; }
+namespace scene { class DSFE_API Object; enum class ObjectID : std::uint32_t; }
+namespace diagnostics { class DSFE_API TelemetryRecorder; }
+namespace interpreter { class DSFE_API IStoredProgram; }
 
 namespace core {
     // Headless API for the Simulation Core
     // Aimed at allowing scripts and other systems to interact with the simulation without direct access to the full SimulationCore implementation
-    struct ENGINE_API ISimulationCore {
+    struct DSFE_API ISimulationCore {
         virtual ~ISimulationCore() = default;
 
         // Simulation control

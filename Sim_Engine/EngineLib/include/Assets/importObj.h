@@ -6,11 +6,11 @@
 #include "importBase.h"
 #include "Platform/Logger.h"
 
-extern ENGINE_API Debug gLog;
+extern DSFE_API Debug gLog;
 
 namespace mesh_import {
 
-	class ENGINE_API ObjMeshImporter : public IMeshImporter {
+	class DSFE_API ObjMeshImporter : public IMeshImporter {
 	public:
 		virtual bool fromFile(const std::string& filepath, scene::Mesh* pMesh) override;
 	};
