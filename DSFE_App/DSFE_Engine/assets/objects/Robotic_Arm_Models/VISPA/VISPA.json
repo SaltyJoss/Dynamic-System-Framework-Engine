@@ -1,0 +1,383 @@
+{
+    "name": "VISPA",
+    "visual0frame": "link",
+    "units": {
+        "length": "m",
+        "angle": "rad"
+    },
+    "world0up": "Z",
+    "scale": 1.0,
+
+    "material": {
+        "Color": {
+            "ThermalWhite": [ 0.93, 0.94, 0.95, 1.0 ],
+            "AerospaceWhite": [ 0.90, 0.91, 0.92, 1.0 ],
+            "AnodisedGold": [ 0.76, 0.63, 0.28, 1.0 ],
+            "BrushedAluminium": [ 0.74, 0.76, 0.78, 1.0 ],
+            "SteelBolt": [ 0.55, 0.57, 0.58, 1.0 ]
+        },
+
+        "Presets": {
+
+            "ThermalCoating": {
+                "Metallic": 0.05,
+                "Roughness": 0.75
+            },
+
+            "AerospacePaint": {
+                "Metallic": 0.1,
+                "Roughness": 0.65
+            },
+
+            "GoldAnodised": {
+                "Metallic": 0.85,
+                "Roughness": 0.35
+            },
+
+            "BrushedMetal": {
+                "Metallic": 0.9,
+                "Roughness": 0.45
+            },
+
+            "Steel": {
+                "Metallic": 1.0,
+                "Roughness": 0.4
+            }
+        }
+    },
+
+    "base_frame": {
+        "origin_xyz": [ 0.0, 0.0, 0.0 ],
+        "origin_rpy": [ -1.57079632679, 0.0, 0.0 ]
+    },
+
+    "links": [
+        { "name": "world" },
+        {
+            "name": "link00",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link0-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "AnodisedGold",
+                    "Metallic": 0.35,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 0.627,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.00281845585208,
+                    "iyy": 0.00281883333333,
+                    "izz": 0.00379978918542,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link01",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link1-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "ThermalWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 2.328,
+                "com_xyz": [ 0, -0.029, -0.043 ],
+                "inertia": {
+                    "ixx": 0.012,
+                    "iyy": 0.007,
+                    "izz": 0.008,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0.003
+                }
+            }
+        },
+
+        {
+            "name": "link02",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link2-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "ThermalWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 3.995,
+                "com_xyz": [ 0.4, 0, 0.142 ],
+                "inertia": {
+                    "ixx": 0.010,
+                    "iyy": 0.578,
+                    "izz": 0.574,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        },
+
+        {
+            "name": "link03",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link3-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "ThermalWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 2.328,
+                "com_xyz": [ 0, 0.043, 0.029 ],
+                "inertia": {
+                    "ixx": 0.012,
+                    "iyy": 0.008,
+                    "izz": 0.007,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0.003
+                }
+            }
+        },
+
+        {
+            "name": "link04",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link4-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "ThermalWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 3.157,
+                "com_xyz": [ 0, -0.043, -0.210 ],
+                "inertia": {
+                    "ixx": 0.199,
+                    "iyy": 0.193,
+                    "izz": 0.01,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0.01
+                }
+            }
+        },
+
+        {
+            "name": "link05",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link5-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "ThermalWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 2.695,
+                "com_xyz": [ 0, 0.125, -0.007 ],
+                "inertia": {
+                    "ixx": 0.029,
+                    "iyy": 0.006,
+                    "izz": 0.027,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": -0.001
+                }
+            }
+        },
+
+        {
+            "name": "link06",
+            "visual": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ],
+                "mesh": "VISPA/meshes/Link6-DHReference-PublicRelease.stl",
+                "material": {
+                    "Color": "AerospaceWhite",
+                    "Metallic": 0.1,
+                    "Roughness": 0.65
+                }
+            },
+            "inertial": {
+                "mass": 0.924,
+                "com_xyz": [ 0, 0, 0 ],
+                "inertia": {
+                    "ixx": 0.002,
+                    "iyy": 0.002,
+                    "izz": 0.001,
+                    "ixy": 0,
+                    "ixz": 0,
+                    "iyz": 0
+                }
+            }
+        }
+    ],
+
+    "joints": [
+        {
+            "name": "world_joint",
+            "type": "fixed",
+            "parent": "world",
+            "child": "link00",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            }
+        },
+
+        {
+            "name": "joint01",
+            "type": "revolute",
+            "parent": "link00",
+            "child": "link01",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0.18 ],
+                "origin_rpy": [ 0, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        },
+
+        {
+            "name": "joint02",
+            "type": "revolute",
+            "parent": "link01",
+            "child": "link02",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 1.57079632679, -1.57079632679, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        },
+
+        {
+            "name": "joint03",
+            "type": "revolute",
+            "parent": "link02",
+            "child": "link03",
+            "origin": {
+                "origin_xyz": [ 0.8, 0, 0 ],
+                "origin_rpy": [ 0, 0, -1.57079632679 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        },
+
+        {
+            "name": "joint04",
+            "type": "revolute",
+            "parent": "link03",
+            "child": "link04",
+            "origin": {
+                "origin_xyz": [ 0, 0.65, 0 ],
+                "origin_rpy": [ -1.57079632679, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        },
+
+        {
+            "name": "joint05",
+            "type": "revolute",
+            "parent": "link04",
+            "child": "link05",
+            "origin": {
+                "origin_xyz": [ 0, 0, 0 ],
+                "origin_rpy": [ 1.57079632679, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        },
+
+        {
+            "name": "joint06",
+            "type": "revolute",
+            "parent": "link05",
+            "child": "link06",
+            "origin": {
+                "origin_xyz": [ 0, 0.325, 0 ],
+                "origin_rpy": [ -1.57079632679, 0, 0 ]
+            },
+            "axis": [ 0, 0, 1 ],
+            "limits": {
+                "lower": -3.14149265359,
+                "upper": 3.14149265359,
+                "velocity": 0.09395689,
+                "effort": 50
+            },
+            "dynamics": {
+                "damping": 0.0,
+                "friction": 0.0
+            }
+        }
+    ]
+}
