@@ -1,3 +1,8 @@
+# CMakeLists.txt for IntegrationTests
+
+cmake_minimum_required(VERSION 3.10)
+project(IntegrationTests LANGUAGES CXX)
+
 enable_testing()
 
 add_executable(IntegrationTests
@@ -9,7 +14,7 @@ add_executable(IntegrationTests
 )
 
 target_link_libraries(IntegrationTests PRIVATE
-    EngineLib
+    DSFE_core
     gtest_main
 )
 

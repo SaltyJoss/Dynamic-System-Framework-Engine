@@ -1,6 +1,15 @@
-# RoboticArm_MathModelling/CMakeLists.txt
-cmake_minimum_required(VERSION 3.14)
-project(DSFE_app)
+# CMake configuration for the DSFE_app project, which includes external dependencies and subdirectories for MathLib and Sim_Engine.
+cmake_minimum_required(VERSION 3.10)
+
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
+project(DSFE LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set common output directories for all targets
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -50,7 +59,7 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG v1.92.5
+  GIT_TAG docking
   GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(imgui)

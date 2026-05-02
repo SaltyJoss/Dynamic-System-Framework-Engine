@@ -1,4 +1,9 @@
-add_library(MathLib STATIC
+# CMakeLists.txt for MathLib
+
+cmake_minimum_required(VERSION 3.10)
+project(PxMLib LANGUAGES CXX)
+
+add_library(PxMLib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/pch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/control/Error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/control/PID.cpp
@@ -12,9 +17,9 @@ add_library(MathLib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/kinematics/Transform_Utils.cpp
 )
 
-target_precompile_headers(MathLib PRIVATE "MathLib/pch.h")
+target_precompile_headers(PxMLib PRIVATE "MathLib/pch.h")
 
-target_include_directories(MathLib 
+target_include_directories(PxMLib 
     PUBLIC 
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MathLib/include>
         ${eigen_SOURCE_DIR}

@@ -1,6 +1,9 @@
-#include "pch.h"
 // File:   Main.cpp
 #include <EngineCore.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
 #include <Application.h>
 #include "BatchEntry.h"
 #include "BatchArgs.h"

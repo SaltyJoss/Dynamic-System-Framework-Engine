@@ -1,5 +1,4 @@
 // BatchMain.cpp
-#include "pch.h"
 #include <EngineCore.h>
 #include "BatchEntry.h"
 #include "BatchArgs.h"
@@ -10,6 +9,7 @@
 #include <chrono>
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <cctype>
