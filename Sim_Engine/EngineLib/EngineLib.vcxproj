@@ -60,7 +60,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\implot;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen;C:\Program Files\HDF_Group\HDF5\2.0.0\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)EngineLib;$(SolutionDir)EngineLib\include;$(SolutionDir)External\GLM;$(SolutionDir)External\GLAD;$(SolutionDir)External\GLFW;$(SolutionDir)External\assimp;$(SolutionDir)External\implot;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\plugins;$(SolutionDir)External;$(SolutionDir)External\MathLib\include;$(SolutionDir)External\Eigen;$(SolutionDir)External\HDF5\include</AdditionalIncludeDirectories>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -134,6 +134,7 @@ if "$(Configuration)"=="Release" (
     <ClCompile Include="src\ui\DebugPanel.cpp" />
     <ClCompile Include="src\ui\RenderPreset.cpp" />
     <ClCompile Include="src\ui\Styles.cpp" />
+    <ClCompile Include="std_image_impl.cpp" />
     <ClInclude Include="..\External\GLAD\glad\glad.h" />
     <ClInclude Include="..\External\imgui\imconfig.h" />
     <ClInclude Include="..\External\imgui\imgui.h" />

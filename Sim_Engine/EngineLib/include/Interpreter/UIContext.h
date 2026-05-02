@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/Utils.h"
+#include <glm/glm.hpp>
 
 #include "Platform/Logger.h"
 

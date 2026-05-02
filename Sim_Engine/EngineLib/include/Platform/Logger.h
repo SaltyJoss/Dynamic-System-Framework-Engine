@@ -10,6 +10,10 @@
 #include <iomanip>
 #include <mutex>
 #include <sstream>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <ostream>
 
 // Log levels for debug panel and sim log
 enum class LogLevel { Trace, Debug, Info, Export, Warning, Error, Success, Fail, Runtime, Output };

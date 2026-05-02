@@ -193,7 +193,7 @@ namespace gui {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
 
-        ImGui::BeginChild(id, size, true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+        ImGui::BeginChild(id, size, true, ImGuiChildFlags_AlwaysUseWindowPadding);
     }
 
     // End Control Panel Helper

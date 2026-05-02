@@ -17,7 +17,9 @@ add_library(PxMLib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/src/kinematics/Transform_Utils.cpp
 )
 
-target_precompile_headers(PxMLib PRIVATE "MathLib/pch.h")
+target_precompile_headers(PxMLib PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/pch.h
+)
 
 target_include_directories(PxMLib 
     PUBLIC 

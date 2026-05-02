@@ -788,6 +788,9 @@
     <ClCompile Include="src\Assets\MeshLoader.cpp">
       <Filter>Source Files\src\Assets</Filter>
     </ClCompile>
+    <ClCompile Include="std_image_impl.cpp">
+      <Filter>Source Files\src\Assets</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />

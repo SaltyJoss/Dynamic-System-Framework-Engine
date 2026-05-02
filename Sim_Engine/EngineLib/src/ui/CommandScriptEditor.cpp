@@ -695,7 +695,7 @@ namespace gui {
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
-		ImGui::BeginChild(id, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysUseWindowPadding);
+		ImGui::BeginChild(id, ImVec2(0, 0), true, ImGuiChildFlags_AlwaysUseWindowPadding);
 	}
 
 	void CommandScriptEditor::endEditorPanel() {

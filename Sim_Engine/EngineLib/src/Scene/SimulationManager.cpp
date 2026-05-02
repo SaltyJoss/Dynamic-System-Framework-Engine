@@ -1787,7 +1787,7 @@ namespace gui {
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 8.0f));
 
 		ImGui::BeginChild(id, ImVec2(0, 0), true,
-			ImGuiWindowFlags_AlwaysUseWindowPadding |
+			ImGuiChildFlags_AlwaysUseWindowPadding |
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse);
 	}
