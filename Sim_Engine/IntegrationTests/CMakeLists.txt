@@ -19,4 +19,13 @@ target_link_libraries(IntegrationTests PRIVATE
 )
 
 include(GoogleTest)
-gtest_discover_tests(IntegrationTests)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    gtest_discover_tests(
+        IntegrationTests
+        DISCOVERY_MODE PRE_TEST
+        DISCOVERY_TIMEOUT 10
+    )
+else()
+    gtest_discover_tests(IntegrationTests)
+endif()
