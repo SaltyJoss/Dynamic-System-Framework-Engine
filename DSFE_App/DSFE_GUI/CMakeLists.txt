@@ -13,6 +13,8 @@ target_include_directories(glad PUBLIC
     ../External # Add the parent External directory
 )
 find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(glm REQUIRED)
 
 target_link_libraries(glad PRIVATE OpenGL::GL)
 
@@ -50,14 +52,19 @@ set(UI_SRC
     src/ui/Styles.cpp
 )
 
-set(ASSETS_SRC
-    src/Assets/std_image_impl.cpp
+set(ROBOT_SRC
+    src/Robots/RobotPresentationBuilder.cpp
 )
+
+set(PLATFORM_SRC src/Platform/WindowManager.cpp)
+
+set(ASSETS_SRC src/Assets/std_image_impl.cpp)
 
 target_sources(DSFE_GUI PRIVATE
     ${RENDER_SRC}
     ${SCENE_SRC}
     ${UI_SRC}
+    ${PLATFORM_SRC}
     ${ASSETS_SRC}
 
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -97,12 +104,15 @@ target_include_directories(DSFE_Core PUBLIC
 target_link_libraries(DSFE_GUI PUBLIC
     DSFE_Core
     ExternalHeaders
-    glfw
     implot
-    glad
     stb
-    glm::glm
     assimp
     OpenGL::GL
     Threads::Threads
+)
+
+target_link_libraries(DSFE_GUI PRIVATE
+    glfw
+    glad
+    glm::glm
 )

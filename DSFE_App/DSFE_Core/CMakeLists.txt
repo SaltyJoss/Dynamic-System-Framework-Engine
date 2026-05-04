@@ -56,7 +56,6 @@ set(PLATFORM_SRC
     src/Platform/Logger.cpp
     src/Platform/Paths.cpp
     src/Platform/StudyRunner.cpp
-    src/Platform/WindowManager.cpp
 
     src/Assets/MeshLoader.cpp
     src/Assets/importObj.cpp
