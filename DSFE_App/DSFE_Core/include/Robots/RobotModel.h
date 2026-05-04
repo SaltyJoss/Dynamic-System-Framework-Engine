@@ -5,10 +5,11 @@
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include <Kinematics/DH_Params.h>
-#include "Scene/Object.h"
 
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
+
+constexpr double DEG2RAD = 3.141592653589793 / 180.0;
 
 namespace robots {
 	// --- Robot Model Kinematic Models ---
@@ -81,12 +82,8 @@ namespace robots {
 		Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
 
 		// Visual Geometry Parameters
-		std::string meshFile;
 		std::vector<std::string> meshFiles; // for multiple visual meshes per link (legacy, string-only)
 		std::vector<VisualMeshEntry> meshEntries; // for multiple visual meshes with per-mesh material
-		Vec4 material{ 0.5, 0.5, 0.5, 1.0 }; // default grey material if not specified at mesh level
-		float metallic = 0.5f;
-		float roughness = 0.5f;
 	};
 
 	// RobotLink struct, representing a single link in the robot model
@@ -97,10 +94,6 @@ namespace robots {
 		Visual visual{};
 		std::vector<CollisionShape> collisions;
 		Inertial inertial{};
-
-		// Attached scene objects (one per visual mesh part)
-		std::vector<scene::Object*> attachedObjects;
-		scene::Object* attachedObject = nullptr; // primary object (first in attachedObjects)
 	};
 
 	// --- Robot Model Joints ---
@@ -110,7 +103,7 @@ namespace robots {
 		bool continuous = false;
 		double minAngle = 0.0f;
 		double maxAngle = 0.0f;
-		double maxqd = glm::radians(180.0f);
+		double maxqd = 180.0 * DEG2RAD;
 		double maxEffort = 0.0f; // max torque/force
 		// Soft limits
 		double omegaRefMaxRad_s = 0.0;
