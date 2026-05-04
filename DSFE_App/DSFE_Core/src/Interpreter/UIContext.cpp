@@ -66,13 +66,13 @@ namespace commands {
 	}
 
 	//  Set the colour property of the current object
-	const OpResult UIContext::setColour(const glm::vec3& color) const {
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj) return OpResult::Failure("No object selected.");
+	//const OpResult UIContext::setColour(const glm::vec3& color) const {
+	//	scene::Object* obj = resolveCurrentObject();
+	//	if (!obj) return OpResult::Failure("No object selected.");
 
-		obj->setAlbedo(color);
-		return OpResult::Success();
-	}
+	//	obj->setAlbedo(color);
+	//	return OpResult::Success();
+	//}
 
 	//  Set the metallic property of the current object
 	const OpResult UIContext::setMetallic(float metallic) const {
@@ -136,14 +136,6 @@ namespace commands {
 		_core->loadRobot(robotName);
 		_robot = _core->robotSystem();
 		if (!_robot) return OpResult::Failure("Robot system is null after load.");
-		return OpResult::Success(true);
-	}
-
-	OpResult UIContext::clearRobot() {
-		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
-
-		_robot = nullptr;
-		_core->clearRobot();
 		return OpResult::Success(true);
 	}
 

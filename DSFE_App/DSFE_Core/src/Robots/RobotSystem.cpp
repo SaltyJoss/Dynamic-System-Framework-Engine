@@ -1,9 +1,7 @@
+// DSFE_Core RobotSystem.cpp
 #include "pch.h"
-// File:   RobotSystem.cpp
-// GitHub: SaltyJoss
+
 #include "Robots/RobotSystem.h"
-#include "Scene/Object.h"
-#include "Scene/Mesh.h"
 
 #include <kinematics/Forward_Kinematics.h>
 #include "Robots/RobotKinematics.h"
@@ -12,8 +10,8 @@
 
 #include <stack>
 #include <unordered_set>
+#include <algorithm>
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <Core/Utils.h>
 #include "Robots/TrajectoryManager.h"
 #include "Platform/Paths.h"
@@ -26,7 +24,7 @@ using namespace constants;
 
 namespace robots {
 	// Constructor
-	RobotSystem::RobotSystem(std::vector<std::unique_ptr<scene::Object>>& objects, spawnFn meshLoader)
+	RobotSystem::RobotSystem()
 		: _objects(objects), _loadMeshReturn(std::move(meshLoader)), _torqueMode(eTorqueMode::CONTROLLED),
 		_integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
 		_kinematics(std::make_unique<RobotKinematics>(_robot)), _dynamics(std::make_unique<RobotDynamics>(_robot)) {
@@ -35,42 +33,8 @@ namespace robots {
 	// Destructor
 	RobotSystem::~RobotSystem() = default;
 
-	// --- 'toGlm' OVERLOADS ---
-
-	// Converts an Eigen 3D vector to a glm::vec3
-	static glm::vec3 toGlm(const Vec3& v) { 
-		return glm::vec3(
-			static_cast<float>(v.x()),
-			static_cast<float>(v.y()),
-			static_cast<float>(v.z())
-			);
-	}
-	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
-	static glm::quat toGlm(const Quat& q) {
-		return glm::quat(
-			static_cast<float>(q.w()),
-			static_cast<float>(q.x()),
-			static_cast<float>(q.y()),
-			static_cast<float>(q.z())
-		); // (w, x, y, z)
-	}
-	
-	// Converts a 3x3 Eigen matrix to a glm::mat3, taking into account the row-major to column-major conversion
-	static glm::mat3 toGlm(const Mat3& m) {
-		glm::mat3 g(1.0f);
-		for (int c = 0; c < 3; ++c)
-			for (int r = 0; r < 3; ++r)
-				g[c][r] = static_cast<float>(m(r, c));
-		return g; // (3x3)
-	}
-
-	// Converts a 4x4 Eigen matrix to a glm::mat4, taking into account the row-major to column-major conversion
-	static glm::mat4 toGlm(const Mat4& m) {
-		glm::mat4 g(1.0f);
-		for (int c = 0; c < 4; ++c)
-			for (int r = 0; r < 4; ++r)
-				g[c][r] = static_cast<float>(m(r, c));
-		return g; // (4x4)
+	const robots::RobotModel& RobotSystem::model() const {
+		return _robot;
 	}
 
 	// Helper function to convert std::vector<double> to Eigen::VectorXd
@@ -85,7 +49,7 @@ namespace robots {
 	// Method to clamp a joint angle to its limits
 	double RobotSystem::clampJointAngle(const RobotJoint& joint, double angleRad) {
 		if (joint.limits.continuous) { return wrapRad(angleRad); }
-		else { return glm::clamp(angleRad, joint.limits.minAngle, joint.limits.maxAngle); }
+		else { return std::clamp(angleRad, joint.limits.minAngle, joint.limits.maxAngle); }
 	}
 
 	// Method to apply a soft velocity barrier to joint torque using a quadratic "wall" function (basically a softer version of a hard velocity limit)
@@ -108,118 +72,6 @@ namespace robots {
 	}
 
 	// --- ROBOT STATE INTEGRATION METHODS ---
-
-	// Method to create Object instances for each robot link
-	void RobotSystem::instantiateRobotLinks() {
-		// For each link, load its visual mesh(es), apply the visual origin transform, and create a scene::Object
-		for (auto& link : _robot.links) {
-			link.attachedObjects.clear();
-
-			// Per-mesh material entries (new format with meshEntries)
-			if (!link.visual.meshEntries.empty()) {
-				for (const auto& entry : link.visual.meshEntries) {
-					const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile).string();
-					auto partObjs = _loadMeshReturn(fullPath);
-
-					// If no meshes were loaded for this entry, skip it
-					for (auto* obj : partObjs) {
-						scene::Mesh* mesh = obj->getMesh();
-						if (mesh) {
-							// Apply per-mesh material if specified, otherwise use link-level material
-							if (entry.hasMaterial) {
-								const Vec4& rgba = entry.material;
-								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-								mesh->setMetallic(entry.metallic);
-								mesh->setRoughness(entry.roughness);
-							}
-							// Fallback to link-level material
-							else {
-								const Vec4& rgba = link.visual.material;
-								mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-								mesh->setMetallic(link.visual.metallic);
-								mesh->setRoughness(link.visual.roughness);
-							}
-							mesh->rebuildGPU();
-						}
-
-						// Set object properties
-						obj->name = link.name;
-						obj->category = scene::ObjectCategory::RobotLink;
-						obj->transform.scale = glm::vec3(_robot.scale);
-						link.attachedObjects.push_back(obj);
-					}
-				}
-
-				if (!link.attachedObjects.empty()) {
-					link.attachedObject = link.attachedObjects[0];
-				}
-				continue;
-			}
-
-			// If no mesh entries, fall back to legacy single mesh or multiple mesh files
-			std::vector<scene::Object*> objs;
-
-			// Explicit multiple meshes
-			if (!link.visual.meshFiles.empty()) {
-				for (const auto& meshRelPath : link.visual.meshFiles) {
-					const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath).string();
-					auto partObjs = _loadMeshReturn(fullPath);
-					objs.insert(objs.end(), partObjs.begin(), partObjs.end());
-				}
-			}
-			// Single mesh file
-			else if (!link.visual.meshFile.empty()) {
-				const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / link.visual.meshFile).string();
-				objs = _loadMeshReturn(fullPath);
-			}
-			else {
-				//LOG_WARN("Link %s has no visual meshes defined", link.name.c_str()); -> dont really have a fix for this as its too early to know if its intentional or not
-				continue;
-			}
-
-			// If no meshes were loaded, skip this link
-			if (objs.empty()) {
-				LOG_WARN("No meshes found for link %s", link.name.c_str());
-				continue;
-			}
-
-			// Merge multiple meshes into one Object (if necessary)
-			scene::Object* obj = objs[0];
-			scene::Mesh* baseMesh = obj->getMesh();
-
-			// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
-			for (size_t i = 1; i < objs.size(); ++i) {
-				scene::Mesh* extraMesh = objs[i]->getMesh();
-				if (extraMesh && baseMesh) {
-					baseMesh->appendGeometry(*extraMesh);
-				}
-
-				objs[i]->name.clear();
-				objs[i]->category = scene::ObjectCategory::General;
-			}
-
-			// Apply visual origin transform to the merged mesh
-			if(baseMesh) {
-				const Vec4& rgba = link.visual.material;
-
-				// Apply visual material properties
-				baseMesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-				baseMesh->setMetallic(link.visual.metallic);
-				baseMesh->setRoughness(link.visual.roughness);
-
-				baseMesh->rebuildGPU();
-			}
-
-			obj->name = link.name;
-			obj->category = scene::ObjectCategory::RobotLink;
-			obj->transform.scale = glm::vec3(_robot.scale);
-			link.attachedObject = obj;
-			link.attachedObjects.push_back(obj);
-		}
-
-		LOG_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
-		D_INFO_ONCE("Instantiated %zu robot links", _robot.links.size());
-	}
 
 	// Method to build a name-to-index map for robot links
 	void RobotSystem::buildLinkIndex() {
@@ -275,7 +127,7 @@ namespace robots {
 			if (wMax_hw > 0.0f) {
 				const double eps = 0.05f;
 				if (std::abs(omega_in) > (1.0f + eps) * wMax_hw) {
-					omega_out = glm::clamp(omega_in, -wMax_hw, wMax_hw);
+					omega_out = std::clamp(omega_in, -wMax_hw, wMax_hw);
 				}
 			}
 
@@ -358,7 +210,6 @@ namespace robots {
 		// Enforce joint limits
 		for (auto& j : _robot.joints) {
 			const double wMax = j.limits.maxqd;
-			/*if (wMax > 0.0f) { j.qd = glm::clamp(j.qd, -wMax, wMax); }*/
 			enforceJointLimits(j);
 		}
 
@@ -451,7 +302,7 @@ namespace robots {
 		}
 
 		// Update kinematics
-		updateRobotKinematics();
+		computeRobotKinematics(_worldTransforms);
 	}
 
 	// Method to step the reference trajectory and update joint reference states
@@ -495,7 +346,13 @@ namespace robots {
 
 	// Method to load a robot model by name
 	void RobotSystem::loadRobot(const std::string& name) {
-		clearRobot();
+		if (name == _loadedName) {
+			LOG_INFO("Robot '%s' is already loaded, skipping load.", name.c_str());
+			D_INFO("Robot '%s' is already loaded, skipping load.", name.c_str());
+			return;
+		}
+
+		// Reset control parameters to target values so that if the new robot has different defaults, we start with those
 		resetNaturalFrequencyToTarget();
 		resetDampingRatioToTarget();
 		resetOvershootRatioToTarget();
@@ -525,8 +382,7 @@ namespace robots {
 		}
 
 		// Set base frame and home position
-		glm::mat4 baseFrameGLM = toGlm(_robot.baseFrame);
-		_robotRootHome = baseFrameGLM;
+		_robotRootHome = _robot.baseFrame;
 		_robotRootPose = _robotRootHome;
 
 		// Initialize joint home positions
@@ -571,35 +427,9 @@ namespace robots {
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
 
-		updateRobotKinematics();
+		computeRobotKinematics(_worldTransforms);
 		D_INFO("Robot reset to home position.");
 		D_SUCCESS("Robot reset to home position.");
-	}
-
-	// Method to clear the current robot from the scene
-	void RobotSystem::clearRobot() {
-		if (!_hasRobot) return;
-
-		// Remove robot objects from _objects
-		for (auto& link : _robot.links) {
-			for (auto* dead : link.attachedObjects) {
-				if (!dead) continue;
-				_objects.erase(
-					std::remove_if(_objects.begin(), _objects.end(),
-						[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == dead; }),
-					_objects.end()
-				);
-			}
-			link.attachedObjects.clear();
-			link.attachedObject = nullptr;
-		}
-
-		_robot.links.clear();
-		_robot.joints.clear();
-		_linkIndex.clear();
-		_hasRobot = false;
-
-		D_WARN("Old robot model removed");
 	}
 
 	void RobotSystem::stopAll() {
@@ -610,13 +440,8 @@ namespace robots {
 		}
 	}
 
-	integration::IntegrationService* RobotSystem::getIntegrator() {
-		return _integrator.get();
-	}
-
-	const integration::IntegrationService* RobotSystem::getIntegrator() const {
-		return _integrator.get();
-	}
+	integration::IntegrationService* RobotSystem::getIntegrator() { return _integrator.get(); }
+	const integration::IntegrationService* RobotSystem::getIntegrator() const { return _integrator.get(); }
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
 
@@ -632,9 +457,14 @@ namespace robots {
 	}
 
 	// Method to update the pose of each robot link based on current joint angles using forward kinematics
-	void RobotSystem::updateRobotKinematics() {
-		if (!_hasRobot) return;
-		std::vector<glm::mat4> world(_robot.links.size(), glm::mat4(1.0f));
+	void RobotSystem::computeRobotKinematics(std::vector<Mat4>& world) {
+		if (!_hasRobot) {
+			world.clear();
+			return;
+		};
+
+		world.resize(_robot.links.size());
+		for (auto& T : world) { T = Mat4::Identity(); }
 
 		// Find root link
 		const std::string rootName = findRootLink();
@@ -666,7 +496,7 @@ namespace robots {
 			if (itP == _linkIndex.end()) { continue; }
 			int pIdx = itP->second;
 
-			const glm::mat4& T_parent = world[pIdx];
+			const Mat4& T_parent = world[pIdx];
 
 
 			// Find children joints
@@ -681,71 +511,35 @@ namespace robots {
 				int cIdx = itC->second;
 
 				// Joint origin transform
-				glm::mat4 T_joint = glm::translate(glm::mat4(1.0f), toGlm(j.origin_xyz));
-				glm::mat4 R_joint = glm::mat4_cast(toGlm(j.origin_q));
+				Mat4 T_joint = Mat4::Identity();
+				T_joint.block<3, 1>(0, 3) = j.origin_xyz;
+
+				// Joint origin rotation
+				Mat4 R_joint = Mat4::Identity();
+				R_joint.block<3, 3>(0, 0) = j.origin_q.toRotationMatrix();
 
 				// Compute child link pose in world frame
-				glm::mat4 T_child = T_parent * T_joint * R_joint;
+				Mat4 T_child = T_parent * T_joint * R_joint;
+
+				Vec3 axis = j.axis.normalized() > 1e-8 ? j.axis.normalized() : Vec3(0, 0, 1); // default axis if zero
 
 				// Apply joint rotation for revolute joints
 				if (j.type == eJointType::REVOLUTE) {
-					glm::mat4 R_q = glm::rotate(glm::mat4(1.0f), static_cast<float>(j.q), glm::normalize(toGlm(j.axis)));
+					Mat4 R_q = Mat4::Identity();
+					R_q.block<3, 3>(0, 0) = Eigen::AngleAxisd(j.q, axis).toRotationMatrix();
+					
 					T_child = T_child * R_q;
 				}
 				else if (j.type == eJointType::PRISMATIC) {
-					glm::mat4 T_q = glm::translate(glm::mat4(1.0f), glm::normalize(toGlm(j.axis)) * static_cast<float>(j.q));
+					Mat4 T_q = Mat4::Identity();
+					T_q.block<3, 1>(0, 3) = axis * j.q; // translate along joint axis by q
+					
 					T_child = T_child * T_q;
 				}
 
 				// FIXED joints: no motion
 				world[cIdx] = T_child;
-
 				st.push(j.child);
-			}
-		}
-
-		// Update attached objects (visuals) based on FK results
-		for (int i = 0; i < (int)_robot.links.size(); ++i) {
-			auto& link = _robot.links[i];
-			if (link.attachedObjects.empty()) continue;
-
-			for (auto* obj : link.attachedObjects) {
-				if (!obj) continue;
-				scene::Mesh* mesh = obj->getMesh();
-				if (!mesh) { continue; }
-
-				// Engine-aligned robots (CAD-authored):
-				// Mesh local frame already represents link frame.
-				// FK must be baked directly into the mesh, not the object.
-				if (_robot.baseFrameIsEngineAligned) {
-					mesh->localTransform = glm::mat4(1.0f);
-					mesh->localTransform = world[i];
-					continue;
-				}
-
-				// FK: world -> link frame
-				const glm::mat4& T_link = world[i];
-
-				// Visual origin: link frame -> visual frame
-				const Vec3& vt = link.visual.origin_xyz;
-				const Vec3& vr = link.visual.origin_rpy;
-
-				glm::mat4 T_visual(1.0f);
-				T_visual = glm::translate(T_visual, glm::vec3(vt.x(), vt.y(), vt.z()));
-				T_visual *= glm::mat4_cast(toGlm(_kinematics->rpyRadToQuat(vr)));
-
-				glm::mat4 M = T_link * T_visual;
-
-				// Apply mesh-local ONCE
-				if (mesh->hasLocalTransform()) {
-					M = M * mesh->localTransform;
-				}
-
-				obj->transform.position = glm::vec3(M[3]);
-				obj->transform.rotQ = glm::quat_cast(M);
-
-				LOG_INFO_ONCE("Mesh local determinant: %.3f",
-					glm::determinant(mesh->localTransform));
 			}
 		}
 	}
@@ -878,7 +672,7 @@ namespace robots {
 			if (joint.child == childLink) {
 				double t = joint.q_ref + deltaRad;
 				if (joint.limits.continuous) { t = wrapRad(t); }
-				else { t = glm::clamp(t, joint.limits.minAngle, joint.limits.maxAngle); }
+				else { t = std::clamp(t, joint.limits.minAngle, joint.limits.maxAngle); }
 				joint.q_ref = t; // clamp to joint limits
 				return true;
 			}
@@ -951,7 +745,7 @@ namespace robots {
 
 	// Method to check if a specific robot joint is at its target angle within a tolerance (degrees)
 	bool RobotSystem::isJointAtTargetDeg(const std::string& childLink, double tolDeg) const { 
-		return isJointAtTargetRad(childLink, glm::radians(tolDeg)); 
+		return isJointAtTargetRad(childLink, radians(tolDeg)); 
 	}
 
 	// Method to check if a specific robot joint is near a target angle within a tolerance (radians)
@@ -971,7 +765,7 @@ namespace robots {
 
 	// Method to check if a specific robot joint is near a target angle within a tolerance (degrees)
 	bool RobotSystem::isJointNearAngleDeg(const std::string& childLink, double targetDeg, double tolDeg) const { 
-		return isJointNearAngleRad(childLink, glm::radians(targetDeg), glm::radians(tolDeg));
+		return isJointNearAngleRad(childLink, radians(targetDeg), radians(tolDeg));
 	}
 
 	// --- ROBOT LINK AND ROOT POSE METHODS ---
@@ -980,7 +774,7 @@ namespace robots {
 	bool RobotSystem::setRobotLinkRotation(const std::string& childLinkName, double angleDeg) {
 		for (auto& j : _robot.joints) {
 			if (j.child == childLinkName) {
-				j.q = glm::radians(angleDeg);
+				j.q = radians(angleDeg);
 				updateRobotKinematics();
 				return true;
 			}
@@ -988,18 +782,22 @@ namespace robots {
 		return false;
 	}
 
+	Mat4 RobotSystem::setRobotRoot(const Vec3& pos, const Quat& rot) {
+		Mat4 T = Mat4::Identity();
+		T.block<3, 1>(0, 3) = pos;
+		Mat4 R = Mat4::Identity();
+		R.block<3, 3>(0, 0) = rot.toRotationMatrix();
+		return T * R;
+	}
+
 	// Method to set the robot root pose in world coordinates
-	void RobotSystem::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
-		glm::mat4 R = glm::mat4_cast(rot);
-		_robotRootPose = T * R;
+	void RobotSystem::setRobotRootPose(const Vec3& pos, const Quat& rot) {
+		_robotRootPose = setRobotRoot(pos, rot);
 	}
 
 	// Method to set the robot root home pose in world coordinates
-	void RobotSystem::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
-		glm::mat4 R = glm::mat4_cast(rot);
-		_robotRootHome = T * R;
+	void RobotSystem::setRobotRootHome(const Vec3& pos, const Quat& rot) {
+		_robotRootHome = setRobotRoot(pos, rot);;
 		_robotRootPose = _robotRootHome;
 	}
 
@@ -1058,23 +856,18 @@ namespace robots {
 
 	// Method to update the robot root pose based on the integrated base translation (for legged robots)
 	void RobotSystem::updateBaseRootPose() {
-		glm::mat4 T = glm::translate(glm::mat4(1.0f),
-			glm::vec3(
-				(float)_basePos.x(),
-				(float)_basePos.y(),
-				(float)_basePos.z()
-			)
-		);
-		glm::mat4 R = glm::rotate(
-			glm::mat4(1.0f),
-			(float)_baseYaw,
-			glm::vec3(0, 1, 0)
-		);
+		Mat4 T = Mat4::Identity();
+		T.block<3, 1>(0, 3) = Vec3(_basePos.x(), _basePos.y(), _basePos.z());
+
+		Mat4 R = Mat4::Identity();
+		R.block<3, 3>(0, 0) = Eigen::AngleAxisd(_baseYaw, Vec3(0, 1, 0)).toRotationMatrix();
 
 		_robotRootPose = T * R * _robotRootHome;
 	}
 
 	// --- ROBOT SYSTEM CONFIGURATION METHODS ---
+
+	std::vector<Mat4>& RobotSystem::getWorldTransforms() { return _worldTransforms; }
 
 	// Method to set the gravity strength for the robot system
 	void RobotSystem::setGravity(double g) {

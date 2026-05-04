@@ -7,6 +7,7 @@ find_package(Threads REQUIRED)
 add_executable(DSFE_Engine 
     src/Main.cpp
     src/BatchMain.cpp
+    src/Application.cpp
 )
 
 target_include_directories(DSFE_Engine PRIVATE

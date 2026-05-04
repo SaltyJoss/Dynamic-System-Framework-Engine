@@ -7,12 +7,10 @@
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; }
-namespace physics { class DSFE_API PhysicsSystem; }
-namespace robots { class DSFE_API RobotSystem; }
-namespace control { class DSFE_API TrajectoryManager; }
-namespace scene { class DSFE_API Object; enum class ObjectID : std::uint32_t; }
-namespace diagnostics { class DSFE_API TelemetryRecorder; }
-namespace interpreter { class DSFE_API IStoredProgram; }
+namespace robots { class RobotSystem; }
+namespace control { class TrajectoryManager; }
+namespace diagnostics { class TelemetryRecorder; }
+namespace interpreter { class IStoredProgram; }
 
 namespace core {
     struct DSFE_API SimulationSnapshot {
@@ -31,7 +29,6 @@ namespace core {
         virtual void stopSimulation() = 0;
         virtual bool isSimRunning() const = 0;
         // Time stepping
-        virtual void updatePhysics(double dt) = 0;
         virtual void setFixedDt(double dt) = 0;
         virtual double fixedDt() const = 0;
         virtual double simTime() const = 0;
@@ -43,20 +40,11 @@ namespace core {
 		// Setter for run tag name of current script
 		virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems
-        virtual physics::PhysicsSystem* physicsSystem() = 0;
         virtual robots::RobotSystem* robotSystem() = 0;
         virtual control::TrajectoryManager* trajectoryManager() = 0;
 		// Robot management
         virtual bool hasRobot() const = 0;
         virtual void loadRobot(const std::string& name) = 0;
-        virtual void clearRobot() = 0;
-		// Scene objects management
-        virtual const std::vector<std::unique_ptr<scene::Object>>& getObjects() const = 0;
-        virtual void deleteObject(int index) = 0;
-        virtual std::vector<scene::Object*> loadMeshReturn(const std::string& path) = 0;
-        // Scene lookup (DSL access)
-        virtual scene::Object* getObject() = 0;
-        virtual scene::Object* getObjectByID(scene::ObjectID id) = 0;
 		// Script execution
         virtual bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) = 0;
         // Telemetry access

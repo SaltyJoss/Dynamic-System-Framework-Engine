@@ -9,12 +9,9 @@ find_package(Threads REQUIRED)
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 
 set(CORE_SRC
-    src/Application.cpp
     src/EngineCore.cpp
 
     src/Numerics/IntegrationService.cpp
-
-    src/Physics/PhysicsSystem.cpp
 
     src/Robots/RobotDynamics.cpp
     src/Robots/RobotKinematics.cpp
@@ -57,8 +54,6 @@ set(PLATFORM_SRC
     src/Platform/Paths.cpp
     src/Platform/StudyRunner.cpp
 
-    src/Assets/MeshLoader.cpp
-    src/Assets/importObj.cpp
     src/Analysis/Telemetry.cpp
 )
 

@@ -64,27 +64,6 @@ namespace commands {
 
 	utils::OpResult CommandContextMotion::stopAllOmega() { return setOmega(mathlib::Vec3(0, 0, 0)); }
 
-	// --- HELPER METHODS ---
-
-	// Converts an Eigen 3D vector to a glm::vec3
-	static glm::vec3 toGlm(const Vec3& v) {
-		return glm::vec3(
-			static_cast<float>(v.x()),
-			static_cast<float>(v.y()),
-			static_cast<float>(v.z())
-		);
-	}
-	// Converts an Eigen quaternion to a glm::quat (note the order of components)
-	static inline glm::quat toGlm(const mathlib::Quat& q) {
-		return glm::quat(
-			static_cast<float>(q.w()),
-			static_cast<float>(q.x()),
-			static_cast<float>(q.y()),
-			static_cast<float>(q.z())
-		);
-	}
-
-
 	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
 		const double y = dir.y();
@@ -208,7 +187,7 @@ namespace commands {
 
 		if (q_err.w() < 0.0) { q_err.coeffs() *= -1.0; }
 
-		double angle = 2.0 * std::acos(glm::clamp(q_err.w(), -1.0, 1.0)); // [0,pi] clamp
+		double angle = 2.0 * std::acos(std::clamp(q_err.w(), -1.0, 1.0)); // [0,pi] clamp
 
 		if (angle < _rig.epsAngle) {
 			s.angularVelocity = Vec3::Zero();
@@ -337,7 +316,7 @@ namespace commands {
 		}
 
 		const Vec3 translation = normaliseDirection(direction) * distance;
-		obj->transform.position += toGlm(translation);
+		obj->transform.position += translation;
 		return OpResult::Success(true);
 	}
 
@@ -363,7 +342,7 @@ namespace commands {
 			translation.z() = vel * dt;
 		}
 
-		obj->transform.position += toGlm(translation);
+		/*obj->transform.position += toGlm(translation);*/
 		return OpResult::Success(true);
 	}
 

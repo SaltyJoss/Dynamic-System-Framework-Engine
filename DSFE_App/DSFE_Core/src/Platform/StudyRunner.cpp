@@ -1,6 +1,6 @@
+// DSFE_Core StudyRunner.cpp
 #include "pch.h"
-// File:   StudyRunner.cpp
-// GitHub: SaltyJoss
+
 #include "Platform/StudyRunner.h"
 #include "Interpreter/Parser.h"
 #include <thread>

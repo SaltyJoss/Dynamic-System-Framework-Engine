@@ -1,12 +1,10 @@
-#include "pch.h"
 // DSFE_Core SimulationCore.cpp
+#include "pch.h"
 #include "Scene/SimulationCore.h"
-#include "Physics/PhysicsSystem.h"
+
 #include "Robots/RobotSystem.h"
 #include "Robots/RobotModel.h"
 #include "Robots/TrajectoryManager.h"
-
-#include "Assets/MeshLoader.h"
 
 #include "Interpreter/StoredProgram.h"
 #include "Interpreter/Parser.h"
@@ -48,16 +46,8 @@ namespace core {
 	}
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
-	SimulationCore::SimulationCore(physics::PhysicsSystem& physics, robots::RobotSystem& robot, control::TrajectoryManager& traj, std::vector<std::unique_ptr<scene::Object>>& objects)
-		: _physics(&physics), _robot(&robot), _traj(&traj), _objects(&objects) {
-	}
-
-	// Update physics for all objects in the scene using the physics system
-	void SimulationCore::updatePhysics(double dt) {
-		if (!_objects || !_physics) { return; }
-		for (auto& obj : *_objects) {
-			if (obj) { _physics->update(dt, obj.get()); }
-		}
+	SimulationCore::SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj)
+		: _robot(&robot), _traj(&traj) {
 	}
 
 	// Simulation System
@@ -117,7 +107,7 @@ namespace core {
 			// Update physics and robot system if sim is running
 			if (_simRunning) {
 				_simTime += _dt;
-				updatePhysics(_dt);
+
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
 					_robot->updateTrajectoryInputs(*_traj, _simTime);
@@ -385,8 +375,6 @@ namespace core {
 			if (_simRunning) {
 				_simTime += dt;
 
-				updatePhysics(dt);
-
 				if (hasRobot()) {
 					// Update Trajectory Inputs
 					_robot->updateTrajectoryInputs(*_traj, _simTime);
@@ -418,9 +406,9 @@ namespace core {
 		_simRunning = false;
 		_telemetryBegun = false;
 
-	D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
-	LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime, _telemetry.ring.size());
-	return (_telemetry.ring.size() >= 2);
+		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime, _telemetry.ring.size());
+		return (_telemetry.ring.size() >= 2);
 	}
 	
 	// Setter for fixed timestep duration
@@ -435,13 +423,6 @@ namespace core {
 
 	// --- Setters and Getters for Systems and State ---
 
-	// Setter for the physics system
-	void SimulationCore::setPhysicsSystem(physics::PhysicsSystem* physics) { _physics = physics; }
-
-	// Accessor for the physics system (non-const and const versions)
-	physics::PhysicsSystem* SimulationCore::physicsSystem() { return _physics; }
-	const physics::PhysicsSystem* SimulationCore::physicsSystem() const { return _physics; }
-
 	// Accessor for the robot system (non-const and const versions)
 	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
 	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
@@ -452,61 +433,8 @@ namespace core {
 
 	// Loads a robot into the robot system by name
 	void SimulationCore::loadRobot(const std::string& name) {
-		if (!_robot) { D_FAIL("Cannot load robot: RobotSystem not set"); return; }
+		if (!_robot) { LOG_ERROR("Cannot load robot: RobotSystem not set"); return; }
 		_robot->loadRobot(name);
-	}
-	// Clears the currently loaded robot from the robot system
-	void SimulationCore::clearRobot() {
-		if (!_robot) { D_FAIL("Cannot clear robot: RobotSystem not set"); return; }
-		_robot->clearRobot();
-	}
-
-	// Getter for the scene objects reference (used for script object lookup)
-	std::vector<std::unique_ptr<scene::Object>>& SimulationCore::getObjects() {
-		if (!_objects) { throw std::runtime_error("Scene objects pointer not set in SimulationCore"); }
-		return *_objects;
-	}
-	// Deletes an object from the scene by index, with bounds checking
-	void SimulationCore::deleteObject(int index) {
-		if (!_objects) { D_FAIL("Cannot delete object: Scene objects pointer not set"); return; }
-		if (index < 0 || index >= static_cast<int>(_objects->size())) {
-			D_FAIL("Cannot delete object: Index %d out of bounds (size=%zu)", index, _objects->size());
-			return;
-		}
-		_objects->erase(_objects->begin() + index);
-	}
-	// Loads a mesh from the given path, adds it to the scene objects, and returns raw pointers to the new objects for script access
-	std::vector<scene::Object*> SimulationCore::loadMeshReturn(const std::string& path) {
-		assets::MeshLoader loader;
-		auto meshes = loader.load(path);
-		std::vector<scene::Object*> result;
-		for (auto& m : meshes) {
-			auto obj = std::make_unique<scene::Object>(m);
-			auto raw = obj.get();
-			raw->internal = true;
-			_objects->push_back(std::move(obj));
-			result.push_back(raw);
-		}
-		return result;
-	}
-
-	// Setter for the scene objects pointer (used for script object lookup)
-	void SimulationCore::setObjects(std::vector<std::unique_ptr<scene::Object>>* objects) { _objects = objects; }
-	// Getter for object
-	scene::Object* SimulationCore::getObject() {
-		if (!_objects) { return nullptr; }
-		for (auto& obj : *_objects) {
-			if (obj) { return obj.get(); }
-		}
-		return nullptr;
-	}
-	// Getter for object by ID
-	scene::Object* SimulationCore::getObjectByID(scene::ObjectID id) {
-		if (!_objects) { return nullptr; }
-		for (auto& obj : *_objects) {
-			if (obj && obj->id == id) { return obj.get(); }
-		}
-		return nullptr;
 	}
 
 	// Setter for the trajectory manager

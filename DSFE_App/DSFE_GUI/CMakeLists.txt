@@ -13,8 +13,6 @@ target_include_directories(glad PUBLIC
     ../External # Add the parent External directory
 )
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(glm REQUIRED)
 
 target_link_libraries(glad PRIVATE OpenGL::GL)
 
@@ -58,7 +56,11 @@ set(ROBOT_SRC
 
 set(PLATFORM_SRC src/Platform/WindowManager.cpp)
 
-set(ASSETS_SRC src/Assets/std_image_impl.cpp)
+set(ASSETS_SRC 
+    src/Assets/std_image_impl.cpp
+    src/Assets/MeshLoader.cpp
+    src/Assets/importObj.cpp
+)
 
 target_sources(DSFE_GUI PRIVATE
     ${RENDER_SRC}
@@ -66,53 +68,32 @@ target_sources(DSFE_GUI PRIVATE
     ${UI_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
-
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-set(imgui_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/imgui)
+set(imfilebrowser_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/imgui/plugins)
 
-add_library(implot STATIC
-    ${implot_SOURCE_DIR}/implot.cpp
-    ${implot_SOURCE_DIR}/implot_items.cpp
-)
-
-target_include_directories(implot PUBLIC
-    ${implot_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}
-)
-
-target_include_directories(DSFE_Core PUBLIC
+target_include_directories(DSFE_GUI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 
-    ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
-    ${imgui_ROOT}/plugins
-
-    ${implot_SOURCE_DIR}
-    ${glm_SOURCE_DIR}/glm
-    ${assimp_SOURCE_DIR}/include
+    ${imfilebrowser_ROOT}
 )
 
 # Link DSFE_Core against its dependencies
-target_link_libraries(DSFE_GUI PUBLIC
-    DSFE_Core
-    ExternalHeaders
-    implot
-    stb
-    assimp
-    OpenGL::GL
-    Threads::Threads
-)
+target_link_libraries(DSFE_GUI
+    PUBLIC
+        DSFE_Core
 
-target_link_libraries(DSFE_GUI PRIVATE
-    glfw
-    glad
-    glm::glm
+    PRIVATE
+        ExternalHeaders
+        implot
+        stb
+        assimp
+        glfw
+        glad
+        glm
+        imgui
+        OpenGL::GL
+        Threads::Threads
 )

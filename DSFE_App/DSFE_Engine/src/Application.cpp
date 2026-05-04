@@ -1,6 +1,6 @@
+// DSFE_Core Application.cpp
 #include "pch.h"
-// File:   Application.cpp
-// GitHub: SaltyJoss
+
 #include "Application.h"
 #include "Platform/WindowManager.h"
 #include "Platform/Paths.h"

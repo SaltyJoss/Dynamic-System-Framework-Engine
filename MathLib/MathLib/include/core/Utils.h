@@ -49,6 +49,15 @@ namespace mathlib {
 	// Convert radians to degrees
 	inline double rad2deg(double radians) { return radians * (180.0 / PI_d); }
 
+	// Portable radian conversion
+	inline double radians(double degrees) {
+		return degrees * std::numbers::pi / 180.0;
+	}
+	// Portable degree conversion
+	inline double degrees(double radians) {
+		return radians * 180.0 / std::numbers::pi;
+	}
+
 	// Clamp a value between min and max
 	inline double clamp(double value, double minVal, double maxVal) {
 		if (value < minVal) { return minVal; }

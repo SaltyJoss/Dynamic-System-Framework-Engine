@@ -3,7 +3,6 @@
 // GitHub: SaltyJoss
 #include "Interpreter/StoredProgram.h"
 #include "Platform/ISimulationCore.h"
-#include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
 #include "Scene/ObjectID.h"
 #include "Scene/Object.h"
@@ -20,9 +19,6 @@ namespace interpreter {
 		}
 	}
 	StoredProgram::~StoredProgram() { clear(); }
-
-	// Convert mathlib::Vec3 to glm::vec3
-	inline glm::vec3 toGlm(const mathlib::Vec3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 
 	// Add a command to the program
 	void StoredProgram::add(std::unique_ptr<commands::ICommand> cmd) {

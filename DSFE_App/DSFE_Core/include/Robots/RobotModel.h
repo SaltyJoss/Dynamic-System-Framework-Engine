@@ -1,6 +1,6 @@
+// DSFE_Core RobotModel.h
 #pragma once
-// File:   RobotModel.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>

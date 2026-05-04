@@ -1,6 +1,6 @@
+// DSFE_Core UIContext.h
 #pragma once
-// File:    UIContext.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/Utils.h"
@@ -29,7 +29,7 @@ namespace commands {
 		utils::OpResult setOmega(const mathlib::Vec3& omega, utils::AngularUnits units);
 		utils::OpResult setFixedDt(double dt);
 
-		const utils::OpResult setColour(const glm::vec3& color) const;
+		/*const utils::OpResult setColour(const glm::vec3& color) const;*/
 		const utils::OpResult setMetallic(float metallic) const;
 		
 		// Loaders (loadCmd)
@@ -39,7 +39,6 @@ namespace commands {
 		
 		// Clearers (clearCmd)
 		utils::OpResult clearObject();
-		utils::OpResult clearRobot();
 		const utils::OpResult clearTexture() const;
 
 		// Selectors (selectCmd)

@@ -1,20 +1,21 @@
+// DSFE_Core RobotSystem.h
 #pragma once
-// File:   RobotSystem.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include "CoreTypes.h"
 
 // Forward declarations
-namespace control { class DSFE_API TrajectoryManager; }
+namespace control { class TrajectoryManager; }
+
+namespace scene { class Object; }
 
 namespace robots {
 	// Forward declarations
-	class DSFE_API RobotKinematics;
-	class DSFE_API RobotDynamics;
+	class RobotKinematics;
+	class RobotDynamics;
 	enum class eTorqueMode;
 
 	// Joint state structure
@@ -31,9 +32,7 @@ namespace robots {
 
 	class DSFE_API RobotSystem {
 	public:
-		using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
-
-		RobotSystem(std::vector<std::unique_ptr<scene::Object>>& sceneObjects, spawnFn meshLoader);
+		RobotSystem();
 		~RobotSystem();
 
         // --- Utility Methods ---
@@ -41,6 +40,9 @@ namespace robots {
         static double clampJointAngle(const RobotJoint& joint, double angleRad);
 
         // ---- Accessors ---
+
+		const robots::RobotModel& model() const;
+		const std::vector<Mat4>& worldTransforms() const { return _worldTransforms; }
 
         const std::vector<RobotLink>& links() const { return _robot.links; }
 		std::vector<RobotLink>& links() { return _robot.links; }
@@ -71,18 +73,12 @@ namespace robots {
 			for (auto& joint : _robot.joints) { joint.zeta_target = _zeta; }
 		}
 
-		void setOvershootRatio(double beta) { _beta = beta; }
-		double getOvershootRatio() const { return _beta; }
-		void resetOvershootRatioToTarget() {
-			for (auto& joint : _robot.joints) { joint.beta_target = _beta; }
-		}
-
 		// Get pointer to this RobotSystem
 		const RobotSystem& getRobot() const { return *this; }
 
 		// ---- Joint State Methods ---
 
-        void updateRobotKinematics();
+        void computeRobotKinematics(std::vector<mathlib::Mat4>& world);
 
 		bool tryGetJointAngleRad(const std::string& childLink, double& outAngle) const;
 		bool trySetJointAngleRad(const std::string& childLink, double angleRad);
@@ -121,20 +117,22 @@ namespace robots {
 
         void loadRobot(const std::string& name);
         void resetRobot();
-        void clearRobot();
         void stopAll();
 
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
         bool setRobotLinkRotation(const std::string& childLinkName, double angleDeg);
-        void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
-		void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+		mathlib::Mat4 setRobotRoot(const mathlib::mathlib::Vec3& pos, const mathlib::Quat& rot);
+        void setRobotRootPose(const mathlib::Vec3& pos, const mathlib::Quat& rot);
+		void setRobotRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 
 		bool setDefaultPoseDeg();
 
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
 		// --- GET AND SET INTEGRATION METHOD ---
+
+		const std::vector<Mat4>& getWorldTransforms() const;
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
@@ -178,7 +176,6 @@ namespace robots {
 
 		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
 		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
-		double _beta = 0.0; // configurable overshoot ratio for PD control (unitless)
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;
@@ -205,12 +202,15 @@ namespace robots {
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
 
+		// World to robot base transform (meters)
+		std::vector<Mat4> _worldTransform = Mat4::Identity();
+
 		// Flags and precomputed data
         bool _hasRobot = false;
-		glm::mat4 _robotRootPose = glm::mat4(1.0f); // current pose (meters)
-		glm::mat4 _robotRootHome = glm::mat4(1.0f); // home/reset pose (meters)
-		VecX _robotQHome;							// home/reset joint positions
-		bool _robotHomeValid = false;				// is home position valid
+		mathlib::Mat4 _robotRootPose = Mat4(1.0f); // current pose (meters)
+		mathlib::Mat4 _robotRootHome = Mat4(1.0f); // home/reset pose (meters)
+		mathlib::VecX _robotQHome				   // home/reset joint positions
+		bool _robotHomeValid = false;			   // is home position valid
 
 		// Index maps for quick lookup of links and joints by name
 		std::unordered_map<std::string, int> _linkIndex;
@@ -237,9 +237,9 @@ namespace robots {
 		bool _baseIsFree = false;
 
 		// Linear
-		Vec3 _basePos{ 0,0,0 };
-		Vec3 _baseVel{ 0,0,0 };
-		Vec3 _baseAcc{ 0,0,0 };
+		mathlib::Vec3 _basePos{ 0,0,0 };
+		mathlib::Vec3 _baseVel{ 0,0,0 };
+		mathlib::Vec3 _baseAcc{ 0,0,0 };
 
 		// Angular (yaw-only for now, extend later)
 		double _baseYaw = 0.0;

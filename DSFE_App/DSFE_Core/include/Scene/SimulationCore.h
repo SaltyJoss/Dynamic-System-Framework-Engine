@@ -1,6 +1,6 @@
+// DSFE_Core SimulationCore.h
 #pragma once
-// File:   SimulationCore.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include "Platform/ISimulationCore.h"
 #include <memory>
@@ -16,7 +16,6 @@
 namespace integration { enum class eIntegrationMethod; }
 namespace control	  { class DSFE_API TrajectoryManager; }
 namespace scene		  { class DSFE_API Object; }
-namespace physics	  { class DSFE_API PhysicsSystem; }
 namespace robots	  { class DSFE_API RobotSystem; }
 namespace interpreter { class DSFE_API IStoredProgram; }
 
@@ -31,7 +30,7 @@ namespace core {
 		SimulationCore();
 		~SimulationCore();
 
-		SimulationCore(physics::PhysicsSystem& physics, robots::RobotSystem& robot, control::TrajectoryManager& traj, std::vector<std::unique_ptr<scene::Object>>& objects);
+		SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj);
 
 		// Simulation control
 		void startSimulation() override;
@@ -62,8 +61,6 @@ namespace core {
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
-		physics::PhysicsSystem* physicsSystem() override;
-		const physics::PhysicsSystem* physicsSystem() const;
 		robots::RobotSystem* robotSystem() override;
 		const robots::RobotSystem* robotSystem() const;
 		control::TrajectoryManager* trajectoryManager() override;
@@ -72,15 +69,6 @@ namespace core {
 		// Robot management
 		bool hasRobot() const override;
 		void loadRobot(const std::string& name) override;
-		void clearRobot() override;
-
-		// Scene objects management
-		const std::vector<std::unique_ptr<scene::Object>>& getObjects() const override;
-		void deleteObject(int index) override;
-		std::vector<scene::Object*> loadMeshReturn(const std::string& path) override;
-		// Object lookup
-		scene::Object* getObject() override;
-		scene::Object* getObjectByID(scene::ObjectID id) override;
 
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) override;
@@ -91,10 +79,8 @@ namespace core {
 		size_t telemetrySampleCount() const override;
 
 		// Setters for subsystems and scene objects
-		void setPhysicsSystem(physics::PhysicsSystem* physics);
 		void setRobotSystem(robots::RobotSystem* robot);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
-		void setObjects(std::vector<std::unique_ptr<scene::Object>>* objects);
 		void setJointLogBuffer(robots::JointLogBuffer* buffer);
 		void setTrajRefBuffer(robots::TrajRefBuffer* buffer);
 
