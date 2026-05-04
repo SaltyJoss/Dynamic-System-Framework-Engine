@@ -45,6 +45,15 @@ namespace core {
 		double fixedDt() const override;
 		double simTime() const override;
 
+		SimulationSnapshot snapshot() const override {
+			std::lock_guard<std::mutex> lock(_stateMutex); // Ensure thread-safe access to snapshot data
+			return SimulationSnapshot{
+				.simTime = _simTime,
+				.simRunning = _simRunning,
+				.scriptRunning = _scriptRunning
+			};
+		}
+
 		// Integrator
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
@@ -66,7 +75,7 @@ namespace core {
 		void clearRobot() override;
 
 		// Scene objects management
-		std::vector<std::unique_ptr<scene::Object>>& getObjects() override;
+		const std::vector<std::unique_ptr<scene::Object>>& getObjects() const override;
 		void deleteObject(int index) override;
 		std::vector<scene::Object*> loadMeshReturn(const std::string& path) override;
 		// Object lookup
@@ -128,6 +137,8 @@ namespace core {
 		robots::RobotSystem* _robot = nullptr;
 		physics::PhysicsSystem* _physics = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
+
+		mutable std::mutex _stateMutex;
 
 		// Simulation Timing
 		double _dt = 1.0 / 180.0;		// [seconds], fixed timestep duration for physics updates

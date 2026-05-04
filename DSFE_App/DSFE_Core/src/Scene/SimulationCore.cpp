@@ -1,6 +1,5 @@
 #include "pch.h"
-// File:   SimulationCore.cpp
-// GitHub: SaltyJoss
+// DSFE_Core SimulationCore.cpp
 #include "Scene/SimulationCore.h"
 #include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"

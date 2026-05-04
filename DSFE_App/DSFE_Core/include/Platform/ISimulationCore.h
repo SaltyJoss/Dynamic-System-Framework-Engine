@@ -15,6 +15,12 @@ namespace diagnostics { class DSFE_API TelemetryRecorder; }
 namespace interpreter { class DSFE_API IStoredProgram; }
 
 namespace core {
+    struct DSFE_API SimulationSnapshot {
+        double simTime;
+        bool simRunning;
+        bool scriptRunning;
+    };
+
     // Headless API for the Simulation Core
     // Aimed at allowing scripts and other systems to interact with the simulation without direct access to the full SimulationCore implementation
     struct DSFE_API ISimulationCore {
@@ -29,6 +35,7 @@ namespace core {
         virtual void setFixedDt(double dt) = 0;
         virtual double fixedDt() const = 0;
         virtual double simTime() const = 0;
+		virtual SimulationSnapshot snapshot() const = 0;
         // Integrator
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
 		virtual std::string integrationMethodName() const = 0;
@@ -44,7 +51,7 @@ namespace core {
         virtual void loadRobot(const std::string& name) = 0;
         virtual void clearRobot() = 0;
 		// Scene objects management
-        virtual std::vector<std::unique_ptr<scene::Object>>& getObjects() = 0;
+        virtual const std::vector<std::unique_ptr<scene::Object>>& getObjects() const = 0;
         virtual void deleteObject(int index) = 0;
         virtual std::vector<scene::Object*> loadMeshReturn(const std::string& path) = 0;
         // Scene lookup (DSL access)
