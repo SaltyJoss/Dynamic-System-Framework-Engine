@@ -1,7 +1,8 @@
-# CMakeLists.txt for the Engine executable
-
+# CMakeLists.txt for the DSFE_Engine executable
 cmake_minimum_required(VERSION 3.10)
-project(DSFE_Engine LANGUAGES CXX)
+project(DSFE_Engine LANGUAGES C CXX)
+
+find_package(Threads REQUIRED)
 
 add_executable(DSFE_Engine 
     src/Main.cpp
@@ -13,7 +14,9 @@ target_include_directories(DSFE_Engine PRIVATE
 )
 
 target_link_libraries(DSFE_Engine PRIVATE 
+    DSFE_GUI
     DSFE_Core
+    Threads::Threads
 )
 
 # --- Asset Copying ---

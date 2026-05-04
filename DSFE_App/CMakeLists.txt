@@ -1,5 +1,6 @@
+# CMakeLists.txt for the DSFE_App project
 cmake_minimum_required(VERSION 3.10)
-project(DSFE_App LANGUAGES CXX)
+project(DSFE_App LANGUAGES C CXX)
 
 add_library(ExternalHeaders INTERFACE)
 
@@ -10,5 +11,6 @@ target_include_directories(ExternalHeaders
 
 # Add projects within the DSFE_App directory
 add_subdirectory(DSFE_Core)
+add_subdirectory(DSFE_GUI)
 add_subdirectory(DSFE_Engine)
 add_subdirectory(DSFE_Unit_Tests)

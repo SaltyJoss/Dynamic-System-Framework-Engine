@@ -1,7 +1,6 @@
-# CMakeLists.txt for DSFE_Unit_Tests
-
+# CMakeLists.txt for DSFE_Unit_Tests executable
 cmake_minimum_required(VERSION 3.10)
-project(DSFE_Unit_Tests LANGUAGES CXX)
+project(DSFE_Unit_Tests LANGUAGES C CXX)
 
 enable_testing()
 

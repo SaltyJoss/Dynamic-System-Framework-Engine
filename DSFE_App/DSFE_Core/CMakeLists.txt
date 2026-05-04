@@ -1,29 +1,12 @@
-# CMakeLists.txt for EngineLib (DSFE_Core)
-
+# CMakeLists.txt for DSFE_Core library
 cmake_minimum_required(VERSION 3.10)
-project(DSFE_Core LANGUAGES CXX)
+project(DSFE_Core LANGUAGES C CXX)
 
-# Define a library for GLAD from the existing source file
-add_library(glad STATIC ../External/GLAD/glad.c)
-target_include_directories(glad PUBLIC 
-    ../External/GLAD 
-    ../External # Add the parent External directory
-)
-find_package(OpenGL REQUIRED)
-
-target_link_libraries(glad PRIVATE OpenGL::GL)
-
-# Define an INTERFACE library for stb (header-only)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ../External/stb)
-
-# DSFE_Core library definition
 add_library(DSFE_Core SHARED)
 
-target_compile_definitions(DSFE_Core PRIVATE 
-    DSFE_CORE_EXPORTS
-    IMGUI_ENABLE_DOCKING
-)
+find_package(Threads REQUIRED)
+
+target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 
 set(CORE_SRC
     src/Application.cpp
@@ -77,54 +60,16 @@ set(PLATFORM_SRC
 
     src/Assets/MeshLoader.cpp
     src/Assets/importObj.cpp
-    src/Assets/std_image_impl.cpp
-
     src/Analysis/Telemetry.cpp
 )
 
-set(RENDER_SRC
-    src/Rendering/CubeVertices.cpp
-    src/Rendering/GUIContext.cpp
-    src/Rendering/IBL.cpp
-    src/Rendering/OpenGLBufferManager.cpp
-    src/Rendering/OpenGLContext.cpp
-    src/Rendering/ShaderUtil.cpp
-    src/Rendering/SkyboxRenderer.cpp
-    src/Rendering/Texture.cpp
-)
-
-set(SCENE_SRC
-    src/Scene/AxisOrientator.cpp
-    src/Scene/Camera.cpp
-    src/Scene/Input.cpp
-    src/Scene/Mesh.cpp
-    src/Scene/Object.cpp
-    src/Scene/SimulationCore.cpp
-    src/Scene/SimulationManager.cpp
-)
-
-set(UI_SRC
-    src/ui/CommandScriptEditor.cpp
-    src/ui/ControlPanel.cpp
-    src/ui/DebugPanel.cpp
-    src/ui/RenderPreset.cpp
-    src/ui/Styles.cpp
-)
+set(SCENE_SRC src/Scene/SimulationCore.cpp)
 
 # Add sources for DSFE_Core, including ImGui files
 target_sources(DSFE_Core PRIVATE
     ${CORE_SRC}
     ${PLATFORM_SRC}
-    ${RENDER_SRC}
     ${SCENE_SRC}
-    ${UI_SRC}
-
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
 # Add Windows-specific source files
@@ -133,17 +78,6 @@ if(WIN32)
 endif()
 
 set(HDF5_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/HDF5)
-set(imgui_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/imgui)
-
-add_library(implot STATIC
-    ${implot_SOURCE_DIR}/implot.cpp
-    ${implot_SOURCE_DIR}/implot_items.cpp
-)
-
-target_include_directories(implot PUBLIC
-    ${implot_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}
-)
 
 add_library(HDF5 INTERFACE)
 
@@ -170,14 +104,6 @@ target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 
-    ${imgui_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}/backends
-    ${imgui_ROOT}/plugins
-
-    ${implot_SOURCE_DIR}
-    ${glm_SOURCE_DIR}/glm
-    ${assimp_SOURCE_DIR}/include
-
     ${HDF5_ROOT}/include
 )
 
@@ -188,11 +114,7 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 target_link_libraries(DSFE_Core PUBLIC 
     PxMLib
     ExternalHeaders
-    glfw
-    implot
-    glad
-    stb
-    glm::glm
     assimp
     HDF5
+    Threads::Threads
 )
