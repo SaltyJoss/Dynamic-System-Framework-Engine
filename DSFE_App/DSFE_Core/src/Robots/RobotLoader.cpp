@@ -5,8 +5,6 @@
 
 #include <MathLibAPI.h>
 #include <core/constants.h>
-#include "Scene/Object.h"
-#include "Assets/MeshLoader.h"
 #include "EngineLib/LogMacros.h"
 
 #include <nlohmann/json.hpp>
@@ -112,64 +110,67 @@ namespace robots {
 	}
 
 	// Parse visual geometry, supporting both single mesh and multiple meshes, as well as material properties
-	static void parseVisual(const json& linkData, const RobotModel& robot, RobotLink& link) {
+	static void parseVisual(const json& linkData, const std::unordered_map<std::string, Vec4>& materials, RobotLink& link) {
 		if (!linkData.contains("visual")) { return; }
 		const auto& v = linkData["visual"];
-
-		// Single Mesh (e.g. URDF style)
-		if (v.contains("mesh") && v["mesh"].is_string()) {
-			link.visual.meshFile = v["mesh"].get<std::string>();
-		}
-
-		// Multiple meshes - supports both string arrays and object arrays with per-mesh material
-		if (v.contains("meshes") && v["meshes"].is_array()) {
-			link.visual.meshFiles.clear();
-			link.visual.meshEntries.clear();
-			for (const auto& m : v["meshes"]) {
-				if (m.is_string()) {
-					// Legacy string format
-					link.visual.meshFiles.push_back(m.get<std::string>());
-				}
-				else if (m.is_object() && m.contains("mesh") && m["mesh"].is_string()) {
-					// Object format with per-mesh material
-					VisualMeshEntry entry;
-					entry.meshFile = m["mesh"].get<std::string>();
-
-					if (m.contains("material") && m["material"].is_object()) {
-						entry.hasMaterial = true;
-						parseMaterialObject(m["material"], robot, "Mesh " + entry.meshFile,
-							entry.material, entry.metallic, entry.roughness);
-					}
-
-					link.visual.meshEntries.push_back(entry);
-				}
-			}
-		}
 
 		// Visual geometry origin
 		link.visual.origin_xyz = readVec3(v, "origin_xyz", link.visual.origin_xyz);
 		link.visual.origin_rpy = readVec3(v, "origin_rpy", link.visual.origin_rpy);
 
-		// Material
+		// Single Mesh
+		if (v.contains("mesh") && v["mesh"].is_string()) {
+			VisualMeshEntry entry;
+			entry.meshFile = v["mesh"].get<std::string>();
+			link.visual.meshEntries.push_back(entry);
+		}
+
+		// Multiple meshes
+		if (v.contains("meshes") && v["meshes"].is_array()) {
+			for (const auto& m : v["meshes"]) {
+				if (!m.is_string()) {
+					LOG_WARN("Invalid mesh entry in link %s (expected string)", link.name.c_str());
+					continue;
+				}
+
+				VisualMeshEntry entry;
+				entry.meshFile = m.get<std::string>();
+				link.visual.meshEntries.push_back(entry);
+			}
+		}
+
+		Vec4 material{ 0.7, 0.0, 0.2, 1.0 }; // Default material if not specified
+		float metallic = 0.5f;
+		float roughness = 0.5f;
+		bool hasMaterial = false;
+
+		// Material assignement
 		if (v.contains("material") && v["material"].is_object()) {
 			parseMaterialObject(v["material"], robot, "Link " + link.name,
-				link.visual.material, link.visual.metallic, link.visual.roughness);
+				material, metallic, roughness);
+			hasMaterial = true;
 		}
 		else if (v.contains("material") && v["material"].is_string()) {
-			// Legacy string format: material name lookup
 			const std::string matName = v["material"].get<std::string>();
 			auto it = robot.materials.find(matName);
+
 			if (it != robot.materials.end()) {
-				link.visual.material = it->second;
+				material = it->second;
+				hasMaterial = true;
 			}
 			else {
-				LOG_WARN("Link %s references undefined material '%s', using default Grey", link.name.c_str(), matName.c_str());
-				link.visual.material = Vec4(0.5, 0.5, 0.5, 1.0); // Default grey material if material name not found
+				LOG_WARN("Link %s references undefined material '%s', using default colour", link.name.c_str(), matName.c_str());
 			}
 		}
-		else {
-			// Default material if not specified
-			link.visual.material = Vec4(0.2, 0.4, 0.5, 1.0); // Default color for visual geometry if no material is specified
+
+		// Assign material properties to all mesh entries
+		for (auto& entry : link.visual.meshEntries) {
+			if (hasMaterial) {
+				entry.material = material;
+				entry.metallic = metallic;
+				entry.roughness = roughness;
+				entry.hasMaterial = hasMaterial;
+			}
 		}
 	}
 
@@ -188,6 +189,11 @@ namespace robots {
 	static void parseCollisions(const json& linkData, const RobotModel& robot, RobotLink& link) {
 		if (!linkData.contains("collision")) { return; }
 		for (const auto& c : linkData["collision"]) {
+			if (!linkData["collision"].is_array()) {
+				LOG_WARN("Collision block is not an array in link %s", link.name.c_str());
+				return;
+			}
+
 			CollisionShape s;
 			s.type = c.value("type", "");
 			s.origin_xyz = readVec3(c, "origin_xyz", s.origin_xyz);
@@ -383,7 +389,7 @@ namespace robots {
 		}
 
 		// Load robot scale (default 1.0)
-		robot.scale = data["scale"].get<float>();
+		robot.scale = data.value("scale", 1.0f);
 
 		// Load base frame if present
 		if (data.contains("base_frame")) {
@@ -418,7 +424,7 @@ namespace robots {
 			RobotLink link;
 			link.name = linkData.value("name", "");
 
-			parseVisual(linkData, robot, link);
+			parseVisual(linkData, robot.materials, link);
 			parseCollisions(linkData, robot, link);
 			parseInertial(linkData, link);
 
