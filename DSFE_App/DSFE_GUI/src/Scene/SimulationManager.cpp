@@ -47,10 +47,14 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #include "Rendering/Texture.h"
 
 #include <Platform/WindowManager.h>
+
+#include <filesystem>
 #include "Platform/Paths.h"
 
 #include "EngineLib/LogMacros.h"
 #include "Platform/DataManager.h"
+
+namespace fs = std::filesystem;
 
 namespace gui {
 	// Converts an Eigen 3D vector to a glm::vec3
@@ -335,8 +339,9 @@ namespace gui {
 
 			for (const auto& link : model.links) {
 				for (const auto& mesh : link.visual.meshEntries) {
+					fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / mesh.meshFile;
 
-					auto objs = owner.loadMeshReturn(mesh.meshFile);
+					auto objs = owner.loadMeshReturn(fullPath.string());
 
 					for (auto& obj : objs) {
 						glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));

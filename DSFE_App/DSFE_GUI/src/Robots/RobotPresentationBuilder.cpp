@@ -6,7 +6,12 @@
 #include "Assets/MeshLoader.h"
 #include "Scene/Object.h"
 
+#include <filesystem>
+#include "Platform/Paths.h"
+
 using namespace robots;
+
+namespace fs = std::filesystem;
 
 // Build a RobotRenderBinding from a RobotModel by loading the visual meshes for each link
 RobotRenderBinding RobotPresentationBuilder::build(const robots::RobotModel& model) {
@@ -16,7 +21,9 @@ RobotRenderBinding RobotPresentationBuilder::build(const robots::RobotModel& mod
 		auto& visuals = binding.linkVisuals[link.name];
 
 		for (const auto& mesh : link.visual.meshEntries) {
-			auto meshes = loader.load(mesh.meshFile);
+			fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / mesh.meshFile;
+
+			auto meshes = loader.load(fullPath.string());
 
 			for (auto& m : meshes) {
 				auto obj = std::make_unique<scene::Object>(m);

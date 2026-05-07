@@ -7,8 +7,12 @@
 #include "Scene/Mesh.h"
 #include "Scene/Object.h"
 
+#include <filesystem>
 #include "Platform/Paths.h"
+
 #include "EngineLib/LogMacros.h"
+
+namespace fs = std::filesystem;
 
 // Converts an Eigen 3D vector to a glm::vec3
 static glm::vec3 toGlm(const Vec3& v) {
@@ -55,8 +59,8 @@ void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
 		// Per-mesh material entries (new format with meshEntries)
 		if (!link.visual.meshEntries.empty()) {
 			for (const auto& entry : link.visual.meshEntries) {
-				const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile).string();
-				auto objs = _loadMeshReturn(fullPath);
+				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
+				auto objs = _loadMeshReturn(fullPath.string());
 
 				// If no meshes were loaded for this entry, skip it
 				for (auto* obj : objs) {
@@ -89,8 +93,8 @@ void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
 		// Legacy Mesh Path Support
 		if (!link.visual.meshFiles.empty()) {
 			for (const auto& meshRelPath : link.visual.meshFiles) {
-				const auto fullPath = (paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath).string();
-				auto partObjs = _loadMeshReturn(fullPath);
+				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath;
+				auto partObjs = _loadMeshReturn(fullPath.string());
 				objs.insert(objs.end(), partObjs.begin(), partObjs.end());
 			}
 		}
