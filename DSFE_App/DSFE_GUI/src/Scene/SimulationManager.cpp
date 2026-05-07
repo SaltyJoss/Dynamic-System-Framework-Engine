@@ -46,6 +46,8 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #include "Rendering/IBL.h"
 #include "Rendering/Texture.h"
 
+#include "Robots/RobotPresentationBuilder.h"
+
 #include <Platform/WindowManager.h>
 
 #include <filesystem>
@@ -337,23 +339,38 @@ namespace gui {
 		void buildRobotPresentationFromModel(const robots::RobotModel& model, SimManager& owner) {
 			clearRobotPresentation();
 
+			RobotPresentationBuilder builder;
+			RobotRenderBinding binding = builder.build(model);
+
+			for (auto& owned : binding.ownedObjects) {
+				_objects.push_back(std::move(owned));
+			}
+
+			for (const auto& [linkName, visuals] : binding.linkVisuals) {
+				auto& target = _linkToObjects[linkName];
+
+				for (auto* obj : visuals) {
+					if (!obj) { continue; }
+
+					target.push_back(obj);
+
+					if (!_primaryLinkObject.contains(linkName)) {
+						_primaryLinkObject[linkName] = obj;
+					}
+				}
+			}
+
 			for (const auto& link : model.links) {
+
 				for (const auto& mesh : link.visual.meshEntries) {
-					fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / mesh.meshFile;
+					const glm::vec3 position = toGlm(link.visual.origin_xyz);
+					const glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));
 
-					auto objs = owner.loadMeshReturn(fullPath.string());
+					auto it = _linkToObjects.find(link.name);
 
-					for (auto& obj : objs) {
-						glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));
-
-						obj->transform.position = toGlm(link.visual.origin_xyz);
+					for (auto& obj : it->second) {
+						obj->transform.position = position;
 						obj->transform.rotQ = glm::quat(rpy);
-
-						_linkToObjects[link.name].push_back(obj);
-
-						if (!_primaryLinkObject.contains(link.name)) {
-							_primaryLinkObject[link.name] = obj;
-						}
 					}
 				}
 			}

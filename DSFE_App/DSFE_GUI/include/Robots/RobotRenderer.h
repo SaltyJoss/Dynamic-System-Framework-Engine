@@ -16,16 +16,22 @@ struct LinkRenderData {
 	std::vector<scene::Object*> collisions; // Collision objects associated with this link (not implemented yet)
 };
 
+struct RobotRenderBinding;
+
 class RobotRenderer {
 public:
-	using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
+	//using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
 
-	void instantiateRobotLinks(const robots::RobotModel& robot);
+	/*void instantiateRobotLinks(const robots::RobotModel& robot);*/
+	void bind(const RobotRenderBinding& binding);
 	void applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world);
 
 	//void clearRobot();
 
 private:
+	struct linkRenderData {
+		std::vector<scene::Object*> visuals; // Visual objects associated with this links
+	};
+
 	std::unordered_map<std::string, LinkRenderData> linkRenderMap; // Map from link names to their render data
-	spawnFn _loadMeshReturn;
 };

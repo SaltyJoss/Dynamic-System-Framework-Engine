@@ -1,5 +1,6 @@
 // DSFE_GUI RobotRenderer.cpp
 #include "Robots/RobotRenderer.h"
+#include "Robots/RobotPresentationBuilder.h"
 #include "Robots/RobotModel.h"
 
 #include <glm/glm.hpp>
@@ -50,93 +51,101 @@ static glm::mat4 toGlm(const Mat4& m) {
 	return g; // (4x4)
 }
 
-// Method to create Object instances for each robot link
-void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
+//// Method to create Object instances for each robot link
+//void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
+//	linkRenderMap.clear();
+//	for (auto& link : robot.links) {
+//		LinkRenderData renderData;
+//
+//		// Per-mesh material entries (new format with meshEntries)
+//		if (!link.visual.meshEntries.empty()) {
+//			for (const auto& entry : link.visual.meshEntries) {
+//				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
+//				auto objs = _loadMeshReturn(fullPath.string());
+//
+//				// If no meshes were loaded for this entry, skip it
+//				for (auto* obj : objs) {
+//					if (scene::Mesh* mesh = obj->getMesh()) {
+//						const Vec4& rgba = entry.hasMaterial
+//							? entry.material
+//							: Vec4(0.7, 0.0, 0.2, 1.0); // Default material if not specified
+//
+//						mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
+//						mesh->setMetallic(entry.hasMaterial ? entry.metallic : 0.5f);
+//						mesh->setRoughness(entry.hasMaterial ? entry.roughness : 0.5f);
+//						mesh->rebuildGPU();
+//					}
+//
+//					obj->name = link.name;
+//					obj->category = scene::ObjectCategory::RobotLink;
+//					obj->transform.scale = glm::vec3(robot.scale);
+//
+//					renderData.visuals.push_back(obj);
+//				}
+//			}
+//
+//			linkRenderMap[link.name] = renderData;
+//			continue;
+//		}
+//
+//		// If no mesh entries, fall back to legacy single mesh or multiple mesh files
+//		std::vector<scene::Object*> objs;
+//
+//		// Legacy Mesh Path Support
+//		if (!link.visual.meshFiles.empty()) {
+//			for (const auto& meshRelPath : link.visual.meshFiles) {
+//				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath;
+//				auto partObjs = _loadMeshReturn(fullPath.string());
+//				objs.insert(objs.end(), partObjs.begin(), partObjs.end());
+//			}
+//		}
+//		else {
+//			continue;
+//		}
+//
+//		// If no meshes were loaded, skip this link
+//		if (objs.empty()) {
+//			LOG_WARN("No meshes found for link %s", link.name.c_str());
+//			continue;
+//		}
+//
+//		// Merge multiple meshes into one Object (if necessary)
+//		scene::Object* rootObj = objs[0];
+//		scene::Mesh* baseMesh = rootObj->getMesh();
+//
+//		// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
+//		for (size_t i = 1; i < objs.size(); ++i) {
+//			if (auto* extra = objs[i]->getMesh()) {
+//				if (baseMesh) { baseMesh->appendGeometry(*extra); }
+//			}
+//
+//			objs[i]->name.clear();
+//			objs[i]->category = scene::ObjectCategory::General;
+//		}
+//
+//		if (baseMesh) {
+//			baseMesh->rebuildGPU();
+//		}
+//
+//		for (auto* obj : objs) {
+//			obj->name = link.name;
+//			obj->category = scene::ObjectCategory::RobotLink;
+//			obj->transform.scale = glm::vec3(robot.scale);
+//
+//			renderData.visuals.push_back(obj);
+//			linkRenderMap[link.name] = renderData;
+//		}
+//	}
+//
+//	LOG_INFO_ONCE("Instantiated %zu robot links", robot.links.size());
+//}
+
+void RobotRenderer::bind(const RobotRenderBinding& binding) {
 	linkRenderMap.clear();
-	for (auto& link : robot.links) {
+	for (const auto& [linkName, visuals] : binding.linkVisuals) {
 		LinkRenderData renderData;
-
-		// Per-mesh material entries (new format with meshEntries)
-		if (!link.visual.meshEntries.empty()) {
-			for (const auto& entry : link.visual.meshEntries) {
-				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
-				auto objs = _loadMeshReturn(fullPath.string());
-
-				// If no meshes were loaded for this entry, skip it
-				for (auto* obj : objs) {
-					if (scene::Mesh* mesh = obj->getMesh()) {
-						const Vec4& rgba = entry.hasMaterial
-							? entry.material
-							: Vec4(0.7, 0.0, 0.2, 1.0); // Default material if not specified
-
-						mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-						mesh->setMetallic(entry.hasMaterial ? entry.metallic : 0.5f);
-						mesh->setRoughness(entry.hasMaterial ? entry.roughness : 0.5f);
-						mesh->rebuildGPU();
-					}
-
-					obj->name = link.name;
-					obj->category = scene::ObjectCategory::RobotLink;
-					obj->transform.scale = glm::vec3(robot.scale);
-
-					renderData.visuals.push_back(obj);
-				}
-			}
-
-			linkRenderMap[link.name] = renderData;
-			continue;
-		}
-
-		// If no mesh entries, fall back to legacy single mesh or multiple mesh files
-		std::vector<scene::Object*> objs;
-
-		// Legacy Mesh Path Support
-		if (!link.visual.meshFiles.empty()) {
-			for (const auto& meshRelPath : link.visual.meshFiles) {
-				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath;
-				auto partObjs = _loadMeshReturn(fullPath.string());
-				objs.insert(objs.end(), partObjs.begin(), partObjs.end());
-			}
-		}
-		else {
-			continue;
-		}
-
-		// If no meshes were loaded, skip this link
-		if (objs.empty()) {
-			LOG_WARN("No meshes found for link %s", link.name.c_str());
-			continue;
-		}
-
-		// Merge multiple meshes into one Object (if necessary)
-		scene::Object* rootObj = objs[0];
-		scene::Mesh* baseMesh = rootObj->getMesh();
-
-		// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
-		for (size_t i = 1; i < objs.size(); ++i) {
-			if (auto* extra = objs[i]->getMesh()) {
-				if (baseMesh) { baseMesh->appendGeometry(*extra); }
-			}
-
-			objs[i]->name.clear();
-			objs[i]->category = scene::ObjectCategory::General;
-		}
-
-		if (baseMesh) {
-			baseMesh->rebuildGPU();
-		}
-
-		for (auto* obj : objs) {
-			obj->name = link.name;
-			obj->category = scene::ObjectCategory::RobotLink;
-			obj->transform.scale = glm::vec3(robot.scale);
-
-			renderData.visuals.push_back(obj);
-			linkRenderMap[link.name] = renderData;
-		}
+		renderData.visuals = visuals;
 	}
-
-	LOG_INFO_ONCE("Instantiated %zu robot links", robot.links.size());
 }
 
 // Method to apply the computed world transforms to the corresponding Object instances for each robot link

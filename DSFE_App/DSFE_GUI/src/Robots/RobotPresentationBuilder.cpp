@@ -27,6 +27,11 @@ RobotRenderBinding RobotPresentationBuilder::build(const robots::RobotModel& mod
 
 			for (auto& m : meshes) {
 				auto obj = std::make_unique<scene::Object>(m);
+
+				obj->name = link.name;
+				obj->category = scene::ObjectCategory::RobotLink;
+				obj->transform.scale = glm::vec3(model.scale);
+
 				visuals.push_back(obj.get()); // Store raw pointer for rendering
 				binding.ownedObjects.push_back(std::move(obj)); // Cache unique_ptr for memory management
 			}
