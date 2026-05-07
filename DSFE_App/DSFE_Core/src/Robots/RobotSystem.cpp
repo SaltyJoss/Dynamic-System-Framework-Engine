@@ -525,13 +525,11 @@ namespace robots {
 				if (j.type == eJointType::REVOLUTE) {
 					Mat4 R_q = Mat4::Identity();
 					R_q.block<3, 3>(0, 0) = Eigen::AngleAxisd(j.q, axis).toRotationMatrix();
-					
 					T_child = T_child * R_q;
 				}
 				else if (j.type == eJointType::PRISMATIC) {
 					Mat4 T_q = Mat4::Identity();
 					T_q.block<3, 1>(0, 3) = axis * j.q; // translate along joint axis by q
-					
 					T_child = T_child * T_q;
 				}
 
