@@ -1,12 +1,12 @@
+// DSFE_Core RobotLoader.cpp
 #include "pch.h"
-// File:   RobotLoader.cpp
-// GitHub: SaltyJoss
+
 #include "Robots/RobotLoader.h"
 
 #include <MathLibAPI.h>
 #include <core/constants.h>
-#include "EngineLib/LogMacros.h"
 
+#include "EngineLib/LogMacros.h"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -52,7 +52,7 @@ namespace robots {
 
 	// Parse materials block if present
 	// Each material is defined as: "materials": { "mat_name": [r, g, b, a] }
-	void loadMaterials(const json& data, RobotModel& robot) {
+	static void loadMaterials(const json& data, RobotModel& robot) {
 		if (!data.contains("material")) { return; }
 		const auto& mat = data["material"];
 
@@ -88,12 +88,12 @@ namespace robots {
 	}
 
 	// Helper to parse material properties from a JSON object into color/metallic/roughness
-	static void parseMaterialObject(const json& m, const RobotModel& robot, const std::string& context,
+	static void parseMaterialObject(const json& m, const std::unordered_map<std::string, Vec4>& materials, const std::string& context,
 		Vec4& outColor, float& outMetallic, float& outRoughness) {
 		if (m.contains("Color") && m["Color"].is_string()) {
 			const std::string colorName = m["Color"].get<std::string>();
-			auto it = robot.materials.find(colorName);
-			if (it != robot.materials.end()) {
+			auto it = materials.find(colorName);
+			if (it != materials.end()) {
 				outColor = it->second;
 			}
 			else {
@@ -146,15 +146,15 @@ namespace robots {
 
 		// Material assignement
 		if (v.contains("material") && v["material"].is_object()) {
-			parseMaterialObject(v["material"], robot, "Link " + link.name,
+			parseMaterialObject(v["material"], materials, "Link " + link.name,
 				material, metallic, roughness);
 			hasMaterial = true;
 		}
 		else if (v.contains("material") && v["material"].is_string()) {
 			const std::string matName = v["material"].get<std::string>();
-			auto it = robot.materials.find(matName);
+			auto it = materials.find(matName);
 
-			if (it != robot.materials.end()) {
+			if (it != materials.end()) {
 				material = it->second;
 				hasMaterial = true;
 			}
@@ -180,7 +180,7 @@ namespace robots {
 		const auto& m = collisionData["material"];
 
 		if (m.is_object()) {
-			parseMaterialObject(m, robot, "Collision",
+			parseMaterialObject(m, robot.materials, "Collision",
 				shape.material, shape.metallic, shape.roughness);
 		}
 	}

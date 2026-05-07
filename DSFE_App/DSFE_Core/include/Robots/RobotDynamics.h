@@ -1,21 +1,21 @@
+// DSFE_Core RobotDynamics.h
 #pragma once
-// File:   RobotDynamics.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
 
 // Forward declarations
-namespace control { class DSFE_API TrajectoryManager; }
-namespace integration { class DSFE_API IntegrationService; enum class eIntegrationMethod; }
+namespace control { class TrajectoryManager; }
+namespace integration { class IntegrationService; enum class eIntegrationMethod; }
 
 namespace robots {
 	// Forward declarations
-	class DSFE_API RobotKinematics;
-	struct DSFE_API RobotModel;
-	struct DSFE_API RobotLink;
-	struct DSFE_API RobotJoint;
-	struct DSFE_API RobotMetrics;
+	class RobotKinematics;
+	struct RobotModel;
+	struct RobotLink;
+	struct RobotJoint;
+	struct RobotMetrics;
 	enum class eTorqueMode;
 
 	// Dynamics class responsible for computing inertia, mass matrix, gravity torque, control torques, and state derivatives

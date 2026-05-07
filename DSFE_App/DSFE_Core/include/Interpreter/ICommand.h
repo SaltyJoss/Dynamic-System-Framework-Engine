@@ -1,6 +1,6 @@
+// DSFE_Core ICommand.h
 #pragma once
-// File:    ICommand.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include <memory>
@@ -8,8 +8,8 @@
 
 namespace commands {
 	// Forward declaration of ICommand for use in IStoredProgram
-	class DSFE_API CommandContextMotion;
-	class DSFE_API UIContext;
+	class CommandContextMotion;
+	class UIContext;
 
 	// ICommand interface
 	class DSFE_API ICommand {

@@ -1,6 +1,6 @@
+// DSFE_Core Telemetry.h
 #pragma once
-// File:    Telemetry.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include <vector>
 #include <functional>
@@ -8,8 +8,8 @@
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-namespace robots { class DSFE_API RobotSystem; }
-namespace control { class DSFE_API TrajectoryManager; }
+namespace robots { class RobotSystem; }
+namespace control { class TrajectoryManager; }
 
 namespace diagnostics {
 	// Enum for telemetry levels

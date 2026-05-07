@@ -3,7 +3,6 @@
 // GitHub: SaltyJoss
 #include "Interpreter/CommandContextMotion.h"
 #include "Scene/SimulationCore.h"
-#include "Scene/ObjectID.h"
 #include "Robots/RobotSystem.h"
 
 #include "EngineLib/LogMacros.h"
@@ -15,24 +14,22 @@ using namespace utils;
 namespace commands {
 	// Constructor
 	CommandContextMotion::CommandContextMotion(core::ISimulationCore* core)
-		: _core(core), _phys(core ? core->physicsSystem() : nullptr),
-		_robot(core ? core->robotSystem() : nullptr), _angularUnits(AngularUnits::DegPerSec) {
-		_defaultObjID = scene::ObjectID::INVALID_OBJECT_ID;
-		_objID = _core->getObjectByID(_defaultObjID) ? _defaultObjID : scene::ObjectID::INVALID_OBJECT_ID;
+		: _core(core), _robot(core ? core->robotSystem() : nullptr), 
+		_angularUnits(AngularUnits::DegPerSec) {
 	}
 
 	// --- OBJECT RESOLUTION METHODS ---
-	scene::ObjectID CommandContextMotion::DefaultObjectID() const { return _defaultObjID; }
-	scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
+	//scene::ObjectID CommandContextMotion::DefaultObjectID() const { return _defaultObjID; }
+	//scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
 
-	scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
-		if (!_core) return nullptr;
-		if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
-		return _core->getObjectByID(id);
-	}
+	//scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
+	//	if (!_core) return nullptr;
+	//	if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
+	//	return _core->getObjectByID(id);
+	//}
 
-	scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
-	scene::Object* CommandContextMotion::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+	//scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
+	//scene::Object* CommandContextMotion::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
 
 	// --- GLOBAL STATE METHODS ---
 	void CommandContextMotion::setAngularUnits(AngularUnits units) { _angularUnits = units; }
@@ -41,19 +38,19 @@ namespace commands {
 	void CommandContextMotion::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
 	double CommandContextMotion::getOmegaClamp() const { return _omegaClamp; }
 
-	utils::OpResult CommandContextMotion::setOmega(const Vec3& omega) {
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj) { return OpResult::Failure("No object selected."); }
-		Vec3 w = omega;
-		if (_angularUnits == AngularUnits::DegPerSec) { w *= (float)(PI / 180.0); }
-		if (_omegaClamp > 0.0) {
-			w.x() = std::clamp((double)w.x(), -_omegaClamp, _omegaClamp);
-			w.y() = std::clamp((double)w.y(), -_omegaClamp, _omegaClamp);
-			w.z() = std::clamp((double)w.z(), -_omegaClamp, _omegaClamp);
-		}
-		obj->state.angularVelocity = w;
-		return OpResult::Success(true);
-	}
+	//utils::OpResult CommandContextMotion::setOmega(const Vec3& omega) {
+	//	scene::Object* obj = resolveCurrentObject();
+	//	if (!obj) { return OpResult::Failure("No object selected."); }
+	//	Vec3 w = omega;
+	//	if (_angularUnits == AngularUnits::DegPerSec) { w *= (float)(PI / 180.0); }
+	//	if (_omegaClamp > 0.0) {
+	//		w.x() = std::clamp((double)w.x(), -_omegaClamp, _omegaClamp);
+	//		w.y() = std::clamp((double)w.y(), -_omegaClamp, _omegaClamp);
+	//		w.z() = std::clamp((double)w.z(), -_omegaClamp, _omegaClamp);
+	//	}
+	//	obj->state.angularVelocity = w;
+	//	return OpResult::Success(true);
+	//}
 
 	utils::OpResult CommandContextMotion::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
@@ -61,8 +58,8 @@ namespace commands {
 		_robot->trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
-
-	utils::OpResult CommandContextMotion::stopAllOmega() { return setOmega(mathlib::Vec3(0, 0, 0)); }
+	 
+	//utils::OpResult CommandContextMotion::stopAllOmega() { return setOmega(mathlib::Vec3(0, 0, 0)); }
 
 	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
@@ -173,178 +170,178 @@ namespace commands {
 
 	// --- RIGID MOTION METHODS ---
 
-	utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
-		if (!_rig.active || !_rig.obj) {
-			D_INFO("No active rigid rotation.");
-			return OpResult::Success();
-		}
+	//utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
+	//	if (!_rig.active || !_rig.obj) {
+	//		D_INFO("No active rigid rotation.");
+	//		return OpResult::Success();
+	//	}
 
-		auto& s = _rig.obj->state;
+	//	auto& s = _rig.obj->state;
 
-		Quat q = s.q;
-		Quat q_err = _rig.qTarget * q.conjugate();
-		q_err.normalize();
+	//	Quat q = s.q;
+	//	Quat q_err = _rig.qTarget * q.conjugate();
+	//	q_err.normalize();
 
-		if (q_err.w() < 0.0) { q_err.coeffs() *= -1.0; }
+	//	if (q_err.w() < 0.0) { q_err.coeffs() *= -1.0; }
 
-		double angle = 2.0 * std::acos(std::clamp(q_err.w(), -1.0, 1.0)); // [0,pi] clamp
+	//	double angle = 2.0 * std::acos(std::clamp(q_err.w(), -1.0, 1.0)); // [0,pi] clamp
 
-		if (angle < _rig.epsAngle) {
-			s.angularVelocity = Vec3::Zero();
-			_rig.active = false;
-			return OpResult::Success(true);
-		}
+	//	if (angle < _rig.epsAngle) {
+	//		s.angularVelocity = Vec3::Zero();
+	//		_rig.active = false;
+	//		return OpResult::Success(true);
+	//	}
 
-		Vec3 axis;
-		double sinHalf = std::sqrt(std::max(0.0, 1.0 - q_err.w() * q_err.w()));
-		axis = (sinHalf < 1e-8) ? _rig.axisUnit : Vec3(q_err.x(), q_err.y(), q_err.z()) / sinHalf;
+	//	Vec3 axis;
+	//	double sinHalf = std::sqrt(std::max(0.0, 1.0 - q_err.w() * q_err.w()));
+	//	axis = (sinHalf < 1e-8) ? _rig.axisUnit : Vec3(q_err.x(), q_err.y(), q_err.z()) / sinHalf;
 
-		double omega = std::min(_rig.maxOmega, angle / std::max(dt, 1e-6)); // simple “arrive in <= 1 step” clamp
-		Vec3 w = omega * axis.normalized();
+	//	double omega = std::min(_rig.maxOmega, angle / std::max(dt, 1e-6)); // simple “arrive in <= 1 step” clamp
+	//	Vec3 w = omega * axis.normalized();
 
-		s.angularVelocity = w;
+	//	s.angularVelocity = w;
 
-		SIM_ROTATE("Updating rigid rotate to object id=%d angleErr=%.3f rad omega=%.3f rad/s axis=(%.3f, %.3f, %.3f)",
-			(int)_rig.obj->id, angle, omega, axis.x(), axis.y(), axis.z());
+	//	SIM_ROTATE("Updating rigid rotate to object id=%d angleErr=%.3f rad omega=%.3f rad/s axis=(%.3f, %.3f, %.3f)",
+	//		(int)_rig.obj->id, angle, omega, axis.x(), axis.y(), axis.z());
 
-		return OpResult::Success(false);
-	}
+	//	return OpResult::Success(false);
+	//}
 
 	// Starts a rigid rotation of the specified object around a given axis at a maximum angular velocity until it reaches the target angle
-	utils::OpResult CommandContextMotion::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
-		if (!obj) return OpResult::Failure("beginRigidRotateTo -> null object.");
-		const double axisLen = axisUnit.norm();
-		if (axisLen < 1e-8) return OpResult::Failure("beginRigidRotateTo => axis is zero.");
+	//utils::OpResult CommandContextMotion::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
+	//	if (!obj) return OpResult::Failure("beginRigidRotateTo -> null object.");
+	//	const double axisLen = axisUnit.norm();
+	//	if (axisLen < 1e-8) return OpResult::Failure("beginRigidRotateTo => axis is zero.");
 
-		axisUnit = axisUnit / axisLen;
+	//	axisUnit = axisUnit / axisLen;
 
-		auto& s = obj->state;
+	//	auto& s = obj->state;
 
-		_rig.obj = obj;
-		_rig.axisUnit = axisUnit;
-		_rig.qStart = s.q;
+	//	_rig.obj = obj;
+	//	_rig.axisUnit = axisUnit;
+	//	_rig.qStart = s.q;
 
-		const double angRad = angleDeg * (PI_d / 180.0);
-		Quat dq(std::cos(0.5 * angRad),
-			axisUnit.x() * std::sin(0.5 * angRad),
-			axisUnit.y() * std::sin(0.5 * angRad),
-			axisUnit.z() * std::sin(0.5 * angRad));
+	//	const double angRad = angleDeg * (PI_d / 180.0);
+	//	Quat dq(std::cos(0.5 * angRad),
+	//		axisUnit.x() * std::sin(0.5 * angRad),
+	//		axisUnit.y() * std::sin(0.5 * angRad),
+	//		axisUnit.z() * std::sin(0.5 * angRad));
 
-		_rig.qTarget = (dq * _rig.qStart).normalized();
-		_rig.maxOmega = degToRad(maxOmegaDegPerSec);
-		_rig.active = true;
+	//	_rig.qTarget = (dq * _rig.qStart).normalized();
+	//	_rig.maxOmega = degToRad(maxOmegaDegPerSec);
+	//	_rig.active = true;
 
-		SIM_ROTATE("Begin rigid rotate to object id=%d axis=(%.3f, %.3f, %.3f) angle=%.3f deg maxOmega=%.3f deg/s",
-			(int)obj->id, axisUnit.x(), axisUnit.y(), axisUnit.z(), angleDeg, maxOmegaDegPerSec);
+	//	SIM_ROTATE("Begin rigid rotate to object id=%d axis=(%.3f, %.3f, %.3f) angle=%.3f deg maxOmega=%.3f deg/s",
+	//		(int)obj->id, axisUnit.x(), axisUnit.y(), axisUnit.z(), angleDeg, maxOmegaDegPerSec);
 
-		return OpResult::Success(false);
-	}
+	//	return OpResult::Success(false);
+	//}
 
-	// Rotates the specified object along given axes at a certain angular velocity for a time step dt
-	OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double /*dt*/) {
-		if (!obj || !obj->getMesh()) {
-			SIM_FAIL("No object provided for rotation.");
-			return OpResult::Failure("No object provided for rotation.");
-		}
-		auto& s = obj->state;
-		// Normalize omega based on current angular units
-		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
-		// Apply rotation to specified axes
-		if (axes.x) { s.angularVelocity.x() = internalOmega; }
-		if (axes.y) { s.angularVelocity.y() = internalOmega; }
-		if (axes.z) { s.angularVelocity.z() = internalOmega; }
+	//// Rotates the specified object along given axes at a certain angular velocity for a time step dt
+	//OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double /*dt*/) {
+	//	if (!obj || !obj->getMesh()) {
+	//		SIM_FAIL("No object provided for rotation.");
+	//		return OpResult::Failure("No object provided for rotation.");
+	//	}
+	//	auto& s = obj->state;
+	//	// Normalize omega based on current angular units
+	//	double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
+	//	// Apply rotation to specified axes
+	//	if (axes.x) { s.angularVelocity.x() = internalOmega; }
+	//	if (axes.y) { s.angularVelocity.y() = internalOmega; }
+	//	if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
-		SIM_ROTATE("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f", omega, (int)_angularUnits, internalOmega);
+	//	SIM_ROTATE("omega(script)=%.3f units=%d -> internal(rad/s)=%.6f", omega, (int)_angularUnits, internalOmega);
 
-		// return success
-		return OpResult::Success(true);
-	}
+	//	// return success
+	//	return OpResult::Success(true);
+	//}
 
-	// Rotates the current object along specified axes at a given angular velocity for a time step dt
-	OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double /*dt*/) {
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj || !obj->getMesh()) {
-			SIM_FAIL("No object associated with this context.");
-			return OpResult::Failure("No object associated with this context.");
-		}
-		auto& s = obj->state;
+	//// Rotates the current object along specified axes at a given angular velocity for a time step dt
+	//OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double /*dt*/) {
+	//	scene::Object* obj = resolveCurrentObject();
+	//	if (!obj || !obj->getMesh()) {
+	//		SIM_FAIL("No object associated with this context.");
+	//		return OpResult::Failure("No object associated with this context.");
+	//	}
+	//	auto& s = obj->state;
 
-		// Normalize omega based on current angular units
-		double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
-		// Apply rotation to specified axes
-		if (axes.x) { s.angularVelocity.x() = internalOmega; }
-		if (axes.y) { s.angularVelocity.y() = internalOmega; }
-		if (axes.z) { s.angularVelocity.z() = internalOmega; }
+	//	// Normalize omega based on current angular units
+	//	double internalOmega = NormaliseOmega(convertOmegaToInternal(omega));
+	//	// Apply rotation to specified axes
+	//	if (axes.x) { s.angularVelocity.x() = internalOmega; }
+	//	if (axes.y) { s.angularVelocity.y() = internalOmega; }
+	//	if (axes.z) { s.angularVelocity.z() = internalOmega; }
 
-		return OpResult::Success(true);
-	}
-		
-	// --- STOP MOTION METHODS ---
+	//	return OpResult::Success(true);
+	//}
+	//	
+	//// --- STOP MOTION METHODS ---
 
-	// Stops rotation of the specified object along the given axes
-	void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
-		if (!obj) return;
-		auto& s = obj->state;
+	//// Stops rotation of the specified object along the given axes
+	//void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
+	//	if (!obj) return;
+	//	auto& s = obj->state;
 
-		angularVelocityPrev = s.angularVelocity; // store previous angular velocity
+	//	angularVelocityPrev = s.angularVelocity; // store previous angular velocity
 
-		if (axes.x) { s.angularVelocity.x() = 0.0; }
-		if (axes.y) { s.angularVelocity.y() = 0.0; }
-		if (axes.z) { s.angularVelocity.z() = 0.0; }
-	}
+	//	if (axes.x) { s.angularVelocity.x() = 0.0; }
+	//	if (axes.y) { s.angularVelocity.y() = 0.0; }
+	//	if (axes.z) { s.angularVelocity.z() = 0.0; }
+	//}
 
-	// Stops translation along specified axes
-	void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
-		if (!obj) return;
-		auto& s = obj->state;
+	//// Stops translation along specified axes
+	//void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
+	//	if (!obj) return;
+	//	auto& s = obj->state;
 
-		linearVelocityPrev = s.linearVelocity; // store previous linear velocity
+	//	linearVelocityPrev = s.linearVelocity; // store previous linear velocity
 
-		if (axes.x) { s.linearVelocity.x() = 0.0; }
-		if (axes.y) { s.linearVelocity.y() = 0.0; }
-		if (axes.z) { s.linearVelocity.z() = 0.0; }
-	}
+	//	if (axes.x) { s.linearVelocity.x() = 0.0; }
+	//	if (axes.y) { s.linearVelocity.y() = 0.0; }
+	//	if (axes.z) { s.linearVelocity.z() = 0.0; }
+	//}
 
-	// --- TRANSLATION COMMAND METHODS ---
+	//// --- TRANSLATION COMMAND METHODS ---
 
-	// Translates the current object in world coordinates along a specified direction at a given velocity for a time step dt
-	OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double /*vel*/) {
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj) {
-			SIM_FAIL("No object associated with this context.");
-			return OpResult::Failure("No object associated with this context.");
-		}
+	//// Translates the current object in world coordinates along a specified direction at a given velocity for a time step dt
+	//OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double /*vel*/) {
+	//	scene::Object* obj = resolveCurrentObject();
+	//	if (!obj) {
+	//		SIM_FAIL("No object associated with this context.");
+	//		return OpResult::Failure("No object associated with this context.");
+	//	}
 
-		const Vec3 translation = normaliseDirection(direction) * distance;
-		obj->transform.position += translation;
-		return OpResult::Success(true);
-	}
+	//	const Vec3 translation = normaliseDirection(direction) * distance;
+	//	obj->transform.position += translation;
+	//	return OpResult::Success(true);
+	//}
 
-	// Translates the current object along specified axes at a given velocity for a time step dt
-	const OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) const {
-		scene::Object* obj = resolveCurrentObject();
-		if (!obj) {
-			SIM_FAIL("No object associated with this context.");
-			return OpResult::Failure("No object associated with this context.");
-		}
+	//// Translates the current object along specified axes at a given velocity for a time step dt
+	//const OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) const {
+	//	scene::Object* obj = resolveCurrentObject();
+	//	if (!obj) {
+	//		SIM_FAIL("No object associated with this context.");
+	//		return OpResult::Failure("No object associated with this context.");
+	//	}
 
-		Vec3 translation = Vec3::Zero();
-		if (axes.x) {
-			obj->state.linearVelocity.x() = vel;
-			translation.x() = vel * dt;
-		}
-		if (axes.y) {
-			obj->state.linearVelocity.y() = vel;
-			translation.y() = vel * dt;
-		}
-		if (axes.z) {
-			obj->state.linearVelocity.z() = vel;
-			translation.z() = vel * dt;
-		}
+	//	Vec3 translation = Vec3::Zero();
+	//	if (axes.x) {
+	//		obj->state.linearVelocity.x() = vel;
+	//		translation.x() = vel * dt;
+	//	}
+	//	if (axes.y) {
+	//		obj->state.linearVelocity.y() = vel;
+	//		translation.y() = vel * dt;
+	//	}
+	//	if (axes.z) {
+	//		obj->state.linearVelocity.z() = vel;
+	//		translation.z() = vel * dt;
+	//	}
 
-		/*obj->transform.position += toGlm(translation);*/
-		return OpResult::Success(true);
-	}
+	//	/*obj->transform.position += toGlm(translation);*/
+	//	return OpResult::Success(true);
+	//}
 
 	// --- READ-ONLY ACCESSORS ---
 

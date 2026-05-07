@@ -1,11 +1,9 @@
+// DSFE_Core StoredProgram.cpp
 #include "pch.h"
-// File:   StoredProgram.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/StoredProgram.h"
 #include "Platform/ISimulationCore.h"
 #include "Robots/RobotSystem.h"
-#include "Scene/ObjectID.h"
-#include "Scene/Object.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -13,10 +11,10 @@ namespace interpreter {
 	StoredProgram::StoredProgram(core::ISimulationCore* core)
 		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
 		// If necessary, can set a default object by querying core->getObject()
-		if (_core) {
-			scene::Object* obj = _core->getObject();
-			_cntx.motion().setDefaultObjectID(obj ? obj->id : scene::ObjectID::INVALID_OBJECT_ID);
-		}
+		//if (_core) {
+		//	scene::Object* obj = _core->getObject();
+		//	_cntx.motion().setDefaultObjectID(obj ? obj->id : scene::ObjectID::INVALID_OBJECT_ID);
+		//}
 	}
 	StoredProgram::~StoredProgram() { clear(); }
 
@@ -84,12 +82,12 @@ namespace interpreter {
 		if (!_core) { return; }
 		if (_core->isSimRunning()) { _core->stopSimulation(); }
 
-		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
-		if (obj) {
-			utils::AxisMask all{ true,true,true };
-			_cntx.motion().stopRotation(obj, all);
-			_cntx.motion().stopTranslation(obj, all);
-		}
+		//scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
+		//if (obj) {
+		//	utils::AxisMask all{ true,true,true };
+		//	_cntx.motion().stopRotation(obj, all);
+		//	_cntx.motion().stopTranslation(obj, all);
+		//}
 
 		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
@@ -98,12 +96,12 @@ namespace interpreter {
 	void StoredProgram::pause() {
 		_state = ProgramState::Paused;
 
-		scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
-		if (obj) {
-			utils::AxisMask all{ true,true,true };
-			_cntx.motion().stopRotation(obj, all);
-			_cntx.motion().stopTranslation(obj, all);
-		}
+		//scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
+		//if (obj) {
+		//	utils::AxisMask all{ true,true,true };
+		//	_cntx.motion().stopRotation(obj, all);
+		//	_cntx.motion().stopTranslation(obj, all);
+		//}
 
 		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
@@ -114,7 +112,6 @@ namespace interpreter {
 		double elapsed = 0.0;
 		const double stepDt = _core ? _core->fixedDt() : static_cast<double>(1.0 / 180.0);
 		while (elapsed < dt) {
-			if (_core) { _core->updatePhysics(stepDt); }
 			elapsed += stepDt;
 		}
 		if (_core && _core->isSimRunning()) { _core->stopSimulation(); }
@@ -139,8 +136,8 @@ namespace interpreter {
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; _core->stopSimulation(); }
 
 		// Ensure default object is valid in context
-		scene::Object* o = _defaultObj ? _defaultObj : (_core ? _core->getObject() : nullptr);
-		_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
+		//scene::Object* o = _defaultObj ? _defaultObj : (_core ? _core->getObject() : nullptr);
+		//_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
 
 		// Get current command
 		auto& cmd = _commands[PC];
@@ -181,10 +178,6 @@ namespace interpreter {
 				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
 				robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 			}
-
-			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return; }
-			phys->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
 		}
 	}
 	// Get Integrator Method
@@ -193,7 +186,6 @@ namespace interpreter {
 	// Set Omega
 	void StoredProgram::setOmega(mathlib::Vec3 omega, utils::AngularUnits units) {
 		_cntx.motion().setAngularUnits(units);
-		_cntx.motion().setOmega(omega);
 	}
 
 	// Set Fixed Dt
@@ -213,10 +205,6 @@ namespace interpreter {
 				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
 				robot->setGravity(gravity);
 			}
-			 
-			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return; }
-			phys->setGravity(mathlib::Vec3(0.0f, 0.0f, static_cast<float>(gravity)));
 		}
 	}
 	// Get Gravity
@@ -227,10 +215,6 @@ namespace interpreter {
 				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return _gravity; }
 				return robot->getGravity();
 			}
-
-			physics::PhysicsSystem* phys = _core->physicsSystem();
-			if (!phys) { LOG_ERROR("No physics system found in simulation manager."); return _gravity; }
-			return phys->getGravity().y();
 		}
 		return _gravity;
 	}

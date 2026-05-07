@@ -1,7 +1,6 @@
+// DSFE_GUI ModelGroup.h
 #pragma once
-// File:   ModelGroup.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include <vector>
 #include <memory>
 #include <string>

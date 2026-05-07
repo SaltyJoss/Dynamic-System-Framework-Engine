@@ -16,14 +16,12 @@ set(CORE_SRC
     src/Robots/RobotDynamics.cpp
     src/Robots/RobotKinematics.cpp
     src/Robots/RobotLoader.cpp
-    src/Robots/RobotModel.cpp
     src/Robots/RobotSystem.cpp
     src/Robots/TrajectoryManager.cpp
 
     src/Interpreter/Command.cpp
     src/Interpreter/CommandContextMotion.cpp
     src/Interpreter/CommandFactory.cpp
-    src/Interpreter/MainContext.cpp
     src/Interpreter/Parser.cpp
     src/Interpreter/RegisterCommand.cpp
     src/Interpreter/StoredProgram.cpp
@@ -90,10 +88,7 @@ target_link_libraries(HDF5 INTERFACE
     $<$<CONFIG:MinSizeRel>:${HDF5_ROOT}/lib/hdf5.lib>
 )
 
-# Set public include directories for consumers of EngineLib
-target_include_directories(DSFE_Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Set private include directories for building EngineLib
+# Set include directories for building DSFE_Core
 target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -105,10 +100,14 @@ target_include_directories(DSFE_Core PUBLIC
 target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 
 # Link DSFE_Core against its dependencies
-target_link_libraries(DSFE_Core PUBLIC 
-    PxMLib
-    ExternalHeaders
-    assimp
-    HDF5
-    Threads::Threads
+target_link_libraries(DSFE_Core
+    PUBLIC 
+        PxMLib
+        assimp
+        HDF5
+        Eigen3::Eigen
+        Threads::Threads
+
+    PRIVATE
+        nlohmann_json::nlohmann_json
 )

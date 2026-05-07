@@ -11,32 +11,12 @@
 
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
-#include "Platform/DataManager.h"
 
 namespace core {
 	// Owned constructed subsystems (default)
 	SimulationCore::SimulationCore()
-		: _objectsOwned(std::make_unique<std::vector<std::unique_ptr<scene::Object>>>()), 
-		  _physicsOwned(std::make_unique<physics::PhysicsSystem>()), _trajOwned(std::make_unique<control::TrajectoryManager>()),
-		_robotOwned(std::make_unique<robots::RobotSystem>(
-			*_objectsOwned,
-			[objs = _objectsOwned.get()](const std::string& path) {
-				assets::MeshLoader loader;
-				auto meshes = loader.load(path);
-
-				std::vector<scene::Object*> result;
-				for (auto& m : meshes) {
-					auto obj = std::make_unique<scene::Object>(m);
-					auto raw = obj.get();
-					objs->push_back(std::move(obj));
-					result.push_back(raw);
-				}
-				return result;
-			}
-		))
+		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _robotOwned(std::make_unique<robots::RobotSystem>())
 	{
-		_objects = _objectsOwned.get();
-		_physics = _physicsOwned.get();
 		_traj = _trajOwned.get();
 		_robot = _robotOwned.get();
 	}
@@ -343,7 +323,6 @@ namespace core {
 
 		// Set integrator on both physics and robot systems
 		_robot->setIntegrationMethod(method);
-		_physics->setIntegrationMethod(method);
 
 		_activeProgram = program;
 		_scriptRunning = true;

@@ -1,12 +1,14 @@
+// DSFE_Core Parser.cpp
 #include "pch.h"
-// File:   Parser.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Parser.h"
+
 #include "Interpreter/RegisterCommand.h"
 #include "Interpreter/CommandFactory.h"
-#include "Interpreter/Commands/ParallelGroupCmd.h"
-#include "Interpreter/Utils.h"
 
+#include "Interpreter/Commands/ParallelGroupCmd.h"
+
+#include "Interpreter/Utils.h"
 #include "EngineLib/LogMacros.h"
 
 using namespace std;

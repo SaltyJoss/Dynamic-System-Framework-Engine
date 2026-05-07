@@ -1,10 +1,12 @@
+// DSFE_Core SelectCmd.h
 #pragma once
-// File:    SelectCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
+
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/UIContext.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,7 +15,7 @@ namespace commands {
 	class DSFE_API SelectCmd final : public Command {
 	public:
 		// Constructor
-		SelectCmd(scene::ObjectID obj);
+		SelectCmd();
 
 		std::string_view getName() const { return "stop"; }
 		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
@@ -27,17 +29,13 @@ namespace commands {
 	private:
 		void execute() override;
 
-		scene::ObjectID _objID{};
 		UIContext* _uiCntx = nullptr;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
-		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
-		// Mark the command as completed
 		void markCompleted() override;
-		// Check if the command has started
 		bool hasStarted() const override;
 	};
 

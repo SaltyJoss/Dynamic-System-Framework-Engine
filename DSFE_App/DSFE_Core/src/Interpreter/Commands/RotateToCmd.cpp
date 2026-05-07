@@ -15,8 +15,8 @@ namespace commands {
 	void RotateToCmd::markCompleted() { setResult({ CmdState::Executed, {}, "rotateTo() ran successfully" }); }
 	bool RotateToCmd::hasStarted() const { return _started; }
 
-	RotateToCmd::RotateToCmd(scene::ObjectID objID, utils::AxisMask axes, double maxOmegaDegPerSec, double angleDeg)
-		: _objID(objID), _axes(axes), _maxOmegaDeg(maxOmegaDegPerSec), _angleDeg(angleDeg), _started(false) {
+	RotateToCmd::RotateToCmd(utils::AxisMask axes, double maxOmegaDegPerSec, double angleDeg)
+		: _axes(axes), _maxOmegaDeg(maxOmegaDegPerSec), _angleDeg(angleDeg), _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
@@ -27,21 +27,21 @@ namespace commands {
 			return CmdResult{ CmdState::Failed, {}, "rotateTo() not started." };
 		}
 
-		auto result = cntx.updateRigidRotateTo(dt);
-		if (!result.ok) {
-			markFailed(result.message);
-			SIM_FAIL("Failed to update rotateTo -> %s", result.message.c_str());
-			return CmdResult{ CmdState::Failed, {}, result.message };
-		}
+		//auto result = cntx.updateRigidRotateTo(dt);
+		//if (!result.ok) {
+		//	markFailed(result.message);
+		//	SIM_FAIL("Failed to update rotateTo -> %s", result.message.c_str());
+		//	return CmdResult{ CmdState::Failed, {}, result.message };
+		//}
 
-		scene::Object* obj = cntx.resolveObject(_objID);
-		if (!obj) return { CmdState::Failed, {}, "rotateTo: object disappeared." };
+		////scene::Object* obj = cntx.resolveObject(_objID);
+		//if (!obj) return { CmdState::Failed, {}, "rotateTo: object disappeared." };
 
-		if (result.done) {
-			cntx.stopRotation(obj, _axes.any() ? _axes : utils::AxisMask{ false,false,true });
-			markCompleted();
-			return { CmdState::Executed, {}, "" };
-		}
+		//if (result.done) {
+		//	cntx.stopRotation(obj, _axes.any() ? _axes : utils::AxisMask{ false,false,true });
+		//	markCompleted();
+		//	return { CmdState::Executed, {}, "" };
+		//}
 
 		return CmdResult{ CmdState::Executing, {}, "" };
 	}
@@ -56,15 +56,15 @@ namespace commands {
 		else if (_axes.y) axis.y() = 1.0;
 		else axis.z() = 1.0;
 
-		scene::Object* obj = _cntxMtn->resolveObject(_objID);
-		if (!obj) { markFailed("rotateTo: invalid object."); return; }
+		//scene::Object* obj = _cntxMtn->resolveObject(_objID);
+		//if (!obj) { markFailed("rotateTo: invalid object."); return; }
 
-		auto result = _cntxMtn->beginRigidRotateTo(obj, axis, _maxOmegaDeg, _angleDeg);
-		if (!result.ok) {
-			markFailed(result.message);
-			SIM_FAIL("Failed to start rotateTo -> %s", result.message.c_str());
-			return;
-		}
+		//auto result = _cntxMtn->beginRigidRotateTo(obj, axis, _maxOmegaDeg, _angleDeg);
+		//if (!result.ok) {
+		//	markFailed(result.message);
+		//	SIM_FAIL("Failed to start rotateTo -> %s", result.message.c_str());
+		//	return;
+		//}
 	}
 
 	// Factory function to create RotateToCmd from command arguments
@@ -75,11 +75,11 @@ namespace commands {
 			return nullptr;
 		}
 
-		scene::ObjectID objID{};
-		if (!tryParseObjID(id, objID)) {
-			SIM_FAIL("rotateTo command requires a valid object ID as the first argument.");
-			return nullptr;
-		}
+		//scene::ObjectID objID{};
+		//if (!tryParseObjID(id, objID)) {
+		//	SIM_FAIL("rotateTo command requires a valid object ID as the first argument.");
+		//	return nullptr;
+		//}
 
 		AxisMask axes = utils::parseAxisMask(args[0]);
 		if (!axes.any()) { axes.z = true; }
@@ -91,6 +91,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateToCmd>(objID, axes, omegaOpt, angleOpt);
+		return std::make_unique<RotateToCmd>(axes, omegaOpt, angleOpt);
 	}
 } // namespace commands

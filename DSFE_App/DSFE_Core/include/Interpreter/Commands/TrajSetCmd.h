@@ -1,9 +1,9 @@
+// DSFE_Core TrajSetCmd.h
 #pragma once
-// File:    TrajSetCmd.h
-// GitHub:  SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
+
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
@@ -39,11 +39,8 @@ namespace commands {
         static std::string upperCopy(std::string s);
 
     protected:
-        // Mark the command as failed with a message
         void markFailed(const std::string& message) override;
-        // Mark the command as completed
         void markCompleted() override;
-        // Check if the command has started
         bool hasStarted() const override;
     };
 

@@ -24,7 +24,10 @@ target_precompile_headers(PxMLib PRIVATE
 target_include_directories(PxMLib 
     PUBLIC 
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MathLib/include>
-        ${eigen_SOURCE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/MathLib/
+)
+
+target_link_libraries(PxMLib PUBLIC
+    Eigen3::Eigen
 )

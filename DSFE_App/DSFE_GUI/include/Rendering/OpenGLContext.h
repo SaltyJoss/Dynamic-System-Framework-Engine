@@ -1,14 +1,12 @@
+// DSFE_GUI OpenGLContext.h
 #pragma once
-// File:   OpenGLContext.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include "RenderBase.h"
 #include "ui/Styles.h"
 #include "Platform/Logger.h"
 
 namespace render {
-	class DSFE_API OpenGLContext : public RenderContext {
+	class OpenGLContext : public RenderContext {
 	public:
 		bool init(window::IWindow* window) override;
 		void preRender() override;

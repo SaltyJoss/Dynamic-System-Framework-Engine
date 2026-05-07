@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   Styles.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI Styles.cpp
 #include "ui/Styles.h"
 #include <imgui.h>
 #include <imgui_impl_glfw.h>

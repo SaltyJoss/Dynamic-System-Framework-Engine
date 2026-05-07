@@ -1,7 +1,5 @@
+// DSFE_GUI imguiWidgets.h
 #pragma once
-// File:   imguiWidgets.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>

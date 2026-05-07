@@ -59,8 +59,8 @@ namespace interpreter {
 		int getCurrentLineNumber() const override { return _currentLineNumber; }
 
 		// Set default object
-		void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
-		scene::Object* defaultObject() const override { return _defaultObj; }
+		//void setDefaultObject(scene::Object* obj) override { _defaultObj = obj; }
+		//scene::Object* defaultObject() const override { return _defaultObj; }
 
 		// Set & Get Integrator Method
 		void setIntegratorMethod(IntegratorMethod method) override;
@@ -84,7 +84,7 @@ namespace interpreter {
 	private:
 		core::ISimulationCore* _core = nullptr;
 		commands::MainContext _cntx;
-		scene::Object* _defaultObj = nullptr;
+		//scene::Object* _defaultObj = nullptr;
 
 		// Bool for tracking if the program has reached the end
 		bool atEnd() const;

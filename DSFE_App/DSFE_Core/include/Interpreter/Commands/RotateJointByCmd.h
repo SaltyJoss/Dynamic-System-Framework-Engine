@@ -1,9 +1,11 @@
+// DSFE_Core RotateJointByCmd.h
 #pragma once
-// File:    RotateJointByCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
+
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
 

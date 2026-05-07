@@ -8,12 +8,12 @@
 
 //Basic window interface
 namespace window {
-    class DSFE_API IWindow {
+    class IWindow {
     public:
         // Destructor
         virtual ~IWindow() = default;
 
-		// Initialization
+		// Initialisation
         virtual bool init(int width, int height, const std::string& title) = 0;
 
         // Core windowing

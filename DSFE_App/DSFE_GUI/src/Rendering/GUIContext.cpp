@@ -1,6 +1,6 @@
-#include "pch.h"
-// File:   GUIContext.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI GUIContext.cpp
+#include "Utils.h"
+
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
@@ -39,7 +39,7 @@ namespace render {
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)_window->getNativeWin(), true);
 		ImGui_ImplOpenGL3_Init(glslVersion);
 
-		LOG_INFO("ImGui context initialized (GLSL %s)", glslVersion);
+		LOG_INFO("ImGui context initialised (GLSL %s)", glslVersion);
 		return true;
 	}
 

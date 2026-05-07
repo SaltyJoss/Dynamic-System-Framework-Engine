@@ -1,7 +1,6 @@
+// DSFE_Core Utils.cpp
 #include "pch.h"
-// File:   Utils.cpp
-// GitHub: SaltyJoss
-#include "Scene/ObjectID.h"
+
 #include "Interpreter/Utils.h"
 
 #include "EngineLib/LogMacros.h"
@@ -200,17 +199,17 @@ namespace utils {
 		return mask;
 	}
 
-	// Helper function to try parsing an ObjectID from a string (e.g. "obj123" or "123")
-	bool utils::tryParseObjID(const std::string& s, scene::ObjectID& out) {
-		std::string_view v = s;
-		if (v.rfind("obj", 0) == 0) v.remove_prefix(3);
+	//// Helper function to try parsing an ObjectID from a string (e.g. "obj123" or "123")
+	//bool utils::tryParseObjID(const std::string& s, scene::ObjectID& out) {
+	//	std::string_view v = s;
+	//	if (v.rfind("obj", 0) == 0) v.remove_prefix(3);
 
-		unsigned id = 0;
-		auto res = std::from_chars(v.data(), v.data() + v.size(), id);
-		if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) return false;
-		out = (scene::ObjectID)id;
-		return true;
-	}
+	//	unsigned id = 0;
+	//	auto res = std::from_chars(v.data(), v.data() + v.size(), id);
+	//	if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) return false;
+	//	out = (scene::ObjectID)id;
+	//	return true;
+	//}
 
 	// Helper functions to convert between degrees and radians
 	double degToRad(double degrees) { return degrees * ( PI_d / 180.0); }

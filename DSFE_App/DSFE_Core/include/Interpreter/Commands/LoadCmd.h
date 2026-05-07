@@ -1,9 +1,11 @@
+// DSFE_Core LoadCmd.h
 #pragma once
-// File:    LoadCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
+
 #include "Interpreter/Command.h"
 #include "Interpreter/UIContext.h"
 
@@ -45,11 +47,8 @@ namespace commands {
 		std::string _path;
 
 	protected:
-		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
-		// Mark the command as completed
 		void markCompleted() override;
-		// Check if the command has started
 		bool hasStarted() const override;
 	};
 

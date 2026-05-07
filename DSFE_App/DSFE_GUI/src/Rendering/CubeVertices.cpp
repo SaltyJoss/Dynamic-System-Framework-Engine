@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   CubeVertices.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI CubeVertices.cpp
 #include "Rendering/CubeVertices.h"
 
 // Cube vertices for skybox and shadow mapping (36 vertices for 12 triangles)

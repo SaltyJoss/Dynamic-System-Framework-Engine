@@ -25,9 +25,9 @@ using namespace constants;
 namespace robots {
 	// Constructor
 	RobotSystem::RobotSystem()
-		: _objects(objects), _loadMeshReturn(std::move(meshLoader)), _torqueMode(eTorqueMode::CONTROLLED),
-		_integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
-		_kinematics(std::make_unique<RobotKinematics>(_robot)), _dynamics(std::make_unique<RobotDynamics>(_robot)) {
+		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
+		_kinematics(std::make_unique<RobotKinematics>(_robot)), _dynamics(std::make_unique<RobotDynamics>(_robot)),
+		_torqueMode(eTorqueMode::CONTROLLED) {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 	// Destructor
@@ -355,7 +355,6 @@ namespace robots {
 		// Reset control parameters to target values so that if the new robot has different defaults, we start with those
 		resetNaturalFrequencyToTarget();
 		resetDampingRatioToTarget();
-		resetOvershootRatioToTarget();
 
 		// Construct path to robot JSON file
 		const std::filesystem::path jsonPath = paths::assets() / "objects" / "Robotic_Arm_Models" / name / (name + ".json");
@@ -389,7 +388,6 @@ namespace robots {
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 
-		instantiateRobotLinks();
 		buildLinkIndex();
 	
 		// Declare that we have a robot loaded
@@ -521,7 +519,7 @@ namespace robots {
 				// Compute child link pose in world frame
 				Mat4 T_child = T_parent * T_joint * R_joint;
 
-				Vec3 axis = j.axis.normalized() > 1e-8 ? j.axis.normalized() : Vec3(0, 0, 1); // default axis if zero
+				Vec3 axis = j.axis.norm() > 1e-8 ? j.axis.normalized() : Vec3(0, 0, 1); // default axis if zero
 
 				// Apply joint rotation for revolute joints
 				if (j.type == eJointType::REVOLUTE) {
@@ -775,7 +773,7 @@ namespace robots {
 		for (auto& j : _robot.joints) {
 			if (j.child == childLinkName) {
 				j.q = radians(angleDeg);
-				updateRobotKinematics();
+				computeRobotKinematics(_worldTransforms);
 				return true;
 			}
 		}
@@ -867,7 +865,7 @@ namespace robots {
 
 	// --- ROBOT SYSTEM CONFIGURATION METHODS ---
 
-	std::vector<Mat4>& RobotSystem::getWorldTransforms() { return _worldTransforms; }
+	const std::vector<Mat4>& RobotSystem::getWorldTransforms() const { return _worldTransforms; }
 
 	// Method to set the gravity strength for the robot system
 	void RobotSystem::setGravity(double g) {

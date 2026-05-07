@@ -1,9 +1,11 @@
+// DSFE_Core RotateToCmd.h
 #pragma once
-// File:    RotateToCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
+
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
 
@@ -13,9 +15,9 @@ namespace commands {
 	class DSFE_API RotateToCmd final : public Command {
 	public:
 		// Constructor
-		RotateToCmd(scene::ObjectID obj, utils::AxisMask axes, double maxOmegaDeg, double angleDeg);
+		RotateToCmd(utils::AxisMask axes, double maxOmegaDeg, double angleDeg);
 
-		std::string_view getName() const { return "rotateBy"; }
+		std::string_view getName() const { return "rotateTo"; }
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -25,7 +27,6 @@ namespace commands {
 		void execute() override;
 		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 
-		scene::ObjectID _objID{};
 		utils::AxisMask _axes;
 		double _angleDeg = 0.0;
 		double _maxOmegaDeg = 0.0;

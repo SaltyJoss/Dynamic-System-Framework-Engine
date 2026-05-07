@@ -1,10 +1,8 @@
+// DSFE_GUI Mesh.h
 #pragma once
-// File:   Mesh.h
-// GitHub: SaltyJoss
 // -----
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
-#include "EngineCore.h"
 
 #include "Rendering/RenderBase.h"
 #include "Assets/VertexHolder.h"
@@ -14,10 +12,10 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations for VertexIndexBuffer.h
-namespace render { class DSFE_API VertexIndexBuffer; }
+namespace render { class VertexIndexBuffer; }
 
 namespace scene {
-	class DSFE_API Mesh {
+	class Mesh {
 	public:
 		// Constructors & Destructor
 		Mesh() = default;

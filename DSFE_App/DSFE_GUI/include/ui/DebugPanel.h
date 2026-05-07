@@ -1,15 +1,12 @@
+// DSFE_GUI DebugPanel.h
 #pragma once
-// File:    DebugPanel.h
-// GitHub:  SaltyJoss
-#include "EngineCore.h"
+
 #include "imgui.h"
 #include "Scene/SimulationManager.h"
 #include "Scene/Camera.h"
 #include <unordered_set>
 
 #include "Platform/Logger.h"
-
-extern DSFE_API Debug gLog;
 
 namespace gui {
 	struct debugLogEntry {
@@ -24,7 +21,7 @@ namespace gui {
 		std::string text;
 	};
 
-	class DSFE_API DebugPanel {
+	class DebugPanel {
 	public:
 		void render();
 		void clearSimLog() { gLog.Instance().clearSimLog(); simSelectedLines.clear(); }

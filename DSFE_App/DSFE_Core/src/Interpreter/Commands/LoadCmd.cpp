@@ -46,9 +46,9 @@ namespace commands {
 		}
 
 		switch (_target.type) {
-		case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); break;
+		//case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); break;
 		case LoadTargetType::Robot:		_cntxUI->loadRobot(_target.path); break;
-		case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); break;
+		//case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); break;
 		default:
 			{
 				std::string errMsg = "Invalid load target type.";

@@ -1,14 +1,13 @@
+// DSFE_GUI Texture.h
 #pragma once
-// File:   Texture.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include <glad/glad.h>
 
 #include <string>
 #include "Platform/Logger.h"
 
 namespace render {
-	class DSFE_API Texture {
+	class Texture {
 	public:
 		GLuint ID = 0;
 		

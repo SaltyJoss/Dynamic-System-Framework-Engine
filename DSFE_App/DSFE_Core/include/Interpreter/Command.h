@@ -1,9 +1,9 @@
+// DSFE_Core Command.h
 #pragma once
-// File:    Command.h
-// GitHub:  SaltyJoss
 #pragma warning(disable : 4100)
 
 #include "EngineCore.h"
+
 #include "ICommand.h"
 #include "MainContext.h"
 

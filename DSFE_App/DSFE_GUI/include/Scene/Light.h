@@ -1,16 +1,12 @@
+// DSFE_GUI Light.h
 #pragma once
-// File:   Light.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include "Scene/Element.h"
 #include "Rendering/ShaderUtil.h"
 #include "Platform/Logger.h"
 
-extern DSFE_API Debug gLog;
-
 namespace scene {
-	class DSFE_API Light : public Element {
+	class Light : public Element {
     public:
 
 		Light() {

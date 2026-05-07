@@ -1,7 +1,8 @@
+// DSFE_Core ISimulationCore.h
 #pragma once
-// File:   ISimulationCore.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
+
 #include <cstdint>
 #include <string>
 

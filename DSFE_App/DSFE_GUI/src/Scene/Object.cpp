@@ -1,11 +1,18 @@
-#include "pch.h"
-// File:   Object.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI Object.cpp
 #include "Scene/Object.h"
+
+#include <MathLibAPI.h>
+#include <core/Types.h>
+#include <core/constants.h>
+
+#include <glm/gtx/quaternion.hpp>
+
 #include "Physics/PhysicsState.h"
 #include "Scene/ObjectID.h"
 #include "Scene/Input.h"
 #include "Scene/Mesh.h"
+
+using namespace mathlib;
 
 namespace scene {
 	// Convert Transform to a 4x4 matrix for rendering

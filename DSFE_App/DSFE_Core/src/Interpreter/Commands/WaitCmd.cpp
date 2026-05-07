@@ -1,6 +1,6 @@
+// DSFE_Core WaitCmd.cpp
 #include "pch.h"
-// File:   WaitCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/WaitCmd.h"
 
 #include "EngineLib/LogMacros.h"

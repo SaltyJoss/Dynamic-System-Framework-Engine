@@ -1,10 +1,12 @@
+// DSFE_Core RotateByCmd.h
 #pragma once
-// File:    RotateByCmd.h
-// GitHub:  SaltyJoss
 #pragma warning(disable : 4251)
+
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
+
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContextMotion.h"
 
@@ -14,7 +16,7 @@ namespace commands {
 	class DSFE_API RotateByCmd final : public Command {
 	public:
 		// Constructor
-		RotateByCmd(scene::ObjectID obj, utils::AxisMask axis, double maxOmegaDeg, double deltaDeg);
+		RotateByCmd(utils::AxisMask axis, double maxOmegaDeg, double deltaDeg);
 
 		std::string_view getName() const { return "rotateBy"; }
 		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
@@ -26,7 +28,6 @@ namespace commands {
 		void execute() override;
 		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 
-		scene::ObjectID _objID{};
 		utils::AxisMask _axes{};
 		double _deltaDeg;
 		double _omegaDeg;

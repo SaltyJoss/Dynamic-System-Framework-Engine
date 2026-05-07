@@ -1,11 +1,14 @@
+// DSFE_Core SetCmd.h
 #pragma once
-// File:    SetCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
+
 #include "Interpreter/Command.h"
 #include "Interpreter/UIContext.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -73,11 +76,8 @@ namespace commands {
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
-		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
-		// Mark the command as completed
 		void markCompleted() override;
-		// Check if the command has started
 		bool hasStarted() const override;
 	};
 

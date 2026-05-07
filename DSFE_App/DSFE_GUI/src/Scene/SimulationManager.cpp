@@ -1,9 +1,10 @@
-#include "pch.h"
-// File:   SimulationManager.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI SimulationManager.cpp
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
 #include "Scene/SimulationCore.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 extern "C" core::ISimulationCore* CreateSimulationCore_v1();
 extern "C" void DestroySimulationCore(core::ISimulationCore*);
@@ -17,6 +18,13 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
 #include <random>
 
+#include <unordered_map>
+#include <mutex>
+#include <vector>
+#include <memory>
+#include <string>
+#include <regex>
+
 #include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
@@ -24,8 +32,8 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #include "Scene/Light.h"
 #include "Scene/AxisOrientator.h"
 
-#include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
+#include "Robots/RobotModel.h"
 #include "Robots/TrajectoryManager.h"
 
 #include "Interpreter/IStoredProgram.h"
@@ -45,6 +53,42 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #include "Platform/DataManager.h"
 
 namespace gui {
+	// Converts an Eigen 3D vector to a glm::vec3
+	static glm::vec3 toGlm(const Vec3& v) {
+		return glm::vec3(
+			static_cast<float>(v.x()),
+			static_cast<float>(v.y()),
+			static_cast<float>(v.z())
+		);
+	}
+	// Converts an Eigen quaternion to a glm::quat, taking into account the different ordering of components (w, x, y, z) vs (x, y, z, w)
+	static glm::quat toGlm(const Quat& q) {
+		return glm::quat(
+			static_cast<float>(q.w()),
+			static_cast<float>(q.x()),
+			static_cast<float>(q.y()),
+			static_cast<float>(q.z())
+		); // (w, x, y, z)
+	}
+
+	// Converts a 3x3 Eigen matrix to a glm::mat3, taking into account the row-major to column-major conversion
+	static glm::mat3 toGlm(const Mat3& m) {
+		glm::mat3 g(1.0f);
+		for (int c = 0; c < 3; ++c)
+			for (int r = 0; r < 3; ++r)
+				g[c][r] = static_cast<float>(m(r, c));
+		return g; // (3x3)
+	}
+
+	// Converts a 4x4 Eigen matrix to a glm::mat4, taking into account the row-major to column-major conversion
+	static glm::mat4 toGlm(const Mat4& m) {
+		glm::mat4 g(1.0f);
+		for (int c = 0; c < 4; ++c)
+			for (int r = 0; r < 4; ++r)
+				g[c][r] = static_cast<float>(m(r, c));
+		return g; // (4x4)
+	}
+
 	// --- PIMPL Implementation ---
 	struct SimManager::Impl {
 		// Completed Simulation Runs (thread-safe)
@@ -113,9 +157,9 @@ namespace gui {
 
 		std::shared_ptr<scene::Mesh> _mesh;
 		std::vector<std::unique_ptr<scene::Object>> _objects;
+		std::unordered_map<std::string, std::vector<scene::Object*>> _linkToObjects;
+		std::unordered_map<std::string, scene::Object*> _primaryLinkObject;
 
-		// Physics System
-		std::unique_ptr<physics::PhysicsSystem> _physics;
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
 
@@ -257,10 +301,8 @@ namespace gui {
 			_mesh = std::make_shared<scene::Mesh>();
 			_mesh->init();
 
-			// Physics system
-			_physics = std::make_unique<physics::PhysicsSystem>();
 			// Robot system with mesh loading (for normal simulation)
-			_robotSystem = std::make_unique<robots::RobotSystem>(_objects, [&owner](const std::string& path) { return owner.loadMeshReturn(path); });
+			_robotSystem = std::make_unique<robots::RobotSystem>([&owner](const std::string& path) { return owner.loadMeshReturn(path); });
 
 			// SSAO shaders
 			_ssaoShader = std::make_unique<shaders::Shader>();
@@ -274,6 +316,47 @@ namespace gui {
 
 			// Generate noise texture (4x4 random rotation vectors)
 			initSSAONoise();
+		}
+
+		void clearRobotPresentation() {
+			_primaryLinkObject.clear();
+			_linkToObjects.clear();
+			_objects.clear();
+		}
+
+		scene::Object* primaryObjectForLink(const std::string& linkName) {
+			auto it = _primaryLinkObject.find(linkName);
+			if (it == _primaryLinkObject.end()) { return nullptr; }
+			return it->second;
+		}
+
+		void buildRobotPresentationFromModel(const robots::RobotModel& model, SimManager& owner) {
+			clearRobotPresentation();
+
+			for (const auto& link : model.links) {
+				for (const auto& mesh : link.visual.meshEntries) {
+
+					auto loaded = owner.loadMesh(mesh.meshFile);
+
+					for (auto& obj : loaded) {
+						glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));
+
+						obj->transform.position = toGlm(link.visual.origin_xyz);
+						obj->transform.rotQ = glm::quat(rpy);
+
+						scene::Object* raw = obj.get();
+
+						_objects.push_back(std::move(obj));
+						_linkToObjects[link.name].push_back(raw);
+
+						if (!_primaryLinkObject.contains(link.name)) {
+							_primaryLinkObject[link.name] = raw;
+						}
+
+						_objects.push_back(std::move(obj));
+					}
+				}
+			}
 		}
 
 		// Random number generation for SSAO kernel and noise
@@ -592,9 +675,7 @@ namespace gui {
 	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
-		_core->setPhysicsSystem(_impl->_physics.get());
 		_core->setRobotSystem(_impl->_robotSystem.get());
-		_core->setObjects(&_impl->_objects);
 		_core->setTrajectoryManager(&_impl->_traj);
 	}
 
@@ -822,13 +903,11 @@ namespace gui {
 
 		// 2) Find child link -> attached object
 		scene::Object* targetObj = nullptr;
-		for (auto& l : links) {
-			if (l.name == jPtr->child) {
-				targetObj = l.attachedObject; // this is the key
-				break;
-			}
+		if (auto it = _impl->_primaryLinkObject.find(jPtr->child);
+			it != _impl->_primaryLinkObject.end()) {
+			targetObj = it->second;
 		}
-
+		
 		if (!targetObj) {
 			LOG_WARN("setViewFollowRobotJoint: no attached object for joint=%s child=%s",
 				jointName.c_str(), jPtr->child.c_str());
@@ -967,10 +1046,37 @@ namespace gui {
 
 		ImGuiIO& io = ImGui::GetIO();
 		_core->tick(io.DeltaTime);
+		syncRobotToScene();
 		_fpsCounter.update();
 
 		drawMainDockspace();
 		drawViewportWindow();
+	}
+
+	void SimManager::syncRobotToScene() {
+		if (!hasRobot()) return;
+		auto* rs = robotSystem();
+		const auto& model = rs->model();
+		const auto& T = rs->worldTransforms();
+
+		for (size_t i = 0; i < model.links.size(); ++i) {
+			const std::string& linkName = model.links[i].name;
+
+			auto it = _impl->_linkToObjects.find(linkName);
+			if (it == _impl->_linkToObjects.end()) continue;
+
+			const glm::mat4& world = toGlm(T[i]);
+
+			for (scene::Object* obj : it->second) {
+				if (!obj) continue;
+
+				glm::vec3 pos = glm::vec3(world[3]);
+				glm::quat q = glm::quat_cast(world);
+
+				obj->transform.position = pos;
+				obj->transform.rotQ = q;
+			}
+		}
 	}
 
 	// --- UI Elements ---
@@ -1138,9 +1244,6 @@ namespace gui {
 
 		//LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
-
-	// Accessor to core's updatePhysics for use in the main application loop
-	void SimManager::updatePhysics(double dt) { _core->updatePhysics(dt); }
 	
 	// Load a robot by name from the robot system
 	void SimManager::loadRobot(const std::string& name) {
@@ -1153,12 +1256,13 @@ namespace gui {
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 
-		if (!_impl->_robotSystem) return;
-
-		const size_t startIdx = _impl->_objects.size();
+		if (!_impl->_robotSystem) { return; }
 		_impl->_robotSystem->loadRobot(name);
 
-		// Reset adaptive state for reference system
+		size_t startIdx = _impl->_objects.size();
+
+		_impl->buildRobotPresentationFromModel(_impl->_robotSystem->model(), *this);
+
 		if (auto* simInteg = _impl->_robotSystem->getIntegrator()) { 
 			simInteg->resetAdaptiveState();
 		}
@@ -1171,21 +1275,14 @@ namespace gui {
 			_impl->eeFollowBound = true;
 			LOG_INFO("Follow view bound to end-effector candidate: %s", ee->name.c_str());
 		}
-
-		// Auto-select the first object of the newly loaded robot
-		if (startIdx < _impl->_objects.size()) {
-			setSelectedObject(_impl->_objects[startIdx].get());
-		}
-
-		//_impl->_robotSystem->setDefaultPoseDeg();
 	}
 	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) {
 		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); }
 	}
-	void SimManager::setRobotRootPose(const glm::vec3& pos, const glm::quat& rot) {
+	void SimManager::setRobotRootPose(const Vec3& pos, Quat& rot) {
 		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); }
 	}
-	void SimManager::setRobotRootHome(const glm::vec3& pos, const glm::quat& rot) {
+	void SimManager::setRobotRootHome(const Vec3& pos, Quat& rot) {
 		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); }
 	}
 	void SimManager::resetRobot() { 
@@ -1193,17 +1290,13 @@ namespace gui {
 	}
 	void SimManager::clearRobot() {
 		setSelectedObject(nullptr); // deselect any selected object
-		if (_impl->_robotSystem) { _impl->_robotSystem->clearRobot(); }
+		_impl->clearRobotPresentation();
 
 		clearViewFollowTarget(gui::ViewID::Follow);
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 	}
 	const bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
-
-	// Access the physics system (non-const and const versions)
-	physics::PhysicsSystem* SimManager::physicsSystem() { return _core->physicsSystem(); }
-	const physics::PhysicsSystem* SimManager::physicsSystem() const { return _core->physicsSystem(); }
 
 	// Access the robot system (non-const and const versions)
 	robots::RobotSystem* SimManager::robotSystem() { return _core->robotSystem(); }
@@ -1288,7 +1381,7 @@ namespace gui {
 
 		// Create program and parser (bound to headless core)
 		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
-		if (scene::Object* o = getObject()) program->setDefaultObject(o);
+		//if (scene::Object* o = getObject()) program->setDefaultObject(o);
 		auto parser = std::make_unique<interpreter::Parser>(program.get());
 
 		// Parse the modified script and start the program

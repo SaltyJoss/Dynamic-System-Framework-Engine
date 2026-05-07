@@ -1,11 +1,15 @@
+// DSFE_GUI ShaderUtil.h
 #pragma once
-// File:   ShaderUtil.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
+#include <string>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "Platform/Logger.h"
 
 namespace shaders {
-	class DSFE_API Shader {
+	class Shader {
 	public:
 		Shader() = default;
 
@@ -15,7 +19,7 @@ namespace shaders {
 		void use();
 		void unload();
 
-		unsigned int getProgramID() { return _programID; }
+		unsigned int getProgramID() const { return _programID; }
 
 		void setMat4(const glm::mat4& mat4, const std::string& name);
 		void setInt1(int a, const std::string& name);

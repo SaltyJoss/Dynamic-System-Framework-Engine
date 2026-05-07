@@ -1,17 +1,17 @@
-// DSFE_Core Application.cpp
-#include "pch.h"
-
+// DSFE_GUI Application.cpp
 #include "Application.h"
+
 #include "Platform/WindowManager.h"
-#include "Platform/Paths.h"
 #include "Scene/Camera.h"
-#include <filesystem>
-#include "EngineLib/LogMacros.h"
 
 #ifdef __gl_h_
 #undef __gl_h_
 #endif
 #include <GLFW/glfw3.h>
+
+#include <filesystem>
+#include "Platform/Paths.h"
+#include "EngineLib/LogMacros.h"
 
 namespace fs = std::filesystem;
 // Initialise the static instance pointer to nullptr

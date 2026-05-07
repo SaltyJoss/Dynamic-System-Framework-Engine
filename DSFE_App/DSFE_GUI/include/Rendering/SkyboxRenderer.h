@@ -1,6 +1,6 @@
+// DSFE_GUI SkyboxRenderer.h
 #pragma once
-// File:   SkyboxRenderer.h
-// GitHub: SaltyJoss
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include "Rendering/ShaderUtil.h"

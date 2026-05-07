@@ -1,11 +1,10 @@
+// DSFE_GUI IBL.h
 #pragma once
-// File:   IBL.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include "Platform/Logger.h"
 
 namespace render {
-	class DSFE_API IBL {
+	class IBL {
 	public:
 		IBL();
 		~IBL();

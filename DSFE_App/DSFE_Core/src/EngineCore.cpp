@@ -4,10 +4,8 @@
 #include "EngineCore.h"
 #include "Scene/SimulationCore.h"
 
-#include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"
-#include "Scene/Object.h"
 
 #include <vector>
 #include <memory>
@@ -19,22 +17,14 @@ extern "C" {
         try { 
             auto* core = new core::SimulationCore();
 
-            auto* physics = new physics::PhysicsSystem();
-
             // Headless object container
-            auto* objects = new std::vector<std::unique_ptr<scene::Object>>();
+            /*auto* objects = new std::vector<std::unique_ptr<scene::Object>>();*/
             // Robot system must be constructible WITHOUT OpenGL
-            auto* robot = new robots::RobotSystem(
-                *objects, [](const std::string&) {
-                    return std::vector<scene::Object*>{};
-                }
-            );
+            auto* robot = new robots::RobotSystem();
 			// Trajectory manager must also be constructible without OpenGL
             auto* traj = new control::TrajectoryManager();
 
-            core->setPhysicsSystem(physics);
             core->setRobotSystem(robot);
-            core->setObjects(objects);
             core->setTrajectoryManager(traj);
 
             return core;

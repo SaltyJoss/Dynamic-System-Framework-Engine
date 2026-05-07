@@ -10,8 +10,6 @@
 // Forward declarations
 namespace control { class TrajectoryManager; }
 
-namespace scene { class Object; }
-
 namespace robots {
 	// Forward declarations
 	class RobotKinematics;
@@ -122,7 +120,7 @@ namespace robots {
         // --- ROBOT LINK AND ROOT POSE METHODS ---
 
         bool setRobotLinkRotation(const std::string& childLinkName, double angleDeg);
-		mathlib::Mat4 setRobotRoot(const mathlib::mathlib::Vec3& pos, const mathlib::Quat& rot);
+		mathlib::Mat4 setRobotRoot(const mathlib::Vec3& pos, const mathlib::Quat& rot);
         void setRobotRootPose(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 		void setRobotRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 
@@ -159,7 +157,6 @@ namespace robots {
 		void reserveInternalLogBuffers(size_t expected);
 
 	private:
-        void instantiateRobotLinks();
         void buildLinkIndex();
 
 		std::unique_ptr<RobotKinematics> _kinematics;
@@ -168,11 +165,7 @@ namespace robots {
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
 
-		std::vector<std::unique_ptr<scene::Object>>& _objects;
-
 		eRole _role = eRole::Simulation;
-
-		spawnFn _loadMeshReturn;
 
 		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
 		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
@@ -203,13 +196,13 @@ namespace robots {
 		eTorqueMode _torqueMode = _robot.torqueMode;
 
 		// World to robot base transform (meters)
-		std::vector<Mat4> _worldTransform = Mat4::Identity();
+		std::vector<Mat4> _worldTransforms;
 
 		// Flags and precomputed data
         bool _hasRobot = false;
-		mathlib::Mat4 _robotRootPose = Mat4(1.0f); // current pose (meters)
-		mathlib::Mat4 _robotRootHome = Mat4(1.0f); // home/reset pose (meters)
-		mathlib::VecX _robotQHome				   // home/reset joint positions
+		mathlib::Mat4 _robotRootPose = Mat4::Identity();
+		mathlib::Mat4 _robotRootHome = Mat4::Identity();
+		mathlib::VecX _robotQHome = mathlib::VecX(); // home/reset joint angles (radians)
 		bool _robotHomeValid = false;			   // is home position valid
 
 		// Index maps for quick lookup of links and joints by name

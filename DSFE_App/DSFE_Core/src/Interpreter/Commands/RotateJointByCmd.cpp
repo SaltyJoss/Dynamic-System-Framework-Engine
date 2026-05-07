@@ -2,7 +2,6 @@
 // File:   RotateJointByCmd.cpp
 // GitHub: SaltyJoss
 #include "Interpreter/Commands/RotateJointByCmd.h"
-#include "Scene/SimulationManager.h"
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"
 

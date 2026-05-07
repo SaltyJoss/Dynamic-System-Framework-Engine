@@ -1,8 +1,7 @@
-#include "pch.h"
-// File:   DebugPanel.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI DebugPanel.cpp
 #include <imgui.h>
 #include "ui/DebugPanel.h"
+
 #include <io.h>
 
 #include "EngineLib/LogMacros.h"

@@ -2,22 +2,24 @@
 #pragma once
 
 #include "EngineCore.h"
+
 #include "Platform/ISimulationCore.h"
+#include "Platform/SimulationState.h"
+
 #include <memory>
 #include <string>
-#include "Platform/SimulationState.h"
+
 #include "Analysis/Telemetry.h"
-#include "Analysis/MetricLogger.h"
 #include "Platform/DataManager.h"
 
+#include "Analysis/MetricLogger.h"
 #include "Platform/Logger.h"
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; }
-namespace control	  { class DSFE_API TrajectoryManager; }
-namespace scene		  { class DSFE_API Object; }
-namespace robots	  { class DSFE_API RobotSystem; }
-namespace interpreter { class DSFE_API IStoredProgram; }
+namespace control	  { class TrajectoryManager; }
+namespace robots	  { class RobotSystem; }
+namespace interpreter { class IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
@@ -38,7 +40,6 @@ namespace core {
 		bool isSimRunning() const override { return _simRunning; }
 
 		// Time stepping
-		void updatePhysics(double dt) override;
 		void setFixedDt(double dt) override;
 		void setSimTime(double t) { _simTime = t; }
 		double fixedDt() const override;
@@ -113,15 +114,13 @@ namespace core {
 
 	private:
 		// Owning storage (used only in owning mode)
-		std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
+		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<robots::RobotSystem> _robotOwned;
-		std::unique_ptr<physics::PhysicsSystem> _physicsOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
 
 		// Non-owning access (always used by logic)
-		std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
+		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		robots::RobotSystem* _robot = nullptr;
-		physics::PhysicsSystem* _physics = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
 
 		mutable std::mutex _stateMutex;

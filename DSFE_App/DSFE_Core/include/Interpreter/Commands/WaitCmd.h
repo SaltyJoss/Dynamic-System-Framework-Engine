@@ -1,12 +1,13 @@
+// DSFE_Core WaitCmd.h
 #pragma once
-// File:    WaitCmd.h
-// GitHub:  SaltyJoss
 #pragma warning(disable : 4100)
 
 #include "EngineCore.h"
+
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/UIContext.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,7 +29,6 @@ namespace commands {
 		void execute() override;
 		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
 
-		scene::ObjectID _objID{};
 		utils::AxisMask _axes{};
 		CommandContextMotion* _MtnCntx = nullptr;
 
@@ -38,11 +38,8 @@ namespace commands {
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
-		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
-		// Mark the command as completed
 		void markCompleted() override;
-		// Check if the command has started
 		bool hasStarted() const override;
 	};
 

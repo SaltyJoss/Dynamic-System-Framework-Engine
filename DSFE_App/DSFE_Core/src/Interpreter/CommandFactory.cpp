@@ -1,6 +1,6 @@
+// DSFE_Core CommandFactory.cpp
 #include "pch.h"
-// File:   CommandFactory.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/CommandFactory.h"
 
 namespace commands {

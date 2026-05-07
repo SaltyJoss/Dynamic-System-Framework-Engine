@@ -1,13 +1,14 @@
+// DSFE_Core GUIContext.h
 #pragma once
-// File:    GUIContext.h
-// GitHub:  SaltyJoss
-#include "EngineCore.h"
+
 #include "RenderBase.h"
 #include "ui/Styles.h"
 #include "Platform/Logger.h"
 
+#include <functional>
+
 namespace render {
-	class DSFE_API GUIContext : public RenderContext {
+	class GUIContext : public RenderContext {
 	public:
 		GUIContext() {}
 

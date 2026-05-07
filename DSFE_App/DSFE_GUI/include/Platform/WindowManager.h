@@ -1,25 +1,24 @@
+// DSFE_GUI WindowManager.h
 #pragma once
-// File:   WindowManager.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include "Platform/Window.h"
 #include "Platform/Logger.h"
 
 // Forward Declarations
-struct DSFE_API GLFWwindow;
+struct GLFWwindow;
 namespace render { 
-    class DSFE_API GUIContext;
-    class DSFE_API OpenGLContext;
+    class GUIContext;
+    class OpenGLContext;
 }
 namespace gui { 
-    class DSFE_API SimManager;
-    class DSFE_API ControlPanel;
-    class DSFE_API DebugPanel;
-	class DSFE_API CommandScriptEditor;
+    class SimManager;
+    class ControlPanel;
+    class DebugPanel;
+	class CommandScriptEditor;
 }
 
 namespace window {
-    class DSFE_API GLWindow : public IWindow {
+    class GLWindow : public IWindow {
     public:
         GLWindow();
         ~GLWindow();

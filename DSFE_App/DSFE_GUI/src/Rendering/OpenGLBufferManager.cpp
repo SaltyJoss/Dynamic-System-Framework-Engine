@@ -1,6 +1,5 @@
-#include "pch.h"
-// File:   OpenGLBufferManager.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI OpenGLBufferManager.cpp
+
 #ifdef __gl_h_
 #undef __gl_h_
 #endif

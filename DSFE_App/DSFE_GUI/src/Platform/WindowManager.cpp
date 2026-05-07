@@ -1,6 +1,6 @@
+// DSFE_GUI WindowManager.cpp
 #include "pch.h"
-// File:   WindowManager.cpp
-// GitHub: SaltyJoss
+
 #ifdef __gl_h_
 #undef __gl_h_
 #endif

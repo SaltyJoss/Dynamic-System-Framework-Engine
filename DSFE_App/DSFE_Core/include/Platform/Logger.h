@@ -174,7 +174,4 @@ private:
 	}
 }; // namespace Debug
 
-// Global logger instance
-extern DSFE_API Debug gLog;
-
 

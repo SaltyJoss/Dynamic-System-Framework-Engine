@@ -1,7 +1,5 @@
+// DSFE_Core LogMacros.h
 #pragma once
-
-// ============================================
-//            File: LogMacros.h
 // ============================================
 // Macros for logging information, warnings, and errors with automatic file and function context.
 //
@@ -81,8 +79,11 @@
 // 	    -> Logs a general output message to the debug panel only once.
 // --------------------------------------------
 // ===========================================
-// 
+
+// ===========================================
 // MACRO LOG LEVEL SUMMARY:
+// ===========================================
+// 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // -----------
 // TRACE    -> Detailed trace messages for debugging (e.g., function entry/exit, step-by-step execution, etc.) ~ acts as TRACE level messages, useful for tracing code execution flow, currently not used in global logging (but may be in future as it is standard practice).
@@ -104,10 +105,6 @@
 // OUTPUT   -> General output messages not fitting other categories (e.g., user output, data dumps, etc.) ~ used for general output that doesn't fit into other categories, useful for user-facing messages or data outputs.
 // -----------
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// 
-// ============================================
-//			  GitHub: saltyjoss
-// ============================================
 
 #include "EngineCore.h"
 
@@ -165,7 +162,7 @@ extern DSFE_API Debug gLog;
         } \
     } while(0)
 // --------------------------------------------
-//
+
 // ============================================
 //        DEBUG PANEL EXCEPTION HANDLING
 // ===========================================
@@ -266,7 +263,7 @@ extern DSFE_API Debug gLog;
         } \
     } while(0)
 // --------------------------------------------
-//
+
 // ============================================
 //          SIMULATION ENGINE LOG MACROS 
 // ============================================

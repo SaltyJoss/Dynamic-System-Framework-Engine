@@ -16,8 +16,8 @@ namespace commands {
 	bool RotateByCmd::hasStarted() const { return _started; }
 
 	// Constructor
-	RotateByCmd::RotateByCmd(scene::ObjectID objID, utils::AxisMask axes, double omegaDegPerSec, double deltaDeg)
-		: _objID(objID), _axes(axes), _omegaDeg(omegaDegPerSec), _deltaDeg(deltaDeg), _totalRotated(0.0), _started(false) {
+	RotateByCmd::RotateByCmd(utils::AxisMask axes, double omegaDegPerSec, double deltaDeg)
+		: _axes(axes), _omegaDeg(omegaDegPerSec), _deltaDeg(deltaDeg), _totalRotated(0.0), _started(false) {
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
@@ -28,36 +28,36 @@ namespace commands {
 			return CmdResult{ CmdState::Failed, {}, "rotateBy() not started." };
 		}
 
-		// Resolve target object (must be called after start() to ensure default object is set)
-		scene::Object* obj = cntx.resolveDefaultObject();
-		if (!obj) {
-			markFailed("rotateBy(<objID>,...) target but no current object selected.");
-			SIM_FAIL("rotateBy(<objID>,...) target but no current object selected.");
-			return CmdResult{ CmdState::Failed, {}, "No current object selected." };
-		}
+		//// Resolve target object (must be called after start() to ensure default object is set)
+		//scene::Object* obj = cntx.resolveDefaultObject();
+		//if (!obj) {
+		//	markFailed("rotateBy(<objID>,...) target but no current object selected.");
+		//	SIM_FAIL("rotateBy(<objID>,...) target but no current object selected.");
+		//	return CmdResult{ CmdState::Failed, {}, "No current object selected." };
+		//}
 
 		AxisMask mask = _axes;
 		if (!mask.any()) { mask.z = true; }
 
 		const double stepDeg = _omegaDeg * dt;
 
-		// If the next step would overshoot the target angle, clamp it to the remaining angle
-		auto result = cntx.rotateObject(obj, mask, _omegaDeg, dt);
-		if (!result.ok) {
-			markFailed(result.message);
-			SIM_FAIL("Failed to rotate object -> %s", result.message.c_str());
-			return CmdResult{ CmdState::Failed, {}, result.message };
-		}
+		//// If the next step would overshoot the target angle, clamp it to the remaining angle
+		//auto result = cntx.rotateObject(obj, mask, _omegaDeg, dt);
+		//if (!result.ok) {
+		//	markFailed(result.message);
+		//	SIM_FAIL("Failed to rotate object -> %s", result.message.c_str());
+		//	return CmdResult{ CmdState::Failed, {}, result.message };
+		//}
 
 		// Update total rotated angle
 		_totalRotated += stepDeg;
-		if (std::abs(_totalRotated) >= std::abs(_deltaDeg)) {
-			if (obj) { cntx.stopRotation(obj, mask); }
+		//if (std::abs(_totalRotated) >= std::abs(_deltaDeg)) {
+		//	if (obj) { cntx.stopRotation(obj, mask); }
 
-			markCompleted();
-			SIM_SUCCESS("Completed rotation of %.2f degrees.", _deltaDeg);
-			return CmdResult{ CmdState::Executed, {}, "" };
-		}
+		//	markCompleted();
+		//	SIM_SUCCESS("Completed rotation of %.2f degrees.", _deltaDeg);
+		//	return CmdResult{ CmdState::Executed, {}, "" };
+		//}
 
 		SIM_RUNTIME("Total rotated: %.2f / %.2f degrees.", _totalRotated, _deltaDeg);
 
@@ -80,11 +80,11 @@ namespace commands {
 			return nullptr;
 		}
 
-		scene::ObjectID objID{};
-		if(!tryParseObjID(id, objID)) {
-			SIM_FAIL("rotateBy command requires a valid object ID as the first argument.");
-			return nullptr;
-		}
+		//scene::ObjectID objID{};
+		//if(!tryParseObjID(id, objID)) {
+		//	SIM_FAIL("rotateBy command requires a valid object ID as the first argument.");
+		//	return nullptr;
+		//}
 
 		AxisMask axes = utils::parseAxisMask(args[0]);
 		if (!axes.any()) { axes.z = true; }
@@ -96,6 +96,6 @@ namespace commands {
 			return nullptr;
 		}
 
-		return std::make_unique<RotateByCmd>(objID, axes, omegaOpt, deltaOpt);
+		return std::make_unique<RotateByCmd>(axes, omegaOpt, deltaOpt);
 	}
 } // namespace commands

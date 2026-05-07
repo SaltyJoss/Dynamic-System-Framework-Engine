@@ -1,20 +1,19 @@
+// DSFE_Core EngineCore.h
 #pragma once
-// File:   EngineCore.h
-// GitHub: SaltyJoss
 
 // Conditional compilation for cross-platform symbol export/import
 #ifdef _WIN32
-  #ifdef DSFE_CORE_EXPORTS
-    #define DSFE_API __declspec(dllexport)
-  #else
-    #define DSFE_API __declspec(dllimport)
-  #endif
+#ifdef DSFE_CORE_EXPORTS
+#define DSFE_API __declspec(dllexport)
 #else
-  #define DSFE_API
+#define DSFE_API __declspec(dllimport)
+#endif
+#else
+#define DSFE_API
 #endif
 
 // Forward declarations for core components
-namespace core { struct DSFE_API ISimulationCore; }
+namespace core { struct ISimulationCore; }
 
 // Factory functions
 extern "C" {

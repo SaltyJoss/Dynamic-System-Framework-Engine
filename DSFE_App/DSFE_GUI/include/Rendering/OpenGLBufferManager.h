@@ -8,7 +8,7 @@
 
 namespace render {
 	// This class manages the creation, binding, and deletion of OpenGL vertex and index buffers (VAO, VBO, EBO) for rendering meshes.
-	class DSFE_API OpenGLVertexIndexBuffer : public VertexIndexBuffer {
+	class OpenGLVertexIndexBuffer : public VertexIndexBuffer {
 		public:
 			OpenGLVertexIndexBuffer() : VertexIndexBuffer() {}
 

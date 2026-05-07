@@ -1,17 +1,13 @@
+// DSFE_GUI Face.h
 #pragma once
-// File:   Face.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include <vector>
 #include "Platform/Logger.h"
 
-extern DSFE_API Debug gLog;
-
 using GLuint = unsigned int;
 
 namespace scene {
-    class DSFE_API Face {
+    class Face {
     public:
         void addVertexIndex(GLuint index) { _vertexIndices.push_back(index); }
     private:

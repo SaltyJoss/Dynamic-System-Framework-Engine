@@ -1,6 +1,6 @@
+// DSFE_Core RegisterCommand.h
 #pragma once
-// File:    RegisterCommand.h
-// GitHub:  SaltyJoss
+
 #include "CommandFactory.h"
 
 namespace commands {

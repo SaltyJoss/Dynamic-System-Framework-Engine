@@ -1,6 +1,5 @@
+// DSFE_Core dllmain.cpp
 #include "pch.h"
-// File:   dllmain.cpp
-// GitHub: SaltyJoss
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,

@@ -1,16 +1,22 @@
 // DSFE_GUI RobotPresentationBuilder.cpp
-#include "RobotPresentationBuilder.h"
+#include "Robots/RobotPresentationBuilder.h"
+
+#include "Robots/RobotModel.h"
 
 #include "Assets/MeshLoader.h"
 #include "Scene/Object.h"
 
-RobotRenderBinding RobotPresentationBuilder::build(const RobotModel& model) {
+using namespace robots;
+
+// Build a RobotRenderBinding from a RobotModel by loading the visual meshes for each link
+RobotRenderBinding RobotPresentationBuilder::build(const robots::RobotModel& model) {
 	RobotRenderBinding binding;
 	assets::MeshLoader loader;
-	for (const auto& [linkName, link] : model.links) {
-		for (const auto& mesh : link.visual.meshEnteries) {
-			auto* obj = loader.load(mesh.meshFile);
-			binding.linkObjects[linkName].push_back(obj);
+	for (const auto& link : model.links) {
+		for (const auto& mesh : link.visual.meshEntries) {
+			auto obj = loader.load(mesh.meshFile);
+			auto& visuals = binding.linkVisuals[link.name];
+			visuals.insert(visuals.end(), obj.begin(), obj.end());
 		}
 	}
 	return binding;

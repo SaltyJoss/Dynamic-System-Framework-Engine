@@ -1,7 +1,6 @@
+// DSFE_GUI SimulationManager.h
 #pragma once
-// File:   SimManager.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
@@ -21,31 +20,30 @@
 
 // Forward Declarations for Rendering
 namespace render {
-    class DSFE_API OpenGLFrameBuffer;
-	class DSFE_API IBL;
+    class OpenGLFrameBuffer;
+	class IBL;
     class SkyboxRenderer;
 }
-namespace shaders { class DSFE_API Shader; }
+namespace shaders { class Shader; }
 
 // Forward Declarations for Scene
 namespace scene {
     enum class eInputButton;
-    class DSFE_API Light;
-    class DSFE_API Camera;
-    class DSFE_API Input;
-    class DSFE_API Mesh;
-    class DSFE_API Object;
-    class DSFE_API SceneRenderer;
+    class Light;
+    class Camera;
+    class Input;
+    class Mesh;
+    class Object;
+    class SceneRenderer;
 }
 
 // Forward Declarations for Simulation Core
-namespace core { class DSFE_API SimulationCore; }
+namespace core { class SimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
-namespace interpreter { class DSFE_API IStoredProgram; }
-namespace physics { class DSFE_API PhysicsSystem; }
-namespace robots { class DSFE_API RobotSystem; }
-namespace control { class DSFE_API TrajectoryManager; }
+namespace interpreter { class IStoredProgram; }
+namespace robots { class RobotSystem; }
+namespace control { class TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
 namespace gui {
@@ -53,7 +51,7 @@ namespace gui {
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
 	// Forward Declarations for Axis Orientator
-	class DSFE_API AxisOrientator;
+	class AxisOrientator;
 
     // Control Modes & Camera
     enum class ControlMode {
@@ -62,7 +60,7 @@ namespace gui {
     };
 
 	// SimManager Class (Plan on renaming later)
-    class DSFE_API SimManager {
+    class SimManager {
     public:
 		// Constructor & Destructor
         SimManager();
@@ -165,6 +163,8 @@ namespace gui {
         void render();
         void resize(int32_t width, int32_t height);
 
+		void syncRobotToScene();
+
 		// Scene Objects Management
         void setSelectedObject(scene::Object* obj);
         void addObject(std::unique_ptr<scene::Object> obj);
@@ -176,8 +176,6 @@ namespace gui {
         scene::Object* getObject();
 		scene::Object* getObjectByID(scene::ObjectID id);
 
-        void updatePhysics(double dt);
-
 		// Robot System loading and management
         void loadRobot(const std::string& name);
         void resetRobot();
@@ -186,12 +184,9 @@ namespace gui {
 
 		// Setters for robot joint states (angle in radians)
         void setRobotLinkRotation(const std::string& linkName, double angle);
-        void setRobotRootPose(const glm::vec3& pos, const glm::quat& rot);
-        void setRobotRootHome(const glm::vec3& pos, const glm::quat& rot);
+        void setRobotRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
+        void setRobotRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
 
-        // Access to Physics System (non-const and const versions)
-        physics::PhysicsSystem* physicsSystem();
-        const physics::PhysicsSystem* physicsSystem() const;
 
 		// Accesors for the robot system (non-const and const versions)
         robots::RobotSystem* robotSystem();

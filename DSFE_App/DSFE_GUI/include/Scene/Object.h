@@ -1,27 +1,23 @@
+// DSFE_GUI Object.h
 #pragma once
-// File:   Object.h
-// GitHub: SaltyJoss
 // -----
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
-#include "EngineCore.h"
 #include "Physics/PhysicsState.h"
-#include "Scene/ObjectID.h"
 
+#include "Scene/ObjectID.h"
 #include "Scene/Element.h"
 
 #include <glm/glm.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
 
-#include "Rendering/ShaderUtil.h"
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
 	enum class eInputButton;
-	class DSFE_API Input;
-	class DSFE_API Mesh;
+	class Input;
+	class Mesh;
 
 	enum class ObjectCategory { General, RobotLink };
 
@@ -70,13 +66,13 @@ namespace scene {
 	//	void logObjectCount() { D_INFO("Total Objects in ObjLookup: %zu", objMap.size()); }
 	//};
 
-	struct DSFE_API AssetSource {
+	struct AssetSource {
 		std::string filename;
 		std::string filepath;
 	};
 
 	// Represents the position, rotation, and scale of an object in 3D space.
-	struct DSFE_API Transform {
+	struct Transform {
 		glm::vec3 position{ 0.0f };
 		glm::quat rotQ{ 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 scale{ 0.01f, 0.01f, 0.01f };
@@ -86,7 +82,7 @@ namespace scene {
 	};
 
 	// Represents a 3D object in the scene with a mesh, transform, and physics state.
-	class DSFE_API Object : public Element {
+	class Object : public Element {
 	public:
 		// Unique identifier for the object
 		scene::ObjectID id = scene::ObjectID::INVALID_OBJECT_ID;
@@ -114,11 +110,11 @@ namespace scene {
 			transform.position = glm::vec3(0.0f);
 			transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
 
-			state.q = Quat(1.0, 0.0, 0.0, 0.0);
-			state.linearVelocity = Vec3::Zero();
-			state.angularVelocity = Vec3::Zero();
-			state.forces = Vec3::Zero();
-			state.torques = Vec3::Zero();
+			state.q = mathlib::Quat(1.0, 0.0, 0.0, 0.0);
+			state.linearVelocity = mathlib::Vec3::Zero();
+			state.angularVelocity = mathlib::Vec3::Zero();
+			state.forces = mathlib::Vec3::Zero();
+			state.torques = mathlib::Vec3::Zero();
 		}
 
 		void onMouseWheel(double delta) { _distance += (float)delta * 0.5f; }

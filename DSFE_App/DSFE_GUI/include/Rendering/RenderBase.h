@@ -1,7 +1,5 @@
+// DSFE_GUI RenderBase.h
 #pragma once
-// File:   RenderBase.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include "Platform/Window.h"
 #include "Assets/VertexHolder.h"
@@ -9,13 +7,11 @@
 #include <cstdint>
 #include "Platform/Logger.h"
 
-extern DSFE_API Debug gLog;
-
 using GLuint = std::uint32_t;
 
 namespace render {
 	// This file defines the base interfaces for rendering components, including VertexIndexBuffer, FrameBuffer, and RenderContext.
-	class DSFE_API VertexIndexBuffer {
+	class VertexIndexBuffer {
 	public:
 		virtual ~VertexIndexBuffer() = default;
 
@@ -35,7 +31,7 @@ namespace render {
 	};
 
 	// This was NOT working in previous version, so revised code with docs and research -> See OpenGLBufferManager
-	class DSFE_API FrameBuffer {
+	class FrameBuffer {
 	public:
 		virtual ~FrameBuffer() = default;
 
@@ -64,7 +60,7 @@ namespace render {
 	};
 
 	// Centralised way to gain context on the renders' process -> see OpenGLContext
-	class DSFE_API RenderContext {
+	class RenderContext {
 	public:
 		virtual ~RenderContext() = default;
 

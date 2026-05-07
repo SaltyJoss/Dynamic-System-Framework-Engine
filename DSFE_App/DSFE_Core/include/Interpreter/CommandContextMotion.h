@@ -1,6 +1,6 @@
+// DSFE_Core CommandContextMotion.h
 #pragma once
-// File:    CommandContextMotion.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/Utils.h"
@@ -9,7 +9,6 @@
 
 namespace commands {
 	struct DSFE_API ActiveRigidRot {
-		scene::Object* obj = nullptr;
 		mathlib::Vec3 axisUnit{ 0.0, 0.0, 0.0 };
 		mathlib::Quat qStart{ 1.0, 0.0, 0.0, 0.0 };
 		mathlib::Quat qTarget{ 1.0, 0.0, 0.0, 0.0 };
@@ -46,7 +45,7 @@ namespace commands {
 		double getOmegaClamp() const;
 
 		// Sets the angular velocity (omega) for the current object
-		utils::OpResult setOmega(const mathlib::Vec3& omega); // rad/s
+		//utils::OpResult setOmega(const mathlib::Vec3& omega); // rad/s
 		utils::OpResult stopAllOmega(); // stops all angular velocity
 
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
@@ -54,28 +53,28 @@ namespace commands {
 		// --- HELPER METHODS ---
 		core::ISimulationCore* Core() const { return _core; }
 		robots::RobotSystem* Robot() const { return _robot; }
-		scene::ObjectID DefaultObjectID() const;
-		scene::ObjectID ObjectID() const;
+		//scene::ObjectID DefaultObjectID() const;
+		//scene::ObjectID ObjectID() const;
 
-		scene::Object* resolveObject(scene::ObjectID id) const;
-		scene::Object* resolveCurrentObject() const;
-		scene::Object* resolveDefaultObject() const;
+		//scene::Object* resolveObject(scene::ObjectID id) const;
+		//scene::Object* resolveCurrentObject() const;
+		//scene::Object* resolveDefaultObject() const;
 
-		void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
-		void setObjectID(scene::ObjectID id) { _objID = id; }
+		//void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
+		//void setObjectID(scene::ObjectID id) { _objID = id; }
 
 		// --- PROCESS CONTROL METHODS ---
 	
 		// Stop Motion
-		void stopRotation(scene::Object* obj, utils::AxisMask axes);
-		void stopTranslation(scene::Object* obj, utils::AxisMask axes);
+		//void stopRotation(scene::Object* obj, utils::AxisMask axes);
+		//void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 		// --- ROTATION COMMAND METHODS ---
 
-		// Rotates an object around specified axes at a given angular velocity
-		utils::OpResult rotateObject(scene::Object* obj, utils::AxisMask axes, double omega, double dt);
-		// Rotates specified axes at a given angular velocity
-		utils::OpResult rotateAxes(utils::AxisMask axes, double omega, double dt);
+		//// Rotates an object around specified axes at a given angular velocity
+		//utils::OpResult rotateObject(scene::Object* obj, utils::AxisMask axes, double omega, double dt);
+		//// Rotates specified axes at a given angular velocity
+		//utils::OpResult rotateAxes(utils::AxisMask axes, double omega, double dt);
 
 		utils::OpResult setJointTargetRad(const std::string& link, double thetaTargetRad);
 		utils::OpResult setJointTargetDeltaRad(const std::string& link, double deltaRad);
@@ -83,29 +82,27 @@ namespace commands {
 		utils::OpResult setJointOmegaRefRad(const std::string& link, double qd_ref);
 		utils::OpResult setJointAlphaRefRad(const std::string& link, double qdd_ref);
 
-		utils::OpResult updateRigidRotateTo(double dt);
+		//utils::OpResult updateRigidRotateTo(double dt);
 		utils::OpResult updateJointRotateTo(double dt);
 
-		utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
+		//utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
 		utils::OpResult beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg);
 
 		// --- TRANSLATION COMMAND METHODS ---
 
 		// Translates in world coordinates along a specified direction
-		utils::OpResult translateWorld(const mathlib::Vec3& direction, double distance, double vel);
-		// Translates along specified axes at a given velocity
-		const utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt) const;
+		//utils::OpResult translateWorld(const mathlib::Vec3& direction, double distance, double vel);
+		//// Translates along specified axes at a given velocity
+		//const utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt) const;
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
-
 	private:
 		core::ISimulationCore* _core = nullptr;
-		physics::PhysicsSystem* _phys = nullptr;
 		robots::RobotSystem* _robot = nullptr;
-		scene::ObjectID _objID;
-		scene::ObjectID _defaultObjID;
+		//scene::ObjectID _objID;
+		//scene::ObjectID _defaultObjID;
 
 		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp

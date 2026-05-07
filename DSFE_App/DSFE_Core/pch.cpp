@@ -1,4 +1,3 @@
-// This source file corresponds to the pre-compiled header, and is necessary for compilation to succeed.
+// DSFE_Core pch.cpp
+// This source file is necessary for compilation of the pre-compiled headerand to succeed.
 #include "pch.h"
-// File:   pch.cpp
-// GitHub: SaltyJoss

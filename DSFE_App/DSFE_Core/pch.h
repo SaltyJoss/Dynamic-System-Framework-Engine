@@ -1,6 +1,5 @@
+// DSFE_Core pch.h
 # pragma once
-// File:   pch.h
-// GitHub: SaltyJoss
 
 #ifndef PCH_H
 #define PCH_H
@@ -25,6 +24,7 @@
 #include <filesystem>
 #include <chrono>
 #include <regex>
+#include <numbers>
 
 #include <core/constants.h>
 

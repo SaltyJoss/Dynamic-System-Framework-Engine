@@ -1,6 +1,6 @@
+// DSFE_Core RobotLoader.h
 #pragma once
-// File:   RobotLoader.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
 

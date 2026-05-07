@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   RenderPreset.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI RenderPreset.cpp
 #include "ui/RenderPreset.h"
 
 namespace render {

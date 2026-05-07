@@ -1,23 +1,17 @@
+// DSFE_GUI Camera.h
 #pragma once
-// File:   Camera.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-
 #include "Scene/Element.h"
-#include "Rendering/ShaderUtil.h"
 #include "Scene/Input.h"
+
 #include "Platform/Logger.h"
 
 namespace scene {
-	class DSFE_API Camera : public Element {
+	class Camera : public Element {
 	public:
 		Camera(const glm::vec3& position, float fov, float aspect, float zNear, float zFar) {
 			_position = position;
@@ -156,10 +150,10 @@ namespace scene {
 		glm::quat _targetRot{ 1.0f, 0.0f, 0.0f, 0.0f };
 
 		glm::mat4 _viewMatrix;
-		glm::mat4 _projection  = glm::mat4{ 1.0f };
+		glm::mat4 _projection{ 1.0f };
 
-		glm::vec3 _position = { 0.0f, 0.0f, 0.0f };
-		glm::vec3 _focus = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 _position{ 0.0f };
+		glm::vec3 _focus{ 0.0f };
 		glm::vec3 _velocity{ 0.0f };
 
 		float _distance = 5.0f;

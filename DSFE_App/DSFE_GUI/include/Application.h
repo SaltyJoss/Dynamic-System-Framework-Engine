@@ -1,15 +1,14 @@
+// DSFE_Engine Application.h
 # pragma once
-// File:   Application.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include <memory>
 #include <string>
 
 // forward declarations
-namespace window { class DSFE_API GLWindow; }
-namespace scene { class DSFE_API Camera; }
+namespace window { class GLWindow; }
+namespace scene { class Camera; }
 
-class DSFE_API Application {
+class Application {
 public:
 	Application(const std::string& name);
 	~Application();

@@ -1,6 +1,6 @@
+// DSFE_Core StartCmd.h
 #pragma once
-// File:    StartCmd.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
@@ -31,11 +31,8 @@ namespace commands {
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
-		// Mark the command as failed with a message
 		void markFailed(const std::string& message) override;
-		// Mark the command as completed
 		void markCompleted() override;
-		// Check if the command has started
 		bool hasStarted() const override;
 	};
 

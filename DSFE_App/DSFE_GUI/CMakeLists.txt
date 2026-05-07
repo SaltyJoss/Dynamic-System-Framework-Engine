@@ -8,19 +8,13 @@ find_package(Threads REQUIRED)
 
 # Define a library for GLAD from the existing source file
 add_library(glad STATIC ../External/GLAD/glad.c)
-target_include_directories(glad PUBLIC 
-    ../External/GLAD 
-    ../External # Add the parent External directory
-)
+target_include_directories(glad PUBLIC ../External/GLAD)
 find_package(OpenGL REQUIRED)
 
-target_link_libraries(glad PRIVATE OpenGL::GL)
-
-# Define an INTERFACE library for stb (header-only)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ../External/stb)
+target_link_libraries(glad PUBLIC OpenGL::GL)
 
 target_compile_definitions(DSFE_GUI PRIVATE IMGUI_ENABLE_DOCKING)
+target_compile_definitions(DSFE_GUI PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 set(RENDER_SRC
     src/Rendering/CubeVertices.cpp
@@ -52,9 +46,13 @@ set(UI_SRC
 
 set(ROBOT_SRC
     src/Robots/RobotPresentationBuilder.cpp
+    src/Robots/RobotRenderer.cpp
 )
 
-set(PLATFORM_SRC src/Platform/WindowManager.cpp)
+set(PLATFORM_SRC 
+    src/Platform/WindowManager.cpp
+    src/Application.cpp
+)
 
 set(ASSETS_SRC 
     src/Assets/std_image_impl.cpp
@@ -66,17 +64,22 @@ target_sources(DSFE_GUI PRIVATE
     ${RENDER_SRC}
     ${SCENE_SRC}
     ${UI_SRC}
+    ${ROBOT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
 )
 
-set(imfilebrowser_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/imgui/plugins)
+set(imfilebrowser_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/imfilebrowser)
 
 target_include_directories(DSFE_GUI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 
+    ${glm_SOURCE_DIR}
+    
+    ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
+    ${implot_SOURCE_DIR}
     ${imfilebrowser_ROOT}
 )
 
@@ -84,16 +87,16 @@ target_include_directories(DSFE_GUI PUBLIC
 target_link_libraries(DSFE_GUI
     PUBLIC
         DSFE_Core
+        Eigen3::Eigen
+        Threads::Threads
 
     PRIVATE
-        ExternalHeaders
         implot
         stb
         assimp
         glfw
         glad
-        glm
+        glm::glm
         imgui
         OpenGL::GL
-        Threads::Threads
 )

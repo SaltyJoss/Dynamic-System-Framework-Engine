@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   SkyboxRenderer.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI SkyboxRenderer.cpp
 #ifdef __gl_h_
 #undef __gl_h_
 #endif

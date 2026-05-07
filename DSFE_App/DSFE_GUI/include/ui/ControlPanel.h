@@ -1,7 +1,6 @@
+// DSFE_GUI ControlPanel.h
 #pragma once
-// File:    ControlPanel.h
-// GitHub:  SaltyJoss
-#include "EngineCore.h"
+
 #include <future>
 #include <atomic>
 #include <mutex>
@@ -17,22 +16,22 @@
 
 // Forward Declarations
 namespace scene {
-    class DSFE_API Mesh;
-    class DSFE_API Object;
-    class DSFE_API Light;
-	class DSFE_API Camera;
+    class Mesh;
+    class Object;
+    class Light;
+	class Camera;
 }
 namespace render {
     enum class ResolutionPreset;
     enum class QualityPreset;
 }
-namespace physics     { class DSFE_API PhysicsSystem; }
-namespace robots      { class DSFE_API RobotSystem; }
-namespace diagnostics { class DSFE_API TelemetryRecorder; }
+
+namespace robots      { class RobotSystem; }
+namespace diagnostics { class TelemetryRecorder; }
 
 namespace gui {
 	// Forward Declaration for SimManager
-    class DSFE_API SimManager;
+    class SimManager;
 	enum class ControlMode;
 
 	// Gravity UI Modes
@@ -91,7 +90,7 @@ namespace gui {
     };
 
 	// ControlPanel Class
-    class DSFE_API ControlPanel {
+    class ControlPanel {
     public:
         ControlPanel(SimManager* sim);
 
@@ -111,7 +110,6 @@ namespace gui {
 		// Internal Pointers
         SimManager* _sim = nullptr;
 		std::shared_ptr<scene::Mesh> _mesh = nullptr;
-		physics::PhysicsSystem* _phys = nullptr;
 		scene::Light* _light = nullptr;
 		scene::Object* _obj = nullptr;
         ImGui::FileBrowser _meshLoad;

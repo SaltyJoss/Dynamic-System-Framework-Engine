@@ -1,7 +1,6 @@
+// DSFE_GUI DebugLogEntry.h
 #pragma once
-// File:    DebugLogEntry.h
-// GitHub:  SaltyJoss
-#include "EngineCore.h"
+
 #include <string>
 #include <chrono>
 
@@ -15,7 +14,7 @@ struct logEntry {
 	std::chrono::system_clock::time_point timestamp;
 };
 
-class DSFE_API DebugPanelLog {};
+class DebugPanelLog {};
 
 // Global logger instance
-extern DSFE_API DebugPanelLog dLog;
+extern DebugPanelLog dLog;

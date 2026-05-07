@@ -1,12 +1,13 @@
+// DSFE_Core ProgramData.h
 #pragma once
-// File:    ProgramData.h
-// GitHub:  SaltyJoss
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
+
 #include <MathLibAPI.h>
 #include <core/Types.h>
 #include <core/constants.h>
+
 #include <string>
 #include <vector>
 

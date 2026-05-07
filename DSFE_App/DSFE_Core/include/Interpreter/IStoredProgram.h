@@ -66,8 +66,8 @@ namespace interpreter {
 		virtual int getCurrentLineNumber() const = 0;
 
 		// Set & Get Default Object
-		virtual void setDefaultObject(scene::Object* obj) = 0;
-		virtual scene::Object* defaultObject() const = 0;
+		//virtual void setDefaultObject(scene::Object* obj) = 0;
+		//virtual scene::Object* defaultObject() const = 0;
 
 		// Set & Get Integrator Method
 		virtual void setIntegratorMethod(IntegratorMethod method) = 0;

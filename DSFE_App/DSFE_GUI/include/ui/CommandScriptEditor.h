@@ -1,7 +1,5 @@
+// DSFE_GUI CommandScriptEditor.h
 #pragma once
-// File:    CommandScriptEditor.h
-// GitHub:  SaltyJoss
-#include "EngineCore.h"
 
 #include <future>
 #include <mutex>
@@ -21,7 +19,7 @@
 
 #include "Platform/Logger.h"
 
-struct DSFE_API StudyResult; // forward declaration to avoid circular dependency
+struct StudyResult; // forward declaration to avoid circular dependency
 
 namespace gui {
 	struct ActiveRun {
@@ -29,7 +27,7 @@ namespace gui {
 		std::string tag;
 	};
 
-	class DSFE_API CommandScriptEditor {
+	class CommandScriptEditor {
 	public:
 		CommandScriptEditor(gui::SimManager* sims);
 		~CommandScriptEditor();

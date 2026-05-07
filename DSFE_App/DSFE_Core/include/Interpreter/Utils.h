@@ -1,3 +1,4 @@
+// DSFE_Core Utils.h
 #pragma once
 
 #include "EngineCore.h"
@@ -60,7 +61,7 @@ namespace utils {
 	float parseFloat(const std::string s);
 	mathlib::Vec3 parseVec3(const std::string& str);
 	AxisMask parseAxisMask(const std::string& s);
-	bool tryParseObjID(const std::string& s, scene::ObjectID& out);
+	//bool tryParseObjID(const std::string& s, scene::ObjectID& out);
 
 	// --- Unit Conversion Utilities ---
 	double degToRad(double degrees);

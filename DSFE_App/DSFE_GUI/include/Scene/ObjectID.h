@@ -1,6 +1,6 @@
+// DSFE_GUI ObjectID.h
 #pragma once
-// File:   ObjectID.h
-// GitHub: SaltyJoss
+
 #include <cstdint>
 
 // ObjectID is a strongly-typed identifier for scene objects, using uint32_t as the underlying type.

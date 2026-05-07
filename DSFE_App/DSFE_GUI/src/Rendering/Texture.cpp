@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   Texture.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI Texture.cpp
 #ifdef __gl_h_
 #undef __gl_h_
 #endif

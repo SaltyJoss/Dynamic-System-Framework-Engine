@@ -3,6 +3,7 @@
 // GitHub: SaltyJoss
 #include "Platform/Paths.h"
 #ifdef _WIN32
+	#define NOMINMAX
 	#include <windows.h>
 		#ifdef _MSC_VER
 		#pragma comment(lib, "Shell32.lib")

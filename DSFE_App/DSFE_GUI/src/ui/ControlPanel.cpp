@@ -1,12 +1,12 @@
-#include "pch.h"
-// File:    ControlPanel.cpp
-// GitHub:  SaltyJoss
+// DSFE_GUI ControlPanel.cpp
 #include "ui/ControlPanel.h"
 
 #ifdef __gl_h_
 #undef __gl_h_ 
 #endif
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <stb/stb_image_write.h>
 
 #include "Scene/Mesh.h"
@@ -15,7 +15,6 @@
 #include "Scene/Camera.h"
 
 #include "Scene/SimulationManager.h"
-#include "Physics/PhysicsSystem.h"
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Parser.h"
 
@@ -205,7 +204,7 @@ namespace gui {
 	// --- ControlPanel Implementation ---
 
     ControlPanel::ControlPanel(SimManager* sim) :
-		_sim(sim), _controlMode(&sim->ctrlMode), _phys(nullptr), _obj(nullptr), _light(nullptr),
+		_sim(sim), _controlMode(&sim->ctrlMode), _obj(nullptr), _light(nullptr),
 		r(render::ResolutionPreset::R_1080p), q(render::QualityPreset::Medium),
         _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
         _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
@@ -254,7 +253,6 @@ namespace gui {
 
     void ControlPanel::drawMenus(SimManager* sim) {
         _sim = sim;
-		_phys = _sim->physicsSystem();
         _obj = _sim->getObject();
 
         if (ImGui::BeginMenu("File")) {
@@ -310,7 +308,6 @@ namespace gui {
         _obj = _sim->getObject();
         _light = _sim->getLight();
         _hasRobot = _sim->hasRobot();
-		_phys = _sim->physicsSystem();
 
 		// Begin Control Panel Window
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -989,7 +986,7 @@ namespace gui {
 							rowH = 10.0f;
 
 							// Find attached object for this joint's child link
-							for (auto& l : links) { if (l.name == joint.child) { attachedObj = l.attachedObject; break; } }
+							/*for (auto& l : links) { if (l.name == joint.child) { attachedObj = l.attachedObject; break; } }*/
 
 							bool jointSelected = (_selection.type == SelectionType::JOINT && _selection.index == i);
 
@@ -1150,14 +1147,14 @@ namespace gui {
         _selection.index = jointIdx;
         _selection.source = SelectionSource::CONTROL_PANEL;
 
-        // find attached object for child link
-        scene::Object* attachedObj = nullptr;
-        for (auto& l : links) {
-            if (l.name == joint.child) { attachedObj = l.attachedObject; break; }
-        }
-        if (attachedObj) {
-            _sim->setSelectedObject(attachedObj);
-        }
+        //// find attached object for child link
+        //scene::Object* attachedObj = nullptr;
+        //for (auto& l : links) {
+        //    if (l.name == joint.child) { attachedObj = l.attachedObject; break; }
+        //}
+        //if (attachedObj) {
+        //    _sim->setSelectedObject(attachedObj);
+        //}
 
         // camera follow
         _sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));

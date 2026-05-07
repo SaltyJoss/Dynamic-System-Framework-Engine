@@ -1,13 +1,10 @@
+// DSFE_GUI Input.h
 #pragma once
-// File:   Input.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
 
 #include <GLFW/glfw3.h>
 #include <cstdint>
-#include "Platform/Logger.h"
 
-extern DSFE_API Debug gLog;
+#include "Platform/Logger.h"
 
 namespace scene {
 	enum class eInputButton {
@@ -17,7 +14,7 @@ namespace scene {
 		None = 9
 	};
 
-	class DSFE_API Input {
+	class Input {
 	public:
 		static eInputButton GetPressedButton(GLFWwindow* window);
 

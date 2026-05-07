@@ -1,6 +1,6 @@
+// DSFE_Core TrajSetCmd.cpp
 #include "pch.h"
-// File:   TrajSetCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/TrajSetCmd.h"
 #include "Scene/SimulationCore.h"
 #include "Robots/RobotSystem.h"

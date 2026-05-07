@@ -1,13 +1,13 @@
-#include "pch.h"
-// File:   CommandScriptEditor.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI CommandScriptEditor.cpp
 #include <imgui.h>
 #include "ui/CommandScriptEditor.h"
+
 #include "Numerics/IntegrationMethods.h"
 #include "Interpreter/StoredProgram.h"
-#include "Platform/Paths.h"
+
 #include <io.h>
 
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
 namespace gui {
@@ -142,7 +142,7 @@ namespace gui {
 
 				// Create new program, parser, and wrapper instances
 				_program = new interpreter::StoredProgram(_sim->simCoreInterface());
-				_program->setDefaultObject(_sim->getObject());
+				//_program->setDefaultObject(_sim->getObject());
 				_parser = new interpreter::Parser(_program);
 				_wrapper = new interpreter::RunWrapper(_parser, _program);
 

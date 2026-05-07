@@ -1,7 +1,8 @@
+// DSFE_Core TrajClearCmd.cpp
 #include "pch.h"
-// File:   TrajClearCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/TrajClearCmd.h"
+
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
 #include "Scene/SimulationCore.h"

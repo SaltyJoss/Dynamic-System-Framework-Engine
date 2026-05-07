@@ -1,11 +1,11 @@
+// DSFE_GUI AxisOrientator.h
 #pragma once
-// File:   AxisOrientator.h
-// GitHub: SaltyJoss
-#include "EngineCore.h"
+
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 namespace gui {
-	class DSFE_API AxisOrientator
+	class AxisOrientator
 	{
 	public:
 		void render(const glm::mat4& viewMatrix);

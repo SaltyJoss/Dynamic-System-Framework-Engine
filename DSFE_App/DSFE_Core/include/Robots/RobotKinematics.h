@@ -1,16 +1,16 @@
+// DSFE_Core RobotKinematics.h
 #pragma once
-// File:   RobotDynamics.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
 
 namespace robots {
 	// Forward declarations
-	struct DSFE_API RobotModel;
-	struct DSFE_API RobotLink;
-	struct DSFE_API RobotJoint;
-	struct DSFE_API RobotMetrics;
+	struct RobotModel;
+	struct RobotLink;
+	struct RobotJoint;
+	struct RobotMetrics;
 
 	// Kinematics class responsible for computing forward kinematics and related transformations
 	class DSFE_API RobotKinematics {

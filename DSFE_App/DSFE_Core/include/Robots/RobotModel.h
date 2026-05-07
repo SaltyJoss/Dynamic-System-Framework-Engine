@@ -4,12 +4,13 @@
 #include "EngineCore.h"
 #include <MathLibAPI.h>
 #include <core/Types.h>
+#include <numbers>
 #include <Kinematics/DH_Params.h>
 
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-constexpr double DEG2RAD = 3.141592653589793 / 180.0;
+constexpr double DEG2RAD = std::numbers::pi / 180.0;
 
 namespace robots {
 	// --- Robot Model Kinematic Models ---
@@ -46,7 +47,7 @@ namespace robots {
 	// Inertial properties of a link
 	struct Inertial {
 		double mass = 0.0f;
-		Vec3 com_xyz{ 0.0,0.0,0.0 };
+		mathlib::Vec3 com_xyz{ 0.0,0.0,0.0 };
 		Inertia inertia{};
 	};
 
@@ -55,13 +56,13 @@ namespace robots {
 		std::string type;
 
 		// Collision Geometry
-		Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
-		Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
 
 		// Collision Geometry Parameters
-		Vec3 size{ 0.0, 0.0, 0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
+		mathlib::Vec3 size{ 0.0, 0.0, 0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 		std::string meshFile; // for mesh collision shapes, not implemented yet
-		Vec4 material{ 0.7f, 0.0f, 0.2f, 1.0f };
+		mathlib::Vec4 material{ 0.7f, 0.0f, 0.2f, 1.0f };
 		float metallic = 0.5f;
 		float roughness = 0.5f;
 	};
@@ -69,7 +70,7 @@ namespace robots {
 	// Per-mesh entry with individual material properties
 	struct VisualMeshEntry {
 		std::string meshFile;
-		Vec4 material{ 0.7, 0.0, 0.2, 1.0 };
+		mathlib::Vec4 material{ 0.7, 0.0, 0.2, 1.0 };
 		float metallic = 0.5f;
 		float roughness = 0.5f;
 		bool hasMaterial = false; // true if material was explicitly specified
@@ -78,8 +79,8 @@ namespace robots {
 	// Visual struct, representing the visual geometry of a link
 	struct Visual {
 		// Visual Geometry
-		Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
-		Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
 
 		// Visual Geometry Parameters
 		std::vector<std::string> meshFiles; // for multiple visual meshes per link (legacy, string-only)
@@ -126,16 +127,16 @@ namespace robots {
 		eJointType type = eJointType::REVOLUTE;
 
 		// Parent joint axis and pivot (for visualization of the joint frame)
-		Vec3 axisParent{ 0.0, 0.0, 1.0 };
-		Vec3 pivotParent{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 axisParent{ 0.0, 0.0, 1.0 };
+		mathlib::Vec3 pivotParent{ 0.0, 0.0, 0.0 };
 
 		// URDF joint frame (parent → joint)
-		Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
-		Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
-		Quat origin_q{ 1,0,0,0 };		  // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
+		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
+		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
+		mathlib::Quat origin_q{ 1,0,0,0 };		  // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
 
 		// Axis expressed IN JOINT FRAME
-		Vec3 axis{ 0.0, 0.0, 1.0 };
+		mathlib::Vec3 axis{ 0.0, 0.0, 1.0 };
 
 		// --- Limits ---
 		JointLimit limits;
@@ -158,8 +159,8 @@ namespace robots {
 		double zeta_target = 0.7f;	 // damping ratio
 
 		// --- Precomputed transforms ---
-		Mat4 jointToChildRest = Mat4::Identity();
-		Mat4 parentToJoint = Mat4::Identity();
+		mathlib::Mat4 jointToChildRest = mathlib::Mat4::Identity();
+		mathlib::Mat4 parentToJoint = mathlib::Mat4::Identity();
 	};
 
 	// --- Robot Model ---
@@ -183,7 +184,7 @@ namespace robots {
 		// Visualization options
 		eVisualFrame visualFrame = eVisualFrame::JOINT;
 		std::unordered_map<std::string, Vec4> materials;
-		Mat4 baseFrame = Mat4::Identity(); // transform from world frame to robot base frame, can be set in JSON
+		mathlib::Mat4 baseFrame = mathlib::Mat4::Identity(); // transform from world frame to robot base frame, can be set in JSON
 
 		bool baseFrameIsEngineAligned = false;
 
