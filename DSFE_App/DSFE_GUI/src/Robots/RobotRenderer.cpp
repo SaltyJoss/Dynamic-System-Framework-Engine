@@ -66,8 +66,8 @@ void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
 							: Vec4(0.7, 0.0, 0.2, 1.0); // Default material if not specified
 
 						mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-						mesh->setMetallic(entry.hasMaterial ? entry.metallic : 0.5);
-						mesh->setRoughness(entry.hasMaterial ? entry.roughness : 0.5);
+						mesh->setMetallic(entry.hasMaterial ? entry.metallic : 0.5f);
+						mesh->setRoughness(entry.hasMaterial ? entry.roughness : 0.5f);
 						mesh->rebuildGPU();
 					}
 

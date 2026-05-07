@@ -13,10 +13,16 @@ RobotRenderBinding RobotPresentationBuilder::build(const robots::RobotModel& mod
 	RobotRenderBinding binding;
 	assets::MeshLoader loader;
 	for (const auto& link : model.links) {
+		auto& visuals = binding.linkVisuals[link.name];
+
 		for (const auto& mesh : link.visual.meshEntries) {
-			auto obj = loader.load(mesh.meshFile);
-			auto& visuals = binding.linkVisuals[link.name];
-			visuals.insert(visuals.end(), obj.begin(), obj.end());
+			auto meshes = loader.load(mesh.meshFile);
+
+			for (auto& m : meshes) {
+				auto obj = std::make_unique<scene::Object>(m);
+				visuals.push_back(obj.get()); // Store raw pointer for rendering
+				binding.ownedObjects.push_back(std::move(obj)); // Cache unique_ptr for memory management
+			}
 		}
 	}
 	return binding;

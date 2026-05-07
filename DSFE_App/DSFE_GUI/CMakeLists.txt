@@ -1,20 +1,30 @@
 # CMakeLists.txt for DSFE_GUI module
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 cmake_minimum_required(VERSION 3.10)
 project(DSFE_GUI LANGUAGES C CXX)
 
 add_library(DSFE_GUI SHARED)
 
 find_package(Threads REQUIRED)
+find_package(OpenGL REQUIRED)
+
+target_compile_definitions(DSFE_GUI PRIVATE
+    DSFE_GUI_EXPORTS
+    IMGUI_ENABLE_DOCKING
+    GLM_ENABLE_EXPERIMENTAL
+)
 
 # Define a library for GLAD from the existing source file
 add_library(glad STATIC ../External/GLAD/glad.c)
 target_include_directories(glad PUBLIC ../External/GLAD)
-find_package(OpenGL REQUIRED)
-
 target_link_libraries(glad PUBLIC OpenGL::GL)
 
-target_compile_definitions(DSFE_GUI PRIVATE IMGUI_ENABLE_DOCKING)
-target_compile_definitions(DSFE_GUI PRIVATE GLM_ENABLE_EXPERIMENTAL)
+add_library(stb INTERFACE)
+
+target_include_directories(stb INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 set(RENDER_SRC
     src/Rendering/CubeVertices.cpp
@@ -71,16 +81,40 @@ target_sources(DSFE_GUI PRIVATE
 
 set(imfilebrowser_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/imfilebrowser)
 
-target_include_directories(DSFE_GUI PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+add_library(imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
 
-    ${glm_SOURCE_DIR}
-    
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(imgui PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
+)
+
+target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+
+add_library(implot STATIC
+    ${implot_SOURCE_DIR}/implot.cpp
+    ${implot_SOURCE_DIR}/implot_items.cpp
+)
+
+target_include_directories(implot PUBLIC
     ${implot_SOURCE_DIR}
-    ${imfilebrowser_ROOT}
+    ${imgui_SOURCE_DIR}
+)
+
+target_include_directories(DSFE_GUI
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+
+    PRIVATE
+        ${imfilebrowser_ROOT}
 )
 
 # Link DSFE_Core against its dependencies

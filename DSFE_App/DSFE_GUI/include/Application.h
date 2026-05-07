@@ -1,6 +1,8 @@
 // DSFE_Engine Application.h
 # pragma once
 
+#include "GUIExports.h"
+
 #include <memory>
 #include <string>
 
@@ -8,7 +10,7 @@
 namespace window { class GLWindow; }
 namespace scene { class Camera; }
 
-class Application {
+class DSFE_GUI_API Application {
 public:
 	Application(const std::string& name);
 	~Application();

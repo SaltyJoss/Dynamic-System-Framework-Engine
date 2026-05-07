@@ -1,6 +1,8 @@
 // DSFE_GUI WindowManager.h
 #pragma once
 
+#include "GUIExports.h"
+
 #include "Platform/Window.h"
 #include "Platform/Logger.h"
 

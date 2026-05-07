@@ -8,7 +8,7 @@
 
 namespace physics {
 	// public struct for physical states
-	struct DSFE_API PhysicsState {
+	struct PhysicsState {
 		mathlib::Quat q = mathlib::Quat::Identity();			 // default to no rotation
 		mathlib::Vec3 linearVelocity = mathlib::Vec3::Zero();  // default to no movement
 		mathlib::Vec3 angularVelocity = mathlib::Vec3::Zero(); // default to no rotation
