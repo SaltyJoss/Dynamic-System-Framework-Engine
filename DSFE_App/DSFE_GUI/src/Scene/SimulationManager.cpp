@@ -302,7 +302,7 @@ namespace gui {
 			_mesh->init();
 
 			// Robot system with mesh loading (for normal simulation)
-			_robotSystem = std::make_unique<robots::RobotSystem>([&owner](const std::string& path) { return owner.loadMeshReturn(path); });
+			_robotSystem = std::make_unique<robots::RobotSystem>();
 
 			// SSAO shaders
 			_ssaoShader = std::make_unique<shaders::Shader>();
@@ -336,24 +336,19 @@ namespace gui {
 			for (const auto& link : model.links) {
 				for (const auto& mesh : link.visual.meshEntries) {
 
-					auto loaded = owner.loadMesh(mesh.meshFile);
+					auto objs = owner.loadMeshReturn(mesh.meshFile);
 
-					for (auto& obj : loaded) {
+					for (auto& obj : objs) {
 						glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));
 
 						obj->transform.position = toGlm(link.visual.origin_xyz);
 						obj->transform.rotQ = glm::quat(rpy);
 
-						scene::Object* raw = obj.get();
-
-						_objects.push_back(std::move(obj));
-						_linkToObjects[link.name].push_back(raw);
+						_linkToObjects[link.name].push_back(obj);
 
 						if (!_primaryLinkObject.contains(link.name)) {
-							_primaryLinkObject[link.name] = raw;
+							_primaryLinkObject[link.name] = obj;
 						}
-
-						_objects.push_back(std::move(obj));
 					}
 				}
 			}
