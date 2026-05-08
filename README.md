@@ -118,11 +118,11 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 
 > **IMPORTANT**: <br />
 > After the release of `v0.8.0r-alpha` this project will be refactored heavily to improve the general pipeline, functionality, and usability for research. This also means DSFE(Core) and DSFE(App) will move away from `single-threaded` to `multi-threaded` practices. <br />
-> After the May 8th my degree content is completed, this means DSFE will get more attention. It is important to understand that the roadmap of this project outlines the larger plans, with many smaller ones not being added. <br />
+> On May 8th 2026 my degree content/examinations are finished, meaning DSFE will be prioritised again. It is important to understand that the roadmap of this project outlines the larger plans, with many smaller ones not being added. <br />
+> <br />
 > In September 2026 I start my masters in Computer Science, for which I plan to use DSFE for the final research project in 2027. This means DSFE will become more generalised in application, with core library (DSFE_Core) aiming to be used for multi-disciplinary research applying numerical models. <br />
-> These changes have begun with the move to CMake-only building and compiling, alongside separation of concerns for DSFE's core library, and the app-specific executable DSFE_Engine. <br />
-> Originally, the plan was to only involve white-box applications, but given the core library is openly available for use external to the application, it makes sense to include a pre-compiled and functional application for researchers and academics who do not wish to code in C++. <br />
-> However, the DSL (Dynamic Systems Language) component of DSFE will be necessary for writing tests and experiments that are runnable. I will work on getting a gitpages documentation site out for it once the more immediate changes have been made. DSL also has plans to evolve from its current state. <br />
+> <br />
+> These changes have begun with the move to CMake-only building and compiling, alongside separation of concerns for DSFE's core library, and the app-specific executable DSFE_Engine. Originally, the plan was to only involve white-box applications, but given the core library is openly available for use external to the application, it makes sense to include a pre-compiled and functional application for researchers and academics who do not wish to code in C++. However, the DSL (Dynamic Systems Language) component of DSFE will be necessary for writing tests and experiments that are runnable. I will work on getting a gitpages documentation site out for it once the more immediate changes have been made. DSL also has plans to evolve from its current state. <br />
 > <br />
 > I am the single developer of DSFE, being self-taught in higher-mathematics and computational physics, so please understand that there will be mistakes and errors in the code. If you find any areas of improvement, please let me know. I want this to become a functional and useful research tool for numerical modelling. <br />
 
