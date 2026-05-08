@@ -47,7 +47,6 @@ This open architecture intentionally avoids hidden "Black-Box" abstractions, and
 
 > **Disclaimer:**<br />
 > The DSFE software has been developed, released, and maintained soley by me([@SaltyJoss](https://github.com/SaltyJoss)). <br />
-> <br />
 > If you identify any significant bugs, logical inconsistencies, implementation errors, or any citation issues, please open an Issue or contact me directly via GitHub.<br />
 > <br />
 > Constructive feedback and technical corrections are welcomed, as they contribute to improving both the software and my understanding of the subject matter.
