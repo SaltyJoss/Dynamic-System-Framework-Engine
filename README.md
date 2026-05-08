@@ -71,11 +71,14 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 <!-- RUNNING DSFE -->
 ## Running DSFE
 
-### As an executable
-Download and extract the files from the [latest release of DSFE](https://github.com/SaltyJoss/RoboticArm_MathModelling/releases) and run the executable (`Engine.exe` on Windows) as you would any other binary!
+<!-- v0.8.0r-alpha and below -->
+### Versions v0.8.0r-alpha and below
 
-### Batch mode (CLI)
-Open a terminal in the extracted release folder and run the engine in ```--batch``` mode to execute a DSL script that automates simulation sweeps.
+#### As an executable
+ * Download and extract the files from the [latest release of DSFE](https://github.com/SaltyJoss/RoboticArm_MathModelling/releases) and run the executable (`Engine.exe` on Windows) as you would any other binary!
+
+#### Batch mode (CLI)
+ * Open a terminal in the extracted release folder and run the engine in ```--batch``` mode to execute a DSL script that automates simulation sweeps.
 
 ```bash
 # Show help / usage
@@ -84,6 +87,10 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe -h
 # Example: one of the commands used to run my tests:
 PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t assets/DSLScripts/vispa_report_test_1.dsl --name vispa_rA_t1 --basedt 1/960 --baseint rk4 --dt 1/30,1/60,1/120,1/240,1/480 --int euler,midpoint,heun,ralston,rk4,rk45
 ```
+<!-- New releases -->
+### Current Release (vx.x.x-beta)
+
+#### To be Added...
 
 <!-- PROJECT INFO -->
 ## Project Info
@@ -110,34 +117,36 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 ## Roadmap Ideas:
 
 > **IMPORTANT**: <br />
-> As of Release `v0.7.1r-alpha`, I will be focusing on my dissertation for this project and coursework for my other modules, as I am finishing my degree. <br />
-> Therefore, I most likely will not make any updates until that period is over. <br />
+> As of Release `v0.8.0r-alpha`, this project has had a large refactor. I have now finished my degree, and plan to use DSFE for my masters project, therefore this framework will recieve meaningful updates. <br />
+> These updates beging with the separation of concerns, and implementing a CMake-only pipeline. This is the first time I have actively used CMake is such a capacity, meaning if you find ANY bugs or issues please let me know. <br />
 
 ### Todo List:
- * [ ] Implement `collision meshes` with existin dynamics pipeline
- * [ ] Improve UI, making it `Research-Oriented`
- * [ ] Add workspace layouts
- * [ ] Support multiple concurrent sessions
- * [ ] Move simulation data output to a `dedicated Data-specific thread` **(IMPORTANT)**
- * [ ] Similar to the above, but multithread DSFE, not just batch parallelisation (running into bottlenecks on a single thread already)
- * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model`</s>
- * [ ] Support `multiple articulated systems` within a single simulation instance
- * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators
- * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged)
- * [x] <s>Sepearate core physics/mathematics logic from the GUI and visualisation layers</s>
- * [ ] Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers
- * [x] <s>Explore migration to a `CMake-only` build system</s>
- * [ ] Migrate to a `CMake-only` build system
- * [ ] Explore `DX11` and `Vulkan` alternatives, not necessarily a good idea but could improve usability on specific systems
- * [ ] Get DSFE to work on `Linux`
- * [ ] Explore `non-x86(x64) instruction set` support (`ARM64`, `RISC-V`)
- * [ ] Integrate the `standardised URDF XML` alongside or in place of the current DSFE json format
- * [x] <s>Implement unit tests for each method relevant to numerical analysis.</s>
- * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`
- * [x] <s>Implemented `basic implicit/structure-preserving integrators` (`Implicit Euler`, `Implicit Midpoint`, `GLRK-variants`)</s>
- * [ ] Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, even `higher-stage(and therefore order) GLRK methods`)
- * [ ] Need to look at using CRBA instead of just looping through a mass matrix loop
- * [ ] Rework DSL to be fully independent of the framework, rather used by the DSFE framework in a specific way via a internal libraries to further integrate specific features.
+ * [ ] Implement `collision meshes` with existing dynamics pipeline. **(CORE)**
+ * [ ] Improve CLI and GUI layouts, making them more `Research-Oriented`. **(CORE)**
+ * [ ] Add workspace layouts in GUI mode. **(VISUAL)**
+ * [ ] Support multiple concurrent sessions for GUI mode. **(VISUAL)**
+ * [ ] Move simulation data output to a `dedicated Data-specific thread`. **(CORE)**
+ * [ ] Similar to the above, but multithread DSFE, not just batch parallelisation (running into bottlenecks on a single thread already). **(CORE)**
+ * [ ] Support `multiple articulated systems` within a single simulation instance. **(CORE)**
+ * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators. **(CORE)**
+ * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged). **(CORE)**
+ * [ ] Explore `DX11` and `Vulkan` alternatives, not necessarily a good idea but could improve usability on specific systems. **(VISUAL)**
+ * [ ] Get DSFE to work on `Linux`. **(CORE)**
+ * [ ] Explore `non-x86(x64) instruction set` support (`ARM64`, `RISC-V`). **(CORE)**
+ * [ ] Integrate the `standardised URDF XML` alongside or in place of the current DSFE json format. **(CORE)**
+ * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`. **(MATH)**
+ * [ ] Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, even `higher-stage(and therefore order) GLRK methods`). **(MATH)**
+ * [ ] Need to look at using `CRBA` instead of just looping through a mass matrix loop. **(MATH)**
+ * [ ] Rework DSL to be fully independent of the framework, rather used by the DSFE framework in a specific way via a internal libraries to further integrate specific features. **(CORE)**
+
+### Completed Tasks:
+ * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model`</s> **(CORE)**
+ * [x] <s>Implement unit tests for each method relevant to numerical analysis.</s> **(CORE)**
+ * [x] <s>Implemented `basic implicit/structure-preserving integrators` (`Implicit Euler`, `Implicit Midpoint`, `GLRK-variants`)</s> **(MATH)**
+ * [x] <s>Sepearate core physics/mathematics logic from the GUI and visualisation layers</s> **(CORE)**
+ * [x] <s>Explore migration to a `CMake-only` build system</s> **(CORE)**
+ * [x] <s>Migrate to a `CMake-only` build system</s> **(CORE)**
+ * [x] <s>Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers</s> **(CORE)**
 
 <br />
 
