@@ -18,7 +18,7 @@ namespace commands {
 		SpinCmd(utils::AxisMask axes, double omegaDeg, double duration);
 
 		std::string_view getName() const { return "SpinCmd"; }
-		void setContext(CommandContext& cntx) override { _cntxMtn = &cntx; }
+		void setContext(CommandContext& cntx) override { _cntx = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
 		program_data::CmdResult currentResult() const override { return getResult(); }

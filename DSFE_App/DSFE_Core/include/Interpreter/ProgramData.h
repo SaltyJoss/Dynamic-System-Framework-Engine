@@ -67,12 +67,6 @@ namespace program_data {
 		Custom
 	};
 
-	// Struct for colour mapping
-	struct DSFE_API Colour {
-		BlockColour col = BlockColour::Red;
-		mathlib::Vec3 rgb = { 1.0f, 0.0f, 0.0f };
-	};
-
 	// Enum representing the state of the program
 	enum ProgramState {
 		Empty,

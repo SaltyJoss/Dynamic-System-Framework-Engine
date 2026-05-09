@@ -73,10 +73,6 @@ namespace interpreter {
 		void setGravity(double gravity) override;
 		double getGravity() const override;
 
-		// Set & Get Colour
-		void setColour(mathlib::Vec3 rgb) override;
-		mathlib::Vec3 getColour() const override;
-
 	private:
 		core::ISimulationCore* _core = nullptr;
 		commands::MainContext _cntx;

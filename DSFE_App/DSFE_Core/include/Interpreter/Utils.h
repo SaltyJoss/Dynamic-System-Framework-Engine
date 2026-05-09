@@ -52,10 +52,6 @@ namespace utils {
 	// --- Conversion Utilities ---
 	std::optional<bool> toBoolean(const std::string_view s);
 
-	// --- Colour Utilities ---
-	mathlib::Vec3 hexToRGB(const std::string& hex);
-	std::string rgbToHex(const mathlib::Vec3& rgb);
-
 	// --- Command Utilities ---
 	double parseDouble(const std::string_view s);
 	float parseFloat(const std::string s);

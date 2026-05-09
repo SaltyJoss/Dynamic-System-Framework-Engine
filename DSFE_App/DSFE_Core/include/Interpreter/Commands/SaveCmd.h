@@ -5,7 +5,6 @@
 
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
 
 #include <memory>
 #include <string>
@@ -30,7 +29,7 @@ namespace commands {
 		SaveCmd(const std::string& id, const std::vector<std::string>& tokens);
 
 		std::string_view getName() const { return "save"; }
-		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
+		void setContext(UIContext& cntx) { _cntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -39,7 +38,7 @@ namespace commands {
 	private:
 		void execute() override;
 
-		UIContext* _uiCntx = nullptr;
+		CommandContext* _cntx = nullptr;
 		SaveCmdArgs _target;
 		std::string _filename = "";   // Filename to save to
 		bool _integratorName  = false; // Whether to include integrator name in the filename

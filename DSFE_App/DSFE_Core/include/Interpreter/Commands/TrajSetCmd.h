@@ -16,7 +16,7 @@ namespace commands {
         ~TrajSetCmd() override = default;
 
         std::string_view getName() const { return "trajSet"; }
-        void setContext(CommandContext& cntx) override { _cntxMtn = &cntx; }
+        void setContext(CommandContext& cntx) override { _cntx = &cntx; }
         program_data::CmdResult getResult() const { return _result; }
         void setResult(const program_data::CmdResult& result) { _result = result; }
         program_data::CmdResult currentResult() const override { return getResult(); }
@@ -24,8 +24,6 @@ namespace commands {
     private:
         program_data::CmdResult update(CommandContext& cntx, double dt) override;
         void execute() override;
-
-        CommandContext* _cntxMtn = nullptr;
 
         std::string _link;
         std::string _type;

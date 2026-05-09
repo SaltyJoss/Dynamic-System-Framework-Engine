@@ -16,9 +16,7 @@ namespace commands {
 
 	// constructor
 	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (id == "obj") { _target.type = LoadTargetType::Object; }
-		else if (id == "robot") { _target.type = LoadTargetType::Robot; }
-		else if (id == "tex") { _target.type = LoadTargetType::Texture; }
+		if (id == "robot") { _target.type = LoadTargetType::MultiBody; }
 		else {
 			std::string errMsg = "Invalid load(<target>,...) identifier -> " + id;
 			markFailed(errMsg);
@@ -38,17 +36,16 @@ namespace commands {
 
 	// Execute the command
 	void LoadCmd::execute() {
-		if (_cntxUI == nullptr) {
-			std::string errMsg = "UI context is not set for load() command";
+		if (_cntx == nullptr) {
+			std::string errMsg = "Command context is not set for load() command";
 			markFailed(errMsg);
 			D_FAIL(errMsg.c_str());
 			return;
 		}
 
 		switch (_target.type) {
-		//case LoadTargetType::Object:	_cntxUI->loadObject(_target.path); break;
-		case LoadTargetType::Robot:		_cntxUI->loadRobot(_target.path); break;
-		//case LoadTargetType::Texture:	_cntxUI->loadTexture(_target.path); break;
+		case LoadTargetType::SingleBody:	_cntx->loadSingleBody(_target.path); break;
+		case LoadTargetType::MultiBody:		_cntx->loadMultibody(_target.path); break;
 		default:
 			{
 				std::string errMsg = "Invalid load target type.";

@@ -30,7 +30,6 @@ namespace commands {
 		program_data::CmdResult update(CommandContext& cntx, double dt) override;
 
 		utils::AxisMask _axes{};
-		CommandContext* _cntx = nullptr;
 
 		double _remainingTime = 0.0;
 		bool _started = false;

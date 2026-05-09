@@ -24,12 +24,6 @@ namespace commands {
 			D_FAIL("%s", errMsg.c_str());
 			return;
 		}
-		if (!_uiCntx) {
-			std::string errMsg = "select() command has no UI context.";
-			markFailed(errMsg);
-			D_FAIL("%s", errMsg.c_str());
-			return;
-		}
 		//scene::Object* obj = _uiCntx->resolveObject(_objID);
 		//if (!obj) {
 		//	std::string errMsg = "select() target object not found.";
@@ -40,15 +34,6 @@ namespace commands {
 		//_uiCntx->resolveObject(_objID);
 		markCompleted();
 		//D_SUCCESS("select() command executed: Object %u selected.", static_cast<uint32_t>(_objID));
-	}
-
-	// Not needed right now, will revist soon
-	void SelectCmd::listObjID() {
-		//D_RUNTIME("Available Object IDs: ");
-		//scene::Object* obj = _uiCntx->resolveObject(_objID);
-		//for (const auto& [name, id] : obj->) {
-		//	D_RUNTIME(" - Name: '%s', ID: %u", name.c_str(), static_cast<uint32_t>(id));
-		//}
 	}
 
 	// Factory function to create a SelectCmd from arguments

@@ -18,7 +18,7 @@ namespace commands {
 		RotateToCmd(utils::AxisMask axes, double maxOmegaDeg, double angleDeg);
 
 		std::string_view getName() const { return "rotateTo"; }
-		void setContext(CommandContext& cntx) override { _cntxMtn = &cntx; }
+		void setContext(CommandContext& cntx) override { _cntx = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
 		program_data::CmdResult currentResult() const override { return getResult(); }

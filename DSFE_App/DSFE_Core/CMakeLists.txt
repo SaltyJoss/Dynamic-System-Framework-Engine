@@ -25,7 +25,6 @@ set(CORE_SRC
     src/Interpreter/Parser.cpp
     src/Interpreter/RegisterCommand.cpp
     src/Interpreter/StoredProgram.cpp
-    src/Interpreter/UIContext.cpp
     src/Interpreter/Utils.cpp
     src/Interpreter/RunWrapper.cpp
 

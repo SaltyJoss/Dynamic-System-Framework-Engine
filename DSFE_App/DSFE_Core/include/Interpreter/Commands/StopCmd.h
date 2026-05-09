@@ -18,7 +18,7 @@ namespace commands {
 		StopCmd();
 
 		std::string_view getName() const { return "stop"; }
-		void setContext(CommandContext& cntx) { _mtnCntx = &cntx; }
+		void setContext(CommandContext& cntx) { _cntx = &cntx; }
 		
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -27,8 +27,6 @@ namespace commands {
 	private:
 		void execute() override;
 
-
-		CommandContext* _mtnCntx = nullptr;
 		bool _started = false;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };

@@ -35,7 +35,8 @@ namespace commands {
 		// --- INITIALISATION METHODS ---
 		utils::OpResult startSim();
 		utils::OpResult setFixedDt(double dt);
-		utils::OpResult loadRobot(const std::string& robotName);
+		utils::OpResult loadSingleBody(const std::string& bodyName);
+		utils::OpResult loadMultibody(const std::string& bodyName);
 
 		// --- GLOBAL STATE METHODS ---
 

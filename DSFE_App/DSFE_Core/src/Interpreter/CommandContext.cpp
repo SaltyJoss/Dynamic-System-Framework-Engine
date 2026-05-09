@@ -38,14 +38,20 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	// Loads a robot by name and updates the context with the new robot system
-	OpResult CommandContext::loadRobot(const std::string& robotName) {
+	OpResult CommandContext::loadSingleBody(const std::string& bodyName) {
 		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
-		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
+		if (bodyName.empty()) return OpResult::Failure("Body name is empty.");
+		/* Need to add logic here for single bodies since I removed physicsSystem. */
+		return OpResult::Success(true);
+	}
 
-		_core->loadRobot(robotName);
+	// Loads a robot by name and updates the context with the new robot system
+	OpResult CommandContext::loadMultibody(const std::string& bodyName) {
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
+		if (bodyName.empty()) return OpResult::Failure("Robot name is empty.");
+		_core->loadRobot(bodyName); // only load robot for now, as multibody is not finished
 		_robot = _core->robotSystem();
-		if (!_robot) return OpResult::Failure("Robot system is null after load.");
+		if (!_robot) return OpResult::Failure("Multibody system is null after load.");
 		return OpResult::Success(true);
 	}
 
