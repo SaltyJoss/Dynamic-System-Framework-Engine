@@ -30,6 +30,7 @@ jobs:
         run: |
           cmake -S . -B build `
               -A x64 `
+              -DVCPKG_TARGET_TRIPLET=x64-windows `
               -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
