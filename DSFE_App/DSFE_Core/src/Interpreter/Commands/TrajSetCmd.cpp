@@ -54,7 +54,7 @@ namespace commands {
     }
 
 	// Updates trajSet command
-	program_data::CmdResult TrajSetCmd::update(CommandContextMotion& cntx, double dt) {
+	program_data::CmdResult TrajSetCmd::update(CommandContext& cntx, double dt) {
 		auto* core = cntx.Core();
 		if (!core) {
 			markFailed("trajSet: no SimulationManager in context.");

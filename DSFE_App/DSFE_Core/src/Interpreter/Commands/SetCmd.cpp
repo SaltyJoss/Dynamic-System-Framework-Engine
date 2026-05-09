@@ -28,56 +28,11 @@ namespace commands {
 		if (s == "implicit_midpoint") return IntegratorMethod::ImplicitMidpoint;
 		if (s == "glrk2")			  return IntegratorMethod::GLRK2;
 		if (s == "glrk3")			  return IntegratorMethod::GLRK3;
-		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Euler Method\"", s.c_str());
-		return IntegratorMethod::Euler;
-	}
-
-	// Helper function to parse the colour
-	static Colour parseColourBlock(const std::string& str) {
-		std::string s = toLower(str);
-		if (s == "red")			{ return Colour{ BlockColour::Red,		mathlib::Vec3{ 1.00f, 0.00f, 0.00f } }; }
-		if (s == "green")		{ return Colour{ BlockColour::Green,	mathlib::Vec3{ 0.00f, 1.00f, 0.00f } }; }
-		if (s == "blue")		{ return Colour{ BlockColour::Blue,		mathlib::Vec3{ 0.00f, 0.00f, 1.00f } }; }
-		if (s == "yellow")		{ return Colour{ BlockColour::Yellow,	mathlib::Vec3{ 1.00f, 1.00f, 0.00f } }; }
-		if (s == "cyan")		{ return Colour{ BlockColour::Cyan,		mathlib::Vec3{ 0.00f, 1.00f, 1.00f } }; }
-		if (s == "magenta")		{ return Colour{ BlockColour::Magenta,	mathlib::Vec3{ 1.00f, 0.00f, 1.00f } }; }
-		if (s == "white")		{ return Colour{ BlockColour::White,	mathlib::Vec3{ 1.00f, 1.00f, 1.00f } }; }
-		if (s == "grey")		{ return Colour{ BlockColour::Grey,		mathlib::Vec3{ 0.50f, 0.50f, 0.50f } }; }
-		if (s == "darkgrey")	{ return Colour{ BlockColour::DarkGrey,	mathlib::Vec3{ 0.25f, 0.25f, 0.25f } }; }
-		if (s == "black")		{ return Colour{ BlockColour::Black,	mathlib::Vec3{ 0.00f, 0.00f, 0.00f } }; }
-		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
-	}
-
-	// Helper function to parse RGB colour from string format "{r,g,b}"
-	static Colour parseColourRGB(const std::string& str) {
-		if (!str.empty() && str.front() == '{' && str.back() == '}') {
-			Vec3 rgb = utils::parseVec3(str);
-			return Colour{ BlockColour::Custom, rgb };
-		}
-		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
-	}
-
-	// Helper function to parse RGB colour from hex format "#RRGGBB"
-	static Colour parseColourHex(const std::string& str) {
-		if (!str.empty() && str.starts_with('#')) {
-			std::string s = str.substr(1);
-			Vec3 rgb = utils::hexToRGB(s);
-			return Colour{ BlockColour::Custom, rgb };
-		}
-		return Colour{ BlockColour::Red, mathlib::Vec3{ 1.0f, 0.0f, 0.0f } };  // Default
+		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Fourth-Order Runge Kutta\"", s.c_str());
+		return IntegratorMethod::RK4;
 	}
 
 	// --- SetCmd Method Implementations ---
-
-	// Get colour from parameter
-	void SetCmd::setColour(const mathlib::Vec3& rgb) {
-		_colRGB = rgb;
-		markCompleted();
-	}
-	void SetCmd::setColour(const std::string& hex) {
-		Vec3 rgb = utils::hexToRGB(hex);
-		setColour(rgb);
-	}
 
 	// Helper function to parse LoadTarget from string
 	// Expected formats: "set(integrator,<method>)", "set(colour,<RGB>)", "set(colour,<hex>)"
@@ -97,15 +52,6 @@ namespace commands {
 			};
 
 			return SetTarget{ SetTargetType::Omega, {}, w }; 
-		}
-		if (startsWith(toLower(id), "colour")) { 
-			std::string s = token; 
-			Colour c;
-			if (s.starts_with('#')) { c = parseColourHex(s); }
-			else if (s.starts_with('{')) { c = parseColourRGB(s); }
-			else { c = parseColourBlock(toLower(s)); }
-
-			return SetTarget{ SetTargetType::Colour, {}, {}, {}, {}, c };
 		}
 		return std::nullopt;
 	}
@@ -151,13 +97,6 @@ namespace commands {
 			auto t = parseSetTarget(_id, _tokens);
 			if (!t) { markFailed("Invalid gravity"); return; }
 			getProgram()->setGravity(t->gravity);
-			markCompleted();
-			return;
-		}
-		if (_id == "colour") {
-			auto t = parseSetTarget(_id, _tokens);
-			if (!t) { markFailed("Invalid colour"); return; }
-			getProgram()->setColour(t->colour.rgb);
 			markCompleted();
 			return;
 		}

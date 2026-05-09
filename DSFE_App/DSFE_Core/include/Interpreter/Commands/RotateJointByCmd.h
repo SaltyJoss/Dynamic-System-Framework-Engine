@@ -7,7 +7,7 @@
 #include <core/Types.h>
 
 #include "Interpreter/Command.h"
-#include "Interpreter/CommandContextMotion.h"
+#include "Interpreter/CommandContext.h"
 
 namespace commands {
 	class DSFE_API RotateJointByCmd final : public Command {
@@ -16,14 +16,14 @@ namespace commands {
 		RotateJointByCmd(std::string link, double omegaDeg, double deltaDeg);
 
 		std::string_view getName() const { return "rotateJointBy"; }
-		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
+		void setContext(CommandContext& cntx) override { _cntxMtn = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
 		program_data::CmdResult currentResult() const override { return getResult(); }
 
 	private:
 		void execute() override;
-		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
+		program_data::CmdResult update(CommandContext& cntx, double dt) override;
 
 		std::string _link;
 		double _deltaDeg = 0.0;

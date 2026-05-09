@@ -5,7 +5,7 @@
 
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
-#include "Interpreter/CommandContextMotion.h"
+#include "Interpreter/CommandContext.h"
 
 #include <memory>
 #include <string>
@@ -18,7 +18,7 @@ namespace commands {
 		StopCmd();
 
 		std::string_view getName() const { return "stop"; }
-		void setContext(CommandContextMotion& cntx) { _mtnCntx = &cntx; }
+		void setContext(CommandContext& cntx) { _mtnCntx = &cntx; }
 		
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -28,7 +28,7 @@ namespace commands {
 		void execute() override;
 
 
-		CommandContextMotion* _mtnCntx = nullptr;
+		CommandContext* _mtnCntx = nullptr;
 		bool _started = false;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };

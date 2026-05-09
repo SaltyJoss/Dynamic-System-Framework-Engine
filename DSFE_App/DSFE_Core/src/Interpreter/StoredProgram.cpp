@@ -10,12 +10,8 @@
 namespace interpreter {
 	StoredProgram::StoredProgram(core::ISimulationCore* core)
 		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
-		// If necessary, can set a default object by querying core->getObject()
-		//if (_core) {
-		//	scene::Object* obj = _core->getObject();
-		//	_cntx.motion().setDefaultObjectID(obj ? obj->id : scene::ObjectID::INVALID_OBJECT_ID);
-		//}
 	}
+
 	StoredProgram::~StoredProgram() { clear(); }
 
 	// Add a command to the program
@@ -25,7 +21,6 @@ namespace interpreter {
 		}
 
 		cmd->setContext(_cntx.motion());
-		cmd->setContext(_cntx.ui());
 		cmd->setProgram(this);
 		_commands.push_back(std::move(cmd));
 	}
@@ -36,7 +31,6 @@ namespace interpreter {
 			throw std::invalid_argument("Attempted to add null command to StoredProgram.");
 		}
 		cmd->setContext(_cntx.motion());
-		cmd->setContext(_cntx.ui());
 		cmd->setProgram(this);
 		_commands.emplace_back(cmd);
 	}
@@ -79,42 +73,28 @@ namespace interpreter {
 	
 	// Stop simulation
 	void StoredProgram::stopSim() {
-		if (!_core) { return; }
 		if (_core->isSimRunning()) { _core->stopSimulation(); }
-
-		//scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
-		//if (obj) {
-		//	utils::AxisMask all{ true,true,true };
-		//	_cntx.motion().stopRotation(obj, all);
-		//	_cntx.motion().stopTranslation(obj, all);
-		//}
-
 		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	// Pause program execution
 	void StoredProgram::pause() {
+		if (!_core) { return; }
 		_state = ProgramState::Paused;
-
-		//scene::Object* obj = _cntx.motion().resolveDefaultObject(); // <-- uses stored default ID
-		//if (obj) {
-		//	utils::AxisMask all{ true,true,true };
-		//	_cntx.motion().stopRotation(obj, all);
-		//	_cntx.motion().stopTranslation(obj, all);
-		//}
-
 		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
 	}
 
 	// Wait for simulation to run for dt seconds
 	void StoredProgram::waitSim(double dt) {
-		if (_core && !_core->isSimRunning()) { _core->startSimulation(); }
+		if (!_core) { return; }
+		if (!_core->isSimRunning()) { _core->startSimulation(); } // I do not like this line
+
 		double elapsed = 0.0;
 		const double stepDt = _core ? _core->fixedDt() : static_cast<double>(1.0 / 180.0);
 		while (elapsed < dt) {
 			elapsed += stepDt;
 		}
-		if (_core && _core->isSimRunning()) { _core->stopSimulation(); }
+		if (_core->isSimRunning()) { _core->stopSimulation(); }
 	}
 
 	// Get current program status
@@ -135,14 +115,9 @@ namespace interpreter {
 		if (_commands.empty()) { _state = ProgramState::Faulted; return; }
 		if (!commandsLeft()) { _state = ProgramState::Completed; return; _core->stopSimulation(); }
 
-		// Ensure default object is valid in context
-		//scene::Object* o = _defaultObj ? _defaultObj : (_core ? _core->getObject() : nullptr);
-		//_cntx.motion().setDefaultObjectID(o ? o->id : scene::ObjectID::INVALID_OBJECT_ID);
-
 		// Get current command
 		auto& cmd = _commands[PC];
 		cmd->setContext(_cntx.motion());
-		cmd->setContext(_cntx.ui());
 
 		if (!cmd->hasStarted()) { cmd->execute(); }
 
@@ -218,17 +193,4 @@ namespace interpreter {
 		}
 		return _gravity;
 	}
-
-	// Set Colour
-	void StoredProgram::setColour(mathlib::Vec3 rgb) {
-		_rgb = rgb;
-		if (_core) {
-			LOG_WARN("This method has not been integrated with the rendering system yet, so it has no effect.");
-		    // _core->setShaderAlbedo(toGlm(rgb));
-			// D_INFO("Set shader albedo -> %.2f,%.2f,%.2f", rgb[0],rgb[1],rgb[2]);
-		}
-	}
-
-	// Get Colour
-	mathlib::Vec3 StoredProgram::getColour() const { return _rgb; }
 } // namespace interpreter

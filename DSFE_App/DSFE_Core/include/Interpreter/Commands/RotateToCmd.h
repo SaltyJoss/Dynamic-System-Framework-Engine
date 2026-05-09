@@ -7,7 +7,7 @@
 #include <core/Types.h>
 
 #include "Interpreter/Command.h"
-#include "Interpreter/CommandContextMotion.h"
+#include "Interpreter/CommandContext.h"
 
 namespace commands {
 
@@ -18,14 +18,14 @@ namespace commands {
 		RotateToCmd(utils::AxisMask axes, double maxOmegaDeg, double angleDeg);
 
 		std::string_view getName() const { return "rotateTo"; }
-		void setContext(CommandContextMotion& cntx) override { _cntxMtn = &cntx; }
+		void setContext(CommandContext& cntx) override { _cntxMtn = &cntx; }
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
 		program_data::CmdResult currentResult() const override { return getResult(); }
 
 	private:
 		void execute() override;
-		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
+		program_data::CmdResult update(CommandContext& cntx, double dt) override;
 
 		utils::AxisMask _axes;
 		double _angleDeg = 0.0;

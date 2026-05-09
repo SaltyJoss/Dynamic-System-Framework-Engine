@@ -21,7 +21,7 @@ namespace commands {
 	}
 
 	// Update command state
-	CmdResult RotateToCmd::update(CommandContextMotion& cntx, double dt) {
+	CmdResult RotateToCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) {
 			markFailed("rotateTo() not started.");
 			return CmdResult{ CmdState::Failed, {}, "rotateTo() not started." };

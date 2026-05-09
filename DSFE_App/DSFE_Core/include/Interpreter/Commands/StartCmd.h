@@ -4,7 +4,7 @@
 #include "EngineCore.h"
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
+#include "Interpreter/CommandContext.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,7 +16,7 @@ namespace commands {
 		StartCmd();
 
 		std::string_view getName() const { return "start"; }
-		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
+		void setContext(CommandContext& cntx) { _cntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -25,7 +25,7 @@ namespace commands {
 	private:
 		void execute() override;
 
-		UIContext* _uiCntx = nullptr;
+		CommandContext* _cntx = nullptr;
 		bool _started = false;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };

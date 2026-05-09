@@ -20,7 +20,7 @@ set(CORE_SRC
     src/Robots/TrajectoryManager.cpp
 
     src/Interpreter/Command.cpp
-    src/Interpreter/CommandContextMotion.cpp
+    src/Interpreter/CommandContext.cpp
     src/Interpreter/CommandFactory.cpp
     src/Interpreter/Parser.cpp
     src/Interpreter/RegisterCommand.cpp

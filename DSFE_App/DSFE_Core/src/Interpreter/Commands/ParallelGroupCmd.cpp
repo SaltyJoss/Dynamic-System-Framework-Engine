@@ -13,7 +13,7 @@ namespace commands {
 	}
 
 	// Update method
-	CmdResult ParallelGroupCmd::update(CommandContextMotion& cntx, double dt) {
+	CmdResult ParallelGroupCmd::update(CommandContext& cntx, double dt) {
 		if (_cmds.empty()) { _result = { CmdState::Executed, {}, "parallel: empty group" }; return _result; }
 		// Start the group if not already started
 		if (!_started) {

@@ -1,4 +1,4 @@
-// DSFE_Core CommandContextMotion.h
+// DSFE_Core CommandContext.h
 #pragma once
 
 #include "EngineCore.h"
@@ -28,9 +28,14 @@ namespace commands {
 	};
 
 	// Class representing the command context
-	class DSFE_API CommandContextMotion {
+	class DSFE_API CommandContext {
 	public:
-		CommandContextMotion(core::ISimulationCore* core);
+		CommandContext(core::ISimulationCore* core);
+
+		// --- INITIALISATION METHODS ---
+		utils::OpResult startSim();
+		utils::OpResult setFixedDt(double dt);
+		utils::OpResult loadRobot(const std::string& robotName);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -49,19 +54,11 @@ namespace commands {
 		utils::OpResult stopAllOmega(); // stops all angular velocity
 
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
+		utils::OpResult stopJointOmega(const std::string& childLink);
 
 		// --- HELPER METHODS ---
 		core::ISimulationCore* Core() const { return _core; }
 		robots::RobotSystem* Robot() const { return _robot; }
-		//scene::ObjectID DefaultObjectID() const;
-		//scene::ObjectID ObjectID() const;
-
-		//scene::Object* resolveObject(scene::ObjectID id) const;
-		//scene::Object* resolveCurrentObject() const;
-		//scene::Object* resolveDefaultObject() const;
-
-		//void setDefaultObjectID(scene::ObjectID id) { _defaultObjID = id; _objID = id; }
-		//void setObjectID(scene::ObjectID id) { _objID = id; }
 
 		// --- PROCESS CONTROL METHODS ---
 	

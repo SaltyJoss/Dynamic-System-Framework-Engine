@@ -7,19 +7,18 @@
 #include <core/Types.h>
 
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
+#include "Interpreter/CommandContext.h"
 
 namespace commands {
 	// Enum for load target type
 	enum class LoadTargetType {
-		Object,
-		Robot,
-		Texture
+		SingleBody,
+		MultiBody
 	};
 
 	// Struct for load target
 	struct DSFE_API LoadTarget {
-		LoadTargetType type = LoadTargetType::Object;
+		LoadTargetType type = LoadTargetType::SingleBody;
 		std::string path;
 	};
 

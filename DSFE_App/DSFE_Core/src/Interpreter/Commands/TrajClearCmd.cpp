@@ -25,7 +25,7 @@ namespace commands {
 	// --- TrajClearCmd Implementation ---
 
 	// Update method for TrajClearCmd
-    program_data::CmdResult TrajClearCmd::update(CommandContextMotion& cntx, double /*dt*/) {
+    program_data::CmdResult TrajClearCmd::update(CommandContext& cntx, double /*dt*/) {
         if (_done) return { CmdState::Executed, {}, "" };
 
         core::ISimulationCore* core = cntx.Core();

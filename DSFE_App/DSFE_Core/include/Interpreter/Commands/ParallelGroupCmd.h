@@ -23,7 +23,7 @@ namespace commands {
 		ParallelGroupCmd(ParallelGroupCmd&&) noexcept = default;
 		ParallelGroupCmd& operator=(ParallelGroupCmd&&) noexcept = default;
 
-		CmdResult update(CommandContextMotion& cntx, double dt) override;
+		CmdResult update(CommandContext& cntx, double dt) override;
 		CmdResult currentResult() const override { return _result; }
 
 	private:

@@ -1,7 +1,7 @@
+// DSFE_Core CommandContext.cpp
 #include "pch.h"
-// File:   CommandContextMotion.cpp
-// GitHub: SaltyJoss
-#include "Interpreter/CommandContextMotion.h"
+
+#include "Interpreter/CommandContext.h"
 #include "Scene/SimulationCore.h"
 #include "Robots/RobotSystem.h"
 
@@ -13,55 +13,61 @@ using namespace utils;
 
 namespace commands {
 	// Constructor
-	CommandContextMotion::CommandContextMotion(core::ISimulationCore* core)
+	CommandContext::CommandContext(core::ISimulationCore* core)
 		: _core(core), _robot(core ? core->robotSystem() : nullptr), 
 		_angularUnits(AngularUnits::DegPerSec) {
 	}
 
-	// --- OBJECT RESOLUTION METHODS ---
-	//scene::ObjectID CommandContextMotion::DefaultObjectID() const { return _defaultObjID; }
-	//scene::ObjectID CommandContextMotion::ObjectID() const { return _objID; }
+	// --- INITIALISATION METHODS ---
 
-	//scene::Object* CommandContextMotion::resolveObject(scene::ObjectID id) const {
-	//	if (!_core) return nullptr;
-	//	if (id == scene::ObjectID::INVALID_OBJECT_ID) return nullptr;
-	//	return _core->getObjectByID(id);
-	//}
+	// Starts the simulation if the simulation manager is available
+	OpResult CommandContext::startSim() {
+		if (!_core) {
+			LOG_WARN("Simulation manager is null, cannot start simulation.");
+			return OpResult::Failure("Simulation manager is null.");
+		}
+		_core->startSimulation();
+		return OpResult::Success();
+	}
 
-	//scene::Object* CommandContextMotion::resolveCurrentObject() const { return resolveObject(_objID); }
-	//scene::Object* CommandContextMotion::resolveDefaultObject() const { return resolveObject(_defaultObjID); }
+	// Set the fixed delta time for the simulation
+	OpResult CommandContext::setFixedDt(double dt) {
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
+		if (dt <= 0.0) { return OpResult::Failure("Fixed dt must be positive."); }
+		_core->setFixedDt(dt);
+		return OpResult::Success(true);
+	}
+
+	// Loads a robot by name and updates the context with the new robot system
+	OpResult CommandContext::loadRobot(const std::string& robotName) {
+		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
+		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
+
+		_core->loadRobot(robotName);
+		_robot = _core->robotSystem();
+		if (!_robot) return OpResult::Failure("Robot system is null after load.");
+		return OpResult::Success(true);
+	}
 
 	// --- GLOBAL STATE METHODS ---
-	void CommandContextMotion::setAngularUnits(AngularUnits units) { _angularUnits = units; }
-	AngularUnits CommandContextMotion::getAngularUnits() const { return _angularUnits; }
+	void CommandContext::setAngularUnits(AngularUnits units) { _angularUnits = units; }
+	AngularUnits CommandContext::getAngularUnits() const { return _angularUnits; }
 	
-	void CommandContextMotion::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
-	double CommandContextMotion::getOmegaClamp() const { return _omegaClamp; }
+	void CommandContext::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
+	double CommandContext::getOmegaClamp() const { return _omegaClamp; }
 
-	//utils::OpResult CommandContextMotion::setOmega(const Vec3& omega) {
-	//	scene::Object* obj = resolveCurrentObject();
-	//	if (!obj) { return OpResult::Failure("No object selected."); }
-	//	Vec3 w = omega;
-	//	if (_angularUnits == AngularUnits::DegPerSec) { w *= (float)(PI / 180.0); }
-	//	if (_omegaClamp > 0.0) {
-	//		w.x() = std::clamp((double)w.x(), -_omegaClamp, _omegaClamp);
-	//		w.y() = std::clamp((double)w.y(), -_omegaClamp, _omegaClamp);
-	//		w.z() = std::clamp((double)w.z(), -_omegaClamp, _omegaClamp);
-	//	}
-	//	obj->state.angularVelocity = w;
-	//	return OpResult::Success(true);
-	//}
-
-	utils::OpResult CommandContextMotion::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
+	utils::OpResult CommandContext::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		double omegaRadPerSec = degToRad(omegaDegPerSec);
 		_robot->trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
 	 
-	//utils::OpResult CommandContextMotion::stopAllOmega() { return setOmega(mathlib::Vec3(0, 0, 0)); }
+	utils::OpResult CommandContext::stopJointOmega(const std::string& childLink) {
+		return setJointOmega(childLink, 0.0);
+	}
 
-	Vec3 CommandContextMotion::normaliseDirection(const Vec3& dir) const {
+	Vec3 CommandContext::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
 		const double y = dir.y();
 		const double z = dir.z();
@@ -74,7 +80,7 @@ namespace commands {
 		return Vec3(x * invLen, y * invLen, z * invLen);
 	}
 
-	double CommandContextMotion::getJointAngleRad(const std::string& link) const {
+	double CommandContext::getJointAngleRad(const std::string& link) const {
 		if (!_robot) return 0.0;
 		double a = 0.0f;
 		if (_robot->tryGetJointAngleRad(link, a)) return (double)a;
@@ -83,7 +89,7 @@ namespace commands {
 
 	// --- JOINT ANGLE METHODS ---
 
-	utils::OpResult CommandContextMotion::setJointTargetRad(const std::string& link, double thetaTargetRad) {
+	utils::OpResult CommandContext::setJointTargetRad(const std::string& link, double thetaTargetRad) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { 
 			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
@@ -91,7 +97,7 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	utils::OpResult CommandContextMotion::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
+	utils::OpResult CommandContext::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		double refRad = 0.0f;
 		if (!_robot->tryGetJointTargetRad(link, refRad)) { 
@@ -101,7 +107,7 @@ namespace commands {
 		return setJointTargetRad(link, targetRad);
 	}
 
-	utils::OpResult CommandContextMotion::setJointMaxOmegaRad(const std::string& link, double maxqd) {
+	utils::OpResult CommandContext::setJointMaxOmegaRad(const std::string& link, double maxqd) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (maxqd <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
 		if (!_robot->trySetJointOmegaMaxRad(link, maxqd)) { 
@@ -111,7 +117,7 @@ namespace commands {
 	}
 
 	// Sets the reference angular velocity for a joint (rad/s)
-	utils::OpResult CommandContextMotion::setJointOmegaRefRad(const std::string& link, double qd_ref) {
+	utils::OpResult CommandContext::setJointOmegaRefRad(const std::string& link, double qd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_robot->trySetJointOmegaRefRad(link, qd_ref)) { 
 			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
@@ -120,7 +126,7 @@ namespace commands {
 	}
 
 	// Sets the reference angular acceleration for a joint (rad/s^2)
-	utils::OpResult CommandContextMotion::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
+	utils::OpResult CommandContext::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_robot->trySetJointAlphaRefRad(link, qdd_ref)) { 
 			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
@@ -128,7 +134,7 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	utils::OpResult CommandContextMotion::updateJointRotateTo(double /*dt*/) {
+	utils::OpResult CommandContext::updateJointRotateTo(double /*dt*/) {
 		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_jnt.active) { return OpResult::Success(true); }
 
@@ -140,7 +146,7 @@ namespace commands {
 		return OpResult::Success(false);
 	}
 
-	utils::OpResult CommandContextMotion::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
+	utils::OpResult CommandContext::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
 		if (!_robot) return OpResult::Failure("beginJointRotateTo -> no robot.");
 		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
 
@@ -170,7 +176,7 @@ namespace commands {
 
 	// --- RIGID MOTION METHODS ---
 
-	//utils::OpResult CommandContextMotion::updateRigidRotateTo(double dt) {
+	//utils::OpResult CommandContext::updateRigidRotateTo(double dt) {
 	//	if (!_rig.active || !_rig.obj) {
 	//		D_INFO("No active rigid rotation.");
 	//		return OpResult::Success();
@@ -208,7 +214,7 @@ namespace commands {
 	//}
 
 	// Starts a rigid rotation of the specified object around a given axis at a maximum angular velocity until it reaches the target angle
-	//utils::OpResult CommandContextMotion::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
+	//utils::OpResult CommandContext::beginRigidRotateTo(scene::Object* obj, Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg) {
 	//	if (!obj) return OpResult::Failure("beginRigidRotateTo -> null object.");
 	//	const double axisLen = axisUnit.norm();
 	//	if (axisLen < 1e-8) return OpResult::Failure("beginRigidRotateTo => axis is zero.");
@@ -238,7 +244,7 @@ namespace commands {
 	//}
 
 	//// Rotates the specified object along given axes at a certain angular velocity for a time step dt
-	//OpResult CommandContextMotion::rotateObject(scene::Object* obj, AxisMask axes, double omega, double /*dt*/) {
+	//OpResult CommandContext::rotateObject(scene::Object* obj, AxisMask axes, double omega, double /*dt*/) {
 	//	if (!obj || !obj->getMesh()) {
 	//		SIM_FAIL("No object provided for rotation.");
 	//		return OpResult::Failure("No object provided for rotation.");
@@ -258,7 +264,7 @@ namespace commands {
 	//}
 
 	//// Rotates the current object along specified axes at a given angular velocity for a time step dt
-	//OpResult CommandContextMotion::rotateAxes(AxisMask axes, double omega, double /*dt*/) {
+	//OpResult CommandContext::rotateAxes(AxisMask axes, double omega, double /*dt*/) {
 	//	scene::Object* obj = resolveCurrentObject();
 	//	if (!obj || !obj->getMesh()) {
 	//		SIM_FAIL("No object associated with this context.");
@@ -279,7 +285,7 @@ namespace commands {
 	//// --- STOP MOTION METHODS ---
 
 	//// Stops rotation of the specified object along the given axes
-	//void CommandContextMotion::stopRotation(scene::Object* obj, AxisMask axes) {
+	//void CommandContext::stopRotation(scene::Object* obj, AxisMask axes) {
 	//	if (!obj) return;
 	//	auto& s = obj->state;
 
@@ -291,7 +297,7 @@ namespace commands {
 	//}
 
 	//// Stops translation along specified axes
-	//void CommandContextMotion::stopTranslation(scene::Object* obj, AxisMask axes) {
+	//void CommandContext::stopTranslation(scene::Object* obj, AxisMask axes) {
 	//	if (!obj) return;
 	//	auto& s = obj->state;
 
@@ -305,7 +311,7 @@ namespace commands {
 	//// --- TRANSLATION COMMAND METHODS ---
 
 	//// Translates the current object in world coordinates along a specified direction at a given velocity for a time step dt
-	//OpResult CommandContextMotion::translateWorld(const Vec3& direction, double distance, double /*vel*/) {
+	//OpResult CommandContext::translateWorld(const Vec3& direction, double distance, double /*vel*/) {
 	//	scene::Object* obj = resolveCurrentObject();
 	//	if (!obj) {
 	//		SIM_FAIL("No object associated with this context.");
@@ -318,7 +324,7 @@ namespace commands {
 	//}
 
 	//// Translates the current object along specified axes at a given velocity for a time step dt
-	//const OpResult CommandContextMotion::translateAxes(AxisMask axes, double vel, double dt) const {
+	//const OpResult CommandContext::translateAxes(AxisMask axes, double vel, double dt) const {
 	//	scene::Object* obj = resolveCurrentObject();
 	//	if (!obj) {
 	//		SIM_FAIL("No object associated with this context.");
@@ -346,7 +352,7 @@ namespace commands {
 	// --- READ-ONLY ACCESSORS ---
 
 	// Checks if the current context has a valid robot and if the specified link index is within bounds
-	bool CommandContextMotion::hasLink(std::size_t linkIndex) const {
+	bool CommandContext::hasLink(std::size_t linkIndex) const {
 		if (!_robot) return false;
 		return _robot && linkIndex < _robot->links().size();
 	}
@@ -354,7 +360,7 @@ namespace commands {
 	// --- PRIVATE METHODS ---
 
 	// Normalizes an angular velocity value based on the current omega clamp setting
-	double CommandContextMotion::NormaliseOmega(double omega) const {
+	double CommandContext::NormaliseOmega(double omega) const {
 		if (_omegaClamp > 0.0) {
 			if (omega > _omegaClamp) { return _omegaClamp; }
 			if (omega < -_omegaClamp) { return -_omegaClamp; }
@@ -363,7 +369,7 @@ namespace commands {
 	}
 
 	// Converts an angular velocity value from the current angular units to the internal representation (radians per second)
-	double CommandContextMotion::convertOmegaToInternal(double omega) const {
+	double CommandContext::convertOmegaToInternal(double omega) const {
 		if (_angularUnits == AngularUnits::DegPerSec) { return degToRad(omega); }
 		return omega;
 	}

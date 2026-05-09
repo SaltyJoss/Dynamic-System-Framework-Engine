@@ -26,7 +26,7 @@ namespace commands {
 	}
 
 	// Updates setOmega command
-	program_data::CmdResult SetOmegaCmd::update(CommandContextMotion& cntx, double dt) {
+	program_data::CmdResult SetOmegaCmd::update(CommandContext& cntx, double dt) {
 		auto* robot = cntx.Robot();
 		if (!robot) {
 			markFailed("setOmega: no RobotSystem in simulation.");

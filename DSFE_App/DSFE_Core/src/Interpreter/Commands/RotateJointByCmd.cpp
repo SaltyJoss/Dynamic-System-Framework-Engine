@@ -23,7 +23,7 @@ namespace commands {
 	}
 
 	// Core update loop for rotateJointBy command
-	program_data::CmdResult RotateJointByCmd::update(CommandContextMotion& cntx, double dt) {
+	program_data::CmdResult RotateJointByCmd::update(CommandContext& cntx, double dt) {
 		auto* robot = cntx.Robot();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
 		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms

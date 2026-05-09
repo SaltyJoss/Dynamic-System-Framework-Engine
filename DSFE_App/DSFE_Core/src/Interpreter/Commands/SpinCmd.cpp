@@ -22,7 +22,7 @@ namespace commands {
 	}
 
 	// Update the command
-	program_data::CmdResult SpinCmd::update(CommandContextMotion& cntx, double dt) {
+	program_data::CmdResult SpinCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) {
 			markFailed("spin() not started.");
 			return CmdResult{ CmdState::Failed, {}, "spin() not started." };

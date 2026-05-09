@@ -22,7 +22,7 @@ namespace commands {
 	}
 
 	// Update the command
-	CmdResult RotateByCmd::update(CommandContextMotion& cntx, double dt) {
+	CmdResult RotateByCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) {
 			markFailed("rotateBy() not started.");
 			return CmdResult{ CmdState::Failed, {}, "rotateBy() not started." };

@@ -8,8 +8,7 @@
 
 namespace commands {
 	// Forward declaration of ICommand for use in IStoredProgram
-	class CommandContextMotion;
-	class UIContext;
+	class CommandContext;
 
 	// ICommand interface
 	class DSFE_API ICommand {
@@ -18,11 +17,10 @@ namespace commands {
 		virtual ~ICommand() = default;
 
 		// Context setters
-		virtual void setContext(CommandContextMotion& cntx) = 0;
-		virtual void setContext(UIContext& cntx) = 0;
+		virtual void setContext(CommandContext& cntx) = 0;
 
 		// Update command
-		virtual program_data::CmdResult update(CommandContextMotion& cntx, double dt) = 0;
+		virtual program_data::CmdResult update(CommandContext& cntx, double dt) = 0;
 
 		// Get current result
 		virtual program_data::CmdResult currentResult() const = 0;

@@ -6,7 +6,7 @@
 
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
+#include "Interpreter/CommandContext.h"
 
 #include <memory>
 #include <string>
@@ -19,7 +19,7 @@ namespace commands {
 		WaitCmd(double t);
 
 		std::string_view getName() const { return "stop"; }
-		void setContext(CommandContextMotion& cntx) { _MtnCntx = &cntx; }
+		void setContext(CommandContext& cntx) { _cntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
@@ -27,10 +27,10 @@ namespace commands {
 
 	private:
 		void execute() override;
-		program_data::CmdResult update(CommandContextMotion& cntx, double dt) override;
+		program_data::CmdResult update(CommandContext& cntx, double dt) override;
 
 		utils::AxisMask _axes{};
-		CommandContextMotion* _MtnCntx = nullptr;
+		CommandContext* _cntx = nullptr;
 
 		double _remainingTime = 0.0;
 		bool _started = false;

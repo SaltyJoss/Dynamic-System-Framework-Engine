@@ -17,7 +17,7 @@ namespace commands {
 	}
 
 	// Update the command
-	program_data::CmdResult WaitCmd::update(CommandContextMotion& cntx, double dt) {
+	program_data::CmdResult WaitCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) { markFailed("wait() not started."); return CmdResult{ CmdState::Failed, {}, "wait() not started." }; }
 		_remainingTime -= dt;
 		if (_remainingTime <= 0.0) { markCompleted(); return CmdResult{ CmdState::Executed, {}, "" }; }

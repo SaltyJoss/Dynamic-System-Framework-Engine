@@ -5,7 +5,6 @@
 
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
 
 #include <memory>
 #include <string>
@@ -17,19 +16,17 @@ namespace commands {
 		// Constructor
 		SelectCmd();
 
-		std::string_view getName() const { return "stop"; }
-		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
+		std::string_view getName() const { return "select"; }
+		void setContext(CommandContext& cntx) { _cntx = &cntx; }
 
 		program_data::CmdResult getResult() const { return _result; }
 		void setResult(const program_data::CmdResult& result) { _result = result; }
 		program_data::CmdResult currentResult() const override { return getResult(); }
 
-		void listObjID();
-
 	private:
 		void execute() override;
 
-		UIContext* _uiCntx = nullptr;
+		CommandContext* _cntx = nullptr;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 

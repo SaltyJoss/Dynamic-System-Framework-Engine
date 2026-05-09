@@ -7,7 +7,7 @@ namespace commands {
 	void Command::execute() {
 		// No base implementation
 	}
-	CmdResult Command::update(CommandContextMotion& cntx, double dt) {
+	CmdResult Command::update(CommandContext& cntx, double dt) {
 		return CmdResult{ CmdState::NotStarted, {}, "" };
 	}
 	// Mark the command as failed with a message

@@ -7,7 +7,7 @@
 #include <core/Types.h>
 
 #include "Interpreter/Command.h"
-#include "Interpreter/UIContext.h"
+#include "Interpreter/CommandContext.h"
 
 #include <memory>
 #include <string>
@@ -21,8 +21,7 @@ namespace commands {
 		IntegratorMethod,
 		Omega,
 		FixedDt,
-		Gravity,
-		Colour
+		Gravity
 	};
 
 	struct DSFE_API SetTarget {
@@ -31,7 +30,6 @@ namespace commands {
 		mathlib::Vec3 omega{ 0.0, 0.0, 0.0 };
 		double fixedDt = 0.0;
 		double gravity = 0.0;
-		Colour colour{ BlockColour::Red, mathlib::Vec3{ 1.0, 0.0, 0.0 } };
 	};
 
 	// Class representing the SET command
@@ -42,7 +40,7 @@ namespace commands {
 		// Get the command name
 		std::string_view getName() const { return "set"; }
 		// Set the command context
-		void setContext(UIContext& cntx) { _uiCntx = &cntx; }
+		void setContext(CommandContext& cntx) { _cntx = &cntx; }
 
 		// Getters and Setters for Result
 		program_data::CmdResult getResult() const { return _result; }
@@ -54,10 +52,6 @@ namespace commands {
 		// Get current method
 		IntegratorMethod getCurrentMethod() const { return _method; }
 
-		// Colour Setters
-		void setColour(const mathlib::Vec3& rgb);
-		void setColour(const std::string& hex);
-
 		// Execute the command
 		void execute() override;
 
@@ -67,11 +61,9 @@ namespace commands {
 		std::string _id;
 		std::string _tokens;
 
-		IntegratorMethod _method = IntegratorMethod::RK4;		// Default - Euler
-		mathlib::Vec3 _colRGB = mathlib::Vec3{ 1.0, 0.0, 0.0 };	// Default - RED
-		Colour _col{ BlockColour::Red };
+		IntegratorMethod _method = IntegratorMethod::RK4;
 
-		UIContext* _uiCntx = nullptr;
+		CommandContext* _cntx = nullptr;
 
 		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
 
