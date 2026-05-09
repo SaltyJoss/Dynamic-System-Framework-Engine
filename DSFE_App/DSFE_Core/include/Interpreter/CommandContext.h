@@ -50,8 +50,7 @@ namespace commands {
 		// Gets the current omega clamp value
 		double getOmegaClamp() const;
 
-		// Sets the angular velocity (omega) for the current object
-		//utils::OpResult setOmega(const mathlib::Vec3& omega); // rad/s
+		// Stops all angular velocity for the robot
 		utils::OpResult stopAllOmega(); // stops all angular velocity
 
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
@@ -61,18 +60,8 @@ namespace commands {
 		core::ISimulationCore* Core() const { return _core; }
 		robots::RobotSystem* Robot() const { return _robot; }
 
-		// --- PROCESS CONTROL METHODS ---
-	
-		// Stop Motion
-		//void stopRotation(scene::Object* obj, utils::AxisMask axes);
-		//void stopTranslation(scene::Object* obj, utils::AxisMask axes);
 
 		// --- ROTATION COMMAND METHODS ---
-
-		//// Rotates an object around specified axes at a given angular velocity
-		//utils::OpResult rotateObject(scene::Object* obj, utils::AxisMask axes, double omega, double dt);
-		//// Rotates specified axes at a given angular velocity
-		//utils::OpResult rotateAxes(utils::AxisMask axes, double omega, double dt);
 
 		utils::OpResult setJointTargetRad(const std::string& link, double thetaTargetRad);
 		utils::OpResult setJointTargetDeltaRad(const std::string& link, double deltaRad);
@@ -86,21 +75,12 @@ namespace commands {
 		//utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
 		utils::OpResult beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg);
 
-		// --- TRANSLATION COMMAND METHODS ---
-
-		// Translates in world coordinates along a specified direction
-		//utils::OpResult translateWorld(const mathlib::Vec3& direction, double distance, double vel);
-		//// Translates along specified axes at a given velocity
-		//const utils::OpResult translateAxes(utils::AxisMask axes, double vel, double dt) const;
-
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
 	private:
 		core::ISimulationCore* _core = nullptr;
 		robots::RobotSystem* _robot = nullptr;
-		//scene::ObjectID _objID;
-		//scene::ObjectID _defaultObjID;
 
 		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp

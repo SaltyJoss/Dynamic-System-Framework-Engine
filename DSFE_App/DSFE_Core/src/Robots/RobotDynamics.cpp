@@ -486,20 +486,6 @@ namespace robots {
 			// Fill the reduced Coriolis vector for active joint i
 			h_r[r] = h_full[active[r]];
 		}
-		
-
-		//// Debugging info about the mass matrix
-		//for (int i = 0; i < M.rows(); ++i) {
-		//	double rowNorm = M.row(i).norm();
-		//	LOG_INFO_ONCE("Row %d norm = %.6e", i, rowNorm);
-		//}
-
-		//// Debugging info about the reduced system
-		//LOG_INFO_ONCE("Reduced system size = %zu", m);
-		//double rcond = M.fullPivLu().rcond();
-		//LOG_INFO_ONCE("Reduced M rcond: %.6e", rcond);
-		//Eigen::JacobiSVD<MatX> svd(M);
-		//LOG_INFO_ONCE("Reduced min singular value: %.6e", svd.singularValues().minCoeff());
 
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
@@ -516,11 +502,6 @@ namespace robots {
 		for (size_t r = 0; r < m; ++r) {
 			qdd[active[r]] = qdd_r[r];
 		}
-
-		//LOG_INFO_ONCE("Rank(M) = %d", (int)cod.rank());
-		//LOG_INFO_ONCE("||tau|| = %.6e", tau.norm());
-		//LOG_INFO_ONCE("||G|| = %.6e", G_r.norm());
-		//LOG_INFO_ONCE("||qdd|| = %.6e", qdd.norm());
 
 		// Fill in derivatives for all joints
 		for (size_t i = 0; i < n; ++i) {

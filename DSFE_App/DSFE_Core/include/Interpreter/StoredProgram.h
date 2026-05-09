@@ -73,9 +73,6 @@ namespace interpreter {
 		void setGravity(double gravity) override;
 		double getGravity() const override;
 
-		void setLoadCmd(bool loadCmdRan) { _loadCmdRan = loadCmdRan; }
-		bool getLoadCmd() const { return _loadCmdRan; }
-
 	private:
 		core::ISimulationCore* _core = nullptr;
 		commands::MainContext _cntx;
@@ -87,8 +84,6 @@ namespace interpreter {
 
 		ProgramState _state = ProgramState::Stopped;
 		bool _stopRequested = false;
-
-		bool _loadCmdRan = false; // Whether a system is loaded, GUI or other may use this to determine whether to visualise the system or not
 
 		CmdResult updateState() override;
 		int _currentLineNumber = 0;

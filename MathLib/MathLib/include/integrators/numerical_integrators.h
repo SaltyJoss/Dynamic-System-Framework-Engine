@@ -522,7 +522,7 @@ namespace integration {
 				VecX x_bwd = x;
 				double h = eps_rel * std::max(1.0, std::abs(x(i)));
 				x_fwd(i) += h;
-				x_fwd(i) -= h;
+				x_bwd(i) -= h;
 				VecX f_fwd = f(t, x_fwd);
 				VecX f_bwd = f(t, x_bwd);
 				J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
