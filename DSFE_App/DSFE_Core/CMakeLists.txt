@@ -5,6 +5,7 @@ project(DSFE_Core LANGUAGES C CXX)
 add_library(DSFE_Core SHARED)
 
 find_package(Threads REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
 
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 
@@ -70,22 +71,6 @@ endif()
 
 set(HDF5_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/HDF5)
 
-add_library(HDF5 INTERFACE)
-
-target_include_directories(HDF5 INTERFACE
-    ${HDF5_ROOT}/include
-)
-
-target_compile_definitions(HDF5 INTERFACE
-    H5_BUILT_AS_DYNAMIC_LIB
-)
-
-target_link_libraries(HDF5 INTERFACE
-    $<$<CONFIG:Debug>:${HDF5_ROOT}/lib/hdf5.lib>
-    $<$<CONFIG:Release>:${HDF5_ROOT}/lib/hdf5.lib>
-    $<$<CONFIG:RelWithDebInfo>:${HDF5_ROOT}/lib/hdf5.lib>
-    $<$<CONFIG:MinSizeRel>:${HDF5_ROOT}/lib/hdf5.lib>
-)
 
 # Set include directories for building DSFE_Core
 target_include_directories(DSFE_Core PUBLIC
@@ -102,11 +87,11 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
-        HDF5
         Eigen3::Eigen
         Threads::Threads
 
     PRIVATE
+        HDF5::HDF5
         assimp
         nlohmann_json::nlohmann_json
 )
