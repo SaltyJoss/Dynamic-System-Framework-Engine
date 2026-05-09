@@ -14,33 +14,33 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
 
-      - name: Clean build folders
-        shell: pwsh
+      - name: Clone vcpkg
         run: |
-          $folders = @("bin","bin-int","out","x64","build")
-          foreach ($f in $folders) {
-            if (Test-Path $f) { Remove-Item -Recurse -Force $f }
-          }
+          git clone https://github.com/microsoft/vcpkg.git
 
-      - name: Install dependencies
+      - name: Bootstrap vcpkg
         shell: pwsh
         run: |
-            vcpkg install hdf5:x64-windows
+          .\vcpkg\bootstrap-vcpkg.bat
+
+      - name: Install HDF5
+        shell: pwsh
+        run: |
+          .\vcpkg\vcpkg.exe install hdf5:x64-windows
 
       - name: Configure
         shell: pwsh
         run: |
           cmake -S . -B build `
-            -A x64 `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-
+              -A x64 `
+              -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         shell: pwsh
         run: |
-          cmake --build build --config Release --verbose
+            cmake --build build --config Release --verbose
 
       - name: Run tests
         shell: pwsh
         run: |
-          ctest --test-dir build --output-on-failure
+           ctest --test-dir build --output-on-failure
