@@ -359,6 +359,8 @@ namespace integration {
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func>
 		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-9) {
+			if (tol < 0.0) { tol = std::min(1e-9, std::pow(dt, 7.0)); }
+
 			size_t n = x.size();
 
 			// Coefficients for the 3-stage Gauss-Legendre method (6th order)
@@ -375,10 +377,10 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(3 * n); // 3 stages
-			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
-			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
-			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
-			VecX k3_0 = f(t + c(2) * dt, x + 0.5 * (x_pred - x));
+			VecX x_pred = GLRK2(x, t, dt, f);
+			VecX k1_0 = f(t + c(0) * dt, x + c(0) * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + c(1) * (x_pred - x));
+			VecX k3_0 = f(t + c(2) * dt, x + c(2) * (x_pred - x));
 			k.segment(0, n) = k1_0;
 			k.segment(n, n) = k2_0;
 			k.segment(2 * n, n) = k3_0;
@@ -516,11 +518,14 @@ namespace integration {
 			MatX J = MatX::Zero(f_0.size(), n);
 			// Compute the Jacobian column by column using finite differences
 			for (int i = 0; i < n; ++i) {
-				VecX x_pert = x;
+				VecX x_fwd = x;
+				VecX x_bwd = x;
 				double h = eps_rel * std::max(1.0, std::abs(x(i)));
-				x_pert(i) += h;
-				VecX f_i = f(t, x_pert);
-				J.col(i) = (f_i - f_0) / h;
+				x_fwd(i) += h;
+				x_bwd(i) -= h;
+				VecX f_fwd = f(t, x_fwd);
+				VecX f_bwd = f(t, x_bwd);
+				J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
 			}
 			return J;
 		}

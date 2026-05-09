@@ -11,46 +11,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install VS 2026 Build Tools (C++ / v145)
-        shell: pwsh
+      - name: Clone vcpkg
         run: |
-          $exitCode = 0
-          choco install visualstudio2026buildtools --yes --no-progress --package-parameters `
-            "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
-          $exitCode = $LASTEXITCODE
-          if ($exitCode -eq 3010) {
-            Write-Host "Installation succeeded but requires reboot (exit code 3010). Continuing without reboot."
-            exit 0
-          } elseif ($exitCode -ne 0) {
-            Write-Host "Installation failed with exit code $exitCode"
-            exit $exitCode
-          }
-            
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-        with:
-          msbuild-architecture: x64
+          git clone https://github.com/microsoft/vcpkg.git
 
-      - name: Verify MSBuild and toolset
+      - name: Bootstrap vcpkg
         shell: pwsh
         run: |
-          msbuild -version
-          vswhere -latest -products * -property installationPath
+          .\vcpkg\bootstrap-vcpkg.bat
 
-      - name: Clean build folders
+      - name: Install HDF5
         shell: pwsh
         run: |
-          $folders = @("bin","bin-int","out","x64","build")
-          foreach ($f in $folders) {
-            if (Test-Path $f) { Remove-Item -Recurse -Force $f }
-          }
+          .\vcpkg\vcpkg.exe install hdf5:x64-windows
 
-      - name: Rebuild Release (v145)
+      - name: Configure
         shell: pwsh
         run: |
-          msbuild "Sim_Engine/Engine.sln" `
-            /t:Rebuild `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:PlatformToolset=v145 `
-            /m
+          cmake -S . -B build `
+              -A x64 `
+              -DVCPKG_TARGET_TRIPLET=x64-windows `
+              -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        shell: pwsh
+        run: |
+            cmake --build build --config Release --verbose
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+           ctest --test-dir build --output-on-failure
