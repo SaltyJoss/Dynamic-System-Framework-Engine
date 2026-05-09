@@ -102,11 +102,11 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
-        assimp
         HDF5
         Eigen3::Eigen
         Threads::Threads
 
     PRIVATE
+        assimp
         nlohmann_json::nlohmann_json
 )

@@ -1,6 +1,6 @@
+// DSFE_Core SimulationState.h
 #pragma once
-// File:   SimulationState.h
-// GitHub: SaltyJoss
+
 #include "EngineCore.h"
 #include <Robots/RobotModel.h>
 
@@ -10,7 +10,7 @@ enum class SelectionType {
 	LINK,
 	JOINT,
 	ROBOT,
-	OBJECT
+	BODY
 	// may add more types later (e.g., JOINT, SENSOR, OBJECT)
 };
 

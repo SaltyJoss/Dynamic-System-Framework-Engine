@@ -112,6 +112,9 @@ namespace core {
 		void setActiveProgram(interpreter::IStoredProgram* p);
 		interpreter::IStoredProgram* activeProgram() const;
 
+		bool robotPresentationDirty() const { return _robotPresentationDirty; }
+		void clearRobotPresentationDirty() { _robotPresentationDirty = false; }
+
 	private:
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
@@ -131,7 +134,7 @@ namespace core {
 		double _accum = 0.0;			// Accumulator for fixed timestep
 		double _simTime = 0.0;			// Current simulation time
 		bool _simRunning = false;		// Whether the simulation loop is currently running
-		bool _scriptRunning = false;	// Whether a script is currently running 
+		bool _scriptRunning = false;	// Whether a script is currently running
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;
@@ -142,6 +145,7 @@ namespace core {
 
 		// Active Script Program
 		interpreter::IStoredProgram* _activeProgram = nullptr;
+		bool _robotPresentationDirty = false;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder

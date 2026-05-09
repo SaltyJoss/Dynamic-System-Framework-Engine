@@ -414,6 +414,7 @@ namespace core {
 	void SimulationCore::loadRobot(const std::string& name) {
 		if (!_robot) { LOG_ERROR("Cannot load robot: RobotSystem not set"); return; }
 		_robot->loadRobot(name);
+		_robotPresentationDirty = true;
 	}
 
 	// Setter for the trajectory manager

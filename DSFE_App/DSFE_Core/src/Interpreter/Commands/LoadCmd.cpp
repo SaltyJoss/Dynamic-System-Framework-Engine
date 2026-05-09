@@ -44,8 +44,8 @@ namespace commands {
 		}
 
 		switch (_target.type) {
-		case LoadTargetType::SingleBody:	_cntx->loadSingleBody(_target.path); break;
-		case LoadTargetType::MultiBody:		_cntx->loadMultibody(_target.path); break;
+		case LoadTargetType::SingleBody: _cntx->loadSingleBody(_target.path); break;
+		case LoadTargetType::MultiBody:	 _cntx->loadMultibody(_target.path); break;
 		default:
 			{
 				std::string errMsg = "Invalid load target type.";

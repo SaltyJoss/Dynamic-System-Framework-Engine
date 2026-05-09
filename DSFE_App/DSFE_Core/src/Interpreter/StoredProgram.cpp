@@ -155,6 +155,7 @@ namespace interpreter {
 			}
 		}
 	}
+
 	// Get Integrator Method
 	IntegratorMethod StoredProgram::getIntegratorMethod() const { return _integratorMethod; }
 
