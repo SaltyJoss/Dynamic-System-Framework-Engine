@@ -5,7 +5,7 @@ project(DSFE_Core LANGUAGES C CXX)
 add_library(DSFE_Core SHARED)
 
 find_package(Threads REQUIRED)
-find_package(HDF5 REQUIRED COMPONENTS CXX)
+find_package(HDF5 CONFIG REQUIRED)
 
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 
@@ -85,7 +85,8 @@ target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
         Eigen3::Eigen
-        ${HDF5_LIBRARIES}
+        hdf5::hdf5-shared
+        hdf5::hdf5_cpp-shared
         Threads::Threads
 
     PRIVATE
