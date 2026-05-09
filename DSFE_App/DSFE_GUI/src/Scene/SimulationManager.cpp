@@ -47,6 +47,7 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #include "Rendering/Texture.h"
 
 #include "Robots/RobotPresentationBuilder.h"
+#include "Robots/RobotRenderer.h"
 
 #include <Platform/WindowManager.h>
 
@@ -168,6 +169,9 @@ namespace gui {
 
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
+
+		// Robot Renderer
+		std::unique_ptr <RobotRenderer> _robotRenderer; // rendering
 
 		// Robot Follow Target
 		bool eeFollowBound = false;
@@ -310,6 +314,8 @@ namespace gui {
 			// Robot system with mesh loading (for normal simulation)
 			_robotSystem = std::make_unique<robots::RobotSystem>();
 
+			_robotRenderer = std::make_unique<RobotRenderer>();
+
 			// SSAO shaders
 			_ssaoShader = std::make_unique<shaders::Shader>();
 			_ssaoShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "ssao.frag.glsl").string());
@@ -346,6 +352,8 @@ namespace gui {
 				_objects.push_back(std::move(owned));
 			}
 
+			_robotRenderer->bind(binding);
+
 			for (const auto& [linkName, visuals] : binding.linkVisuals) {
 				auto& target = _linkToObjects[linkName];
 
@@ -356,21 +364,6 @@ namespace gui {
 
 					if (!_primaryLinkObject.contains(linkName)) {
 						_primaryLinkObject[linkName] = obj;
-					}
-				}
-			}
-
-			for (const auto& link : model.links) {
-
-				for (const auto& mesh : link.visual.meshEntries) {
-					const glm::vec3 position = toGlm(link.visual.origin_xyz);
-					const glm::vec3 rpy = glm::radians(toGlm(link.visual.origin_rpy));
-
-					auto it = _linkToObjects.find(link.name);
-
-					for (auto& obj : it->second) {
-						obj->transform.position = position;
-						obj->transform.rotQ = glm::quat(rpy);
 					}
 				}
 			}
@@ -1063,7 +1056,7 @@ namespace gui {
 
 		ImGuiIO& io = ImGui::GetIO();
 		_core->tick(io.DeltaTime);
-		syncRobotToScene();
+		//syncRobotToScene();
 		_fpsCounter.update();
 
 		drawMainDockspace();
@@ -1279,6 +1272,11 @@ namespace gui {
 		size_t startIdx = _impl->_objects.size();
 
 		_impl->buildRobotPresentationFromModel(_impl->_robotSystem->model(), *this);
+
+		_impl->_robotRenderer->applyTransforms(
+			_impl->_robotSystem->model(),
+			_impl->_robotSystem->worldTransforms()
+		);
 
 		if (auto* simInteg = _impl->_robotSystem->getIntegrator()) { 
 			simInteg->resetAdaptiveState();

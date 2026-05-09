@@ -15,6 +15,8 @@
 
 namespace fs = std::filesystem;
 
+static glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
+
 // Converts an Eigen 3D vector to a glm::vec3
 static glm::vec3 toGlm(const Vec3& v) {
 	return glm::vec3(
@@ -51,141 +53,69 @@ static glm::mat4 toGlm(const Mat4& m) {
 	return g; // (4x4)
 }
 
-//// Method to create Object instances for each robot link
-//void RobotRenderer::instantiateRobotLinks(const robots::RobotModel& robot) {
-//	linkRenderMap.clear();
-//	for (auto& link : robot.links) {
-//		LinkRenderData renderData;
-//
-//		// Per-mesh material entries (new format with meshEntries)
-//		if (!link.visual.meshEntries.empty()) {
-//			for (const auto& entry : link.visual.meshEntries) {
-//				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
-//				auto objs = _loadMeshReturn(fullPath.string());
-//
-//				// If no meshes were loaded for this entry, skip it
-//				for (auto* obj : objs) {
-//					if (scene::Mesh* mesh = obj->getMesh()) {
-//						const Vec4& rgba = entry.hasMaterial
-//							? entry.material
-//							: Vec4(0.7, 0.0, 0.2, 1.0); // Default material if not specified
-//
-//						mesh->setAlbedo(glm::vec3(rgba.x(), rgba.y(), rgba.z()));
-//						mesh->setMetallic(entry.hasMaterial ? entry.metallic : 0.5f);
-//						mesh->setRoughness(entry.hasMaterial ? entry.roughness : 0.5f);
-//						mesh->rebuildGPU();
-//					}
-//
-//					obj->name = link.name;
-//					obj->category = scene::ObjectCategory::RobotLink;
-//					obj->transform.scale = glm::vec3(robot.scale);
-//
-//					renderData.visuals.push_back(obj);
-//				}
-//			}
-//
-//			linkRenderMap[link.name] = renderData;
-//			continue;
-//		}
-//
-//		// If no mesh entries, fall back to legacy single mesh or multiple mesh files
-//		std::vector<scene::Object*> objs;
-//
-//		// Legacy Mesh Path Support
-//		if (!link.visual.meshFiles.empty()) {
-//			for (const auto& meshRelPath : link.visual.meshFiles) {
-//				fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / meshRelPath;
-//				auto partObjs = _loadMeshReturn(fullPath.string());
-//				objs.insert(objs.end(), partObjs.begin(), partObjs.end());
-//			}
-//		}
-//		else {
-//			continue;
-//		}
-//
-//		// If no meshes were loaded, skip this link
-//		if (objs.empty()) {
-//			LOG_WARN("No meshes found for link %s", link.name.c_str());
-//			continue;
-//		}
-//
-//		// Merge multiple meshes into one Object (if necessary)
-//		scene::Object* rootObj = objs[0];
-//		scene::Mesh* baseMesh = rootObj->getMesh();
-//
-//		// If there are multiple meshes (e.g., from a multi-part OBJ), merge them into the first one
-//		for (size_t i = 1; i < objs.size(); ++i) {
-//			if (auto* extra = objs[i]->getMesh()) {
-//				if (baseMesh) { baseMesh->appendGeometry(*extra); }
-//			}
-//
-//			objs[i]->name.clear();
-//			objs[i]->category = scene::ObjectCategory::General;
-//		}
-//
-//		if (baseMesh) {
-//			baseMesh->rebuildGPU();
-//		}
-//
-//		for (auto* obj : objs) {
-//			obj->name = link.name;
-//			obj->category = scene::ObjectCategory::RobotLink;
-//			obj->transform.scale = glm::vec3(robot.scale);
-//
-//			renderData.visuals.push_back(obj);
-//			linkRenderMap[link.name] = renderData;
-//		}
-//	}
-//
-//	LOG_INFO_ONCE("Instantiated %zu robot links", robot.links.size());
-//}
+// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
+static mathlib::Quat rpyRadToQuat(const mathlib::Vec3& rpyRad) {
+	const double roll = rpyRad.x();
+	const double pitch = rpyRad.y();
+	const double yaw = rpyRad.z();
+
+	const Quat qx(Eigen::AngleAxisd(roll, Vec3(1.0, 0.0, 0.0)));
+	const Quat qy(Eigen::AngleAxisd(pitch, Vec3(0.0, 1.0, 0.0)));
+	const Quat qz(Eigen::AngleAxisd(yaw, Vec3(0.0, 0.0, 1.0)));
+
+	return (qz * qy * qx).normalized();
+}
 
 void RobotRenderer::bind(const RobotRenderBinding& binding) {
 	linkRenderMap.clear();
+
+	LOG_INFO("Link render map cleared");
+	LOG_INFO("binding entries = %zu", binding.linkVisuals.size());
+
 	for (const auto& [linkName, visuals] : binding.linkVisuals) {
 		LinkRenderData renderData;
-		renderData.visuals = visuals;
+
+		for (auto* obj : visuals) {
+			renderData.visuals.push_back(obj);
+		}
+
+		linkRenderMap[linkName] = renderData;
 	}
 }
 
 // Method to apply the computed world transforms to the corresponding Object instances for each robot link
 void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world) {
-	for (int i = 0; i < robot.links.size(); ++i) {
+	const bool isAligned = robot.baseFrameIsEngineAligned;
+	const size_t n = robot.links.size();
+
+	for (int i = 0; i < n; ++i) {
 		const auto& link = robot.links[i];
+
 		auto it = linkRenderMap.find(link.name);
-		if (it == linkRenderMap.end()) continue;
+		if (it == linkRenderMap.end()) { continue; }
 
 		glm::mat4 T = toGlm(world[i]);
+		glm::vec3 pos = glm::vec3(T[3]); // Extract translation from the 4x4 matrix
+		glm::quat q = glm::quat_cast(T); // Extract rotation as a quaternion
+
+		glm::quat q_rot = isAligned ? (q * q_corr) : q;
 
 		for (auto* obj : it->second.visuals) {
-			obj->transform.position = glm::vec3(T[3]);
-			obj->transform.rotQ = glm::quat_cast(T);
+			if (!obj) { continue; }
+
+			obj->transform.position = pos;
+			obj->transform.rotQ = q_rot;
 		}
 	}
 }
 
-//// Method to clear the current robot from the scene
-//void RobotRenderer::clearRobot() {
-//	if (!_hasRobot) return;
-//
-//	// Remove robot objects from _objects
-//	for (auto& link : _robot.links) {
-//		for (auto* dead : link.attachedObjects) {
-//			if (!dead) continue;
-//			_objects.erase(
-//				std::remove_if(_objects.begin(), _objects.end(),
-//					[&](const std::unique_ptr<scene::Object>& obj) { return obj.get() == dead; }),
-//				_objects.end()
-//			);
-//		}
-//		link.attachedObjects.clear();
-//		link.attachedObject = nullptr;
-//	}
-//
-//	_robot.links.clear();
-//	_robot.joints.clear();
-//	_linkIndex.clear();
-//	_hasRobot = false;
-//
-//	D_WARN("Old robot model removed");
-//}
+// Method to clear the current robot from the scene
+void RobotRenderer::clearRobotModel(const robots::RobotModel& robot) {
+	// Remove robot objects from _objects
+	for (auto& link : robot.links) {
+		auto it = linkRenderMap.find(link.name);
+		if (it == linkRenderMap.end()) continue;
+		
+	}
+	D_WARN("Old robot model removed");
+}

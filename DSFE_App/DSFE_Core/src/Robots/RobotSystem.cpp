@@ -863,8 +863,6 @@ namespace robots {
 
 	// --- ROBOT SYSTEM CONFIGURATION METHODS ---
 
-	const std::vector<Mat4>& RobotSystem::getWorldTransforms() const { return _worldTransforms; }
-
 	// Method to set the gravity strength for the robot system
 	void RobotSystem::setGravity(double g) {
 		_gravity = g;

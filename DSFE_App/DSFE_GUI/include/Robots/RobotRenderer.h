@@ -26,7 +26,7 @@ public:
 	void bind(const RobotRenderBinding& binding);
 	void applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world);
 
-	//void clearRobot();
+	void clearRobotModel(const robots::RobotModel& robot);
 
 private:
 	struct linkRenderData {
