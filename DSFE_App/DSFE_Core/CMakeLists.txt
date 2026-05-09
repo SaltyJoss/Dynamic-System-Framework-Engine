@@ -73,6 +73,8 @@ endif()
 target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+
+    ${HDF5_INCLUDE_DIRS}
 )
 
 # Use precompiled headers
@@ -83,7 +85,7 @@ target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
         Eigen3::Eigen
-        HDF5::HDF5
+        ${HDF5_LIBRARIES}
         Threads::Threads
 
     PRIVATE
