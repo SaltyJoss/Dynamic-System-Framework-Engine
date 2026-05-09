@@ -7,9 +7,6 @@ add_library(DSFE_Core SHARED)
 find_package(Threads REQUIRED)
 find_package(HDF5 CONFIG REQUIRED)
 
-get_property(_targets DIRECTORY PROPERTY IMPORTED_TARGETS)
-message(STATUS "Imported targets: ${_targets}")
-
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 
 set(CORE_SRC
@@ -83,31 +80,12 @@ target_include_directories(DSFE_Core PUBLIC
 # Use precompiled headers
 target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 
-if(TARGET hdf5::hdf5_cpp)
-    set(HDF5_CPP_TARGET hdf5::hdf5_cpp)
-elseif(TARGET hdf5::hdf5_cpp-shared)
-    set(HDF5_CPP_TARGET hdf5::hdf5_cpp-shared)
-endif()
-
-if(TARGET hdf5::hdf5)
-    set(HDF5_C_TARGET hdf5::hdf5)
-elseif(TARGET hdf5::hdf5-shared)
-    set(HDF5_C_TARGET hdf5::hdf5-shared)
-endif()
-
-target_link_libraries(DSFE_Core
-    PUBLIC
-        ${HDF5_C_TARGET}
-        ${HDF5_CPP_TARGET}
-)
-
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
         Eigen3::Eigen
         hdf5::hdf5-shared
-        hdf5::hdf5_cpp-shared 
         Threads::Threads
 
     PRIVATE
