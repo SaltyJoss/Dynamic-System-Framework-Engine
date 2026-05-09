@@ -70,6 +70,7 @@ namespace core {
 		// Robot management
 		bool hasRobot() const override;
 		void loadRobot(const std::string& name) override;
+		void loadRobotInternal(const std::string& name); // Internal method that assumes ownership
 
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) override;

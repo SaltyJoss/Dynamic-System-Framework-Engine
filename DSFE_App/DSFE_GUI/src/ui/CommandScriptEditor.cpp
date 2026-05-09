@@ -243,8 +243,6 @@ namespace gui {
 		}
 
 		endEditorPanel();
-		
-
 
 		ImGui::End();
 		ImGui::PopStyleColor();

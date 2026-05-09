@@ -170,8 +170,9 @@ namespace gui {
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
 
-		// Robot Renderer
+		// Robot Rendering
 		std::unique_ptr <RobotRenderer> _robotRenderer; // rendering
+		RobotRenderBinding _currentBinding; // current render binding 
 
 		// Robot Follow Target
 		bool eeFollowBound = false;
@@ -1056,7 +1057,12 @@ namespace gui {
 
 		ImGuiIO& io = ImGui::GetIO();
 		_core->tick(io.DeltaTime);
-		//syncRobotToScene();
+		
+		if (_core->robotPresentationDirty()) {
+			loadRobot(_core->robotSystem()->robotName());
+			_core->clearRobotPresentationDirty();
+		}
+
 		_fpsCounter.update();
 
 		drawMainDockspace();
@@ -1259,6 +1265,7 @@ namespace gui {
 	void SimManager::loadRobot(const std::string& name) {
 		// Clear any existing robot first
 		if (hasRobot()) { clearRobot(); }
+		_bodyLoaded = true;
 
 		setSelectedObject(nullptr);
 		detachCameraFromObject();
@@ -1267,7 +1274,7 @@ namespace gui {
 		_impl->eeObject = nullptr;
 
 		if (!_impl->_robotSystem) { return; }
-		_impl->_robotSystem->loadRobot(name);
+		_core->loadRobotInternal(name);
 
 		size_t startIdx = _impl->_objects.size();
 
@@ -1306,6 +1313,7 @@ namespace gui {
 	void SimManager::clearRobot() {
 		setSelectedObject(nullptr); // deselect any selected object
 		_impl->clearRobotPresentation();
+		_bodyLoaded = false;
 
 		clearViewFollowTarget(gui::ViewID::Follow);
 		_impl->eeFollowBound = false;
@@ -1325,6 +1333,10 @@ namespace gui {
 	void SimManager::startSimulation() {
 		if (!hasRobot()) {
 			LOG_WARN("Cannot start simulation: no robot loaded");
+			return;
+		}
+		if (hasRobot() && !_bodyLoaded) {
+			loadRobot(_impl->_robotSystem->robotName());
 			return;
 		}
 		_core->startSimulation();

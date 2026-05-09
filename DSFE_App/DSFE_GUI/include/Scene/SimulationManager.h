@@ -285,6 +285,7 @@ namespace gui {
 
         // Misc Settings
         bool _glReady = false;
+        bool _bodyLoaded = false;
 
 		// Sizes & Display
 		glm::vec2 _internalSize{ 1920.0f, 1080.0f };  // Internal render target size

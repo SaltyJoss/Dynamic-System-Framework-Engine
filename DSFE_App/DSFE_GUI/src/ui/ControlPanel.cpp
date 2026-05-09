@@ -1076,7 +1076,7 @@ namespace gui {
 			for (int i = 0; i < objs.size(); i++) {
 				auto* obj = objs[i].get();
 			 rowH = 10.0f;
-				bool isSelected = (_selection.type == SelectionType::OBJECT && _selection.index == i);
+				bool isSelected = (_selection.type == SelectionType::BODY && _selection.index == i);
 
 				if (obj->category != scene::ObjectCategory::General) { continue; } // skip non-general objects
 
@@ -1086,7 +1086,7 @@ namespace gui {
 
 				if (ImGui::Selectable(label.c_str(), isSelected)) {
 					_currentObjectName = label;
-					_selection.type = SelectionType::OBJECT;
+					_selection.type = SelectionType::BODY;
 					_selection.index = i;
 					_selection.source = SelectionSource::CONTROL_PANEL;
 					_sim->setSelectedObject(obj); // fine to keep for inspector

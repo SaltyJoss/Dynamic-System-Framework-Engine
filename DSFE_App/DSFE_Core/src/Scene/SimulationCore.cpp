@@ -412,9 +412,13 @@ namespace core {
 
 	// Loads a robot into the robot system by name
 	void SimulationCore::loadRobot(const std::string& name) {
+		loadRobotInternal(name);
+		_robotPresentationDirty = true;
+	}
+
+	void SimulationCore::loadRobotInternal(const std::string& name) {
 		if (!_robot) { LOG_ERROR("Cannot load robot: RobotSystem not set"); return; }
 		_robot->loadRobot(name);
-		_robotPresentationDirty = true;
 	}
 
 	// Setter for the trajectory manager
