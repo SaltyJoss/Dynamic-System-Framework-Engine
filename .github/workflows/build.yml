@@ -10,6 +10,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+  
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
 
       - name: Clean build folders
         shell: pwsh
@@ -19,10 +22,18 @@ jobs:
             if (Test-Path $f) { Remove-Item -Recurse -Force $f }
           }
 
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+            vcpkg install hdf5:x64-windows
+
       - name: Configure
         shell: pwsh
         run: |
-          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build `
+            -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
 
       - name: Build
         shell: pwsh

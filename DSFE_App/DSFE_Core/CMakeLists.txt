@@ -69,15 +69,10 @@ if(WIN32)
     target_sources(DSFE_Core PRIVATE "dllmain.cpp")
 endif()
 
-set(HDF5_ROOT ${CMAKE_SOURCE_DIR}/DSFE_App/External/HDF5)
-
-
 # Set include directories for building DSFE_Core
 target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-
-    ${HDF5_ROOT}/include
 )
 
 # Use precompiled headers
@@ -88,10 +83,10 @@ target_link_libraries(DSFE_Core
     PUBLIC 
         PxMLib
         Eigen3::Eigen
+        HDF5::HDF5
         Threads::Threads
 
     PRIVATE
-        HDF5::HDF5
         assimp
         nlohmann_json::nlohmann_json
 )
