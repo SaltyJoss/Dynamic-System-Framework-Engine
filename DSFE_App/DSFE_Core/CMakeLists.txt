@@ -19,6 +19,7 @@ set(CORE_SRC
     src/Robots/RobotLoader.cpp
     src/Robots/RobotSystem.cpp
     src/Robots/TrajectoryManager.cpp
+    src/Robots/RobotSimSnapshot.cpp
 
     src/Interpreter/Command.cpp
     src/Interpreter/CommandContext.cpp

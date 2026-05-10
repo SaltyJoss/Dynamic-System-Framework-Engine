@@ -12,6 +12,8 @@ namespace robots {
 		double scale = 1.0;
 		mathlib::Mat4 baseFrame = mathlib::Mat4::Identity();
 
+		bool jointAffectsLink(size_t jIdx, size_t lIdx) const;
+
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
 	};
