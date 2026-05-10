@@ -135,6 +135,29 @@ namespace robots {
 				f[j.parent].v += Xup[i].transpose() * f[i].v;
 			}
 		}
-		
+	}
+
+
+	mathlib::VecX SpatialDynamics::inverseDynamics(
+		const SpatialModel& model,
+		const mathlib::VecX& q,
+		const mathlib::VecX& qd,
+		const mathlib::VecX& qdd
+	) {
+		const size_t n = model.joints.size();
+
+		std::vector<mathlib::SpatialVec> v(n);
+		std::vector<mathlib::SpatialMat> Xup(n);
+		std::vector<mathlib::SpatialVec> a(n);
+		mathlib::VecX tau;
+
+		// Compute spatial velocities and transforms
+		computeSpatialVelocities(model, q, qd, v, Xup);
+		// Compute spatial accelerations
+		computeSpatialAccelerations(model, q, qd, qdd, v, Xup, a);
+		// Compute inverse dynamics (joint torques)
+		computeInverseDynamics(model, v, a, Xup, tau);
+
+		return tau;
 	}
 }

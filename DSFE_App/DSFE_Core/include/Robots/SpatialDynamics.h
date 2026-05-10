@@ -33,5 +33,12 @@ namespace robots {
 			const std::vector<mathlib::SpatialMat>& Xup,
 			mathlib::VecX& tau_out
 		);
+
+		static mathlib::VecX inverseDynamics(
+			const SpatialModel& model,
+			const mathlib::VecX& q,
+			const mathlib::VecX& qd,
+			const mathlib::VecX& qdd
+		);
 	};
 }

@@ -297,37 +297,10 @@ namespace robots {
 		// Pack current state into vector form for integration
 		mathlib::VecX x = packState();
 		RobotSimSnapshot snap = takeSnapshot(simTime);
+		const size_t n = snap.model->joints.size();
 
-		std::vector<mathlib::SpatialVec> v_spatial;
-		std::vector<mathlib::SpatialMat> X_up;
-
-		SpatialDynamics::computeSpatialVelocities(
-			_spatialModel,
-			snap.q, snap.qd,
-			v_spatial, X_up
-		);
-
-		LOG_INFO_ONCE("Spatial velocity count = %lld", (long long)v_spatial.size());
-
-		mathlib::VecX qdd = mathlib::VecX::Zero(snap.q.size());
-		std::vector<mathlib::SpatialVec> a_spatial;
-
-		SpatialDynamics::computeSpatialAccelerations(
-			_spatialModel,
-			snap.q, snap.qd, qdd,
-			v_spatial, X_up,
-			a_spatial
-		);
-
-		LOG_INFO_ONCE("Spatial acceleration count = %lld", (long long)a_spatial.size());
-
-		mathlib::VecX tau_rnea;
-
-		SpatialDynamics::computeInverseDynamics(
-			_spatialModel,
-			v_spatial, a_spatial, X_up,
-			tau_rnea
-		);
+		mathlib::VecX q_s(n), qd_s(n), qdd_s(n);
+		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q_s, qd_s, qdd_s); // [Nm], torque computed by RNEA for current state and reference acceleration
 
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
@@ -336,8 +309,6 @@ namespace robots {
 				LOG_INFO("tau_rnea[%zu] = %f", i, tau_rnea[i]);
 			}
 		}
-
-		const size_t n = snap.model->joints.size();
 
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
