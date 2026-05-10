@@ -15,5 +15,15 @@ namespace robots {
 			std::vector<mathlib::SpatialVec>& v_out,
 			std::vector<mathlib::SpatialMat>& Xup_out
 		);
+
+		static void computeSpatialAccelerations(
+			const SpatialModel& model,
+			const mathlib::VecX& q,
+			const mathlib::VecX& qd,
+			const mathlib::VecX& qdd,
+			const std::vector<mathlib::SpatialVec>& v_out,
+			const std::vector<mathlib::SpatialMat>& Xup_out,
+			std::vector<mathlib::SpatialVec>& a_out
+		);
 	};
 }
