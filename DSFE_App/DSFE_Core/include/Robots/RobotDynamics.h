@@ -37,9 +37,10 @@ namespace robots {
 		) const;
 
 		// Computes the full mass matrix M(q) based on the current state and robot configuration
-		mathlib::MatX computeMassMatrix(
+		void computeMassMatrix(
 			const RobotConstModel& robot,
-			const std::vector<mathlib::Pose>& T_world
+			const std::vector<mathlib::Pose>& T_world,
+			mathlib::MatX& M_out
 		) const;
 
 		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration

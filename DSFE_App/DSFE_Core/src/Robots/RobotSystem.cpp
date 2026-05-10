@@ -253,7 +253,9 @@ namespace robots {
 
 		// FK needed for inertia
 		mathlib::VecX x_f = packState();
-		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(*snap.model, x_f);
+
+		std::vector<Pose> T_world;
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x_f, T_world);
 
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);

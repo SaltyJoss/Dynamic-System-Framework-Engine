@@ -69,12 +69,14 @@ namespace robots {
 	}
 
 	// Computes the full mass matrix M(q) based on the current state and robot configuration
-	mathlib::MatX RobotDynamics::computeMassMatrix(
+	void RobotDynamics::computeMassMatrix(
 		const RobotConstModel& robot,
-		const std::vector<mathlib::Pose>& T_world
+		const std::vector<mathlib::Pose>& T_world,
+		mathlib::MatX& M_out
 	) const {
 		const size_t n = robot.joints.size();
-		MatX M = MatX::Zero(n, n);
+		M_out.resize(n, n);
+		M_out.setZero();
 
 		// Compute its contribution to the mass matrix for each link
 		for (size_t k = 0; k < robot.links.size(); ++k) {
@@ -119,11 +121,10 @@ namespace robots {
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
 
-					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj; // [kg*m^2]
+					M_out(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj; // [kg*m^2]
 				}
 			}
 		}
-		return M; // [kg*m^2], mass matrix for the robot at configuration q
 	}
 
 	// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
@@ -144,6 +145,8 @@ namespace robots {
 		std::vector<Pose> T_world_eps; // forward kinematics for perturbed configurations
 		T_world_eps.reserve(n);
 
+		MatX M_plus(n, n);
+
 		// Finite difference approximation of dM/dq for each joint
 		for (size_t k = 0; k < n; ++k) {
 			q_eps = q; // reset to original configuration for each joint perturbation
@@ -158,7 +161,7 @@ namespace robots {
 
 			// Compute forward kinematics for the perturbed state
 			_kinematics->computeForwardKinematics_fromState(robot, x_eps, T_world_eps);
-			MatX M_plus = computeMassMatrix(robot, T_world_eps); // mass matrix for the perturbed configuration
+			computeMassMatrix(robot, T_world_eps, M_plus); // mass matrix for the perturbed configuration
 			
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
 		}
