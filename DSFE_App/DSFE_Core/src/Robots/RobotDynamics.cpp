@@ -139,12 +139,12 @@ namespace robots {
 		std::vector<double> q_eps = q;
 
 		std::vector<MatX> dM_dq(n, MatX::Zero(n, n)); // partial derivatives of M with respect to each joint angle
+		VecX x_eps(3 * n); // state vector for kinematics
 
 		// Finite difference approximation of dM/dq for each joint
 		for (size_t k = 0; k < n; ++k) {
 			q_eps = q; // reset to original configuration for each joint perturbation
 			q_eps[k] += eps; // perturb joint k by a small amount
-			VecX x_eps(3 * n); // state vector for kinematics
 
 			// Construct the state vector for the perturbed configuration
 			for (size_t i = 0; i < n; ++i) {
