@@ -26,7 +26,7 @@ namespace robots {
 	// Constructor
 	RobotSystem::RobotSystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
-		_kinematics(std::make_unique<RobotKinematics>(_robot)), _dynamics(std::make_unique<RobotDynamics>(_robot)),
+		_kinematics(std::make_unique<RobotKinematics>()), _dynamics(std::make_unique<RobotDynamics>()),
 		_torqueMode(eTorqueMode::CONTROLLED) {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
@@ -188,20 +188,55 @@ namespace robots {
 		if (j.q > hi) { j.q = hi; if (j.qd > 0.0f) { j.qd = 0.0f; }}
 	}
 
+	// Method to take a snapshot of the current robot state
+	RobotSimSnapshot RobotSystem::takeSnapshot(double simTime) const {
+		RobotSimSnapshot snap;
+		snap.model = &_constModel;
+
+		const size_t n = (size_t)_robot.joints.size();
+
+		snap.q.resize(n);
+		snap.qd.resize(n);
+		snap.eta.resize(n);
+		snap.q_ref.resize(n);
+		snap.qd_ref.resize(n);
+		snap.qdd_ref.resize(n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const auto& j = _robot.joints[i];
+			snap.q[i] = j.q;
+			snap.qd[i] = j.qd;
+			snap.eta[i] = j.eta;
+			snap.q_ref[i] = j.q_ref;
+			snap.qd_ref[i] = j.qd_ref;
+			snap.qdd_ref[i] = j.qdd_ref;
+		}
+
+		snap.robotRootPose = _robotRootPose;
+		snap.baseIsFree = _baseIsFree;
+		snap.gravity = _gravity;
+		snap.torqueMode = _robot.torqueMode;
+		snap.simTime = simTime;
+
+		return snap;
+	}
+
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
 		const size_t n = _robot.joints.size();
 		_simTime = simTime;
 
-		// 
+		// Pack current state into vector form for integration
 		mathlib::VecX x = packState();
+		RobotSimSnapshot snap = takeSnapshot(simTime);
 
 		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn); };
+		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
 		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 		mathlib::VecX x_Next = step.x_next;
 
+		// Update dynamics timestep for energy calculations and integration
 		_dynamics->setDt(step.dt_taken);
 
 		// Unpack new state
@@ -215,8 +250,7 @@ namespace robots {
 
 		// FK needed for inertia
 		mathlib::VecX x_f = packState();
-		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(x_f);
-		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
+		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(*snap.model, x_f);
 
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);
@@ -228,7 +262,7 @@ namespace robots {
 		VecX qd_vec = toVecX(qd);
 
 		// Compute mass matrix M(q)
-		MatX M_full = _dynamics->computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		MatX M_full = _dynamics->computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
 		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
@@ -244,7 +278,7 @@ namespace robots {
 			sys_PE += m * g * com_world.z(); // PE = m * g * h, where h is the height (z) of the COM in world frame
 		}
 
-		tau_g = _dynamics->computeGravityTorque(q, T_world, x);
+		tau_g = _dynamics->computeGravityTorque(*snap.model, q, T_world);
 
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
@@ -254,6 +288,7 @@ namespace robots {
 
 			// Compute joint metrics
 			RobotMetrics m = _dynamics->computeJointMetrics(
+				snap,
 				j, I_eff,
 				j.q, j.qd, j.eta,
 				j.q_ref, j.qd_ref, j.qdd_ref,
@@ -366,8 +401,6 @@ namespace robots {
 
 		// Load robot model from JSON
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
-		_dynamics->setRobot(_robot);
-		_kinematics->setRobot(_robot);
 
 		_loadedName = name;
 		_baseIsFree = false;

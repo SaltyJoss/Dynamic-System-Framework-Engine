@@ -3,9 +3,9 @@
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+#include "Robots/RobotSimSnapshot.h"
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
-#include "CoreTypes.h"
 
 // Forward declarations
 namespace control { class TrajectoryManager; }
@@ -108,6 +108,8 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
+		RobotSimSnapshot takeSnapshot(double simTime) const;
+
 		void step(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
 
@@ -192,6 +194,8 @@ namespace robots {
 		// Robot model, and robot mode
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
+
+		RobotConstModel _constModel;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;

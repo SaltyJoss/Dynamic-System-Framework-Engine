@@ -2,7 +2,7 @@
 // File:   RobotKinematics.cpp
 // GitHub: SaltyJoss
 #include "Robots/RobotKinematics.h"
-#include "Robots/RobotModel.h"
+#include "Robots/RobotSimSnapshot.h"
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 
@@ -13,14 +13,16 @@ using namespace constants;
 
 namespace robots {
 	// Constructor
-	RobotKinematics::RobotKinematics(RobotModel& robot)
-		: _robot(robot) {
+	RobotKinematics::RobotKinematics() {
 	}
 
 	// Computes the forward kinematics for the robot based on the current state and robot configuration
-	std::vector<mathlib::Pose> RobotKinematics::computeForwardKinematics_fromState(const mathlib::VecX& x) const {
-		const auto& joints = _robot.joints;
-		const auto& links = _robot.links;
+	std::vector<mathlib::Pose> RobotKinematics::computeForwardKinematics_fromState(
+		const RobotConstModel& robot,
+		const mathlib::VecX& x
+	) const {
+		const auto& joints = robot.joints;
+		const auto& links = robot.links;
 		const size_t n = (size_t)joints.size();
 
 		std::vector<Pose> T_world;
@@ -32,7 +34,7 @@ namespace robots {
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = joints[i];
-			const double theta = x[i]; // joint angle from state vector
+			const double q = x[i]; // joint angle from state vector
 
 			Pose T_origin = Pose::Identity(); // transform from parent link to joint frame (fixed)
 			T_origin.block<3, 3>(0, 0) = joint.origin_q.toRotationMatrix(); // rotation from parent link frame to joint frame, derived from rpy in JSON
@@ -41,10 +43,10 @@ namespace robots {
 			// Compute joint motion transform based on joint axis and angle
 			Pose T_motion = Pose::Identity();
 			if (joint.type == eJointType::REVOLUTE) {
-				T_motion = jointMotionTransform(joint.axis, theta); // rotation about joint axis
+				T_motion = jointMotionTransform(joint.axis, q); // rotation about joint axis
 			}
 			else if (joint.type == eJointType::PRISMATIC) {
-				T_motion.block<3, 1>(0, 3) = joint.axis.normalized() * theta; // translation along joint axis
+				T_motion.block<3, 1>(0, 3) = joint.axis.normalized() * q; // translation along joint axis
 			}
 
 			// compose transforms 
@@ -71,11 +73,11 @@ namespace robots {
 	// Computes the forward kinematics for a single joint motion based on the joint axis and angle
 	mathlib::Pose RobotKinematics::jointMotionTransform(
 		const mathlib::Vec3& axis_joint,
-		double theta
+		double q
 	) const {
 		Pose T = Pose::Identity(); // homogeneous transformation matrix (4x4)
 
-		Eigen::AngleAxisd aa(theta, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
+		Eigen::AngleAxisd aa(q, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
 		T.block<3, 3>(0, 0) = aa.toRotationMatrix();		  // set upper-left 3x3 block to rotation matrix
 
 		return T; // (4x4) homogeneous transformation
@@ -93,7 +95,4 @@ namespace robots {
 
 		return (qz * qy * qx).normalized();
 	}
-
-	// Accessor for the robot model
-	void RobotKinematics::setRobot(RobotModel& robot) { _robot = robot; }
 }

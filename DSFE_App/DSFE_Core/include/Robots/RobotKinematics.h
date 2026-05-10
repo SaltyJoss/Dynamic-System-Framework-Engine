@@ -7,7 +7,8 @@
 
 namespace robots {
 	// Forward declarations
-	struct RobotModel;
+	struct RobotConstModel;
+	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
 	struct RobotMetrics;
@@ -16,10 +17,13 @@ namespace robots {
 	class DSFE_API RobotKinematics {
 	public:
 		// Constructor
-		RobotKinematics(RobotModel& robot);
+		RobotKinematics();
 
 		// Computes the forward kinematics for the robot based on the current state and robot configuration
-		std::vector<mathlib::Pose> computeForwardKinematics_fromState(const mathlib::VecX& x) const;
+		std::vector<mathlib::Pose> computeForwardKinematics_fromState(
+			const RobotConstModel& robot, 
+			const mathlib::VecX& x
+		) const;
 
 		// Computes the joint world poses for all joints based on the current state and robot configuration
 		std::vector<mathlib::Pose> calcJointWorldPoses(
@@ -30,16 +34,10 @@ namespace robots {
 		// Computes the forward kinematics for a single joint motion based on the joint axis and angle
 		mathlib::Pose jointMotionTransform(
 			const mathlib::Vec3& axis_joint,
-			double theta
+			double q
 		) const;
 
 		// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
 		mathlib::Quat rpyRadToQuat(const mathlib::Vec3& rpyRad);
-
-		// Accessor for the robot model
-		void setRobot(RobotModel& robot);
-
-	private:
-		RobotModel& _robot;
 	};
 }

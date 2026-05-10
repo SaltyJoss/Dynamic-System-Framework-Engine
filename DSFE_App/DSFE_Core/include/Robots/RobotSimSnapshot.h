@@ -18,7 +18,7 @@ namespace robots {
 
 	// Runtime snapshot for one integration/derivative step
 	struct DSFE_API RobotSimSnapshot {
-		std::shared_ptr<const RobotConstModel> model = nullptr;
+		const RobotConstModel* model = nullptr;
 
 		mathlib::VecX q;   // joint angles
 		mathlib::VecX qd;  // joint velocities

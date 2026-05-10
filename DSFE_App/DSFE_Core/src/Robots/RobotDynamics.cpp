@@ -3,7 +3,7 @@
 // GitHub: SaltyJoss
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotKinematics.h"
-#include "Robots/RobotModel.h"
+#include "Robots/RobotSimSnapshot.h"
 #include "Robots/TrajectoryManager.h"
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
@@ -12,8 +12,8 @@
 
 namespace robots {
 	// Constructor
-	RobotDynamics::RobotDynamics(RobotModel& robot)
-		: _robot(robot), _kinematics(std::make_unique<RobotKinematics>(robot)) {
+	RobotDynamics::RobotDynamics() 
+		: _kinematics(std::make_unique<RobotKinematics>()) {
 	}
 
 	// Computes the inertia tensor of a robot link
@@ -70,15 +70,15 @@ namespace robots {
 
 	// Computes the full mass matrix M(q) based on the current state and robot configuration
 	mathlib::MatX RobotDynamics::computeMassMatrix(
-		const std::vector<double>& /*q*/,
+		const RobotConstModel& robot,
 		const std::vector<mathlib::Pose>& T_world
 	) const {
-		const size_t n = _robot.joints.size();
+		const size_t n = robot.joints.size();
 		MatX M = MatX::Zero(n, n); // mass matrix to be computed
 
 		// Compute its contribution to the mass matrix for each link - based on its mass, inertia, and Jacobian columns for each joint
-		for (size_t k = 0; k < _robot.links.size(); ++k) {
-			const RobotLink& link = _robot.links[k];
+		for (size_t k = 0; k < robot.links.size(); ++k) {
+			const RobotLink& link = robot.links[k];
 			const double m = link.inertial.mass;
 
 			// Skip massless links
@@ -95,7 +95,7 @@ namespace robots {
 
 			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
 			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j_i = _robot.joints[i];
+				const RobotJoint& j_i = robot.joints[i];
 				// Skip fixed joints since they don't contribute to the mass matrix
 				if (j_i.type == eJointType::FIXED) { continue; }
 
@@ -113,7 +113,7 @@ namespace robots {
 
 				// Computes the contribution to the mass matrix from this link for joints i and j
 				for (size_t j = 0; j < n; ++j) {
-					const RobotJoint& j_j = _robot.joints[j];
+					const RobotJoint& j_j = robot.joints[j];
 					// Skip fixed joints since they don't contribute to the mass matrix
 					if (j_j.type == eJointType::FIXED) { continue; }
 
@@ -138,12 +138,13 @@ namespace robots {
 
 	// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
 	mathlib::VecX RobotDynamics::computeCoriolisVector(
+		const RobotConstModel& robot,
 		const std::vector<double>& q,
 		const std::vector<double>& qd,
 		const std::vector<mathlib::Pose>& T_world,
 		const mathlib::MatX& M
 	) const {
-		const size_t n = _robot.joints.size();
+		const size_t n = robot.joints.size();
 		const double eps = 1e-6; // small value to prevent division by zero
 		std::vector<double> q_eps = q;
 
@@ -163,8 +164,8 @@ namespace robots {
 			}
 
 			// Compute forward kinematics for the perturbed state
-			std::vector<Pose> T_world_eps = _kinematics->computeForwardKinematics_fromState(x_eps);
-			MatX M_plus = computeMassMatrix(q_eps, T_world_eps); // mass matrix for the perturbed configuration
+			std::vector<Pose> T_world_eps = _kinematics->computeForwardKinematics_fromState(robot, x_eps);
+			MatX M_plus = computeMassMatrix(robot, T_world_eps); // mass matrix for the perturbed configuration
 			
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
 		}
@@ -184,33 +185,28 @@ namespace robots {
 
 	// Computes the gravity torque for a joint based on the current state and robot configuration
 	std::vector<double> RobotDynamics::computeGravityTorque(
+		const RobotConstModel& robot,
 		const std::vector<double>& q,
-		const std::vector<mathlib::Pose>& T_world,
-		mathlib::VecX x
+		const std::vector<mathlib::Pose>& T_world
 	) const {
-		const size_t n = _robot.joints.size();
+		const size_t n = robot.joints.size();
 		std::vector<double> tau_G(n, 0.0); // [Nm], gravity torque for each joint
 		double g{ _gravity }; // [m/s^2], gravity acceleration magnitude
 
-		// Create state vector with current joint angles
-		for (size_t k = 0; k < q.size(); ++k) {
-			x[k] = q[k]; // [rad]
-		}
-
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
-			const RobotJoint& j = _robot.joints[i];
+			const RobotJoint& j = robot.joints[i];
 			if (j.type == eJointType::FIXED) { continue; }
 
 			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
 
 			const Vec3 p_i = T_world[i + 1].block<3, 1>(0, 3);
 			const Mat3 R_i = T_world[i + 1].block<3, 3>(0, 0);
-			const Vec3 axis_world = (R_i * _robot.joints[i].axis).normalized();
+			const Vec3 axis_world = (R_i * robot.joints[i].axis).normalized();
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
-			for (size_t k = 0; k < _robot.links.size(); ++k) {
-				const RobotLink& link = _robot.links[k];
+			for (size_t k = 0; k < robot.links.size(); ++k) {
+				const RobotLink& link = robot.links[k];
 				const double m = link.inertial.mass;
 				if (m <= 0.0) { continue; }
 
@@ -235,6 +231,7 @@ namespace robots {
 
 	// Computes the control torque for a joint based on the current state, reference, and robot configuration
 	mathlib::VecX RobotDynamics::computeAppliedTorques(
+		const RobotSimSnapshot& snap,
 		const std::vector<double>& q,
 		const std::vector<double>& qd,
 		const std::vector<double>& eta,
@@ -242,14 +239,14 @@ namespace robots {
 		std::vector<double> I_eff,
 		std::vector<double> tau_g
 	) const {
-		const size_t n = _robot.joints.size();
+		const size_t n = snap.model->joints.size();
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
 
-		switch (_robot.torqueMode) {
+		switch (snap.torqueMode) {
 		case eTorqueMode::PASSIVE:
 			// Compute passive damping and friction torques
 			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = _robot.joints[i];
+				const RobotJoint& j = snap.model->joints[i];
 				if (j.type == eJointType::FIXED) { continue; }
 
 				const double c = j.dynamics.damping;
@@ -263,11 +260,12 @@ namespace robots {
 		case eTorqueMode::CONTROLLED:
 			// State-Consistent effective inertia
 			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = _robot.joints[i];
+				const RobotJoint& j = snap.model->joints[i];
 				if (j.type == eJointType::FIXED) { continue; }
 
 				// Compute control torque using the computed metrics for this joint
 				RobotMetrics m = computeJointMetrics(
+					snap,
 					j, I_eff[i],
 					q[i], qd[i], eta[i],
 					j.q_ref, j.qd_ref, j.qdd_ref,
@@ -283,6 +281,7 @@ namespace robots {
 
 	// Computes control and dynamics metrics for a specific joint based on the current state and reference
 	RobotMetrics RobotDynamics::computeJointMetrics(
+		const RobotSimSnapshot& snap,
 		const RobotJoint& joint, double I_eff,
 		double q, double qd, double eta,
 		double q_ref, double qd_ref, double qdd_ref,
@@ -290,7 +289,7 @@ namespace robots {
 		double dt
 	) const {
 		RobotMetrics m{};
-		if (_robot.torqueMode == eTorqueMode::NONE) {
+		if (snap.torqueMode == eTorqueMode::NONE) {
 			// Current states
 			m.theta = q;	   // [rad]
 			m.omega = qd;	   // [rad/s]
@@ -342,7 +341,7 @@ namespace robots {
 
 		// Feedforward term based on reference acceleration and passive dynamics compensation
 		double tau_ff = m.I_eff * qdd_ref + tau_c;
-		if (_robot.torqueMode == eTorqueMode::CONTROLLED) { tau_ff += tau_g; }
+		if (snap.torqueMode == eTorqueMode::CONTROLLED) { tau_ff += tau_g; }
 
 		// Passive dynamics
 		const double c = joint.dynamics.damping;
@@ -377,7 +376,7 @@ namespace robots {
 		}
 
 		// Torque saturation and velocity soft limits only in CONTROLLED mode
-		if (_robot.torqueMode == eTorqueMode::CONTROLLED) {
+		if (snap.torqueMode == eTorqueMode::CONTROLLED) {
 			double tau_preSat = m.tau;
 
 			// Effort clamp
@@ -412,9 +411,10 @@ namespace robots {
 	// Computes the derivative of the state vector (q, qd, eta) based on the current state and robot configurations
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
-		const mathlib::VecX& x
+		const mathlib::VecX& x,
+		const RobotSimSnapshot& snap
 	) const {
-		const size_t n = static_cast<int>(_robot.joints.size());
+		const size_t n = static_cast<int>(snap.model->joints.size());
 		mathlib::VecX dx(3 * n);
 
 		// Extract state
@@ -426,12 +426,12 @@ namespace robots {
 		}
 
 		// Compute forward kinematics to get the pose of each link in the world frame
-		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(x);
+		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(*snap.model, x);
 		// Compute world poses of each joint for inertia calculations
-		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
+		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, snap.model->joints);
 
 		// Compute mass matrix M(q)
-		MatX M_full = computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		MatX M_full = computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);
@@ -440,7 +440,7 @@ namespace robots {
 		}
 
 		// Compute Coriolis bias for active joints
-		VecX h_full = computeCoriolisVector(q, qd, T_world, M_full); // [Nm], full Coriolis and centrifugal torque vector
+		VecX h_full = computeCoriolisVector(*snap.model, q, qd, T_world, M_full); // [Nm], full Coriolis and centrifugal torque vector
 
 		// Compute gravity torques for each joint
 		std::vector<double> tau_gravity(n, 0.0);
@@ -448,17 +448,17 @@ namespace robots {
 		VecX tau = VecX::Zero(n);
 
 		// Compute gravity torques if in a torque mode that requires it
-		if (_robot.torqueMode != eTorqueMode::NONE) {
+		if (snap.torqueMode != eTorqueMode::NONE) {
 			// Compute gravity torque
-			tau_gravity = computeGravityTorque(q, T_world, x);
+			tau_gravity = computeGravityTorque(*snap.model, q, T_world);
 			// Compute applied torques based on control mode
-			tau = computeAppliedTorques(q, qd, eta, T_world, I_eff, tau_gravity);
+			tau = computeAppliedTorques(snap, q, qd, eta, T_world, I_eff, tau_gravity);
 		}
 
 		// Build list of active (non-fixed) joints
 		std::vector<size_t> active;
 		for (size_t i = 0; i < n; ++i) {
-			if (_robot.joints[i].type != eJointType::FIXED) {
+			if (snap.model->joints[i].type != eJointType::FIXED) {
 				active.push_back(i);
 			}
 		}
@@ -490,7 +490,7 @@ namespace robots {
 		// Solved for qdd
 		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
 		VecX qdd_r;
-		if (_robot.torqueMode == eTorqueMode::NONE) {
+		if (snap.torqueMode == eTorqueMode::NONE) {
 			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
 		}
 		else {
@@ -505,7 +505,7 @@ namespace robots {
 
 		// Fill in derivatives for all joints
 		for (size_t i = 0; i < n; ++i) {
-			const RobotJoint& joint = _robot.joints[i];
+			const RobotJoint& joint = snap.model->joints[i];
 
 			// For fixed joints, the derivative of angle and velocity is zero
 			if (joint.type == eJointType::FIXED) {
@@ -516,7 +516,7 @@ namespace robots {
 			}
 
 			// Compute error for integral term
-			double err_i = _robot.joints[i].q_ref - q[i];
+			double err_i = snap.model->joints[i].q_ref - q[i];
 
 			// For revolute and prismatic joints, fill in the derivatives
 			dx[i] = qd[i];
@@ -525,11 +525,5 @@ namespace robots {
 		}
 
 		return dx;
-	}
-
-	// Set the robot model reference for dynamics calculations
-	void RobotDynamics::setRobot(RobotModel& robot) {
-		_robot = robot;
-		_kinematics->setRobot(robot);
 	}
 }

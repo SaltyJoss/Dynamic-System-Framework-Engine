@@ -12,7 +12,8 @@ namespace integration { class IntegrationService; enum class eIntegrationMethod;
 namespace robots {
 	// Forward declarations
 	class RobotKinematics;
-	struct RobotModel;
+	struct RobotConstModel;
+	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
 	struct RobotMetrics;
@@ -22,7 +23,7 @@ namespace robots {
 	class DSFE_API RobotDynamics {
 	public:
 		// Constructor
-		RobotDynamics(RobotModel& robot);
+		RobotDynamics();
 
 		// Computes the inertia tensor of a robot link
 		mathlib::Mat3 computeLinkInertiaTensor(const RobotLink& link) const;
@@ -37,12 +38,13 @@ namespace robots {
 
 		// Computes the full mass matrix M(q) based on the current state and robot configuration
 		mathlib::MatX computeMassMatrix(
-			const std::vector<double>& q,
+			const RobotConstModel& robot,
 			const std::vector<mathlib::Pose>& T_world
 		) const;
 
 		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
 		mathlib::VecX computeCoriolisVector(
+			const RobotConstModel& robot,
 			const std::vector<double>& q,
 			const std::vector<double>& qd,
 			const std::vector<mathlib::Pose>& T_world,
@@ -51,23 +53,25 @@ namespace robots {
 
 		// Computes the gravity torque for a joint based on the current state and robot configuration
 		std::vector<double> computeGravityTorque(
+			const RobotConstModel& robot,
 			const std::vector<double>& q,
-			const std::vector<mathlib::Pose>& T_world,
-			mathlib::VecX x
+			const std::vector<mathlib::Pose>& T_world
 		) const;
 
 		// Computes the control torque for a joint based on the current state, reference, and robot configuration
 		mathlib::VecX computeAppliedTorques(
+			const RobotSimSnapshot& snap,
 			const std::vector<double>& q,
 			const std::vector<double>& qd,
 			const std::vector<double>& eta,
 			const std::vector<mathlib::Pose>& T_world,
 			std::vector<double> I_eff,
-			std::vector<double> tau_gravity
+			std::vector<double> tau_g
 		) const;
 
 		// Computes control and dynamics metrics for a specific joint based on the current state and reference
 		RobotMetrics computeJointMetrics(
+			const RobotSimSnapshot& snap,
 			const RobotJoint& joint, double I_eff,
 			double q, double qd, double eta,
 			double q_ref, double qd_ref, double qdd_ref,
@@ -78,11 +82,9 @@ namespace robots {
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
 		mathlib::VecX derivative(
 			double t,
-			const mathlib::VecX& x
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap
 		) const;
-
-		// Accessor for the robot model
-		void setRobot(RobotModel& robot);
 
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
@@ -94,7 +96,6 @@ namespace robots {
 
 	private:
 		// References and pointers
-		RobotModel& _robot;
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
