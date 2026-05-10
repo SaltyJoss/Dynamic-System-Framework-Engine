@@ -3,8 +3,12 @@
 // GitHub: SaltyJoss
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotKinematics.h"
+#include "Robots/SpatialDynamics.h"
+
 #include "Robots/RobotSimSnapshot.h"
+
 #include "Robots/TrajectoryManager.h"
+
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 
@@ -148,7 +152,7 @@ namespace robots {
 		VecX x_eps(2 * n); // state vector for kinematics
 
 		std::vector<Pose> T_world_eps; // forward kinematics for perturbed configurations
-		T_world_eps.resize(n);
+		T_world_eps.resize(robot.links.size());
 
 		std::vector<Pose> jointWorldPoses_eps;
 		jointWorldPoses_eps.resize(n);
@@ -237,52 +241,6 @@ namespace robots {
 			tau_G[i] = tau_g_i;
 		}
 		return tau_G; // [Nm], gravity torques for each joint
-	}
-
-	// Computes the control torque for a joint based on the current state, reference, and robot configuration
-	mathlib::VecX RobotDynamics::computeAppliedTorques(
-		const RobotSimSnapshot& snap,
-		const std::vector<double>& q, const std::vector<double>& qd,
-		const std::vector<mathlib::Pose>& /*T_world*/,
-		std::vector<double> I_eff, std::vector<double> tau_g
-	) const {
-		const size_t n = snap.model->joints.size();
-		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
-
-		switch (snap.torqueMode) {
-		case eTorqueMode::PASSIVE:
-			// Compute passive damping and friction torques
-			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = snap.model->joints[i];
-				if (j.type == eJointType::FIXED) { continue; }
-
-				const double c = j.dynamics.damping;
-				const double mu = j.dynamics.friction;
-				const double v_eps = 1e-2; // small velocity threshold for friction model
-
-				tau[i] -= c * qd[i]; // viscous damping
-				tau[i] -= mu * std::tanh(qd[i] / v_eps); // Coulomb friction with a small velocity threshold
-			}
-			break;
-		case eTorqueMode::CONTROLLED:
-			// State-Consistent effective inertia
-			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = snap.model->joints[i];
-				if (j.type == eJointType::FIXED) { continue; }
-
-				// Compute control torque using the computed metrics for this joint
-				RobotMetrics m = computeJointMetrics(
-					snap,
-					j, I_eff[i],
-					q[i], qd[i],
-					snap.q_ref[i], snap.qd_ref[i], snap.qdd_ref[i],
-					0.0, tau_g[i]
-				);
-				tau[i] = m.tau;
-			}
-			break;
-		}
-		return tau; // [Nm], applied torques for each joint
 	}
 
 	// Computes control and dynamics metrics for a specific joint based on the current state and reference
@@ -433,88 +391,54 @@ namespace robots {
 
 		// Compute gravity torques for each joint
 		std::vector<double> tau_gravity(n, 0.0);
-		// Compute applied torques based on control mode and current state
-		VecX tau = VecX::Zero(n);
 
 		// Compute gravity torques if in a torque mode that requires it
 		if (snap.torqueMode != eTorqueMode::NONE) {
 			// Compute gravity torque
 			tau_gravity = computeGravityTorque(*snap.model, T_world, jointWorldPoses);
-			// Compute applied torques based on control mode
-			tau = computeAppliedTorques(snap, q, qd, T_world, I_eff, tau_gravity);
 		}
 
-		// Build list of active (non-fixed) joints
-		std::vector<size_t> active;
-		for (size_t i = 0; i < n; ++i) {
-			if (snap.model->joints[i].type != eJointType::FIXED) {
-				active.push_back(i);
-			}
-		}
-		const size_t m = active.size();
-
-		// Build reduced system
-		MatX M(m, m);
-		VecX tau_r = VecX::Zero(m);
-		VecX G_r = VecX::Zero(m);
-		VecX h_r = VecX::Zero(m);
-
-		// Fill reduced mass matrix and torque vectors for active joints
-		for (size_t r = 0; r < m; ++r) {
-			size_t i = active[r];
-
-			tau_r[r] = tau[i];		 // applied torque for active joint i
-			G_r[r] = tau_gravity[i]; // gravity torque for active joint i
-
-			// Fill the reduced mass matrix row for active joint i
-			for (size_t c = 0; c < m; ++c) {
-				size_t j = active[c];
-				M(r, c) = M_full(i, j);
-			}
-
-			// Fill the reduced Coriolis vector for active joint i
-			h_r[r] = h_full[active[r]];
-		}
-
-		for (size_t i = 0; i < n; ++i) {
-			const auto& j = snap.model->joints[i];
-
-			if (j.type == eJointType::FIXED) {
-				continue;
-			}
-
-			LOG_INFO_ONCE(
-				"joint[%zu] %s q=%.6f qref=%.6f qd=%.6f tau=%.6f",
-				i,
-				j.name.c_str(),
-				q[i],
-				snap.q_ref[i],
-				qd[i],
-				tau[i]
-			);
-
-			break;
-		}
-
-		// Solved for qdd
-		Eigen::CompleteOrthogonalDecomposition<MatX> cod(M);
-		VecX qdd_r;
-		if (snap.torqueMode == eTorqueMode::NONE) {
-			qdd_r = cod.solve(tau_r); // tau_r = 0, so checks for consistency of M
-		}
-		else {
-			qdd_r = cod.solve(tau_r - G_r - h_r); // M qdd = tau - G -> qdd = M^-1 (tau - G)
-		}
-
-		// Expand qdd back to full size, filling zeros for fixed joints
-		Eigen::VectorXd qdd = Eigen::VectorXd::Zero(n);
-		for (size_t r = 0; r < m; ++r) {
-			qdd[active[r]] = qdd_r[r];
-		}
-
-		// Fill in derivatives for all joints
+		VecX tau = VecX::Zero(n);
 		for (size_t i = 0; i < n; ++i) {
 			const RobotJoint& joint = snap.model->joints[i];
+			if (joint.type == eJointType::FIXED) { continue; }
+
+			const double wn = joint.wn_target;	 // [rad/s], natural frequency
+			const double z = joint.zeta_target;  // damping ratio
+
+			const double err = snap.q_ref[i] - q[i];	   // [rad], position error
+			const double err_d = snap.qd_ref[i] - qd[i]; // [rad/s], velocity error
+
+			const double k_p = I_eff[i] * wn * wn;		 // [Nm/rad], proportional gain
+			const double k_d = 2.0 * z * I_eff[i] * wn; // [Nm/(rad/s)], derivative gain
+
+			double tau_i = k_p * err + k_d * err_d + I_eff[i] * snap.qdd_ref[i]; // [Nm], control torque for joint i
+			tau_i += tau_gravity[i]; // Gravity compensation
+			tau_i += h_full[i]; // add Coriolis and centrifugal bias
+			tau_i -= joint.dynamics.damping * qd[i]; // subtract viscous damping
+			tau_i -= joint.dynamics.friction * std::tanh(qd[i] / 1e-2); // subtract Coulomb friction
+
+			if (joint.limits.maxEffort > 0.0f) {
+				const double E_max = joint.limits.maxEffort;
+				tau_i = std::clamp(tau_i, -E_max, E_max); // clamp to max effort
+			}
+
+			tau[i] = tau_i;
+		}
+
+		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)
+		VecX g = VecX::Zero(n);
+		for (size_t i = 0; i < n; ++i) { g[i] = tau_gravity[i]; }
+		VecX rhs = tau - h_full - g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
+
+		// Solve for Accelerations
+		VecX qdd = M_full.ldlt().solve(rhs); // [rad/s^2], joint accelerations computed from dynamics
+
+		// Fill the state derivative vector dx = (qd, qdd)
+		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& joint = snap.model->joints[i];
+
+			LOG_INFO("FD Joint[%zu]: tau=%.3f, h=%.3f, g=%.3f qdd=%.3f", i, tau[i], h_full[i], tau_gravity[i], qdd[i]);
 
 			// For fixed joints, the derivative of angle and velocity is zero
 			if (joint.type == eJointType::FIXED) {

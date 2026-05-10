@@ -293,21 +293,25 @@ namespace robots {
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
 		_simTime = simTime;
-
+		 
 		// Pack current state into vector form for integration
 		mathlib::VecX x = packState();
 		RobotSimSnapshot snap = takeSnapshot(simTime);
 		const size_t n = snap.model->joints.size();
 
-		mathlib::VecX q_s(n), qd_s(n), qdd_s(n);
-		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q_s, qd_s, qdd_s); // [Nm], torque computed by RNEA for current state and reference acceleration
+		mathlib::VecX q(n), qd(n), qdd(n);
+		for (size_t i = 0; i < n; ++i) {
+			q[i] = _robot.joints[i].q;
+			qd[i] = _robot.joints[i].qd;
+			qdd[i] = _robot.joints[i].qdd_ref;
+		}
+
+		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
 
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
-		if (tau_rnea.size() > 0) {
-			for (size_t i = 0; i < (size_t)tau_rnea.size(); ++i) {
-				LOG_INFO("tau_rnea[%zu] = %f", i, tau_rnea[i]);
-			}
+		for (size_t i = 0; i < n; ++i) {
+			LOG_INFO("RNEA Input Joint[%zu]: q=%f, qd=%f, qdd=%f", i, q[i], qd[i], qdd[i]);
 		}
 
 		// Define the derivative function
@@ -320,6 +324,11 @@ namespace robots {
 
 		// Unpack new state
 		unpackState(x_Next);
+
+		for (size_t i = 0; i < n; ++i) {
+			q[i] = _robot.joints[i].q;
+			qd[i] = _robot.joints[i].qd;
+		}
 
 		// Enforce joint limits
 		for (auto& j : _robot.joints) {
@@ -337,19 +346,13 @@ namespace robots {
 
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);
-		std::vector<double> q(n), qd(n);
-		for (size_t i = 0; i < n; ++i) {
-			q[i] = _robot.joints[i].q;
-			qd[i] = _robot.joints[i].qd;
-		}
-		VecX qd_vec = toVecX(qd);
 
 		// Compute mass matrix M(q)
 		MatX M_full(n, n);
 		_dynamics->computeMassMatrix(*snap.model, T_world, jointWorldPoses, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
-		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
+		double sys_KE = 0.5 * qd.transpose() * M_full * qd; // [J], kinetic energy of the robot at configuration q and velocity qd
 
 		// Compute system potential energy at configuration q (relative to gravity)
 		double sys_PE = 0.0;

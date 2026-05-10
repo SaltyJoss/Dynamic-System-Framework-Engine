@@ -60,14 +60,6 @@ namespace robots {
 			const std::vector<mathlib::Pose>& jointWorldPoses
 		) const;
 
-		// Computes the control torque for a joint based on the current state, reference, and robot configuration
-		mathlib::VecX computeAppliedTorques(
-			const RobotSimSnapshot& snap,
-			const std::vector<double>& q, const std::vector<double>& qd,
-			const std::vector<mathlib::Pose>& T_world,
-			std::vector<double> I_eff, std::vector<double> tau_g
-		) const;
-
 		// Computes control and dynamics metrics for a specific joint based on the current state and reference
 		RobotMetrics computeJointMetrics(
 			const RobotSimSnapshot& snap,
