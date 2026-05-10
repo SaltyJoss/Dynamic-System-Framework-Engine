@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
+#include "Robots/RobotMetrics.h"
 
 // Forward declarations
 namespace control { class TrajectoryManager; }
@@ -16,7 +17,6 @@ namespace robots {
 	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
-	struct RobotMetrics;
 	enum class eTorqueMode;
 
 	// Dynamics class responsible for computing inertia, mass matrix, gravity torque, control torques, and state derivatives
@@ -47,26 +47,17 @@ namespace robots {
 		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
 		mathlib::VecX computeCoriolisVector(
 			const RobotConstModel& robot,
-			const std::vector<double>& q,
-			const std::vector<double>& qd,
+			const mathlib::VecX& q,
+			const mathlib::VecX& qd,
 			const std::vector<mathlib::Pose>& T_world,
 			const mathlib::MatX& M
 		) const;
 
 		// Computes the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(
+		mathlib::VecX computeGravityTorque(
 			const RobotConstModel& robot,
 			const std::vector<mathlib::Pose>& T_world,
 			const std::vector<mathlib::Pose>& jointWorldPoses
-		) const;
-
-		// Computes control and dynamics metrics for a specific joint based on the current state and reference
-		RobotMetrics computeJointMetrics(
-			const RobotSimSnapshot& snap,
-			const RobotJoint& joint, double I_eff,
-			double q, double qd,
-			double q_ref, double qd_ref, double qdd_ref,
-			double tau_coriolis, double tau_g
 		) const;
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
@@ -74,7 +65,7 @@ namespace robots {
 			double t,
 			const mathlib::VecX& x,
 			const RobotSimSnapshot& snap
-		) const;
+		);
 
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
@@ -84,9 +75,19 @@ namespace robots {
 		void setDt(double dt) { _dt = dt; }
 		const double dt() const { return _dt; }
 
+		void resizeMetrics(size_t n);
+		const RobotMetrics& metrics() const { return _metrics; }
+
 	private:
 		// References and pointers
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
+		RobotMetrics _metrics;
+
+		mathlib::MatX _M; // mass matrix
+		mathlib::VecX _rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
+		mathlib::VecX _h; // Coriolis and centrifugal bias vector
+		mathlib::VecX _g; // gravity torque vector
+		mathlib::VecX _tau; // control torque vector
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 

@@ -315,8 +315,8 @@ namespace robots {
 
 	// Parse joint dynamics parameters
 	static void parseJointDynamics(const json& jointData, RobotJoint& joint) {
-		joint.dynamics.damping = 0.0f;
-		joint.dynamics.friction = 0.0f;
+		joint.dynamics.damping = 0.0;
+		joint.dynamics.friction = 0.0;
 
 		if (!jointData.contains("dynamics") || !jointData["dynamics"].is_object()) { return; }
 
@@ -324,8 +324,8 @@ namespace robots {
 		joint.dynamics.damping = D.value("damping", joint.dynamics.damping);
 		joint.dynamics.friction = D.value("friction", joint.dynamics.friction);
 
-		if (joint.dynamics.damping < 0.0f) { joint.dynamics.damping = 0.0f; }
-		if (joint.dynamics.friction < 0.0f) { joint.dynamics.friction = 0.0f; }
+		if (joint.dynamics.damping < 0.0) { joint.dynamics.damping = 0.0; }
+		if (joint.dynamics.friction < 0.0) { joint.dynamics.friction = 0.0; }
 	}
 
 	// Check if a joint is fixed based on its type string

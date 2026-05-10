@@ -102,18 +102,18 @@ namespace robots {
 	// Joint limits struct, representing the physical limits of a joint
 	struct JointLimit {
 		bool continuous = false;
-		double minAngle = 0.0f;
-		double maxAngle = 0.0f;
+		double minAngle = 0.0;
+		double maxAngle = 0.0;
 		double maxqd = 180.0 * DEG2RAD;
-		double maxEffort = 0.0f; // max torque/force
+		double maxEffort = 0.0; // max torque/force
 		// Soft limits
 		double omegaRefMaxRad_s = 0.0;
 	};
 
 	// Joint dynamics parameters, representing the damping and friction properties of a joint
 	struct JointDynamics {
-		double damping = 0.0f;
-		double friction = 0.0f;
+		double damping = 0.0;
+		double friction = 0.0;
 	};
 
 	// RobotJoint struct, representing a single joint in the robot model
@@ -143,20 +143,19 @@ namespace robots {
 		JointDynamics dynamics;
 
 		// --- State ---
-		double q = 0.0f;	  // rad
-		double qd = 0.0f;	  // rad/s
-		double torque = 0.0f; // Nm or N
+		double q = 0.0;	  // rad
+		double qd = 0.0;	  // rad/s
+		double torque = 0.0; // Nm or N
 		double eta = 0.0f;	  // Integral state
 
 		// --- Control ---
-		double q_ref = 0.0f;   // rad
-		double qd_ref = 0.0f;  // rad/s
-		double qdd_ref = 0.0f; // rad/s^2
+		double q_ref = 0.0;   // rad
+		double qd_ref = 0.0;  // rad/s
+		double qdd_ref = 0.0; // rad/s^2
 
 		// --- Control Parameters ---
-		double wn_target = 5.0f;	 // rad/s
-		double beta_target = 0.046f; // overshoot ratio
-		double zeta_target = 0.7f;	 // damping ratio
+		double wn_target = 5.0;	 // rad/s
+		double zeta_target = 0.7;	 // damping ratio
 
 		// --- Precomputed transforms ---
 		mathlib::Mat4 jointToChildRest = mathlib::Mat4::Identity();
@@ -210,45 +209,5 @@ namespace robots {
 				joints[i].q = a;
 			}
 		}
-	};
-
-	// --- Robot Metrics ---
-
-	// Per-joint metrics
-	struct RobotMetrics {
-		// State
-		double theta{ 0.0 };
-		double omega{ 0.0 };
-		double alpha{ 0.0 };
-		double err{ 0.0 };
-		double err_d{ 0.0 };
-
-		// Dynamics
-		double I_eff{ 0.0 };
-		double tau{ 0.0 };
-		double tau_fb{ 0.0 };
-		double tau_damping{ 0.0 };
-		double tau_friction{ 0.0 };
-		double tau_coriolis{ 0.0 };
-		double tau_gravity{ 0.0 };
-
-		// Constraints / realism
-		double tau_barrier{ 0.0 };
-		double tau_sat{ 0.0 };
-		double wMax_hw{ 0.0 };
-		double wMax_traj{ 0.0 };
-		double traj_overspeed{ 0.0 };
-
-		// Energy, Work, & Power
-		double KE{ 0.0 };
-		double PE{ 0.0 };
-		double E_total{ 0.0 };
-		double W_actuator{ 0.0 };
-		double P_damping{ 0.0 };
-		double P_friction{ 0.0 };
-
-		// Stability flags
-		bool sat_flag{ false };
-		bool traj_overspeed_flag{ false };
 	};
 } // namespace robots
