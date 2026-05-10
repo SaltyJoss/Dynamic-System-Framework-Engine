@@ -4,6 +4,7 @@
 #include "Robots/SpatialDynamics.h"
 
 namespace robots {
+	// Recursive function to compute spatial velocities using the articulated body algorithm
 	void SpatialDynamics::computeSpatialVelocities(
 		const SpatialModel& model,
 		const mathlib::VecX& q,
@@ -64,6 +65,7 @@ namespace robots {
 		}
 	}
 
+	// Recursive function to compute spatial accelerations using the articulated body algorithm
 	void SpatialDynamics::computeSpatialAccelerations(
 		const SpatialModel& model,
 		const mathlib::VecX& q,
@@ -97,5 +99,42 @@ namespace robots {
 			
 			a_out[i].v = Xup[i] * a_out[j.parent].v + aJ.v + crossTerm.v;
 		}
+	}
+
+	// Recursive function to compute inverse dynamics (joint torques) using the articulated body algorithm
+	void SpatialDynamics::computeInverseDynamics(
+		const SpatialModel& model,
+		const std::vector<mathlib::SpatialVec>& v,
+		const std::vector<mathlib::SpatialVec>& a,
+		const std::vector<mathlib::SpatialMat>& Xup,
+		mathlib::VecX& tau_out
+	) {
+		const size_t n = model.joints.size();
+		tau_out.resize(n);
+
+		std::vector<mathlib::SpatialVec> f(n);
+
+		// Forward Force Computation
+		for (size_t i = 0; i < n; ++i) {
+			const SpatialJoint& j = model.joints[i];
+			mathlib::SpatialVec I_v;
+			
+			mathlib::SpatialVec coriolis;
+			coriolis.v = mathlib::forceCrossMatrix(v[i]) * I_v.v;
+
+			f[i].v = j.inertia * a[i].v + coriolis.v;
+		}
+
+		// Backward Recursion Computation
+		for (int i = (int)n - 1; i >= 0; --i) {
+			const SpatialJoint& j = model.joints[i];
+
+			tau_out[i] = j.S.v.transpose() * f[i].v;
+
+			if (j.parent >= 0) {
+				f[j.parent].v += Xup[i].transpose() * f[i].v;
+			}
+		}
+		
 	}
 }

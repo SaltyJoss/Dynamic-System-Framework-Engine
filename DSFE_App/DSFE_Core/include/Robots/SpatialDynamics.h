@@ -25,5 +25,13 @@ namespace robots {
 			const std::vector<mathlib::SpatialMat>& Xup_out,
 			std::vector<mathlib::SpatialVec>& a_out
 		);
+
+		static void computeInverseDynamics(
+			const SpatialModel& model,
+			const std::vector<mathlib::SpatialVec>& v,
+			const std::vector<mathlib::SpatialVec>& a,
+			const std::vector<mathlib::SpatialMat>& Xup,
+			mathlib::VecX& tau_out
+		);
 	};
 }
