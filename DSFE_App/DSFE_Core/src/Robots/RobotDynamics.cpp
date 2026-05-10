@@ -99,10 +99,14 @@ namespace robots {
 
 				if (!robot.jointAffectsLink(i, k)) { continue; } // skip if joint i does not affect link k
 
+				int childIdx_i = robot.linkIndex(j_i.child);
+				if (childIdx_i < 0) { continue; } // not valid child link index
+				const Pose& T_child_i = T_world[childIdx_i];
+
 				// Rotation from joint i frame to world frame
-				const Mat3 R_i = T_world[i + 1].block<3, 3>(0, 0); // rotation from joint i frame to world frame
+				const Mat3 R_i = T_child_i.block<3, 3>(0, 0); // rotation from joint i frame to world frame
 				const Vec3 z_i = R_i * j_i.axis;			   // joint axis in world frame
-				const Vec3 p_i = T_world[i + 1].block<3, 1>(0, 3); // joint position in world frame
+				const Vec3 p_i = T_child_i.block<3, 1>(0, 3); // joint position in world frame
 
 				Vec3 J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
 				Vec3 J_wi = z_i;				  // angular velocity Jacobian column for joint i
@@ -114,9 +118,13 @@ namespace robots {
 
 					if (!robot.jointAffectsLink(j, k)) { continue; } // skip if joint j does not affect link k
 
-					const Mat3 R_j = T_world[j + 1].block<3, 3>(0, 0); // rotation from joint j frame to world frame
+					int childIdx_j = robot.linkIndex(j_j.child);
+					if (childIdx_j < 0) { continue; } // not valid child link index
+					const Pose& T_child_j = T_world[childIdx_j];
+
+					const Mat3 R_j = T_child_j.block<3, 3>(0, 0); // rotation from joint j frame to world frame
 					const Vec3 z_j = R_j * j_j.axis;			   // joint axis in world frame
-					const Vec3 p_j = T_world[j + 1].block<3, 1>(0, 3); // joint position in world frame
+					const Vec3 p_j = T_child_j.block<3, 1>(0, 3); // joint position in world frame
 
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
@@ -195,8 +203,12 @@ namespace robots {
 
 			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
 
-			const Vec3 p_i = T_world[i + 1].block<3, 1>(0, 3);
-			const Mat3 R_i = T_world[i + 1].block<3, 3>(0, 0);
+			int childIdx = robot.linkIndex(j.child);
+			if (childIdx < 0) { continue; } // not valid child link index
+			const Pose& T_child = T_world[childIdx];
+
+			const Vec3 p_i = T_child.block<3, 1>(0, 3);
+			const Mat3 R_i = T_child.block<3, 3>(0, 0);
 			const Vec3 axis_world = (R_i * robot.joints[i].axis).normalized();
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
@@ -314,23 +326,13 @@ namespace robots {
 		// Control parameters
 		const double wn = joint.wn_target;	 // [rad/s], natural frequency
 		const double z  = joint.zeta_target; // damping ratio
-		const double b  = joint.beta_target; // overshoot ratio
 
 		// Compute PID gains
 		double k_p = m.I_eff * wn * wn;		 // [Nm/rad],     proportional gain
-		double k_i = 0.0;			 // [Nm/(rad*s)], integral gain
 		double k_d = 2.0 * z * m.I_eff * wn; // [Nm/(rad/s)], derivative gain
 
-		// Integral term with anti-windup
-		double tau_i = k_i * eta;
-		if (joint.limits.maxEffort > 0.0f) {
-			const double rho = 0.3; // fraction of max effort allocated to I-term
-			const double tau_i_max = rho * joint.limits.maxEffort;
-			tau_i = std::clamp(tau_i, -tau_i_max, tau_i_max);
-		}
-
 		// Inverse dynamics control law (PD + feedforward)
-		double tau_fb = k_p * m.err + tau_i + k_d * m.err_d;
+		double tau_fb = k_p * m.err + k_d * m.err_d;
 
 		// Feedforward term based on reference acceleration and passive dynamics compensation
 		double tau_ff = m.I_eff * qdd_ref + tau_c;
@@ -414,7 +416,8 @@ namespace robots {
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
 
 		// Compute mass matrix M(q)
-		MatX M_full = computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		MatX M_full(n, n);
+		computeMassMatrix(*snap.model, T_world, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);

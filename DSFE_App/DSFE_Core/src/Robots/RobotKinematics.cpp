@@ -26,11 +26,10 @@ namespace robots {
 		const auto& links = robot.links;
 		const size_t n = (size_t)joints.size();
 
-		T_world_out.clear();
-		T_world_out.reserve((size_t)links.size());
+		T_world_out.resize(robot.links.size());
 
 		Pose T = Pose::Identity(); // world -> base
-		T_world_out.push_back(T);	   // base link 
+		T_world_out[0] = T;	   // base link 
 
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
@@ -52,7 +51,7 @@ namespace robots {
 
 			// compose transforms 
 			T = T * T_origin * T_motion; // parent -> joint -> motion -> child
-			T_world_out.push_back(T); // link i+1 pose in world frame
+			T_world_out[i + 1] = T;
 		}
 	}
 

@@ -267,7 +267,8 @@ namespace robots {
 		VecX qd_vec = toVecX(qd);
 
 		// Compute mass matrix M(q)
-		MatX M_full = _dynamics->computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		MatX M_full(n, n);
+		_dynamics->computeMassMatrix(*snap.model, T_world, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
 		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
