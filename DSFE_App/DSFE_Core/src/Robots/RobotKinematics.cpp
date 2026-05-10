@@ -17,19 +17,20 @@ namespace robots {
 	}
 
 	// Computes the forward kinematics for the robot based on the current state and robot configuration
-	std::vector<mathlib::Pose> RobotKinematics::computeForwardKinematics_fromState(
+	void RobotKinematics::computeForwardKinematics_fromState(
 		const RobotConstModel& robot,
-		const mathlib::VecX& x
+		const mathlib::VecX& x,
+		std::vector<mathlib::Pose>& T_world_out
 	) const {
 		const auto& joints = robot.joints;
 		const auto& links = robot.links;
 		const size_t n = (size_t)joints.size();
 
-		std::vector<Pose> T_world;
-		T_world.reserve((size_t)links.size());
+		T_world_out.clear();
+		T_world_out.reserve((size_t)links.size());
 
 		Pose T = Pose::Identity(); // world -> base
-		T_world.push_back(T);	   // base link 
+		T_world_out.push_back(T);	   // base link 
 
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
@@ -51,9 +52,8 @@ namespace robots {
 
 			// compose transforms 
 			T = T * T_origin * T_motion; // parent -> joint -> motion -> child
-			T_world.push_back(T); // link i+1 pose in world frame
+			T_world_out.push_back(T); // link i+1 pose in world frame
 		}
-		return T_world; // poses of all links in world frame
 	}
 
 	// Computes the joint world poses for all joints based on the current state and robot configuration

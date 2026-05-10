@@ -20,9 +20,10 @@ namespace robots {
 		RobotKinematics();
 
 		// Computes the forward kinematics for the robot based on the current state and robot configuration
-		std::vector<mathlib::Pose> computeForwardKinematics_fromState(
-			const RobotConstModel& robot, 
-			const mathlib::VecX& x
+		void computeForwardKinematics_fromState(
+			const RobotConstModel& robot,
+			const mathlib::VecX& x,
+			std::vector<mathlib::Pose>& T_world_out
 		) const;
 
 		// Computes the joint world poses for all joints based on the current state and robot configuration

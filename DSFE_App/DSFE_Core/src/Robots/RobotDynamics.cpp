@@ -141,6 +141,9 @@ namespace robots {
 		std::vector<MatX> dM_dq(n, MatX::Zero(n, n)); // partial derivatives of M with respect to each joint angle
 		VecX x_eps(3 * n); // state vector for kinematics
 
+		std::vector<Pose> T_world_eps; // forward kinematics for perturbed configurations
+		T_world_eps.reserve(n);
+
 		// Finite difference approximation of dM/dq for each joint
 		for (size_t k = 0; k < n; ++k) {
 			q_eps = q; // reset to original configuration for each joint perturbation
@@ -154,7 +157,7 @@ namespace robots {
 			}
 
 			// Compute forward kinematics for the perturbed state
-			std::vector<Pose> T_world_eps = _kinematics->computeForwardKinematics_fromState(robot, x_eps);
+			_kinematics->computeForwardKinematics_fromState(robot, x_eps, T_world_eps);
 			MatX M_plus = computeMassMatrix(robot, T_world_eps); // mass matrix for the perturbed configuration
 			
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
@@ -390,7 +393,7 @@ namespace robots {
 		const mathlib::VecX& x,
 		const RobotSimSnapshot& snap
 	) const {
-		const size_t n = static_cast<int>(snap.model->joints.size());
+		const size_t n = snap.model->joints.size();
 		mathlib::VecX dx(3 * n);
 
 		// Extract state
@@ -401,8 +404,11 @@ namespace robots {
 			eta[i] = x[i + 2 * n];
 		}
 
+		std::vector<Pose> T_world;
+		T_world.reserve(snap.model->links.size());
+
 		// Compute forward kinematics to get the pose of each link in the world frame
-		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(*snap.model, x);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
 
 		// Compute mass matrix M(q)
 		MatX M_full = computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
