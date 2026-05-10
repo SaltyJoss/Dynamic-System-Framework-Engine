@@ -405,6 +405,26 @@ namespace robots {
 		// Load robot model from JSON
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
 
+		_constModel.name = _robot.name;
+		_constModel.scale = _robot.scale;
+
+		_constModel.baseFrame = _robot.baseFrame;
+		_constModel.baseFrameIsAligned = _robot.baseFrameIsEngineAligned;
+
+		_constModel.links = _robot.links;
+		_constModel.joints = _robot.joints;
+
+		_constModel.linkNameToIndex.clear();
+		for (size_t i = 0; i < _constModel.links.size(); ++i) {
+			_constModel.linkNameToIndex[_constModel.links[i].name] = (int)i;
+		}
+
+		LOG_INFO_ONCE(
+			"CONST MODEL: links=%lld joints=%lld",
+			(long long)_constModel.links.size(),
+			(long long)_constModel.joints.size()
+		);
+
 		_loadedName = name;
 		_baseIsFree = false;
 

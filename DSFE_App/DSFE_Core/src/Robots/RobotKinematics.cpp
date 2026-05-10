@@ -29,7 +29,12 @@ namespace robots {
 		T_world_out.resize(robot.links.size());
 
 		Pose T = Pose::Identity(); // world -> base
-		T_world_out[0] = T;	   // base link 
+		T_world_out[0] = T;	   // base link
+
+		if (T_world_out.empty()) {
+			LOG_ERROR("T_world_out is empty");
+			return;
+		}
 
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
@@ -51,7 +56,14 @@ namespace robots {
 
 			// compose transforms 
 			T = T * T_origin * T_motion; // parent -> joint -> motion -> child
-			T_world_out[i + 1] = T;
+			
+			int childIdx = robot.linkIndex(joint.child);
+			if (childIdx < 0 || childIdx >= T_world_out.size()) {
+				LOG_ERROR("Invalid child link index for joint {}: {}", joint.name.c_str(), childIdx);
+				continue;
+			}
+
+			T_world_out[childIdx] = T; // world -> child link
 		}
 	}
 
