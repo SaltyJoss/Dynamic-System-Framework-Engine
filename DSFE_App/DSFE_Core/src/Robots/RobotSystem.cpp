@@ -82,6 +82,75 @@ namespace robots {
 		}
 	}
 
+	// Method to build the spatial model (kinematic tree) from the robot model
+	void RobotSystem::buildSpatialModel() {
+		_spatialModel.joints.clear();
+		const size_t n = _robot.joints.size();
+		_spatialModel.joints.resize(n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& j = _robot.joints[i];
+			SpatialJoint& sj = _spatialModel.joints[i];
+
+			sj.name = j.name;
+			sj.type = j.type;
+
+			// Find parent joint
+			sj.parent = -1;
+			for (size_t p = 0; p < n; ++p) {
+				if (_robot.joints[p].child == j.parent) {
+					sj.parent = (int)p;
+					break;
+				}
+			}
+
+			// Build XTree
+			mathlib::Mat3 R = j.origin_q.toRotationMatrix();
+			mathlib::Vec3 r = j.origin_xyz;			
+			sj.Xtree = mathlib::spatialTransform(R, r);
+
+			// Build Spatial Inertia
+			int childLinkIdx = -1;
+			for (size_t l = 0; l < _robot.links.size(); ++l) {
+				if (_robot.links[l].name == j.child) {
+					childLinkIdx = (int)l;
+					break;
+				}
+			}
+
+			if (childLinkIdx >= 0) {
+				const RobotLink& link = _robot.links[childLinkIdx];
+				mathlib::Mat3 I_com;
+
+				const auto& I = link.inertial.inertia;
+				I_com <<
+					I.ixx, I.ixy, I.ixz,
+					I.ixy, I.iyy, I.iyz,
+					I.ixz, I.iyz, I.izz;
+
+				sj.inertia = mathlib::spatialInertia(
+					link.inertial.mass,
+					link.inertial.com_xyz,
+					I_com
+				);
+			}
+
+			// Build S vector (motion subspace)
+			switch (j.type) {
+				case eJointType::REVOLUTE:
+					sj.S = mathlib::SpatialVec(j.axis.normalized(), mathlib::Vec3::Zero());
+					break;
+				case eJointType::PRISMATIC:
+					sj.S = mathlib::SpatialVec(mathlib::Vec3::Zero(), j.axis.normalized());
+					break;
+				default:
+					sj.S = mathlib::SpatialVec();
+					break;
+			}
+		}
+		LOG_INFO("SpatialModel built: joints=%d", (long long)_spatialModel.joints.size());
+	}
+
 	// Method to pack robot joint states into a state vector
 	mathlib::VecX RobotSystem::packState() const {
 		const size_t n = static_cast<int>(_robot.joints.size());
@@ -436,19 +505,16 @@ namespace robots {
 			}
 		}
 
-		// Set base frame and home position
 		_robotRootHome = _robot.baseFrame;
 		_robotRootPose = _robotRootHome;
 
-		// Initialize joint home positions
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 
 		buildLinkIndex();
-	
-		// Declare that we have a robot loaded
+		buildSpatialModel();
 		_hasRobot = true;
-		// Reset robot
+
 		resetRobot();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());

@@ -3,6 +3,7 @@
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+#include "Robots/SpatialModel.h"
 #include "Robots/RobotSimSnapshot.h"
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
@@ -158,6 +159,7 @@ namespace robots {
 
 	private:
         void buildLinkIndex();
+		void buildSpatialModel();
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
@@ -195,6 +197,7 @@ namespace robots {
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
 
+		SpatialModel _spatialModel;
 		RobotConstModel _constModel;
 
 		// World to robot base transform (meters)
