@@ -8,6 +8,8 @@
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotLoader.h"
 
+#include <Robots/SpatialDynamics.h>
+
 #include <stack>
 #include <unordered_set>
 #include <algorithm>
@@ -296,6 +298,29 @@ namespace robots {
 		mathlib::VecX x = packState();
 		RobotSimSnapshot snap = takeSnapshot(simTime);
 
+		std::vector<mathlib::SpatialVec> v_spatial;
+		std::vector<mathlib::SpatialMat> X_up;
+
+		SpatialDynamics::computeSpatialVelocities(
+			_spatialModel,
+			snap.q, snap.qd,
+			v_spatial, X_up
+		);
+
+		LOG_INFO_ONCE("Spatial velocity count = %lld", (long long)v_spatial.size());
+
+		mathlib::VecX qdd = mathlib::VecX::Zero(snap.q.size());
+		std::vector<mathlib::SpatialVec> a_spatial;
+
+		SpatialDynamics::computeSpatialAccelerations(
+			_spatialModel,
+			snap.q, snap.qd, qdd,
+			v_spatial, X_up,
+			a_spatial
+		);
+
+		LOG_INFO_ONCE("Spatial acceleration count = %lld", (long long)a_spatial.size());
+
 		const size_t n = snap.model->joints.size();
 
 		// Define the derivative function
@@ -528,10 +553,11 @@ namespace robots {
 		_robot.setJointVector(_robotQHome);
 
 		for (auto& joint : _robot.joints) {
-			joint.qd = 0.0f;
+			joint.qd = 0.0;
+
 			joint.q_ref = joint.q;
-			joint.qd_ref = 0.0f;
-			joint.qdd_ref = 0.0f;
+			joint.qd_ref = 0.0;
+			joint.qdd_ref = 0.0;
 		}
 
 		// Reset base state if free-floating
