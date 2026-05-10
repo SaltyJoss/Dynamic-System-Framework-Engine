@@ -85,5 +85,5 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nlohmann_json)
 
 # --- Project Subdirectories ---
-add_subdirectory(MathLib)
+add_subdirectory(PxMLib)
 add_subdirectory(DSFE_App)
