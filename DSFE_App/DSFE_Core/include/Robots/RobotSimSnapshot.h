@@ -16,6 +16,9 @@ namespace robots {
 
 		std::vector<RobotLink> links;
 		std::vector<RobotJoint> joints;
+
+		std::unordered_map<std::string, int> linkNameToIndex;
+		int linkIndex(const std::string& linkName) const;
 	};
 
 	// Runtime snapshot for one integration/derivative step

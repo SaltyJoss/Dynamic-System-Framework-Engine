@@ -4,6 +4,7 @@
 #include "Robots/RobotSimSnapshot.h"
 
 namespace robots {
+	// Method to check if a joint affects a link
     bool RobotConstModel::jointAffectsLink(size_t jIdx, size_t lIdx) const {
 		if (jIdx >= joints.size() || lIdx >= links.size()) { return false; }
 
@@ -28,4 +29,15 @@ namespace robots {
 
 		return false; // joint does not affect this link
     }
+
+	// Method to get the index of a link by name, returns -1 if not found
+	int RobotConstModel::linkIndex(const std::string& linkName) const {
+		auto it = linkNameToIndex.find(linkName);
+		if (it != linkNameToIndex.end()) {
+			return it->second;
+		}
+		else {
+			return -1; // not found
+		}
+	}
 }
