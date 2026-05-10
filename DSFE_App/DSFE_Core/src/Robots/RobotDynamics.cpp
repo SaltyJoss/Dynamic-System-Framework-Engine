@@ -186,7 +186,6 @@ namespace robots {
 	// Computes the gravity torque for a joint based on the current state and robot configuration
 	std::vector<double> RobotDynamics::computeGravityTorque(
 		const RobotConstModel& robot,
-		const std::vector<double>& q,
 		const std::vector<mathlib::Pose>& T_world
 	) const {
 		const size_t n = robot.joints.size();
@@ -269,8 +268,7 @@ namespace robots {
 					j, I_eff[i],
 					q[i], qd[i], eta[i],
 					j.q_ref, j.qd_ref, j.qdd_ref,
-					0.0, tau_g[i],
-					dt()
+					0.0, tau_g[i]
 				);
 				tau[i] = m.tau;
 			}
@@ -285,8 +283,7 @@ namespace robots {
 		const RobotJoint& joint, double I_eff,
 		double q, double qd, double eta,
 		double q_ref, double qd_ref, double qdd_ref,
-		double tau_c, double tau_g,
-		double dt
+		double tau_c, double tau_g
 	) const {
 		RobotMetrics m{};
 		if (snap.torqueMode == eTorqueMode::NONE) {
@@ -368,13 +365,6 @@ namespace robots {
 		m.P_damping  = tau_damping * qd;  // [W], power dissipated by damping
 		m.P_friction = tau_friction * qd; // [W], power dissipated by friction
 
-		// Hip reaction compensation
-		if (_baseIsFree && joint.name.find("hip_pitch") != std::string::npos) {
-			const double hipReactionGain = 0.7;
-			// If base is free-floating, apply a fraction of the last measured base forward force as a counter-torque to the hip pitch joint to help stabilise the base
-			m.tau -= hipReactionGain * _lastBaseForwardForce;
-		}
-
 		// Torque saturation and velocity soft limits only in CONTROLLED mode
 		if (snap.torqueMode == eTorqueMode::CONTROLLED) {
 			double tau_preSat = m.tau;
@@ -382,7 +372,6 @@ namespace robots {
 			// Effort clamp
 			if (joint.limits.maxEffort > 0.0f) {
 				const double E_max = joint.limits.maxEffort;
-				/*m.tau = std::clamp(m.tau, -E_max, E_max);*/
 			}
 
 			m.tau_sat = tau_preSat - m.tau;
@@ -393,9 +382,6 @@ namespace robots {
 			const double wMax_traj = std::abs(joint.limits.omegaRefMaxRad_s); // or derived from trajectory manager
 
 			double tau_preBarrier = m.tau;
-
-			// Apply soft velocity barrier
-			/*applyOmegaBarrier(m.tau, omega, wMax_hw, m.I_eff);*/
 
 			// Cache barrier torque and overspeed metrics
 			m.tau_barrier = tau_preBarrier - m.tau;
@@ -427,8 +413,6 @@ namespace robots {
 
 		// Compute forward kinematics to get the pose of each link in the world frame
 		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(*snap.model, x);
-		// Compute world poses of each joint for inertia calculations
-		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, snap.model->joints);
 
 		// Compute mass matrix M(q)
 		MatX M_full = computeMassMatrix(*snap.model, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
@@ -450,7 +434,7 @@ namespace robots {
 		// Compute gravity torques if in a torque mode that requires it
 		if (snap.torqueMode != eTorqueMode::NONE) {
 			// Compute gravity torque
-			tau_gravity = computeGravityTorque(*snap.model, q, T_world);
+			tau_gravity = computeGravityTorque(*snap.model, T_world);
 			// Compute applied torques based on control mode
 			tau = computeAppliedTorques(snap, q, qd, eta, T_world, I_eff, tau_gravity);
 		}

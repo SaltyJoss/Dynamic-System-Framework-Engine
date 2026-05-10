@@ -214,8 +214,11 @@ namespace robots {
 
 		snap.robotRootPose = _robotRootPose;
 		snap.baseIsFree = _baseIsFree;
+		snap.lastBaseForwardForce = _lastBaseForwardForce;
 		snap.gravity = _gravity;
+
 		snap.torqueMode = _robot.torqueMode;
+		snap.dt = _dynamics->dt();
 		snap.simTime = simTime;
 
 		return snap;
@@ -278,7 +281,7 @@ namespace robots {
 			sys_PE += m * g * com_world.z(); // PE = m * g * h, where h is the height (z) of the COM in world frame
 		}
 
-		tau_g = _dynamics->computeGravityTorque(*snap.model, q, T_world);
+		tau_g = _dynamics->computeGravityTorque(*snap.model, T_world);
 
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
@@ -292,7 +295,7 @@ namespace robots {
 				j, I_eff,
 				j.q, j.qd, j.eta,
 				j.q_ref, j.qd_ref, j.qdd_ref,
-				0.0,tau_g[i], dt
+				0.0, tau_g[i]
 			);
 
 			m.KE = sys_KE;

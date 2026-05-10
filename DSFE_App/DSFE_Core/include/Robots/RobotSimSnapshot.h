@@ -31,8 +31,11 @@ namespace robots {
 		mathlib::Mat4 robotRootPose = mathlib::Mat4::Identity();
 
 		bool baseIsFree = false;
+		double lastBaseForwardForce = 0.0;
 		double gravity = 0.0;
+
 		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
+		double dt = 0.0;
 		double simTime = 0.0; // simulation time in seconds
 	};
 } // namespace robots
