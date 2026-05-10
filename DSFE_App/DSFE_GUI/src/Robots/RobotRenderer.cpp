@@ -88,7 +88,17 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 	const bool isAligned = robot.baseFrameIsEngineAligned;
 	const size_t n = robot.links.size();
 
-	for (int i = 0; i < n; ++i) {
+	LOG_INFO_ONCE(
+		"applyTransforms world size = %zu",
+		world.size()
+	);
+
+	LOG_INFO_ONCE(
+		"link06 z = %.3f",
+		world.back()(2, 3)
+	);
+
+	for (size_t i = 0; i < n; ++i) {
 		const auto& link = robot.links[i];
 
 		auto it = linkRenderMap.find(link.name);

@@ -1057,6 +1057,13 @@ namespace gui {
 
 		ImGuiIO& io = ImGui::GetIO();
 		_core->tick(io.DeltaTime);
+
+		if (_impl->_robotSystem && hasRobot()) {
+			_impl->_robotRenderer->applyTransforms(
+				_impl->_robotSystem->model(),
+				_impl->_robotSystem->worldTransforms()
+			);
+		}
 		
 		if (_core->robotPresentationDirty()) {
 			loadRobot(_core->robotSystem()->robotName());
@@ -1067,7 +1074,7 @@ namespace gui {
 
 		drawMainDockspace();
 		drawViewportWindow();
-	}
+	} 
 
 	void SimManager::syncRobotToScene() {
 		if (!hasRobot()) return;
