@@ -221,12 +221,13 @@ namespace robots {
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
-		const size_t n = _robot.joints.size();
 		_simTime = simTime;
 
 		// Pack current state into vector form for integration
 		mathlib::VecX x = packState();
 		RobotSimSnapshot snap = takeSnapshot(simTime);
+
+		const size_t n = snap.model->joints.size();
 
 		// Define the derivative function
 		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
@@ -248,11 +249,10 @@ namespace robots {
 		// FK needed for inertia
 		mathlib::VecX x_f = packState();
 
-		std::vector<Pose> T_world;
+		std::vector<Pose> T_world(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x_f, T_world);
 
-		std::vector<Pose> jointWorldPoses;
-		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
+		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
 
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);

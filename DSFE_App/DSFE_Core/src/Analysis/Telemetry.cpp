@@ -35,7 +35,6 @@ namespace diagnostics {
 			// Joint data
 			jt.q   = j.q;
 			jt.qd  = j.qd;
-			jt.eta = j.eta;
 
 			// Reference data
 			jt.q_ref = j.q_ref;

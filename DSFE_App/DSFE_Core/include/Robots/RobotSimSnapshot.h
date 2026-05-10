@@ -27,7 +27,6 @@ namespace robots {
 
 		mathlib::VecX q;   // joint angles
 		mathlib::VecX qd;  // joint velocities
-		mathlib::VecX eta; // joint control states (e.g. for muscle models)
 
 		mathlib::VecX q_ref;   // reference joint angles
 		mathlib::VecX qd_ref;  // reference joint velocities

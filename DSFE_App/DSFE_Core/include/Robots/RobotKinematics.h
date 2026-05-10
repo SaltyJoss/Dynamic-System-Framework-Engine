@@ -29,7 +29,7 @@ namespace robots {
 		// Computes the joint world poses for all joints based on the current state and robot configuration
 		std::vector<mathlib::Pose> calcJointWorldPoses(
 			const std::vector<mathlib::Pose>& T_world,
-			const std::vector<RobotJoint>& joints
+			const RobotConstModel& robot
 		);
 
 		// Computes the forward kinematics for a single joint motion based on the joint axis and angle

@@ -58,13 +58,20 @@ namespace robots {
 	// Computes the joint world poses for all joints based on the current state and robot configuration
 	std::vector<Pose> RobotKinematics::calcJointWorldPoses(
 		const std::vector<Pose>& T_world,
-		const std::vector<RobotJoint>& joints
+		const RobotConstModel& robot
 	) {
-		std::vector<Pose> jointWorldPoses;
-		jointWorldPoses.reserve(joints.size());
-		for (size_t i = 0; i < joints.size(); ++i) {
-			const Pose& T = T_world[i + 1]; // joint i is at the end of link i, which is at T_world[i+1]
-			jointWorldPoses.push_back(T);
+		std::vector<Pose> jointWorldPoses(robot.joints.size());
+
+		for (size_t i = 0; i < robot.joints.size(); ++i) {
+			const RobotJoint& joints = robot.joints[i];
+			int childIdx = robot.linkIndex(joints.child);
+
+			if (childIdx < 0 || childIdx >= T_world.size()) {
+				LOG_ERROR("Invalid child link index for joint {}: {}", joints.name.c_str(), childIdx);
+				continue;
+			}
+
+			jointWorldPoses[i] = T_world[childIdx];
 		}
 		return jointWorldPoses;
 	}

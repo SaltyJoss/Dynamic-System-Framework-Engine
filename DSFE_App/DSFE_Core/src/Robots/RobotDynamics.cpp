@@ -145,7 +145,7 @@ namespace robots {
 		std::vector<double> q_eps = q;
 
 		std::vector<MatX> dM_dq(n, MatX::Zero(n, n)); // partial derivatives of M with respect to each joint angle
-		VecX x_eps(3 * n); // state vector for kinematics
+		VecX x_eps(2 * n); // state vector for kinematics
 
 		std::vector<Pose> T_world_eps; // forward kinematics for perturbed configurations
 		T_world_eps.resize(n);
@@ -164,13 +164,12 @@ namespace robots {
 			for (size_t i = 0; i < n; ++i) {
 				x_eps[i] = q_eps[i];
 				x_eps[n + i] = qd[i];
-				x_eps[2 * n + i] = 0.0; // eta is not used for Coriolis computation
 			}
 
 			// Compute forward kinematics for the perturbed state
 			_kinematics->computeForwardKinematics_fromState(robot, x_eps, T_world_eps);
 
-			jointWorldPoses_eps = _kinematics->calcJointWorldPoses(T_world_eps, robot.joints);
+			jointWorldPoses_eps = _kinematics->calcJointWorldPoses(T_world_eps, robot);
 
 			computeMassMatrix(robot, T_world_eps, jointWorldPoses_eps, M_plus); // mass matrix for the perturbed configuration
 			
@@ -417,7 +416,7 @@ namespace robots {
 
 		std::vector<Pose> jointWorldPoses;
 		jointWorldPoses.resize(n);
-		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, snap.model->joints);
+		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
 
 		// Compute mass matrix M(q)
 		MatX M_full(n, n);
