@@ -81,6 +81,12 @@ namespace scene {
 		glm::mat4 toMatrix() const;
 	};
 
+	struct RenderMaterial {
+		glm::vec3 albedo{ 1.0f, 1.0f, 1.0f };
+		float metallic = 0.5f;
+		float roughness = 0.5f;
+	};
+
 	// Represents a 3D object in the scene with a mesh, transform, and physics state.
 	class Object : public Element {
 	public:
@@ -91,6 +97,7 @@ namespace scene {
 		// 3D Transform
 		Transform transform;
 		physics::PhysicsState state;
+		RenderMaterial material;
 
 		// Object Category & Asset Source
 		ObjectCategory category = ObjectCategory::General;

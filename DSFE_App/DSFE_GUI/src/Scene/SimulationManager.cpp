@@ -1585,12 +1585,12 @@ namespace gui {
 			switch (currentShaderMode) {
 				case ShaderMode::Basic:
 					// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setVec3(obj->material.albedo, "albedo");
 					break;
 
 				case ShaderMode::Lit:
 					// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setVec3(obj->material.albedo, "albedo");
 					shader->setVec3(_impl->_light->getPosition(), "lightPosition");
 					shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
 					shader->setVec3(_impl->_light->getColour(), "lightColour");
@@ -1599,9 +1599,9 @@ namespace gui {
 
 				case ShaderMode::PBR:
 					// Per-mesh PBR material properties
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
-					shader->setFlt1(obj->getMesh()->getMetallic(), "metallic");
-					shader->setFlt1(obj->getMesh()->getRoughness(), "roughness");
+					shader->setVec3(obj->material.albedo, "albedo");
+					shader->setFlt1(obj->material.metallic, "metallic");
+					shader->setFlt1(obj->material.roughness, "roughness");
 					shader->setFlt1(1.0f, "ao");
 					shader->setFlt1(_settingsCurrent.ambientStrength, "ambientStrength");
 
