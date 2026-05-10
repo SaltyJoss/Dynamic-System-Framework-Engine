@@ -74,62 +74,52 @@ namespace robots {
 		const std::vector<mathlib::Pose>& T_world
 	) const {
 		const size_t n = robot.joints.size();
-		MatX M = MatX::Zero(n, n); // mass matrix to be computed
+		MatX M = MatX::Zero(n, n);
 
-		// Compute its contribution to the mass matrix for each link - based on its mass, inertia, and Jacobian columns for each joint
+		// Compute its contribution to the mass matrix for each link
 		for (size_t k = 0; k < robot.links.size(); ++k) {
 			const RobotLink& link = robot.links[k];
 			const double m = link.inertial.mass;
 
-			// Skip massless links
 			if (m <= 0.0) { continue; }
 
-			// Rotation and position of the link in world frame
 			const Mat3 R = T_world[k].block<3, 3>(0, 0);  // Rotation from link frame to world frame
 			const Vec3 p = T_world[k].block<3, 1>(0, 3);  // Center of mass of the link in world frame
 			const Vec3 com = R * link.inertial.com_xyz + p; // Center of mass in world frame
 
-			// Inertia tensor of the link in world frame
 			Mat3 I_local = computeLinkInertiaTensor(link); // inertia tensor in link frame
 			Mat3 I_world = R * I_local * R.transpose();	   // inertia tensor in world frame
 
 			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j_i = robot.joints[i];
-				// Skip fixed joints since they don't contribute to the mass matrix
 				if (j_i.type == eJointType::FIXED) { continue; }
+
+				if (!robot.jointAffectsLink(i, k)) { continue; } // skip if joint i does not affect link k
 
 				// Rotation from joint i frame to world frame
 				const Mat3 R_i = T_world[i + 1].block<3, 3>(0, 0); // rotation from joint i frame to world frame
 				const Vec3 z_i = R_i * j_i.axis;			   // joint axis in world frame
 				const Vec3 p_i = T_world[i + 1].block<3, 1>(0, 3); // joint position in world frame
 
-				// Only include contribution if joint i affects link k
-				if (k <= i) continue;
-
-				// Jacobian columns for joint i
 				Vec3 J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
 				Vec3 J_wi = z_i;				  // angular velocity Jacobian column for joint i
 
 				// Computes the contribution to the mass matrix from this link for joints i and j
 				for (size_t j = 0; j < n; ++j) {
 					const RobotJoint& j_j = robot.joints[j];
-					// Skip fixed joints since they don't contribute to the mass matrix
 					if (j_j.type == eJointType::FIXED) { continue; }
 
-					// Rotation from joint j frame to world frame
+					if (!robot.jointAffectsLink(j, k)) { continue; } // skip if joint j does not affect link k
+
 					const Mat3 R_j = T_world[j + 1].block<3, 3>(0, 0); // rotation from joint j frame to world frame
 					const Vec3 z_j = R_j * j_j.axis;			   // joint axis in world frame
 					const Vec3 p_j = T_world[j + 1].block<3, 1>(0, 3); // joint position in world frame
 
-					// Only include contribution if joint i affects link k
-					if (k <= j) continue;
-
-					// Jacobian columns for joints i and j
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
-					// Mass matrix contribution from this link for joints i and j
-					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj;
+
+					M(i, j) += m * J_vi.dot(J_vj) + J_wi.transpose() * I_world * J_wj; // [kg*m^2]
 				}
 			}
 		}
