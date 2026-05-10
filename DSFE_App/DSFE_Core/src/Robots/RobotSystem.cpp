@@ -321,6 +321,22 @@ namespace robots {
 
 		LOG_INFO_ONCE("Spatial acceleration count = %lld", (long long)a_spatial.size());
 
+		mathlib::VecX tau_rnea;
+
+		SpatialDynamics::computeInverseDynamics(
+			_spatialModel,
+			v_spatial, a_spatial, X_up,
+			tau_rnea
+		);
+
+		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
+
+		if (tau_rnea.size() > 0) {
+			for (size_t i = 0; i < (size_t)tau_rnea.size(); ++i) {
+				LOG_INFO("tau_rnea[%zu] = %f", i, tau_rnea[i]);
+			}
+		}
+
 		const size_t n = snap.model->joints.size();
 
 		// Define the derivative function
