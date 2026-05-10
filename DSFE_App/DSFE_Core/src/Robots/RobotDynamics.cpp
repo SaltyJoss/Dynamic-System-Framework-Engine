@@ -275,7 +275,7 @@ namespace robots {
 					snap,
 					j, I_eff[i],
 					q[i], qd[i],
-					j.q_ref, j.qd_ref, j.qdd_ref,
+					snap.q_ref[i], snap.qd_ref[i], snap.qdd_ref[i],
 					0.0, tau_g[i]
 				);
 				tau[i] = m.tau;
@@ -474,6 +474,26 @@ namespace robots {
 
 			// Fill the reduced Coriolis vector for active joint i
 			h_r[r] = h_full[active[r]];
+		}
+
+		for (size_t i = 0; i < n; ++i) {
+			const auto& j = snap.model->joints[i];
+
+			if (j.type == eJointType::FIXED) {
+				continue;
+			}
+
+			LOG_INFO_ONCE(
+				"joint[%zu] %s q=%.6f qref=%.6f qd=%.6f tau=%.6f",
+				i,
+				j.name.c_str(),
+				q[i],
+				snap.q_ref[i],
+				qd[i],
+				tau[i]
+			);
+
+			break;
 		}
 
 		// Solved for qdd
