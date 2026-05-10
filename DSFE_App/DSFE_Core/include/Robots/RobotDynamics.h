@@ -40,6 +40,7 @@ namespace robots {
 		void computeMassMatrix(
 			const RobotConstModel& robot,
 			const std::vector<mathlib::Pose>& T_world,
+			const std::vector<mathlib::Pose>& jointWorldPoses,
 			mathlib::MatX& M_out
 		) const;
 
@@ -55,25 +56,23 @@ namespace robots {
 		// Computes the gravity torque for a joint based on the current state and robot configuration
 		std::vector<double> computeGravityTorque(
 			const RobotConstModel& robot,
-			const std::vector<mathlib::Pose>& T_world
+			const std::vector<mathlib::Pose>& T_world,
+			const std::vector<mathlib::Pose>& jointWorldPoses
 		) const;
 
 		// Computes the control torque for a joint based on the current state, reference, and robot configuration
 		mathlib::VecX computeAppliedTorques(
 			const RobotSimSnapshot& snap,
-			const std::vector<double>& q,
-			const std::vector<double>& qd,
-			const std::vector<double>& eta,
+			const std::vector<double>& q, const std::vector<double>& qd,
 			const std::vector<mathlib::Pose>& T_world,
-			std::vector<double> I_eff,
-			std::vector<double> tau_g
+			std::vector<double> I_eff, std::vector<double> tau_g
 		) const;
 
 		// Computes control and dynamics metrics for a specific joint based on the current state and reference
 		RobotMetrics computeJointMetrics(
 			const RobotSimSnapshot& snap,
 			const RobotJoint& joint, double I_eff,
-			double q, double qd, double eta,
+			double q, double qd,
 			double q_ref, double qd_ref, double qdd_ref,
 			double tau_coriolis, double tau_g
 		) const;

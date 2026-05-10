@@ -85,7 +85,7 @@ namespace robots {
 	// Method to pack robot joint states into a state vector
 	mathlib::VecX RobotSystem::packState() const {
 		const size_t n = static_cast<int>(_robot.joints.size());
-		mathlib::VecX x(3 * n);
+		mathlib::VecX x(2 * n);
 
 		// Pack angles and velocities
 		for (size_t i = 0; i < n; ++i) {
@@ -94,7 +94,6 @@ namespace robots {
 			// Current states
 			x[i] = j.q;
 			x[i + n] = j.qd;
-			x[i + 2 * n] = j.eta; // integral state
 		}
 		return x; // state vector
 	}
@@ -114,7 +113,6 @@ namespace robots {
 			// Current states
 			double theta_in = x[i];		  // [rad]
 			double omega_in = x[i + n];	  // [rad/s]
-			double eta_in   = x[i + 2 * n]; // integral state
 
 			// Clamp joint angle
 			double theta_out = clampJointAngle(j, theta_in);
@@ -147,7 +145,6 @@ namespace robots {
 			// Update joint states
 			j.q = theta_out;
 			j.qd = omega_out;
-			j.eta = eta_in;
 		}
 	}
 
@@ -159,8 +156,8 @@ namespace robots {
 			auto& j = _robot.joints[i];
 
 			// Pack reference angles and velocities
-			x[i] = (double)j.q_ref;
-			x[i + n] = (double)j.qd_ref;
+			x[i] = j.q_ref;
+			x[i + n] = j.qd_ref;
 		}
 		return x; // reference state vector
 	}
@@ -172,7 +169,6 @@ namespace robots {
 			auto& j = _robot.joints[i];
 			j.q_ref = x[i];					   // [rad]
 			j.qd_ref = x[i + n];				   // [rad/s]
-			// Clamp reference angle to joint limits
 			j.q_ref = clampJointAngle(j, j.q_ref); // [rad]
 		}
 	}
@@ -197,7 +193,6 @@ namespace robots {
 
 		snap.q.resize(n);
 		snap.qd.resize(n);
-		snap.eta.resize(n);
 		snap.q_ref.resize(n);
 		snap.qd_ref.resize(n);
 		snap.qdd_ref.resize(n);
@@ -206,7 +201,6 @@ namespace robots {
 			const auto& j = _robot.joints[i];
 			snap.q[i] = j.q;
 			snap.qd[i] = j.qd;
-			snap.eta[i] = j.eta;
 			snap.q_ref[i] = j.q_ref;
 			snap.qd_ref[i] = j.qd_ref;
 			snap.qdd_ref[i] = j.qdd_ref;
@@ -257,6 +251,9 @@ namespace robots {
 		std::vector<Pose> T_world;
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x_f, T_world);
 
+		std::vector<Pose> jointWorldPoses;
+		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
+
 		// compute gravity torques for new state so logs match dynamics
 		std::vector<double> tau_g(n, 0.0);
 		std::vector<double> q(n), qd(n);
@@ -268,7 +265,7 @@ namespace robots {
 
 		// Compute mass matrix M(q)
 		MatX M_full(n, n);
-		_dynamics->computeMassMatrix(*snap.model, T_world, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
+		_dynamics->computeMassMatrix(*snap.model, T_world, jointWorldPoses, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
 		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
@@ -284,7 +281,7 @@ namespace robots {
 			sys_PE += m * g * com_world.z(); // PE = m * g * h, where h is the height (z) of the COM in world frame
 		}
 
-		tau_g = _dynamics->computeGravityTorque(*snap.model, T_world);
+		tau_g = _dynamics->computeGravityTorque(*snap.model, T_world, jointWorldPoses);
 
 		// For each joint, compute the effective inertia by summing contributions from all links
 		for (size_t i = 0; i < n; ++i) {
@@ -296,7 +293,7 @@ namespace robots {
 			RobotMetrics m = _dynamics->computeJointMetrics(
 				snap,
 				j, I_eff,
-				j.q, j.qd, j.eta,
+				j.q, j.qd,
 				j.q_ref, j.qd_ref, j.qdd_ref,
 				0.0, tau_g[i]
 			);

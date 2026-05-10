@@ -72,6 +72,7 @@ namespace robots {
 	void RobotDynamics::computeMassMatrix(
 		const RobotConstModel& robot,
 		const std::vector<mathlib::Pose>& T_world,
+		const std::vector<mathlib::Pose>& jointWorldPoses,
 		mathlib::MatX& M_out
 	) const {
 		const size_t n = robot.joints.size();
@@ -99,14 +100,12 @@ namespace robots {
 
 				if (!robot.jointAffectsLink(i, k)) { continue; } // skip if joint i does not affect link k
 
-				int childIdx_i = robot.linkIndex(j_i.child);
-				if (childIdx_i < 0) { continue; } // not valid child link index
-				const Pose& T_child_i = T_world[childIdx_i];
+				const Pose& T_joint_i = jointWorldPoses[i]; // pose of joint i in world frame
 
 				// Rotation from joint i frame to world frame
-				const Mat3 R_i = T_child_i.block<3, 3>(0, 0); // rotation from joint i frame to world frame
-				const Vec3 z_i = R_i * j_i.axis;			   // joint axis in world frame
-				const Vec3 p_i = T_child_i.block<3, 1>(0, 3); // joint position in world frame
+				const Mat3 R_i = T_joint_i.block<3, 3>(0, 0); // rotation from joint i frame to world frame
+				const Vec3 p_i = T_joint_i.block<3, 1>(0, 3); // joint position in world frame
+				const Vec3 z_i = (R_i * j_i.axis).normalized(); // joint axis in world frame
 
 				Vec3 J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
 				Vec3 J_wi = z_i;				  // angular velocity Jacobian column for joint i
@@ -118,13 +117,11 @@ namespace robots {
 
 					if (!robot.jointAffectsLink(j, k)) { continue; } // skip if joint j does not affect link k
 
-					int childIdx_j = robot.linkIndex(j_j.child);
-					if (childIdx_j < 0) { continue; } // not valid child link index
-					const Pose& T_child_j = T_world[childIdx_j];
+					const Pose& T_joint_j = jointWorldPoses[j]; // pose of joint i in world frame
 
-					const Mat3 R_j = T_child_j.block<3, 3>(0, 0); // rotation from joint j frame to world frame
-					const Vec3 z_j = R_j * j_j.axis;			   // joint axis in world frame
-					const Vec3 p_j = T_child_j.block<3, 1>(0, 3); // joint position in world frame
+					const Mat3 R_j = T_joint_j.block<3, 3>(0, 0);
+					const Vec3 p_j = T_joint_j.block<3, 1>(0, 3);
+					const Vec3 z_j = (R_j * j_j.axis).normalized();
 
 					Vec3 J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					Vec3 J_wj = z_j;				  // angular velocity Jacobian column for joint j
@@ -151,7 +148,10 @@ namespace robots {
 		VecX x_eps(3 * n); // state vector for kinematics
 
 		std::vector<Pose> T_world_eps; // forward kinematics for perturbed configurations
-		T_world_eps.reserve(n);
+		T_world_eps.resize(n);
+
+		std::vector<Pose> jointWorldPoses_eps;
+		jointWorldPoses_eps.resize(n);
 
 		MatX M_plus(n, n);
 
@@ -169,7 +169,10 @@ namespace robots {
 
 			// Compute forward kinematics for the perturbed state
 			_kinematics->computeForwardKinematics_fromState(robot, x_eps, T_world_eps);
-			computeMassMatrix(robot, T_world_eps, M_plus); // mass matrix for the perturbed configuration
+
+			jointWorldPoses_eps = _kinematics->calcJointWorldPoses(T_world_eps, robot.joints);
+
+			computeMassMatrix(robot, T_world_eps, jointWorldPoses_eps, M_plus); // mass matrix for the perturbed configuration
 			
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
 		}
@@ -190,7 +193,8 @@ namespace robots {
 	// Computes the gravity torque for a joint based on the current state and robot configuration
 	std::vector<double> RobotDynamics::computeGravityTorque(
 		const RobotConstModel& robot,
-		const std::vector<mathlib::Pose>& T_world
+		const std::vector<mathlib::Pose>& T_world,
+		const std::vector<mathlib::Pose>& jointWorldPoses
 	) const {
 		const size_t n = robot.joints.size();
 		std::vector<double> tau_G(n, 0.0); // [Nm], gravity torque for each joint
@@ -203,12 +207,10 @@ namespace robots {
 
 			double tau_g_i = 0.0; // [Nm], gravity torque contribution for joint i
 
-			int childIdx = robot.linkIndex(j.child);
-			if (childIdx < 0) { continue; } // not valid child link index
-			const Pose& T_child = T_world[childIdx];
+			const Pose& T_joint = jointWorldPoses[i]; // pose of joint i in world frame
 
-			const Vec3 p_i = T_child.block<3, 1>(0, 3);
-			const Mat3 R_i = T_child.block<3, 3>(0, 0);
+			const Mat3 R_i = T_joint.block<3, 3>(0, 0);
+			const Vec3 p_i = T_joint.block<3, 1>(0, 3);
 			const Vec3 axis_world = (R_i * robot.joints[i].axis).normalized();
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
@@ -216,6 +218,8 @@ namespace robots {
 				const RobotLink& link = robot.links[k];
 				const double m = link.inertial.mass;
 				if (m <= 0.0) { continue; }
+
+				if (!robot.jointAffectsLink(i, k)) { continue; }
 
 				// Link's center of mass in world frame
 				const Mat3 R_k = T_world[k].block<3, 3>(0, 0);
@@ -239,12 +243,9 @@ namespace robots {
 	// Computes the control torque for a joint based on the current state, reference, and robot configuration
 	mathlib::VecX RobotDynamics::computeAppliedTorques(
 		const RobotSimSnapshot& snap,
-		const std::vector<double>& q,
-		const std::vector<double>& qd,
-		const std::vector<double>& eta,
+		const std::vector<double>& q, const std::vector<double>& qd,
 		const std::vector<mathlib::Pose>& /*T_world*/,
-		std::vector<double> I_eff,
-		std::vector<double> tau_g
+		std::vector<double> I_eff, std::vector<double> tau_g
 	) const {
 		const size_t n = snap.model->joints.size();
 		VecX tau = VecX::Zero(n); // [Nm], torque for each joint
@@ -274,7 +275,7 @@ namespace robots {
 				RobotMetrics m = computeJointMetrics(
 					snap,
 					j, I_eff[i],
-					q[i], qd[i], eta[i],
+					q[i], qd[i],
 					j.q_ref, j.qd_ref, j.qdd_ref,
 					0.0, tau_g[i]
 				);
@@ -289,7 +290,7 @@ namespace robots {
 	RobotMetrics RobotDynamics::computeJointMetrics(
 		const RobotSimSnapshot& snap,
 		const RobotJoint& joint, double I_eff,
-		double q, double qd, double eta,
+		double q, double qd,
 		double q_ref, double qd_ref, double qdd_ref,
 		double tau_c, double tau_g
 	) const {
@@ -392,32 +393,35 @@ namespace robots {
 		return m;
 	}
 
-	// Computes the derivative of the state vector (q, qd, eta) based on the current state and robot configurations
+	// Computes the derivative of the state vector (q, qd) based on the current state and robot configurations
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
 		const mathlib::VecX& x,
 		const RobotSimSnapshot& snap
 	) const {
 		const size_t n = snap.model->joints.size();
-		mathlib::VecX dx(3 * n);
+		mathlib::VecX dx(2 * n);
 
 		// Extract state
-		std::vector<double> q(n), qd(n), eta(n);
+		std::vector<double> q(n), qd(n);
 		for (size_t i = 0; i < n; ++i) {
 			q[i] = x[i];
 			qd[i] = x[i + n];
-			eta[i] = x[i + 2 * n];
 		}
 
 		std::vector<Pose> T_world;
-		T_world.reserve(snap.model->links.size());
+		T_world.resize(snap.model->links.size());
 
 		// Compute forward kinematics to get the pose of each link in the world frame
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
 
+		std::vector<Pose> jointWorldPoses;
+		jointWorldPoses.resize(n);
+		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, snap.model->joints);
+
 		// Compute mass matrix M(q)
 		MatX M_full(n, n);
-		computeMassMatrix(*snap.model, T_world, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
+		computeMassMatrix(*snap.model, T_world, jointWorldPoses, M_full); // [kg*m^2], full mass matrix for the robot at configuration q
 
 		// Compute effective inertia for each joint based on current configuration
 		std::vector<double> I_eff(n, 0.0);
@@ -436,9 +440,9 @@ namespace robots {
 		// Compute gravity torques if in a torque mode that requires it
 		if (snap.torqueMode != eTorqueMode::NONE) {
 			// Compute gravity torque
-			tau_gravity = computeGravityTorque(*snap.model, T_world);
+			tau_gravity = computeGravityTorque(*snap.model, T_world, jointWorldPoses);
 			// Compute applied torques based on control mode
-			tau = computeAppliedTorques(snap, q, qd, eta, T_world, I_eff, tau_gravity);
+			tau = computeAppliedTorques(snap, q, qd, T_world, I_eff, tau_gravity);
 		}
 
 		// Build list of active (non-fixed) joints
@@ -497,17 +501,12 @@ namespace robots {
 			if (joint.type == eJointType::FIXED) {
 				dx[i] = 0.0;
 				dx[i + n] = 0.0;
-				dx[i + 2 * n] = 0.0;
 				continue;
 			}
 
-			// Compute error for integral term
-			double err_i = snap.model->joints[i].q_ref - q[i];
-
-			// For revolute and prismatic joints, fill in the derivatives
+			// Fill derivatives
 			dx[i] = qd[i];
 			dx[i + n] = qdd[i];
-			dx[i + 2 * n] = err_i; // integrate error
 		}
 
 		return dx;
