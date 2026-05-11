@@ -14,6 +14,12 @@ namespace {
 	// Simple Exponential Decay Function: dx/dt = -x, which should decay to exp(-T) at t=T
 	auto convExpDecay = [](double, const VecX& x) -> VecX { return -x; };
 
+	// Jacobian of the exponential decay function, which is just -1 for this simple case
+	auto convExpDecayJac = [](const VecX& x, MatX& F_out) {
+		F_out.setZero(1, 1);
+		F_out(0, 0) = -1.0;
+	};
+
 	// Computes the error of a given step function by integrating from t=0 to t=T and comparing to the exact solution exp(-T)
 	template<typename StepFn>
 	double computeError(StepFn stepFn, double T, int N) {
@@ -40,58 +46,59 @@ namespace {
 	integration::ODE ode;
 }
 
-// Convergence Order Tests
 // Forward Euler Convergence Order Test
-TEST("Explicit Euler Convergence Order", Euler_Order1)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.eulerStep(x, t, dt, convExpDecay); },
-		1.0, 500, 1.0, 0.3, "Euler should be order 1");
+TEST("Explicit Euler Convergence Order", Euler_Order1) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.eulerStep(x, t, dt, convExpDecay);
+	}, 1.0, 500, 1.0, 0.3, "Euler should be order 1");
 }
 // Midpoint (RK2) Convergence Order Test
-TEST("Explicit Midpoint Convergence Order", Midpoint_Order2)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.midpointStep(x, t, dt, convExpDecay); },
-		1.0, 200, 2.0, 0.3, "Midpoint should be order 2");
+TEST("Explicit Midpoint Convergence Order", Midpoint_Order2) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.midpointStep(x, t, dt, convExpDecay);
+	}, 1.0, 200, 2.0, 0.3, "Midpoint should be order 2");
 }
 // Heun (RK2) Convergence Order Test
-TEST("Heun Convergence Order", Heun_Order2)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.heunStep(x, t, dt, convExpDecay); },
-		1.0, 200, 2.0, 0.3, "Heun should be order 2");
+TEST("Heun Convergence Order", Heun_Order2) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.heunStep(x, t, dt, convExpDecay);
+	}, 1.0, 200, 2.0, 0.3, "Heun should be order 2");
 }
 // Ralston (RK2) Convergence Order Test
-TEST("Ralston Convergence Order", Ralston_Order2)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.ralstonStep(x, t, dt, convExpDecay); },
-		1.0, 200, 2.0, 0.3, "Ralston should be order 2");
+TEST("Ralston Convergence Order", Ralston_Order2) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.ralstonStep(x, t, dt, convExpDecay);
+	}, 1.0, 200, 2.0, 0.3, "Ralston should be order 2");
 }
 // RK4 Convergence Order Test
-TEST("RK4 Convergence Order", RK4_Order4)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.rk4Step(x, t, dt, convExpDecay); },
-		1.0, 50, 4.0, 0.3, "RK4 should be order 4");
+TEST("RK4 Convergence Order", RK4_Order4) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.rk4Step(x, t, dt, convExpDecay);
+	}, 1.0, 50, 4.0, 0.3, "RK4 should be order 4");
 }
+
 // Implicit Euler Convergence Order Test
-TEST("Implicit Euler Convergence Order", ImplicitEuler_Order1)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.implicit_euler(x, t, dt, convExpDecay); },
-		1.0, 500, 1.0, 0.3, "Implicit Euler should be order 1");
+TEST("Implicit Euler Convergence Order", ImplicitEuler_Order1) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.implicit_euler(x, t, dt, convExpDecay);
+	}, 1.0, 500, 1.0, 0.3, "Implicit Euler should be order 1");
 }
 // Implicit Midpoint Convergence Order Test
 TEST("Implicit Midpoint Convergence Order", ImplicitMidpoint_Order2)
 {
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.implicit_midpoint(x, t, dt, convExpDecay); },
-		1.0, 200, 2.0, 0.3, "Implicit Midpoint should be order 2");
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.implicit_midpoint(x, t, dt, convExpDecay);
+	}, 1.0, 200, 2.0, 0.3, "Implicit Midpoint should be order 2");
 }
 // GLRK2 Convergence Order Test
-TEST("GLRK2 Convergence Order", GLRK2_Order4)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.GLRK2(x, t, dt, convExpDecay); },
-		1.0, 50, 4.0, 0.3, "GLRK2 should be order 4");
+TEST("GLRK2 Convergence Order", GLRK2_Order4) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.GLRK2(x, t, dt, convExpDecay, 50, 1e-6, convExpDecayJac);
+	}, 1.0, 50, 4.0, 0.3, "GLRK2 should be order 4");
 }
 // GLRK3 Convergence Order Test
-TEST("GLRK3 Convergence Order", GLRK3_Order6)
-{
-	verifyOrder([](const VecX& x, double t, double dt) { return ode.GLRK3(x, t, dt, convExpDecay); },
-		1.0, 25, 6.0, 0.3, "GLRK3 should be order 6");
+TEST("GLRK3 Convergence Order", GLRK3_Order6) {
+	verifyOrder([](const VecX& x, double t, double dt) {
+		return ode.GLRK3(x, t, dt, convExpDecay, 80, 1e-7, convExpDecayJac);
+	}, 1.0, 25, 6.0, 0.3, "GLRK3 should be order 6");
 }
