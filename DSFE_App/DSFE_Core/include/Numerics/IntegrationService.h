@@ -49,8 +49,8 @@ namespace integration {
 					//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
 				case eIntegrationMethod::ImplicitEuler:    return { _ODE->implicit_euler(x, t, dt, std::forward<Func>(f)), dt, dt };
 				case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::GLRK2:			   return { _ODE->GLRK2(x, t, dt, std::forward<Func>(f), 50, 1e-6, std::forward<JacFunc>(jac)), dt, dt };
-				case eIntegrationMethod::GLRK3:			   return { _ODE->GLRK3(x, t, dt, std::forward<Func>(f), 80, 1e-8, std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::GLRK2:			   return { _ODE->GLRK2(x, t, dt, std::forward<Func>(f), 50, 1e-10, std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::GLRK3:			   return { _ODE->GLRK3(x, t, dt, std::forward<Func>(f), 80, -1, std::forward<JacFunc>(jac)), dt, dt };
 				default:
 				LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 				return { _ODE->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };

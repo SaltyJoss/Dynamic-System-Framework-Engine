@@ -289,10 +289,13 @@ namespace integration {
 
 			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 			VecX c(2);
-			c << 0.5 - std::sqrt(3.0) / 6.0, 0.5 + std::sqrt(3.0) / 6.0; // Stage time fractions
+			c << 
+				0.5 - std::sqrt(3.0) / 6.0, 
+				0.5 + std::sqrt(3.0) / 6.0; // Stage time fractions
 
 			Mat2 A = Mat2::Zero();
-			A << 0.25, 0.25 - std::sqrt(3.0) / 6.0,
+			A << 
+				0.25, 0.25 - std::sqrt(3.0) / 6.0,
 				0.25 + std::sqrt(3.0) / 6.0, 0.25;
 
 			const double b = 0.5; // Weights for final update
@@ -376,17 +379,21 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-7, JacFunc&& jac = nullptr) {
-			if (tol < 0.0) { tol = std::min(1e-9, std::pow(dt, 7.0)); }
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = -1, JacFunc&& jac = nullptr) {
+			if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
 
 			size_t n = x.size();
 
 			// Coefficients for the 3-stage Gauss-Legendre method (6th order)
 			VecX c(3);
-			c << 0.5 - std::sqrt(15.0) / 10.0, 0.5, 0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
+			c << 
+				0.5 - std::sqrt(15.0) / 10.0, 
+				0.5, 
+				0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
 
 			Mat3 A = Mat3::Zero();
-			A << 5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 1.0 / 36.0 - std::sqrt(15.0) / 30.0,
+			A << 
+				5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 1.0 / 36.0 - std::sqrt(15.0) / 30.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 30.0, 2.0 / 9.0 + std::sqrt(15.0) / 15.0, 5.0 / 36.0;
 
@@ -395,10 +402,13 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(3 * n); // 3 stages
-			VecX x_pred = rk4Step(x, t, dt, f);
-			VecX k1_0 = f(t + c(0) * dt, x + c(0) * (x_pred - x));
-			VecX k2_0 = f(t + c(1) * dt, x + c(1) * (x_pred - x));
-			VecX k3_0 = f(t + c(2) * dt, x + c(2) * (x_pred - x));
+			VecX x_pred = GLRK2(x, t, dt, f, 50, 1e-10, jac);
+			//VecX x_pred = rk4Step(x, t, dt, f);
+			//VecX f0 = f(t, x);
+
+			VecX k1_0 = f(t + c(0) * dt, x + c(0) * dt * (x_pred - x));
+			VecX k2_0 = f(t + c(1) * dt, x + c(1) * dt * (x_pred - x));
+			VecX k3_0 = f(t + c(2) * dt, x + c(2) * dt * (x_pred - x));
 			k.segment(0, n) = k1_0;
 			k.segment(n, n) = k2_0;
 			k.segment(2 * n, n) = k3_0;
@@ -456,7 +466,7 @@ namespace integration {
 				}
 
 				if (!analytical_success) {
-					printf("Using finite difference Jacobian for GLRK2\n");
+					printf("Using finite difference Jacobian for GLRK3\n");
 					F1 = finite_difference_jacobian(
 						[&](double, const VecX& x_pert) {
 						return f(t + c(0) * dt, x_pert);
@@ -497,6 +507,12 @@ namespace integration {
 			// Solve the nonlinear system for the stage values using Newton-Raphson
 			k = newton_raphson(eval_g, eval_j, k, maxIter, tol);
 
+			VecX g_check;
+			eval_g(k, g_check);
+
+			double residual = g_check.norm();
+			//if (residual > 1e-8) { std::cout << "[GLRK3] Large final residual: " << residual << std::endl; }
+
 			// Compute the final update for x using the stage values
 			VecX k1 = k.segment(0, n);
 			VecX k2 = k.segment(n, n);
@@ -514,7 +530,8 @@ namespace integration {
 		// Newton-Raphson solver for systems of nonlinear equations g(x) = 0
 		template<typename EvalG, typename EvalJ>
 		VecX newton_raphson(EvalG&& eval_g, EvalJ&& eval_j, VecX x0, int maxIter, double tol) {
-			VecX x = x0, g, x_trial, delta;
+			VecX x = x0, g, x_trial;
+			VecX delta = VecX::Constant(x0.size(), std::numeric_limits<double>::infinity());
 			MatX J;
 			Eigen::PartialPivLU<MatX> lu;
 
@@ -524,30 +541,15 @@ namespace integration {
 				if (g.norm() < tol) { return x; }
 
 				eval_j(x, J);
-				lu.compute(J);
-
 				if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian"); }
 
+				lu.compute(J);
 				delta = lu.solve(-g);
 
-				double lambda = 1.0; // Line search parameter
-				const double norm_g = g.norm();
+				if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step"); }
+				if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
 
-				// Backtracking line search to ensure we are making progress (convergence)
-				while (lambda > 1e-6) {
-					x_trial = x + lambda * delta;
-					VecX g_trial;
-					eval_g(x_trial, g_trial);
-					if (g_trial.norm() < norm_g) {
-						x = x_trial;
-						break;
-					}
-					lambda *= 0.5;
-				}
-				if (lambda <= 1e-6) {
-					printf("[Solver Warning] Newton line search failed to converge at current timestep. Forcing fallback step recovery.\n");
-					return x0;
-				}
+				x += delta;
 			}
 
 			throw std::runtime_error("Newton-Raphson failed to converge");
@@ -556,12 +558,12 @@ namespace integration {
 		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
 		template<typename Func>
 		MatX finite_difference_jacobian(Func&& f, double t, const VecX& x) {
-			const double eps_rel = 1e-6;
+			const double eps_rel = 1e-8;
 			VecX f_0 = f(t, x);
 			int n = (int)x.size();
 			MatX J = MatX::Zero(f_0.size(), n);
 			// Compute the Jacobian column by column using central differences
-			/*for (int i = 0; i < n; ++i) {
+			for (int i = 0; i < n; ++i) {
 				VecX x_fwd = x;
 				VecX x_bwd = x;
 				double h = eps_rel * std::max(1.0, std::abs(x(i)));
@@ -570,13 +572,6 @@ namespace integration {
 				VecX f_fwd = f(t, x_fwd);
 				VecX f_bwd = f(t, x_bwd);
 				J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
-			}*/
-			// Forward difference approximation (simpler, but less accurate than central difference)
-			for (int i = 0; i < n; ++i) {
-				VecX x_pert = x;
-				double h = eps_rel * std::max(1.0, std::abs(x(i)));
-				x_pert(i) += h;
-				J.col(i) = (f(t, x_pert) - f_0) / h;
 			}
 			return J;
 		}
