@@ -284,7 +284,7 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
 		template<typename Func>
-		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-8) {
+		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-6) {
 			size_t n = x.size();
 
 			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
@@ -305,50 +305,57 @@ namespace integration {
 			k.segment(0, n) = k1_0;
 			k.segment(n, n) = k2_0;
 
-			auto eval = [&](const VecX& k_guess, VecX& g, MatX& J) {
-				// Extract the stage values k1, k2 from the guess vector
+			auto eval_g = [&](const VecX& k_guess, VecX& g) {
 				VecX k1 = k_guess.segment(0, n);
 				VecX k2 = k_guess.segment(n, n);
-				// Compute the stage points x1, x2 based on the current guess for k1, k2
+
 				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
 				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
-				// Evaluate f at the stage points
+
 				VecX f1 = f(t + c(0) * dt, x1);
 				VecX f2 = f(t + c(1) * dt, x2);
 
-				// Compute the residual g(k) = 0 for the stage equations
 				g.resize(2 * n);
 				g.segment(0, n) = k1 - f1;
 				g.segment(n, n) = k2 - f2;
+			};
 
-				// Numerical Jacobian of f with respect to x at the stage points
-				MatX F1 = finite_difference_jacobian(
-					[&](double /*t*/, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); },
-					t + c(0) * dt,
-					x1
-				);
-				MatX F2 = finite_difference_jacobian(
-					[&](double /*t*/, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); },
-					t + c(1) * dt,
-					x2
-				);
+			auto eval_j = [&](const VecX& k_guess, MatX& J) {
+				VecX k1 = k_guess.segment(0, n);
+				VecX k2 = k_guess.segment(n, n);
 
-				// Jacobian of g with respect to k has a block structure due to the coupling of k1 and k2 through the stages
-				J = MatX::Zero(2 * n, 2 * n);
-				// The Jacobian has a block structure due to the coupling of k1 and k2 through the stages
+				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
+				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
+
+				MatX F1(n, n), F2(n, n);
+
+				// Compile-time redirection bypasses FDM completely for DSFE_core
+				if constexpr (requires { f.jacobian(x1, F1); }) {
+					printf("Using analytical Jacobian for GLRK2\n");
+					f.jacobian(x1, F1);
+					f.jacobian(x2, F2);
+				}
+				else {
+					printf("Using finite difference Jacobian for GLRK2\n");
+					// Fallback for simple vector profiles inside mathlib tests
+					F1 = finite_difference_jacobian([&](double, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); }, t + c(0) * dt, x1);
+					F2 = finite_difference_jacobian([&](double, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); }, t + c(1) * dt, x2);
+				}
+
+				J.setZero(2 * n, 2 * n);
 				J.block(0, 0, n, n) = MatX::Identity(n, n) - dt * A(0, 0) * F1;
 				J.block(0, n, n, n) = -dt * A(0, 1) * F1;
 				J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
 				J.block(n, n, n, n) = MatX::Identity(n, n) - dt * A(1, 1) * F2;
-				};
+			};
 
 			// Solve the nonlinear system for the stage values using Newton-Raphson
-			k = newton_raphson(eval, k, maxIter, tol);
+			k = newton_raphson(eval_g, eval_j, k, maxIter, tol);
 
 			// Compute the final update for x using the stage values
 			VecX k1 = k.segment(0, n);
 			VecX k2 = k.segment(n, n);
-			VecX x_f = x + dt * b * (k1 + k2);
+			VecX x_f = x + dt * (b * k1 + b * k2);
 
 			// Precautionary check for divergence (NaN or Inf)
 			if (!x_f.allFinite()) { throw std::runtime_error("GLRK2 diverged"); }
@@ -358,7 +365,7 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-9) {
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-7) {
 			if (tol < 0.0) { tol = std::min(1e-9, std::pow(dt, 7.0)); }
 
 			size_t n = x.size();
@@ -377,7 +384,7 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(3 * n); // 3 stages
-			VecX x_pred = GLRK2(x, t, dt, f);
+			VecX x_pred = rk4Step(x, t, dt, f);
 			VecX k1_0 = f(t + c(0) * dt, x + c(0) * (x_pred - x));
 			VecX k2_0 = f(t + c(1) * dt, x + c(1) * (x_pred - x));
 			VecX k3_0 = f(t + c(2) * dt, x + c(2) * (x_pred - x));
@@ -385,46 +392,72 @@ namespace integration {
 			k.segment(n, n) = k2_0;
 			k.segment(2 * n, n) = k3_0;
 
-			auto eval = [&](const VecX& k_guess, VecX& g, MatX& J) {
-				// Extract the stage values k1, k2, k3 from the guess vector
+			auto eval_g = [&](const VecX& k_guess, VecX& g) {
 				VecX k1 = k_guess.segment(0, n);
 				VecX k2 = k_guess.segment(n, n);
 				VecX k3 = k_guess.segment(2 * n, n);
-				// Compute the stage points x1, x2, x3 based on the current guess for k1, k2, k3
+
 				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2 + A(0, 2) * k3);
 				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
 				VecX x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
-				// Evaluate f at the stage points
+
 				VecX f1 = f(t + c(0) * dt, x1);
 				VecX f2 = f(t + c(1) * dt, x2);
 				VecX f3 = f(t + c(2) * dt, x3);
 
-				// Compute the residual g(k) = 0 for the stage equations
 				g.resize(3 * n);
+
 				g.segment(0, n) = k1 - f1;
 				g.segment(n, n) = k2 - f2;
 				g.segment(2 * n, n) = k3 - f3;
+			};
 
-				// Numerical Jacobian of f with respect to x at the stage points
-				MatX F1 = finite_difference_jacobian(
-					[&](double /*t*/, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); },
-					t + c(0) * dt,
-					x1
-				);
-				MatX F2 = finite_difference_jacobian(
-					[&](double /*t*/, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); },
-					t + c(1) * dt,
-					x2
-				);
-				MatX F3 = finite_difference_jacobian(
-					[&](double /*t*/, const VecX& x_pert) { return f(t + c(2) * dt, x_pert); },
-					t + c(2) * dt,
-					x3
-				);
+			auto eval_j = [&](const VecX& k_guess, MatX& J) {
 
-				// Jacobian of g with respect to k has a block structure due to the coupling of k1, k2, k3 through the stages
-				J = MatX::Zero(3 * n, 3 * n);
-				// The Jacobian has a block structure due to the coupling of k1, k2, k3 through the stages
+				VecX k1 = k_guess.segment(0, n);
+				VecX k2 = k_guess.segment(n, n);
+				VecX k3 = k_guess.segment(2 * n, n);
+
+				VecX x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2 + A(0, 2) * k3);
+				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
+				VecX x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
+
+				MatX F1(n, n), F2(n, n), F3(n, n);
+
+				// Compile-time redirection bypasses FDM completely for DSFE_core
+				if constexpr (requires { f.jacobian(x1, F1); }) {
+					f.jacobian(x1, F1);
+					f.jacobian(x2, F2);
+					f.jacobian(x3, F3);
+				}
+				else {
+					// Fallback for simple vector profiles inside mathlib tests
+					F1 = finite_difference_jacobian(
+						[&](double, const VecX& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						t + c(0) * dt,
+						x1
+					);
+
+					F2 = finite_difference_jacobian(
+						[&](double, const VecX& x_pert) {
+						return f(t + c(1) * dt, x_pert);
+					},
+						t + c(1) * dt,
+						x2
+					);
+
+					F3 = finite_difference_jacobian(
+						[&](double, const VecX& x_pert) {
+						return f(t + c(2) * dt, x_pert);
+					},
+						t + c(2) * dt,
+						x3
+					);
+				}
+
+				J.setZero(3 * n, 3 * n);
 				J.block(0, 0, n, n) = MatX::Identity(n, n) - dt * A(0, 0) * F1;
 				J.block(0, n, n, n) = -dt * A(0, 1) * F1;
 				J.block(0, 2 * n, n, n) = -dt * A(0, 2) * F1;
@@ -434,10 +467,10 @@ namespace integration {
 				J.block(2 * n, 0, n, n) = -dt * A(2, 0) * F3;
 				J.block(2 * n, n, n, n) = -dt * A(2, 1) * F3;
 				J.block(2 * n, 2 * n, n, n) = MatX::Identity(n, n) - dt * A(2, 2) * F3;
-				};
+			};
 
 			// Solve the nonlinear system for the stage values using Newton-Raphson
-			k = newton_raphson(eval, k, maxIter, tol);
+			k = newton_raphson(eval_g, eval_j, k, maxIter, tol);
 
 			// Compute the final update for x using the stage values
 			VecX k1 = k.segment(0, n);
@@ -454,70 +487,53 @@ namespace integration {
 	private:
 
 		// Newton-Raphson solver for systems of nonlinear equations g(x) = 0
-		template<typename Eval>
-		VecX newton_raphson(Eval&& eval, VecX x0, int maxIter, double tol) {
-			VecX x = x0;
+		template<typename EvalG, typename EvalJ>
+		VecX newton_raphson(EvalG&& eval_g, EvalJ&& eval_j, VecX x0, int maxIter, double tol) {
+			VecX x = x0, g, x_trial, delta;
+			MatX J;
+			Eigen::PartialPivLU<MatX> lu;
+
 			for (int iter = 0; iter < maxIter; ++iter) {
-				VecX g;
-				MatX J;
+				eval_g(x, g);
+				if (!g.allFinite()) { throw std::runtime_error("Newton received non-finite residual"); }
+				if (g.norm() < tol) { return x; }
 
-				eval(x, g, J);
+				eval_j(x, J);
+				lu.compute(J);
 
-				if (!g.allFinite() || !J.allFinite()) {
-					throw std::runtime_error("Newton received non-finite residual/Jacobian");
-				}
+				if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian"); }
 
-				if (g.norm() < tol) {
-					return x;
-				}
-
-				Eigen::FullPivLU<MatX> lu(J);
-				if (!lu.isInvertible()) {
-					throw std::runtime_error("Jacobian is singular during Newton-Raphson iteration " + std::to_string(iter + 1));
-				}
-
-				VecX delta = lu.solve(-g);
+				delta = lu.solve(-g);
 
 				double lambda = 1.0; // Line search parameter
-				double norm_g = g.norm();
-				VecX x_trial;
+				const double norm_g = g.norm();
 
 				// Backtracking line search to ensure we are making progress (convergence)
 				while (lambda > 1e-6) {
 					x_trial = x + lambda * delta;
-
 					VecX g_trial;
-					MatX J_dummy;
-					eval(x_trial, g_trial, J_dummy);
-
-					// Check if the new guess has a smaller residual norm
+					eval_g(x_trial, g_trial);
 					if (g_trial.norm() < norm_g) {
-						x = x_trial; // Accept the update
+						x = x_trial;
 						break;
 					}
-					lambda *= 0.5; // Reduce step size
+					lambda *= 0.5;
 				}
-				if (lambda <= 1e-4) {
-					x += 0.1 * delta;  // force small step instead of failing
-				}
+				if (lambda <= 1e-6) { throw std::runtime_error("Newton line search failed"); }
 			}
 
-			VecX g_final;
-			MatX J_final;
-			eval(x, g_final, J_final);
-
-			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations, final residual norm: " + std::to_string(g_final.norm()));
+			throw std::runtime_error("Newton-Raphson failed to converge");
 		}
 
 		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
 		template<typename Func>
 		MatX finite_difference_jacobian(Func&& f, double t, const VecX& x) {
-			const double eps_rel = std::sqrt(std::numeric_limits<double>::epsilon());
+			const double eps_rel = 1e-6;
 			VecX f_0 = f(t, x);
 			int n = (int)x.size();
 			MatX J = MatX::Zero(f_0.size(), n);
-			// Compute the Jacobian column by column using finite differences
-			for (int i = 0; i < n; ++i) {
+			// Compute the Jacobian column by column using central differences
+			/*for (int i = 0; i < n; ++i) {
 				VecX x_fwd = x;
 				VecX x_bwd = x;
 				double h = eps_rel * std::max(1.0, std::abs(x(i)));
@@ -526,6 +542,13 @@ namespace integration {
 				VecX f_fwd = f(t, x_fwd);
 				VecX f_bwd = f(t, x_bwd);
 				J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
+			}*/
+			// Forward difference approximation (simpler, but less accurate than central difference)
+			for (int i = 0; i < n; ++i) {
+				VecX x_pert = x;
+				double h = eps_rel * std::max(1.0, std::abs(x(i)));
+				x_pert(i) += h;
+				J.col(i) = (f(t, x_pert) - f_0) / h;
 			}
 			return J;
 		}

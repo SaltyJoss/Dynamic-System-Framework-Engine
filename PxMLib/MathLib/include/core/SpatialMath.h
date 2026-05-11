@@ -42,7 +42,6 @@ namespace mathlib {
 		}
 	};
 
-
 	inline Mat3 skewSymmetric(const Vec3& v) {
 		Mat3 S;
 		S <<
@@ -92,5 +91,4 @@ namespace mathlib {
 
 		return I;
 	}
-
 } // namespace mathlib

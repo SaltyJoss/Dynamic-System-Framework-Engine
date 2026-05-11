@@ -289,6 +289,19 @@ namespace robots {
 		return snap;
 	}
 
+	struct SystemDynamicsWrapper {
+		RobotDynamics* dynamics;
+		const RobotSimSnapshot& snap;
+
+		mathlib::VecX operator()(double t, const mathlib::VecX& xIn) {
+			return dynamics->derivative(t, xIn, snap);
+		}
+
+		void jacobian(const mathlib::VecX& xIn, mathlib::MatX& J_out) {
+			dynamics->analyticalJacobian(*snap.model, xIn, J_out);
+		}
+	};
+
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
@@ -308,7 +321,8 @@ namespace robots {
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
 		// Integrate 
-		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
+		//auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
+		SystemDynamicsWrapper f{ _dynamics.get(), snap };
 		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
 
 		unpackState(step.x_next);

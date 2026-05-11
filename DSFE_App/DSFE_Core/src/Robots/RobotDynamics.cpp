@@ -9,6 +9,8 @@
 
 #include "Robots/TrajectoryManager.h"
 
+#include <cmath>
+
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 
@@ -243,6 +245,44 @@ namespace robots {
 		return tau_G; // [Nm], gravity torques for each joint
 	}
 
+	void RobotDynamics::analyticalJacobian(
+		const RobotConstModel& robot,
+		const mathlib::VecX& x,
+		mathlib::MatX& J_out
+	) {
+		const size_t n = robot.joints.size();
+		J_out.setZero(2 * n, 2 * n); // [rad/rad] for position part, [rad/s / rad/s] for velocity part
+
+		J_out.block(0, 0, n, n).setIdentity();
+
+		MatX dTau_dq = MatX::Zero(n, n);
+		MatX dTau_dv = MatX::Zero(n, n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& joint = robot.joints[i];
+			if (joint.type == eJointType::FIXED) { continue; }
+
+			const double wn = joint.wn_target;
+			const double z = joint.zeta_target;
+			const double I_eff = std::max(_M(i, i), 1e-6);
+
+			const double k_p = I_eff * wn * wn;
+			const double k_d = 2.0 * z * I_eff * wn;
+
+			dTau_dq(i, i) = -k_p;
+
+			double stiff_friction = -0.05 * (1.0 - std::pow(std::tanh(_metrics.qd[i] / 1e-2), 2)) / 1e-2;
+			dTau_dq(i, i) = -k_d - 0.2 + stiff_friction;
+		}
+
+		auto solver = _M.ldlt();
+		MatX da_dq = solver.solve(dTau_dq);
+		MatX da_dv = solver.solve(dTau_dv);
+
+		J_out.block(n, 0, n, n) = da_dq;
+		J_out.block(n, n, n, n) = da_dv;
+	}
+
 	// Computes the derivative of the state vector (q, qd) based on the current state and robot configurations
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
@@ -300,18 +340,6 @@ namespace robots {
 			tau_i -= /*joint.dynamics.damping*/ 0.2 * qd[i]; // subtract viscous damping
 			tau_i -= /*joint.dynamics.friction*/ 0.05 * std::tanh(qd[i] / 1e-2); // subtract Coulomb friction
 
-			uint8_t saturated = 0;
-			double tau_sat = 0.0;
-			if (joint.limits.maxEffort > 0.0f) {
-				const double E_max = joint.limits.maxEffort;
-				const double unclamped = tau_i; // [Nm], the original torque command before clamping
-
-				tau_i = std::clamp(tau_i, -E_max, E_max); // clamp to max effort
-
-				tau_sat = unclamped - tau_i; // [Nm], the amount by which the torque command exceeds the limit
-				saturated = (std::abs(unclamped) > E_max);
-			}
-
 			_tau[i] = tau_i;
 
 			// metrics
@@ -324,8 +352,8 @@ namespace robots {
 			_metrics.I_eff[i] = I_eff;
 			_metrics.tau[i] = tau_i;
 
-			_metrics.tau_sat[i] = tau_sat;
-			_metrics.sat_flag[i] = saturated;
+			//_metrics.tau_sat[i] = tau_sat;
+			//_metrics.sat_flag[i] = saturated;
 		}
 
 		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)

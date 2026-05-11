@@ -60,6 +60,13 @@ namespace robots {
 			const std::vector<mathlib::Pose>& jointWorldPoses
 		) const;
 
+		// Computes the analytical Jacobian matrix J(q) for the robot based on the current state and robot configuration
+		void analyticalJacobian(
+			const RobotConstModel& robot,
+			const mathlib::VecX& x,
+			mathlib::MatX& J_out
+		);
+
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
 		mathlib::VecX derivative(
 			double t,
