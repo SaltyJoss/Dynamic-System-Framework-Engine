@@ -251,8 +251,10 @@ namespace robots {
 		mathlib::MatX& J_out
 	) {
 		const size_t n = robot.joints.size();
-		J_out.setZero(2 * n, 2 * n); // [rad/rad] for position part, [rad/s / rad/s] for velocity part
+		Eigen::Map<const VecX> q_local(x.data(), n);
+		Eigen::Map<const VecX> qd_local(x.data() + n, n);
 
+		J_out.setZero(2 * n, 2 * n); // [rad/rad] for position part, [rad/s / rad/s] for velocity part
 		J_out.block(0, 0, n, n).setIdentity();
 
 		MatX dTau_dq = MatX::Zero(n, n);
@@ -271,8 +273,10 @@ namespace robots {
 
 			dTau_dq(i, i) = -k_p;
 
-			double stiff_friction = -0.05 * (1.0 - std::pow(std::tanh(_metrics.qd[i] / 1e-2), 2)) / 1e-2;
-			dTau_dq(i, i) = -k_d - 0.2 + stiff_friction;
+			double qd_i = qd_local[i];
+			double tanh_term = std::tanh(qd_i / 1e-2);
+			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-2;
+			dTau_dq(i, i) = -k_d - 0.2 + stiff_friction_slope;
 		}
 
 		auto solver = _M.ldlt();
@@ -369,6 +373,86 @@ namespace robots {
 
 		return dx;
 	}
+
+	mathlib::VecX RobotDynamics::derivative_with_gains(
+		double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
+		const mathlib::VecX& kp, const mathlib::VecX& kd
+	) {
+		const size_t n = snap.model->joints.size();
+		mathlib::VecX dx(2 * n);
+
+		Eigen::Map<const VecX> q(x.data(), n);
+		Eigen::Map<const VecX> qd(x.data() + n, n);
+
+		std::vector<Pose> T_world(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
+		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
+
+		computeMassMatrix(*snap.model, T_world, jointWorldPoses, _M);
+		_h = computeCoriolisVector(*snap.model, q, qd, T_world, _M);
+
+		_g.setZero();
+		if (snap.torqueMode != eTorqueMode::NONE) {
+			_g = computeGravityTorque(*snap.model, T_world, jointWorldPoses);
+		}
+
+		_tau.setZero();
+		for (size_t i = 0; i < n; ++i) {
+			if (snap.model->joints[i].type == eJointType::FIXED) continue;
+
+			// FIXED: Use the constant, frozen step-start values passed down
+			double tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + std::max(_M(i, i), 1e-6) * snap.qdd_ref[i];
+			tau_i += _g[i] + _h[i];
+			tau_i -= 0.2 * qd[i];
+			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
+
+			_tau[i] = tau_i;
+		}
+
+		_rhs.noalias() = _tau - _h - _g;
+		_metrics.qdd = _M.ldlt().solve(_rhs);
+
+		dx.head(n) = qd;
+		dx.tail(n) = _metrics.qdd;
+		return dx;
+	}
+
+	void RobotDynamics::jacobian_with_gains(
+		const mathlib::VecX& x, const RobotSimSnapshot& snap,
+		const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out
+	) {
+		const size_t n = snap.model->joints.size();
+		F_out.setZero(2 * n, 2 * n);
+		F_out.block(0, n, n, n).setIdentity();
+
+		Eigen::Map<const VecX> q(x.data(), n);
+		Eigen::Map<const VecX> qd(x.data() + n, n);
+
+		// Compute a local mass matrix for this exact stage evaluation frame
+		mathlib::MatX M_local(n, n);
+		std::vector<Pose> T_local(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_local);
+		std::vector<Pose> j_local = _kinematics->calcJointWorldPoses(T_local, *snap.model);
+		computeMassMatrix(*snap.model, T_local, j_local, M_local);
+
+		mathlib::MatX dTau_dq = mathlib::MatX::Zero(n, n);
+		mathlib::MatX dTau_dv = mathlib::MatX::Zero(n, n);
+
+		for (size_t i = 0; i < n; ++i) {
+			if (snap.model->joints[i].type == eJointType::FIXED) continue;
+
+			dTau_dq(i, i) = -kp[i];
+
+			double tanh_term = std::tanh(qd[i] / 1e-2);
+			double stiff_friction = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-2;
+			dTau_dv(i, i) = -kd[i] - 0.2 + stiff_friction;
+		}
+
+		auto solver = M_local.ldlt();
+		F_out.block(n, 0, n, n) = solver.solve(dTau_dq);
+		F_out.block(n, n, n, n) = solver.solve(dTau_dv);
+	}
+
 
 	void RobotDynamics::resizeMetrics(size_t n) {
 		_metrics.resize(n);

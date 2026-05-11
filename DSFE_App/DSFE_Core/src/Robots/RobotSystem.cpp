@@ -289,19 +289,6 @@ namespace robots {
 		return snap;
 	}
 
-	struct SystemDynamicsWrapper {
-		RobotDynamics* dynamics;
-		const RobotSimSnapshot& snap;
-
-		mathlib::VecX operator()(double t, const mathlib::VecX& xIn) {
-			return dynamics->derivative(t, xIn, snap);
-		}
-
-		void jacobian(const mathlib::VecX& xIn, mathlib::MatX& J_out) {
-			dynamics->analyticalJacobian(*snap.model, xIn, J_out);
-		}
-	};
-
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) return;
@@ -317,13 +304,40 @@ namespace robots {
 		mathlib::VecX qdd(n);
 		for (size_t i = 0; i < n; ++i) { qdd[i] = _robot.joints[i].qdd_ref; }
 
+		std::vector<Pose> T_start(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
+		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
+
+		mathlib::MatX M_start(n, n);
+		_dynamics->computeMassMatrix(*snap.model, T_start, jointWorldPoses_start, M_start);
+
+		// 2. CACHE FROZEN GAINS BASED ON M_START
+		mathlib::VecX kp_frozen(n), kd_frozen(n);
+		for (size_t i = 0; i < n; ++i) {
+			const auto& joint = snap.model->joints[i];
+			if (joint.type == eJointType::FIXED) continue;
+
+			const double I_eff = std::max(M_start(i, i), 1e-6);
+			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
+			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
+		}
+
 		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
 		// Integrate 
-		//auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
-		SystemDynamicsWrapper f{ _dynamics.get(), snap };
-		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
+		//auto f_deriv = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
+		//auto f_J = [&](const mathlib::VecX& xIn, mathlib::MatX& J_out) { return _dynamics->analyticalJacobian(*snap.model, xIn, J_out); };
+		
+		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
+			return _dynamics->derivative_with_gains(t, xIn, snap, kp_frozen, kd_frozen);
+		};
+
+		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
+			_dynamics->jacobian_with_gains(xIn, snap, kp_frozen, kd_frozen, J_out);
+		};
+		
+		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f_deriv, f_J);
 
 		unpackState(step.x_next);
 		_dynamics->setDt(step.dt_taken);

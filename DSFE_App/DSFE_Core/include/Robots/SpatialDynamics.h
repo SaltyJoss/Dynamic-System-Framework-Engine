@@ -6,6 +6,7 @@
 #include <core/SpatialMath.h>
 
 namespace robots {
+
 	class DSFE_API SpatialDynamics {
 	public:
 		static void computeSpatialVelocities(

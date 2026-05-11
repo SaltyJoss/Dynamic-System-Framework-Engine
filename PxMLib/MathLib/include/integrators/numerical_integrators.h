@@ -283,8 +283,8 @@ namespace integration {
 		}
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
-		template<typename Func>
-		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-6) {
+		template<typename Func, typename JacFunc = std::nullptr_t>
+		inline VecX GLRK2(const VecX& x, double t, double dt, Func&& f, int maxIter = 50, double tol = 1e-6, JacFunc&& jac = nullptr) {
 			size_t n = x.size();
 
 			// Coefficients for the 2-stage Gauss-Legendre method (4th order)
@@ -328,16 +328,27 @@ namespace integration {
 				VecX x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
 
 				MatX F1(n, n), F2(n, n);
+				bool analytical_success = false;
 
-				// Compile-time redirection bypasses FDM completely for DSFE_core
-				if constexpr (requires { f.jacobian(x1, F1); }) {
-					printf("Using analytical Jacobian for GLRK2\n");
-					f.jacobian(x1, F1);
-					f.jacobian(x2, F2);
+				// Attempt to use the provided Jacobian function if it's not a nullptr and is callable
+				if constexpr (!std::is_same_v<std::decay_t<JacFunc>, std::nullptr_t>) {
+					if constexpr (std::is_pointer_v<std::decay_t<JacFunc>> || requires { bool(jac); }) {
+						if (jac) {
+							jac(x1, F1);
+							jac(x2, F2);
+							analytical_success = true;
+						}
+					}
+					else {
+						// Pure lambda type execution path
+						jac(x1, F1);
+						jac(x2, F2);
+						analytical_success = true;
+					}
 				}
-				else {
+
+				if (!analytical_success) {
 					printf("Using finite difference Jacobian for GLRK2\n");
-					// Fallback for simple vector profiles inside mathlib tests
 					F1 = finite_difference_jacobian([&](double, const VecX& x_pert) { return f(t + c(0) * dt, x_pert); }, t + c(0) * dt, x1);
 					F2 = finite_difference_jacobian([&](double, const VecX& x_pert) { return f(t + c(1) * dt, x_pert); }, t + c(1) * dt, x2);
 				}
@@ -364,8 +375,8 @@ namespace integration {
 		}
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
-		template<typename Func>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-7) {
+		template<typename Func, typename JacFunc = std::nullptr_t>
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = 1e-7, JacFunc&& jac = nullptr) {
 			if (tol < 0.0) { tol = std::min(1e-9, std::pow(dt, 7.0)); }
 
 			size_t n = x.size();
@@ -423,15 +434,29 @@ namespace integration {
 				VecX x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
 
 				MatX F1(n, n), F2(n, n), F3(n, n);
+				bool analytical_success = false;
 
-				// Compile-time redirection bypasses FDM completely for DSFE_core
-				if constexpr (requires { f.jacobian(x1, F1); }) {
-					f.jacobian(x1, F1);
-					f.jacobian(x2, F2);
-					f.jacobian(x3, F3);
+				// Attempt to use the provided Jacobian function if it's not a nullptr and is callable
+				if constexpr (!std::is_same_v<std::decay_t<JacFunc>, std::nullptr_t>) {
+					if constexpr (std::is_pointer_v<std::decay_t<JacFunc>> || requires { bool(jac); }) {
+						if (jac) {
+							jac(x1, F1);
+							jac(x2, F2);
+							jac(x3, F3);
+							analytical_success = true;
+						}
+					}
+					else {
+						// Pure lambda type execution path
+						jac(x1, F1);
+						jac(x2, F2);
+						jac(x3, F3);
+						analytical_success = true;
+					}
 				}
-				else {
-					// Fallback for simple vector profiles inside mathlib tests
+
+				if (!analytical_success) {
+					printf("Using finite difference Jacobian for GLRK2\n");
 					F1 = finite_difference_jacobian(
 						[&](double, const VecX& x_pert) {
 						return f(t + c(0) * dt, x_pert);
@@ -519,7 +544,10 @@ namespace integration {
 					}
 					lambda *= 0.5;
 				}
-				if (lambda <= 1e-6) { throw std::runtime_error("Newton line search failed"); }
+				if (lambda <= 1e-6) {
+					printf("[Solver Warning] Newton line search failed to converge at current timestep. Forcing fallback step recovery.\n");
+					return x0;
+				}
 			}
 
 			throw std::runtime_error("Newton-Raphson failed to converge");

@@ -74,6 +74,16 @@ namespace robots {
 			const RobotSimSnapshot& snap
 		);
 
+		mathlib::VecX derivative_with_gains(
+			double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp, const mathlib::VecX& kd
+		);
+
+		void jacobian_with_gains(
+			const mathlib::VecX& x, const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out
+		);
+
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
 		const double getGravity() const { return _gravity; }
