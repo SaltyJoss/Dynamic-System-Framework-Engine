@@ -191,6 +191,36 @@ namespace robots {
 			if (!checkSize(joint_index, "joint_index")) return false;
 			return true; // all sizes match
         }
+
+        void swap(JointLogBuffer& other) noexcept {
+            sim_time.swap(other.sim_time);
+            dt_taken.swap(other.dt_taken);
+            dt_sug.swap(other.dt_sug);
+            theta.swap(other.theta);
+            omega.swap(other.omega);
+            alpha.swap(other.alpha);
+            err.swap(other.err);
+            err_d.swap(other.err_d);
+            I_eff.swap(other.I_eff);
+            tau.swap(other.tau);
+            tau_fb.swap(other.tau_fb);
+            tau_coriolis.swap(other.tau_coriolis);
+            tau_gravity.swap(other.tau_gravity);
+            tau_damping.swap(other.tau_damping);
+            tau_friction.swap(other.tau_friction);
+            tau_barrier.swap(other.tau_barrier);
+            tau_sat.swap(other.tau_sat);
+            KE.swap(other.KE);
+            PE.swap(other.PE);
+            E_total.swap(other.E_total);
+            W_actuator.swap(other.W_actuator);
+            P_damping.swap(other.P_damping);
+            P_friction.swap(other.P_friction);
+            clamp_theta.swap(other.clamp_theta);
+            clamp_omega.swap(other.clamp_omega);
+            sat_flag.swap(other.sat_flag);
+            joint_index.swap(other.joint_index);
+        }
     };
 
 	// Struct for logging reference trajectory data

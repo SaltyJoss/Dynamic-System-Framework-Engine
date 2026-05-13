@@ -149,7 +149,7 @@ namespace robots {
 		eTorqueMode getTorqueMode() const { return _robot.torqueMode; }
 
 		// Swap for the current log buffer, returning a ptr to new active buffer
-		robots::JointLogBuffer* claimExportLogBuffer();
+		std::unique_ptr<robots::JointLogBuffer> claimExportLogBuffer();
 
 		// Method to enable or disable the use of internal log buffers
 		void useInternalLogBuffer(bool enable);

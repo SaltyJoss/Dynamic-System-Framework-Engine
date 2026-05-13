@@ -1015,13 +1015,17 @@ namespace robots {
 	void RobotSystem::setTorqueMode(eTorqueMode mode) { _robot.torqueMode = mode; }
 
 	// Method to claim the current active log buffer for exporting logged data (returns pointer to buffer active before swap)
-	robots::JointLogBuffer* RobotSystem::claimExportLogBuffer() {
+	std::unique_ptr<robots::JointLogBuffer> RobotSystem::claimExportLogBuffer() {
 		// swap active buffer index
 		std::lock_guard<std::mutex> lk(_logSwapMutex);				 // ensure thread safety during swap
 		int prev = _activeLogBufIdx.load(std::memory_order_acquire); // get current active buffer index
 		int next = 1 - prev;										 // compute next buffer index (toggle between 0 and 1)
 		_activeLogBufIdx.store(next, std::memory_order_release);	 // set next buffer as active for logging
-		return &_logBuffers[prev]; // returns ptr to buffer active before swap
+
+		auto out = std::make_unique<robots::JointLogBuffer>(); // create a new buffer to return to caller
+		out->swap(_logBuffers[prev]); // swap contents of previous active buffer with new buffer
+
+		return out;
 	}
 
 	// Method to enable or disable the use of internal log buffers for recording joint metrics during simulation

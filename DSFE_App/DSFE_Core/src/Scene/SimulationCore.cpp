@@ -159,10 +159,8 @@ namespace core {
 		D_RUNTIME("stopping simulation");
 
 		if (_robot) {
-			robots::JointLogBuffer* raw = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
-			if (raw) {
-				auto buf = std::make_unique<robots::JointLogBuffer>();
-				_robot->useInternalLogBuffer(true);
+			auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
+			if (buf) {
 				enqueueExportBuffer(std::move(buf));
 			}
 		}
@@ -174,29 +172,17 @@ namespace core {
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& buf) {
+	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now(); // start timer for export duration measurement
 		// Construct a header for the HDF5 dataset based on the robot and integrator names
 		const std::string intName = _robot->getIntegratorName();
 		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
 		const std::string header = robotName + "_sim_" + intName;
 
-		// Claim the export log buffer from the robot (swap is internal!)
-		robots::JointLogBuffer* exportBuf = _robot->claimExportLogBuffer();
-		if (!exportBuf) { return; }
-
-		// Validation check to ensure we have data to export
-		std::string vmsg;
-		if (!exportBuf->validate(&vmsg)) {
-			D_FAIL("ExportLogs -> validation failed for export buffer: %s", vmsg.c_str());
-			// Not returning, data is exported even if validation fails
-		}
-
 		// Check if there are any log entries to export
-		const size_t N = exportBuf->size();
+		const size_t N = exportBuf.size();
 		if (N == 0) {
-			D_RUNTIME("ExportLogs -> no data to export (buffer size is 0)"); // *REMNINDER* -> SHOULD I make a macro for ExportLogs?
-			exportBuf->clear();
+			D_RUNTIME("ExportLogs has no data to export (buffer size is 0)");
 			return;
 		}
 
@@ -204,38 +190,38 @@ namespace core {
 		for (size_t i = 0; i < N; ++i) {
 			data::FieldList fields;
 			// Sim Metadata
-			fields.emplace_back("sim_time",    (double)exportBuf->sim_time[i]);
-			fields.emplace_back("dt_taken",    (double)exportBuf->dt_taken[i]);
-			fields.emplace_back("dt_sug",      (double)exportBuf->dt_sug[i]);
+			fields.emplace_back("sim_time",    (double)exportBuf.sim_time[i]);
+			fields.emplace_back("dt_taken",    (double)exportBuf.dt_taken[i]);
+			fields.emplace_back("dt_sug",      (double)exportBuf.dt_sug[i]);
 			// States
-			fields.emplace_back("theta",       (double)exportBuf->theta[i]);
-			fields.emplace_back("omega",       (double)exportBuf->omega[i]);
-			fields.emplace_back("alpha",       (double)exportBuf->alpha[i]);
-			fields.emplace_back("err",         (double)exportBuf->err[i]);
-			fields.emplace_back("err_d",       (double)exportBuf->err_d[i]);
+			fields.emplace_back("theta",       (double)exportBuf.theta[i]);
+			fields.emplace_back("omega",       (double)exportBuf.omega[i]);
+			fields.emplace_back("alpha",       (double)exportBuf.alpha[i]);
+			fields.emplace_back("err",         (double)exportBuf.err[i]);
+			fields.emplace_back("err_d",       (double)exportBuf.err_d[i]);
 			// Dynamics
-			fields.emplace_back("I_eff",       (double)exportBuf->I_eff[i]);
-			fields.emplace_back("tau",         (double)exportBuf->tau[i]);
-			fields.emplace_back("tau_fb",      (double)exportBuf->tau_fb[i]);
-			fields.emplace_back("tau_coriolis",(double)exportBuf->tau_coriolis[i]);
-			fields.emplace_back("tau_gravity", (double)exportBuf->tau_gravity[i]);
-			fields.emplace_back("tau_damping", (double)exportBuf->tau_damping[i]);
-			fields.emplace_back("tau_friction",(double)exportBuf->tau_friction[i]);
-			fields.emplace_back("tau_barrier", (double)exportBuf->tau_barrier[i]);
-			fields.emplace_back("tau_sat",     (double)exportBuf->tau_sat[i]);
+			fields.emplace_back("I_eff",       (double)exportBuf.I_eff[i]);
+			fields.emplace_back("tau",         (double)exportBuf.tau[i]);
+			fields.emplace_back("tau_fb",      (double)exportBuf.tau_fb[i]);
+			fields.emplace_back("tau_coriolis",(double)exportBuf.tau_coriolis[i]);
+			fields.emplace_back("tau_gravity", (double)exportBuf.tau_gravity[i]);
+			fields.emplace_back("tau_damping", (double)exportBuf.tau_damping[i]);
+			fields.emplace_back("tau_friction",(double)exportBuf.tau_friction[i]);
+			fields.emplace_back("tau_barrier", (double)exportBuf.tau_barrier[i]);
+			fields.emplace_back("tau_sat",     (double)exportBuf.tau_sat[i]);
 			// Energy, Work, & Power
-			fields.emplace_back("KE",          (double)exportBuf->KE[i]);
-			fields.emplace_back("PE",          (double)exportBuf->PE[i]);
-			fields.emplace_back("E_total",     (double)exportBuf->E_total[i]);
-			fields.emplace_back("W_actuator",  (double)exportBuf->W_actuator[i]);
-			fields.emplace_back("P_damping",   (double)exportBuf->P_damping[i]);
-			fields.emplace_back("P_friction",  (double)exportBuf->P_friction[i]);
+			fields.emplace_back("KE",          (double)exportBuf.KE[i]);
+			fields.emplace_back("PE",          (double)exportBuf.PE[i]);
+			fields.emplace_back("E_total",     (double)exportBuf.E_total[i]);
+			fields.emplace_back("W_actuator",  (double)exportBuf.W_actuator[i]);
+			fields.emplace_back("P_damping",   (double)exportBuf.P_damping[i]);
+			fields.emplace_back("P_friction",  (double)exportBuf.P_friction[i]);
 			// Limit flags and info
-			fields.emplace_back("clamp_theta", (double)exportBuf->clamp_theta[i]);
-			fields.emplace_back("clamp_omega", (double)exportBuf->clamp_omega[i]);
-			fields.emplace_back("sat_flag",    (double)exportBuf->sat_flag[i]);
+			fields.emplace_back("clamp_theta", (double)exportBuf.clamp_theta[i]);
+			fields.emplace_back("clamp_omega", (double)exportBuf.clamp_omega[i]);
+			fields.emplace_back("sat_flag",    (double)exportBuf.sat_flag[i]);
 			// Joint info
-			fields.emplace_back("joint_index", (double)exportBuf->joint_index[i]);
+			fields.emplace_back("joint_index", (double)exportBuf.joint_index[i]);
 
 			// Write entry to HDF5
 			_data.capture(data::Stream::Simulation, header, fields);
@@ -243,18 +229,6 @@ namespace core {
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
 		LOG_INFO("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
-		D_RUNTIME("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
-
-		// Clear exported buffer
-		exportBuf->clear();
-		LOG_INFO("ExportLogs -> export buffer cleared");
-		D_RUNTIME("ExportLogs -> export buffer cleared");
-		
-		// Log success
-		LOG_INFO("ExportLogs -> export completed successfully");
-		D_SUCCESS("ExportLogs -> export completed successfully");
-
-		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry

@@ -153,9 +153,10 @@ namespace core {
 		double _dt = 1.0 / 180.0;		// [seconds], fixed timestep duration for physics updates
 		double _telHz = 120.0;			// [Hz], controls how often telemetry updates during simulation runs
 		double _accum = 0.0;			// Accumulator for fixed timestep
-		double _simTime = 0.0;			// Current simulation time
-		bool _simRunning = false;		// Whether the simulation loop is currently running
-		bool _scriptRunning = false;	// Whether a script is currently running
+
+		std::atomic<double> _simTime{ 0.0 };		// Current simulation time
+		std::atomic<bool> _simRunning{ false };		// Whether the simulation loop is currently running
+		std::atomic<bool> _scriptRunning{ false };	// Whether a script is currently running
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;
