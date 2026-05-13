@@ -158,14 +158,14 @@ namespace core {
 		if (!_simRunning) { return; }
 		D_RUNTIME("stopping simulation");
 
-		// Export references
-		if (_trajRefBuffer.size() > 0) {
-			exportRefsToHDF5();
-			_trajRefBuffer.clear();
+		if (_robot) {
+			robots::JointLogBuffer* raw = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
+			if (raw) {
+				auto buf = std::make_unique<robots::JointLogBuffer>();
+				_robot->useInternalLogBuffer(true);
+				enqueueExportBuffer(std::move(buf));
+			}
 		}
-
-		// Claims export buffer and writes it for joint logs
-		exportLogsToHDF5();
 
 		// Clear buffers to free memory and prepare for next run
 		_data.setEnabled(false);
@@ -174,7 +174,7 @@ namespace core {
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportLogsToHDF5() {
+	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& buf) {
 		auto t0 = std::chrono::steady_clock::now(); // start timer for export duration measurement
 		// Construct a header for the HDF5 dataset based on the robot and integrator names
 		const std::string intName = _robot->getIntegratorName();
@@ -442,4 +442,51 @@ namespace core {
 	// Setter and getter for the active script program
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
+
+	// Thread-based methods
+
+	// Starts the export thread if it's not already running
+	void SimulationCore::startExportThread() {
+		if (_expThreadRunning.exchange(true)) { return; }
+		_expThread = std::thread([this]() { 
+			exportThreadMain();
+		});
+	}
+
+	// Signals the export thread to stop and waits for it to finish
+	void SimulationCore::stopExportThread() {
+		if (!_expThreadRunning.exchange(false)) { return; }
+		_expCondVar.notify_all();
+		if (_expThread.joinable()) {
+			_expThread.join();
+		}
+	}
+
+	// Main loop for the export thread, waits for export buffers to be enqueued and processes them
+	void SimulationCore::exportThreadMain() {
+		while (_expThreadRunning.load()) {
+			std::unique_ptr<robots::JointLogBuffer> buf;
+			{
+				std::unique_lock<std::mutex> lock(_expMutex);
+				_expCondVar.wait(lock, [this]() {
+					return !_expQ.empty() || !_expThreadRunning.load();
+				});
+				if (!_expThreadRunning.load() && _expQ.empty()) { break; }
+				buf = std::move(_expQ.front());
+				_expQ.pop();
+			}
+
+			if (buf) {
+				exportLogsToHDF5(*buf);
+			}
+		}
+	}
+
+	void SimulationCore::enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf) {
+		{
+			std::lock_guard<std::mutex> lock(_expMutex);
+			_expQ.push(std::move(buf));
+		}
+		_expCondVar.notify_one();
+	}
 }

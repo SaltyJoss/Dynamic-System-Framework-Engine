@@ -102,7 +102,7 @@ namespace core {
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
-		void exportLogsToHDF5();
+		void exportLogsToHDF5(const robots::JointLogBuffer& buf);
 		void exportRefsToHDF5();
 
 		// Increment simulation time by dt (used in the simulation loop)
