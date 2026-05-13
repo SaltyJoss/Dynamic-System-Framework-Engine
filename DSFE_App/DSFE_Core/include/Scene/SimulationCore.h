@@ -3,6 +3,12 @@
 
 #include "EngineCore.h"
 
+#include <queue>
+#include <thread>
+#include <condition_variable>
+#include <atomic>
+#include <memory>
+
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 
@@ -33,6 +39,11 @@ namespace core {
 		~SimulationCore();
 
 		SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj);
+
+		// Buffer queue for exporting sim outputs
+		void startExportThread();
+		void stopExportThread();
+		void enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf);
 
 		// Simulation control
 		void startSimulation() override;
@@ -117,6 +128,15 @@ namespace core {
 		void clearRobotPresentationDirty() { _robotPresentationDirty = false; }
 
 	private:
+		// Export thread management
+		void exportThreadMain();
+
+		std::thread _expThread;
+		std::mutex _expMutex;
+		std::condition_variable _expCondVar;
+		std::queue<std::unique_ptr<robots::JointLogBuffer>> _expQ;
+		std::atomic<bool> _expThreadRunning{ false };
+
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<robots::RobotSystem> _robotOwned;
