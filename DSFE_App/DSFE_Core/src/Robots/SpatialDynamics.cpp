@@ -98,12 +98,8 @@ namespace robots {
 		// Backward Recursion Computation
 		for (int i = (int)n - 1; i >= 0; --i) {
 			const SpatialJoint& j = model.joints[i];
-
 			tau_out[i] = j.S.dot(f[i]);
-
-			if (j.parent >= 0) {
-				f[j.parent] += Xup[i].transpose() * f[i];
-			}
+			if (j.parent >= 0) { f[j.parent] += Xup[i].transpose() * f[i]; }
 		}
 	}
 
@@ -190,7 +186,7 @@ namespace robots {
 		mathlib::VecX& d_out,
 		std::vector<SpatialVec>& U_out
 	) {
-		size_t n = model.joints.size();
+		const size_t n = model.joints.size();
 
 		// Resize scratch buffers
 		IA_out.resize(n);
@@ -242,19 +238,15 @@ namespace robots {
 		std::vector<SpatialVec>& a_out,
 		mathlib::VecX& qdd_out
 	) {
-		size_t n = model.joints.size();
+		const size_t n = model.joints.size();
 		a_out.resize(n);
 		qdd_out.resize(n);
 
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& j = model.joints[i];
 
-			if (j.parent < 0) {
-				a_out[i] = Xup[i] * a0 + c[i];
-			}
-			else {
-				a_out[i] = Xup[i] * a_out[j.parent] + c[i];
-			}
+			if (j.parent < 0) { a_out[i] = Xup[i] * a0 + c[i]; }
+			else { a_out[i] = Xup[i] * a_out[j.parent] + c[i]; }
 
 			if (j.type == eJointType::FIXED) {
 				qdd_out[i] = 0.0;
@@ -289,7 +281,6 @@ namespace robots {
 
 		for (size_t i = 0; i < n; ++i) {
 			scratch.spatial.IA[i] = model.joints[i].inertia; // Articulated Body Inertia
-
 			scratch.spatial.pA[i] = crossForce(scratch.spatial.v[i], (scratch.spatial.IA[i] * scratch.spatial.v[i]));
 		}
 
