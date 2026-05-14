@@ -5,17 +5,18 @@
 
 namespace robots {
 	// Recursive function to compute spatial velocities using the articulated body algorithm
-	void SpatialDynamics::computeSpatialVelocities(
+	void SpatialDynamics::computeSpatialKinematicsAndBias(
 		const SpatialModel& model,
 		const mathlib::VecX& q,
 		const mathlib::VecX& qd,
+		std::vector<mathlib::SpatialMat>& Xup_out,
 		std::vector<mathlib::SpatialVec>& v_out,
-		std::vector<mathlib::SpatialMat>& Xup_out
-
+		std::vector<mathlib::SpatialVec>& c_out
 	) {
 		const size_t n = model.joints.size();
 		v_out.resize(n);
 		Xup_out.resize(n);
+		c_out.resize(n);
 
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& j = model.joints[i];
@@ -24,11 +25,7 @@ namespace robots {
 			mathlib::SpatialMat XJ = mathlib::SpatialMat::Identity();
 			
 			if (j.type == eJointType::REVOLUTE) {
-				Eigen::AngleAxisd aa(
-					q[i],
-					j.S.angular().normalized()
-				);
-
+				Eigen::AngleAxisd aa(q[i], j.S.angular().normalized());
 				mathlib::Mat3 R = aa.toRotationMatrix();
 				XJ = mathlib::spatialTransform(R, mathlib::Vec3::Zero());
 			}
@@ -37,76 +34,51 @@ namespace robots {
 				XJ = mathlib::spatialTransform(mathlib::Mat3::Identity(), r);
 			}
 
-			// Combined Transform
-			Xup_out[i] = XJ * j.Xtree;
-
-			// Joint Velocity
-			mathlib::SpatialVec vJ = j.S * qd[i];
+			Xup_out[i] = XJ * j.Xtree; // Combined Transform
+			mathlib::SpatialVec vJ = j.S * qd[i]; // Joint Velocity
 
 			// Root Link
-			if (j.parent < 0) {
-				v_out[i] = vJ;
-				continue;
-			}
+			if (j.parent < 0) { v_out[i] = vJ; }
+			else { v_out[i] = Xup_out[i] * v_out[j.parent] + vJ; }
 
-			// Propagate Velocity
-			mathlib::SpatialVec v_parent;
-
-			v_parent.v = Xup_out[i] * v_out[j.parent].v;
-			v_out[i] = v_parent + vJ;
-
-			if (j.name == "joint03") {
-				LOG_INFO_ONCE("joint=%s, parent=%d | w=(%f, %f, %f), v=(%f, %f, %f)"
-					, j.name.c_str(), j.parent,
-					v_out[i].angular().x(), v_out[i].angular().y(), v_out[i].angular().z(),
-					v_out[i].linear().x(), v_out[i].linear().y(), v_out[i].linear().z()
-				);
-			}
+			c_out[i] = crossMotion(v_out[i], vJ); // Coriolis Term
 		}
 	}
 
 	// Recursive function to compute spatial accelerations using the articulated body algorithm
-	void SpatialDynamics::computeSpatialAccelerations(
+	void SpatialDynamics::computeAccelerations_RNEA(
 		const SpatialModel& model,
-		const mathlib::VecX& q,
-		const mathlib::VecX& qd,
 		const mathlib::VecX& qdd,
-		const std::vector<mathlib::SpatialVec>& v,
 		const std::vector<mathlib::SpatialMat>& Xup,
+		const std::vector<mathlib::SpatialVec>& c,
 		std::vector<mathlib::SpatialVec>& a_out
 	) {
 		const size_t n = model.joints.size();
 		a_out.resize(n);
-		
-		mathlib::SpatialVec gravity;
-		gravity.v << 0, 0, 0, 0, 0, 9.81;
+
+		SpatialVec a0;
+		a0.v << 0, 0, 0, 0, 0, -9.81;
 
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& j = model.joints[i];
-
-			// Joint Acceleration
-			mathlib::SpatialVec aJ = j.S * qdd[i];
-
-			// Velocity Product Term
-			mathlib::SpatialVec crossTerm;
-			crossTerm.v = mathlib::motionCrossMatrix(v[i]) * (j.S * qd[i]).v;
+			mathlib::SpatialVec aJ = j.S * qdd[i]; // Joint Acceleration
 
 			// Root Link
 			if (j.parent < 0) {
-				a_out[i].v = Xup[i] * gravity.v + aJ.v + crossTerm.v;
+				a_out[i] = Xup[i] * a0 + aJ + c[i];
 				continue;
 			}
 			
-			a_out[i].v = Xup[i] * a_out[j.parent].v + aJ.v + crossTerm.v;
+			a_out[i] = Xup[i] * a_out[j.parent] + aJ + c[i];
 		}
 	}
 
 	// Recursive function to compute inverse dynamics (joint torques) using the articulated body algorithm
-	void SpatialDynamics::computeInverseDynamics(
+	void SpatialDynamics::computeBackwardForces_RNEA(
 		const SpatialModel& model,
+		const std::vector<mathlib::SpatialMat>& Xup,
 		const std::vector<mathlib::SpatialVec>& v,
 		const std::vector<mathlib::SpatialVec>& a,
-		const std::vector<mathlib::SpatialMat>& Xup,
 		mathlib::VecX& tau_out
 	) {
 		const size_t n = model.joints.size();
@@ -117,11 +89,8 @@ namespace robots {
 		// Forward Force Computation
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& j = model.joints[i];
-			mathlib::SpatialVec I_v;
-			
-			mathlib::SpatialVec coriolis;
-			coriolis.v = mathlib::forceCrossMatrix(v[i]) * I_v.v;
-
+			mathlib::SpatialVec I_v = j.inertia * v[i];
+			mathlib::SpatialVec coriolis = crossForce(v[i], I_v);
 			f[i].v = j.inertia * a[i].v + coriolis.v;
 		}
 
@@ -129,16 +98,16 @@ namespace robots {
 		for (int i = (int)n - 1; i >= 0; --i) {
 			const SpatialJoint& j = model.joints[i];
 
-			tau_out[i] = j.S.v.transpose() * f[i].v;
+			tau_out[i] = j.S.dot(f[i]);
 
 			if (j.parent >= 0) {
-				f[j.parent].v += Xup[i].transpose() * f[i].v;
+				f[j.parent] += Xup[i].transpose() * f[i];
 			}
 		}
 	}
 
-
-	mathlib::VecX SpatialDynamics::inverseDynamics(
+	// Main function to compute inverse dynamics (joint torques) given joint states and accelerations using the Recursive Newton-Euler Algorithm (RNEA)
+	mathlib::VecX SpatialDynamics::RNEA(
 		const SpatialModel& model,
 		const mathlib::VecX& q,
 		const mathlib::VecX& qd,
@@ -148,16 +117,183 @@ namespace robots {
 
 		std::vector<mathlib::SpatialVec> v(n);
 		std::vector<mathlib::SpatialMat> Xup(n);
+		std::vector<mathlib::SpatialVec> c(n);
 		std::vector<mathlib::SpatialVec> a(n);
 		mathlib::VecX tau;
 
 		// Compute spatial velocities and transforms
-		computeSpatialVelocities(model, q, qd, v, Xup);
+		computeSpatialKinematicsAndBias(model, q, qd, Xup, v, c);
 		// Compute spatial accelerations
-		computeSpatialAccelerations(model, q, qd, qdd, v, Xup, a);
+		computeAccelerations_RNEA(model, qdd, Xup, c, a);
 		// Compute inverse dynamics (joint torques)
-		computeInverseDynamics(model, v, a, Xup, tau);
+		computeBackwardForces_RNEA(model, Xup, v, a, tau);
 
 		return tau;
+	}
+
+	// Main function to compute the mass matrix of the robot at a given configuration using the Composite Rigid Body Algorithm (CRBA)
+	mathlib::MatX SpatialDynamics::CRBA(
+		const SpatialModel& model,
+		const std::vector<mathlib::SpatialMat>& Xup,
+		DynamicsScratch& scratch
+	) {
+		const size_t n = model.joints.size();
+		scratch.M.setZero(n, n);
+		std::vector<SpatialMat> Ic(n); // spatial inertia for each link
+
+		// Initialise spatial inertia for each link based on the robot model
+		for (size_t i = 0; i < n; ++i) { Ic[i] = model.joints[i].inertia; }
+
+		// Upward pass: propagate spatial inertia from child links to parent joints
+		for (int i = (int)n - 1; i >= 0; --i) {
+			const SpatialJoint& j = model.joints[i];
+			if (j.type == eJointType::FIXED) { continue; }
+			int p = j.parent;
+			if (p >= 0) {
+				Ic[p] += Xup[i].transpose() * Ic[i] * Xup[i];
+			}
+		}
+
+		// Downward pass: compute mass matrix contributions for each joint
+		for (size_t i = 0; i < n; ++i) {
+			const SpatialJoint& j = model.joints[i];
+			if (j.type == eJointType::FIXED) { continue; }
+			SpatialVec F = Ic[i] * j.S;
+			scratch.M(i, i) = j.S.dot(F);
+
+			int jIdx = (int)i;
+			while (model.joints[jIdx].parent >= 0) {
+				int p = model.joints[jIdx].parent;
+				F = Xup[jIdx].transpose() * F;
+				scratch.M(i, p) = model.joints[p].S.dot(F);
+				scratch.M(p, i) = scratch.M(i, p);
+				jIdx = p;
+			}
+		}
+		return scratch.M; // [kg*m^2], mass matrix computed using the Composite Rigid Body Algorithm (CRBA)
+	}
+
+	// Recursive function to compute articulated body inertias and bias forces using the Articulated Body Algorithm (ABA)
+	void computeArticulatedBodies_ABA(
+		const SpatialModel& model,
+		const std::vector<SpatialMat>& Xup,
+		const std::vector<SpatialVec>& v,
+		const std::vector<SpatialVec>& c,
+		const mathlib::VecX& tau,
+		std::vector<SpatialMat>& IA_out,
+		std::vector<SpatialVec>& pA_out,
+		std::vector<SpatialMat>& Ia_out,
+		std::vector<double>& u_out,
+		std::vector<double>& d_out,
+		std::vector<SpatialVec>& U_out
+	) {
+		size_t n = model.joints.size();
+
+		// Resize scratch buffers
+		IA_out.resize(n);
+		pA_out.resize(n);
+		Ia_out.resize(n);
+		U_out.resize(n);
+		u_out.resize(n);
+		d_out.resize(n);
+
+		// Upward pass: compute articulated body inertias and bias forces
+		for (int i = (int)n - 1; i >= 0; --i) {
+			const SpatialJoint& j = model.joints[i];
+			
+			if (j.type == eJointType::FIXED) {
+				Ia_out[i] = IA_out[i];
+				if (j.parent >= 0) {
+					IA_out[j.parent] += Xup[i].transpose() * Ia_out[i] * Xup[i];
+					pA_out[j.parent] += Xup[i].transpose() * pA_out[i];
+				}
+				continue;
+			}
+
+			U_out[i] = IA_out[i] * j.S;
+			d_out[i] = dot(j.S, U_out[i]);
+			if (std::abs(d_out[i]) < 1e-12) { d_out[i] = 1e-12; } // Regularisation to avoid singularities
+
+			u_out[i] = tau[i] - dot(j.S, pA_out[i]);
+			Ia_out[i] = IA_out[i] - outer(U_out[i]) / d_out[i];
+
+			// pA = pA + Ia * c + U * (u/d)
+			pA_out[i] += Ia_out[i] * c[i] + U_out[i] * (u_out[i] / d_out[i]);
+
+			if (j.parent >= 0) {
+				IA_out[j.parent] += Xup[i].transpose() * Ia_out[i] * Xup[i];
+				pA_out[j.parent] += Xup[i].transpose() * pA_out[i];
+			}
+		}
+	}
+
+	// Recursive function to compute joint accelerations using the Articulated Body Algorithm (ABA)
+	void computeAccelerations_ABA(
+		const SpatialModel& model,
+		const std::vector<SpatialMat>& Xup,
+		const std::vector<SpatialVec>& c,
+		const std::vector<double>& u_out,
+		const std::vector<double>& d_out,
+		const std::vector<SpatialVec>& U,
+		const SpatialVec& a0,
+		std::vector<SpatialVec>& a_out,
+		mathlib::VecX& qdd_out
+	) {
+		size_t n = model.joints.size();
+		a_out.resize(n);
+		qdd_out.resize(n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const SpatialJoint& j = model.joints[i];
+
+			if (j.parent < 0) {
+				a_out[i] = Xup[i] * a0 + c[i];
+			}
+			else {
+				a_out[i] = Xup[i] * a_out[j.parent] + c[i];
+			}
+
+			if (j.type == eJointType::FIXED) {
+				qdd_out[i] = 0.0;
+				continue;
+			}
+
+			qdd_out[i] = (u_out[i] - U[i].dot(a_out[i])) / d_out[i];
+			a_out[i] += j.S * qdd_out[i];
+		}
+	}
+
+	// Main function to compute joint accelerations given joint states and torques using the Articulated Body Algorithm (ABA)
+	mathlib::VecX SpatialDynamics::ABA(
+		const SpatialModel& model,
+		const mathlib::VecX& q,
+		const mathlib::VecX& qd,
+		const mathlib::VecX& tau
+	) {
+		const size_t n = model.joints.size();
+		VecX qdd = VecX::Zero(n);
+
+		// Scratch buffers for spatial velocities, transforms, and accelerations
+		std::vector<SpatialMat> Xup(n), IA(n), Ia(n);
+		std::vector<SpatialVec> v(n), c(n), pA(n), U(n), a(n);
+		std::vector<double> d(n, 0.0), u(n, 0.0);
+
+		SpatialVec a0; // base acceleration (gravity)
+		a0.v << 0, 0, 0, 0, 0, -9.81; // gravity acceleration in spatial vector form
+
+		computeSpatialKinematicsAndBias(model, q, qd, Xup, v, c);
+
+		for (size_t i = 0; i < n; ++i) {
+			IA[i] = model.joints[i].inertia; // Articulated Body Inertia
+
+			pA[i] = crossForce(v[i], (IA[i] * v[i]));
+		}
+
+		// Compute articulated body inertias and bias forces
+		computeArticulatedBodies_ABA(model, Xup, v, c, tau, IA, pA, Ia, u, d, U);
+		// Compute joint accelerations using the articulated body algorithm
+		computeAccelerations_ABA(model, Xup, c, u, d, U, a0, a, qdd);
+
+		return qdd; // [rad/s^2], joint accelerations computed using the Articulated Body Algorithm (ABA)
 	}
 }
