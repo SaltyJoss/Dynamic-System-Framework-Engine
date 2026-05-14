@@ -197,7 +197,7 @@ namespace core {
 			fields.emplace_back("position",		(double)exportBuf.theta[i]);
 			fields.emplace_back("velocity",		(double)exportBuf.omega[i]);
 			fields.emplace_back("acceleration",	(double)exportBuf.alpha[i]);
-			fields.emplace_back("error",			(double)exportBuf.err[i]);
+			fields.emplace_back("error",		(double)exportBuf.err[i]);
 			fields.emplace_back("error_d",		(double)exportBuf.err_d[i]);
 			// Dynamics
 			fields.emplace_back("I_eff",		(double)exportBuf.I_eff[i]);
