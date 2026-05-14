@@ -20,8 +20,10 @@ namespace robots {
 
 		static void computeAccelerations_RNEA(
 			const SpatialModel& model,
-			const mathlib::VecX& qdd, const std::vector<mathlib::SpatialMat>& Xup,
+			const mathlib::VecX& qdd,
+			const std::vector<mathlib::SpatialMat>& Xup,
 			const std::vector<mathlib::SpatialVec>& c,
+			const mathlib::VecX& g,
 			std::vector<mathlib::SpatialVec>& a_out
 		);
 
@@ -37,7 +39,8 @@ namespace robots {
 			const SpatialModel& model,
 			const mathlib::VecX& q,
 			const mathlib::VecX& qd,
-			const mathlib::VecX& qdd
+			const mathlib::VecX& qdd,
+			DynamicsScratch& scratch
 		);
 
 		static mathlib::MatX CRBA(
@@ -55,8 +58,8 @@ namespace robots {
 			std::vector<SpatialMat>& IA_out,
 			std::vector<SpatialVec>& pA_out,
 			std::vector<SpatialMat>& Ia_out,
-			std::vector<double>& u_out, 
-			std::vector<double>& d_out,
+			mathlib::VecX& u_out,
+			mathlib::VecX& d_out,
 			std::vector<SpatialVec>& U_out
 		);
 
@@ -64,8 +67,8 @@ namespace robots {
 			const SpatialModel& model,
 			const std::vector<SpatialMat>& Xup,
 			const std::vector<SpatialVec>& c,
-			const std::vector<double>& u_out,
-			const std::vector<double>& d_out,
+			const mathlib::VecX& u_out,
+			const mathlib::VecX& d_out,
 			const std::vector<SpatialVec>& U,
 			const SpatialVec& a0,
 			std::vector<SpatialVec>& a_out,

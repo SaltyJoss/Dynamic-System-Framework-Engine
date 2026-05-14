@@ -48,16 +48,17 @@ namespace robots {
 	// Recursive function to compute spatial accelerations using the articulated body algorithm
 	void SpatialDynamics::computeAccelerations_RNEA(
 		const SpatialModel& model,
-		const mathlib::VecX& qdd,
+		const mathlib::VecX& qdd, 
 		const std::vector<mathlib::SpatialMat>& Xup,
 		const std::vector<mathlib::SpatialVec>& c,
+		const mathlib::VecX& g,
 		std::vector<mathlib::SpatialVec>& a_out
 	) {
 		const size_t n = model.joints.size();
 		a_out.resize(n);
 
 		SpatialVec a0;
-		a0.v << 0, 0, 0, 0, 0, -9.81;
+		a0.v << g.segment<3>(0), g.segment<3>(3); // Base acceleration (gravity)
 
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& j = model.joints[i];
@@ -111,10 +112,12 @@ namespace robots {
 		const SpatialModel& model,
 		const mathlib::VecX& q,
 		const mathlib::VecX& qd,
-		const mathlib::VecX& qdd
+		const mathlib::VecX& qdd,
+		DynamicsScratch& scratch
 	) {
 		const size_t n = model.joints.size();
 
+		// TODO Remove these temp scratches AFTER debugging
 		std::vector<mathlib::SpatialVec> v(n);
 		std::vector<mathlib::SpatialMat> Xup(n);
 		std::vector<mathlib::SpatialVec> c(n);
@@ -124,7 +127,7 @@ namespace robots {
 		// Compute spatial velocities and transforms
 		computeSpatialKinematicsAndBias(model, q, qd, Xup, v, c);
 		// Compute spatial accelerations
-		computeAccelerations_RNEA(model, qdd, Xup, c, a);
+		computeAccelerations_RNEA(model, qdd, Xup, c, scratch.g, a);
 		// Compute inverse dynamics (joint torques)
 		computeBackwardForces_RNEA(model, Xup, v, a, tau);
 
@@ -183,8 +186,8 @@ namespace robots {
 		std::vector<SpatialMat>& IA_out,
 		std::vector<SpatialVec>& pA_out,
 		std::vector<SpatialMat>& Ia_out,
-		std::vector<double>& u_out,
-		std::vector<double>& d_out,
+		mathlib::VecX& u_out,
+		mathlib::VecX& d_out,
 		std::vector<SpatialVec>& U_out
 	) {
 		size_t n = model.joints.size();
@@ -232,8 +235,8 @@ namespace robots {
 		const SpatialModel& model,
 		const std::vector<SpatialMat>& Xup,
 		const std::vector<SpatialVec>& c,
-		const std::vector<double>& u_out,
-		const std::vector<double>& d_out,
+		const mathlib::VecX& u_out,
+		const mathlib::VecX& d_out,
 		const std::vector<SpatialVec>& U,
 		const SpatialVec& a0,
 		std::vector<SpatialVec>& a_out,
@@ -275,7 +278,7 @@ namespace robots {
 		VecX qdd = VecX::Zero(n);
 
 		SpatialVec a0; // base acceleration (gravity)
-		a0.v << 0, 0, 0, 0, 0, -9.81; // gravity acceleration in spatial vector form
+		a0.v << scratch.g.segment<3>(0), scratch.g.segment<3>(3);
 
 		computeSpatialKinematicsAndBias(
 			model, q, qd,
