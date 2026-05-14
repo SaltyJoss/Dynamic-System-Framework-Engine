@@ -114,8 +114,6 @@ namespace robots {
 	private:
 		// References and pointers
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
-		
-		 _spatialModel; // spatial model for dynamics computations
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 

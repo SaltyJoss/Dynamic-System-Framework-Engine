@@ -173,7 +173,7 @@ namespace robots {
 	}
 
 	// Recursive function to compute articulated body inertias and bias forces using the Articulated Body Algorithm (ABA)
-	void computeArticulatedBodies_ABA(
+	void SpatialDynamics::computeArticulatedBodies_ABA(
 		const SpatialModel& model,
 		const std::vector<SpatialMat>& Xup,
 		const std::vector<SpatialVec>& v,
@@ -227,7 +227,7 @@ namespace robots {
 	}
 
 	// Recursive function to compute joint accelerations using the Articulated Body Algorithm (ABA)
-	void computeAccelerations_ABA(
+	void SpatialDynamics::computeAccelerations_ABA(
 		const SpatialModel& model,
 		const std::vector<SpatialMat>& Xup,
 		const std::vector<SpatialVec>& c,

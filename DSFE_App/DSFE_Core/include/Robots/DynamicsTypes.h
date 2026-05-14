@@ -4,6 +4,8 @@
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include <core/Types.h>
+#include <core/SpatialMath.h>
+
 #include "Robots/RobotMetrics.h"
 
 namespace robots {
@@ -14,8 +16,8 @@ namespace robots {
 		mathlib::VecX h;   // Coriolis and centrifugal bias vector
 		mathlib::VecX tau; // control torque vector
 
-		std::vector<Pose> T_world;
-		std::vector<Pose> jointWorldPoses;
+		std::vector<mathlib::Pose> T_world;
+		std::vector<mathlib::Pose> jointWorldPoses;
 
 		size_t jointCap = 0;
 		size_t linkCap = 0;
