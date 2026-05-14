@@ -24,21 +24,35 @@ namespace mathlib {
 		Vec3 linear() const { return v.segment<3>(3); }
 
 		SpatialVec operator+(const SpatialVec& rhs) const {
-			SpatialVec result;
-			result.v = this->v + rhs.v;
-			return result;
+			SpatialVec out;
+			out.v = this->v + rhs.v;
+			return out;
 		}
 
 		SpatialVec operator-(const SpatialVec& rhs) const {
-			SpatialVec result;
-			result.v = this->v - rhs.v;
-			return result;
+			SpatialVec out;
+			out.v = this->v - rhs.v;
+			return out;
 		}
 
-		SpatialVec operator*(double s) const {
-			SpatialVec result;
-			result.v = this->v * s;
-			return result;
+		SpatialVec operator*(double rhs) const {
+			SpatialVec out;
+			out.v = this->v * rhs;
+			return out;
+		}
+
+		SpatialVec& operator+=(const SpatialVec& rhs) {
+			this->v += rhs.v;
+			return *this;
+		}
+
+		SpatialVec operator*=(double rhs) {
+			this->v *= rhs;
+			return *this;
+		}
+
+		double dot(const SpatialVec& sv) const {
+			return this->v.dot(sv.v);
 		}
 	};
 
@@ -90,5 +104,61 @@ namespace mathlib {
 		I.block<3, 3>(3, 3) = mass * Mat3::Identity();
 
 		return I;
+	}
+
+	// Operator overloads for spatial vector and matrix operations
+
+	// SpatialMat * SpatialVec
+	inline SpatialVec operator*(
+		const SpatialMat& lhs,
+		const SpatialVec& rhs
+		) {
+		SpatialVec out;
+		out.v = lhs * rhs.v;
+		return out;
+	}
+
+	// SpatialVec1 * SpatialVec2 (outer product)
+	inline SpatialMat outer(
+		const SpatialVec& rhs,
+		const SpatialVec& lhs
+	) {
+		return rhs.v * lhs.v.transpose();
+	}
+	// SpatialVec^2 (outer product)
+	inline SpatialMat outer(const SpatialVec& sv) {
+		return sv.v * sv.v.transpose();
+	}
+
+	// SpatialVec1 . SpatialVec2
+	inline double dot(
+		const SpatialVec& lhs,
+		const SpatialVec& rhs
+	) {
+		return lhs.v.dot(rhs.v);
+	}
+	// SpatialVec .^2 (element-wise square)
+	inline double dot(const SpatialVec& sv) {
+		return sv.v.dot(sv.v);
+	}
+
+	// SpatialVec x SpatialVec (motion cross product)
+	inline SpatialVec crossMotion(
+		const SpatialVec& lhs,
+		const SpatialVec& rhs
+	) {
+		SpatialVec out;
+		out.v = motionCrossMatrix(lhs) * rhs.v;
+		return out;
+	}
+
+	// SpatialVec x SpatialVec (force cross product)
+	inline SpatialVec crossForce(
+		const SpatialVec& lhs,
+		const SpatialVec& rhs
+	) {
+		SpatialVec out;
+		out.v = forceCrossMatrix(lhs) * rhs.v;
+		return out;
 	}
 } // namespace mathlib
