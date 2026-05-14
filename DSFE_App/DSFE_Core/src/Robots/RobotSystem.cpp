@@ -291,7 +291,7 @@ namespace robots {
 
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
-		if (!_hasRobot) return;
+		if (!_hasRobot) { return; }
 		_simTime = simTime;
 		mathlib::VecX x = packState();
 
@@ -315,7 +315,7 @@ namespace robots {
 		mathlib::VecX kp_frozen(n), kd_frozen(n);
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = snap.model->joints[i];
-			if (joint.type == eJointType::FIXED) continue;
+			if (joint.type == eJointType::FIXED) { continue; }
 
 			const double I_eff = std::max(M_start(i, i), 1e-6);
 			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
@@ -325,16 +325,25 @@ namespace robots {
 		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
-		// Integrate 
-		//auto f_deriv = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn, snap); };
-		//auto f_J = [&](const mathlib::VecX& xIn, mathlib::MatX& J_out) { return _dynamics->analyticalJacobian(*snap.model, xIn, J_out); };
-		
+		_dynScratch.resize(n, snap.model->links.size());
+		_dynResult.resize(n);
+
 		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
-			return _dynamics->derivative_with_gains(t, xIn, snap, kp_frozen, kd_frozen);
+			return _dynamics->derivative_with_gains(t, 
+				xIn,
+				snap,
+				kp_frozen, kd_frozen,
+				_dynScratch, _dynResult
+			);
 		};
 
 		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
-			_dynamics->jacobian_with_gains(xIn, snap, kp_frozen, kd_frozen, J_out);
+			_dynamics->jacobian_with_gains(xIn,
+				snap,
+				kp_frozen, kd_frozen,
+				J_out,
+				_dynScratch
+			);
 		};
 		
 		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f_deriv, f_J);
@@ -388,16 +397,15 @@ namespace robots {
 		if (_useInternalLogging) {
 			int idx = _activeLogBufIdx.load(std::memory_order_acquire);
 			buf = &_logBuffers[idx];
-		} else { buf = _logBuffer; }
-
-		const RobotMetrics& m = _dynamics->metrics();
+		} else {
+			buf = _logBuffer;
+		}
 
 		if (buf) {
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j = snap.model->joints[i];
 
-				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : std::max(M_full(i, i), 1e-6);
-
+				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : _dynResult.metrics.I_eff[i];
 				const double err = snap.q_ref[i] - q_next[i];
 				const double err_d = snap.qd_ref[i] - qd_next[i];
 
@@ -406,13 +414,14 @@ namespace robots {
 				e.sim_time = simTime;
 				e.dt_taken = step.dt_taken;
 				e.dt_sug = step.dt_sug;
-				e.theta = q_next[i]; e.omega = qd_next[i]; e.alpha = qdd[i];
+				e.theta = q_next[i]; e.omega = qd_next[i]; e.alpha = _dynResult.metrics.qdd[i];
 				e.err = err; e.err_d = err_d;
-				e.I_eff = I_eff; e.tau = tau_rnea[i]; e.tau_gravity = tau_g[i];
-				e.tau_sat = m.tau_sat[i]; 
+				e.I_eff = I_eff;
+				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = tau_rnea[i];  e.tau_gravity = tau_g[i];
+				e.tau_sat = _dynResult.metrics.tau_sat[i]; 
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = (double)_clampTheta[i]; e.clamp_omega = (double)_clampOmega[i];
-				e.sat_flag = m.sat_flag[i]; e.joint_index = (int)i;
+				e.sat_flag = _dynResult.metrics.sat_flag[i]; e.joint_index = (int)i;
 				buf->push_entry(e);
 			}
 		}
@@ -490,6 +499,8 @@ namespace robots {
 
 		// Load robot model from JSON
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
+		const size_t n = _robot.joints.size();
+		const size_t m = _robot.links.size();
 
 		_constModel.name = _robot.name;
 		_constModel.scale = _robot.scale;
@@ -532,7 +543,8 @@ namespace robots {
 		buildSpatialModel();
 		_hasRobot = true;
 
-		_dynamics->resizeMetrics(_robot.joints.size());
+		_dynScratch.resize(n, m);
+		_dynResult.resize(n);
 
 		resetRobot();
 
@@ -548,7 +560,6 @@ namespace robots {
 
 		for (auto& joint : _robot.joints) {
 			joint.qd = 0.0;
-
 			joint.q_ref = joint.q;
 			joint.qd_ref = 0.0;
 			joint.qdd_ref = 0.0;
