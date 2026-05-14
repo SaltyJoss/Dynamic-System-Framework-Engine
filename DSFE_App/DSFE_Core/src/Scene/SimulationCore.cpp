@@ -190,38 +190,32 @@ namespace core {
 		for (size_t i = 0; i < N; ++i) {
 			data::FieldList fields;
 			// Sim Metadata
-			fields.emplace_back("sim_time",    (double)exportBuf.sim_time[i]);
-			fields.emplace_back("dt_taken",    (double)exportBuf.dt_taken[i]);
-			fields.emplace_back("dt_sug",      (double)exportBuf.dt_sug[i]);
+			fields.emplace_back("sim_time",		(double)exportBuf.sim_time[i]);
+			fields.emplace_back("dt_taken",		(double)exportBuf.dt_taken[i]);
+			fields.emplace_back("dt_sug",		(double)exportBuf.dt_sug[i]);
 			// States
-			fields.emplace_back("theta",       (double)exportBuf.theta[i]);
-			fields.emplace_back("omega",       (double)exportBuf.omega[i]);
-			fields.emplace_back("alpha",       (double)exportBuf.alpha[i]);
-			fields.emplace_back("err",         (double)exportBuf.err[i]);
-			fields.emplace_back("err_d",       (double)exportBuf.err_d[i]);
+			fields.emplace_back("position",		(double)exportBuf.theta[i]);
+			fields.emplace_back("velocity",		(double)exportBuf.omega[i]);
+			fields.emplace_back("acceleration",	(double)exportBuf.alpha[i]);
+			fields.emplace_back("error",			(double)exportBuf.err[i]);
+			fields.emplace_back("error_d",		(double)exportBuf.err_d[i]);
 			// Dynamics
-			fields.emplace_back("I_eff",       (double)exportBuf.I_eff[i]);
-			fields.emplace_back("tau",         (double)exportBuf.tau[i]);
-			fields.emplace_back("tau_fb",      (double)exportBuf.tau_fb[i]);
-			fields.emplace_back("tau_coriolis",(double)exportBuf.tau_coriolis[i]);
-			fields.emplace_back("tau_gravity", (double)exportBuf.tau_gravity[i]);
-			fields.emplace_back("tau_damping", (double)exportBuf.tau_damping[i]);
-			fields.emplace_back("tau_friction",(double)exportBuf.tau_friction[i]);
-			fields.emplace_back("tau_barrier", (double)exportBuf.tau_barrier[i]);
-			fields.emplace_back("tau_sat",     (double)exportBuf.tau_sat[i]);
+			fields.emplace_back("I_eff",		(double)exportBuf.I_eff[i]);
+			fields.emplace_back("tau",			(double)exportBuf.tau[i]);
+			fields.emplace_back("tau_ff",		(double)exportBuf.tau_ff[i]);
+			fields.emplace_back("tau_gravity",	(double)exportBuf.tau_gravity[i]);
+			fields.emplace_back("tau_barrier",	(double)exportBuf.tau_barrier[i]);
+			fields.emplace_back("tau_sat",		(double)exportBuf.tau_sat[i]);
 			// Energy, Work, & Power
-			fields.emplace_back("KE",          (double)exportBuf.KE[i]);
-			fields.emplace_back("PE",          (double)exportBuf.PE[i]);
-			fields.emplace_back("E_total",     (double)exportBuf.E_total[i]);
-			fields.emplace_back("W_actuator",  (double)exportBuf.W_actuator[i]);
-			fields.emplace_back("P_damping",   (double)exportBuf.P_damping[i]);
-			fields.emplace_back("P_friction",  (double)exportBuf.P_friction[i]);
+			fields.emplace_back("KE",			(double)exportBuf.KE[i]);
+			fields.emplace_back("PE",			(double)exportBuf.PE[i]);
+			fields.emplace_back("E_total",		(double)exportBuf.E_total[i]);
 			// Limit flags and info
-			fields.emplace_back("clamp_theta", (double)exportBuf.clamp_theta[i]);
-			fields.emplace_back("clamp_omega", (double)exportBuf.clamp_omega[i]);
-			fields.emplace_back("sat_flag",    (double)exportBuf.sat_flag[i]);
+			fields.emplace_back("clamp_theta",	(double)exportBuf.clamp_theta[i]);
+			fields.emplace_back("clamp_omega",	(double)exportBuf.clamp_omega[i]);
+			fields.emplace_back("sat_flag",		(double)exportBuf.sat_flag[i]);
 			// Joint info
-			fields.emplace_back("joint_index", (double)exportBuf.joint_index[i]);
+			fields.emplace_back("joint_index",	(double)exportBuf.joint_index[i]);
 
 			// Write entry to HDF5
 			_data.capture(data::Stream::Simulation, header, fields);

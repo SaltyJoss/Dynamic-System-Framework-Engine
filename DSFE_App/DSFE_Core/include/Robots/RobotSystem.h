@@ -3,8 +3,11 @@
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+
 #include "Robots/SpatialModel.h"
 #include "Robots/RobotSimSnapshot.h"
+#include "Robots/DynamicsTypes.h"
+
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
 
@@ -199,6 +202,9 @@ namespace robots {
 
 		SpatialModel _spatialModel;
 		RobotConstModel _constModel;
+
+		DynamicsScratch _dynScratch;
+		DynamicsResult _dynResult;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;
