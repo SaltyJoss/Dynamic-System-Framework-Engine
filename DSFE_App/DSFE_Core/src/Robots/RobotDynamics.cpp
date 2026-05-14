@@ -421,7 +421,7 @@ namespace robots {
 
 			double tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
 			tau_i -= 0.2 * qd[i];
-			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
+			//tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
 
 			scratch.dense.tau[i] = tau_i;
 
@@ -476,9 +476,9 @@ namespace robots {
 			const SpatialJoint& joint = model.joints[i];
 			if (joint.type == eJointType::FIXED) { continue; }
 			dTau_dq(i, i) = -kp[i];
-			double tanh_term = std::tanh(qd[i] / 1e-2);
-			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-2;
-			dTau_dv(i, i) = -kd[i] - 0.2 + stiff_friction_slope;
+			double tanh_term = std::tanh(qd[i] / 1e-1);
+			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-1;
+			dTau_dv(i, i) = -kd[i] - 0.2;
 		}
 
 		Eigen::LDLT<MatX> solver(scratch.dense.M); // compute the Cholesky decomposition of the mass matrix for efficient solving
