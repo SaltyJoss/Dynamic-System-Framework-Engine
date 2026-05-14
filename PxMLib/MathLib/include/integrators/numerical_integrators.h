@@ -302,11 +302,9 @@ namespace integration {
 
 			// Initial guess for the stage values k1, k2, k3
 			VecX k = VecX::Zero(2 * n); // 2 stages
-			VecX x_pred = rk4Step(x, t, dt, f); // Use RK4 as an initial guess for the stage values
-			VecX k1_0 = f(t + c(0) * dt, x + 0.5 * (x_pred - x));
-			VecX k2_0 = f(t + c(1) * dt, x + 0.5 * (x_pred - x));
-			k.segment(0, n) = k1_0;
-			k.segment(n, n) = k2_0;
+			VecX f0 = f(t, x);
+			k.segment(0, n) = f0;
+			k.segment(n, n) = f0;
 
 			auto eval_g = [&](const VecX& k_guess, VecX& g) {
 				VecX k1 = k_guess.segment(0, n);
@@ -379,7 +377,7 @@ namespace integration {
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 80, double tol = -1, JacFunc&& jac = nullptr) {
+		inline VecX GLRK3(const VecX& x, double t, double dt, Func&& f, int maxIter = 150, double tol = -1, JacFunc&& jac = nullptr) {
 			if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
 
 			size_t n = x.size();
@@ -392,8 +390,9 @@ namespace integration {
 				0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
 
 			Mat3 A = Mat3::Zero();
-			A << 
-				5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 1.0 / 36.0 - std::sqrt(15.0) / 30.0,
+
+			A <<
+				5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 5.0 / 36.0 - std::sqrt(15.0) / 30.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
 				5.0 / 36.0 + std::sqrt(15.0) / 30.0, 2.0 / 9.0 + std::sqrt(15.0) / 15.0, 5.0 / 36.0;
 
@@ -404,14 +403,14 @@ namespace integration {
 			VecX k = VecX::Zero(3 * n); // 3 stages
 			VecX x_pred = GLRK2(x, t, dt, f, 50, 1e-10, jac);
 			//VecX x_pred = rk4Step(x, t, dt, f);
-			//VecX f0 = f(t, x);
+			VecX f0 = f(t, x);
 
-			VecX k1_0 = f(t + c(0) * dt, x + c(0) * dt * (x_pred - x));
-			VecX k2_0 = f(t + c(1) * dt, x + c(1) * dt * (x_pred - x));
-			VecX k3_0 = f(t + c(2) * dt, x + c(2) * dt * (x_pred - x));
-			k.segment(0, n) = k1_0;
-			k.segment(n, n) = k2_0;
-			k.segment(2 * n, n) = k3_0;
+			//VecX k1_0 = f(t + c(0) * dt, x + c(0) * dt * (x_pred - x));
+			//VecX k2_0 = f(t + c(1) * dt, x + c(1) * dt * (x_pred - x));
+			//VecX k3_0 = f(t + c(2) * dt, x + c(2) * dt * (x_pred - x));
+			k.segment(0, n) = f0;
+			k.segment(n, n) = f0;
+			k.segment(2 * n, n) = f0;
 
 			auto eval_g = [&](const VecX& k_guess, VecX& g) {
 				VecX k1 = k_guess.segment(0, n);
@@ -533,7 +532,7 @@ namespace integration {
 			VecX x = x0, g, x_trial;
 			VecX delta = VecX::Constant(x0.size(), std::numeric_limits<double>::infinity());
 			MatX J;
-			Eigen::PartialPivLU<MatX> lu;
+			Eigen::ColPivHouseholderQR<MatX> solver;
 
 			for (int iter = 0; iter < maxIter; ++iter) {
 				eval_g(x, g);
@@ -543,8 +542,8 @@ namespace integration {
 				eval_j(x, J);
 				if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian"); }
 
-				lu.compute(J);
-				delta = lu.solve(-g);
+				solver.compute(J);
+				delta = solver.solve(-g);
 
 				if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step"); }
 				if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
