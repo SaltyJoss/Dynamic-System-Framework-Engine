@@ -7,11 +7,12 @@
 #include "Robots/RobotMetrics.h"
 
 namespace robots {
-	struct DynamicsScratch {
-		mathlib::MatX M; // mass matrix
+	// Scratch buffers for dense dynamics computations
+	struct DenseDynamicsScratch {
+		mathlib::MatX M;   // mass matrix
 		mathlib::VecX rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
-		mathlib::VecX h; // Coriolis and centrifugal bias vector
-		mathlib::VecX g; // gravity torque vector
+		mathlib::VecX h;   // Coriolis and centrifugal bias vector
+		mathlib::VecX g;   // gravity torque vector
 		mathlib::VecX tau; // control torque vector
 
 		std::vector<Pose> T_world;
@@ -24,10 +25,11 @@ namespace robots {
 		void resize(size_t nJoints, size_t nLinks) {
 			// Do not resize if the current capacities are sufficient
 			if (jointCap == nJoints
-				&& linkCap && nLinks) {
+				&& linkCap == nLinks) {
 				return;
 			}
 
+			// Dense buffers
 			M.resize(nJoints, nJoints);
 			rhs.resize(nJoints);
 			h.resize(nJoints);
@@ -35,9 +37,13 @@ namespace robots {
 			tau.resize(nJoints);
 			T_world.resize(nLinks);
 			jointWorldPoses.resize(nJoints);
+
+			jointCap = nJoints;
+			linkCap = nLinks;
 		}
 
 		void zero() {
+			// Dense buffers
 			M.setZero();
 			rhs.setZero();
 			h.setZero();
@@ -46,8 +52,74 @@ namespace robots {
 			for (auto& T : T_world) T.setIdentity();
 			for (auto& T : jointWorldPoses) T.setIdentity();
 		}
+
+		void clear() {
+			// Dense buffers
+			M.resize(0, 0);
+			rhs.resize(0);
+			h.resize(0);
+			g.resize(0);
+			tau.resize(0);
+			T_world.clear();
+			jointWorldPoses.clear();
+			jointCap = 0;
+			linkCap = 0;
+		}
 	};
 
+	// Scratch buffers for spatial dynamics computations
+	struct SpatialDynamicsScratch {
+		std::vector<mathlib::SpatialMat> Xup; // spatial transformation from parent to current link
+		std::vector<mathlib::SpatialMat> IA;  // articulated body inertia
+		std::vector<mathlib::SpatialMat> Ia;  // articulated body inertia in the link frame
+
+		std::vector<mathlib::SpatialVec> v;  // spatial velocity
+		std::vector<mathlib::SpatialVec> c;  // spatial bias acceleration
+		std::vector<mathlib::SpatialVec> a;  // spatial acceleration
+		std::vector<mathlib::SpatialVec> pA; // articulated bias force
+		std::vector<mathlib::SpatialVec> U;  // articulated body force
+
+		std::vector<double> u; // joint force contribution
+		std::vector<double> d; // joint inertia contribution
+
+		size_t jointCap = 0;
+
+		// Resizes the scratch buffers
+		void resize(size_t nJoints) {
+			// Do not resize if the current capacities are sufficient
+			if (jointCap == nJoints) { return; }
+
+			// Spatial buffers
+			Xup.resize(nJoints);
+			IA.resize(nJoints);
+			Ia.resize(nJoints);
+			v.resize(nJoints);
+			c.resize(nJoints);
+			a.resize(nJoints);
+			pA.resize(nJoints);
+			U.resize(nJoints);
+			u.resize(nJoints);
+			d.resize(nJoints);
+
+			jointCap = nJoints;
+		}
+
+		void clear() {
+			Xup.clear();
+			IA.clear();
+			Ia.clear();
+			v.clear();
+			c.clear();
+			a.clear();
+			pA.clear();
+			U.clear();
+			u.clear();
+			d.clear();
+			jointCap = 0;
+		}
+	};
+
+	// Output structure for dynamics computations
 	struct DynamicsResult {
 		mathlib::VecX dxdt;
 		mathlib::VecX qdd;
@@ -58,6 +130,25 @@ namespace robots {
 			dxdt.resize(2 * n);
 			qdd.resize(n);
 			metrics.resize(n);
+		}
+	};
+
+	// Central scratch structure that contains all buffers needed for dynamics computations, both dense and spatial
+	struct DynamicsScratch {
+		DenseDynamicsScratch dense;
+		SpatialDynamicsScratch spatial;
+		// TODO add kinematics scratch
+
+		// Resizes all scratch buffers using the given number of joints and links
+		void resize(size_t nJoints, size_t nLinks) {
+			dense.resize(nJoints, nLinks);
+			spatial.resize(nJoints);
+		}
+
+		// Clears all scratch buffers
+		void clear() {
+			dense.clear();
+			spatial.clear();
 		}
 	};
 }
