@@ -322,7 +322,7 @@ namespace robots {
 			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
 		}
 
-		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
+		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(_spatialModel, q, qd, qdd, _dynScratch); // [Nm], torque computed by RNEA for current state and reference acceleration
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
 		_dynScratch.dense.resize(n, snap.model->links.size());
