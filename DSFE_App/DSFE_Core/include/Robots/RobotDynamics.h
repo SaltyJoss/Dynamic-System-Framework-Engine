@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
+#include "Robots/DynamicsTypes.h"
 #include "Robots/RobotMetrics.h"
 
 // Forward declarations
@@ -32,8 +33,8 @@ namespace robots {
 		double computeJointInertiaContribution(
 			const RobotJoint& joint,
 			const RobotLink& link,
-			const mathlib::Pose& jointWorldPose,   // pose of joint frame in world
-			const mathlib::Pose& linkWorldPose     // pose of the link in world
+			const mathlib::Pose& jointWorldPose,
+			const mathlib::Pose& linkWorldPose
 		) const;
 
 		// Computes the full mass matrix M(q) based on the current state and robot configuration
@@ -47,8 +48,7 @@ namespace robots {
 		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
 		mathlib::VecX computeCoriolisVector(
 			const RobotConstModel& robot,
-			const mathlib::VecX& q,
-			const mathlib::VecX& qd,
+			const mathlib::VecX& q, const mathlib::VecX& qd,
 			const std::vector<mathlib::Pose>& T_world,
 			const mathlib::MatX& M
 		) const;
@@ -64,24 +64,32 @@ namespace robots {
 		void analyticalJacobian(
 			const RobotConstModel& robot,
 			const mathlib::VecX& x,
-			mathlib::MatX& J_out
+			mathlib::MatX& J_out,
+			DynamicsScratch& scratch
 		);
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
 		mathlib::VecX derivative(
 			double t,
 			const mathlib::VecX& x,
-			const RobotSimSnapshot& snap
+			const RobotSimSnapshot& snap,
+			DynamicsScratch& scratch, DynamicsResult& out
 		);
 
+		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
 		mathlib::VecX derivative_with_gains(
-			double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
-			const mathlib::VecX& kp, const mathlib::VecX& kd
+			double t,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp,const mathlib::VecX& kd,
+			DynamicsScratch& scratch, DynamicsResult& out
 		);
 
+		// Computes the Jacobian matrix with control gains based on the current state and robot configuration
 		void jacobian_with_gains(
 			const mathlib::VecX& x, const RobotSimSnapshot& snap,
-			const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out
+			const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out,
+			DynamicsScratch& scratch
 		);
 
 		// Set the gravity strength for the robot system
@@ -92,19 +100,9 @@ namespace robots {
 		void setDt(double dt) { _dt = dt; }
 		const double dt() const { return _dt; }
 
-		void resizeMetrics(size_t n);
-		const RobotMetrics& metrics() const { return _metrics; }
-
 	private:
 		// References and pointers
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
-		RobotMetrics _metrics;
-
-		mathlib::MatX _M; // mass matrix
-		mathlib::VecX _rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
-		mathlib::VecX _h; // Coriolis and centrifugal bias vector
-		mathlib::VecX _g; // gravity torque vector
-		mathlib::VecX _tau; // control torque vector
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 

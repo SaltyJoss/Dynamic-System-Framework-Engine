@@ -248,14 +248,20 @@ namespace robots {
 	void RobotDynamics::analyticalJacobian(
 		const RobotConstModel& robot,
 		const mathlib::VecX& x,
-		mathlib::MatX& J_out
+		mathlib::MatX& J_out,
+		DynamicsScratch& scratch
 	) {
 		const size_t n = robot.joints.size();
+
 		Eigen::Map<const VecX> q_local(x.data(), n);
 		Eigen::Map<const VecX> qd_local(x.data() + n, n);
 
-		J_out.setZero(2 * n, 2 * n); // [rad/rad] for position part, [rad/s / rad/s] for velocity part
-		J_out.block(0, 0, n, n).setIdentity();
+		_kinematics->computeForwardKinematics_fromState(robot, x, scratch.T_world);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, robot);
+		computeMassMatrix(robot, scratch.T_world, scratch.jointWorldPoses, scratch.M);
+
+		J_out.setZero(2 * n, 2 * n); // [rad/rad] position part, [rad/s / rad/s] velocity part
+		J_out.block(0, n, n, n).setIdentity();
 
 		MatX dTau_dq = MatX::Zero(n, n);
 		MatX dTau_dv = MatX::Zero(n, n);
@@ -266,7 +272,7 @@ namespace robots {
 
 			const double wn = joint.wn_target;
 			const double z = joint.zeta_target;
-			const double I_eff = std::max(_M(i, i), 1e-6);
+			const double I_eff = std::max(scratch.M(i, i), 1e-6);
 
 			const double k_p = I_eff * wn * wn;
 			const double k_d = 2.0 * z * I_eff * wn;
@@ -276,10 +282,10 @@ namespace robots {
 			double qd_i = qd_local[i];
 			double tanh_term = std::tanh(qd_i / 1e-2);
 			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-2;
-			dTau_dq(i, i) = -k_d - 0.2 + stiff_friction_slope;
+			dTau_dv(i, i) = -k_d - 0.2 + stiff_friction_slope;
 		}
 
-		auto solver = _M.ldlt();
+		auto solver = scratch.M.ldlt();
 		MatX da_dq = solver.solve(dTau_dq);
 		MatX da_dv = solver.solve(dTau_dv);
 
@@ -291,7 +297,9 @@ namespace robots {
 	mathlib::VecX RobotDynamics::derivative(
 		double /*t*/,
 		const mathlib::VecX& x,
-		const RobotSimSnapshot& snap
+		const RobotSimSnapshot& snap,
+		DynamicsScratch& scratch,
+		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
 		mathlib::VecX dx(2 * n);
@@ -300,31 +308,27 @@ namespace robots {
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
-		std::vector<Pose> T_world;
-		T_world.resize(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
 
-		std::vector<Pose> jointWorldPoses;
-		jointWorldPoses.resize(n);
-		jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
 
-		computeMassMatrix(*snap.model, T_world, jointWorldPoses, _M); // [kg*m^2], full mass matrix for the robot at configuration q
-		_h = computeCoriolisVector(*snap.model, q, qd, T_world, _M); // [Nm], full Coriolis and centrifugal torque vector
+		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M); // [kg*m^2], full mass matrix for the robot at configuration q
+		scratch.h = computeCoriolisVector(*snap.model, q, qd, scratch.T_world, scratch.M); // [Nm], full Coriolis and centrifugal torque vector
 
-		_g.setZero();
+		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			_g = computeGravityTorque(*snap.model, T_world, jointWorldPoses);
+			scratch.g = computeGravityTorque(*snap.model, scratch.T_world, scratch.jointWorldPoses);
 		}
 
-		_tau.setZero();
+		scratch.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			const RobotJoint& joint = snap.model->joints[i];
 
 			// Fixed joints
 			if (joint.type == eJointType::FIXED) {
-				_metrics.q[i] = q[i];
-				_metrics.qd[i] = qd[i];
-				_metrics.qdd[i] = 0.0;
+				out.metrics.q[i] = q[i];
+				out.metrics.qd[i] = qd[i];
+				out.metrics.qdd[i] = 0.0;
 				continue;
 			}
 
@@ -334,49 +338,51 @@ namespace robots {
 			const double err = snap.q_ref[i] - q[i];	   // [rad], position error
 			const double err_d = snap.qd_ref[i] - qd[i]; // [rad/s], velocity error
 
-			const double I_eff = std::max(_M(i, i), 1e-6); // [kg*m^2], effective inertia for joint i with floor to prevent singularities
+			const double I_eff = std::max(scratch.M(i, i), 1e-6); // [kg*m^2], effective inertia for joint i with floor to prevent singularities
 			const double k_p = I_eff * wn * wn;		 // [Nm/rad], proportional gain
 			const double k_d = 2.0 * z * I_eff * wn; // [Nm/(rad/s)], derivative gain
 
 			double tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
-			tau_i += _g[i]; // Gravity compensation
-			tau_i += _h[i]; // add Coriolis and centrifugal bias
+			tau_i += scratch.g[i]; // Gravity compensation
+			tau_i += scratch.h[i]; // add Coriolis and centrifugal bias
 			tau_i -= /*joint.dynamics.damping*/ 0.2 * qd[i]; // subtract viscous damping
 			tau_i -= /*joint.dynamics.friction*/ 0.05 * std::tanh(qd[i] / 1e-2); // subtract Coulomb friction
 
-			_tau[i] = tau_i;
+			scratch.tau[i] = tau_i;
 
 			// metrics
-			_metrics.q[i] = q[i];
-			_metrics.qd[i] = qd[i];
+			out.metrics.q[i] = q[i];
+			out.metrics.qd[i] = qd[i];
 
-			_metrics.err[i] = err;
-			_metrics.errd[i] = err_d;
+			out.metrics.err[i] = err;
+			out.metrics.errd[i] = err_d;
 
-			_metrics.I_eff[i] = I_eff;
-			_metrics.tau[i] = tau_i;
+			out.metrics.I_eff[i] = I_eff;
+			out.metrics.tau[i] = tau_i;
 
 			//_metrics.tau_sat[i] = tau_sat;
 			//_metrics.sat_flag[i] = saturated;
 		}
 
 		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)
-		VecX g = VecX::Zero(n);
-		_rhs.noalias() = _tau - _h - _g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
+		scratch.rhs.noalias() = scratch.tau - scratch.h - scratch.g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
 
 		// Solve for Accelerations
-		_metrics.qdd = _M.ldlt().solve(_rhs); // [rad/s^2], joint accelerations computed from dynamics
+		out.qdd = scratch.M.ldlt().solve(scratch.rhs); // [rad/s^2], joint accelerations computed from dynamics
+		out.metrics.qdd = out.qdd;
 
 		// Fill derivatives
 		dx.head(n) = qd;
-		dx.tail(n) = _metrics.qdd;
+		dx.tail(n) = out.qdd;
 
 		return dx;
 	}
 
 	mathlib::VecX RobotDynamics::derivative_with_gains(
 		double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
-		const mathlib::VecX& kp, const mathlib::VecX& kd
+		const mathlib::VecX& kp, const mathlib::VecX& kd,
+		DynamicsScratch& scratch,
+		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
 		mathlib::VecX dx(2 * n);
@@ -384,44 +390,46 @@ namespace robots {
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
-		std::vector<Pose> T_world(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_world);
-		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
 
-		computeMassMatrix(*snap.model, T_world, jointWorldPoses, _M);
-		_h = computeCoriolisVector(*snap.model, q, qd, T_world, _M);
+		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
+		scratch.h = computeCoriolisVector(*snap.model, q, qd, scratch.T_world, scratch.M);
 
-		_g.setZero();
+		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			_g = computeGravityTorque(*snap.model, T_world, jointWorldPoses);
+			scratch.g = computeGravityTorque(*snap.model, scratch.T_world, scratch.jointWorldPoses);
 		}
 
-		_tau.setZero();
+		scratch.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			if (snap.model->joints[i].type == eJointType::FIXED) continue;
 
 			// FIXED: Use the constant, frozen step-start values passed down
-			double tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + std::max(_M(i, i), 1e-6) * snap.qdd_ref[i];
-			tau_i += _g[i] + _h[i];
+			double tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + std::max(scratch.M(i, i), 1e-6) * snap.qdd_ref[i];
+			tau_i += scratch.g[i] + scratch.h[i];
 			tau_i -= 0.2 * qd[i];
 			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
 
-			_tau[i] = tau_i;
+			scratch.tau[i] = tau_i;
 		}
 
-		_rhs.noalias() = _tau - _h - _g;
-		_metrics.qdd = _M.ldlt().solve(_rhs);
+		scratch.rhs.noalias() = scratch.tau - scratch.h - scratch.g;
+		out.qdd = scratch.M.ldlt().solve(scratch.rhs);
+		out.metrics.qdd = out.qdd;
 
 		dx.head(n) = qd;
-		dx.tail(n) = _metrics.qdd;
+		dx.tail(n) = out.qdd;
 		return dx;
 	}
 
 	void RobotDynamics::jacobian_with_gains(
 		const mathlib::VecX& x, const RobotSimSnapshot& snap,
-		const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out
+		const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out,
+		DynamicsScratch& scratch
 	) {
 		const size_t n = snap.model->joints.size();
+
 		F_out.setZero(2 * n, 2 * n);
 		F_out.block(0, n, n, n).setIdentity();
 
@@ -429,11 +437,9 @@ namespace robots {
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
 		// Compute a local mass matrix for this exact stage evaluation frame
-		mathlib::MatX M_local(n, n);
-		std::vector<Pose> T_local(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_local);
-		std::vector<Pose> j_local = _kinematics->calcJointWorldPoses(T_local, *snap.model);
-		computeMassMatrix(*snap.model, T_local, j_local, M_local);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
+		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
 
 		mathlib::MatX dTau_dq = mathlib::MatX::Zero(n, n);
 		mathlib::MatX dTau_dv = mathlib::MatX::Zero(n, n);
@@ -448,18 +454,8 @@ namespace robots {
 			dTau_dv(i, i) = -kd[i] - 0.2 + stiff_friction;
 		}
 
-		auto solver = M_local.ldlt();
+		auto solver = scratch.M.ldlt();
 		F_out.block(n, 0, n, n) = solver.solve(dTau_dq);
 		F_out.block(n, n, n, n) = solver.solve(dTau_dv);
-	}
-
-
-	void RobotDynamics::resizeMetrics(size_t n) {
-		_metrics.resize(n);
-		_M.resize(n, n);
-		_rhs.resize(n);
-		_h.resize(n);
-		_g.resize(n);
-		_tau.resize(n);
 	}
 }
