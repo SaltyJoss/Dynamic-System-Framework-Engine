@@ -3,9 +3,10 @@
 // GitHub: SaltyJoss
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotKinematics.h"
-#include "Robots/SpatialDynamics.h"
-
 #include "Robots/RobotSimSnapshot.h"
+
+#include "Robots/SpatialModel.h"
+#include "Robots/SpatialDynamics.h"
 
 #include "Robots/TrajectoryManager.h"
 
@@ -375,6 +376,62 @@ namespace robots {
 		dx.head(n) = qd;
 		dx.tail(n) = out.qdd;
 
+		return dx;
+	}
+
+	mathlib::VecX RobotDynamics::derivative_spatial(
+		const robots::SpatialModel& model,
+		double /*t*/,
+		const mathlib::VecX& x,
+		const RobotSimSnapshot& snap,
+		DynamicsScratch& scratch,
+		DynamicsResult& out
+	) {
+		const size_t n = snap.model->joints.size();
+		VecX dx(2 * n);
+
+		Eigen::Map<const VecX> q(x.data(), n);
+		Eigen::Map<const VecX> qd(x.data() + n, n);
+
+		scratch.dense.tau.setZero();
+
+		for (size_t i = 0; i < n; ++i) {
+			const SpatialJoint& joint = model.joints[i];
+			if (joint.type == eJointType::FIXED) { continue; }
+
+			const double wn = 5.0;
+			const double z = 0.7;
+
+			const double err = snap.q_ref[i] - q[i];
+			const double err_d = snap.qd_ref[i] - qd[i];
+
+			const double I_eff = std::max(scratch.dense.M(i, i), 1e-6);
+			const double k_p = I_eff * wn * wn;
+			const double k_d = 2.0 * z * I_eff * wn;
+
+			double tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
+			tau_i += scratch.g[i];
+			tau_i += scratch.dense.h[i];
+			tau_i -= 0.2 * qd[i];
+			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
+
+			scratch.dense.tau[i] = tau_i;
+
+			out.metrics.q[i] = q[i];
+			out.metrics.qd[i] = qd[i];
+
+			out.metrics.err[i] = err;
+			out.metrics.errd[i] = err_d;
+
+			out.metrics.I_eff[i] = I_eff;
+			out.metrics.tau[i] = tau_i;
+		}
+
+		out.qdd = SpatialDynamics::ABA(model, q, qd, scratch.dense.tau, scratch);
+		out.metrics.qdd = out.qdd;
+		dx.head(n) = qd;
+		dx.tail(n) = out.qdd;
+		
 		return dx;
 	}
 

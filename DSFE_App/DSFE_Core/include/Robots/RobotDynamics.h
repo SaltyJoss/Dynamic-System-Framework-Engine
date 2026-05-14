@@ -15,6 +15,7 @@ namespace robots {
 	// Forward declarations
 	class RobotKinematics;
 	struct RobotConstModel;
+	struct SpatialModel;
 	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
@@ -77,6 +78,15 @@ namespace robots {
 			DynamicsResult& out
 		);
 
+		mathlib::VecX derivative_spatial(
+			const robots::SpatialModel& model,
+			double t,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			DynamicsScratch& scratch,
+			DynamicsResult& out
+		);
+
 		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
 		mathlib::VecX derivative_with_gains(
 			double t,
@@ -104,6 +114,8 @@ namespace robots {
 	private:
 		// References and pointers
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
+		
+		 _spatialModel; // spatial model for dynamics computations
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 
