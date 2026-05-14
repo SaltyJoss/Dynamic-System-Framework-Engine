@@ -16,6 +16,8 @@ namespace robots {
 		mathlib::VecX h;   // Coriolis and centrifugal bias vector
 		mathlib::VecX tau; // control torque vector
 
+		mathlib::VecX I_eff_controller; // effective inertia vector for controller design (e.g., for inverse dynamics control)
+
 		std::vector<mathlib::Pose> T_world;
 		std::vector<mathlib::Pose> jointWorldPoses;
 
@@ -24,7 +26,7 @@ namespace robots {
 
 		// Resizes the scratch buffers
 		void resize(size_t nJoints, size_t nLinks) {
-			// Do not resize if the current capacities are sufficient
+			// Do not resize if the current capacities are sufficients
 			if (jointCap == nJoints
 				&& linkCap == nLinks) {
 				return;
@@ -35,6 +37,7 @@ namespace robots {
 			rhs.resize(nJoints);
 			h.resize(nJoints);
 			tau.resize(nJoints);
+			I_eff_controller.resize(nJoints);
 			T_world.resize(nLinks);
 			jointWorldPoses.resize(nJoints);
 
@@ -50,6 +53,7 @@ namespace robots {
 			rhs.setZero();
 			h.setZero();
 			tau.setZero();
+			I_eff_controller.setZero();
 			for (auto& T : T_world) T.setIdentity();
 			for (auto& T : jointWorldPoses) T.setIdentity();
 		}
@@ -60,6 +64,7 @@ namespace robots {
 			rhs.resize(0);
 			h.resize(0);
 			tau.resize(0);
+			I_eff_controller.resize(0);
 			T_world.clear();
 			jointWorldPoses.clear();
 			jointCap = 0;
@@ -81,6 +86,13 @@ namespace robots {
 
 		mathlib::VecX u; // joint force contribution
 		mathlib::VecX d; // joint inertia contribution
+
+		std::vector<std::vector<mathlib::SpatialMat>> dXup_dq; // derivative of spatial transformation w.r.t. joint angles
+
+		std::vector<std::vector<mathlib::SpatialVec>> dv_dq;  // derivative of spatial velocity w.r.t. joint angles
+		std::vector<std::vector<mathlib::SpatialVec>> dv_dqd; // derivative of spatial velocity w.r.t. joint velocities
+		std::vector<std::vector<mathlib::SpatialVec>> dc_dq;  // derivative of spatial bias acceleration w.r.t. joint angles
+		std::vector<std::vector<mathlib::SpatialVec>> dc_dqd; // derivative of spatial bias acceleration w.r.t. joint velocities
 
 		size_t jointCap = 0;
 

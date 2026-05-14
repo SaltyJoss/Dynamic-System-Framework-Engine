@@ -393,8 +393,18 @@ namespace robots {
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
-		scratch.dense.tau.setZero();
+		SpatialDynamics::computeSpatialKinematicsAndBias(
+			model, q, qd,
+			scratch.spatial.Xup,
+			scratch.spatial.v,
+			scratch.spatial.c
+		);
 
+		MatX M = SpatialDynamics::CRBA(model, scratch.spatial.Xup, scratch);
+		// RNEA to compute gravity compensation (q, 0, 0) for gravity, (q, qd, 0) for Coriolis
+		VecX tau_g = SpatialDynamics::RNEA(model, q, VecX::Zero(n), VecX::Zero(n), scratch);
+
+		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& joint = model.joints[i];
 			if (joint.type == eJointType::FIXED) { continue; }
@@ -405,13 +415,11 @@ namespace robots {
 			const double err = snap.q_ref[i] - q[i];
 			const double err_d = snap.qd_ref[i] - qd[i];
 
-			const double I_eff = std::max(scratch.dense.M(i, i), 1e-6);
+			const double I_eff = std::max(M(i, i), 1e-6);
 			const double k_p = I_eff * wn * wn;
 			const double k_d = 2.0 * z * I_eff * wn;
 
 			double tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			tau_i += scratch.g[i];
-			tau_i += scratch.dense.h[i];
 			tau_i -= 0.2 * qd[i];
 			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
 
@@ -433,6 +441,52 @@ namespace robots {
 		dx.tail(n) = out.qdd;
 		
 		return dx;
+	}
+
+	void RobotDynamics::jacobian_spatial(
+		const robots::SpatialModel& model,
+		const mathlib::VecX& x,
+		const RobotSimSnapshot& snap,
+		const mathlib::VecX& kp,
+		const mathlib::VecX& kd,
+		mathlib::MatX& F_out,
+		DynamicsScratch& scratch
+	) {
+		const size_t n = snap.model->joints.size();
+		
+		F_out.setZero(2 * n, 2 * n);
+		F_out.block(0, n, n, n).setIdentity();
+
+		Eigen::Map<const VecX> q(x.data(), n);
+		Eigen::Map<const VecX> qd(x.data() + n, n);
+
+		SpatialDynamics::computeSpatialKinematicsAndBias(
+			model, q, qd,
+			scratch.spatial.Xup,
+			scratch.spatial.v,
+			scratch.spatial.c
+		);
+
+		scratch.dense.M = SpatialDynamics::CRBA(model, scratch.spatial.Xup, scratch);
+
+		MatX dTau_dq = MatX::Zero(n, n);
+		MatX dTau_dv = MatX::Zero(n, n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const SpatialJoint& joint = model.joints[i];
+			if (joint.type == eJointType::FIXED) { continue; }
+			dTau_dq(i, i) = -kp[i];
+			double tanh_term = std::tanh(qd[i] / 1e-2);
+			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-2;
+			dTau_dv(i, i) = -kd[i] - 0.2 + stiff_friction_slope;
+		}
+
+		Eigen::LDLT<MatX> solver(scratch.dense.M); // compute the Cholesky decomposition of the mass matrix for efficient solving
+		MatX dqdd_dtau_q = solver.solve(dTau_dq); // compute the partial derivative of qdd with respect to q
+		MatX dqdd_dtau_v = solver.solve(dTau_dv); // compute the partial derivative of qdd with respect to qd
+
+		F_out.block(n, 0, n, n) = dqdd_dtau_q; // fill the Jacobian block for qdd with respect to q
+		F_out.block(n, n, n, n) = dqdd_dtau_v; // fill the Jacobian block for qdd with respect to qd)
 	}
 
 	mathlib::VecX RobotDynamics::derivative_with_gains(

@@ -87,6 +87,16 @@ namespace robots {
 			DynamicsResult& out
 		);
 
+		void jacobian_spatial(
+			const robots::SpatialModel& model,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp,
+			const mathlib::VecX& kd,
+			mathlib::MatX& F_out,
+			DynamicsScratch& scratch
+		);
+
 		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
 		mathlib::VecX derivative_with_gains(
 			double t,
