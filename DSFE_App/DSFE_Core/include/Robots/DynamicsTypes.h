@@ -7,12 +7,11 @@
 #include "Robots/RobotMetrics.h"
 
 namespace robots {
-	// Scratch buffers for dense dynamics computations
+	// Scratch buffers for dense dynamics
 	struct DenseDynamicsScratch {
 		mathlib::MatX M;   // mass matrix
 		mathlib::VecX rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
 		mathlib::VecX h;   // Coriolis and centrifugal bias vector
-		mathlib::VecX g;   // gravity torque vector
 		mathlib::VecX tau; // control torque vector
 
 		std::vector<Pose> T_world;
@@ -33,7 +32,6 @@ namespace robots {
 			M.resize(nJoints, nJoints);
 			rhs.resize(nJoints);
 			h.resize(nJoints);
-			g.resize(nJoints);
 			tau.resize(nJoints);
 			T_world.resize(nLinks);
 			jointWorldPoses.resize(nJoints);
@@ -49,7 +47,6 @@ namespace robots {
 			M.setZero();
 			rhs.setZero();
 			h.setZero();
-			g.setZero();
 			tau.setZero();
 			for (auto& T : T_world) T.setIdentity();
 			for (auto& T : jointWorldPoses) T.setIdentity();
@@ -60,7 +57,6 @@ namespace robots {
 			M.resize(0, 0);
 			rhs.resize(0);
 			h.resize(0);
-			g.resize(0);
 			tau.resize(0);
 			T_world.clear();
 			jointWorldPoses.clear();
@@ -81,8 +77,8 @@ namespace robots {
 		std::vector<mathlib::SpatialVec> pA; // articulated bias force
 		std::vector<mathlib::SpatialVec> U;  // articulated body force
 
-		std::vector<double> u; // joint force contribution
-		std::vector<double> d; // joint inertia contribution
+		mathlib::VecX u; // joint force contribution
+		mathlib::VecX d; // joint inertia contribution
 
 		size_t jointCap = 0;
 
@@ -115,8 +111,8 @@ namespace robots {
 			a.clear();
 			pA.clear();
 			U.clear();
-			u.clear();
-			d.clear();
+			u.resize(0);
+			d.resize(0);
 			jointCap = 0;
 		}
 	};
@@ -141,16 +137,21 @@ namespace robots {
 		SpatialDynamicsScratch spatial;
 		// TODO add kinematics scratch
 
+		// Gravity scratch buffer
+		mathlib::VecX g;
+
 		// Resizes all scratch buffers using the given number of joints and links
 		void resize(size_t nJoints, size_t nLinks) {
 			dense.resize(nJoints, nLinks);
 			spatial.resize(nJoints);
+			g.resize(nJoints);
 		}
 
 		// Clears all scratch buffers
 		void clear() {
 			dense.clear();
 			spatial.clear();
+			g.resize(0);
 		}
 	};
 }
