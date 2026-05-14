@@ -48,7 +48,7 @@ namespace core {
 		// Simulation control
 		void startSimulation() override;
 		void stopSimulation() override;
-		bool isSimRunning() const override { return _simRunning; }
+		bool isSimRunning() const override { return _simRunning.load(); }
 
 		// Time stepping
 		void setFixedDt(double dt) override;
@@ -59,9 +59,9 @@ namespace core {
 		SimulationSnapshot snapshot() const override {
 			std::lock_guard<std::mutex> lock(_stateMutex); // Ensure thread-safe access to snapshot data
 			return SimulationSnapshot{
-				.simTime = _simTime,
-				.simRunning = _simRunning,
-				.scriptRunning = _scriptRunning
+				.simTime = _simTime.load(),
+				.simRunning = _simRunning.load(),
+				.scriptRunning = _scriptRunning.load()
 			};
 		}
 
@@ -106,11 +106,14 @@ namespace core {
 		void exportRefsToHDF5();
 
 		// Increment simulation time by dt (used in the simulation loop)
-		void incrementSimTime(double dt) { _simTime += dt; }
+		void incrementSimTime(double dt) {
+			double newSimTime = _simTime.load() + dt;
+			_simTime.store(newSimTime);
+		}
 
 		// Script Running State
-		void setScriptRunning(bool running) { _scriptRunning = running; }
-		const bool isScriptRunning() const { return _scriptRunning; }
+		void setScriptRunning(bool running) { _scriptRunning.store(running); }
+		const bool isScriptRunning() const { return _scriptRunning.load(); }
 
 		// Setter and getter for telemetry frequency (Hz)
 		void setTelemetryHz(double hz) { _telHz = hz; }

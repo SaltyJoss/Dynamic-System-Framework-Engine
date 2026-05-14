@@ -56,62 +56,66 @@ namespace core {
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
+		double simTime = _simTime.load();
+
 		_accum += frame_dt; // accumulate frame time to step the simulation in fixed increments of _dt
 		// Step the simulation forward in fixed increments of _dt until we catch up to the current frame time
 		while (_accum >= _dt) {
 			// Step the active script program if running and check for completion or faults
-			if (_scriptRunning && _activeProgram) {
+			if (_scriptRunning.load() && _activeProgram) {
 				_activeProgram->step(_dt);
 				const bool completed = _activeProgram->isCompleted();
 				const bool stopped = _activeProgram->isStopped();
 				const bool faulted = _activeProgram->isFaulted();
 				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, _simTime);
-					_scriptRunning = false;
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, simTime);
+					_scriptRunning.store(false);
 					_activeProgram = nullptr;
 					stopSimulation();
 					D_RUNTIME("Program execution completed.");
 				}
 				else if (stopped || faulted) {
-					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)", (int)stopped, (int)faulted, _dt, _simTime);
-					_scriptRunning = false;
+					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)", (int)stopped, (int)faulted, _dt, simTime);
+					_scriptRunning.store(false);
 					_activeProgram = nullptr;
 					stopSimulation();
 					D_RUNTIME("Program execution completed.");
 				}
 			}
-			else if (_scriptRunning && !_activeProgram) {
+			else if (_scriptRunning.load() && !_activeProgram) {
 				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
-				_scriptRunning = false;
+				_scriptRunning.store(false);
 			}
+
 			// Update physics and robot system if sim is running
-			if (_simRunning) {
-				_simTime += _dt;
+			if (_simRunning.load()) {
+				simTime += _dt;
 
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
-					_robot->updateTrajectoryInputs(*_traj, _simTime);
-					_robot->step(_dt, _simTime);
+					_robot->updateTrajectoryInputs(*_traj, simTime);
+					_robot->step(_dt, simTime);
 					// Telemetry update
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
+						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
+		_simTime.store(simTime); // store the updated simulation time back to the atomic variable
 	}
 
 	// Start the simulation loop
 	void SimulationCore::startSimulation() {
-		if (_simRunning) return;
+		if (_simRunning.load()) { return; }
 		telemetry().clear();
 		D_RUNTIME("starting simulation");
 
-		_simTime = 0.0;
+		_simTime.store(0.0);
 		_accum = 0.0;
 
 		// Reset simulation system
@@ -148,14 +152,14 @@ namespace core {
 		_data.setIntegratorName(integrationMethodName());
 		_data.setRunTag(_runTag);
 
-		_simRunning = true;
+		_simRunning.store(true);
 		_telemetryBegun = false;
 		_data.setEnabled(true);
 	}
 
 	// Stop the simulation loop
 	void SimulationCore::stopSimulation() {
-		if (!_simRunning) { return; }
+		if (!_simRunning.load()) { return; }
 		D_RUNTIME("stopping simulation");
 
 		if (_robot) {
@@ -167,7 +171,7 @@ namespace core {
 
 		// Clear buffers to free memory and prepare for next run
 		_data.setEnabled(false);
-		_simRunning = false;
+		_simRunning.store(false);
 		_telemetryBegun = false;
 	}
 
@@ -284,8 +288,8 @@ namespace core {
 		_robot->setRefBuffer(&_trajRefBuffer);
 
 		// Reset simulation state
-		_simTime = 0.0;
-		_simRunning = false;
+		_simTime.store(0);
+		_simRunning.store(false);
 		_telemetryBegun = false;
 		_accum = 0.0;
 
@@ -293,7 +297,7 @@ namespace core {
 		_robot->setIntegrationMethod(method);
 
 		_activeProgram = program;
-		_scriptRunning = true;
+		_scriptRunning.store(true);
 
 		// Set run mode to synchronous for the duration of this run
 		_runMode = eRunMode::Synchronous;
@@ -301,10 +305,11 @@ namespace core {
 		// enable sim stepping and telemetry for synchronous run
 		startSimulation();
 
-		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime);
+		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime.load());
 
 		// Run tight simulation loop until program completes
 		const double dt = _dt;
+		double simTime = _simTime.load();
 		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
 
 		// Main loop: step the program and simulation until completion
@@ -319,42 +324,45 @@ namespace core {
 			program->step(dt);
 
 			// Step physics and robot if sim is running
-			if (_simRunning) {
-				_simTime += dt;
+			if (_simRunning.load()) {
+				simTime += dt;
 
 				if (hasRobot()) {
 					// Update Trajectory Inputs
-					_robot->updateTrajectoryInputs(*_traj, _simTime);
+					_robot->updateTrajectoryInputs(*_traj, simTime);
 
 					// Step robot system
-					_robot->step(dt, _simTime);
+					_robot->step(dt, simTime);
 
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
+						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
 
 					// Telemetry update
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
+
+		_simTime.store(simTime); // Update the main sim time with the final value from the loop
+		 
 		// Clean up
 		stopSimulation();
 
-		LOG_INFO("SimulationCore::runScriptToCompletion -> stopSimulation called; simTime=%.6f telemetry_samples=%zu", _simTime, _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> stopSimulation called; simTime=%.6f telemetry_samples=%zu", _simTime.load(), _telemetry.ring.size());
 		// Reset run mode to interactive (default)
 		_runMode = eRunMode::Interactive;
 
 		_activeProgram = nullptr;
-		_scriptRunning = false;
-		_simRunning = false;
+		_scriptRunning.store(false);
+		_simRunning.store(false);
 		_telemetryBegun = false;
 
-		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
-		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime, _telemetry.ring.size());
+		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
 		return (_telemetry.ring.size() >= 2);
 	}
 	
@@ -363,7 +371,10 @@ namespace core {
 	// Getter for fixed timestep duration
 	double SimulationCore::fixedDt() const { return _dt; }
 	// Getter for current simulation time
-	double SimulationCore::simTime() const { return _simTime; }
+	double SimulationCore::simTime() const {
+		double t = _simTime.load();
+		return t;
+	}
 
 	// Method to step the simulation with a fixed timestep
 	void SimulationCore::tick(double frame_dt) { stepFixed(frame_dt); }
