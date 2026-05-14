@@ -65,7 +65,7 @@ namespace robots {
 			const RobotConstModel& robot,
 			const mathlib::VecX& x,
 			mathlib::MatX& J_out,
-			DynamicsScratch& scratch
+			DenseDynamicsScratch& scratch
 		);
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
@@ -73,7 +73,7 @@ namespace robots {
 			double t,
 			const mathlib::VecX& x,
 			const RobotSimSnapshot& snap,
-			DynamicsScratch& scratch, DynamicsResult& out
+			DenseDynamicsScratch& scratch, DynamicsResult& out
 		);
 
 		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
@@ -82,14 +82,14 @@ namespace robots {
 			const mathlib::VecX& x,
 			const RobotSimSnapshot& snap,
 			const mathlib::VecX& kp,const mathlib::VecX& kd,
-			DynamicsScratch& scratch, DynamicsResult& out
+			DenseDynamicsScratch& scratch, DynamicsResult& out
 		);
 
 		// Computes the Jacobian matrix with control gains based on the current state and robot configuration
 		void jacobian_with_gains(
 			const mathlib::VecX& x, const RobotSimSnapshot& snap,
 			const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out,
-			DynamicsScratch& scratch
+			DenseDynamicsScratch& scratch
 		);
 
 		// Set the gravity strength for the robot system

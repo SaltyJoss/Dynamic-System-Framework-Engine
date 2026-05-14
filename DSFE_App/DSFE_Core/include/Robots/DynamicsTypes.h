@@ -42,6 +42,8 @@ namespace robots {
 			linkCap = nLinks;
 		}
 
+		// Sets all buffers to zero or identity
+		//  * (ONLY FOR DEBUGGING PURPOSES, CALL clear() FOR PRODUCTION USE)
 		void zero() {
 			// Dense buffers
 			M.setZero();

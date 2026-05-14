@@ -138,7 +138,7 @@ namespace robots {
 		DynamicsScratch& scratch
 	) {
 		const size_t n = model.joints.size();
-		scratch.M.setZero(n, n);
+		scratch.dense.M.setZero(n, n);
 		std::vector<SpatialMat> Ic(n); // spatial inertia for each link
 
 		// Initialise spatial inertia for each link based on the robot model
@@ -159,18 +159,18 @@ namespace robots {
 			const SpatialJoint& j = model.joints[i];
 			if (j.type == eJointType::FIXED) { continue; }
 			SpatialVec F = Ic[i] * j.S;
-			scratch.M(i, i) = j.S.dot(F);
+			scratch.dense.M(i, i) = j.S.dot(F);
 
 			int jIdx = (int)i;
 			while (model.joints[jIdx].parent >= 0) {
 				int p = model.joints[jIdx].parent;
 				F = Xup[jIdx].transpose() * F;
-				scratch.M(i, p) = model.joints[p].S.dot(F);
-				scratch.M(p, i) = scratch.M(i, p);
+				scratch.dense.M(i, p) = model.joints[p].S.dot(F);
+				scratch.dense.M(p, i) = scratch.dense.M(i, p);
 				jIdx = p;
 			}
 		}
-		return scratch.M; // [kg*m^2], mass matrix computed using the Composite Rigid Body Algorithm (CRBA)
+		return scratch.dense.M; // [kg*m^2], mass matrix computed using the Composite Rigid Body Algorithm (CRBA)
 	}
 
 	// Recursive function to compute articulated body inertias and bias forces using the Articulated Body Algorithm (ABA)

@@ -322,10 +322,10 @@ namespace robots {
 			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
 		}
 
-		mathlib::VecX tau_rnea = SpatialDynamics::inverseDynamics(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
+		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(_spatialModel, q, qd, qdd); // [Nm], torque computed by RNEA for current state and reference acceleration
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
-		_dynScratch.resize(n, snap.model->links.size());
+		_dynScratch.dense.resize(n, snap.model->links.size());
 		_dynResult.resize(n);
 
 		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
@@ -333,7 +333,7 @@ namespace robots {
 				xIn,
 				snap,
 				kp_frozen, kd_frozen,
-				_dynScratch, _dynResult
+				_dynScratch.dense, _dynResult
 			);
 		};
 
@@ -342,7 +342,7 @@ namespace robots {
 				snap,
 				kp_frozen, kd_frozen,
 				J_out,
-				_dynScratch
+				_dynScratch.dense
 			);
 		};
 		

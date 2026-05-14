@@ -249,7 +249,7 @@ namespace robots {
 		const RobotConstModel& robot,
 		const mathlib::VecX& x,
 		mathlib::MatX& J_out,
-		DynamicsScratch& scratch
+		DenseDynamicsScratch& scratch
 	) {
 		const size_t n = robot.joints.size();
 
@@ -298,7 +298,7 @@ namespace robots {
 		double /*t*/,
 		const mathlib::VecX& x,
 		const RobotSimSnapshot& snap,
-		DynamicsScratch& scratch,
+		DenseDynamicsScratch& scratch,
 		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
@@ -381,7 +381,7 @@ namespace robots {
 	mathlib::VecX RobotDynamics::derivative_with_gains(
 		double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
 		const mathlib::VecX& kp, const mathlib::VecX& kd,
-		DynamicsScratch& scratch,
+		DenseDynamicsScratch& scratch,
 		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
@@ -426,7 +426,7 @@ namespace robots {
 	void RobotDynamics::jacobian_with_gains(
 		const mathlib::VecX& x, const RobotSimSnapshot& snap,
 		const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out,
-		DynamicsScratch& scratch
+		DenseDynamicsScratch& scratch
 	) {
 		const size_t n = snap.model->joints.size();
 
