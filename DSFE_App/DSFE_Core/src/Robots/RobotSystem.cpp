@@ -298,6 +298,8 @@ namespace robots {
 		RobotSimSnapshot snap = takeSnapshot(simTime);
 		const size_t n = snap.model->joints.size();
 
+		_dynScratch.clear();
+
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
@@ -308,6 +310,8 @@ namespace robots {
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
 		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
 
+		_dynScratch.clear();
+
 		SpatialDynamics::computeSpatialKinematicsAndBias(
 			_spatialModel,
 			q, qd,
@@ -316,7 +320,6 @@ namespace robots {
 		);
 
 		// CRBA only for controller inertia scaling
-
 		mathlib::MatX M_start = SpatialDynamics::CRBA(
 			_spatialModel,
 			_dynScratch.spatial.Xup,
@@ -343,7 +346,6 @@ namespace robots {
 		); // [Nm], torque computed by RNEA for current state and reference acceleration
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
-		_dynScratch.dense.resize(n, snap.model->links.size());
 		_dynResult.resize(n);
 
 		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
