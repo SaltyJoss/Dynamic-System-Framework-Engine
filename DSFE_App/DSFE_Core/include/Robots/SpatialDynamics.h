@@ -76,7 +76,8 @@ namespace robots {
 			const SpatialModel& model,
 			const mathlib::VecX& q,
 			const mathlib::VecX& qd,
-			const mathlib::VecX& tau
+			const mathlib::VecX& tau,
+			DynamicsScratch& scratch
 		);
 	};
 }

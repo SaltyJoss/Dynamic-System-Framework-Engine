@@ -268,31 +268,42 @@ namespace robots {
 		const SpatialModel& model,
 		const mathlib::VecX& q,
 		const mathlib::VecX& qd,
-		const mathlib::VecX& tau
+		const mathlib::VecX& tau,
+		DynamicsScratch& scratch
 	) {
 		const size_t n = model.joints.size();
 		VecX qdd = VecX::Zero(n);
 
-		// Scratch buffers for spatial velocities, transforms, and accelerations
-		std::vector<SpatialMat> Xup(n), IA(n), Ia(n);
-		std::vector<SpatialVec> v(n), c(n), pA(n), U(n), a(n);
-		std::vector<double> d(n, 0.0), u(n, 0.0);
-
 		SpatialVec a0; // base acceleration (gravity)
 		a0.v << 0, 0, 0, 0, 0, -9.81; // gravity acceleration in spatial vector form
 
-		computeSpatialKinematicsAndBias(model, q, qd, Xup, v, c);
+		computeSpatialKinematicsAndBias(
+			model, q, qd,
+			scratch.spatial.Xup,
+			scratch.spatial.v,
+			scratch.spatial.c
+		);
 
 		for (size_t i = 0; i < n; ++i) {
-			IA[i] = model.joints[i].inertia; // Articulated Body Inertia
+			scratch.spatial.IA[i] = model.joints[i].inertia; // Articulated Body Inertia
 
-			pA[i] = crossForce(v[i], (IA[i] * v[i]));
+			scratch.spatial.pA[i] = crossForce(scratch.spatial.v[i], (scratch.spatial.IA[i] * scratch.spatial.v[i]));
 		}
 
 		// Compute articulated body inertias and bias forces
-		computeArticulatedBodies_ABA(model, Xup, v, c, tau, IA, pA, Ia, u, d, U);
+		computeArticulatedBodies_ABA(
+			model, scratch.spatial.Xup,
+			scratch.spatial.v, scratch.spatial.c, tau,
+			scratch.spatial.IA, scratch.spatial.pA, scratch.spatial.Ia,
+			scratch.spatial.u, scratch.spatial.d, scratch.spatial.U
+		);
+
 		// Compute joint accelerations using the articulated body algorithm
-		computeAccelerations_ABA(model, Xup, c, u, d, U, a0, a, qdd);
+		computeAccelerations_ABA(
+			model, scratch.spatial.Xup, scratch.spatial.c,
+			scratch.spatial.u, scratch.spatial.d, scratch.spatial.U,
+			a0, scratch.spatial.a,qdd
+		);
 
 		return qdd; // [rad/s^2], joint accelerations computed using the Articulated Body Algorithm (ABA)
 	}
