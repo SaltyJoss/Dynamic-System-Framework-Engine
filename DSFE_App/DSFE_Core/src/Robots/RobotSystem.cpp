@@ -333,7 +333,7 @@ namespace robots {
 				xIn,
 				snap,
 				kp_frozen, kd_frozen,
-				_dynScratch.dense, _dynResult
+				_dynScratch, _dynResult
 			);
 		};
 

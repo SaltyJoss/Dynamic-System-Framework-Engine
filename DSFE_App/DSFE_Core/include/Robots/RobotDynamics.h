@@ -69,11 +69,12 @@ namespace robots {
 		);
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
-		mathlib::VecX derivative(
+		mathlib::VecX derivative_dense(
 			double t,
 			const mathlib::VecX& x,
 			const RobotSimSnapshot& snap,
-			DenseDynamicsScratch& scratch, DynamicsResult& out
+			DynamicsScratch& scratch,
+			DynamicsResult& out
 		);
 
 		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
@@ -82,7 +83,7 @@ namespace robots {
 			const mathlib::VecX& x,
 			const RobotSimSnapshot& snap,
 			const mathlib::VecX& kp,const mathlib::VecX& kd,
-			DenseDynamicsScratch& scratch, DynamicsResult& out
+			DynamicsScratch& scratch, DynamicsResult& out
 		);
 
 		// Computes the Jacobian matrix with control gains based on the current state and robot configuration

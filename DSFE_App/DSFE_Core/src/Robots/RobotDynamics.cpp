@@ -294,11 +294,11 @@ namespace robots {
 	}
 
 	// Computes the derivative of the state vector (q, qd) based on the current state and robot configurations
-	mathlib::VecX RobotDynamics::derivative(
+	mathlib::VecX RobotDynamics::derivative_dense(
 		double /*t*/,
 		const mathlib::VecX& x,
 		const RobotSimSnapshot& snap,
-		DenseDynamicsScratch& scratch,
+		DynamicsScratch& scratch,
 		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
@@ -308,19 +308,19 @@ namespace robots {
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.dense.T_world);
 
-		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
+		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.dense.T_world, *snap.model);
 
-		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M); // [kg*m^2], full mass matrix for the robot at configuration q
-		scratch.h = computeCoriolisVector(*snap.model, q, qd, scratch.T_world, scratch.M); // [Nm], full Coriolis and centrifugal torque vector
+		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M); // [kg*m^2], full mass matrix for the robot at configuration q
+		scratch.dense.h = computeCoriolisVector(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M); // [Nm], full Coriolis and centrifugal torque vector
 
 		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque(*snap.model, scratch.T_world, scratch.jointWorldPoses);
+			scratch.g = computeGravityTorque(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
-		scratch.tau.setZero();
+		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			const RobotJoint& joint = snap.model->joints[i];
 
@@ -338,17 +338,17 @@ namespace robots {
 			const double err = snap.q_ref[i] - q[i];	   // [rad], position error
 			const double err_d = snap.qd_ref[i] - qd[i]; // [rad/s], velocity error
 
-			const double I_eff = std::max(scratch.M(i, i), 1e-6); // [kg*m^2], effective inertia for joint i with floor to prevent singularities
+			const double I_eff = std::max(scratch.dense.M(i, i), 1e-6); // [kg*m^2], effective inertia for joint i with floor to prevent singularities
 			const double k_p = I_eff * wn * wn;		 // [Nm/rad], proportional gain
 			const double k_d = 2.0 * z * I_eff * wn; // [Nm/(rad/s)], derivative gain
 
 			double tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
 			tau_i += scratch.g[i]; // Gravity compensation
-			tau_i += scratch.h[i]; // add Coriolis and centrifugal bias
+			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
 			tau_i -= /*joint.dynamics.damping*/ 0.2 * qd[i]; // subtract viscous damping
 			tau_i -= /*joint.dynamics.friction*/ 0.05 * std::tanh(qd[i] / 1e-2); // subtract Coulomb friction
 
-			scratch.tau[i] = tau_i;
+			scratch.dense.tau[i] = tau_i;
 
 			// metrics
 			out.metrics.q[i] = q[i];
@@ -365,10 +365,10 @@ namespace robots {
 		}
 
 		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)
-		scratch.rhs.noalias() = scratch.tau - scratch.h - scratch.g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
+		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
 
 		// Solve for Accelerations
-		out.qdd = scratch.M.ldlt().solve(scratch.rhs); // [rad/s^2], joint accelerations computed from dynamics
+		out.qdd = scratch.dense.M.ldlt().solve(scratch.dense.rhs); // [rad/s^2], joint accelerations computed from dynamics
 		out.metrics.qdd = out.qdd;
 
 		// Fill derivatives
@@ -381,7 +381,7 @@ namespace robots {
 	mathlib::VecX RobotDynamics::derivative_with_gains(
 		double t, const mathlib::VecX& x, const RobotSimSnapshot& snap,
 		const mathlib::VecX& kp, const mathlib::VecX& kd,
-		DenseDynamicsScratch& scratch,
+		DynamicsScratch& scratch,
 		DynamicsResult& out
 	) {
 		const size_t n = snap.model->joints.size();
@@ -390,32 +390,32 @@ namespace robots {
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
-		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.dense.T_world);
+		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.dense.T_world, *snap.model);
 
-		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
-		scratch.h = computeCoriolisVector(*snap.model, q, qd, scratch.T_world, scratch.M);
+		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M);
+		scratch.dense.h = computeCoriolisVector(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
 
 		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque(*snap.model, scratch.T_world, scratch.jointWorldPoses);
+			scratch.g = computeGravityTorque(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
-		scratch.tau.setZero();
+		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			if (snap.model->joints[i].type == eJointType::FIXED) continue;
 
 			// FIXED: Use the constant, frozen step-start values passed down
-			double tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + std::max(scratch.M(i, i), 1e-6) * snap.qdd_ref[i];
-			tau_i += scratch.g[i] + scratch.h[i];
+			double tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + std::max(scratch.dense.M(i, i), 1e-6) * snap.qdd_ref[i];
+			tau_i += scratch.g[i] + scratch.dense.h[i];
 			tau_i -= 0.2 * qd[i];
 			tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
 
-			scratch.tau[i] = tau_i;
+			scratch.dense.tau[i] = tau_i;
 		}
 
-		scratch.rhs.noalias() = scratch.tau - scratch.h - scratch.g;
-		out.qdd = scratch.M.ldlt().solve(scratch.rhs);
+		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.g;
+		out.qdd = scratch.dense.M.ldlt().solve(scratch.dense.rhs);
 		out.metrics.qdd = out.qdd;
 
 		dx.head(n) = qd;
