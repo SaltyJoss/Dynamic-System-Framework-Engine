@@ -536,22 +536,53 @@ namespace integration {
 
 			for (int iter = 0; iter < maxIter; ++iter) {
 				eval_g(x, g);
-				if (!g.allFinite()) { throw std::runtime_error("Newton received non-finite residual"); }
+				if (!g.allFinite()) {
+					throw std::runtime_error(
+						"Newton received non-finite residual at iter = "
+						+ std::to_string(iter)
+						+ ", residual norm = "
+						+ std::to_string(g.norm())
+					);
+				}
 				if (g.norm() < tol) { return x; }
 
 				eval_j(x, J);
-				if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian"); }
+				if (!J.allFinite()) {
+					throw std::runtime_error(
+						"Newton received non-finite Jacobian at iter = "
+						+ std::to_string(iter)
+					);
+				}
 
 				solver.compute(J);
 				delta = solver.solve(-g);
 
-				if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step"); }
-				if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
+				if (!delta.allFinite()) {
+					throw std::runtime_error(
+						"Newton produced non-finite step at iter = "
+						+ std::to_string(iter)
+					);
+				}
 
-				x += delta;
+				if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
+				x += 0.5 * delta;
+
+				if (!x.allFinite()) {
+					throw std::runtime_error(
+						"Newton state became non-finite at iter = "
+						+ std::to_string(iter)
+					);
+				}
 			}
 
-			throw std::runtime_error("Newton-Raphson failed to converge");
+			throw std::runtime_error(
+				"Newton-Raphson failed to converge after "
+				+ std::to_string(maxIter)
+				+ " iterations. Final residual norm = "
+				+ std::to_string(g.norm())
+				+ ", final step norm = "
+				+ std::to_string(delta.norm())
+			);
 		}
 
 		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
