@@ -564,8 +564,8 @@ namespace integration {
 					);
 				}
 
+				x += delta;
 				if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
-				x += 0.5 * delta;
 
 				if (!x.allFinite()) {
 					throw std::runtime_error(
