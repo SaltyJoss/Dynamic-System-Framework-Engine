@@ -106,7 +106,13 @@ namespace core {
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
-		_simTime.store(simTime); // store the updated simulation time back to the atomic variable
+
+		if (_simRunning.load()) {
+			_simTime.store(simTime);
+		}
+		else {
+			_simTime.store(0.0, std::memory_order_relaxed);
+		}
 	}
 
 	// Start the simulation loop
@@ -115,7 +121,7 @@ namespace core {
 		telemetry().clear();
 		D_RUNTIME("starting simulation");
 
-		_simTime.store(0.0);
+		_simTime.store(0.0, std::memory_order_relaxed);
 		_accum = 0.0;
 
 		// Reset simulation system
@@ -173,6 +179,9 @@ namespace core {
 		_data.setEnabled(false);
 		_simRunning.store(false);
 		_telemetryBegun = false;
+
+		_simTime.store(0.0, std::memory_order_relaxed);
+		_accum = 0.0;
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
@@ -288,7 +297,7 @@ namespace core {
 		_robot->setRefBuffer(&_trajRefBuffer);
 
 		// Reset simulation state
-		_simTime.store(0);
+		_simTime.store(0.0, std::memory_order_relaxed);
 		_simRunning.store(false);
 		_telemetryBegun = false;
 		_accum = 0.0;
@@ -347,8 +356,13 @@ namespace core {
 			}
 		}
 
-		_simTime.store(simTime); // Update the main sim time with the final value from the loop
-		 
+		if (_simRunning.load()) {
+			_simTime.store(simTime);
+		}
+		else {
+			_simTime.store(0.0);
+		}
+	
 		// Clean up
 		stopSimulation();
 
