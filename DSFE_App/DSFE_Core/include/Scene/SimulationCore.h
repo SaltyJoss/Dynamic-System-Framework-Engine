@@ -44,6 +44,7 @@ namespace core {
 		void startExportThread();
 		void stopExportThread();
 		void enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf);
+		void flushExports();
 
 		// Simulation control
 		void startSimulation() override;

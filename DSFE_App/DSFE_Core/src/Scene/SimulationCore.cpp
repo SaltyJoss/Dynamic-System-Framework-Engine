@@ -173,13 +173,8 @@ namespace core {
 		D_RUNTIME("stopping simulation");
 
 		auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
-		if (buf) {
-			enqueueExportBuffer(std::move(buf));
-		}
-
-		while (_exportsInFlight.load() > 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
+		if (buf) { enqueueExportBuffer(std::move(buf)); }
+		flushExports();
 
 		// Clear buffers to free memory and prepare for next run
 		_data.setEnabled(false);
@@ -480,7 +475,12 @@ namespace core {
 			}
 
 			if (buf) {
-				exportLogsToHDF5(*buf);
+				try {
+					exportLogsToHDF5(*buf);
+				}
+				catch (...) {
+					LOG_ERROR("Export failed");
+				}
 				--_exportsInFlight;
 			}
 		}
@@ -493,5 +493,11 @@ namespace core {
 			_expQ.push(std::move(buf));
 		}
 		_expCondVar.notify_one();
+	}
+
+	void SimulationCore::flushExports() {
+		while (_exportsInFlight.load(std::memory_order_acquire) > 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 }
