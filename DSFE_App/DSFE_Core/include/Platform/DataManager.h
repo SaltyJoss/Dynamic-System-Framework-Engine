@@ -48,6 +48,11 @@ namespace data {
         const std::string& path() const { return _path; }
 
         void write(std::string topic, const FieldList& fields);
+        void writeVector(
+            const std::string& topic,
+            const std::string& key,
+            const std::vector<double>& vals
+        );
 
     private:
         mutable std::mutex _mtx;
@@ -103,7 +108,9 @@ namespace data {
         void setEnabled(bool enabled);
 		void setIntegratorName(std::string name) { _integratorName = name; }
         void setParentFolder(std::string folder) { _parentFolder = folder; }
+
 		void capture(Stream s, std::string_view topic, const FieldList& fields);
+
 		bool enabled() const { return _enabled; }
 
 		void setRunTag(std::string t) { _runTag = t; }

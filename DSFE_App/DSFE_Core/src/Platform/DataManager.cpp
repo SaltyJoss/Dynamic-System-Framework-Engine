@@ -272,6 +272,36 @@ namespace data {
 		H5Sclose(memSpace);
 	}
 
+	// Append a row to a 1D vector-of type double- dataset
+	static void appendDoubleVector1D(
+		hid_t dataset,
+		const std::vector<double>& vals
+	) {
+		if (vals.empty()) { return; }
+
+		hid_t currSpace = H5Dget_space(dataset);
+		hsize_t dims[1] = { 0 };
+
+		H5Sget_simple_extent_dims(currSpace, dims, nullptr);
+		const hsize_t currSize = dims[0];
+
+		H5Sclose(currSpace);
+
+		const hsize_t newSize = currSpace + vals.size();
+		H5Dset_extent(dataset, &newSize);
+
+		hid_t filespace = H5Dget_space(dataset);
+		hsize_t start[1] = { currSize };
+		hsize_t count[1] = { vals.size() };
+		H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, nullptr, count, nullptr);
+
+		hid_t memSpace = H5Screate_simple(1, count, nullptr);
+		H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memSpace, filespace, H5P_DEFAULT, vals.data());
+
+		H5Sclose(filespace);
+		H5Sclose(memSpace);
+	}
+
 	// Append a row to a 2D double dataset
 	static void appendDouble2D(hid_t dataset, const std::vector<double>& values) {
 		hsize_t dim2 = values.size();
@@ -538,6 +568,35 @@ namespace data {
 				appendStringRow2D(ds, _vlenStrType, std::get<std::vector<std::string>>(value));
 			}
 		}
+	}
+
+	// Writes vector fields to HDF5 datasets
+	void HDF5StreamWriter::writeVector(
+		const std::string& topic,
+		const std::string& key,
+		const std::vector<double>& vals
+	) {
+		std::lock_guard<std::mutex> lock(_mtx);
+		if (!_active || vals.empty()) { return; }
+
+		const std::string gPath = "/log/" + topic;
+		hid_t g = ensureGroup(_fileID, gPath.c_str());
+		if (g < 0) { return; }
+
+		H5Gclose(g);
+		const std::string dPath = gPath + "/" + key;
+
+		hid_t ds;
+
+		if (auto it = _ds1D_D.find(dPath); it != _ds1D_D.end()) {
+			ds = it->second;
+		}
+		else {
+			ds = ensureDoubleDataset1D(_fileID, dPath);
+			_ds1D_D.emplace(dPath, ds);
+		}
+
+		appendDoubleVector1D(ds, vals);
 	}
 
 	// start CSV stream writer
