@@ -20,6 +20,8 @@
 // HDF5 C API
 #include <hdf5.h>
 
+namespace robots { struct JointLogBuffer; }
+
 namespace data {
     // Variant type to hold different data types
     using Value = std::variant<
@@ -110,6 +112,11 @@ namespace data {
         void setParentFolder(std::string folder) { _parentFolder = folder; }
 
 		void capture(Stream s, std::string_view topic, const FieldList& fields);
+        void captureJointBuffer(
+            Stream s,
+            std::string_view topic,
+            const robots::JointLogBuffer& buf
+        );
 
 		bool enabled() const { return _enabled; }
 

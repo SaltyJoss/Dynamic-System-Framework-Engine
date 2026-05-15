@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "Platform/DataManager.h"
+#include "Analysis/MetricLogger.h";
 
 namespace data {
 	// Escape a string for CSV format
@@ -695,6 +696,53 @@ namespace data {
 		else if (s == Stream::Reference) {
 			_ref.write(std::string(topic), fields);
 		}
+	}
+
+	void DataManager::captureJointBuffer(
+		Stream s,
+		std::string_view topic,
+		const robots::JointLogBuffer& buf
+	) {
+		HDF5StreamWriter* writer = nullptr;
+
+		if (s == Stream::Simulation) {
+			writer = &_sim;
+		}
+		else if (s == Stream::Reference) {
+			writer = &_ref;
+		}
+
+		if (!writer) { return; }
+
+		std::vector<double> jointIndexD(buf.joint_index.begin(), buf.joint_index.end());
+		const std::string t(topic);
+
+		writer->writeVector(t, "sim_time", buf.sim_time);
+		writer->writeVector(t, "dt_taken", buf.dt_taken);
+		writer->writeVector(t, "dt_sug", buf.dt_sug);
+		// States
+		writer->writeVector(t, "position", buf.theta);
+		writer->writeVector(t, "velocity", buf.omega);
+		writer->writeVector(t, "acceleration", buf.alpha);
+		writer->writeVector(t, "error", buf.err);
+		writer->writeVector(t, "error_d", buf.err_d);
+		// Dynamics
+		writer->writeVector(t, "I_eff", buf.I_eff);
+		writer->writeVector(t, "tau", buf.tau);
+		writer->writeVector(t, "tau_ff", buf.tau_ff);
+		writer->writeVector(t, "tau_gravity", buf.tau_gravity);
+		writer->writeVector(t, "tau_barrier", buf.tau_barrier);
+		writer->writeVector(t, "tau_sat", buf.tau_sat);
+		// Energy, Work, & Power
+		writer->writeVector(t, "KE", buf.KE);
+		writer->writeVector(t, "PE", buf.PE);
+		writer->writeVector(t, "E_total", buf.E_total);
+		// Limit flags and info
+		writer->writeVector(t, "clamp_theta", buf.clamp_theta);
+		writer->writeVector(t, "clamp_omega", buf.clamp_omega);
+		writer->writeVector(t, "sat_flag", buf.sat_flag);
+		// Joint info
+		writer->writeVector(t, "joint_index", jointIndexD); // converted to vector<double>, TODO template vector writer though as my long term fix
 	}
 
 } // namespace data
