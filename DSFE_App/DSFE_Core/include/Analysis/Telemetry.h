@@ -24,7 +24,6 @@ namespace diagnostics {
 		// Actual data
 		double q   = 0.0f; // Joint angle in radians
 		double qd  = 0.0f; // Joint angular velocity in radians per second
-		double eta = 0.0f; // 
 
 		// Additional dynamics data
 		double torqueNm = 0.0f; // Joint torque (N·m)

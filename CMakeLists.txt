@@ -10,7 +10,6 @@ project(DSFE LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_TOOLCHAIN_FILE "C:/Program Files/Microsoft Visual Studio/18/Insiders/VC/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # Set common output directories for all targets
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -85,5 +84,5 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nlohmann_json)
 
 # --- Project Subdirectories ---
-add_subdirectory(MathLib)
+add_subdirectory(PxMLib)
 add_subdirectory(DSFE_App)

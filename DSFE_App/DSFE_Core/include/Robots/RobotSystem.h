@@ -3,9 +3,13 @@
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+
+#include "Robots/SpatialModel.h"
+#include "Robots/RobotSimSnapshot.h"
+#include "Robots/DynamicsTypes.h"
+
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
-#include "CoreTypes.h"
 
 // Forward declarations
 namespace control { class TrajectoryManager; }
@@ -108,6 +112,8 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
+		RobotSimSnapshot takeSnapshot(double simTime) const;
+
 		void step(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
 
@@ -146,7 +152,7 @@ namespace robots {
 		eTorqueMode getTorqueMode() const { return _robot.torqueMode; }
 
 		// Swap for the current log buffer, returning a ptr to new active buffer
-		robots::JointLogBuffer* claimExportLogBuffer();
+		std::unique_ptr<robots::JointLogBuffer> claimExportLogBuffer();
 
 		// Method to enable or disable the use of internal log buffers
 		void useInternalLogBuffer(bool enable);
@@ -156,6 +162,7 @@ namespace robots {
 
 	private:
         void buildLinkIndex();
+		void buildSpatialModel();
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
@@ -192,6 +199,12 @@ namespace robots {
 		// Robot model, and robot mode
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
+
+		SpatialModel _spatialModel;
+		RobotConstModel _constModel;
+
+		DynamicsScratch _dynScratch;
+		DynamicsResult _dynResult;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;

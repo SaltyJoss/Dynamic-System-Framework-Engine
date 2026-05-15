@@ -636,7 +636,7 @@ namespace gui {
 			glBindVertexArray(0);
 
 			v.post->unbind();
-		}
+		}	
 
 		static bool icontains(const std::string& s, const char* sub) {
 			if (sub == nullptr || *sub == '\0') { return false; }
@@ -1056,7 +1056,15 @@ namespace gui {
 		}
 
 		ImGuiIO& io = ImGui::GetIO();
+
 		_core->tick(io.DeltaTime);
+
+		if (_impl->_robotSystem && hasRobot()) {
+			_impl->_robotRenderer->applyTransforms(
+				_impl->_robotSystem->model(),
+				_impl->_robotSystem->worldTransforms()
+			);
+		}
 		
 		if (_core->robotPresentationDirty()) {
 			loadRobot(_core->robotSystem()->robotName());
@@ -1067,7 +1075,7 @@ namespace gui {
 
 		drawMainDockspace();
 		drawViewportWindow();
-	}
+	} 
 
 	void SimManager::syncRobotToScene() {
 		if (!hasRobot()) return;
@@ -1497,6 +1505,7 @@ namespace gui {
 		_impl->_worldGridShader->setVec3(cam->getPosition(), "gCameraWorldPos");
 		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
 		_impl->_worldGridShader->setFlt1(internalScale, "gInternalScale");
+		_impl->_worldGridShader->setFlt1(2500.0f, "gGridSize");
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1578,12 +1587,12 @@ namespace gui {
 			switch (currentShaderMode) {
 				case ShaderMode::Basic:
 					// (IMPORTANT) mesh_basic.frag needs: uniform vec3 color;
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setVec3(obj->material.albedo, "albedo");
 					break;
 
 				case ShaderMode::Lit:
 					// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
+					shader->setVec3(obj->material.albedo, "albedo");
 					shader->setVec3(_impl->_light->getPosition(), "lightPosition");
 					shader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
 					shader->setVec3(_impl->_light->getColour(), "lightColour");
@@ -1592,9 +1601,9 @@ namespace gui {
 
 				case ShaderMode::PBR:
 					// Per-mesh PBR material properties
-					shader->setVec3(obj->getMesh()->getAlbedo(), "albedo");
-					shader->setFlt1(obj->getMesh()->getMetallic(), "metallic");
-					shader->setFlt1(obj->getMesh()->getRoughness(), "roughness");
+					shader->setVec3(obj->material.albedo, "albedo");
+					shader->setFlt1(obj->material.metallic, "metallic");
+					shader->setFlt1(obj->material.roughness, "roughness");
 					shader->setFlt1(1.0f, "ao");
 					shader->setFlt1(_settingsCurrent.ambientStrength, "ambientStrength");
 

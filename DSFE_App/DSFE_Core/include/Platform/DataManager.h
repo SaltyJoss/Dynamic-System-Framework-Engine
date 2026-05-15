@@ -1,6 +1,6 @@
+// DSFE_Core DataManager.h
 #pragma once
-// File:   DataManager.h
-// GitHub: SaltyJoss
+
 #pragma warning(disable : 4251)
 #include "EngineCore.h"
 #include <string>
@@ -19,6 +19,8 @@
 
 // HDF5 C API
 #include <hdf5.h>
+
+namespace robots { struct JointLogBuffer; }
 
 namespace data {
     // Variant type to hold different data types
@@ -48,6 +50,11 @@ namespace data {
         const std::string& path() const { return _path; }
 
         void write(std::string topic, const FieldList& fields);
+        void writeVector(
+            const std::string& topic,
+            const std::string& key,
+            const std::vector<double>& vals
+        );
 
     private:
         mutable std::mutex _mtx;
@@ -103,7 +110,14 @@ namespace data {
         void setEnabled(bool enabled);
 		void setIntegratorName(std::string name) { _integratorName = name; }
         void setParentFolder(std::string folder) { _parentFolder = folder; }
+
 		void capture(Stream s, std::string_view topic, const FieldList& fields);
+        void captureJointBuffer(
+            Stream s,
+            std::string_view topic,
+            const robots::JointLogBuffer& buf
+        );
+
 		bool enabled() const { return _enabled; }
 
 		void setRunTag(std::string t) { _runTag = t; }

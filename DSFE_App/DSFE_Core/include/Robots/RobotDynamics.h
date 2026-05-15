@@ -4,6 +4,8 @@
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
+#include "Robots/DynamicsTypes.h"
+#include "Robots/RobotMetrics.h"
 
 // Forward declarations
 namespace control { class TrajectoryManager; }
@@ -12,17 +14,18 @@ namespace integration { class IntegrationService; enum class eIntegrationMethod;
 namespace robots {
 	// Forward declarations
 	class RobotKinematics;
-	struct RobotModel;
+	struct RobotConstModel;
+	struct SpatialModel;
+	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
-	struct RobotMetrics;
 	enum class eTorqueMode;
 
 	// Dynamics class responsible for computing inertia, mass matrix, gravity torque, control torques, and state derivatives
 	class DSFE_API RobotDynamics {
 	public:
 		// Constructor
-		RobotDynamics(RobotModel& robot);
+		RobotDynamics();
 
 		// Computes the inertia tensor of a robot link
 		mathlib::Mat3 computeLinkInertiaTensor(const RobotLink& link) const;
@@ -31,58 +34,84 @@ namespace robots {
 		double computeJointInertiaContribution(
 			const RobotJoint& joint,
 			const RobotLink& link,
-			const mathlib::Pose& jointWorldPose,   // pose of joint frame in world
-			const mathlib::Pose& linkWorldPose     // pose of the link in world
+			const mathlib::Pose& jointWorldPose,
+			const mathlib::Pose& linkWorldPose
 		) const;
 
 		// Computes the full mass matrix M(q) based on the current state and robot configuration
-		mathlib::MatX computeMassMatrix(
-			const std::vector<double>& q,
-			const std::vector<mathlib::Pose>& T_world
+		void computeMassMatrix(
+			const RobotConstModel& robot,
+			const std::vector<mathlib::Pose>& T_world,
+			const std::vector<mathlib::Pose>& jointWorldPoses,
+			mathlib::MatX& M_out
 		) const;
 
 		// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and robot configuration
 		mathlib::VecX computeCoriolisVector(
-			const std::vector<double>& q,
-			const std::vector<double>& qd,
+			const RobotConstModel& robot,
+			const mathlib::VecX& q, const mathlib::VecX& qd,
 			const std::vector<mathlib::Pose>& T_world,
 			const mathlib::MatX& M
 		) const;
 
 		// Computes the gravity torque for a joint based on the current state and robot configuration
-		std::vector<double> computeGravityTorque(
-			const std::vector<double>& q,
+		mathlib::VecX computeGravityTorque(
+			const RobotConstModel& robot,
 			const std::vector<mathlib::Pose>& T_world,
-			mathlib::VecX x
+			const std::vector<mathlib::Pose>& jointWorldPoses
 		) const;
 
-		// Computes the control torque for a joint based on the current state, reference, and robot configuration
-		mathlib::VecX computeAppliedTorques(
-			const std::vector<double>& q,
-			const std::vector<double>& qd,
-			const std::vector<double>& eta,
-			const std::vector<mathlib::Pose>& T_world,
-			std::vector<double> I_eff,
-			std::vector<double> tau_gravity
-		) const;
-
-		// Computes control and dynamics metrics for a specific joint based on the current state and reference
-		RobotMetrics computeJointMetrics(
-			const RobotJoint& joint, double I_eff,
-			double q, double qd, double eta,
-			double q_ref, double qd_ref, double qdd_ref,
-			double tau_coriolis, double tau_g,
-			double dt
-		) const;
+		// Computes the analytical Jacobian matrix J(q) for the robot based on the current state and robot configuration
+		void analyticalJacobian(
+			const RobotConstModel& robot,
+			const mathlib::VecX& x,
+			mathlib::MatX& J_out,
+			DenseDynamicsScratch& scratch
+		);
 
 		// Computes the Coriolis and centrifugal torque for a joint based on the current state and robot configuration
-		mathlib::VecX derivative(
+		mathlib::VecX derivative_dense(
 			double t,
-			const mathlib::VecX& x
-		) const;
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			DynamicsScratch& scratch,
+			DynamicsResult& out
+		);
 
-		// Accessor for the robot model
-		void setRobot(RobotModel& robot);
+		mathlib::VecX derivative_spatial(
+			const robots::SpatialModel& model,
+			double t,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			DynamicsScratch& scratch,
+			DynamicsResult& out
+		);
+
+		void jacobian_spatial(
+			const robots::SpatialModel& model,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp,
+			const mathlib::VecX& kd,
+			mathlib::MatX& F_out,
+			DynamicsScratch& scratch
+		);
+
+		// Computes the derivative of the state vector with control gains based on the current state and robot configurations
+		mathlib::VecX derivative_with_gains(
+			double t,
+			const mathlib::VecX& x,
+			const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp,const mathlib::VecX& kd,
+			DynamicsScratch& scratch, DynamicsResult& out
+		);
+
+		// Computes the Jacobian matrix with control gains based on the current state and robot configuration
+		void jacobian_with_gains(
+			const mathlib::VecX& x, const RobotSimSnapshot& snap,
+			const mathlib::VecX& kp, const mathlib::VecX& kd, mathlib::MatX& F_out,
+			DenseDynamicsScratch& scratch
+		);
 
 		// Set the gravity strength for the robot system
 		void setGravity(double gravity) { _gravity = gravity; }
@@ -94,7 +123,6 @@ namespace robots {
 
 	private:
 		// References and pointers
-		RobotModel& _robot;
 		std::unique_ptr<RobotKinematics> _kinematics = nullptr;
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates

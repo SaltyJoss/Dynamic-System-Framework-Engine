@@ -27,7 +27,6 @@ Application::Application(const std::string& appName) {
 	LOG_INFO("Logs path: %s", paths::logs().string().c_str());
 	LOG_INFO("Runs path: %s", paths::runs().string().c_str());
 
-	// Detect monitor resolution and create window at 80% of monitor height, forced 16:9
 	int winW = 1920, winH = 1080;
 	if (glfwInit()) {
 		const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -48,15 +47,12 @@ Application::Application(const std::string& appName) {
 	_window->init(winW, winH, appName);
 }
 
-// Destructor: Defaulted since we're using smart pointers for resource management
 Application::~Application() = default;
 
 // Main application loop: Continues running until the window signals to close, updating and rendering each frame
 void Application::run() {
     while (_window->isRunning() && !_window->shouldClose()) {
-		// Poll for and process events (keyboard, mouse, window events, etc.)
-		// This should be called before any input handling to ensure we have the latest events
-        _window->update();                             // Scene updates, movement
-        _window->render();                             // Draw everything
+        _window->update();
+        _window->render();
     }
 }

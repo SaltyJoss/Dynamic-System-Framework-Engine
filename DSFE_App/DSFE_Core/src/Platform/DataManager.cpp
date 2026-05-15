@@ -1,7 +1,8 @@
+// DSFE_Core DataManager.cpp
 #include "pch.h"
-// File:   DataManager.cpp
-// GitHub: SaltyJoss
+
 #include "Platform/DataManager.h"
+#include "Analysis/MetricLogger.h"
 
 namespace data {
 	// Escape a string for CSV format
@@ -268,6 +269,36 @@ namespace data {
 		H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memSpace, filespace, H5P_DEFAULT, &value);
 
 		// Cleanup
+		H5Sclose(filespace);
+		H5Sclose(memSpace);
+	}
+
+	// Append a row to a 1D vector-of type double- dataset
+	static void appendDoubleVector1D(
+		hid_t dataset,
+		const std::vector<double>& vals
+	) {
+		if (vals.empty()) { return; }
+
+		hid_t currSpace = H5Dget_space(dataset);
+		hsize_t dims[1] = { 0 };
+
+		H5Sget_simple_extent_dims(currSpace, dims, nullptr);
+		const hsize_t currSize = dims[0];
+
+		H5Sclose(currSpace);
+
+		const hsize_t newSize = currSize + static_cast<hsize_t>(vals.size());
+		H5Dset_extent(dataset, &newSize);
+
+		hid_t filespace = H5Dget_space(dataset);
+		hsize_t start[1] = { currSize };
+		hsize_t count[1] = { vals.size() };
+		H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, nullptr, count, nullptr);
+
+		hid_t memSpace = H5Screate_simple(1, count, nullptr);
+		H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memSpace, filespace, H5P_DEFAULT, vals.data());
+
 		H5Sclose(filespace);
 		H5Sclose(memSpace);
 	}
@@ -540,6 +571,35 @@ namespace data {
 		}
 	}
 
+	// Writes vector fields to HDF5 datasets
+	void HDF5StreamWriter::writeVector(
+		const std::string& topic,
+		const std::string& key,
+		const std::vector<double>& vals
+	) {
+		std::lock_guard<std::mutex> lock(_mtx);
+		if (!_active || vals.empty()) { return; }
+
+		const std::string gPath = "/log/" + topic;
+		hid_t g = ensureGroup(_fileID, gPath.c_str());
+		if (g < 0) { return; }
+
+		H5Gclose(g);
+		const std::string dPath = gPath + "/" + key;
+
+		hid_t ds;
+
+		if (auto it = _ds1D_D.find(dPath); it != _ds1D_D.end()) {
+			ds = it->second;
+		}
+		else {
+			ds = ensureDoubleDataset1D(_fileID, dPath);
+			_ds1D_D.emplace(dPath, ds);
+		}
+
+		appendDoubleVector1D(ds, vals);
+	}
+
 	// start CSV stream writer
 	void CsvStreamWriter::start(std::string_view parentFolder, std::string_view subFolder) {
 		std::lock_guard<std::mutex> lock(_mtx);
@@ -636,6 +696,53 @@ namespace data {
 		else if (s == Stream::Reference) {
 			_ref.write(std::string(topic), fields);
 		}
+	}
+
+	void DataManager::captureJointBuffer(
+		Stream s,
+		std::string_view topic,
+		const robots::JointLogBuffer& buf
+	) {
+		HDF5StreamWriter* writer = nullptr;
+
+		if (s == Stream::Simulation) {
+			writer = &_sim;
+		}
+		else if (s == Stream::Reference) {
+			writer = &_ref;
+		}
+
+		if (!writer) { return; }
+
+		std::vector<double> jointIndexD(buf.joint_index.begin(), buf.joint_index.end());
+		const std::string t(topic);
+
+		writer->writeVector(t, "sim_time", buf.sim_time);
+		writer->writeVector(t, "dt_taken", buf.dt_taken);
+		writer->writeVector(t, "dt_sug", buf.dt_sug);
+		// States
+		writer->writeVector(t, "position", buf.theta);
+		writer->writeVector(t, "velocity", buf.omega);
+		writer->writeVector(t, "acceleration", buf.alpha);
+		writer->writeVector(t, "error", buf.err);
+		writer->writeVector(t, "error_d", buf.err_d);
+		// Dynamics
+		writer->writeVector(t, "I_eff", buf.I_eff);
+		writer->writeVector(t, "tau", buf.tau);
+		writer->writeVector(t, "tau_ff", buf.tau_ff);
+		writer->writeVector(t, "tau_gravity", buf.tau_gravity);
+		writer->writeVector(t, "tau_barrier", buf.tau_barrier);
+		writer->writeVector(t, "tau_sat", buf.tau_sat);
+		// Energy, Work, & Power
+		writer->writeVector(t, "KE", buf.KE);
+		writer->writeVector(t, "PE", buf.PE);
+		writer->writeVector(t, "E_total", buf.E_total);
+		// Limit flags and info
+		writer->writeVector(t, "clamp_theta", buf.clamp_theta);
+		writer->writeVector(t, "clamp_omega", buf.clamp_omega);
+		writer->writeVector(t, "sat_flag", buf.sat_flag);
+		// Joint info
+		writer->writeVector(t, "joint_index", jointIndexD); // converted to vector<double>, TODO template vector writer though as my long term fix
 	}
 
 } // namespace data

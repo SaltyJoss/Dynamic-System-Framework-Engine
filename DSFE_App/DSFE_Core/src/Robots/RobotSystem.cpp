@@ -8,6 +8,8 @@
 #include "Robots/RobotDynamics.h"
 #include "Robots/RobotLoader.h"
 
+#include <Robots/SpatialDynamics.h>
+
 #include <stack>
 #include <unordered_set>
 #include <algorithm>
@@ -26,7 +28,7 @@ namespace robots {
 	// Constructor
 	RobotSystem::RobotSystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
-		_kinematics(std::make_unique<RobotKinematics>(_robot)), _dynamics(std::make_unique<RobotDynamics>(_robot)),
+		_kinematics(std::make_unique<RobotKinematics>()), _dynamics(std::make_unique<RobotDynamics>()),
 		_torqueMode(eTorqueMode::CONTROLLED) {
 		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
@@ -82,10 +84,79 @@ namespace robots {
 		}
 	}
 
+	// Method to build the spatial model (kinematic tree) from the robot model
+	void RobotSystem::buildSpatialModel() {
+		_spatialModel.joints.clear();
+		const size_t n = _robot.joints.size();
+		_spatialModel.joints.resize(n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const RobotJoint& j = _robot.joints[i];
+			SpatialJoint& sj = _spatialModel.joints[i];
+
+			sj.name = j.name;
+			sj.type = j.type;
+
+			// Find parent joint
+			sj.parent = -1;
+			for (size_t p = 0; p < n; ++p) {
+				if (_robot.joints[p].child == j.parent) {
+					sj.parent = (int)p;
+					break;
+				}
+			}
+
+			// Build XTree
+			mathlib::Mat3 R = j.origin_q.toRotationMatrix();
+			mathlib::Vec3 r = j.origin_xyz;			
+			sj.Xtree = mathlib::spatialTransform(R, r);
+
+			// Build Spatial Inertia
+			int childLinkIdx = -1;
+			for (size_t l = 0; l < _robot.links.size(); ++l) {
+				if (_robot.links[l].name == j.child) {
+					childLinkIdx = (int)l;
+					break;
+				}
+			}
+
+			if (childLinkIdx >= 0) {
+				const RobotLink& link = _robot.links[childLinkIdx];
+				mathlib::Mat3 I_com;
+
+				const auto& I = link.inertial.inertia;
+				I_com <<
+					I.ixx, I.ixy, I.ixz,
+					I.ixy, I.iyy, I.iyz,
+					I.ixz, I.iyz, I.izz;
+
+				sj.inertia = mathlib::spatialInertia(
+					link.inertial.mass,
+					link.inertial.com_xyz,
+					I_com
+				);
+			}
+
+			// Build S vector (motion subspace)
+			switch (j.type) {
+				case eJointType::REVOLUTE:
+					sj.S = mathlib::SpatialVec(j.axis.normalized(), mathlib::Vec3::Zero());
+					break;
+				case eJointType::PRISMATIC:
+					sj.S = mathlib::SpatialVec(mathlib::Vec3::Zero(), j.axis.normalized());
+					break;
+				default:
+					sj.S = mathlib::SpatialVec();
+					break;
+			}
+		}
+		LOG_INFO("SpatialModel built: joints=%d", (long long)_spatialModel.joints.size());
+	}
+
 	// Method to pack robot joint states into a state vector
 	mathlib::VecX RobotSystem::packState() const {
 		const size_t n = static_cast<int>(_robot.joints.size());
-		mathlib::VecX x(3 * n);
+		mathlib::VecX x(2 * n);
 
 		// Pack angles and velocities
 		for (size_t i = 0; i < n; ++i) {
@@ -94,7 +165,6 @@ namespace robots {
 			// Current states
 			x[i] = j.q;
 			x[i + n] = j.qd;
-			x[i + 2 * n] = j.eta; // integral state
 		}
 		return x; // state vector
 	}
@@ -114,7 +184,6 @@ namespace robots {
 			// Current states
 			double theta_in = x[i];		  // [rad]
 			double omega_in = x[i + n];	  // [rad/s]
-			double eta_in   = x[i + 2 * n]; // integral state
 
 			// Clamp joint angle
 			double theta_out = clampJointAngle(j, theta_in);
@@ -147,7 +216,6 @@ namespace robots {
 			// Update joint states
 			j.q = theta_out;
 			j.qd = omega_out;
-			j.eta = eta_in;
 		}
 	}
 
@@ -159,8 +227,8 @@ namespace robots {
 			auto& j = _robot.joints[i];
 
 			// Pack reference angles and velocities
-			x[i] = (double)j.q_ref;
-			x[i + n] = (double)j.qd_ref;
+			x[i] = j.q_ref;
+			x[i + n] = j.qd_ref;
 		}
 		return x; // reference state vector
 	}
@@ -172,7 +240,6 @@ namespace robots {
 			auto& j = _robot.joints[i];
 			j.q_ref = x[i];					   // [rad]
 			j.qd_ref = x[i + n];				   // [rad/s]
-			// Clamp reference angle to joint limits
 			j.q_ref = clampJointAngle(j, j.q_ref); // [rad]
 		}
 	}
@@ -188,109 +255,196 @@ namespace robots {
 		if (j.q > hi) { j.q = hi; if (j.qd > 0.0f) { j.qd = 0.0f; }}
 	}
 
+	// Method to take a snapshot of the current robot state
+	RobotSimSnapshot RobotSystem::takeSnapshot(double simTime) const {
+		RobotSimSnapshot snap;
+		snap.model = &_constModel;
+
+		const size_t n = (size_t)_robot.joints.size();
+
+		snap.q.resize(n);
+		snap.qd.resize(n);
+		snap.q_ref.resize(n);
+		snap.qd_ref.resize(n);
+		snap.qdd_ref.resize(n);
+
+		for (size_t i = 0; i < n; ++i) {
+			const auto& j = _robot.joints[i];
+			snap.q[i] = j.q;
+			snap.qd[i] = j.qd;
+			snap.q_ref[i] = j.q_ref;
+			snap.qd_ref[i] = j.qd_ref;
+			snap.qdd_ref[i] = j.qdd_ref;
+		}
+
+		snap.robotRootPose = _robotRootPose;
+		snap.baseIsFree = _baseIsFree;
+		snap.lastBaseForwardForce = _lastBaseForwardForce;
+		snap.gravity = _gravity;
+
+		snap.torqueMode = _robot.torqueMode;
+		snap.dt = _dynamics->dt();
+		snap.simTime = simTime;
+
+		return snap;
+	}
+
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
-		if (!_hasRobot) return;
-		const size_t n = _robot.joints.size();
+		if (!_hasRobot) { return; }
 		_simTime = simTime;
-
-		// 
 		mathlib::VecX x = packState();
 
-		// Define the derivative function
-		auto f = [&](double t, const mathlib::VecX& xIn) { return _dynamics->derivative(t, xIn); };
-		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f);
-		mathlib::VecX x_Next = step.x_next;
+		RobotSimSnapshot snap = takeSnapshot(simTime);
+		const size_t n = snap.model->joints.size();
 
+		Eigen::Map<const VecX> q(x.data(), n);
+		Eigen::Map<const VecX> qd(x.data() + n, n);
+
+		mathlib::VecX qdd(n);
+		for (size_t i = 0; i < n; ++i) { qdd[i] = _robot.joints[i].qdd_ref; }
+
+		std::vector<Pose> T_start(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
+		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
+
+		SpatialDynamics::computeSpatialKinematicsAndBias(
+			_spatialModel,
+			q, qd,
+			_dynScratch.spatial.Xup,
+			_dynScratch.spatial.v, _dynScratch.spatial.c
+		);
+
+		// CRBA only for controller inertia scaling
+		mathlib::MatX M_start = SpatialDynamics::CRBA(
+			_spatialModel,
+			_dynScratch.spatial.Xup,
+			_dynScratch
+		);
+
+		// Cache frozen joint gains for this step
+		mathlib::VecX kp_frozen(n), kd_frozen(n);
+		for (size_t i = 0; i < n; ++i) {
+			const auto& joint = snap.model->joints[i];
+			if (joint.type == eJointType::FIXED) { continue; }
+
+			_dynScratch.dense.I_eff_controller[i] = std::max(M_start(i, i), 1e-6);
+			const double I_eff = _dynScratch.dense.I_eff_controller[i];
+
+			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
+			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
+		}
+
+		// Compute RNEA torques for feedforward control
+		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(
+			_spatialModel,
+			q, qd, qdd,
+			_dynScratch
+		); // [Nm]
+		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
+
+		// Define the derivative function for integration, capturing necessary variables by reference
+		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
+			return _dynamics->derivative_spatial(_spatialModel,
+				t, xIn, snap,
+				_dynScratch, _dynResult
+			);
+		};
+		// Define the Jacobian function for integration, capturing necessary variables by reference
+		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
+			_dynamics->jacobian_spatial(_spatialModel,
+				xIn, snap,
+				kp_frozen, kd_frozen,
+				J_out, _dynScratch
+			);
+		};
+		
+		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f_deriv, f_J);
+
+		unpackState(step.x_next);
 		_dynamics->setDt(step.dt_taken);
 
-		// Unpack new state
-		unpackState(x_Next);
+		Eigen::Map<const VecX> q_next(step.x_next.data(), n);
+		Eigen::Map<const VecX> qd_next(step.x_next.data() + n, n);
 
 		// Enforce joint limits
-		for (auto& j : _robot.joints) {
-			const double wMax = j.limits.maxqd;
-			enforceJointLimits(j);
-		}
+		for (auto& j : _robot.joints) { enforceJointLimits(j); }
 
-		// FK needed for inertia
-		mathlib::VecX x_f = packState();
-		std::vector<Pose> T_world = _kinematics->computeForwardKinematics_fromState(x_f);
-		std::vector<Pose> jointWorldPose = _kinematics->calcJointWorldPoses(T_world, _robot.joints);
+		// Recompute kinematics and dynamics at the new state for logging and control purposes
+		std::vector<Pose> T_world(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState(*snap.model, step.x_next, T_world);
+		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
 
-		// compute gravity torques for new state so logs match dynamics
-		std::vector<double> tau_g(n, 0.0);
-		std::vector<double> q(n), qd(n);
-		for (size_t i = 0; i < n; ++i) {
-			q[i] = _robot.joints[i].q;
-			qd[i] = _robot.joints[i].qd;
-		}
-		VecX qd_vec = toVecX(qd);
+		// Compute spatial kinematics and bias terms for the new state
+		SpatialDynamics::computeSpatialKinematicsAndBias(
+			_spatialModel,
+			q_next, qd_next,
+			_dynScratch.spatial.Xup,
+			_dynScratch.spatial.v, _dynScratch.spatial.c
+		);
+		// Compute mass matrix at the new state
+		MatX M_full = SpatialDynamics::CRBA(
+			_spatialModel,
+			_dynScratch.spatial.Xup,
+			_dynScratch
+		);
 
-		// Compute mass matrix M(q)
-		MatX M_full = _dynamics->computeMassMatrix(q, T_world); // [kg*m^2], full mass matrix for the robot at configuration q
+		VecX tau_g = _dynamics->computeGravityTorque(*snap.model, T_world, jointWorldPoses);
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
-		double sys_KE = 0.5 * qd_vec.transpose() * M_full * qd_vec; // [J], kinetic energy of the robot at configuration q and velocity qd
+		double sys_KE = 0.5 * qd_next.transpose() * M_full * qd_next; // [J], kinetic energy of the robot at configuration q and velocity qd
 
 		// Compute system potential energy at configuration q (relative to gravity)
 		double sys_PE = 0.0;
 		double g = _dynamics->getGravity();
+
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
 			const RobotLink& link = _robot.links[k];
-			double m = link.inertial.mass;
+			const double m = link.inertial.mass;
+
 			if (m <= 0.0) { continue; }
-			Vec3 com_world = (T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + T_world[k].block<3, 1>(0, 3); // COM position in world frame
-			sys_PE += m * g * com_world.z(); // PE = m * g * h, where h is the height (z) of the COM in world frame
+
+			Vec3 com_world = 
+				(T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) +
+				T_world[k].block<3, 1>(0, 3);
+
+			sys_PE += m * g * com_world.z();
 		}
 
-		tau_g = _dynamics->computeGravityTorque(q, T_world, x);
+		const double sys_E = sys_KE + sys_PE; // total mechanical energy of the system
 
-		// For each joint, compute the effective inertia by summing contributions from all links
-		for (size_t i = 0; i < n; ++i) {
-			const RobotJoint& j = _robot.joints[i];
+		// Log metrics to buffer if logging is enabled
+		robots::JointLogBuffer* buf = nullptr;
 
-			double I_eff = (j.type == eJointType::FIXED) ? 1.0 : std::max(M_full(i, i), 1e-6); // effective inertia for this joint, with a small floor to avoid division by zero
+		// If using internal logging, get the active buffer
+		if (_useInternalLogging) {
+			int idx = _activeLogBufIdx.load(std::memory_order_acquire);
+			buf = &_logBuffers[idx];
+		} else {
+			buf = _logBuffer;
+		}
 
-			// Compute joint metrics
-			RobotMetrics m = _dynamics->computeJointMetrics(
-				j, I_eff,
-				j.q, j.qd, j.eta,
-				j.q_ref, j.qd_ref, j.qdd_ref,
-				0.0,tau_g[i], dt
-			);
+		if (buf) {
+			for (size_t i = 0; i < n; ++i) {
+				const RobotJoint& j = snap.model->joints[i];
 
-			m.KE = sys_KE;
-			m.PE = sys_PE;
-			m.E_total = sys_KE + sys_PE;
+				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : _dynResult.metrics.I_eff[i];
+				const double err = snap.q_ref[i] - q_next[i];
+				const double err_d = snap.qd_ref[i] - qd_next[i];
 
-			// Log metrics to buffer if logging is enabled
-			robots::JointLogBuffer* buf = nullptr;
-
-			// If using internal logging, get the active buffer
-			if (_useInternalLogging) {
-				int idx = _activeLogBufIdx.load(std::memory_order_acquire);
-				buf = &_logBuffers[idx];
-			}
-			// If using external logging, use the user-provided buffer
-			else { buf = _logBuffer; /*external buffer provided by user*/ }
-
-			// If we have a buffer, push the new entry
-			if (buf) {
 				JointLogBuffer::JointLogEntry e{};
+
 				e.sim_time = simTime;
 				e.dt_taken = step.dt_taken;
 				e.dt_sug = step.dt_sug;
-				e.theta = m.theta; e.omega = m.omega; e.alpha = m.alpha;
-				e.err = m.err; e.err_d = m.err_d;
-				e.I_eff = m.I_eff; e.tau = m.tau; e.tau_fb = m.tau_fb;
-				e.tau_coriolis = m.tau_coriolis; e.tau_gravity = m.tau_gravity;
-				e.tau_damping = m.tau_damping; e.tau_friction = m.tau_friction;
-				e.tau_barrier = m.tau_barrier; e.tau_sat = m.tau_sat;
-				e.KE = m.KE; e.PE = m.PE; e.E_total = m.E_total;
-				e.W_actuator = m.W_actuator; e.P_damping = m.P_damping; e.P_friction = m.P_friction;
+				e.theta = q_next[i]; e.omega = qd_next[i]; e.alpha = _dynResult.metrics.qdd[i];
+				e.err = err; e.err_d = err_d;
+				e.I_eff = I_eff;
+				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = tau_rnea[i];  e.tau_gravity = tau_g[i];
+				e.tau_sat = _dynResult.metrics.tau_sat[i]; 
+				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = (double)_clampTheta[i]; e.clamp_omega = (double)_clampOmega[i];
-				e.sat_flag = m.sat_flag; e.joint_index = (int)i;
+				e.sat_flag = _dynResult.metrics.sat_flag[i]; e.joint_index = (int)i;
 				buf->push_entry(e);
 			}
 		}
@@ -366,8 +520,28 @@ namespace robots {
 
 		// Load robot model from JSON
 		_robot = robots::RobotLoader::loadFromJSON(jsonPath.string());
-		_dynamics->setRobot(_robot);
-		_kinematics->setRobot(_robot);
+		const size_t n = _robot.joints.size();
+		const size_t m = _robot.links.size();
+
+		_constModel.name = _robot.name;
+		_constModel.scale = _robot.scale;
+
+		_constModel.baseFrame = _robot.baseFrame;
+		_constModel.baseFrameIsAligned = _robot.baseFrameIsEngineAligned;
+
+		_constModel.links = _robot.links;
+		_constModel.joints = _robot.joints;
+
+		_constModel.linkNameToIndex.clear();
+		for (size_t i = 0; i < _constModel.links.size(); ++i) {
+			_constModel.linkNameToIndex[_constModel.links[i].name] = (int)i;
+		}
+
+		LOG_INFO_ONCE(
+			"CONST MODEL: links=%lld joints=%lld",
+			(long long)_constModel.links.size(),
+			(long long)_constModel.joints.size()
+		);
 
 		_loadedName = name;
 		_baseIsFree = false;
@@ -380,19 +554,19 @@ namespace robots {
 			}
 		}
 
-		// Set base frame and home position
 		_robotRootHome = _robot.baseFrame;
 		_robotRootPose = _robotRootHome;
 
-		// Initialize joint home positions
 		_robotQHome = _robot.makeJointVector();
 		_robotHomeValid = true;
 
 		buildLinkIndex();
-	
-		// Declare that we have a robot loaded
+		buildSpatialModel();
 		_hasRobot = true;
-		// Reset robot
+
+		_dynScratch.resize(n, m);
+		_dynResult.resize(n);
+
 		resetRobot();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
@@ -406,10 +580,10 @@ namespace robots {
 		_robot.setJointVector(_robotQHome);
 
 		for (auto& joint : _robot.joints) {
-			joint.qd = 0.0f;
+			joint.qd = 0.0;
 			joint.q_ref = joint.q;
-			joint.qd_ref = 0.0f;
-			joint.qdd_ref = 0.0f;
+			joint.qd_ref = 0.0;
+			joint.qdd_ref = 0.0;
 		}
 
 		// Reset base state if free-floating
@@ -421,6 +595,9 @@ namespace robots {
 		_baseYaw = 0.0;
 		_baseYawRate = 0.0;
 		_baseYawAcc = 0.0;
+
+		_dynScratch.resize(_robot.joints.size(), _robot.links.size());
+		_dynResult.resize(_robot.joints.size());
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
@@ -873,13 +1050,17 @@ namespace robots {
 	void RobotSystem::setTorqueMode(eTorqueMode mode) { _robot.torqueMode = mode; }
 
 	// Method to claim the current active log buffer for exporting logged data (returns pointer to buffer active before swap)
-	robots::JointLogBuffer* RobotSystem::claimExportLogBuffer() {
+	std::unique_ptr<robots::JointLogBuffer> RobotSystem::claimExportLogBuffer() {
 		// swap active buffer index
 		std::lock_guard<std::mutex> lk(_logSwapMutex);				 // ensure thread safety during swap
 		int prev = _activeLogBufIdx.load(std::memory_order_acquire); // get current active buffer index
 		int next = 1 - prev;										 // compute next buffer index (toggle between 0 and 1)
 		_activeLogBufIdx.store(next, std::memory_order_release);	 // set next buffer as active for logging
-		return &_logBuffers[prev]; // returns ptr to buffer active before swap
+
+		auto out = std::make_unique<robots::JointLogBuffer>(); // create a new buffer to return to caller
+		out->swap(_logBuffers[prev]); // swap contents of previous active buffer with new buffer
+
+		return out;
 	}
 
 	// Method to enable or disable the use of internal log buffers for recording joint metrics during simulation

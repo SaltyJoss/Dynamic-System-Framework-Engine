@@ -19,15 +19,19 @@ namespace core {
 	{
 		_traj = _trajOwned.get();
 		_robot = _robotOwned.get();
+
+		startExportThread();
 	}
 	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
+		stopExportThread();
 		std::cout << "CORE DESTROYED\n"; 
 	}
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
 	SimulationCore::SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj)
 		: _robot(&robot), _traj(&traj) {
+		startExportThread();
 	}
 
 	// Simulation System
@@ -56,62 +60,72 @@ namespace core {
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
+		double simTime = _simTime.load();
+
 		_accum += frame_dt; // accumulate frame time to step the simulation in fixed increments of _dt
 		// Step the simulation forward in fixed increments of _dt until we catch up to the current frame time
 		while (_accum >= _dt) {
 			// Step the active script program if running and check for completion or faults
-			if (_scriptRunning && _activeProgram) {
+			if (_scriptRunning.load() && _activeProgram) {
 				_activeProgram->step(_dt);
 				const bool completed = _activeProgram->isCompleted();
 				const bool stopped = _activeProgram->isStopped();
 				const bool faulted = _activeProgram->isFaulted();
 				if (completed) {
-					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, _simTime);
-					_scriptRunning = false;
+					D_SUCCESS("SCRIPT END: completed=%d (dt=%.6f s, simTime=%.3f s)", (int)completed, _dt, simTime);
+					_scriptRunning.store(false);
 					_activeProgram = nullptr;
 					stopSimulation();
 					D_RUNTIME("Program execution completed.");
 				}
 				else if (stopped || faulted) {
-					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)", (int)stopped, (int)faulted, _dt, _simTime);
-					_scriptRunning = false;
+					D_FAIL("SCRIPT END: stopped=%d faulted=%d (dt=%.6f s, simTime=%.3f s)", (int)stopped, (int)faulted, _dt, simTime);
+					_scriptRunning.store(false);
 					_activeProgram = nullptr;
 					stopSimulation();
 					D_RUNTIME("Program execution completed.");
 				}
 			}
-			else if (_scriptRunning && !_activeProgram) {
+			else if (_scriptRunning.load() && !_activeProgram) {
 				D_FAIL("SCRIPT END: _scriptRunning=1 but _activeProgram=nullptr");
-				_scriptRunning = false;
+				_scriptRunning.store(false);
 			}
+
 			// Update physics and robot system if sim is running
-			if (_simRunning) {
-				_simTime += _dt;
+			if (_simRunning.load()) {
+				simTime += _dt;
 
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
-					_robot->updateTrajectoryInputs(*_traj, _simTime);
-					_robot->step(_dt, _simTime);
+					_robot->updateTrajectoryInputs(*_traj, simTime);
+					_robot->step(_dt, simTime);
 					// Telemetry update
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
+						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
+		}
+
+		if (_simRunning.load()) {
+			_simTime.store(simTime);
+		}
+		else {
+			_simTime.store(0.0, std::memory_order_relaxed);
 		}
 	}
 
 	// Start the simulation loop
 	void SimulationCore::startSimulation() {
-		if (_simRunning) return;
+		if (_simRunning.load()) { return; }
 		telemetry().clear();
 		D_RUNTIME("starting simulation");
 
-		_simTime = 0.0;
+		_simTime.store(0.0, std::memory_order_relaxed);
 		_accum = 0.0;
 
 		// Reset simulation system
@@ -148,113 +162,52 @@ namespace core {
 		_data.setIntegratorName(integrationMethodName());
 		_data.setRunTag(_runTag);
 
-		_simRunning = true;
+		_simRunning.store(true);
 		_telemetryBegun = false;
 		_data.setEnabled(true);
 	}
 
 	// Stop the simulation loop
 	void SimulationCore::stopSimulation() {
-		if (!_simRunning) { return; }
+		if (!_simRunning.load()) { return; }
 		D_RUNTIME("stopping simulation");
 
-		// Export references
-		if (_trajRefBuffer.size() > 0) {
-			exportRefsToHDF5();
-			_trajRefBuffer.clear();
-		}
-
-		// Claims export buffer and writes it for joint logs
-		exportLogsToHDF5();
+		auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
+		if (buf) { enqueueExportBuffer(std::move(buf)); }
+		flushExports();
 
 		// Clear buffers to free memory and prepare for next run
 		_data.setEnabled(false);
-		_simRunning = false;
+		_simRunning.store(false);
 		_telemetryBegun = false;
+
+		_simTime.store(0.0, std::memory_order_relaxed);
+		_accum = 0.0;
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportLogsToHDF5() {
-		auto t0 = std::chrono::steady_clock::now(); // start timer for export duration measurement
-		// Construct a header for the HDF5 dataset based on the robot and integrator names
+	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& exportBuf) {
+		auto t0 = std::chrono::steady_clock::now();
+
 		const std::string intName = _robot->getIntegratorName();
 		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
 		const std::string header = robotName + "_sim_" + intName;
 
-		// Claim the export log buffer from the robot (swap is internal!)
-		robots::JointLogBuffer* exportBuf = _robot->claimExportLogBuffer();
-		if (!exportBuf) { return; }
-
-		// Validation check to ensure we have data to export
-		std::string vmsg;
-		if (!exportBuf->validate(&vmsg)) {
-			D_FAIL("ExportLogs -> validation failed for export buffer: %s", vmsg.c_str());
-			// Not returning, data is exported even if validation fails
-		}
-
 		// Check if there are any log entries to export
-		const size_t N = exportBuf->size();
+		const size_t N = exportBuf.size();
 		if (N == 0) {
-			D_RUNTIME("ExportLogs -> no data to export (buffer size is 0)"); // *REMNINDER* -> SHOULD I make a macro for ExportLogs?
-			exportBuf->clear();
+			D_RUNTIME("ExportLogs has no data to export (buffer size is 0)");
 			return;
 		}
 
-		// For each log entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			data::FieldList fields;
-			// Sim Metadata
-			fields.emplace_back("sim_time",    (double)exportBuf->sim_time[i]);
-			fields.emplace_back("dt_taken",    (double)exportBuf->dt_taken[i]);
-			fields.emplace_back("dt_sug",      (double)exportBuf->dt_sug[i]);
-			// States
-			fields.emplace_back("theta",       (double)exportBuf->theta[i]);
-			fields.emplace_back("omega",       (double)exportBuf->omega[i]);
-			fields.emplace_back("alpha",       (double)exportBuf->alpha[i]);
-			fields.emplace_back("err",         (double)exportBuf->err[i]);
-			fields.emplace_back("err_d",       (double)exportBuf->err_d[i]);
-			// Dynamics
-			fields.emplace_back("I_eff",       (double)exportBuf->I_eff[i]);
-			fields.emplace_back("tau",         (double)exportBuf->tau[i]);
-			fields.emplace_back("tau_fb",      (double)exportBuf->tau_fb[i]);
-			fields.emplace_back("tau_coriolis",(double)exportBuf->tau_coriolis[i]);
-			fields.emplace_back("tau_gravity", (double)exportBuf->tau_gravity[i]);
-			fields.emplace_back("tau_damping", (double)exportBuf->tau_damping[i]);
-			fields.emplace_back("tau_friction",(double)exportBuf->tau_friction[i]);
-			fields.emplace_back("tau_barrier", (double)exportBuf->tau_barrier[i]);
-			fields.emplace_back("tau_sat",     (double)exportBuf->tau_sat[i]);
-			// Energy, Work, & Power
-			fields.emplace_back("KE",          (double)exportBuf->KE[i]);
-			fields.emplace_back("PE",          (double)exportBuf->PE[i]);
-			fields.emplace_back("E_total",     (double)exportBuf->E_total[i]);
-			fields.emplace_back("W_actuator",  (double)exportBuf->W_actuator[i]);
-			fields.emplace_back("P_damping",   (double)exportBuf->P_damping[i]);
-			fields.emplace_back("P_friction",  (double)exportBuf->P_friction[i]);
-			// Limit flags and info
-			fields.emplace_back("clamp_theta", (double)exportBuf->clamp_theta[i]);
-			fields.emplace_back("clamp_omega", (double)exportBuf->clamp_omega[i]);
-			fields.emplace_back("sat_flag",    (double)exportBuf->sat_flag[i]);
-			// Joint info
-			fields.emplace_back("joint_index", (double)exportBuf->joint_index[i]);
-
-			// Write entry to HDF5
-			_data.capture(data::Stream::Simulation, header, fields);
-		}
+		_data.captureJointBuffer(
+			data::Stream::Simulation,
+			header, exportBuf
+		);
+		
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
 		LOG_INFO("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
-		D_RUNTIME("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
-
-		// Clear exported buffer
-		exportBuf->clear();
-		LOG_INFO("ExportLogs -> export buffer cleared");
-		D_RUNTIME("ExportLogs -> export buffer cleared");
-		
-		// Log success
-		LOG_INFO("ExportLogs -> export completed successfully");
-		D_SUCCESS("ExportLogs -> export completed successfully");
-
-		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry
@@ -316,8 +269,8 @@ namespace core {
 		_robot->setRefBuffer(&_trajRefBuffer);
 
 		// Reset simulation state
-		_simTime = 0.0;
-		_simRunning = false;
+		_simTime.store(0.0, std::memory_order_relaxed);
+		_simRunning.store(false);
 		_telemetryBegun = false;
 		_accum = 0.0;
 
@@ -325,7 +278,7 @@ namespace core {
 		_robot->setIntegrationMethod(method);
 
 		_activeProgram = program;
-		_scriptRunning = true;
+		_scriptRunning.store(true);
 
 		// Set run mode to synchronous for the duration of this run
 		_runMode = eRunMode::Synchronous;
@@ -333,10 +286,11 @@ namespace core {
 		// enable sim stepping and telemetry for synchronous run
 		startSimulation();
 
-		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime);
+		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime.load());
 
 		// Run tight simulation loop until program completes
 		const double dt = _dt;
+		double simTime = _simTime.load();
 		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
 
 		// Main loop: step the program and simulation until completion
@@ -351,42 +305,50 @@ namespace core {
 			program->step(dt);
 
 			// Step physics and robot if sim is running
-			if (_simRunning) {
-				_simTime += dt;
+			if (_simRunning.load()) {
+				simTime += dt;
 
 				if (hasRobot()) {
 					// Update Trajectory Inputs
-					_robot->updateTrajectoryInputs(*_traj, _simTime);
+					_robot->updateTrajectoryInputs(*_traj, simTime);
 
 					// Step robot system
-					_robot->step(dt, _simTime);
+					_robot->step(dt, simTime);
 
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
-						_telemetry.beginRun(_simTime, _telHz, 300.0);
+						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
-						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), _simTime);
+						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
 
 					// Telemetry update
-					_telemetry.update(_simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
+
+		if (_simRunning.load()) {
+			_simTime.store(simTime);
+		}
+		else {
+			_simTime.store(0.0);
+		}
+	
 		// Clean up
 		stopSimulation();
 
-		LOG_INFO("SimulationCore::runScriptToCompletion -> stopSimulation called; simTime=%.6f telemetry_samples=%zu", _simTime, _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> stopSimulation called; simTime=%.6f telemetry_samples=%zu", _simTime.load(), _telemetry.ring.size());
 		// Reset run mode to interactive (default)
 		_runMode = eRunMode::Interactive;
 
 		_activeProgram = nullptr;
-		_scriptRunning = false;
-		_simRunning = false;
+		_scriptRunning.store(false);
+		_simRunning.store(false);
 		_telemetryBegun = false;
 
-		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime, _telemetry.ring.size());
-		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime, _telemetry.ring.size());
+		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
 		return (_telemetry.ring.size() >= 2);
 	}
 	
@@ -395,7 +357,10 @@ namespace core {
 	// Getter for fixed timestep duration
 	double SimulationCore::fixedDt() const { return _dt; }
 	// Getter for current simulation time
-	double SimulationCore::simTime() const { return _simTime; }
+	double SimulationCore::simTime() const {
+		double t = _simTime.load();
+		return t;
+	}
 
 	// Method to step the simulation with a fixed timestep
 	void SimulationCore::tick(double frame_dt) { stepFixed(frame_dt); }
@@ -442,4 +407,64 @@ namespace core {
 	// Setter and getter for the active script program
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
+
+	// Thread-based methods
+
+	// Starts the export thread if it's not already running
+	void SimulationCore::startExportThread() {
+		if (_expThreadRunning.exchange(true)) { return; }
+		_expThread = std::thread([this]() { 
+			exportThreadMain();
+		});
+	}
+
+	// Signals the export thread to stop and waits for it to finish
+	void SimulationCore::stopExportThread() {
+		if (!_expThreadRunning.exchange(false)) { return; }
+		_expCondVar.notify_all();
+		if (_expThread.joinable()) {
+			_expThread.join();
+		}
+	}
+
+	// Main loop for the export thread, waits for export buffers to be enqueued and processes them
+	void SimulationCore::exportThreadMain() {
+		while (true) {
+			std::unique_ptr<robots::JointLogBuffer> buf;
+			{
+				std::unique_lock<std::mutex> lock(_expMutex);
+				_expCondVar.wait(lock, [this]() {
+					return !_expQ.empty() || !_expThreadRunning.load();
+				});
+				if (!_expThreadRunning.load() && _expQ.empty()) { break; }
+				buf = std::move(_expQ.front());
+				_expQ.pop();
+			}
+
+			if (buf) {
+				try {
+					exportLogsToHDF5(*buf);
+				}
+				catch (...) {
+					LOG_ERROR("Export failed");
+				}
+				--_exportsInFlight;
+			}
+		}
+	}
+
+	void SimulationCore::enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf) {
+		{
+			std::lock_guard<std::mutex> lock(_expMutex);
+			++_exportsInFlight;
+			_expQ.push(std::move(buf));
+		}
+		_expCondVar.notify_one();
+	}
+
+	void SimulationCore::flushExports() {
+		while (_exportsInFlight.load(std::memory_order_acquire) > 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	}
 }

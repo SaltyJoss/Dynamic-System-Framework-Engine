@@ -5,7 +5,7 @@
 
 namespace robots {
 	// Struct for logging joint data each step (for later analysis)
-    struct DSFE_API JointLogBuffer {
+    struct JointLogBuffer {
 		// Sim Metadata
         std::vector<double> sim_time;
         std::vector<double> dt_taken;
@@ -20,6 +20,7 @@ namespace robots {
         std::vector<double> I_eff;
         std::vector<double> tau;
         std::vector<double> tau_fb;
+        std::vector<double> tau_ff;
         std::vector<double> tau_coriolis;
         std::vector<double> tau_gravity;
         std::vector<double> tau_damping;
@@ -53,6 +54,7 @@ namespace robots {
             I_eff.clear();
             tau.clear();
             tau_fb.clear();
+            tau_ff.clear();
             tau_coriolis.clear();
             tau_gravity.clear();
             tau_damping.clear();
@@ -84,6 +86,7 @@ namespace robots {
             I_eff.reserve(n);
             tau.reserve(n);
             tau_fb.reserve(n);
+            tau_ff.reserve(n);
             tau_coriolis.reserve(n);
             tau_gravity.reserve(n);
             tau_damping.reserve(n);
@@ -113,7 +116,10 @@ namespace robots {
             double dt_taken;
             double dt_sug;
             double theta, omega, alpha, err, err_d;
-            double I_eff, tau, tau_fb, tau_coriolis, tau_gravity, tau_damping, tau_friction, tau_barrier, tau_sat;
+            double I_eff;
+            double tau, tau_fb, tau_ff;
+            double tau_coriolis, tau_gravity, tau_damping, tau_friction;
+            double tau_barrier, tau_sat;
             double KE, PE, E_total, W_actuator, P_damping, P_friction;
             double clamp_theta, clamp_omega, sat_flag;
             int joint_index;
@@ -132,6 +138,7 @@ namespace robots {
             I_eff.push_back(e.I_eff);
             tau.push_back(e.tau);
             tau_fb.push_back(e.tau_fb);
+			tau_ff.push_back(e.tau_ff);
             tau_coriolis.push_back(e.tau_coriolis);
             tau_gravity.push_back(e.tau_gravity);
             tau_damping.push_back(e.tau_damping);
@@ -173,6 +180,7 @@ namespace robots {
 			if (!checkSize(I_eff, "I_eff")) return false;
 			if (!checkSize(tau, "tau")) return false;
 			if (!checkSize(tau_fb, "tau_fb")) return false;
+			if (!checkSize(tau_ff, "tau_ff")) return false;
 			if (!checkSize(tau_coriolis, "tau_coriolis")) return false;
 			if (!checkSize(tau_gravity, "tau_gravity")) return false;
 			if (!checkSize(tau_damping, "tau_damping")) return false;
@@ -191,10 +199,41 @@ namespace robots {
 			if (!checkSize(joint_index, "joint_index")) return false;
 			return true; // all sizes match
         }
+
+        void swap(JointLogBuffer& other) noexcept {
+            sim_time.swap(other.sim_time);
+            dt_taken.swap(other.dt_taken);
+            dt_sug.swap(other.dt_sug);
+            theta.swap(other.theta);
+            omega.swap(other.omega);
+            alpha.swap(other.alpha);
+            err.swap(other.err);
+            err_d.swap(other.err_d);
+            I_eff.swap(other.I_eff);
+            tau.swap(other.tau);
+            tau_fb.swap(other.tau_fb);
+			tau_ff.swap(other.tau_ff);
+            tau_coriolis.swap(other.tau_coriolis);
+            tau_gravity.swap(other.tau_gravity);
+            tau_damping.swap(other.tau_damping);
+            tau_friction.swap(other.tau_friction);
+            tau_barrier.swap(other.tau_barrier);
+            tau_sat.swap(other.tau_sat);
+            KE.swap(other.KE);
+            PE.swap(other.PE);
+            E_total.swap(other.E_total);
+            W_actuator.swap(other.W_actuator);
+            P_damping.swap(other.P_damping);
+            P_friction.swap(other.P_friction);
+            clamp_theta.swap(other.clamp_theta);
+            clamp_omega.swap(other.clamp_omega);
+            sat_flag.swap(other.sat_flag);
+            joint_index.swap(other.joint_index);
+        }
     };
 
 	// Struct for logging reference trajectory data
-    struct DSFE_API TrajRefBuffer {
+    struct TrajRefBuffer {
 		// Sim Metadata
         std::vector<double> sim_time;
 		// Reference states

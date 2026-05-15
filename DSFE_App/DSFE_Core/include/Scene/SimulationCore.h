@@ -3,6 +3,12 @@
 
 #include "EngineCore.h"
 
+#include <queue>
+#include <thread>
+#include <condition_variable>
+#include <atomic>
+#include <memory>
+
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 
@@ -34,10 +40,16 @@ namespace core {
 
 		SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj);
 
+		// Buffer queue for exporting sim outputs
+		void startExportThread();
+		void stopExportThread();
+		void enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf);
+		void flushExports();
+
 		// Simulation control
 		void startSimulation() override;
 		void stopSimulation() override;
-		bool isSimRunning() const override { return _simRunning; }
+		bool isSimRunning() const override { return _simRunning.load(); }
 
 		// Time stepping
 		void setFixedDt(double dt) override;
@@ -48,9 +60,9 @@ namespace core {
 		SimulationSnapshot snapshot() const override {
 			std::lock_guard<std::mutex> lock(_stateMutex); // Ensure thread-safe access to snapshot data
 			return SimulationSnapshot{
-				.simTime = _simTime,
-				.simRunning = _simRunning,
-				.scriptRunning = _scriptRunning
+				.simTime = _simTime.load(),
+				.simRunning = _simRunning.load(),
+				.scriptRunning = _scriptRunning.load()
 			};
 		}
 
@@ -91,15 +103,18 @@ namespace core {
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
-		void exportLogsToHDF5();
+		void exportLogsToHDF5(const robots::JointLogBuffer& buf);
 		void exportRefsToHDF5();
 
 		// Increment simulation time by dt (used in the simulation loop)
-		void incrementSimTime(double dt) { _simTime += dt; }
+		void incrementSimTime(double dt) {
+			double newSimTime = _simTime.load() + dt;
+			_simTime.store(newSimTime);
+		}
 
 		// Script Running State
-		void setScriptRunning(bool running) { _scriptRunning = running; }
-		const bool isScriptRunning() const { return _scriptRunning; }
+		void setScriptRunning(bool running) { _scriptRunning.store(running); }
+		const bool isScriptRunning() const { return _scriptRunning.load(); }
 
 		// Setter and getter for telemetry frequency (Hz)
 		void setTelemetryHz(double hz) { _telHz = hz; }
@@ -117,6 +132,15 @@ namespace core {
 		void clearRobotPresentationDirty() { _robotPresentationDirty = false; }
 
 	private:
+		// Export thread management
+		void exportThreadMain();
+
+		std::thread _expThread;
+		std::mutex _expMutex;
+		std::condition_variable _expCondVar;
+		std::queue<std::unique_ptr<robots::JointLogBuffer>> _expQ;
+		std::atomic<bool> _expThreadRunning{ false };
+
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<robots::RobotSystem> _robotOwned;
@@ -133,9 +157,11 @@ namespace core {
 		double _dt = 1.0 / 180.0;		// [seconds], fixed timestep duration for physics updates
 		double _telHz = 120.0;			// [Hz], controls how often telemetry updates during simulation runs
 		double _accum = 0.0;			// Accumulator for fixed timestep
-		double _simTime = 0.0;			// Current simulation time
-		bool _simRunning = false;		// Whether the simulation loop is currently running
-		bool _scriptRunning = false;	// Whether a script is currently running
+
+		std::atomic<double> _simTime{ 0.0 };		// Current simulation time
+		std::atomic<bool> _simRunning{ false };		// Whether the simulation loop is currently running
+		std::atomic<bool> _scriptRunning{ false };	// Whether a script is currently running
+		std::atomic<int> _exportsInFlight = 0;
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;

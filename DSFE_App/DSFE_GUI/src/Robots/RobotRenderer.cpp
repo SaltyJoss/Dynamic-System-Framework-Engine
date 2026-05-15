@@ -88,7 +88,9 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 	const bool isAligned = robot.baseFrameIsEngineAligned;
 	const size_t n = robot.links.size();
 
-	for (int i = 0; i < n; ++i) {
+	LOG_INFO_ONCE("applyTransforms world size = %zu", world.size());
+
+	for (size_t i = 0; i < n; ++i) {
 		const auto& link = robot.links[i];
 
 		auto it = linkRenderMap.find(link.name);
@@ -100,11 +102,20 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 
 		glm::quat q_rot = isAligned ? (q * q_corr) : q;
 
-		for (auto* obj : it->second.visuals) {
+		for (size_t v = 0; v < it->second.visuals.size(); ++v) {
+			auto* obj = it->second.visuals[v];
 			if (!obj) { continue; }
 
 			obj->transform.position = pos;
 			obj->transform.rotQ = q_rot;
+
+			if (v < link.visual.meshEntries.size()) {
+				const auto& meshMat = link.visual.meshEntries[v];
+
+				obj->material.albedo = glm::vec3(meshMat.material.x(), meshMat.material.y(), meshMat.material.z());
+				obj->material.metallic = meshMat.metallic;
+				obj->material.roughness = meshMat.roughness;
+			}
 		}
 	}
 }

@@ -33,6 +33,14 @@ namespace render {
 					   |  ImGuiConfigFlags_DockingEnable
 					   |  ImGuiConfigFlags_ViewportsEnable;
 
+		try { 
+			io.IniFilename = "config/imgui.ini";
+		}
+		catch (const std::exception& e) {
+			LOG_ERROR("Failed to set ImGui ini file path: %s, loading default", e.what());
+			io.IniFilename = nullptr; // fallback to default in-memory ini
+		}
+
 		_style = std::make_unique<gui::Styles>();
 		_style->DarkMode();
 
