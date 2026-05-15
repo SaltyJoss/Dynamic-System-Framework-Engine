@@ -1,3 +1,4 @@
+// DSFE_Engine world_grid.vert.glsl
 #version 460 core
 
 out vec3 WorldPos;
@@ -6,7 +7,7 @@ out float vViewZ;
 uniform mat4 gVP = mat4(1.0);
 uniform mat4 gView;
 
-uniform float gGridSize = 1000.0;
+uniform float gGridSize;
 uniform vec3 gCameraWorldPos;
 
 uniform float gGridY = 0.0;

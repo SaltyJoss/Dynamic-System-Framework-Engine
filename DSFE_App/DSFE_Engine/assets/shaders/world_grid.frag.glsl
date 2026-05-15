@@ -1,6 +1,6 @@
+// DSFE_Engine world_grid.frag.glsl
 #version 460 core
 
-in vec2 GridXZ;
 in vec3 WorldPos;
 in float vViewZ;
 
@@ -8,7 +8,6 @@ layout(location = 0) out vec4 FragColour;
 
 uniform float gGridMinPixelsBetweenCells = 2.0;
 uniform float gGridCellSize = 0.1;
-uniform float gGridSize = 2500.0;
 uniform float gInternalScale = 1.0; // NOT quality preset
 
 uniform vec3 gCameraWorldPos;

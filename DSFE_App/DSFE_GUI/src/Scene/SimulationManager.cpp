@@ -636,7 +636,7 @@ namespace gui {
 			glBindVertexArray(0);
 
 			v.post->unbind();
-		}
+		}	
 
 		static bool icontains(const std::string& s, const char* sub) {
 			if (sub == nullptr || *sub == '\0') { return false; }
@@ -1505,6 +1505,7 @@ namespace gui {
 		_impl->_worldGridShader->setVec3(cam->getPosition(), "gCameraWorldPos");
 		_impl->_worldGridShader->setFlt1(_settingsCurrent.renderScale, "gRenderScale");
 		_impl->_worldGridShader->setFlt1(internalScale, "gInternalScale");
+		_impl->_worldGridShader->setFlt1(2500.0f, "gGridSize");
 
 		glBindVertexArray(_impl->_worldGridVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
