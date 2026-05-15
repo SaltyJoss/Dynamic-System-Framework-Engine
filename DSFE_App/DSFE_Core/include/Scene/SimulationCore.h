@@ -160,6 +160,7 @@ namespace core {
 		std::atomic<double> _simTime{ 0.0 };		// Current simulation time
 		std::atomic<bool> _simRunning{ false };		// Whether the simulation loop is currently running
 		std::atomic<bool> _scriptRunning{ false };	// Whether a script is currently running
+		std::atomic<int> _exportsInFlight = 0;
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;

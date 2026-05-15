@@ -19,15 +19,19 @@ namespace core {
 	{
 		_traj = _trajOwned.get();
 		_robot = _robotOwned.get();
+
+		startExportThread();
 	}
 	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
+		stopExportThread();
 		std::cout << "CORE DESTROYED\n"; 
 	}
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
 	SimulationCore::SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj)
 		: _robot(&robot), _traj(&traj) {
+		startExportThread();
 	}
 
 	// Simulation System
@@ -168,11 +172,13 @@ namespace core {
 		if (!_simRunning.load()) { return; }
 		D_RUNTIME("stopping simulation");
 
-		if (_robot) {
-			auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
-			if (buf) {
-				enqueueExportBuffer(std::move(buf));
-			}
+		auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
+		if (buf) {
+			enqueueExportBuffer(std::move(buf));
+		}
+
+		while (_exportsInFlight.load() > 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
 		// Clear buffers to free memory and prepare for next run
@@ -199,36 +205,40 @@ namespace core {
 			return;
 		}
 
+		data::FieldList fields;
+		fields.reserve(21);
+
 		// For each log entry, create a field list and write to HDF5
 		for (size_t i = 0; i < N; ++i) {
-			data::FieldList fields;
+			fields.clear();
+
 			// Sim Metadata
-			fields.emplace_back("sim_time",		(double)exportBuf.sim_time[i]);
-			fields.emplace_back("dt_taken",		(double)exportBuf.dt_taken[i]);
-			fields.emplace_back("dt_sug",		(double)exportBuf.dt_sug[i]);
+			fields.emplace_back("sim_time",		static_cast<double>(exportBuf.sim_time[i]));
+			fields.emplace_back("dt_taken",		static_cast<double>(exportBuf.dt_taken[i]));
+			fields.emplace_back("dt_sug",		static_cast<double>(exportBuf.dt_sug[i]));
 			// States
-			fields.emplace_back("position",		(double)exportBuf.theta[i]);
-			fields.emplace_back("velocity",		(double)exportBuf.omega[i]);
-			fields.emplace_back("acceleration",	(double)exportBuf.alpha[i]);
-			fields.emplace_back("error",		(double)exportBuf.err[i]);
-			fields.emplace_back("error_d",		(double)exportBuf.err_d[i]);
+			fields.emplace_back("position",		static_cast<double>(exportBuf.theta[i]));
+			fields.emplace_back("velocity",		static_cast<double>(exportBuf.omega[i]));
+			fields.emplace_back("acceleration",	static_cast<double>(exportBuf.alpha[i]));
+			fields.emplace_back("error",		static_cast<double>(exportBuf.err[i]));
+			fields.emplace_back("error_d",		static_cast<double>(exportBuf.err_d[i]));
 			// Dynamics
-			fields.emplace_back("I_eff",		(double)exportBuf.I_eff[i]);
-			fields.emplace_back("tau",			(double)exportBuf.tau[i]);
-			fields.emplace_back("tau_ff",		(double)exportBuf.tau_ff[i]);
-			fields.emplace_back("tau_gravity",	(double)exportBuf.tau_gravity[i]);
-			fields.emplace_back("tau_barrier",	(double)exportBuf.tau_barrier[i]);
-			fields.emplace_back("tau_sat",		(double)exportBuf.tau_sat[i]);
+			fields.emplace_back("I_eff",		static_cast<double>(exportBuf.I_eff[i]));
+			fields.emplace_back("tau",			static_cast<double>(exportBuf.tau[i]));
+			fields.emplace_back("tau_ff",		static_cast<double>(exportBuf.tau_ff[i]));
+			fields.emplace_back("tau_gravity",	static_cast<double>(exportBuf.tau_gravity[i]));
+			fields.emplace_back("tau_barrier",	static_cast<double>(exportBuf.tau_barrier[i]));
+			fields.emplace_back("tau_sat",		static_cast<double>(exportBuf.tau_sat[i]));
 			// Energy, Work, & Power
-			fields.emplace_back("KE",			(double)exportBuf.KE[i]);
-			fields.emplace_back("PE",			(double)exportBuf.PE[i]);
-			fields.emplace_back("E_total",		(double)exportBuf.E_total[i]);
+			fields.emplace_back("KE",			static_cast<double>(exportBuf.KE[i]));
+			fields.emplace_back("PE",			static_cast<double>(exportBuf.PE[i]));
+			fields.emplace_back("E_total",		static_cast<double>(exportBuf.E_total[i]));
 			// Limit flags and info
-			fields.emplace_back("clamp_theta",	(double)exportBuf.clamp_theta[i]);
-			fields.emplace_back("clamp_omega",	(double)exportBuf.clamp_omega[i]);
-			fields.emplace_back("sat_flag",		(double)exportBuf.sat_flag[i]);
+			fields.emplace_back("clamp_theta",	static_cast<double>(exportBuf.clamp_theta[i]));
+			fields.emplace_back("clamp_omega",	static_cast<double>(exportBuf.clamp_omega[i]));
+			fields.emplace_back("sat_flag",		static_cast<double>(exportBuf.sat_flag[i]));
 			// Joint info
-			fields.emplace_back("joint_index",	(double)exportBuf.joint_index[i]);
+			fields.emplace_back("joint_index",	static_cast<double>(exportBuf.joint_index[i]));
 
 			// Write entry to HDF5
 			_data.capture(data::Stream::Simulation, header, fields);
@@ -457,7 +467,7 @@ namespace core {
 
 	// Main loop for the export thread, waits for export buffers to be enqueued and processes them
 	void SimulationCore::exportThreadMain() {
-		while (_expThreadRunning.load()) {
+		while (true) {
 			std::unique_ptr<robots::JointLogBuffer> buf;
 			{
 				std::unique_lock<std::mutex> lock(_expMutex);
@@ -471,6 +481,7 @@ namespace core {
 
 			if (buf) {
 				exportLogsToHDF5(*buf);
+				--_exportsInFlight;
 			}
 		}
 	}
@@ -478,6 +489,7 @@ namespace core {
 	void SimulationCore::enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf) {
 		{
 			std::lock_guard<std::mutex> lock(_expMutex);
+			++_exportsInFlight;
 			_expQ.push(std::move(buf));
 		}
 		_expCondVar.notify_one();
