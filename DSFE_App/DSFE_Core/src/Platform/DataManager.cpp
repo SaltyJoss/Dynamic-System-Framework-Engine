@@ -2,7 +2,7 @@
 #include "pch.h"
 
 #include "Platform/DataManager.h"
-#include "Analysis/MetricLogger.h";
+#include "Analysis/MetricLogger.h"
 
 namespace data {
 	// Escape a string for CSV format
@@ -288,7 +288,7 @@ namespace data {
 
 		H5Sclose(currSpace);
 
-		const hsize_t newSize = currSpace + vals.size();
+		const hsize_t newSize = currSize + static_cast<hsize_t>(vals.size());
 		H5Dset_extent(dataset, &newSize);
 
 		hid_t filespace = H5Dget_space(dataset);

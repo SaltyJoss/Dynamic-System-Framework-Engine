@@ -187,8 +187,8 @@ namespace core {
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
 	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& exportBuf) {
-		auto t0 = std::chrono::steady_clock::now(); // start timer for export duration measurement
-		// Construct a header for the HDF5 dataset based on the robot and integrator names
+		auto t0 = std::chrono::steady_clock::now();
+
 		const std::string intName = _robot->getIntegratorName();
 		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
 		const std::string header = robotName + "_sim_" + intName;
@@ -200,44 +200,11 @@ namespace core {
 			return;
 		}
 
-		data::FieldList fields;
-		fields.reserve(21);
-
-		// For each log entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			fields.clear();
-
-			// Sim Metadata
-			fields.emplace_back("sim_time",		static_cast<double>(exportBuf.sim_time[i]));
-			fields.emplace_back("dt_taken",		static_cast<double>(exportBuf.dt_taken[i]));
-			fields.emplace_back("dt_sug",		static_cast<double>(exportBuf.dt_sug[i]));
-			// States
-			fields.emplace_back("position",		static_cast<double>(exportBuf.theta[i]));
-			fields.emplace_back("velocity",		static_cast<double>(exportBuf.omega[i]));
-			fields.emplace_back("acceleration",	static_cast<double>(exportBuf.alpha[i]));
-			fields.emplace_back("error",		static_cast<double>(exportBuf.err[i]));
-			fields.emplace_back("error_d",		static_cast<double>(exportBuf.err_d[i]));
-			// Dynamics
-			fields.emplace_back("I_eff",		static_cast<double>(exportBuf.I_eff[i]));
-			fields.emplace_back("tau",			static_cast<double>(exportBuf.tau[i]));
-			fields.emplace_back("tau_ff",		static_cast<double>(exportBuf.tau_ff[i]));
-			fields.emplace_back("tau_gravity",	static_cast<double>(exportBuf.tau_gravity[i]));
-			fields.emplace_back("tau_barrier",	static_cast<double>(exportBuf.tau_barrier[i]));
-			fields.emplace_back("tau_sat",		static_cast<double>(exportBuf.tau_sat[i]));
-			// Energy, Work, & Power
-			fields.emplace_back("KE",			static_cast<double>(exportBuf.KE[i]));
-			fields.emplace_back("PE",			static_cast<double>(exportBuf.PE[i]));
-			fields.emplace_back("E_total",		static_cast<double>(exportBuf.E_total[i]));
-			// Limit flags and info
-			fields.emplace_back("clamp_theta",	static_cast<double>(exportBuf.clamp_theta[i]));
-			fields.emplace_back("clamp_omega",	static_cast<double>(exportBuf.clamp_omega[i]));
-			fields.emplace_back("sat_flag",		static_cast<double>(exportBuf.sat_flag[i]));
-			// Joint info
-			fields.emplace_back("joint_index",	static_cast<double>(exportBuf.joint_index[i]));
-
-			// Write entry to HDF5
-			_data.capture(data::Stream::Simulation, header, fields);
-		}
+		_data.captureJointBuffer(
+			data::Stream::Simulation,
+			header, exportBuf
+		);
+		
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
 		LOG_INFO("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
