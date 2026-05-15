@@ -36,6 +36,12 @@ namespace robots {
 		return M; // [kg*m^2], (3x3) inertia tensor in link frame
 	}
 
+	static bool isControlledJoint(eJointType t) {
+		return
+			t == eJointType::REVOLUTE ||
+			t == eJointType::PRISMATIC;
+	}
+
 	// Computes the contribution of a single joint and its child link to the effective inertia I_eff of the joint
 	double RobotDynamics::computeJointInertiaContribution(
 		const RobotJoint& joint,
@@ -407,7 +413,10 @@ namespace robots {
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& joint = model.joints[i];
-			if (joint.type == eJointType::FIXED) { continue; }
+			if (!isControlledJoint(joint.type)) {
+				scratch.dense.tau[i] = 0.0;
+				continue;
+			}
 
 			const double wn = 5.0;
 			const double z = 0.7;
@@ -474,10 +483,11 @@ namespace robots {
 
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint& joint = model.joints[i];
-			if (joint.type == eJointType::FIXED) { continue; }
+			if (!isControlledJoint(joint.type)) { continue; }
 			dTau_dq(i, i) = -kp[i];
-			double tanh_term = std::tanh(qd[i] / 1e-1);
-			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / 1e-1;
+			const double eps_fric = 1e-2;
+			double tanh_term = std::tanh(qd[i] / eps_fric);
+			double stiff_friction_slope = -0.05 * (1.0 - tanh_term * tanh_term) / eps_fric;
 			dTau_dv(i, i) = -kd[i] - 0.2;
 		}
 
