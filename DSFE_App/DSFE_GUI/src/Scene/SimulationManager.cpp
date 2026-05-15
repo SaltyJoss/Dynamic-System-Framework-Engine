@@ -1056,6 +1056,7 @@ namespace gui {
 		}
 
 		ImGuiIO& io = ImGui::GetIO();
+
 		_core->tick(io.DeltaTime);
 
 		if (_impl->_robotSystem && hasRobot()) {

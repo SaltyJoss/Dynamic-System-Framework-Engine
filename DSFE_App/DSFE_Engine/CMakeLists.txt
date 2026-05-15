@@ -20,9 +20,14 @@ target_link_libraries(DSFE_Engine PRIVATE
 )
 
 # --- Asset Copying ---
-# Define the source and destination for assets
+# Defines the source and destination for assets
 set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/DSFE_App/DSFE_Engine/assets)
 set(ASSETS_DEST_DIR $<TARGET_FILE_DIR:DSFE_Engine>/assets)
+
+# --- Config Copying ---
+# Defines the source and destination for the config file
+set(CONFIG_SRC_DIR ${CMAKE_SOURCE_DIR}/DSFE_App/config)
+set(CONFIG_DEST_DIR $<TARGET_FILE_DIR:DSFE_Engine>/config)
 
 # Add a custom command to copy the assets directory after the build
 add_custom_command(TARGET DSFE_Engine POST_BUILD
@@ -30,4 +35,12 @@ add_custom_command(TARGET DSFE_Engine POST_BUILD
     "${ASSETS_SRC_DIR}"
     "${ASSETS_DEST_DIR}"
     COMMENT "Copying assets to build directory..."
+)
+
+# Add a custom command to copy the config directory after the build
+add_custom_command(TARGET DSFE_Engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+    "${CONFIG_SRC_DIR}"
+    "${CONFIG_DEST_DIR}"
+    COMMENT "Copying config to build directory..."
 )
