@@ -1,7 +1,0 @@
-# MathLib/External/CMakeLists.txt
-add_library(Eigen INTERFACE)
-target_include_directories(Eigen INTERFACE 
-    "${CMAKE_CURRENT_SOURCE_DIR}/Eigen/src"
-)
-
-add_library(Eigen3::Eigen ALIAS Eigen3)

@@ -444,16 +444,11 @@ intermediate/
 # Do not ignore
 # - external dependencies (may contain necessary .lib/.dll files)
 # --- but keep vendor libs in External ---
-!Sim_Engine/External/**
-
-# - HDF5 plugin folders (may contain necessary .lib/.dll files)
-!Sim_Engine/External/HDF5/
-!Sim_Engine/External/HDF5/lib/
-!Sim_Engine/External/HDF5/lib/plugin/
+!DSFE_App/External/**
 
 # - necessary .lib/.dll files in External
-!Sim_Engine/External/**/*.lib
-!Sim_Engine/External/**/*.dll
+!DSFE_App/External/**/*.lib
+!DSFE_App/External/**/*.dll
 
 # Ignore vcpkg build and installed files if used
 vcpkg_installed/
@@ -479,14 +474,5 @@ vcpkg_downloads/
 !**/*.vcxproj.filters
 !**/*.sln
 !CMakeLists.txt
-/Engine/assets/hdr
-/Engine/assets/objects/Misc
-/Engine/assets/objects/Models/44-moon-photorealistic-2k/Supporting Files
-/Engine/assets/objects/Models/44-moon-photorealistic-2k
-/Sim_Engine/Engine/assets/objects/Models/Black_Hole
-/Sim_Engine/Engine/assets/objects/Models/Earth
-/Sim_Engine/Engine/assets/objects/Models/Solar_System
-/Sim_Engine/Engine/assets/objects/Models/Star_Cluster
-/Sim_Engine/Engine/assets/objects/Models/robotic-arm1
-/Sim_Engine/Engine/assets/objects/Models
-/Sim_Engine/Runs
+!**/imgui.ini
+
