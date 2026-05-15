@@ -1,6 +1,6 @@
+// DSFE_Core DataManager.cpp
 #include "pch.h"
-// File:   DataManager.cpp
-// GitHub: SaltyJoss
+
 #include "Platform/DataManager.h"
 
 namespace data {

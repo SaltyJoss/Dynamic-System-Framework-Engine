@@ -298,8 +298,6 @@ namespace robots {
 		RobotSimSnapshot snap = takeSnapshot(simTime);
 		const size_t n = snap.model->joints.size();
 
-		_dynScratch.clear();
-
 		Eigen::Map<const VecX> q(x.data(), n);
 		Eigen::Map<const VecX> qd(x.data() + n, n);
 
@@ -309,8 +307,6 @@ namespace robots {
 		std::vector<Pose> T_start(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
 		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
-
-		_dynScratch.clear();
 
 		SpatialDynamics::computeSpatialKinematicsAndBias(
 			_spatialModel,
@@ -339,22 +335,22 @@ namespace robots {
 			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
 		}
 
+		// Compute RNEA torques for feedforward control
 		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(
 			_spatialModel,
 			q, qd, qdd,
 			_dynScratch
-		); // [Nm], torque computed by RNEA for current state and reference acceleration
+		); // [Nm]
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
-		_dynResult.resize(n);
-
+		// Define the derivative function for integration, capturing necessary variables by reference
 		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
 			return _dynamics->derivative_spatial(_spatialModel,
 				t, xIn, snap,
 				_dynScratch, _dynResult
 			);
 		};
-
+		// Define the Jacobian function for integration, capturing necessary variables by reference
 		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
 			_dynamics->jacobian_spatial(_spatialModel,
 				xIn, snap,
@@ -374,18 +370,19 @@ namespace robots {
 		// Enforce joint limits
 		for (auto& j : _robot.joints) { enforceJointLimits(j); }
 
+		// Recompute kinematics and dynamics at the new state for logging and control purposes
 		std::vector<Pose> T_world(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, step.x_next, T_world);
-
 		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
 
+		// Compute spatial kinematics and bias terms for the new state
 		SpatialDynamics::computeSpatialKinematicsAndBias(
 			_spatialModel,
 			q_next, qd_next,
 			_dynScratch.spatial.Xup,
 			_dynScratch.spatial.v, _dynScratch.spatial.c
 		);
-
+		// Compute mass matrix at the new state
 		MatX M_full = SpatialDynamics::CRBA(
 			_spatialModel,
 			_dynScratch.spatial.Xup,
@@ -451,8 +448,6 @@ namespace robots {
 				buf->push_entry(e);
 			}
 		}
-
-
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
@@ -600,6 +595,9 @@ namespace robots {
 		_baseYaw = 0.0;
 		_baseYawRate = 0.0;
 		_baseYawAcc = 0.0;
+
+		_dynScratch.resize(_robot.joints.size(), _robot.links.size());
+		_dynResult.resize(_robot.joints.size());
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();

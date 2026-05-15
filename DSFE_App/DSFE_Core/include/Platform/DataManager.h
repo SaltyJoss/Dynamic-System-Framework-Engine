@@ -1,6 +1,6 @@
+// DSFE_Core DataManager.h
 #pragma once
-// File:   DataManager.h
-// GitHub: SaltyJoss
+
 #pragma warning(disable : 4251)
 #include "EngineCore.h"
 #include <string>
