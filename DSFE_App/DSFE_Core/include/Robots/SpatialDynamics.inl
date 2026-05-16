@@ -152,7 +152,8 @@ namespace robots {
 			if (j.type == eJointType::FIXED) { continue; }
 			int p = j.parent;
 			if (p >= 0) {
-				Ic[p] += Xup[i].transpose() * Ic[i] * Xup[i];
+				mathlib::MatX_T<Scalar> XupT = Xup[i].transpose();
+				Ic[p] += XupT * Ic[i] * Xup[i];
 			}
 		}
 
@@ -207,8 +208,9 @@ namespace robots {
 			if (j.type == eJointType::FIXED) {
 				Ia_out[i] = IA_out[i];
 				if (j.parent >= 0) {
-					IA_out[j.parent] += Xup[i].transpose() * Ia_out[i] * Xup[i];
-					pA_out[j.parent] += Xup[i].transpose() * pA_out[i];
+					mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
+					IA_out[j.parent] += XupT * Ia_out[i] * Xup[i];
+					pA_out[j.parent] += XupT * pA_out[i];
 				}
 				continue;
 			}
@@ -224,8 +226,9 @@ namespace robots {
 			pA_out[i] += Ia_out[i] * c[i] + U_out[i] * (u_out[i] / d_out[i]);
 
 			if (j.parent >= 0) {
-				IA_out[j.parent] += Xup[i].transpose() * Ia_out[i] * Xup[i];
-				pA_out[j.parent] += Xup[i].transpose() * pA_out[i];
+				mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
+				IA_out[j.parent] += XupT * Ia_out[i] * Xup[i];
+				pA_out[j.parent] += XupT * pA_out[i];
 			}
 		}
 	}

@@ -246,38 +246,34 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		mathlib::VecX_T<Scalar> x_new = x + dt * f((t + dt) / Scalar(2), x); // Initial guess
-
 		// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
 
 		// Numerical Jacobian for Newton-Raphson
 		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
 			int n = (int)x_guess.size();
-
 			mathlib::MatX_T<Scalar> F;
 			bool analytical_success = false;
 
 			if constexpr (!std::is_same_v<std::decay_t<JacFunc>, std::nullptr_t>) {
 				if constexpr (std::is_pointer_v<std::decay_t<JacFunc>> || requires { bool(jac); }) {
 					if (jac) {
-						jac(x_guess, F); // User-provided Jacobian
+						jac((x + x_guess) / Scalar(2), F); // User-provided Jacobian
 						analytical_success = true;
 					}
 				}
 				else {
-					jac(x_guess, F); // User-provided Jacobian
+					jac((x + x_guess) / Scalar(2), F); // User-provided Jacobian
 					analytical_success = true;
 				}
 			}
 			if (!analytical_success) {
 				F = finiteDifferenceJacobian(
 					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2)); },
-					t + dt,
+					t + dt / Scalar(2),
 					x_guess
 				);
 			}
-
 			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
 		};
 
@@ -296,7 +292,7 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		size_t n = x.size();
+		const Eigen::Index n = x.size();
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 		mathlib::VecX_T<Scalar> c(2);
@@ -304,7 +300,7 @@ namespace integration {
 			0.5 - std::sqrt(3.0) / 6.0,
 			0.5 + std::sqrt(3.0) / 6.0; // Stage time fractions
 
-		mathlib::MatX_T<Scalar> A = mathlib::MatX_T<Scalar>::Zero();
+		mathlib::MatX_T<Scalar> A(2, 2);
 		A <<
 			0.25, 0.25 - std::sqrt(3.0) / 6.0,
 			0.25 + std::sqrt(3.0) / 6.0, 0.25;
@@ -312,7 +308,7 @@ namespace integration {
 		const Scalar b = 0.5; // Weights for final update
 
 		// Initial guess for the stage values k1, k2, k3
-		mathlib::VecX_T<Scalar> k = mathlib::VecX_T<Scalar>::Zero(2 * n); // 2 stages
+		mathlib::VecX_T<Scalar> k(2 * n); // 2 stages
 		mathlib::VecX_T<Scalar> f0 = f(t, x);
 		k.segment(0, n) = f0;
 		k.segment(n, n) = f0;
@@ -335,10 +331,8 @@ namespace integration {
 		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
-
 			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
 			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
-
 			mathlib::MatX_T<Scalar> F1(n, n), F2(n, n);
 			bool analytical_success = false;
 
@@ -398,8 +392,7 @@ namespace integration {
 		Scalar tol
 	) {
 		if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
-
-		size_t n = x.size();
+		const Eigen::Index n = x.size();
 
 		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
 		mathlib::VecX_T<Scalar> c(3);
@@ -408,8 +401,7 @@ namespace integration {
 			0.5,
 			0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
 
-		mathlib::Mat3_T<Scalar> A = mathlib::Mat3_T<Scalar>::Zero();
-
+		mathlib::Mat3_T<Scalar> A(3, 3);
 		A <<
 			5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 5.0 / 36.0 - std::sqrt(15.0) / 30.0,
 			5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
@@ -419,7 +411,7 @@ namespace integration {
 		b << 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0; // Weights for final update
 
 		// Initial guess for the stage values k1, k2, k3
-		mathlib::VecX_T<Scalar> k = mathlib::VecX_T<Scalar>::Zero(3 * n); // 3 stages
+		mathlib::VecX_T<Scalar> k(3 * n); // 3 stages
 		mathlib::VecX_T<Scalar> f0 = f(t, x);
 		k.segment(0, n) = f0;
 		k.segment(n, n) = f0;
@@ -611,7 +603,7 @@ namespace integration {
 		const Scalar eps_rel = 1e-8;
 		mathlib::VecX_T<Scalar> f_0 = f(t, x);
 		int n = (int)x.size();
-		mathlib::MatX_T<Scalar> J = mathlib::MatX_T<Scalar>::Zero(f_0.size(), n);
+		mathlib::MatX_T<Scalar> J(f_0.size(), n);
 		// Compute the Jacobian column by column using central differences
 		for (int i = 0; i < n; ++i) {
 			mathlib::VecX_T<Scalar> x_fwd = x;

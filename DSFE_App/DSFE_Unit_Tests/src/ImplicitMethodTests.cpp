@@ -97,7 +97,7 @@ TEST("Implicit Midpoint Method", ImplicitMidpoint_HarmonicOscillator_EnergyPrese
 	VecX x(2); x << 1.0, 0.0;
 	double E0 = 0.5 * (x(0)*x(0) + x(1)*x(1));
 	double dt = 5.0 / 2500, t = 0.0;
-	for (int i = 0; i < 2500; ++i) { x = integrator.implicitMidpoint(x, t, dt, impHarmonicOsc, impExpDecayJac); t += dt; }
+	for (int i = 0; i < 2500; ++i) { x = integrator.implicitMidpoint(x, t, dt, impHarmonicOsc, impHarmonicOscJac); t += dt; }
 	double Ef = 0.5 * (x(0)*x(0) + x(1)*x(1));
 	double drift = std::abs(Ef - E0);
 	ASSERT_TRUE(drift < tol_high * (1.0 + E0), "Implicit Midpoint energy drift too large for SHO");

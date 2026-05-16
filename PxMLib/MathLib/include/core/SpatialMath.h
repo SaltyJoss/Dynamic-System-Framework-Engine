@@ -157,7 +157,7 @@ namespace mathlib {
 		const SpatialVec_T<Scalar>& rhs
 	) {
 		SpatialVec_T<Scalar> out;
-		out.v = lhs * rhs.v;
+		out.v.noalias() = lhs.derived() * rhs.v;
 		return out;
 	}
 
