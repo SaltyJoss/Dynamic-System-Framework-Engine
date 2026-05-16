@@ -28,37 +28,37 @@ namespace integration {
 		IntegrationService();
 
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		StepOut stepODE(eIntegrationMethod m, VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
+		StepOut step(eIntegrationMethod m, VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
 			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 				if (f == nullptr) {
 					D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
-					return { _ODE->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
+					return { _integrator->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
 				}
 			}
 
 			switch (m) {
 				// Explicit methods
 				//  * currently all explicit methods use fixed step size, apart from RK45 as it is an adaptive method
-				case eIntegrationMethod::Euler:    return { _ODE->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Midpoint: return { _ODE->midpointStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Heun:     return { _ODE->heunStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Ralston:  return { _ODE->ralstonStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::RK4:      return { _ODE->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::RK45:	   return stepAdaptiveODE(eIntegrationMethod::RK45, x, t, dt, std::forward<Func>(f), _rtol, _atol);
+				case eIntegrationMethod::Euler:    return { _integrator->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::Midpoint: return { _integrator->midpointStep(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::Heun:     return { _integrator->heunStep(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::Ralston:  return { _integrator->ralstonStep(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::RK4:      return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::RK45:	   return step_adaptive(eIntegrationMethod::RK45, x, t, dt, std::forward<Func>(f), _rtol, _atol);
 					// Implicit methods
 					//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
-				case eIntegrationMethod::ImplicitEuler:    return { _ODE->implicit_euler(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::ImplicitMidpoint: return { _ODE->implicit_midpoint(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::GLRK2:			   return { _ODE->GLRK2(x, t, dt, std::forward<Func>(f), 50, 1e-10, std::forward<JacFunc>(jac)), dt, dt };
-				case eIntegrationMethod::GLRK3:			   return { _ODE->GLRK3(x, t, dt, std::forward<Func>(f), 80, -1, std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicit_euler(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicit_midpoint(x, t, dt, std::forward<Func>(f)), dt, dt };
+				case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), 50, 1e-10, std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), 80, -1, std::forward<JacFunc>(jac)), dt, dt };
 				default:
 				LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
-				return { _ODE->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
+				return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
 			}
 		}
 
 		template<typename Func>
-		StepOut stepAdaptiveODE(eIntegrationMethod m, VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
+		StepOut step_adaptive(eIntegrationMethod m, VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
 			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 				if (f == nullptr) {
 					LOG_WARN("No derivative function provided for adaptive integration - returning state unchanged");
@@ -96,7 +96,7 @@ namespace integration {
 				double h_try = std::min(h, t_end - t_curr);
 				double dt_used = 0.0;
 
-				VecX x_next = _ODE->rk45Step(x_curr, t_curr, h_try, dt_used, std::forward<Func>(f), rtol, atol);
+				VecX x_next = _integrator->rk45Step(x_curr, t_curr, h_try, dt_used, std::forward<Func>(f), rtol, atol);
 
 				// Update rk45step
 				t_curr += dt_used;
@@ -132,7 +132,7 @@ namespace integration {
 		const char* toString(eIntegrationMethod m);
 
 		integration::eIntegrationMethod method;
-		std::unique_ptr<integration::ODE> _ODE;
+		std::unique_ptr<integration::NumericalIntegrator> _integrator;
 
 		std::string _methodStr = "RK4";
 

@@ -92,7 +92,7 @@ namespace robots {
 
 		for (size_t i = 0; i < n; ++i) {
 			const RobotJoint& j = _robot.joints[i];
-			SpatialJoint& sj = _spatialModel.joints[i];
+			auto& sj = _spatialModel.joints[i];
 
 			sj.name = j.name;
 			sj.type = j.type;
@@ -359,7 +359,7 @@ namespace robots {
 			);
 		};
 		
-		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f_deriv, f_J);
+		auto step = _integrator->step(_curIntMethod, x, simTime, dt, f_deriv, f_J);
 
 		unpackState(step.x_next);
 		_dynamics->setDt(step.dt_taken);
