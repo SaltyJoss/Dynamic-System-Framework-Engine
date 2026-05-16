@@ -7,10 +7,12 @@
 #include <numbers>
 #include <Kinematics/DH_Params.h>
 
+#include <unordered_map>
+
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-constexpr double DEG2RAD = std::numbers::pi / 180.0;
+constexpr double DEG2RAD = std::numebers::pi / 180.0;
 
 namespace robots {
 	// --- Robot Model Kinematic Models ---

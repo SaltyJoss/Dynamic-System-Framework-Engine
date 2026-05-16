@@ -13,7 +13,7 @@ namespace mathlib {
 	template<typename Scalar>
 	using Mat3_T = Eigen::Matrix<Scalar, 3, 3>;
 
-	// Template version of 6D vector and 6x6 matrix for spatial algebra
+	// Template version of 6D vector for spatial algebra
 	template<typename Scalar>
 	using Vec6_T = Eigen::Matrix<Scalar, 6, 1>;
 
@@ -28,4 +28,8 @@ namespace mathlib {
 	// Template version of dynamic-size matrix
 	template<typename Scalar>
 	using MatX_T = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+
+	// Template version of pose (4x4 homogeneous transformation matrix)
+	template<typename Scalar>
+	using Pose_T = Eigen::Matrix<Scalar, 4, 4>;
 }

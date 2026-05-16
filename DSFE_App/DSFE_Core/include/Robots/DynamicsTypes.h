@@ -16,11 +16,10 @@ namespace robots {
 		mathlib::VecX_T<Scalar> rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
 		mathlib::VecX_T<Scalar> h;   // Coriolis and centrifugal bias vector
 		mathlib::VecX_T<Scalar> tau; // control torque vector
-
 		mathlib::VecX_T<Scalar> I_eff_controller; // effective inertia vector for controller design (e.g., for inverse dynamics control)
 
-		std::vector<mathlib::Pose> T_world;
-		std::vector<mathlib::Pose> jointWorldPoses;
+		std::vector<mathlib::Pose_T<Scalar>> T_world;
+		std::vector<mathlib::Pose_T<Scalar>> jointWorldPoses;
 
 		size_t jointCap = 0;
 		size_t linkCap = 0;
