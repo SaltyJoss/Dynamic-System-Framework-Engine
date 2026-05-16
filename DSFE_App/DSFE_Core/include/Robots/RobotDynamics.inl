@@ -157,8 +157,8 @@ namespace robots {
 			}
 
 			// Compute forward kinematics for the perturbed state
-			_kinematics->computeForwardKinematics_fromState(robot, x_eps, T_world_eps);
-			jointWorldPoses_eps = _kinematics->calcJointWorldPoses(T_world_eps, robot);
+			_kinematics->computeForwardKinematics_fromState<Scalar>(robot, x_eps, T_world_eps);
+			jointWorldPoses_eps = _kinematics->calcJointWorldPoses<Scalar>(T_world_eps, robot);
 			computeMassMatrix(robot, T_world_eps, jointWorldPoses_eps, M_plus); // mass matrix for the perturbed configuration
 
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
@@ -215,11 +215,8 @@ namespace robots {
 
 				// Gravitational force on the link
 				mathlib::Vec3_T<Scalar> g_world;
-				g << mathlib::Vec3_T<Scalar>(0.0, 0.0, -g); // [m/s^2], gravity vector in world frame
-				const mathlib::Vec3_T<Scalar> F_g;
-				F_g = m * g_world; // [N], gravitational force on the link in world frame
-
-				// Torque contribution from this link's weight about joint i
+				g_world << mathlib::Vec3_T<Scalar>(0.0, 0.0, -g); // [m/s^2], gravity vector in world frame
+				const mathlib::Vec3_T<Scalar> F_g = m * g_world; // [N], gravitational force on the link in world frame
 				const mathlib::Vec3_T<Scalar> r = com_world - p_i; // [m]
 
 				// Torque = r × F_g projected onto joint axis
@@ -243,9 +240,9 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q_local(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd_local(x.data() + n, n);
 
-		_kinematics->computeForwardKinematics_fromState(robot, x, scratch.T_world);
-		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, robot);
-		computeMassMatrix(robot, scratch.T_world, scratch.jointWorldPoses, scratch.M);
+		_kinematics->computeForwardKinematics_fromState<Scalar>(robot, x, scratch.T_world);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.T_world, robot);
+		computeMassMatrix<Scalar>(robot, scratch.T_world, scratch.jointWorldPoses, scratch.M);
 
 		J_out.setZero(2 * n, 2 * n); // [rad/rad] position part, [rad/s / rad/s] velocity part
 		J_out.block(0, n, n, n).setIdentity();
@@ -301,16 +298,16 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.dense.T_world);
+		_kinematics->computeForwardKinematics_fromState<Scalar>(*snap.model, x, scratch.dense.T_world);
 
-		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.dense.T_world, *snap.model);
+		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.dense.T_world, *snap.model);
 
-		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M); // [kg*m^2], full mass matrix for the robot at configuration q
-		scratch.dense.h = computeCoriolisVector(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M); // [Nm], full Coriolis and centrifugal torque vector
+		computeMassMatrix<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M); // [kg*m^2], full mass matrix for the robot at configuration q
+		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M); // [Nm], full Coriolis and centrifugal torque vector
 
 		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
+			scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
 		scratch.dense.tau.setZero();
@@ -392,16 +389,18 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
-		SpatialDynamics::computeSpatialKinematicsAndBias(
+		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			model, q, qd,
 			scratch.spatial.Xup,
 			scratch.spatial.v,
 			scratch.spatial.c
 		);
 
-		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA(model, scratch.spatial.Xup, scratch);
+		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA<Scalar>(model, scratch.spatial.Xup, scratch);
 		// RNEA to compute gravity compensation (q, 0, 0) for gravity, (q, qd, 0) for Coriolis
-		mathlib::VecX_T<Scalar> tau_g = SpatialDynamics::RNEA(model, q, VecX::Zero(n), VecX::Zero(n), scratch);
+		mathlib::VecX_T<Scalar> qd_zero = mathlib::VecX_T<Scalar>::Zero(n);
+		mathlib::VecX_T<Scalar> qdd_zero = mathlib::VecX_T<Scalar>::Zero(n);
+		mathlib::VecX_T<Scalar> tau_g = SpatialDynamics::RNEA<Scalar>(model, q, qd_zero, qdd_zero, scratch);
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
@@ -443,7 +442,7 @@ namespace robots {
 			out.metrics.tau[i] = tau_i;
 		}
 
-		out.qdd = SpatialDynamics::ABA(model, q, qd, scratch.dense.tau, scratch);
+		out.qdd = SpatialDynamics::ABA<Scalar>(model, q, qd, scratch.dense.tau, scratch);
 		out.metrics.qdd = out.qdd;
 		dx.head(n) = qd;
 		dx.tail(n) = out.qdd;
@@ -469,7 +468,7 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
-		SpatialDynamics::computeSpatialKinematicsAndBias(
+		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			model, q, qd,
 			scratch.spatial.Xup,
 			scratch.spatial.v,
@@ -519,15 +518,15 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.dense.T_world);
-		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.dense.T_world, *snap.model);
+		_kinematics->computeForwardKinematics_fromState<Scalar>(*snap.model, x, scratch.dense.T_world);
+		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.dense.T_world, *snap.model);
 
 		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M);
-		scratch.dense.h = computeCoriolisVector(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
+		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
 
 		scratch.g.setZero();
 		if (snap.torqueMode != eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
+			scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
 		scratch.dense.tau.setZero();
@@ -575,9 +574,9 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
 		// Compute a local mass matrix for this exact stage evaluation frame
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, scratch.T_world);
-		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses(scratch.T_world, *snap.model);
-		computeMassMatrix(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
+		_kinematics->computeForwardKinematics_fromState<Scalar>(*snap.model, x, scratch.T_world);
+		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.T_world, *snap.model);
+		computeMassMatrix<Scalar>(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
 
 		mathlib::MatX dTau_dq = mathlib::MatX_T<Scalar>::Zero(n, n);
 		mathlib::MatX dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);

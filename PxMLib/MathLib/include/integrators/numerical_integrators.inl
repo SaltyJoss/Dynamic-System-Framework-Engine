@@ -192,17 +192,17 @@ namespace integration {
 		Scalar t,
 		Scalar dt,
 		Func&& f,
-		JacFunc&& jac = nullptr,
-		int maxIter = 8,
-		Scalar tol = 1e-6
+		JacFunc&& jac,
+		int maxIter,
+		Scalar tol
 	) {
 		mathlib::VecX_T<Scalar> x_new = x + dt * f(t, x); // Initial guess
 
 		// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
-		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess) { return x_guess - x - dt * f(t + dt, x_guess); };
+		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f(t + dt, x_guess); };
 
 		// Numerical Jacobian for Newton-Raphson
-		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess) -> mathlib::MatX_T<Scalar> {
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
 			int n = (int)x_guess.size();
 
 			mathlib::MatX_T<Scalar> F;
@@ -228,10 +228,11 @@ namespace integration {
 				);
 			}
 
-			return mathlib::MatX_T<Scalar>::Identity(n, n) - dt * F; // J = I - dt * df/dx
+			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * F; // J = I - dt * df/dx
 		};
 
-		return newtonRaphson(g, J, x + dt * f(t + dt, x), maxIter, tol);
+		mathlib::VecX_T<Scalar> x0 = x + dt * f(t + dt, x); // Initial guess for Newton-Raphson
+		return newtonRaphson(g, J, x0, maxIter, tol);
 	}
 
 	// Implicit Midpoint method
@@ -241,17 +242,17 @@ namespace integration {
 		Scalar t,
 		Scalar dt,
 		Func&& f,
-		JacFunc&& jac = nullptr,
-		int maxIter = 10,
-		Scalar tol = 1e-7
+		JacFunc&& jac,
+		int maxIter,
+		Scalar tol
 	) {
 		mathlib::VecX_T<Scalar> x_new = x + dt * f((t + dt) / Scalar(2), x); // Initial guess
 
 		// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
-		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess) { return x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
+		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
 
 		// Numerical Jacobian for Newton-Raphson
-		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess) -> mathlib::MatX_T<Scalar> {
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
 			int n = (int)x_guess.size();
 
 			mathlib::MatX_T<Scalar> F;
@@ -277,10 +278,11 @@ namespace integration {
 				);
 			}
 
-			return mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
+			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
 		};
 
-		return newtonRaphson(g, J, x + dt + f(t + dt / Scalar(2), x), maxIter, tol);
+		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
+		return newtonRaphson(g, J, x0, maxIter, tol);
 	}
 
 	// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
@@ -290,9 +292,9 @@ namespace integration {
 		Scalar t,
 		Scalar dt,
 		Func&& f,
-		JacFunc&& jac = nullptr,
-		int maxIter = 50,
-		Scalar tol = 1e-6
+		JacFunc&& jac,
+		int maxIter,
+		Scalar tol
 	) {
 		size_t n = x.size();
 
@@ -330,7 +332,7 @@ namespace integration {
 			g.segment(n, n) = k2 - f2;
 		};
 
-		auto eval_j = [&](const VecX_T<Scalar>& k_guess, MatX_T<Scalar>& J) {
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 
@@ -391,9 +393,9 @@ namespace integration {
 		Scalar t,
 		Scalar dt,
 		Func&& f,
-		JacFunc&& jac = nullptr,
-		int maxIter = 150,
-		Scalar tol = -1
+		JacFunc&& jac,
+		int maxIter,
+		Scalar tol
 	) {
 		if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
 
@@ -423,7 +425,7 @@ namespace integration {
 		k.segment(n, n) = f0;
 		k.segment(2 * n, n) = f0;
 
-		auto eval_g = [&](const VecX_T<Scalar>& k_guess, VecX_T<Scalar>& g) {
+		auto eval_g = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::VecX_T<Scalar>& g) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 			mathlib::VecX_T<Scalar> k3 = k_guess.segment(2 * n, n);
@@ -443,7 +445,7 @@ namespace integration {
 			g.segment(2 * n, n) = k3 - f3;
 		};
 
-		auto eval_j = [&](const VecX_T<Scalar>& k_guess, MatX_T<Scalar>& J) {
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 			mathlib::VecX_T<Scalar> k3 = k_guess.segment(2 * n, n);

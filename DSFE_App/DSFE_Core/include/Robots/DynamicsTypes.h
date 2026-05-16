@@ -150,8 +150,8 @@ namespace robots {
 	// Central scratch structure that contains all buffers needed for dynamics computations, both dense and spatial
 	template<typename Scalar>
 	struct DynamicsScratch {
-		DenseDynamicsScratch dense;
-		SpatialDynamicsScratch spatial;
+		DenseDynamicsScratch<Scalar> dense;
+		SpatialDynamicsScratch<Scalar> spatial;
 		// TODO add kinematics scratch
 
 		// Gravity scratch buffer

@@ -31,7 +31,7 @@ namespace {
 		return x;
 	}
 
-	integration::ODE ode;
+	integration::NumericalIntegrator integrator;
 }
 
 // Forward Euler Tests
@@ -39,14 +39,14 @@ namespace {
 TEST("Euler Method", Euler_ExponentialDecay_SmallStep)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.eulerStep(x, t, dt, expDecay); }, x0, 1.0, 1000);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.eulerStep(x, t, dt, expDecay); }, x0, 1.0, 1000);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-2, "Euler exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("Euler Method", Euler_HarmonicOscillator_SmallStep)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.eulerStep(x, t, dt, harmonicOsc); }, x0, 2.0, 2000);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.eulerStep(x, t, dt, harmonicOsc); }, x0, 2.0, 2000);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 5e-2, "Euler SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 5e-2, "Euler SHO velocity error too large");
 }
@@ -56,14 +56,14 @@ TEST("Euler Method", Euler_HarmonicOscillator_SmallStep)
 TEST("Midpoint Method (RK2)", Midpoint_ExponentialDecay)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.midpointStep(x, t, dt, expDecay); }, x0, 1.0, 500);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.midpointStep(x, t, dt, expDecay); }, x0, 1.0, 500);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-5, "Midpoint exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("Midpoint Method (RK2)", Midpoint_HarmonicOscillator)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.midpointStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.midpointStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 1e-4, "Midpoint SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 1e-4, "Midpoint SHO velocity error too large");
 }
@@ -73,14 +73,14 @@ TEST("Midpoint Method (RK2)", Midpoint_HarmonicOscillator)
 TEST("Heun Method (RK2)", Heun_ExponentialDecay)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.heunStep(x, t, dt, expDecay); }, x0, 1.0, 500);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.heunStep(x, t, dt, expDecay); }, x0, 1.0, 500);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-5, "Heun exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("Heun Method (RK2)", Heun_HarmonicOscillator)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.heunStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.heunStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 1e-4, "Heun SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 1e-4, "Heun SHO velocity error too large");
 }
@@ -90,14 +90,14 @@ TEST("Heun Method (RK2)", Heun_HarmonicOscillator)
 TEST("Ralston Method (RK2)", Ralston_ExponentialDecay)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.ralstonStep(x, t, dt, expDecay); }, x0, 1.0, 500);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.ralstonStep(x, t, dt, expDecay); }, x0, 1.0, 500);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-5, "Ralston exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("Ralston Method (RK2)", Ralston_HarmonicOscillator)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.ralstonStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.ralstonStep(x, t, dt, harmonicOsc); }, x0, 2.0, 1000);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 1e-4, "Ralston SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 1e-4, "Ralston SHO velocity error too large");
 }
@@ -107,14 +107,14 @@ TEST("Ralston Method (RK2)", Ralston_HarmonicOscillator)
 TEST("RK4 Method", RK4_ExponentialDecay)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.rk4Step(x, t, dt, expDecay); }, x0, 1.0, 100);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.rk4Step(x, t, dt, expDecay); }, x0, 1.0, 100);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-9, "RK4 exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("RK4 Method", RK4_HarmonicOscillator)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.rk4Step(x, t, dt, harmonicOsc); }, x0, 2.0, 200);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.rk4Step(x, t, dt, harmonicOsc); }, x0, 2.0, 200);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 1e-9, "RK4 SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 1e-9, "RK4 SHO velocity error too large");
 }
@@ -122,6 +122,6 @@ TEST("RK4 Method", RK4_HarmonicOscillator)
 TEST("RK4 Method", RK4_ExponentialDecay_LargeStep)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return ode.rk4Step(x, t, dt, expDecay); }, x0, 1.0, 10);
+	VecX r = integrateToTime([](const VecX& x, double t, double dt) { return integrator.rk4Step(x, t, dt, expDecay); }, x0, 1.0, 10);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-5, "RK4 large-step exponential decay error too large");
 }

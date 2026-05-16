@@ -200,11 +200,11 @@ namespace robots {
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
 
-		SpatialModel _spatialModel;
+		SpatialModel<double> _spatialModel;
 		RobotConstModel _constModel;
 
-		DynamicsScratch _dynScratch;
-		DynamicsResult _dynResult;
+		DynamicsScratch<double> _dynScratch;
+		DynamicsResult<double> _dynResult;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;

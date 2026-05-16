@@ -25,11 +25,13 @@ namespace robots {
 			if (j.type == eJointType::REVOLUTE) {
 				Eigen::AngleAxis<Scalar> aa(q[i], j.S.angular().normalized());
 				mathlib::Mat3_T<Scalar> R = aa.toRotationMatrix();
-				XJ = mathlib::spatialTransform(R, mathlib::Vec3_T<Scalar>::Zero());
+				mathlib::Vec3_T<Scalar> r = mathlib::Vec3_T<Scalar>::Zero();
+				XJ = mathlib::spatialTransform(R, r);
 			}
 			else if (j.type == eJointType::PRISMATIC) {
 				mathlib::Vec3_T<Scalar> r = q[i] * j.S.linear().normalized();
-				XJ = mathlib::spatialTransform(mathlib::Mat3_T<Scalar>::Identity(), r);
+				mathlib::Mat3_T<Scalar> R = mathlib::Mat3_T<Scalar>::Identity();
+				XJ = mathlib::spatialTransform(R, r);
 			}
 
 			Xup_out[i] = XJ * j.Xtree; // Combined Transform
@@ -89,7 +91,7 @@ namespace robots {
 
 		// Forward Force Computation
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Spatial>& j = model.joints[i];
+			const SpatialJoint<Scalar>& j = model.joints[i];
 			mathlib::SpatialVec_T<Scalar> I_v = j.inertia * v[i];
 			mathlib::SpatialVec_T<Scalar> coriolis = crossForce(v[i], I_v);
 			f[i].v = j.inertia * a[i].v + coriolis.v;
@@ -97,9 +99,10 @@ namespace robots {
 
 		// Backward Recursion Computation
 		for (int i = (int)n - 1; i >= 0; --i) {
-			const SpatialJoint& j = model.joints[i];
+			const SpatialJoint<Scalar>& j = model.joints[i];
 			tau_out[i] = j.S.dot(f[i]);
-			if (j.parent >= 0) { f[j.parent] += Xup[i].transpose() * f[i]; }
+			mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
+			if (j.parent >= 0) { f[j.parent] += XupT * f[i]; }
 		}
 	}
 
@@ -145,7 +148,7 @@ namespace robots {
 
 		// Upward pass: propagate spatial inertia from child links to parent joints
 		for (int i = (int)n - 1; i >= 0; --i) {
-			const SpatialJoint& j = model.joints[i];
+			const SpatialJoint<Scalar>& j = model.joints[i];
 			if (j.type == eJointType::FIXED) { continue; }
 			int p = j.parent;
 			if (p >= 0) {
@@ -163,7 +166,8 @@ namespace robots {
 			int jIdx = (int)i;
 			while (model.joints[jIdx].parent >= 0) {
 				int p = model.joints[jIdx].parent;
-				F = Xup[jIdx].transpose() * F;
+				mathlib::SpatialMat_T<Scalar> XupT = Xup[jIdx].transpose(); // TODO Make Eigen-copatible operator overloads for spatial transforms to avoid the errors from this transpose operation in a matrix multiplication context
+				F = XupT * F;
 				scratch.dense.M(i, p) = model.joints[p].S.dot(F);
 				scratch.dense.M(p, i) = scratch.dense.M(i, p);
 				jIdx = p;

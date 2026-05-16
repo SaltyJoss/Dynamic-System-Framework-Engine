@@ -7,6 +7,7 @@
 #include <core/Types_tpl.h>
 #include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
+#include "Robots/RobotSimSnapshot.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -47,7 +48,8 @@ namespace robots {
 		) const;
 
 		// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
-		mathlib::Quat rpyRadToQuat(const mathlib::Vec3& rpyRad);
+		template<typename Scalar>
+		mathlib::Quat rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad);
 	};
 }
 

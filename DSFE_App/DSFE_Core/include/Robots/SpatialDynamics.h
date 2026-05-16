@@ -30,21 +30,21 @@ namespace robots {
 		);
 
 		template<typename Scalar>
+		static void computeBackwardForces_RNEA(
+			const SpatialModel<Scalar>& model,
+			const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
+			const std::vector<mathlib::SpatialVec_T<Scalar>>& v,
+			const std::vector<mathlib::SpatialVec_T<Scalar>>& a,
+			mathlib::VecX_T<Scalar>& tau_out
+		);
+
+		template<typename Scalar>
 		static mathlib::VecX_T<Scalar> RNEA(
 			const SpatialModel<Scalar>& model,
 			const mathlib::VecX_T<Scalar>& q,
 			const mathlib::VecX_T<Scalar>& qd,
 			const mathlib::VecX_T<Scalar>& qdd,
 			DynamicsScratch<Scalar>& scratch
-		);
-
-		template<typename Scalar>
-		void computeBackwardForces_RNEA(
-			const SpatialModel<Scalar>& model,
-			const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
-			const std::vector<mathlib::SpatialVec_T<Scalar>>& v,
-			const std::vector<mathlib::SpatialVec_T<Scalar>>& a,
-			mathlib::VecX_T<Scalar>& tau_out
 		);
 
 		template<typename Scalar>

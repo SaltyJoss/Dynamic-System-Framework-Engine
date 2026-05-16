@@ -298,17 +298,17 @@ namespace robots {
 		RobotSimSnapshot snap = takeSnapshot(simTime);
 		const size_t n = snap.model->joints.size();
 
-		Eigen::Map<const VecX> q(x.data(), n);
-		Eigen::Map<const VecX> qd(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<double>> q(x.data(), n);
+		Eigen::Map<const mathlib::VecX_T<double>> qd(x.data() + n, n);
 
-		mathlib::VecX qdd(n);
+		mathlib::VecX_T<double> qdd(n);
 		for (size_t i = 0; i < n; ++i) { qdd[i] = _robot.joints[i].qdd_ref; }
 
 		std::vector<Pose> T_start(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
 		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
 
-		SpatialDynamics::computeSpatialKinematicsAndBias(
+		SpatialDynamics::computeSpatialKinematicsAndBias<double>(
 			_spatialModel,
 			q, qd,
 			_dynScratch.spatial.Xup,
@@ -316,14 +316,14 @@ namespace robots {
 		);
 
 		// CRBA only for controller inertia scaling
-		mathlib::MatX M_start = SpatialDynamics::CRBA(
+		mathlib::MatX_T<double> M_start = SpatialDynamics::CRBA<double>(
 			_spatialModel,
 			_dynScratch.spatial.Xup,
 			_dynScratch
 		);
 
 		// Cache frozen joint gains for this step
-		mathlib::VecX kp_frozen(n), kd_frozen(n);
+		mathlib::VecX_T<double> kp_frozen(n), kd_frozen(n);
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = snap.model->joints[i];
 			if (joint.type == eJointType::FIXED) { continue; }
@@ -336,7 +336,7 @@ namespace robots {
 		}
 
 		// Compute RNEA torques for feedforward control
-		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(
+		mathlib::VecX_T<double> tau_rnea = SpatialDynamics::RNEA<double>(
 			_spatialModel,
 			q, qd, qdd,
 			_dynScratch
@@ -344,15 +344,17 @@ namespace robots {
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
 		// Define the derivative function for integration, capturing necessary variables by reference
-		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
-			return _dynamics->derivative_spatial(_spatialModel,
+		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX_T<double>& xIn) {
+			return _dynamics->derivative_spatial<double>(
+				_spatialModel,
 				t, xIn, snap,
 				_dynScratch, _dynResult
 			);
 		};
 		// Define the Jacobian function for integration, capturing necessary variables by reference
-		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
-			_dynamics->jacobian_spatial(_spatialModel,
+		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX_T<double>& xIn, mathlib::MatX_T<double>& J_out) {
+			_dynamics->jacobian_spatial<double>(
+				_spatialModel,
 				xIn, snap,
 				kp_frozen, kd_frozen,
 				J_out, _dynScratch
@@ -364,32 +366,32 @@ namespace robots {
 		unpackState(step.x_next);
 		_dynamics->setDt(step.dt_taken);
 
-		Eigen::Map<const VecX> q_next(step.x_next.data(), n);
-		Eigen::Map<const VecX> qd_next(step.x_next.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<double>> q_next(step.x_next.data(), n);
+		Eigen::Map<const mathlib::VecX_T<double>> qd_next(step.x_next.data() + n, n);
 
 		// Enforce joint limits
 		for (auto& j : _robot.joints) { enforceJointLimits(j); }
 
 		// Recompute kinematics and dynamics at the new state for logging and control purposes
-		std::vector<Pose> T_world(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, step.x_next, T_world);
-		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
+		std::vector<Pose_T<double>> T_world(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState<double>(*snap.model, step.x_next, T_world);
+		std::vector<Pose_T<double>> jointWorldPoses = _kinematics->calcJointWorldPoses<double>(T_world, *snap.model);
 
 		// Compute spatial kinematics and bias terms for the new state
-		SpatialDynamics::computeSpatialKinematicsAndBias(
+		SpatialDynamics::computeSpatialKinematicsAndBias<double>(
 			_spatialModel,
 			q_next, qd_next,
 			_dynScratch.spatial.Xup,
 			_dynScratch.spatial.v, _dynScratch.spatial.c
 		);
 		// Compute mass matrix at the new state
-		MatX M_full = SpatialDynamics::CRBA(
+		mathlib::MatX_T<double> M_full = SpatialDynamics::CRBA<double>(
 			_spatialModel,
 			_dynScratch.spatial.Xup,
 			_dynScratch
 		);
 
-		VecX tau_g = _dynamics->computeGravityTorque(*snap.model, T_world, jointWorldPoses);
+		mathlib::VecX_T<double> tau_g = _dynamics->computeGravityTorque<double>(*snap.model, T_world, jointWorldPoses);
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
 		double sys_KE = 0.5 * qd_next.transpose() * M_full * qd_next; // [J], kinetic energy of the robot at configuration q and velocity qd

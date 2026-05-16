@@ -52,7 +52,7 @@ namespace {
 		F_out(0, 0) = -100.0;
 	};
 
-	integration::ODE ode;
+	integration::NumericalIntegrator integrator;
 }
 
 // Backward Euler Tests
@@ -60,14 +60,14 @@ namespace {
 TEST("Implicit Euler Method", ImplicitEuler_ExponentialDecay) {
 	VecX x(1); x << 1.0;
 	double dt = 1.0 / 1000, t = 0.0;
-	for (int i = 0; i < 1000; ++i) { x = ode.implicit_euler(x, t, dt, impExpDecay); t += dt; }
+	for (int i = 0; i < 1000; ++i) { x = integrator.implicitEuler(x, t, dt, impExpDecay, impExpDecayJac); t += dt; }
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < 1e-2, "Backward Euler exponential decay error too large");
 }
 // Linear Decay Test
 TEST("Implicit Euler Method", ImplicitEuler_LinearDecay) {
 	VecX x(1); x << 1.0;
 	double T = 0.5, dt = T / 500, t = 0.0;
-	for (int i = 0; i < 500; ++i) { x = ode.implicit_euler(x, t, dt, linearDecay); t += dt; }
+	for (int i = 0; i < 500; ++i) { x = integrator.implicitEuler(x, t, dt, linearDecay, linearDecayJac); t += dt; }
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < 1e-2, "Backward Euler linear decay error too large");
 }
 // Stability Test with Large Time Step
@@ -76,7 +76,7 @@ TEST("Implicit Euler Method", ImplicitEuler_Stability_LargeStep) {
 	double T = 2.0, dt = T / 20, t = 0.0;
 	double prev = x(0);
 	for (int i = 0; i < 20; ++i) {
-		x = ode.implicit_euler(x, t, dt, impExpDecay);
+		x = integrator.implicitEuler(x, t, dt, impExpDecay, impExpDecayJac);
 		t += dt;
 		ASSERT_TRUE(x(0) < prev * (1.0 + 1e-12), "Not monotone");
 		ASSERT_TRUE(x(0) < prev, "Not strictly decaying");
@@ -89,7 +89,7 @@ TEST("Implicit Euler Method", ImplicitEuler_Stability_LargeStep) {
 TEST("Implicit Midpoint Method", ImplicitMidpoint_ExponentialDecay) {
 	VecX x(1); x << 1.0;
 	double dt = 1.0 / 1000, t = 0.0;
-	for (int i = 0; i < 1000; ++i) { x = ode.implicit_midpoint(x, t, dt, impExpDecay); t += dt; }
+	for (int i = 0; i < 1000; ++i) { x = integrator.implicitMidpoint(x, t, dt, impExpDecay, impExpDecayJac); t += dt; }
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < 1e-2, "Implicit Midpoint exponential decay error too large");
 }
 // Energy Preservation Test for Simple Harmonic Oscillator
@@ -97,7 +97,7 @@ TEST("Implicit Midpoint Method", ImplicitMidpoint_HarmonicOscillator_EnergyPrese
 	VecX x(2); x << 1.0, 0.0;
 	double E0 = 0.5 * (x(0)*x(0) + x(1)*x(1));
 	double dt = 5.0 / 2500, t = 0.0;
-	for (int i = 0; i < 2500; ++i) { x = ode.implicit_midpoint(x, t, dt, impHarmonicOsc); t += dt; }
+	for (int i = 0; i < 2500; ++i) { x = integrator.implicitMidpoint(x, t, dt, impHarmonicOsc, impExpDecayJac); t += dt; }
 	double Ef = 0.5 * (x(0)*x(0) + x(1)*x(1));
 	double drift = std::abs(Ef - E0);
 	ASSERT_TRUE(drift < tol_high * (1.0 + E0), "Implicit Midpoint energy drift too large for SHO");
@@ -108,7 +108,7 @@ TEST("Implicit Midpoint Method", ImplicitMidpoint_Stability_LargeStep) {
 	double T = 2.0, dt = T / 20, t = 0.0;
 	double prev = x(0);
 	for (int i = 0; i < 20; ++i) {
-		x = ode.implicit_midpoint(x, t, dt, impExpDecay);
+		x = integrator.implicitMidpoint(x, t, dt, impExpDecay, impExpDecayJac);
 		t += dt;
 		ASSERT_TRUE(x(0) < prev * (1.0 + 1e-12), "Not monotone");
 		ASSERT_TRUE(x(0) < prev, "Not strictly decaying");
@@ -123,7 +123,7 @@ TEST("GLRK2 Method", GLRK2_HarmonicOscillator_EnergyPreservation) {
 	double E0 = 0.5 * (x(0) * x(0) + x(1) * x(1));
 	double T = 5.0, dt = T / 2500, t = 0.0;
 	for (int i = 0; i < 2500; ++i) {
-		x = ode.GLRK2(x, t, dt, impHarmonicOsc, 50, 1e-6, impHarmonicOscJac);
+		x = integrator.GLRK2(x, t, dt, impHarmonicOsc, impHarmonicOscJac, 50, 1e-6);
 		t += dt;
 	}
 	double Ef = 0.5 * (x(0) * x(0) + x(1) * x(1));
@@ -135,7 +135,7 @@ TEST("GLRK2 Method", GLRK2_ExponentialDecay) {
 	VecX x(1); x << 1.0;
 	double T = 1.0, dt = T / 1000, t = 0.0;
 	for (int i = 0; i < 1000; ++i) {
-		x = ode.GLRK2(x, t, dt, impExpDecay, 50, 1e-6, impExpDecayJac);
+		x = integrator.GLRK2(x, t, dt, impExpDecay, impExpDecayJac, 50, 1e-6);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < tol_low, "GLRK2 exponential decay error too large");
@@ -146,7 +146,7 @@ TEST("GLRK2 Method", GLRK2_Stability_LargeStep) {
 	double T = 2.0, dt = T / 20, t = 0.0;
 	double prev = x(0);
 	for (int i = 0; i < 20; ++i) {
-		x = ode.GLRK2(x, t, dt, impExpDecay, 50, 1e-6, impExpDecayJac);
+		x = integrator.GLRK2(x, t, dt, impExpDecay, impExpDecayJac, 50, 1e-6);
 		t += dt;
 		ASSERT_TRUE(x(0) < prev * (1.0 + 1e-12), "Not monotone");
 		ASSERT_TRUE(x(0) < prev, "Not strictly decaying");
@@ -158,7 +158,7 @@ TEST("GLRK2 Method", GLRK2_LinearDecay) {
 	VecX x(1); x << 1.0;
 	double T = 0.5, dt = T / 500, t = 0.0;
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK2(x, t, dt, linearDecay, 50, 1e-6, linearDecayJac);
+		x = integrator.GLRK2(x, t, dt, linearDecay, linearDecayJac, 50, 1e-6);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < tol_low, "GLRK2 linear decay error too large");
@@ -171,7 +171,7 @@ TEST("GLRK2 Method", GLRK2_StiffDecay) {
 	auto stiff_f = [](double, const VecX& x) { return -100.0 * x; };
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK2(x, t, dt, stiff_f, 50, 1e-10, stiffDecayJac);
+		x = integrator.GLRK2(x, t, dt, stiff_f, stiffDecayJac, 50, 1e-10);
 		t += dt;
 	}
 	ASSERT_TRUE(std::isfinite(x(0)), "GLRK2 produced a non-finite result.");
@@ -191,7 +191,7 @@ TEST("GLRK2 Method", GLRK2_NonlinearDecay) {
 	};
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK2(x, t, dt, nl_f, 50, 1e-6, nl_jac);
+		x = integrator.GLRK2(x, t, dt, nl_f, nl_jac, 50, 1e-6);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - expected) < tol_low, "GLRK2 nonlinear decay error too large");
@@ -208,7 +208,7 @@ TEST("GLRK2 Method", GLRK2_StiffNonlinearDecay) {
 	};
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK2(x, t, dt, stiff_nl_f, 50, 1e-6, stiff_nl_jac);
+		x = integrator.GLRK2(x, t, dt, stiff_nl_f, stiff_nl_jac, 50, 1e-6);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - (1.0 / 51.0)) < tol_low, "GLRK2 stiff nonlinear decay error too large");
@@ -221,7 +221,7 @@ TEST("GLRK3 Method", GLRK3_HarmonicOscillator_EnergyPreservation) {
 	double E0 = 0.5 * (x(0) * x(0) + x(1) * x(1));
 	double T = 5.0, dt = T / 2500, t = 0.0;
 	for (int i = 0; i < 2500; ++i) {
-		x = ode.GLRK3(x, t, dt, impHarmonicOsc, 80, 1e-7, impHarmonicOscJac);
+		x = integrator.GLRK3(x, t, dt, impHarmonicOsc, impHarmonicOscJac, 80, 1e-7);
 		t += dt;
 	}
 	double Ef = 0.5 * (x(0) * x(0) + x(1) * x(1));
@@ -233,7 +233,7 @@ TEST("GLRK3 Method", GLRK3_ExponentialDecay) {
 	VecX x(1); x << 1.0;
 	double T = 1.0, dt = T / 1000, t = 0.0;
 	for (int i = 0; i < 1000; ++i) {
-		x = ode.GLRK3(x, t, dt, impExpDecay, 80, 1e-7, impExpDecayJac);
+		x = integrator.GLRK3(x, t, dt, impExpDecay, impExpDecayJac, 80, 1e-7);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < tol_low, "GLRK3 exponential decay error too large");
@@ -244,7 +244,7 @@ TEST("GLRK3 Method", GLRK3_Stability_LargeStep) {
 	double T = 2.0, dt = T / 20, t = 0.0;
 	double prev = x(0);
 	for (int i = 0; i < 20; ++i) {
-		x = ode.GLRK3(x, t, dt, impExpDecay, 80, 1e-7, impExpDecayJac);
+		x = integrator.GLRK3(x, t, dt, impExpDecay, impExpDecayJac, 80, 1e-7);
 		t += dt;
 		ASSERT_TRUE(x(0) < prev * (1.0 + 1e-12), "Not monotone");
 		ASSERT_TRUE(x(0) < prev, "Not strictly decaying");
@@ -256,7 +256,7 @@ TEST("GLRK3 Method", GLRK3_LinearDecay) {
 	VecX x(1); x << 1.0;
 	double T = 0.5, dt = T / 500, t = 0.0;
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK3(x, t, dt, linearDecay, 80, 1e-7, linearDecayJac);
+		x = integrator.GLRK3(x, t, dt, linearDecay, linearDecayJac, 80, 1e-7);
 		t += dt;
 	}
 	ASSERT_TRUE(std::abs(x(0) - std::exp(-1.0)) < tol_low, "GLRK3 linear decay error too large");
@@ -269,7 +269,7 @@ TEST("GLRK3 Method", GLRK3_StiffDecay) {
 	auto stiff_f = [](double, const VecX& x) { return -100.0 * x; };
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK3(x, t, dt, stiff_f, 150, 1e-12, stiffDecayJac);
+		x = integrator.GLRK3(x, t, dt, stiff_f, stiffDecayJac, 150, 1e-12);
 		t += dt;
 	}
 	ASSERT_TRUE(std::isfinite(x(0)), "GLRK3 produced a non-finite result.");
@@ -290,7 +290,7 @@ TEST("GLRK3 Method", GLRK3_NonlinearDecay) {
 	};
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK3(x, t, dt, nl_f, 80, 1e-7, nl_jac);
+		x = integrator.GLRK3(x, t, dt, nl_f, nl_jac, 80, 1e-7);
 		t += dt;
 	}
 	double rel_err = std::abs(x(0) - expected) / expected;
@@ -310,7 +310,7 @@ TEST("GLRK3 Method", GLRK3_StiffNonlinearDecay) {
 	};
 
 	for (int i = 0; i < 500; ++i) {
-		x = ode.GLRK3(x, t, dt, stiff_nl_f, 80, 1e-7, stiff_nl_jac);
+		x = integrator.GLRK3(x, t, dt, stiff_nl_f, stiff_nl_jac, 80, 1e-7);
 		t += dt;
 	}
 	double rel_err = std::abs(x(0) - expected) / expected;

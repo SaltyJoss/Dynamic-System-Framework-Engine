@@ -151,6 +151,16 @@ namespace mathlib {
 		return out;
 	}
 
+	template<typename Derived, typename Scalar>
+	inline SpatialVec_T<Scalar> operator*(
+		const Eigen::MatrixBase<Derived>& lhs,
+		const SpatialVec_T<Scalar>& rhs
+	) {
+		SpatialVec_T<Scalar> out;
+		out.v = lhs * rhs.v;
+		return out;
+	}
+
 	// SpatialVec1 * SpatialVec2 (outer product)
 	template<typename Scalar>
 	inline SpatialMat_T<Scalar> outer(

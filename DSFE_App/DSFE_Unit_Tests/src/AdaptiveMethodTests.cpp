@@ -22,18 +22,18 @@ namespace {
 	};
 
 	// Helper function to integrate from t=0 to t=T using RK45 with adaptive step size
-	VecX integrateRK45(integration::ODE& ode, const VecX& x0, double T, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
+	VecX integrateRK45(integration::NumericalIntegrator& integrator, const VecX& x0, double T, std::function<VecX(double, const VecX&)> f, double rtol, double atol) {
 		VecX x = x0;
 		double t = 0.0, dt = T / 10.0;
 		for (int s = 0; t < T && s < 10000; ++s) {
 			double h = std::min(dt, T - t), dt_used = 0.0;
-			x = ode.rk45Step(x, t, h, dt_used, f, rtol, atol);
+			x = integrator.rk45Step(x, t, h, dt_used, f, rtol, atol);
 			t += dt_used;
 		}
 		return x;
 	}
 
-	integration::ODE ode;
+	integration::NumericalIntegrator integrator;
 }
 
 // RK45 (Dormand-Prince) Tests
@@ -41,21 +41,21 @@ namespace {
 TEST("RK45 Adaptive Step-Size", RK45_ExponentialDecay_TightTolerance)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateRK45(ode, x0, 1.0, rk45ExpDecay, 1e-8, 1e-10);
+	VecX r = integrateRK45(integrator, x0, 1.0, rk45ExpDecay, 1e-8, 1e-10);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-6, "RK45 tight-tol exponential decay error too large");
 }
 // Exponential Decay Test with Loose Tolerance
 TEST("RK45 Adaptive Step-Size", RK45_ExponentialDecay_LooseTolerance)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateRK45(ode, x0, 1.0, rk45ExpDecay, 1e-3, 1e-6);
+	VecX r = integrateRK45(integrator, x0, 1.0, rk45ExpDecay, 1e-3, 1e-6);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-1.0)) < 1e-2, "RK45 loose-tol exponential decay error too large");
 }
 // Simple Harmonic Oscillator Test
 TEST("RK45 Adaptive Step-Size", RK45_HarmonicOscillator)
 {
 	VecX x0(2); x0 << 1.0, 0.0;
-	VecX r = integrateRK45(ode, x0, 2.0, rk45HarmonicOsc, 1e-8, 1e-10);
+	VecX r = integrateRK45(integrator, x0, 2.0, rk45HarmonicOsc, 1e-8, 1e-10);
 	ASSERT_TRUE(std::abs(r(0) - std::cos(2.0)) < 1e-6, "RK45 SHO position error too large");
 	ASSERT_TRUE(std::abs(r(1) + std::sin(2.0)) < 1e-6, "RK45 SHO velocity error too large");
 }
@@ -63,6 +63,6 @@ TEST("RK45 Adaptive Step-Size", RK45_HarmonicOscillator)
 TEST("RK45 Adaptive Step-Size", RK45_LongerIntegration)
 {
 	VecX x0(1); x0 << 1.0;
-	VecX r = integrateRK45(ode, x0, 5.0, rk45ExpDecay, 1e-6, 1e-9);
+	VecX r = integrateRK45(integrator, x0, 5.0, rk45ExpDecay, 1e-6, 1e-9);
 	ASSERT_TRUE(std::abs(r(0) - std::exp(-5.0)) < 1e-5, "RK45 longer integration error too large");
 }

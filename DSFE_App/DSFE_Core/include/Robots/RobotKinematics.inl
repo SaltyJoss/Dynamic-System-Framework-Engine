@@ -25,7 +25,7 @@ namespace robots {
 
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {
-			const Scalar& joint = joints[i];
+			const auto& joint = joints[i];
 			const Scalar q = x[i]; // joint angle from state vector
 
 			mathlib::Pose_T<Scalar> T_origin = mathlib::Pose_T<Scalar>::Identity(); // transform from parent link to joint frame (fixed)
@@ -85,8 +85,22 @@ namespace robots {
 		mathlib::Pose_T<Scalar> T = mathlib::Pose_T<Scalar>::Identity(); // homogeneous transformation matrix (4x4)
 
 		Eigen::AngleAxis<Scalar> aa(q, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
-		T.template block<3, 3>(0, 0) = aa.toRotationMatrix();		  // set upper-left 3x3 block to rotation matrix
+		T.template block<3, 3>(0, 0) = aa.toRotationMatrix();	 // set upper-left 3x3 block to rotation matrix
 
 		return T; // (4x4) homogeneous transformation
+	}
+
+	// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
+	template<typename Scalar>
+	mathlib::Quat RobotKinematics::rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad) {
+		const double roll = rpyRad.x();
+		const double pitch = rpyRad.y();
+		const double yaw = rpyRad.z();
+
+		const Quat qx(Eigen::AngleAxis<Scalar>(roll, Vec3(1.0, 0.0, 0.0)));
+		const Quat qy(Eigen::AngleAxis<Scalar>(pitch, Vec3(0.0, 1.0, 0.0)));
+		const Quat qz(Eigen::AngleAxis<Scalar>(yaw, Vec3(0.0, 0.0, 1.0)));
+
+		return (qz * qy * qx).normalized();
 	}
 }

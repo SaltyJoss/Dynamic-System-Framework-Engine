@@ -9,6 +9,16 @@
 
 #include "Robots/SpatialDynamics.h"
 #include "Robots/SpatialModel.h"
+#include "Robots/RobotKinematics.h"
+#include "Robots/RobotSimSnapshot.h"
+
+#include "Robots/TrajectoryManager.h"
+
+#include <cmath>
+#include <Core/Utils.h>
+#include <kinematics/Forward_Kinematics.h>
+
+#include "EngineLib/LogMacros.h"
 
 // Forward declarations
 namespace control { class TrajectoryManager; }

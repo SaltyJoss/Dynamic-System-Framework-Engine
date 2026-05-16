@@ -16,7 +16,7 @@
 namespace integration {
 	// Struct representing the result of a single integration step
 	struct DSFE_API StepOut {
-		VecX x_next;			// next state vector
+		mathlib::VecX x_next;			// next state vector
 		double dt_taken = 0.0;	// actual step size taken
 		double dt_sug = 0.0;	// suggested next step size
 	};
@@ -28,7 +28,7 @@ namespace integration {
 		IntegrationService();
 
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		StepOut step(eIntegrationMethod m, VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
+		StepOut step(eIntegrationMethod m, mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
 			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 				if (f == nullptr) {
 					D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
@@ -45,12 +45,12 @@ namespace integration {
 				case eIntegrationMethod::Ralston:  return { _integrator->ralstonStep(x, t, dt, std::forward<Func>(f)), dt, dt };
 				case eIntegrationMethod::RK4:      return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
 				case eIntegrationMethod::RK45:	   return step_adaptive(eIntegrationMethod::RK45, x, t, dt, std::forward<Func>(f), _rtol, _atol);
-					// Implicit methods
-					//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
-				case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicit_euler(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicit_midpoint(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), 50, 1e-10, std::forward<JacFunc>(jac)), dt, dt };
-				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), 80, -1, std::forward<JacFunc>(jac)), dt, dt };
+				// Implicit methods
+				//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
+				case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicitEuler(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicitMidpoint(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
+				case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
+				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 150, 1e-14), dt, dt };
 				default:
 				LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 				return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
@@ -58,7 +58,7 @@ namespace integration {
 		}
 
 		template<typename Func>
-		StepOut step_adaptive(eIntegrationMethod m, VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
+		StepOut step_adaptive(eIntegrationMethod m, mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
 			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 				if (f == nullptr) {
 					LOG_WARN("No derivative function provided for adaptive integration - returning state unchanged");
@@ -83,7 +83,7 @@ namespace integration {
 			const double eps = 1e-12 * dt_try; // small epsilon to prevent division by zero
 
 			// Initialise current state and time for the adaptive stepping loop
-			VecX x_curr = x;	  // current state during the adaptive step
+			mathlib::VecX x_curr = x;	  // current state during the adaptive step
 			double t_curr = t;	  // current time during the adaptive step
 			double t_total = 0.0; // total time taken for the step
 
@@ -96,7 +96,7 @@ namespace integration {
 				double h_try = std::min(h, t_end - t_curr);
 				double dt_used = 0.0;
 
-				VecX x_next = _integrator->rk45Step(x_curr, t_curr, h_try, dt_used, std::forward<Func>(f), rtol, atol);
+				mathlib::VecX x_next = _integrator->rk45Step(x_curr, t_curr, h_try, dt_used, std::forward<Func>(f), rtol, atol);
 
 				// Update rk45step
 				t_curr += dt_used;
