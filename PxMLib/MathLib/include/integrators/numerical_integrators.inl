@@ -200,7 +200,6 @@ namespace integration {
 
 		// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f(t + dt, x_guess); };
-
 		// Numerical Jacobian for Newton-Raphson
 		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
 			int n = (int)x_guess.size();
@@ -601,8 +600,8 @@ namespace integration {
 		const mathlib::VecX_T<Scalar>& x
 	) {
 		const Scalar eps_rel = 1e-8;
+		const int n = static_cast<int>(x.size());
 		mathlib::VecX_T<Scalar> f_0 = f(t, x);
-		int n = (int)x.size();
 		mathlib::MatX_T<Scalar> J(f_0.size(), n);
 		// Compute the Jacobian column by column using central differences
 		for (int i = 0; i < n; ++i) {
@@ -614,6 +613,27 @@ namespace integration {
 			mathlib::VecX_T<Scalar> f_fwd = f(t, x_fwd);
 			mathlib::VecX_T<Scalar> f_bwd = f(t, x_bwd);
 			J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
+		}
+		return J;
+	}
+
+	// Automatic Difference Jacobian
+	template<typename Scalar, typename Func>
+	mathlib::MatX_T<Scalar> NumericalIntegrator::automaticDifferenceJacobian(
+		Func&& f,
+		const mathlib::VecX_T<Scalar>& x
+	) {
+		const int n = static_cast<int>(x.size());
+		mathlib::MatX_T<Scalar> J(n, n);
+		for (int i = 0; i < n; ++i) {
+			mathlib::VecX_T<DualNumber_T<Scalar, 1>> x_dual(n);
+			for (int k = 0; k < n; ++k) {
+				x_dual(k) = DualNumber_T<Scalar, 1>(x(k), (k == i) ? Scalar(1) : Scalar(0));
+			}
+			auto f_dual = f(x_dual);
+			for (int j = 0; j < n; ++j) {
+				J(j, i) = f_dual(j).dual[0];
+			}
 		}
 		return J;
 	}
