@@ -9,7 +9,7 @@ namespace mathlib {
 	template<typename Scalar>
 	class DualNumber_T {
 	public:
-		DualNumber_T(Scalar real = Scalar(0), Scalar dual = Scalar(0)) : _real(real), _dual(dual) {}
+		DualNumber_T(Scalar real = Scalar(0), Scalar dual = Scalar(0)) : real(real), dual(dual) {}
 		Scalar real;
 		Scalar dual;
 	};
@@ -67,14 +67,14 @@ namespace mathlib {
 
 	// Power function (x^n)
 	template<typename Scalar>
-	inline DualNumber_T<Scalar> pow(
+	inline DualNumber_T<Scalar> pow(<
 		const DualNumber_T<Scalar>& a,
 		Scalar n
 	) {
 		Scalar realPow = std::pow(a.real, n);
 		return DualNumber_T<Scalar>(
 			realPow,
-			n * std::pow(x.real, a - Scalar(1)) * a.dual
+			n * std::pow(a.real, n - Scalar(1)) * a.dual
 		);
 	}
 
@@ -140,7 +140,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar> smoothStep(
 		DualNumber_T<Scalar> x
 	) {
-		return x * x * (DualNumber_T(3) - DualNumber_T(2) * x);
+		return x * x * (DualNumber_T<Scalar>(3) - DualNumber_T<Scalar>(2) * x);
 	}
 
 	// Smoothstep function with edge parameters
