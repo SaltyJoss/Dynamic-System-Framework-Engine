@@ -84,7 +84,7 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_Core
     PUBLIC 
-        PxMLib
+        MathLib
         Eigen3::Eigen
         hdf5::hdf5-shared
         Threads::Threads

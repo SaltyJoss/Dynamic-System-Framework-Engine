@@ -9,8 +9,7 @@
 	#include <windows.h>
 #endif
 
-int main()
-{
+int main() {
 #ifdef _WIN32
 	// Enable ANSI escape codes on Windows 10+
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
