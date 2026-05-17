@@ -26,12 +26,212 @@ namespace mathlib {
 		std::array<Scalar, NVar> m_duals;
 	};
 
+	// ----
+	// Unary Operators
+	// ----
+
+	// Negation
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator-(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = -a.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = -a.m_duals[i];
+		}
+		return out;
+	}
+
+	// Conjugate (negate dual part, keep real part)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> conjugate(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = -a.m_duals[i];
+		}
+		return out;
+	}
+
+	// Identity
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator+(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return a;
+	}
+
+	// ----
+	// Comparison Operators (compare only the real part)
+	// ----
+
+	// Equality
+	template<typename Scalar, size_t NVar>
+	inline bool operator==(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return a.m_real == b.m_real;
+	}
+
+	// Inequality
+	template<typename Scalar, size_t NVar>
+	inline bool operator!=(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return !(a == b);
+	}
+
+	// Less than
+	template<typename Scalar, size_t NVar>
+	inline bool operator<(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return a.m_real < b.m_real;
+	}
+
+	// Less than or equal
+	template<typename Scalar, size_t NVar>
+	inline bool operator<=(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return a.m_real <= b.m_real;
+	}
+
+	// Greater than
+	template<typename Scalar, size_t NVar>
+	inline bool operator>(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		return a.m_real > b.m_real;
+	}
+
+	// Greater than or equal
+	template<typename Scalar, size_t NVar>
+	inline bool operator>=(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return a.m_real >= b.m_real;
+	}
+	
+	// ----
+	// Scalar Interactions
+	// ----
+
+	// Scalar Addition (dual + scalar)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator+(
+		const DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		DualNumber_T<Scalar, NVar> out = a;
+		out.m_real += b;
+		return out;
+	}
+
+	// Scalar Addition (scalar + dual)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator+(
+		Scalar a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		return b + a; // Reuse dual + scalar
+	}
+
+	// Scalar Subtraction (dual - scalar)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator-(
+		const DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		DualNumber_T<Scalar, NVar> out = a;
+		out.m_real -= b;
+		return out;
+	}
+
+	// Scalar Subtraction (scalar - dual)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator-(
+		Scalar a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a - b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = -b.m_duals[i];
+		}
+		return out;
+	}
+
+	// Scalar Multiplication (dual * scalar)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator*(
+		const DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real * b;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] * b;
+		}
+		return out;
+	}
+
+	// Scalar Multiplication (scalar * dual)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator*(
+		Scalar a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return b * a; // Reuse dual * scalar
+	}
+
+	// Scalar Division (dual / scalar)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator/(
+		const DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real / b;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] / b;
+		}
+		return out;
+	}
+
+	// Scalar Division (scalar / dual)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator/(
+		Scalar a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a / b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = -a * b.m_duals[i] / (b.m_real * b.m_real);
+		}
+		return out;
+	}
+
+	// ----
+	// Dual Number Interactions
+	// ----
+
 	// Addition
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> operator+(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.m_real = a.m_real + b.m_real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -45,7 +245,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator-(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.m_real = a.m_real - b.m_real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -59,7 +259,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.m_real = a.m_real * b.m_real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -73,7 +273,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.m_real = a.m_real / b.m_real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -168,4 +368,24 @@ namespace mathlib {
 	) {
 		return x * x * (Scalar(3) - Scalar(2) * x);
 	}
+
+	// Smooth step function for dual numbers (applies smooth step to the real part, scales dual part by the derivative of the smooth step)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> smoothStep(
+		const DualNumber_T<Scalar, NVar>& x
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = smoothStep(x.m_real);
+		Scalar derivative = Scalar(6) * x.m_real * (Scalar(1) - x.m_real); // Derivative of smooth step with respect to x
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = derivative * x.m_duals[i];
+		}
+		return out;
+	}
+
+	// ----
+	// Numeric Limits Specialisation for DualNumber_T
+	// ----
+
+	// TODO: Add specialisation of std::numeric_limits for DualNumber_T to define properties like infinity, NaN, epsilon, etc. based on the underlying Scalar type.
 }
