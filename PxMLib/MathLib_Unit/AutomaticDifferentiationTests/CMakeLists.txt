@@ -6,9 +6,10 @@ enable_testing()
 
 add_executable(MathLib_ADTests
     main.cpp
-    ADIntegratorTests.cpp
     ADNewtonTests.cpp
     ADJacobianTests.cpp
+    ADExplicitIntegratorTests.cpp
+    ADImplicitIntegratorTests.cpp
 )
 
 target_link_libraries(MathLib_ADTests PRIVATE

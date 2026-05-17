@@ -1,4 +1,4 @@
-// MathLib_UnitTests ADIntegratorTests.cpp
+// MathLib_UnitTests ADExplicitIntegratorTests.cpp
 
 #include "TestHarness.h"
 #include <core/DualNumbers.h>
