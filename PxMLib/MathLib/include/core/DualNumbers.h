@@ -67,7 +67,7 @@ namespace mathlib {
 	inline bool operator==(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return a.real == b.real;
 	}
 
@@ -76,7 +76,7 @@ namespace mathlib {
 	inline bool operator!=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return !(a == b);
 	}
 
@@ -85,7 +85,7 @@ namespace mathlib {
 	inline bool operator<(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return a.real < b.real;
 	}
 
@@ -94,7 +94,7 @@ namespace mathlib {
 	inline bool operator<=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return a.real <= b.real;
 	}
 
@@ -112,7 +112,7 @@ namespace mathlib {
 	inline bool operator>=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return a.real >= b.real;
 	}
 	
@@ -170,7 +170,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real * b;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -184,7 +184,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		return b * a; // Reuse dual * scalar
 	}
 
@@ -193,9 +193,9 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = a.real / b;
+		out.real = a.real / b ? a.real / b : throw std::runtime_error("Division by zero in dual number scalar division");
 		for (size_t i = 0; i < NVar; ++i) {
 			out.dual[i] = a.dual[i] / b;
 		}
@@ -207,7 +207,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-		) {
+	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a / b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -283,6 +283,16 @@ namespace mathlib {
 		Scalar n
 	) {
 		DualNumber_T<Scalar, NVar> out;
+		if (a.real == Scalar(0) && n < Scalar(0)) {
+			throw std::runtime_error("Invalid dual power: division by zero");
+		}
+		if (n == Scalar(0)) {
+			out.real = Scalar(1);
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = Scalar(0);
+			}
+			return out;
+		}
 		out.real = std::pow(a.real, n);
 		for (size_t i = 0; i < NVar; ++i) {
 			out.dual[i] = n * std::pow(a.real, n - Scalar(1)) * a.dual[i];
@@ -467,7 +477,7 @@ namespace mathlib {
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
 	) {
-		a.real /= b;
+		a.real /= b ? b : throw std::runtime_error("Division by zero in DualNumber_T operator/=");
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] /= b;
 		}
@@ -484,7 +494,7 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] = (a.dual[i] * b.real - ogReal * b.dual[i]) / (b.real * b.real);
 		}
-		a.real = ogReal / b.real;
+		a.real = ogReal / b.real ? ogReal / b.real : throw std::runtime_error("Division by zero in DualNumber_T operator/=");
 		return a;
 	}
 
