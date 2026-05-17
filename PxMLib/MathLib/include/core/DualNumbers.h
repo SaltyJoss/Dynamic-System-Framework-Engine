@@ -1,173 +1,171 @@
-// PxM/MathLib DualNumbers.h
+// PxM/MathLib M_DualNumbers.h
 #pragma once
 
 #include "MathLibAPI.h"
 #include "core/Types_tpl.h"
 
 namespace mathlib {
-	// Template version of dual number (single variable)
-	template<typename Scalar>
+	// Template version of dual number
+	template<typename Scalar, size_t NVar>
 	class DualNumber_T {
 	public:
-		DualNumber_T(Scalar real = Scalar(0), Scalar dual = Scalar(0)) : real(real), dual(dual) {}
-		Scalar real;
-		Scalar dual;
+		DualNumber_T(
+			Scalar real = Scalar(0),
+			const std::array<Scalar, NVar>& duals = std::array<Scalar, NVar>()
+		) : m_real(real), m_duals(duals) {
+		}
+
+		DualNumber_T(
+			Scalar real,
+			std::initializer_list<Scalar> duals
+		) : m_real(real) {
+			std::copy(duals.begin(), duals.end(), m_duals.begin());
+		}
+
+		Scalar m_real;
+		std::array<Scalar, NVar> m_duals;
 	};
 
 	// Addition
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> operator+(
-		const DualNumber_T<Scalar>& a,
-		const DualNumber_T<Scalar>& b
-	) {
-		return DualNumber_T<Scalar>(a.real + b.real, a.dual + b.dual);
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator+(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real + b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] + b.m_duals[i];
+		}
+		return out;
 	}
 
 	// Subtraction
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> operator-(
-		const DualNumber_T<Scalar>& a,
-		const DualNumber_T<Scalar>& b
-	) {
-		return DualNumber_T<Scalar>(a.real - b.real, a.dual - b.dual);
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator-(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real - b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] - b.m_duals[i];
+		}
+		return out;
 	}
 
 	// Multiplication
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> operator*(
-		const DualNumber_T<Scalar>& a,
-		const DualNumber_T<Scalar>& b
-	) {
-		return DualNumber_T<Scalar>(
-			a.real * b.real,
-			a.real * b.dual + a.dual * b.real
-		);
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator*(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real * b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_real * b.m_duals[i] + a.m_duals[i] * b.m_real;
+		}
+		return out;
 	}
 
 	// Division
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> operator/(
-		const DualNumber_T<Scalar>& a,
-		const DualNumber_T<Scalar>& b
-	) {
-		return DualNumber_T<Scalar>(
-			a.real / b.real,
-			(a.dual * b.real - a.real * b.dual) / (b.real * b.real)
-		);
-	}
-
-	// Exponential function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> exp(
-		const DualNumber_T<Scalar>& a
-	) {
-		Scalar expReal = std::exp(a.real);
-		return DualNumber_T<Scalar>(expReal, expReal * a.dual);
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator/(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = a.m_real / b.m_real;
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = (a.m_duals[i] * b.m_real - a.m_real * b.m_duals[i]) / (b.m_real * b.m_real);
+		}
+		return out;
 	}
 
 	// Power function (x^n)
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> pow(<
-		const DualNumber_T<Scalar>& a,
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> pow(
+		const DualNumber_T<Scalar, NVar>& a,
 		Scalar n
 	) {
-		Scalar realPow = std::pow(a.real, n);
-		return DualNumber_T<Scalar>(
-			realPow,
-			n * std::pow(a.real, n - Scalar(1)) * a.dual
-		);
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = std::pow(a.m_real, n);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = n * std::pow(a.m_real, n - Scalar(1)) * a.m_duals[i];
+		}
+		return out;
 	}
 
 	// Square root function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> sqrt(
-		const DualNumber_T<Scalar>& a
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> sqrt(
+		const DualNumber_T<Scalar, NVar>& a
 	) {
-		Scalar sqrtReal = std::sqrt(a.real);
-		return DualNumber_T<Scalar>(
-			sqrtReal,
-			Scalar(0.5) * a.dual / sqrtReal
-		);
+		DualNumber_T<Scalar, NVar> out;
+		Scalar sqrtReal = std::sqrt(a.m_real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = Scalar(0.5) * a.m_duals[i] / sqrtReal;
+		}
+		return out;
 	}
 
 	// Sine function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> sin(
-		const DualNumber_T<Scalar>& a
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> sin(
+		const DualNumber_T<Scalar, NVar>& a
 	) {
-		return DualNumber_T<Scalar>(
-			std::sin(a.real),
-			std::cos(a.real) * a.dual
-		);
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = std::sin(a.m_real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = std::cos(a.m_real) * a.m_duals[i];
+		}
+		return out;
 	}
 
 	// Cosine function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> cos(
-		const DualNumber_T<Scalar>& a
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> cos(
+		const DualNumber_T<Scalar, NVar>& a
 	) {
-		return DualNumber_T<Scalar>(
-			std::cos(a.real),
-			-std::sin(a.real) * a.dual
-		);
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = std::cos(a.m_real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = -std::sin(a.m_real) * a.m_duals[i];
+		}
+		return out;
 	}
 
 	// Tangent function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> tan(
-		const DualNumber_T<Scalar>& a
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> tan(
+		const DualNumber_T<Scalar, NVar>& a
 	) {
-		Scalar cosReal = std::cos(a.real);
-		return DualNumber_T<Scalar>(
-			std::tan(a.real),
-			a.dual / (cosReal * cosReal)
-		);
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = std::tan(a.m_real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] / (std::cos(a.m_real) * std::cos(a.m_real));
+		}
+		return out;
 	}
 
 	// Arctangent function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> atan(
-		const DualNumber_T<Scalar>& a
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> atan(
+		const DualNumber_T<Scalar, NVar>& a
 	) {
-		return DualNumber_T<Scalar>(
-			std::atan(a.real),
-			a.dual / (1 + a.real * a.real)
-		);
+		DualNumber_T<Scalar, NVar> out;
+		out.m_real = std::atan(a.m_real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.m_duals[i] = a.m_duals[i] / (Scalar(1) + a.m_real * a.m_real);
+		}
+		return out;
 	}
 
-	// Smoothstep function for transition from 0 to 1 as x goes from 0 to 1
+	// Smooth step function for smooth interpolation between 0 and 1
 	template<typename Scalar>
-	inline DualNumber_T<Scalar> smoothStep(
-		DualNumber_T<Scalar> x
+	inline Scalar smoothStep(
+		const Scalar& x
 	) {
-		return x * x * (DualNumber_T<Scalar>(3) - DualNumber_T<Scalar>(2) * x);
-	}
-
-	// Smoothstep function with edge parameters
-	// * Derivative of smoothstep with respect to t is 6*t*(1-t), and dt/da = 1/(edge1 - edge0)
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> smoothStep(
-		DualNumber_T<Scalar> edge0,
-		DualNumber_T<Scalar> edge1,
-		DualNumber_T<Scalar> a
-	) {
-		DualNumber_T<Scalar> t = (a - edge0) / (edge1 - edge0);
-		return DualNumber_T<Scalar>(
-			t.real * t.real * (Scalar(3) - Scalar(2) * t.real),
-			t.dual * (Scalar(6) * t.real * (Scalar(1) - t.real))
-		);
-	}
-
-	// Sigmoid function
-	template<typename Scalar>
-	inline DualNumber_T<Scalar> sigmoid(
-		DualNumber_T<Scalar> a
-	) {
-		Scalar expNegReal = std::exp(-a.real);
-		Scalar sigmoidReal = Scalar(1) / (Scalar(1) + expNegReal);
-		return DualNumber_T<Scalar>(
-			sigmoidReal,
-			a.dual * sigmoidReal * (Scalar(1) - sigmoidReal)
-		);
+		return x * x * (Scalar(3) - Scalar(2) * x);
 	}
 }
