@@ -11,12 +11,12 @@ namespace {
 	// Test that the derivative of a simple polynomial function is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_PolynomialDerivative) {
 		auto f = [](const DualNumber_T<double, 1>& x) {
-			return 3.0 * x * x + 2.0 * x + 1.0;
+			return 3.0 * x * x + 2.0 * x + 1.0; // f(x) = 3x^2 + 2x + 1, f'(x) = 6x + 2
 		};
 		DualNumber_T<double, 1> x(1.0, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
 		ASSERT_TRUE(std::abs(y.real - 6.0) < 1e-12, "Polynomial function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - 4.0) < 1e-12, "Polynomial derivative incorrect");
+		ASSERT_TRUE(std::abs(y.dual[0] - 8.0) < 1e-12, "Polynomial derivative incorrect");
 	}
 	// Test that the derivative of x^2 is computed correctly by the product rule using dual numbers
 	TEST("Differentiation", DualNumber_ProductRule_xSquared) {
@@ -26,7 +26,7 @@ namespace {
 		DualNumber_T<double, 1> x(2.0, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
 		ASSERT_TRUE(std::abs(y.real - 4.0) < 1e-12, "Product rule function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - 8.0) < 1e-12, "Product rule derivative incorrect");
+		ASSERT_TRUE(std::abs(y.dual[0] - 4.0) < 1e-12, "Product rule derivative incorrect");
 	}
 	// Test that the sine function's derivative is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_SineDerivative) {

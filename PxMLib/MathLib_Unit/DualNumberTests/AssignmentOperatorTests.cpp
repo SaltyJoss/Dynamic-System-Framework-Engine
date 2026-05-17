@@ -17,6 +17,15 @@ namespace {
 		ASSERT_TRUE(std::abs(a.dual[0] - 0.6) < 1e-12, "Addition assignment dual[0] part incorrect");
 		ASSERT_TRUE(std::abs(a.dual[1] - 0.3) < 1e-12, "Addition assignment dual[1] part incorrect");
 	}
+	// Test that addition assignment works with dual numbers and scalars
+	TEST("Assignment Operators", DualNumber_AdditionAssignmentScalar) {
+		DualNumber_T<double, 2> a(1.0, { 0.5, 0.25 });
+		double scalar = 2.0;
+		a += scalar;
+		ASSERT_TRUE(std::abs(a.real - 3.0) < 1e-12, "Addition assignment with scalar real part incorrect");
+		ASSERT_TRUE(std::abs(a.dual[0] - 0.5) < 1e-12, "Addition assignment with scalar dual[0] part incorrect");
+		ASSERT_TRUE(std::abs(a.dual[1] - 0.25) < 1e-12, "Addition assignment with scalar dual[1] part incorrect");
+	}
 	// Test that subtraction assignment works correctly for dual numbers
 	TEST("Assignment Operators", DualNumber_SubtractionAssignment) {
 		DualNumber_T<double, 2> a(1.0, { 0.5, 0.25 });
@@ -25,6 +34,15 @@ namespace {
 		ASSERT_TRUE(std::abs(a.real + 1.0) < 1e-12, "Subtraction assignment real part incorrect");
 		ASSERT_TRUE(std::abs(a.dual[0] - 0.4) < 1e-12, "Subtraction assignment dual[0] part incorrect");
 		ASSERT_TRUE(std::abs(a.dual[1] - 0.2) < 1e-12, "Subtraction assignment dual[1] part incorrect");
+	}
+	// Test that subtraction assignment works with dual numbers and scalars
+	TEST("Assignment Operators", DualNumber_SubtractionAssignmentScalar) {
+		DualNumber_T<double, 2> a(1.0, { 0.5, 0.25 });
+		double scalar = 2.0;
+		a -= scalar;
+		ASSERT_TRUE(std::abs(a.real + 1.0) < 1e-12, "Subtraction assignment with scalar real part incorrect");
+		ASSERT_TRUE(std::abs(a.dual[0] - 0.5) < 1e-12, "Subtraction assignment with scalar dual[0] part incorrect");
+		ASSERT_TRUE(std::abs(a.dual[1] - 0.25) < 1e-12, "Subtraction assignment with scalar dual[1] part incorrect");
 	}
 	// Test that addition assignment and subtraction assignment are inverses for dual numbers
 	TEST("Assignment Operators", DualNumber_AddSubAssignmentInverse) {
@@ -50,8 +68,8 @@ namespace {
 		DualNumber_T<double, 2> a(1.0, { 0.5, 0.25 });
 		DualNumber_T<double, 2> b(2.0, { 0.1, 0.05 });
 		a /= b;
-		double expected0 = (0.5f * 2.0f - 1.0f * 0.1f) / (2.0f * 2.0f);
-		double expected1 = (0.25f * 2.0f - 1.0f * 0.05f) / (2.0f * 2.0f);
+		double expected0 = (0.5 * 2.0 - 1.0 * 0.1) / (2.0 * 2.0);
+		double expected1 = (0.25 * 2.0 - 1.0 * 0.05) / (2.0 * 2.0);
 		ASSERT_TRUE(std::abs(a.real - 0.5) < 1e-12, "Division real part incorrect");
 		ASSERT_TRUE(std::abs(a.dual[0] - expected0) < 1e-12, "Division dual[0] part incorrect");
 		ASSERT_TRUE(std::abs(a.dual[1] - expected1) < 1e-12, "Division dual[1] part incorrect");

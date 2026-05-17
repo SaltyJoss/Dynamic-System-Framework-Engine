@@ -13,7 +13,7 @@ namespace {
 		DualNumber_T<double, 1> a(1.0, { 0.5 });
 		DualNumber_T<double, 1> b(2.0, { 0.1 });
 		DualNumber_T<double, 1> c = a / b;
-		double expected0 = (0.5f * 2.0f - 1.0f * 0.1f) / (2.0f * 2.0f);
+		double expected0 = (0.5 * 2.0 - 1.0 * 0.1) / (2.0 * 2.0);
 		ASSERT_TRUE(std::abs(c.real - 0.5) < 1e-12, "Division real part incorrect");
 		ASSERT_TRUE(std::abs(c.dual[0] - expected0) < 1e-12, "Division dual[0] part incorrect");
 	}
@@ -22,8 +22,8 @@ namespace {
 		DualNumber_T<double, 2> a(1.0, { 0.5, 0.25 });
 		DualNumber_T<double, 2> b(2.0, { 0.1, 0.05 });
 		DualNumber_T<double, 2> c = a / b;
-		double expected0 = (0.5f * 2.0f - 1.0f * 0.1f) / (2.0f * 2.0f);
-		double expected1 = (0.25f * 2.0f - 1.0f * 0.05f) / (2.0f * 2.0f);
+		double expected0 = (0.5 * 2.0 - 1.0 * 0.1) / (2.0 * 2.0);
+		double expected1 = (0.25 * 2.0 - 1.0f * 0.05) / (2.0 * 2.0);
 		ASSERT_TRUE(std::abs(c.real - 0.5) < 1e-12, "Division real part incorrect");
 		ASSERT_TRUE(std::abs(c.dual[0] - expected0) < 1e-12, "Division dual[0] part incorrect");
 		ASSERT_TRUE(std::abs(c.dual[1] - expected1) < 1e-12, "Division dual[1] part incorrect");
