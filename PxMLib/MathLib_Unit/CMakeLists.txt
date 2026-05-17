@@ -4,3 +4,4 @@ project(MathLib_Unit_Tests LANGUAGES C CXX)
 
 add_subdirectory(IntegratorTests)
 add_subdirectory(DualNumberTests)
+add_subdirectory(AutomaticDifferentiationTests)

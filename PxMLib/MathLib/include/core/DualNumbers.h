@@ -3,6 +3,8 @@
 
 #include "MathLibAPI.h"
 #include "core/Types_tpl.h"
+#include <array>
+#include <algorithm>
 
 namespace mathlib {
 	// Template version of dual number
@@ -22,7 +24,7 @@ namespace mathlib {
 			dual.fill(Scalar(0));
 			std::copy_n(
 				duals.begin(),
-				std::min(duals.size(), NVar),
+				std::min(duals.size(), static_cast<size_t>(NVar)),
 				dual.begin()
 			);
 		}
@@ -42,19 +44,6 @@ namespace mathlib {
 	) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = -a.real;
-		for (size_t i = 0; i < NVar; ++i) {
-			out.dual[i] = -a.dual[i];
-		}
-		return out;
-	}
-
-	// Conjugate (negate dual part, keep real part)
-	template<typename Scalar, size_t NVar>
-	inline DualNumber_T<Scalar, NVar> conjugate(
-		const DualNumber_T<Scalar, NVar>& a
-	) {
-		DualNumber_T<Scalar, NVar> out;
-		out.real = a.real;
 		for (size_t i = 0; i < NVar; ++i) {
 			out.dual[i] = -a.dual[i];
 		}
