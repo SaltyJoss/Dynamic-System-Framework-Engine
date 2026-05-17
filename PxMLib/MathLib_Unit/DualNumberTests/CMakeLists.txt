@@ -7,8 +7,8 @@ enable_testing()
 add_executable(MathLib_DualNumberTests
     main.cpp
     ArithmeticTests.cpp
-    AssignmentOperatorTests.cpp
     DivisionTests.cpp
+    AssignmentOperatorTests.cpp
     DifferentiationTests.cpp
     TranscendentalTests.cpp
 )
