@@ -11,6 +11,8 @@
 
 // Numerical integration methods
 namespace integration {
+	constexpr bool USE_AD_JACOBIANS = true;
+
 	// Ordinary Differential Equation (ODE) solvers
 	class MATHLIB_API NumericalIntegrator {
 	public:
@@ -115,7 +117,7 @@ namespace integration {
 			Func&& f,
 			JacFunc&& jac = nullptr,
 			int maxIter = 150,
-			Scalar tol = -1
+			Scalar tol = 1e-14
 		);
 
 	private:
@@ -135,6 +137,12 @@ namespace integration {
 		mathlib::MatX_T<Scalar> finiteDifferenceJacobian(
 			Func&& f,
 			Scalar t,
+			const mathlib::VecX_T<Scalar>& x
+		);
+
+		template<typename Scalar, typename Func>
+		mathlib::MatX_T<Scalar> automaticDifferenceJacobian(
+			Func&& f,
 			const mathlib::VecX_T<Scalar>& x
 		);
 	};
