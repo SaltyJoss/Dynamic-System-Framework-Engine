@@ -12,18 +12,20 @@ namespace mathlib {
 		DualNumber_T(
 			Scalar real = Scalar(0),
 			const std::array<Scalar, NVar>& duals = std::array<Scalar, NVar>()
-		) : m_real(real), m_duals(duals) {
+		) : real(real), dual(duals) {
+			dual.fill(Scalar(0));
 		}
 
 		DualNumber_T(
 			Scalar real,
 			std::initializer_list<Scalar> duals
-		) : m_real(real) {
-			std::copy(duals.begin(), duals.end(), m_duals.begin());
+		) : real(real) {
+			dual.fill(Scalar(0));
+			std::copy(duals.begin(), duals.end(), dual.begin());
 		}
 
-		Scalar m_real;
-		std::array<Scalar, NVar> m_duals;
+		Scalar real;
+		std::array<Scalar, NVar> duals;
 	};
 
 	// ----
@@ -36,9 +38,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = -a.m_real;
+		out.real = -a.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = -a.m_duals[i];
+			out.dual[i] = -a.dual[i];
 		}
 		return out;
 	}
@@ -49,9 +51,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real;
+		out.real = a.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = -a.m_duals[i];
+			out.dual[i] = -a.dual[i];
 		}
 		return out;
 	}
@@ -74,7 +76,7 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
 		) {
-		return a.m_real == b.m_real;
+		return a.real == b.real;
 	}
 
 	// Inequality
@@ -92,7 +94,7 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
 		) {
-		return a.m_real < b.m_real;
+		return a.real < b.real;
 	}
 
 	// Less than or equal
@@ -101,7 +103,7 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
 		) {
-		return a.m_real <= b.m_real;
+		return a.real <= b.real;
 	}
 
 	// Greater than
@@ -110,7 +112,7 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
 	) {
-		return a.m_real > b.m_real;
+		return a.real > b.real;
 	}
 
 	// Greater than or equal
@@ -119,7 +121,7 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
 		) {
-		return a.m_real >= b.m_real;
+		return a.real >= b.real;
 	}
 	
 	// ----
@@ -133,7 +135,7 @@ namespace mathlib {
 		Scalar b
 	) {
 		DualNumber_T<Scalar, NVar> out = a;
-		out.m_real += b;
+		out.real += b;
 		return out;
 	}
 
@@ -153,7 +155,7 @@ namespace mathlib {
 		Scalar b
 	) {
 		DualNumber_T<Scalar, NVar> out = a;
-		out.m_real -= b;
+		out.real -= b;
 		return out;
 	}
 
@@ -164,9 +166,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a - b.m_real;
+		out.real = a - b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = -b.m_duals[i];
+			out.dual[i] = -b.dual[i];
 		}
 		return out;
 	}
@@ -178,9 +180,9 @@ namespace mathlib {
 		Scalar b
 		) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real * b;
+		out.real = a.real * b;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] * b;
+			out.dual[i] = a.dual[i] * b;
 		}
 		return out;
 	}
@@ -201,9 +203,9 @@ namespace mathlib {
 		Scalar b
 		) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real / b;
+		out.real = a.real / b;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] / b;
+			out.dual[i] = a.dual[i] / b;
 		}
 		return out;
 	}
@@ -215,9 +217,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 		) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a / b.m_real;
+		out.real = a / b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = -a * b.m_duals[i] / (b.m_real * b.m_real);
+			out.dual[i] = -a * b.dual[i] / (b.real * b.real);
 		}
 		return out;
 	}
@@ -233,9 +235,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real + b.m_real;
+		out.real = a.real + b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] + b.m_duals[i];
+			out.dual[i] = a.dual[i] + b.dual[i];
 		}
 		return out;
 	}
@@ -247,9 +249,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real - b.m_real;
+		out.real = a.real - b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] - b.m_duals[i];
+			out.dual[i] = a.dual[i] - b.dual[i];
 		}
 		return out;
 	}
@@ -261,9 +263,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real * b.m_real;
+		out.real = a.real * b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_real * b.m_duals[i] + a.m_duals[i] * b.m_real;
+			out.dual[i] = a.real * b.dual[i] + a.dual[i] * b.real;
 		}
 		return out;
 	}
@@ -275,9 +277,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& b
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = a.m_real / b.m_real;
+		out.real = a.real / b.real;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = (a.m_duals[i] * b.m_real - a.m_real * b.m_duals[i]) / (b.m_real * b.m_real);
+			out.dual[i] = (a.dual[i] * b.real - a.real * b.dual[i]) / (b.real * b.real);
 		}
 		return out;
 	}
@@ -289,9 +291,9 @@ namespace mathlib {
 		Scalar n
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = std::pow(a.m_real, n);
+		out.real = std::pow(a.real, n);
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = n * std::pow(a.m_real, n - Scalar(1)) * a.m_duals[i];
+			out.dual[i] = n * std::pow(a.real, n - Scalar(1)) * a.dual[i];
 		}
 		return out;
 	}
@@ -302,9 +304,10 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		Scalar sqrtReal = std::sqrt(a.m_real);
+		Scalar sqrtReal = std::sqrt(a.real);
+		out.real = sqrtReal;
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = Scalar(0.5) * a.m_duals[i] / sqrtReal;
+			out.dual[i] = Scalar(0.5) * a.dual[i] / sqrtReal;
 		}
 		return out;
 	}
@@ -315,9 +318,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = std::sin(a.m_real);
+		out.real = std::sin(a.real);
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = std::cos(a.m_real) * a.m_duals[i];
+			out.dual[i] = std::cos(a.real) * a.dual[i];
 		}
 		return out;
 	}
@@ -328,9 +331,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = std::cos(a.m_real);
+		out.real = std::cos(a.real);
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = -std::sin(a.m_real) * a.m_duals[i];
+			out.dual[i] = -std::sin(a.real) * a.dual[i];
 		}
 		return out;
 	}
@@ -341,9 +344,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = std::tan(a.m_real);
+		out.real = std::tan(a.real);
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] / (std::cos(a.m_real) * std::cos(a.m_real));
+			out.dual[i] = a.dual[i] / (std::cos(a.real) * std::cos(a.real));
 		}
 		return out;
 	}
@@ -354,9 +357,9 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& a
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = std::atan(a.m_real);
+		out.real = std::atan(a.real);
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = a.m_duals[i] / (Scalar(1) + a.m_real * a.m_real);
+			out.dual[i] = a.dual[i] / (Scalar(1) + a.real * a.real);
 		}
 		return out;
 	}
@@ -375,10 +378,10 @@ namespace mathlib {
 		const DualNumber_T<Scalar, NVar>& x
 	) {
 		DualNumber_T<Scalar, NVar> out;
-		out.m_real = smoothStep(x.m_real);
-		Scalar derivative = Scalar(6) * x.m_real * (Scalar(1) - x.m_real); // Derivative of smooth step with respect to x
+		out.real = smoothStep(x.real);
+		Scalar derivative = Scalar(6) * x.real * (Scalar(1) - x.real); // Derivative of smooth step with respect to x
 		for (size_t i = 0; i < NVar; ++i) {
-			out.m_duals[i] = derivative * x.m_duals[i];
+			out.dual[i] = derivative * x.dual[i];
 		}
 		return out;
 	}
