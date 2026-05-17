@@ -11,9 +11,8 @@ namespace mathlib {
 	public:
 		DualNumber_T(
 			Scalar real = Scalar(0),
-			const std::array<Scalar, NVar>& duals = std::array<Scalar, NVar>()
-		) : real(real), dual(duals) {
-			dual.fill(Scalar(0));
+			const std::array<Scalar, NVar>& dual = std::array<Scalar, NVar>()
+		) : real(real), dual(dual) {
 		}
 
 		DualNumber_T(
@@ -21,16 +20,20 @@ namespace mathlib {
 			std::initializer_list<Scalar> duals
 		) : real(real) {
 			dual.fill(Scalar(0));
-			std::copy(duals.begin(), duals.end(), dual.begin());
+			std::copy_n(
+				duals.begin(),
+				std::min(duals.size(), NVar),
+				dual.begin()
+			);
 		}
 
 		Scalar real;
-		std::array<Scalar, NVar> duals;
+		std::array<Scalar, NVar> dual;
 	};
 
-	// ----
+	// -----
 	// Unary Operators
-	// ----
+	// -----
 
 	// Negation
 	template<typename Scalar, size_t NVar>
@@ -66,9 +69,9 @@ namespace mathlib {
 		return a;
 	}
 
-	// ----
+	// -----
 	// Comparison Operators (compare only the real part)
-	// ----
+	// -----
 
 	// Equality
 	template<typename Scalar, size_t NVar>
@@ -124,9 +127,9 @@ namespace mathlib {
 		return a.real >= b.real;
 	}
 	
-	// ----
+	// -----
 	// Scalar Interactions
-	// ----
+	// -----
 
 	// Scalar Addition (dual + scalar)
 	template<typename Scalar, size_t NVar>
@@ -224,9 +227,9 @@ namespace mathlib {
 		return out;
 	}
 
-	// ----
+	// -----
 	// Dual Number Interactions
-	// ----
+	// -----
 
 	// Addition
 	template<typename Scalar, size_t NVar>
@@ -386,9 +389,93 @@ namespace mathlib {
 		return out;
 	}
 
-	// ----
+	// -----
+	// Assignment Operators
+	// -----
+
+	// Addition assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator+=(
+		DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		a.real += b.real;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] += b.dual[i];
+		}
+		return a;
+	}
+
+	// Subtraction assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator-=(
+		DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		a.real -= b.real;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] -= b.dual[i];
+		}
+		return a;
+	}
+
+	// Scalar multiplication assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator*=(
+		DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		a.real *= b;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] *= b;
+		}
+		return a;
+	}
+
+	// Element-wise multiplication assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator*=(
+		DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		Scalar ogReal = a.real;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] = ogReal * b.dual[i] + a.dual[i] * b.real;
+		}
+		a.real = ogReal * b.real;
+		return a;
+	}
+
+	// Scalar division assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator/=(
+		DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		a.real /= b;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] /= b;
+		}
+		return a;
+	}
+
+	// Element-wise division assignment operator
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator/=(
+		DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		Scalar ogReal = a.real;
+		for (size_t i = 0; i < NVar; ++i) {
+			a.dual[i] = (a.dual[i] * b.real - ogReal * b.dual[i]) / (b.real * b.real);
+		}
+		a.real = ogReal / b.real;
+		return a;
+	}
+
+	// -----
 	// Numeric Limits Specialisation for DualNumber_T
-	// ----
+	// -----
 
 	// TODO: Add specialisation of std::numeric_limits for DualNumber_T to define properties like infinity, NaN, epsilon, etc. based on the underlying Scalar type.
 }
