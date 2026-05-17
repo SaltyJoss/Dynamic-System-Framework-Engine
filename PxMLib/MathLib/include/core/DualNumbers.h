@@ -430,6 +430,15 @@ namespace mathlib {
 		}
 		return a;
 	}
+	// Addition assignment operator with scalar
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator+=(
+		DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		a.real += b;
+		return a;
+	}
 
 	// Subtraction assignment operator
 	template<typename Scalar, size_t NVar>
@@ -441,6 +450,15 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] -= b.dual[i];
 		}
+		return a;
+	}
+	// Subtraction assignment operator with scalar
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar>& operator-=(
+		DualNumber_T<Scalar, NVar>& a,
+		Scalar b
+	) {
+		a.real -= b;
 		return a;
 	}
 
@@ -477,7 +495,12 @@ namespace mathlib {
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
 	) {
-		a.real /= b ? b : throw std::runtime_error("Division by zero in DualNumber_T operator/=");
+		if (b == Scalar(0)) {
+			throw std::runtime_error(
+				"Division by zero in DualNumber_T operator/="
+			);
+		}
+		a.real /= b;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] /= b;
 		}
@@ -494,7 +517,12 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] = (a.dual[i] * b.real - ogReal * b.dual[i]) / (b.real * b.real);
 		}
-		a.real = ogReal / b.real ? ogReal / b.real : throw std::runtime_error("Division by zero in DualNumber_T operator/=");
+		if (b.real == Scalar(0)) {
+			throw std::runtime_error(
+				"Division by zero in DualNumber_T operator/="
+			);
+		}
+		a.real = ogReal / b.real;
 		return a;
 	}
 
