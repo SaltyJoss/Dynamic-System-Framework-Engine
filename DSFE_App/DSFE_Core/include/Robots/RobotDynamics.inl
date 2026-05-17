@@ -54,7 +54,7 @@ namespace robots {
 		Scalar I_rot = axis_world.transpose() * I_world * axis_world;
 		Scalar I_eff_i = I_trans + I_rot;
 
-		return std::max(I_eff_i, 1e-6); // [kg*m^2], I_eff contribution of this joint + floor to avoid singularities
+		return Eigen::numext::maxi(I_eff_i, Scalar(1e-6)); // [kg*m^2], I_eff contribution of this joint + floor to avoid singularities
 	}
 
 	// Computes the full mass matrix M(q) based on the current state and robot configuration
@@ -131,7 +131,7 @@ namespace robots {
 		const mathlib::MatX_T<Scalar>& M
 	) const {
 		const size_t n = robot.joints.size();
-		const Scalar eps = 1e-6; // small value to prevent division by zero
+		const Scalar eps = Scalar(1e-6); // small value to prevent division by zero
 		mathlib::VecX_T<Scalar> q_eps = q;
 
 		std::vector<mathlib::MatX_T<Scalar>> dM_dq(n, mathlib::MatX_T<Scalar>::Zero(n, n)); // partial derivatives of M with respect to each joint angle
@@ -205,7 +205,7 @@ namespace robots {
 			for (size_t k = 0; k < robot.links.size(); ++k) {
 				const RobotLink& link = robot.links[k];
 				const Scalar m = (Scalar)link.inertial.mass;
-				if (m <= 0.0) { continue; }
+				if (m <= Scalar(0)) { continue; }
 
 				if (!robot.jointAffectsLink(i, k)) { continue; }
 
@@ -215,7 +215,7 @@ namespace robots {
 
 				// Gravitational force on the link
 				mathlib::Vec3_T<Scalar> g_world;
-				g_world << mathlib::Vec3_T<Scalar>(0.0, 0.0, -g); // [m/s^2], gravity vector in world frame
+				g_world = mathlib::Vec3_T<Scalar>(0.0, 0.0, -g); // [m/s^2], gravity vector in world frame
 				const mathlib::Vec3_T<Scalar> F_g = m * g_world; // [N], gravitational force on the link in world frame
 				const mathlib::Vec3_T<Scalar> r = com_world - p_i; // [m]
 
@@ -287,7 +287,7 @@ namespace robots {
 	mathlib::VecX_T<Scalar> RobotDynamics::derivative_dense(
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RobotSimSnapshot& snap,
+		const RobotSimSnapshot_T<Scalar>& snap,
 		DynamicsScratch<Scalar>& scratch,
 		DynamicsResult<Scalar>& out
 	) {
@@ -379,7 +379,7 @@ namespace robots {
 		const robots::SpatialModel<Scalar>& model,
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RobotSimSnapshot& snap,
+		const RobotSimSnapshot_T<Scalar>& snap,
 		DynamicsScratch<Scalar>& scratch,
 		DynamicsResult<Scalar>& out
 	) {
@@ -447,6 +447,13 @@ namespace robots {
 		dx.head(n) = qd;
 		dx.tail(n) = out.qdd;
 
+		using DXScalar = typename std::decay_t<decltype(dx(0))>;
+
+		static_assert(
+			!std::is_same_v<DXScalar, double>,
+			"dx collapsed to double"
+		);
+
 		return dx;
 	}
 
@@ -454,7 +461,7 @@ namespace robots {
 	void RobotDynamics::jacobian_spatial(
 		const robots::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& x,
-		const RobotSimSnapshot& snap,
+		const RobotSimSnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		mathlib::MatX_T<Scalar>& F_out,
@@ -484,7 +491,7 @@ namespace robots {
 			const SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) { continue; }
 			dTau_dq(i, i) = -kp[i];
-			const Scalar eps_f = 1e-2;
+			const Scalar eps_f = Scalar(1e-2);
 			const Scalar b = Scalar(0.2);
 			const Scalar c = Scalar(0.05);
 
@@ -506,7 +513,7 @@ namespace robots {
 	mathlib::VecX_T<Scalar> RobotDynamics::derivative_with_gains(
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RobotSimSnapshot& snap,
+		const RobotSimSnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		DynamicsScratch<Scalar>& scratch,
@@ -559,7 +566,7 @@ namespace robots {
 	template<typename Scalar>
 	void RobotDynamics::jacobian_with_gains(
 		const mathlib::VecX_T<Scalar>& x,
-		const RobotSimSnapshot& snap,
+		const RobotSimSnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		mathlib::MatX_T<Scalar>& F_out,
@@ -578,8 +585,8 @@ namespace robots {
 		scratch.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.T_world, *snap.model);
 		computeMassMatrix<Scalar>(*snap.model, scratch.T_world, scratch.jointWorldPoses, scratch.M);
 
-		mathlib::MatX dTau_dq = mathlib::MatX_T<Scalar>::Zero(n, n);
-		mathlib::MatX dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);
+		mathlib::MatX_T<Scalar> dTau_dq = mathlib::MatX_T<Scalar>::Zero(n, n);
+		mathlib::MatX_T<Scalar> dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);
 
 		for (size_t i = 0; i < n; ++i) {
 			if (snap.model->joints[i].type == eJointType::FIXED) continue;

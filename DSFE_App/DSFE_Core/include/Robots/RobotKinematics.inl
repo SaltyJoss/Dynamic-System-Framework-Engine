@@ -92,14 +92,14 @@ namespace robots {
 
 	// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
 	template<typename Scalar>
-	mathlib::Quat RobotKinematics::rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad) {
+	mathlib::Quat_T<Scalar> RobotKinematics::rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad) {
 		const double roll = rpyRad.x();
 		const double pitch = rpyRad.y();
 		const double yaw = rpyRad.z();
 
-		const Quat qx(Eigen::AngleAxis<Scalar>(roll, Vec3(1.0, 0.0, 0.0)));
-		const Quat qy(Eigen::AngleAxis<Scalar>(pitch, Vec3(0.0, 1.0, 0.0)));
-		const Quat qz(Eigen::AngleAxis<Scalar>(yaw, Vec3(0.0, 0.0, 1.0)));
+		const Quat_T<Scalar> qx(Eigen::AngleAxis<Scalar>(roll,	mathlib::Vec3_T<Scalar>(Scalar(1), Scalar(0), Scalar(0))));
+		const Quat_T<Scalar> qy(Eigen::AngleAxis<Scalar>(pitch,	mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(1), Scalar(0))));
+		const Quat_T<Scalar> qz(Eigen::AngleAxis<Scalar>(yaw,	mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(0), Scalar(1))));
 
 		return (qz * qy * qx).normalized();
 	}

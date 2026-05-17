@@ -13,6 +13,10 @@ namespace mathlib {
 	template<typename Scalar>
 	using Mat3_T = Eigen::Matrix<Scalar, 3, 3>;
 
+	// Template version of 4x4 matrix for homogeneous transformations
+	template<typename Scalar>
+	using Mat4_T = Eigen::Matrix<Scalar, 4, 4>;
+
 	// Template version of 6D vector for spatial algebra
 	template<typename Scalar>
 	using Vec6_T = Eigen::Matrix<Scalar, 6, 1>;
@@ -32,4 +36,8 @@ namespace mathlib {
 	// Template version of pose (4x4 homogeneous transformation matrix)
 	template<typename Scalar>
 	using Pose_T = Eigen::Matrix<Scalar, 4, 4>;
+
+	// Template version of quaternion
+	template<typename Scalar>
+	using Quat_T = Eigen::Quaternion<Scalar>;
 }

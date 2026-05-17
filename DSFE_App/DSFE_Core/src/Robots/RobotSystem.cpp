@@ -259,19 +259,21 @@ namespace robots {
 	RobotSimSnapshot RobotSystem::takeSnapshot(double simTime) const {
 		RobotSimSnapshot snap;
 		snap.model = &_constModel;
-
 		const size_t n = (size_t)_robot.joints.size();
 
 		snap.q.resize(n);
 		snap.qd.resize(n);
+
 		snap.q_ref.resize(n);
 		snap.qd_ref.resize(n);
 		snap.qdd_ref.resize(n);
 
 		for (size_t i = 0; i < n; ++i) {
 			const auto& j = _robot.joints[i];
+
 			snap.q[i] = j.q;
 			snap.qd[i] = j.qd;
+
 			snap.q_ref[i] = j.q_ref;
 			snap.qd_ref[i] = j.qd_ref;
 			snap.qdd_ref[i] = j.qdd_ref;
@@ -283,6 +285,7 @@ namespace robots {
 		snap.gravity = _gravity;
 
 		snap.torqueMode = _robot.torqueMode;
+
 		snap.dt = _dynamics->dt();
 		snap.simTime = simTime;
 
@@ -344,11 +347,17 @@ namespace robots {
 		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
 
 		// Define the derivative function for integration, capturing necessary variables by reference
-		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX_T<double>& xIn) {
-			return _dynamics->derivative_spatial<double>(
+		auto f_deriv = [&, kp_frozen, kd_frozen](auto t, const auto& xIn) {
+			using Scalar = std::decay_t<decltype(t)>;
+
+			DynamicsScratch<Scalar> scratch;
+			DynamicsResult<Scalar> result;
+
+			return _dynamics->template derivative_spatial<Scalar>(
 				_spatialModel,
-				t, xIn, snap,
-				_dynScratch, _dynResult
+				t, xIn,
+				snap, 
+				scratch, result
 			);
 		};
 		// Define the Jacobian function for integration, capturing necessary variables by reference

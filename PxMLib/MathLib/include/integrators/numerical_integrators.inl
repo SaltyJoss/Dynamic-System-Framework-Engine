@@ -223,9 +223,10 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for Implicit Euler\n");
 					F = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f(t + c(0) * dt, x_pert);
-					},
+						[&](auto, const auto& x_pert) {
+							return f(t + dt, x_pert);
+						},
+						t + dt,
 						x_guess
 					);
 				}
@@ -233,9 +234,9 @@ namespace integration {
 					printf("Using finite difference Jacobian for Implicit Euler\n");
 					F = finiteDifferenceJacobian(
 						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2));
-					},
-						t + dt / Scalar(2),
+							return f(t + dt, x + x_pert);
+						},
+						t + dt,
 						x_guess
 					);
 				}
@@ -284,9 +285,12 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for Implicit Midpoint\n");
 					F = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-							return f(t + c(0) * dt, x_pert);
+						[&](auto, const auto& x_pert) {
+							using Dual = typename std::remove_reference_t<decltype(x_pert(0))>;
+							auto x_dual = x.template cast<Dual>();
+							return f((t + dt) / Scalar(2), (x_dual + x_pert) / Scalar(2));
 						},
+						t + dt / Scalar(2),
 						x_guess
 					);
 				}
@@ -384,15 +388,17 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for GLRK2\n");
 					F1 = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f(t + c(0) * dt, x_pert);
-					},
+						[&](auto, const auto& x_pert) {
+							return f(t + c(0) * dt, x_pert);
+						},
+						t + c(0) * dt,
 						x1
 					);
 					F2 = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f(t + c(0) * dt, x_pert);
-					},
+						[&](auto, const auto& x_pert) {
+							return f(t + c(1) * dt, x_pert);
+						},
+						t + c(1) * dt,
 						x2
 					);
 				}
@@ -447,7 +453,9 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
+		if constexpr (std::is_same_v<Scalar, double>) {
+			if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
+		}
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
@@ -528,21 +536,24 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for GLRK3\n");
 					F1 = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						[&](auto, const auto& x_pert) {
 							return f(t + c(0) * dt, x_pert);
 						},
+						t + c(0) * dt,
 						x1
 					);
 					F2 = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f(t + c(0) * dt, x_pert);
-					},
+						[&](auto, const auto& x_pert) {
+							return f(t + c(1) * dt, x_pert);
+						},
+						t + c(1) * dt,
 						x2
 					);
 					F3 = automaticDifferenceJacobian(
-						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-						return f(t + c(0) * dt, x_pert);
-					},
+						[&](auto, const auto& x_pert) {
+							return f(t + c(2) * dt, x_pert);
+						},
+						t + c(2) * dt,
 						x3
 					);
 				}
@@ -701,16 +712,26 @@ namespace integration {
 	template<typename Scalar, typename Func>
 	mathlib::MatX_T<Scalar> NumericalIntegrator::automaticDifferenceJacobian(
 		Func&& f,
+		Scalar t,
 		const mathlib::VecX_T<Scalar>& x
 	) {
 		const int n = static_cast<int>(x.size());
 		mathlib::MatX_T<Scalar> J(n, n);
 		for (int i = 0; i < n; ++i) {
-			mathlib::VecX_T<DualNumber_T<Scalar, 1>> x_dual(n);
+			mathlib::VecX_T<mathlib::DualNumber_T<Scalar, 1>> x_dual(n);
 			for (int k = 0; k < n; ++k) {
-				x_dual(k) = DualNumber_T<Scalar, 1>(x(k), (k == i) ? Scalar(1) : Scalar(0));
+				x_dual(k) = mathlib::DualNumber_T<Scalar, 1>(x(k), std::array<Scalar, 1>{ (k == i) ? Scalar(1) : Scalar(0) });
 			}
-			auto f_dual = f(x_dual);
+			mathlib::DualNumber_T<Scalar, 1> t_dual(t);
+			auto f_dual = f(t_dual, x_dual);
+
+			using FDualScalar = std::remove_reference_t<decltype(f_dual(0))>;
+
+			static_assert(
+				!std::is_same_v<FDualScalar, double>,
+				"f_dual collapsed to double"
+				);
+
 			for (int j = 0; j < n; ++j) {
 				J(j, i) = f_dual(j).dual[0];
 			}

@@ -3,8 +3,9 @@
 // GitHub: SaltyJoss
 #include "MathLibAPI.h"
 
-#include "core/Types.h"
-#include "core/Types_tpl.h"
+#include <core/Types.h>
+#include <core/Types_tpl.h>
+#include <core/DualNumbers.h>
 #include <string>
 #include <functional>
 #include <iostream>
@@ -143,6 +144,7 @@ namespace integration {
 		template<typename Scalar, typename Func>
 		mathlib::MatX_T<Scalar> automaticDifferenceJacobian(
 			Func&& f,
+			Scalar t,
 			const mathlib::VecX_T<Scalar>& x
 		);
 	};

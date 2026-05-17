@@ -42,6 +42,12 @@ namespace robots {
 			else { v_out[i] = Xup_out[i] * v_out[j.parent] + vJ; }
 
 			c_out[i] = crossMotion(v_out[i], vJ); // Coriolis Term
+
+			using corScalar = typename std::decay_t<decltype(c_out[i].v(0))>;
+			static_assert(
+				std::is_same_v<corScalar, Scalar>,
+				"c_out scalar type does not match model scalar type"
+			);
 		}
 	}
 
@@ -57,7 +63,7 @@ namespace robots {
 		const size_t n = model.joints.size();
 		a_out.resize(n);
 
-		SpatialVec_T<Scalar> a0; // base acceleration (gravity)
+		mathlib::SpatialVec_T<Scalar> a0; // base acceleration (gravity)
 		a0.v <<
 			g.template segment<3>(0),
 			g.template segment<3>(3);
@@ -141,7 +147,7 @@ namespace robots {
 	) {
 		const size_t n = model.joints.size();
 		scratch.dense.M.setZero(n, n);
-		std::vector<SpatialMat_T<Scalar>> Ic(n); // spatial inertia for each link
+		std::vector<mathlib::SpatialMat_T<Scalar>> Ic(n); // spatial inertia for each link
 
 		// Initialise spatial inertia for each link based on the robot model
 		for (size_t i = 0; i < n; ++i) { Ic[i] = model.joints[i].inertia; }
@@ -161,7 +167,7 @@ namespace robots {
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint<Scalar>& j = model.joints[i];
 			if (j.type == eJointType::FIXED) { continue; }
-			SpatialVec_T<Scalar> F = Ic[i] * j.S;
+			mathlib::SpatialVec_T<Scalar> F = Ic[i] * j.S;
 			scratch.dense.M(i, i) = j.S.dot(F);
 
 			int jIdx = (int)i;
@@ -217,7 +223,18 @@ namespace robots {
 
 			U_out[i] = IA_out[i] * j.S;
 			d_out[i] = dot(j.S, U_out[i]);
-			if (std::abs(d_out[i]) < 1e-12) { d_out[i] = 1e-12; } // Regularisation to avoid singularities
+			if (d_out[i] < Scalar(1e-12)) {
+				d_out[i] = Scalar(1e-12);
+			}
+
+			using DScalar = typename std::decay_t<
+				decltype(d_out[i])
+			>;
+
+			static_assert(
+				!std::is_same_v<DScalar, double>,
+				"d_out collapsed"
+				);
 
 			u_out[i] = tau[i] - dot(j.S, pA_out[i]);
 			Ia_out[i] = IA_out[i] - outer(U_out[i]) / d_out[i];
@@ -274,9 +291,9 @@ namespace robots {
 		DynamicsScratch<Scalar>& scratch
 	) {
 		const size_t n = model.joints.size();
-		VecX_T<Scalar> qdd = VecX_T<Scalar>::Zero(n);
+		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(n);
 
-		SpatialVec_T<Scalar> a0; // base acceleration (gravity)
+		mathlib::SpatialVec_T<Scalar> a0; // base acceleration (gravity)
 		a0.v <<
 			scratch.g.template segment<3>(0),
 			scratch.g.template segment<3>(3);

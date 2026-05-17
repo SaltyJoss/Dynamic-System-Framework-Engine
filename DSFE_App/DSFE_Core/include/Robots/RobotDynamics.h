@@ -26,9 +26,6 @@ namespace integration { class IntegrationService; enum class eIntegrationMethod;
 
 namespace robots {
 	// Forward declarations
-	class RobotKinematics;
-	struct RobotConstModel;
-	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
 	enum class eTorqueMode;
@@ -93,7 +90,7 @@ namespace robots {
 		mathlib::VecX_T<Scalar> derivative_dense(
 			Scalar t,
 			const mathlib::VecX_T<Scalar>& x,
-			const RobotSimSnapshot& snap,
+			const RobotSimSnapshot_T<Scalar>& snap,
 			DynamicsScratch<Scalar>& scratch,
 			DynamicsResult<Scalar>& out
 		);
@@ -103,7 +100,7 @@ namespace robots {
 			const robots::SpatialModel<Scalar>& model,
 			Scalar t,
 			const mathlib::VecX_T<Scalar>& x,
-			const RobotSimSnapshot& snap,
+			const RobotSimSnapshot_T<Scalar>& snap,
 			DynamicsScratch<Scalar>& scratch,
 			DynamicsResult<Scalar>& out
 		);
@@ -112,7 +109,7 @@ namespace robots {
 		void jacobian_spatial(
 			const robots::SpatialModel<Scalar>& model,
 			const mathlib::VecX_T<Scalar>& x,
-			const RobotSimSnapshot& snap,
+			const RobotSimSnapshot_T<Scalar>& snap,
 			const mathlib::VecX_T<Scalar>& kp,
 			const mathlib::VecX_T<Scalar>& kd,
 			mathlib::MatX_T<Scalar>& F_out,
@@ -124,7 +121,7 @@ namespace robots {
 		mathlib::VecX_T<Scalar> derivative_with_gains(
 			Scalar t,
 			const mathlib::VecX_T<Scalar>& x,
-			const RobotSimSnapshot& snap,
+			const RobotSimSnapshot_T<Scalar>& snap,
 			const mathlib::VecX_T<Scalar>& kp,
 			const mathlib::VecX_T<Scalar>& kd,
 			DynamicsScratch<Scalar>& scratch,
@@ -135,7 +132,7 @@ namespace robots {
 		template<typename Scalar>
 		void jacobian_with_gains(
 			const mathlib::VecX_T<Scalar>& x,
-			const RobotSimSnapshot& snap,
+			const RobotSimSnapshot_T<Scalar>& snap,
 			const mathlib::VecX_T<Scalar>& kp,
 			const mathlib::VecX_T<Scalar>& kd,
 			mathlib::MatX_T<Scalar>& F_out,

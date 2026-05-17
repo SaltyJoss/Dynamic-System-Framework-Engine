@@ -13,8 +13,6 @@
 
 namespace robots {
 	// Forward declarations
-	struct RobotConstModel;
-	struct RobotSimSnapshot;
 	struct RobotLink;
 	struct RobotJoint;
 	struct RobotMetrics;
@@ -49,7 +47,7 @@ namespace robots {
 
 		// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
 		template<typename Scalar>
-		mathlib::Quat rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad);
+		mathlib::Quat_T<Scalar> rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad);
 	};
 }
 
