@@ -367,6 +367,32 @@ namespace mathlib {
 		return out;
 	}
 
+	// Hyperbolic tangent function (tanh)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> tanh(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.real = std::tanh(a.real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.dual[i] = a.dual[i] * (Scalar(1) - out.real * out.real);
+		}
+		return out;
+	}
+
+	// Exponential function
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> exp(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.real = std::exp(a.real);
+		for (size_t i = 0; i < NVar; ++i) {
+			out.dual[i] = out.real * a.dual[i];
+		}
+		return out;
+	}
+
 	// Smooth step function for smooth interpolation between 0 and 1
 	template<typename Scalar>
 	inline Scalar smoothStep(
