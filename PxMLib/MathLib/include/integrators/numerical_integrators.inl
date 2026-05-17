@@ -220,11 +220,25 @@ namespace integration {
 				}
 			}
 			if (!analytical_success) {
-				F = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + dt, x_pert); },
-					t + dt,
-					x_guess
-				);
+				if (USE_AD_JACOBIANS == true) {
+					printf("Using AD Jacobian for Implicit Euler\n");
+					F = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						x_guess
+					);
+				}
+				else {
+					printf("Using finite difference Jacobian for Implicit Euler\n");
+					F = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2));
+					},
+						t + dt / Scalar(2),
+						x_guess
+					);
+				}
 			}
 
 			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * F; // J = I - dt * df/dx
@@ -267,11 +281,25 @@ namespace integration {
 				}
 			}
 			if (!analytical_success) {
-				F = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2)); },
-					t + dt / Scalar(2),
-					x_guess
-				);
+				if (USE_AD_JACOBIANS == true) {
+					printf("Using AD Jacobian for Implicit Midpoint\n");
+					F = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(0) * dt, x_pert);
+						},
+						x_guess
+					);
+				}
+				else {
+					printf("Using finite difference Jacobian for Implicit Midpoint\n");
+					F = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2));
+						},
+						t + dt / Scalar(2),
+						x_guess
+					);
+				}
 			}
 			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
 		};
@@ -353,9 +381,38 @@ namespace integration {
 			}
 
 			if (!analytical_success) {
-				printf("Using finite difference Jacobian for GLRK2\n");
-				F1 = finiteDifferenceJacobian([&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(0) * dt, x_pert); }, t + c(0) * dt, x1);
-				F2 = finiteDifferenceJacobian([&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(1) * dt, x_pert); }, t + c(1) * dt, x2);
+				if (USE_AD_JACOBIANS == true) {
+					printf("Using AD Jacobian for GLRK2\n");
+					F1 = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						x1
+					);
+					F2 = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						x2
+					);
+				}
+				else {
+					printf("Using finite difference Jacobian for GLRK2\n");
+					F1 = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(0) * dt, x_pert);
+						},
+						t + c(0) * dt,
+						x1
+					);
+					F2 = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(1) * dt, x_pert);
+						},
+						t + c(1) * dt,
+						x2
+					);
+				}
 			}
 
 			J.setZero(2 * n, 2 * n);
@@ -468,30 +525,53 @@ namespace integration {
 			}
 
 			if (!analytical_success) {
-				printf("Using finite difference Jacobian for GLRK3\n");
-				F1 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(0) * dt, x_pert);
-				},
-					t + c(0) * dt,
-					x1
-				);
+				if (USE_AD_JACOBIANS == true) {
+					printf("Using AD Jacobian for GLRK3\n");
+					F1 = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(0) * dt, x_pert);
+						},
+						x1
+					);
+					F2 = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						x2
+					);
+					F3 = automaticDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+						return f(t + c(0) * dt, x_pert);
+					},
+						x3
+					);
+				}
+				else {
+					printf("Using finite difference Jacobian for GLRK3\n");
+					F1 = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(0) * dt, x_pert);
+						},
+						t + c(0) * dt,
+						x1
+					);
 
-				F2 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(1) * dt, x_pert);
-				},
-					t + c(1) * dt,
-					x2
-				);
+					F2 = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(1) * dt, x_pert);
+						},
+						t + c(1) * dt,
+						x2
+					);
 
-				F3 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(2) * dt, x_pert);
-				},
-					t + c(2) * dt,
-					x3
-				);
+					F3 = finiteDifferenceJacobian(
+						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
+							return f(t + c(2) * dt, x_pert);
+						},
+						t + c(2) * dt,
+						x3
+					);
+				}
 			}
 
 			J.setZero(3 * n, 3 * n);
