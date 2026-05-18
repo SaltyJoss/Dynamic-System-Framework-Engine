@@ -12,8 +12,7 @@
 
 // Numerical integration methods
 namespace integration {
-	constexpr bool USE_AD_JACOBIANS = true;
-
+	constexpr bool USE_AD_JACOBIANS = false;
 	// Ordinary Differential Equation (ODE) solvers
 	class MATHLIB_API NumericalIntegrator {
 	public:
@@ -84,26 +83,16 @@ namespace integration {
 			int maxIter = 8,
 			Scalar tol = Scalar(1e-6)
 		);
-		// Overload without Jacobian
+		// AD version of Implicit Euler method
 		template<typename Scalar, typename Func>
-		mathlib::VecX_T<Scalar> implicitEuler(
+		mathlib::VecX_T<Scalar> implicitEuler_AD(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar t,
 			Scalar dt,
 			Func&& f,
 			int maxIter,
 			Scalar tol
-		) {
-			return implicitEuler(
-				x,
-				t,
-				dt,
-				std::forward<Func>(f),
-				nullptr,
-				maxIter,
-				tol
-			);
-		}
+		);
 
 		// Implicit Midpoint method
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -116,26 +105,16 @@ namespace integration {
 			int maxIter = 10,
 			Scalar tol = Scalar(1e-7)
 		);
-		// Overload without Jacobian
+		// AD version of Implicit Midpoint method
 		template<typename Scalar, typename Func>
-		mathlib::VecX_T<Scalar> implicitMidpoint(
+		mathlib::VecX_T<Scalar> implicitMidpoint_AD(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar t,
 			Scalar dt,
 			Func&& f,
 			int maxIter,
 			Scalar tol
-		) {
-			return implicitMidpoint(
-				x,
-				t,
-				dt,
-				std::forward<Func>(f),
-				nullptr,
-				maxIter,
-				tol
-			);
-		}
+		);
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -148,26 +127,16 @@ namespace integration {
 			int maxIter = 50,
 			Scalar tol = Scalar(1e-6)
 		);
-		// Overload without Jacobian
+		// AD version of GLRK2
 		template<typename Scalar, typename Func>
-		mathlib::VecX_T<Scalar> GLRK2(
+		mathlib::VecX_T<Scalar> GLRK2_AD(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar t,
 			Scalar dt,
 			Func&& f,
 			int maxIter,
 			Scalar tol
-		) {
-			return GLRK2(
-				x,
-				t,
-				dt,
-				std::forward<Func>(f),
-				nullptr,
-				maxIter,
-				tol
-			);
-		}
+		);
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -180,26 +149,16 @@ namespace integration {
 			int maxIter = 150,
 			Scalar tol = Scalar(1e-14)
 		);
-		// Overload without Jacobian
+		// AD version of GLRK3
 		template<typename Scalar, typename Func>
-		mathlib::VecX_T<Scalar> GLRK3(
+		mathlib::VecX_T<Scalar> GLRK3_AD(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar t,
 			Scalar dt,
 			Func&& f,
 			int maxIter,
 			Scalar tol
-		) {
-			return GLRK3(
-				x,
-				t,
-				dt,
-				std::forward<Func>(f),
-				nullptr,
-				maxIter,
-				tol
-			);
-		}
+		);
 
 	private:
 

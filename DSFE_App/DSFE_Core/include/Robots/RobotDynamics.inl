@@ -443,7 +443,7 @@ namespace robots {
 		}
 
 		out.qdd = SpatialDynamics::ABA<Scalar>(model, q, qd, scratch.dense.tau, scratch);
-		out.metrics.qdd = mathlib::real(out.qdd);
+		out.metrics.qdd = out.qdd;
 		dx.head(n) = qd;
 		dx.tail(n) = out.qdd;
 		return dx;

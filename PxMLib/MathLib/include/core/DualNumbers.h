@@ -699,6 +699,14 @@ namespace mathlib {
 		using BaseScalar = Scalar;
 		static constexpr bool is_dual = true;
 	};
+
+	// Dual Part
+	template<typename Scalar, size_t NVar>
+	inline std::array<Scalar, NVar> dualPart(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return a.dual;
+	}
 }
 
 namespace Eigen {

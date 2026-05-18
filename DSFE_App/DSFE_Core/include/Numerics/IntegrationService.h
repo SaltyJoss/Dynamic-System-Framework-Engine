@@ -50,7 +50,7 @@ namespace integration {
 				case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicitEuler(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
 				case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicitMidpoint(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
 				case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
-				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 150, 1e-14), dt, dt };
+				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
 				default:
 				LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 				return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };

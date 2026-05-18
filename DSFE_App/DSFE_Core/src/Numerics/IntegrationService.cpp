@@ -61,5 +61,6 @@ namespace integration {
 
 	// Constructor
 	IntegrationService::IntegrationService() 
-		: _integrator(std::make_unique<integration::NumericalIntegrator>()), method(eIntegrationMethod::RK4), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {}
+		: _integrator(std::make_unique<integration::NumericalIntegrator>()), method(eIntegrationMethod::RK4), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {
+	}
 } // namespace integration
