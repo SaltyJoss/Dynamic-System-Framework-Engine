@@ -227,15 +227,6 @@ namespace robots {
 				d_out[i] = Scalar(1e-12);
 			}
 
-			using DScalar = typename std::decay_t<
-				decltype(d_out[i])
-			>;
-
-			static_assert(
-				!std::is_same_v<DScalar, double>,
-				"d_out collapsed"
-				);
-
 			u_out[i] = tau[i] - dot(j.S, pA_out[i]);
 			Ia_out[i] = IA_out[i] - outer(U_out[i]) / d_out[i];
 

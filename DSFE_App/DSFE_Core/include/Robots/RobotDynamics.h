@@ -4,6 +4,7 @@
 #include "EngineCore.h"
 #include "MathLibAPI.h"
 #include "core/Types.h"
+#include <core/DualNumbers.h>
 #include "Robots/DynamicsTypes.h"
 #include "Robots/RobotMetrics.h"
 

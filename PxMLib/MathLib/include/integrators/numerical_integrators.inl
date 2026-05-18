@@ -196,8 +196,6 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		mathlib::VecX_T<Scalar> x_new = x + dt * f(t, x); // Initial guess
-
 		// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f(t + dt, x_guess); };
 		// Numerical Jacobian for Newton-Raphson
@@ -223,8 +221,10 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for Implicit Euler\n");
 					F = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + dt,
 						x_guess
@@ -234,7 +234,7 @@ namespace integration {
 					printf("Using finite difference Jacobian for Implicit Euler\n");
 					F = finiteDifferenceJacobian(
 						[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-							return f(t + dt, x + x_pert);
+							return f(t + dt, x_pert);
 						},
 						t + dt,
 						x_guess
@@ -285,10 +285,11 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for Implicit Midpoint\n");
 					F = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							using Dual = typename std::remove_reference_t<decltype(x_pert(0))>;
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
 							auto x_dual = x.template cast<Dual>();
-							return f((t + dt) / Scalar(2), (x_dual + x_pert) / Scalar(2));
+							Dual t_mid = Dual(t_pert + dt) / Dual(2);
+							return f(t_mid , (x_dual + x_pert) / Dual(2));
 						},
 						t + dt / Scalar(2),
 						x_guess
@@ -323,22 +324,24 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
+		using std::sqrt;
+
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 		mathlib::VecX_T<Scalar> c(2);
 		c <<
-			0.5 - std::sqrt(3.0) / 6.0,
-			0.5 + std::sqrt(3.0) / 6.0; // Stage time fractions
+			Scalar(0.5) - sqrt(Scalar(3)) / Scalar(6),
+			Scalar(0.5) + sqrt(Scalar(3)) / Scalar(6); // Stage time fractions
 
 		mathlib::MatX_T<Scalar> A(2, 2);
 		A <<
-			0.25, 0.25 - std::sqrt(3.0) / 6.0,
-			0.25 + std::sqrt(3.0) / 6.0, 0.25;
+			Scalar(0.25), Scalar(0.25) - sqrt(Scalar(3)) / Scalar(6),
+			Scalar(0.25) + sqrt(Scalar(3)) / Scalar(6), Scalar(0.25);
 
-		const Scalar b = 0.5; // Weights for final update
+		const Scalar b = Scalar(0.5); // Weights for final update
 
-		// Initial guess for the stage values k1, k2, k3
+		// Initial guess for the stage values k1, k2
 		mathlib::VecX_T<Scalar> k(2 * n); // 2 stages
 		mathlib::VecX_T<Scalar> f0 = f(t, x);
 		k.segment(0, n) = f0;
@@ -388,15 +391,19 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for GLRK2\n");
 					F1 = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + c(0) * dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + c(0) * dt,
 						x1
 					);
 					F2 = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + c(1) * dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + c(1) * dt,
 						x2
@@ -453,23 +460,31 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		if constexpr (std::is_same_v<Scalar, double>) {
-			if (tol < 0.0) { tol = std::max(1e-12, 1e-2 * std::pow(dt, 7.0)); }
+		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
+		using std::sqrt;
+		using std::pow;
+		using std::abs;
+		using std::max;
+
+		if (mathlib::real(tol) < Real(0)) {
+			Real dt_r = mathlib::real(dt);
+			Real tol_r = max(Real(1e-12), Real(1e-2) * pow(dt_r, Real(7)));
+			tol = Scalar(tol_r);
 		}
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
 		mathlib::VecX_T<Scalar> c(3);
 		c <<
-			0.5 - std::sqrt(15.0) / 10.0,
-			0.5,
-			0.5 + std::sqrt(15.0) / 10.0; // Stage time fractions
+			Scalar(0.5) - sqrt(Scalar(15)) / Scalar(10),
+			Scalar(0.5),
+			Scalar(0.5) + sqrt(Scalar(15)) / Scalar(10); // Stage time fractions
 
 		mathlib::Mat3_T<Scalar> A(3, 3);
 		A <<
-			5.0 / 36.0, 2.0 / 9.0 - std::sqrt(15.0) / 15.0, 5.0 / 36.0 - std::sqrt(15.0) / 30.0,
-			5.0 / 36.0 + std::sqrt(15.0) / 24.0, 2.0 / 9.0, 5.0 / 36.0 - std::sqrt(15.0) / 24.0,
-			5.0 / 36.0 + std::sqrt(15.0) / 30.0, 2.0 / 9.0 + std::sqrt(15.0) / 15.0, 5.0 / 36.0;
+			Scalar(5) / Scalar(36), Scalar(2) / Scalar(9) - sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(30),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(24), Scalar(2) / Scalar(9), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(24),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(30), Scalar(2) / Scalar(9) - sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36);
 
 		mathlib::VecX_T<Scalar> b(3);
 		b << 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0; // Weights for final update
@@ -536,22 +551,28 @@ namespace integration {
 				if (USE_AD_JACOBIANS == true) {
 					printf("Using AD Jacobian for GLRK3\n");
 					F1 = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + c(0) * dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + c(0) * dt,
 						x1
 					);
 					F2 = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + c(1) * dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + c(1) * dt,
 						x2
 					);
 					F3 = automaticDifferenceJacobian(
-						[&](auto, const auto& x_pert) {
-							return f(t + c(2) * dt, x_pert);
+						[&](auto t_pert, const auto& x_pert) {
+							using Dual = std::decay_t<decltype(x_pert(0))>;
+							Dual t_eval = Dual(t_pert) + Dual(c(2)) * Dual(dt);
+							return f(t_eval, x_pert);
 						},
 						t + c(2) * dt,
 						x3
@@ -603,7 +624,7 @@ namespace integration {
 		mathlib::VecX_T<Scalar> g_check;
 		eval_g(k, g_check);
 
-		Scalar residual = g_check.norm();
+		auto residual = mathlib::real(g_check.norm());
 		//if (residual > 1e-8) { std::cout << "[GLRK3] Large final residual: " << residual << std::endl; }
 
 		// Compute the final update for x using the stage values
@@ -663,7 +684,7 @@ namespace integration {
 			}
 
 			x += delta;
-			if (delta.norm() < tol * (1.0 + x.norm())) { return x; }
+			if (delta.norm() < tol * (Scalar(1) + x.norm())) { return x; }
 
 			if (!x.allFinite()) {
 				throw std::runtime_error(
@@ -690,7 +711,7 @@ namespace integration {
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x
 	) {
-		const Scalar eps_rel = 1e-8;
+		const Scalar eps_rel = Scalar(1e-8);
 		const int n = static_cast<int>(x.size());
 		mathlib::VecX_T<Scalar> f_0 = f(t, x);
 		mathlib::MatX_T<Scalar> J(f_0.size(), n);
@@ -703,7 +724,7 @@ namespace integration {
 			x_bwd(i) -= h;
 			mathlib::VecX_T<Scalar> f_fwd = f(t, x_fwd);
 			mathlib::VecX_T<Scalar> f_bwd = f(t, x_bwd);
-			J.col(i) = (f_fwd - f_bwd) / (2.0 * h);
+			J.col(i) = (f_fwd - f_bwd) / (Scalar(2) * h);
 		}
 		return J;
 	}
@@ -718,19 +739,22 @@ namespace integration {
 		const int n = static_cast<int>(x.size());
 		mathlib::MatX_T<Scalar> J(n, n);
 		for (int i = 0; i < n; ++i) {
-			mathlib::VecX_T<mathlib::DualNumber_T<Scalar, 1>> x_dual(n);
+			using BaseScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
+			using Dual_T = mathlib::DualNumber_T<BaseScalar, 1>;
+
+			mathlib::VecX_T<Dual_T> x_dual(n);
 			for (int k = 0; k < n; ++k) {
-				x_dual(k) = mathlib::DualNumber_T<Scalar, 1>(x(k), std::array<Scalar, 1>{ (k == i) ? Scalar(1) : Scalar(0) });
-			}
-			mathlib::DualNumber_T<Scalar, 1> t_dual(t);
-			auto f_dual = f(t_dual, x_dual);
-
-			using FDualScalar = std::remove_reference_t<decltype(f_dual(0))>;
-
-			static_assert(
-				!std::is_same_v<FDualScalar, double>,
-				"f_dual collapsed to double"
+				x_dual(k) = Dual_T(
+					x(k),
+					std::array<Scalar, 1>{
+						(k == i) ? Scalar(1) : Scalar(0) 
+					}
 				);
+			}
+
+			Dual_T t_dual(t);
+			using ReturnT = decltype(f(t_dual, x_dual));
+			ReturnT f_dual = f(t_dual, x_dual);
 
 			for (int j = 0; j < n; ++j) {
 				J(j, i) = f_dual(j).dual[0];

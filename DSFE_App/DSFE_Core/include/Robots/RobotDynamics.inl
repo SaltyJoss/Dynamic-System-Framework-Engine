@@ -344,17 +344,17 @@ namespace robots {
 			tau_i -= b * qd[i]; // subtract viscous damping
 			tau_i -= c * std::tanh(qd[i] / eps_f); // subtract Coulomb friction
 
-			scratch.dense.tau[i] = tau_i;
 
-			// metrics
-			out.metrics.q[i] = q[i];
-			out.metrics.qd[i] = qd[i];
+			scratch.dense.tau[i] = mathlib::real(tau_i);
 
-			out.metrics.err[i] = err;
-			out.metrics.errd[i] = err_d;
+			out.metrics.q[i] = mathlib::real(q[i]);
+			out.metrics.qd[i] = mathlib::real(qd[i]);
 
-			out.metrics.I_eff[i] = I_eff;
-			out.metrics.tau[i] = tau_i;
+			out.metrics.err[i] = mathlib::real(err);
+			out.metrics.errd[i] = mathlib::real(err_d);
+
+			out.metrics.I_eff[i] = mathlib::real(I_eff);
+			out.metrics.tau[i] = mathlib::real(tau_i);
 
 			//_metrics.tau_sat[i] = tau_sat;
 			//_metrics.sat_flag[i] = saturated;
@@ -406,54 +406,46 @@ namespace robots {
 		for (size_t i = 0; i < n; ++i) {
 			const SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) {
-				scratch.dense.tau[i] = 0.0;
+				scratch.dense.tau[i] = Scalar(0);
 				continue;
 			}
 
-			const Scalar wn = Scalar(5.0);
+			const Scalar wn = Scalar(5);
 			const Scalar z = Scalar(0.7);
 
 			const Scalar err = snap.q_ref[i] - q[i];
 			const Scalar err_d = snap.qd_ref[i] - qd[i];
 
-			const Scalar eps = (Scalar)1e-6;
+			const Scalar eps = Scalar(1e-6);
 
 			const Scalar I_eff = std::max(M(i, i), eps);
 			const Scalar k_p = I_eff * wn * wn;
-			const Scalar k_d = Scalar(2.0) * z * I_eff * wn;
+			const Scalar k_d = Scalar(2) * z * I_eff * wn;
 
 			const Scalar b = Scalar(0.2); // viscous damping coefficient
 			const Scalar c = Scalar(0.05); // Coulomb friction coefficient
-			const Scalar eps_f = (Scalar)1e-2;
+			const Scalar eps_f = Scalar(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
 			tau_i -= b * qd[i];
-			//tau_i -= 0.05 * std::tanh(qd[i] / 1e-2);
+			//tau_i -= b * std::tanh(qd[i] / eps_f);
 
-			scratch.dense.tau[i] = tau_i;
+			scratch.dense.tau[i] = mathlib::real(tau_i);
 
-			out.metrics.q[i] = q[i];
-			out.metrics.qd[i] = qd[i];
+			out.metrics.q[i] = mathlib::real(q[i]);
+			out.metrics.qd[i] = mathlib::real(qd[i]);
 
-			out.metrics.err[i] = err;
-			out.metrics.errd[i] = err_d;
+			out.metrics.err[i] = mathlib::real(err);
+			out.metrics.errd[i] = mathlib::real(err_d);
 
-			out.metrics.I_eff[i] = I_eff;
-			out.metrics.tau[i] = tau_i;
+			out.metrics.I_eff[i] = mathlib::real(I_eff);
+			out.metrics.tau[i] = mathlib::real(tau_i);
 		}
 
 		out.qdd = SpatialDynamics::ABA<Scalar>(model, q, qd, scratch.dense.tau, scratch);
-		out.metrics.qdd = out.qdd;
+		out.metrics.qdd = mathlib::real(out.qdd);
 		dx.head(n) = qd;
 		dx.tail(n) = out.qdd;
-
-		using DXScalar = typename std::decay_t<decltype(dx(0))>;
-
-		static_assert(
-			!std::is_same_v<DXScalar, double>,
-			"dx collapsed to double"
-		);
-
 		return dx;
 	}
 

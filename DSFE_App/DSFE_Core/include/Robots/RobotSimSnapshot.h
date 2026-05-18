@@ -48,4 +48,34 @@ namespace robots {
 		Scalar simTime = Scalar(0);
 	};
 	using RobotSimSnapshot = RobotSimSnapshot_T<double>;
+
+	template<typename ToScalar, typename FromScalar>
+	inline RobotSimSnapshot_T<ToScalar> castSnapshot(
+		const RobotSimSnapshot_T<FromScalar>& src
+	) {
+		RobotSimSnapshot_T<ToScalar> dst;
+
+		dst.model = src.model;
+
+		dst.q = src.q.template cast<ToScalar>();
+		dst.qd = src.qd.template cast<ToScalar>();
+
+		dst.q_ref = src.q_ref.template cast<ToScalar>();
+		dst.qd_ref = src.qd_ref.template cast<ToScalar>();
+		dst.qdd_ref = src.qdd_ref.template cast<ToScalar>();
+
+		dst.robotRootPose = src.robotRootPose.template cast<ToScalar>();
+
+		dst.baseIsFree = src.baseIsFree;
+
+		dst.lastBaseForwardForce = ToScalar(src.lastBaseForwardForce);
+		dst.gravity = ToScalar(src.gravity);
+
+		dst.torqueMode = src.torqueMode;
+
+		dst.dt = ToScalar(src.dt);
+		dst.simTime = ToScalar(src.simTime);
+
+		return dst;
+	}
 } // namespace robots
