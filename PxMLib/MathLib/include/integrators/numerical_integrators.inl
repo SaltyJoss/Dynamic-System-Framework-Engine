@@ -244,19 +244,27 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		auto jac = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
-			J_out = automaticDifferenceJacobian(
+		// The function g(x_guess) = 0 that we want to solve for the implicit Euler step
+		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f(t + dt, x_guess); };
+		// Numerical Jacobian for Newton-Raphson
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
+			int n = (int)x_guess.size();
+			mathlib::MatX_T<Scalar> F;
+			F = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = Dual(t_pert) + Dual(dt);
-					return f(t_eval, x_pert);
-				},
-				t,
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + dt,
 				x_guess
 			);
-			J_out = mathlib::MatX_T<Scalar>::Identity(x.size(), x.size()) - dt * J_out; // J = I - dt * df/dx
+
+			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * F; // J = I - dt * df/dx
 		};
-		return implicitEuler(x, t, dt, f, jac, maxIter, tol);
+
+		mathlib::VecX_T<Scalar> x0 = x + dt * f(t + dt, x); // Initial guess for Newton-Raphson
+		return newtonRaphson_AD(g, J, x0, maxIter, tol);
 	}
 
 	// Implicit Midpoint method
@@ -292,7 +300,6 @@ namespace integration {
 				}
 			}
 			if (!analytical_success) {
-				printf("Using finite difference Jacobian for Implicit Midpoint\n");
 				F = finiteDifferenceJacobian(
 					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
 					return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2));
@@ -317,20 +324,30 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		auto jac = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
-			J_out = automaticDifferenceJacobian(
+		// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
+		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
+
+		// Numerical Jacobian for Newton-Raphson
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
+			int n = (int)x_guess.size();
+			mathlib::MatX_T<Scalar> F;
+			bool analytical_success = false;
+
+			F = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-					using Dual = std::decay_t<decltype(x_pert(0))>;
-					auto x_dual = x.template cast<Dual>();
-					Dual t_mid = Dual(t_pert + dt) / Dual(2);
-					return f(t_mid, (x_dual + x_pert) / Dual(2));
-				},
-				t,
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				mathlib::VecX_T<Dual> x_mid = (x.template cast<Dual>() + x_pert) / Dual(2);
+				Dual t_mid = (t_pert + dt) / Dual(2);
+				return f(t_mid, x_mid);
+			},
+				t + dt / Scalar(2),
 				x_guess
 			);
-			J_out = mathlib::MatX_T<Scalar>::Identity(x.size(), x.size()) - Scalar(0.5) * dt * J_out; // J = I - dt * df/dx
+			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
 		};
-		return implicitMidpoint(x, t, dt, f, jac, maxIter, tol);
+
+		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
+		return newtonRaphson_AD(g, J, x0, maxIter, tol);
 	}
 
 	// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
@@ -408,7 +425,6 @@ namespace integration {
 			}
 
 			if (!analytical_success) {
-				printf("Using finite difference Jacobian for GLRK2\n");
 				F1 = finiteDifferenceJacobian(
 					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
 					return f(t + c(0) * dt, x_pert);
@@ -455,44 +471,88 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
+		using std::sqrt;
 
+		const Eigen::Index n = x.size();
+
+		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 		mathlib::VecX_T<Scalar> c(2);
 		c <<
 			Scalar(0.5) - sqrt(Scalar(3)) / Scalar(6),
 			Scalar(0.5) + sqrt(Scalar(3)) / Scalar(6); // Stage time fractions
+
 		mathlib::MatX_T<Scalar> A(2, 2);
-		auto jac = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
-			int n = (int)x_guess.size();
-			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * x_guess.segment(0, n) + A(0, 1) * x_guess.segment(n, n));
-			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * x_guess.segment(0, n) + A(1, 1) * x_guess.segment(n, n));
-			J_out = automaticDifferenceJacobian(
-				[&](auto t_pert, const auto& x_pert) {
-					using Dual = std::decay_t<decltype(x_pert(0))>;
+		A <<
+			Scalar(0.25), Scalar(0.25) - sqrt(Scalar(3)) / Scalar(6),
+			Scalar(0.25) + sqrt(Scalar(3)) / Scalar(6), Scalar(0.25);
 
-					mathlib::VecX_T<Dual> k1 = x_pert.segment(0, n);
-					mathlib::VecX_T<Dual> k2 = x_pert.segment(n, n);
+		const Scalar b = Scalar(0.5); // Weights for final update
 
-					mathlib::VecX_T<Dual> x_base = x.template cast<Dual>();
+		// Initial guess for the stage values k1, k2, k3
+		mathlib::VecX_T<Scalar> k(2 * n); // 2 stages
+		mathlib::VecX_T<Scalar> f0 = f(t, x);
+		k.segment(0, n) = f0;
+		k.segment(n, n) = f0;
 
-					mathlib::VecX_T<Dual> x1 = x_base + Dual(dt) * (Dual(A(0, 0)) * k1 + Dual(A(0, 1)) * k2);
-					mathlib::VecX_T<Dual> x2 = x_base + Dual(dt) * (Dual(A(1, 0)) * k1 + Dual(A(1, 1)) * k2);
+		auto eval_g = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::VecX_T<Scalar>& g) {
+			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
+			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 
-					Dual t_eval1 = Dual(t_pert) + Dual(c(0)) * Dual(dt);
-					Dual t_eval2 = Dual(t_pert) + Dual(c(1)) * Dual(dt);
+			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
+			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
 
-					mathlib::VecX_T<Dual> out(2 * n);
+			mathlib::VecX_T<Scalar> f1 = f(t + c(0) * dt, x1);
+			mathlib::VecX_T<Scalar> f2 = f(t + c(1) * dt, x2);
 
-					out.segment(0, n) = k1 - f(t_eval1, x1);
-					out.segment(n, n) = k2 - f(t_eval2, x2);
-
-					return out;
-				},
-				t,
-				x_guess
-			);
-			J_out = mathlib::MatX_T<Scalar>::Identity(x.size(), x.size()) - dt * J_out; // J = I - dt * df/dx
+			g.resize(2 * n);
+			g.segment(0, n) = k1 - f1;
+			g.segment(n, n) = k2 - f2;
 		};
-		return GLRK2(x, t, dt, f, jac, maxIter, tol);
+
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
+			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
+			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
+			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
+			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
+			mathlib::MatX_T<Scalar> F1(n, n), F2(n, n);
+			bool analytical_success = false;
+
+			F1 = automaticDifferenceJacobian(
+				[&](auto t_pert, const auto& x_pert) {
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + c(0) * dt,
+				x1
+			);
+			F2 = automaticDifferenceJacobian(
+				[&](auto t_pert, const auto& x_pert) {
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + c(1) * dt,
+				x2
+			);
+
+			J.setZero(2 * n, 2 * n);
+			J.block(0, 0, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1;
+			J.block(0, n, n, n) = -dt * A(0, 1) * F1;
+			J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
+			J.block(n, n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2;
+		};
+
+		// Solve the nonlinear system for the stage values using Newton-Raphson
+		k = newtonRaphson_AD(eval_g, eval_j, k, maxIter, tol);
+
+		// Compute the final update for x using the stage values
+		mathlib::VecX_T<Scalar> k1 = k.segment(0, n);
+		mathlib::VecX_T<Scalar> k2 = k.segment(n, n);
+		mathlib::VecX_T<Scalar> x_f = x + dt * (b * k1 + b * k2);
+
+		return x_f;
+
 	}
 
 	// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
@@ -594,7 +654,6 @@ namespace integration {
 			}
 
 			if (!analytical_success) {
-				printf("Using finite difference Jacobian for GLRK3\n");
 				F1 = finiteDifferenceJacobian(
 					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
 					return f(t + c(0) * dt, x_pert);
@@ -662,48 +721,129 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
+		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
+		using std::sqrt;
+		using std::pow;
+		using std::abs;
+		using std::max;
+
+		if (mathlib::real(tol) < Real(0)) {
+			Real dt_r = mathlib::real(dt);
+			Real tol_r = max(Real(1e-12), Real(1e-2) * pow(dt_r, Real(7)));
+			tol = Scalar(tol_r);
+		}
+		const Eigen::Index n = x.size();
+
+		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
 		mathlib::VecX_T<Scalar> c(3);
 		c <<
 			Scalar(0.5) - sqrt(Scalar(15)) / Scalar(10),
 			Scalar(0.5),
 			Scalar(0.5) + sqrt(Scalar(15)) / Scalar(10); // Stage time fractions
+
 		mathlib::Mat3_T<Scalar> A(3, 3);
-		auto jac = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
-			int n = (int)x_guess.size();
-			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * x_guess.segment(0, n) + A(0, 1) * x_guess.segment(n, n) + A(0, 2) * x_guess.segment(2 * n, n));
-			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * x_guess.segment(0, n) + A(1, 1) * x_guess.segment(n, n) + A(1, 2) * x_guess.segment(2 * n, n));
-			mathlib::VecX_T<Scalar> x3 = x + dt * (A(2, 0) * x_guess.segment(0, n) + A(2, 1) * x_guess.segment(n, n) + A(2, 2) * x_guess.segment(2 * n, n));
-			J_out = automaticDifferenceJacobian(
-				[&](auto t_pert, const auto& x_pert) {
-					using Dual = std::decay_t<decltype(x_pert(0))>;
+		A <<
+			Scalar(5) / Scalar(36), Scalar(2) / Scalar(9) - sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(30),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(24), Scalar(2) / Scalar(9), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(24),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(30), Scalar(2) / Scalar(9) - sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36);
 
-					mathlib::VecX_T<Dual> k1 = x_pert.segment(0, n);
-					mathlib::VecX_T<Dual> k2 = x_pert.segment(n, n);
-					mathlib::VecX_T<Dual> k3 = x_pert.segment(2 * n, n);
+		mathlib::VecX_T<Scalar> b(3);
+		b << 5.0 / 18.0, 4.0 / 9.0, 5.0 / 18.0; // Weights for final update
 
-					mathlib::VecX_T<Dual> x_base = x.template cast<Dual>();
+		// Initial guess for the stage values k1, k2, k3
+		mathlib::VecX_T<Scalar> k(3 * n); // 3 stages
+		mathlib::VecX_T<Scalar> f0 = f(t, x);
+		k.segment(0, n) = f0;
+		k.segment(n, n) = f0;
+		k.segment(2 * n, n) = f0;
 
-					mathlib::VecX_T<Dual> x1 = x_base + Dual(dt) * (Dual(A(0, 0)) * k1 + Dual(A(0, 1)) * k2 + Dual(A(0, 2)) * k3);
-					mathlib::VecX_T<Dual> x2 = x_base + Dual(dt) * (Dual(A(1, 0)) * k1 + Dual(A(1, 1)) * k2 + Dual(A(1, 2)) * k3);
-					mathlib::VecX_T<Dual> x3 = x_base + Dual(dt) * (Dual(A(2, 0)) * k1 + Dual(A(2, 1)) * k2 + Dual(A(2, 2)) * k3);
+		auto eval_g = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::VecX_T<Scalar>& g) {
+			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
+			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
+			mathlib::VecX_T<Scalar> k3 = k_guess.segment(2 * n, n);
 
-					Dual t_eval1 = Dual(t_pert) + Dual(c(0)) * Dual(dt);
-					Dual t_eval2 = Dual(t_pert) + Dual(c(1)) * Dual(dt);
-					Dual t_eval3 = Dual(t_pert) + Dual(c(2)) * Dual(dt);
+			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2 + A(0, 2) * k3);
+			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
+			mathlib::VecX_T<Scalar> x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
 
-					mathlib::VecX_T<Dual> out(3 * n);
+			mathlib::VecX_T<Scalar> f1 = f(t + c(0) * dt, x1);
+			mathlib::VecX_T<Scalar> f2 = f(t + c(1) * dt, x2);
+			mathlib::VecX_T<Scalar> f3 = f(t + c(2) * dt, x3);
 
-					out.segment(0, n) = k1 - f(t_eval1, x1);
-					out.segment(n, n) = k2 - f(t_eval2, x2);
-					out.segment(2 * n, n) = k3 - f(t_eval3, x3);
+			g.resize(3 * n);
 
-					return out;
-				},
-				t,
-				x_guess
-			);
+			g.segment(0, n) = k1 - f1;
+			g.segment(n, n) = k2 - f2;
+			g.segment(2 * n, n) = k3 - f3;
 		};
-		return GLRK3(x, t, dt, f, jac, maxIter, tol);
+
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
+			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
+			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
+			mathlib::VecX_T<Scalar> k3 = k_guess.segment(2 * n, n);
+
+			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2 + A(0, 2) * k3);
+			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
+			mathlib::VecX_T<Scalar> x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
+
+			mathlib::MatX_T<Scalar> F1(n, n), F2(n, n), F3(n, n);
+
+			F1 = automaticDifferenceJacobian(
+				[&](auto t_pert, const auto& x_pert) {
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + c(0) * dt,
+				x1
+			);
+			F2 = automaticDifferenceJacobian(
+				[&](auto t_pert, const auto& x_pert) {
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + c(1) * dt,
+				x2
+			);
+			F3 = automaticDifferenceJacobian(
+				[&](auto t_pert, const auto& x_pert) {
+				using Dual = std::decay_t<decltype(x_pert(0))>;
+				Dual t_eval = Dual(t_pert) + Dual(c(2)) * Dual(dt);
+				return f(t_eval, x_pert);
+			},
+				t + c(2) * dt,
+				x3
+			);
+
+
+			J.setZero(3 * n, 3 * n);
+			J.block(0, 0, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1;
+			J.block(0, n, n, n) = -dt * A(0, 1) * F1;
+			J.block(0, 2 * n, n, n) = -dt * A(0, 2) * F1;
+			J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
+			J.block(n, n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2;
+			J.block(n, 2 * n, n, n) = -dt * A(1, 2) * F2;
+			J.block(2 * n, 0, n, n) = -dt * A(2, 0) * F3;
+			J.block(2 * n, n, n, n) = -dt * A(2, 1) * F3;
+			J.block(2 * n, 2 * n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(2, 2) * F3;
+		};
+
+		// Solve the nonlinear system for the stage values using Newton-Raphson
+		k = newtonRaphson_AD(eval_g, eval_j, k, maxIter, tol);
+
+		mathlib::VecX_T<Scalar> g_check;
+		eval_g(k, g_check);
+
+		//if (residual > 1e-8) { std::cout << "[GLRK3] Large final residual: " << residual << std::endl; }
+
+		// Compute the final update for x using the stage values
+		mathlib::VecX_T<Scalar> k1 = k.segment(0, n);
+		mathlib::VecX_T<Scalar> k2 = k.segment(n, n);
+		mathlib::VecX_T<Scalar> k3 = k.segment(2 * n, n);
+		mathlib::VecX_T<Scalar> x_f = x + dt * (b(0) * k1 + b(1) * k2 + b(2) * k3);
+
+		return x_f;
 	}
 
 	// Newton-Raphson solver for systems of nonlinear equations g(x) = 0
@@ -770,6 +910,63 @@ namespace integration {
 			+ std::to_string(delta.norm())
 		);
 	}
+	// AD version of Newton-Raphson solver for systems of nonlinear equations g(x) = 0 (DOES NOT USE NEWTON RAPHSON CALL)
+	template<typename Scalar, typename EvalG, typename EvalJ>
+	mathlib::VecX_T<Scalar> NumericalIntegrator::newtonRaphson_AD(
+		EvalG&& eval_g,
+		EvalJ&& eval_j,
+		mathlib::VecX_T<Scalar> x0,
+		int maxIter,
+		Scalar tol
+	) {
+		mathlib::VecX_T<Scalar> x = x0, g, x_trial;
+		using BaseScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
+		mathlib::VecX_T<Scalar> delta = mathlib::VecX_T<Scalar>::Constant(x0.size(), Scalar(std::numeric_limits<BaseScalar>::infinity()));
+		mathlib::MatX_T<Scalar> J;
+		Eigen::ColPivHouseholderQR<mathlib::MatX_T<Scalar>> solver;
+		for (int iter = 0; iter < maxIter; ++iter) {
+			eval_g(x, g);
+			if (!g.allFinite()) {
+				throw std::runtime_error(
+					"Newton received non-finite residual at iter = "
+					+ std::to_string(iter)
+					+ ", residual norm = "
+					+ std::to_string(mathlib::real(g.norm()))
+				);
+			}
+			eval_j(x, J);
+			if (!J.allFinite()) {
+				throw std::runtime_error(
+					"Newton received non-finite Jacobian at iter = "
+					+ std::to_string(iter)
+				);
+			}
+			solver.compute(J);
+			delta = solver.solve(-g);
+			if (!delta.allFinite()) {
+				throw std::runtime_error(
+					"Newton produced non-finite step at iter = "
+					+ std::to_string(iter)
+				);
+			}
+			x += delta;
+			if (mathlib::real(g.norm()) < mathlib::real(tol)) { return x; }
+			if (!x.allFinite()) {
+				throw std::runtime_error(
+					"Newton state became non-finite at iter = "
+					+ std::to_string(iter)
+				);
+			}
+		}
+		throw std::runtime_error(
+			"Newton-Raphson failed to converge after "
+			+ std::to_string(maxIter)
+			+ " iterations. Final residual norm = "
+			+ std::to_string(mathlib::real(g.norm()))
+			+ ", final step norm = "
+			+ std::to_string(mathlib::real(delta.norm()))
+		);
+	}
 
 	// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
 	template<typename Scalar, typename Func>
@@ -786,7 +983,7 @@ namespace integration {
 		for (int i = 0; i < n; ++i) {
 			mathlib::VecX_T<Scalar> x_fwd = x;
 			mathlib::VecX_T<Scalar> x_bwd = x;
-			Scalar h = eps_rel * std::max(1.0, std::abs(x(i)));
+			Scalar h = eps_rel * std::max(Scalar(1), Scalar(std::abs(mathlib::real(x(i)))));
 			x_fwd(i) += h;
 			x_bwd(i) -= h;
 			mathlib::VecX_T<Scalar> f_fwd = f(t, x_fwd);

@@ -171,6 +171,15 @@ namespace integration {
 			int maxIter,
 			Scalar tol
 		);
+		// AD version of Newton-Raphson solver
+		template<typename Scalar, typename EvalG, typename EvalJ>
+		mathlib::VecX_T<Scalar> newtonRaphson_AD(
+			EvalG&& eval_g,
+			EvalJ&& eval_j,
+			mathlib::VecX_T<Scalar> x0,
+			int maxIter,
+			Scalar tol
+		);
 
 		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
 		template<typename Scalar, typename Func>

@@ -701,11 +701,25 @@ namespace mathlib {
 	};
 
 	// Dual Part
-	template<typename Scalar, size_t NVar>
-	inline std::array<Scalar, NVar> dualPart(
-		const DualNumber_T<Scalar, NVar>& a
+	template<typename Scalar, size_t N>
+	Scalar dualPart(
+		const DualNumber_T<Scalar, N>& x
 	) {
-		return a.dual;
+		return x.dual[0];
+	}
+
+	template<typename Derived>
+	auto makeMutableCopy(const Eigen::MatrixBase<Derived>& x)
+		-> typename std::decay_t<Derived>::PlainObject {
+		return x.derived().eval();
+	}
+
+	template<typename T, typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> operator*(
+		T a,
+		const DualNumber_T<Scalar, NVar>& b
+		) {
+		return b * static_cast<Scalar>(a);
 	}
 }
 
