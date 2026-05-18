@@ -3,6 +3,8 @@
 
 #include "MathLibAPI.h"
 #include "core/Types_tpl.h"
+#include <Eigen/Core>
+#include <limits>
 #include <array>
 #include <algorithm>
 
@@ -11,6 +13,8 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	class DualNumber_T {
 	public:
+		using ScalarT = Scalar;
+
 		DualNumber_T(
 			Scalar real = Scalar(0),
 			const std::array<Scalar, NVar>& dual = std::array<Scalar, NVar>()
@@ -41,7 +45,7 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> operator-(
 		const DualNumber_T<Scalar, NVar>& a
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = -a.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -54,7 +58,7 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> operator+(
 		const DualNumber_T<Scalar, NVar>& a
-	) {
+		) {
 		return a;
 	}
 
@@ -67,7 +71,7 @@ namespace mathlib {
 	inline bool operator==(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return a.real == b.real;
 	}
 
@@ -76,7 +80,7 @@ namespace mathlib {
 	inline bool operator!=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return !(a == b);
 	}
 
@@ -85,7 +89,7 @@ namespace mathlib {
 	inline bool operator<(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return a.real < b.real;
 	}
 
@@ -94,7 +98,7 @@ namespace mathlib {
 	inline bool operator<=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return a.real <= b.real;
 	}
 
@@ -112,10 +116,10 @@ namespace mathlib {
 	inline bool operator>=(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return a.real >= b.real;
 	}
-	
+
 	// -----
 	// Scalar Interactions
 	// -----
@@ -125,7 +129,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator+(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out = a;
 		out.real += b;
 		return out;
@@ -136,7 +140,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator+(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return b + a; // Reuse dual + scalar
 	}
 
@@ -145,7 +149,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator-(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out = a;
 		out.real -= b;
 		return out;
@@ -156,7 +160,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator-(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a - b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -170,7 +174,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real * b;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -184,7 +188,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		return b * a; // Reuse dual * scalar
 	}
 
@@ -193,7 +197,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		const DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real / b ? a.real / b : throw std::runtime_error("Division by zero in dual number scalar division");
 		for (size_t i = 0; i < NVar; ++i) {
@@ -207,7 +211,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		Scalar a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a / b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -225,7 +229,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator+(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real + b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -239,7 +243,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator-(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real - b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -253,7 +257,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator*(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real * b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -267,7 +271,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> operator/(
 		const DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		DualNumber_T<Scalar, NVar> out;
 		out.real = a.real / b.real;
 		for (size_t i = 0; i < NVar; ++i) {
@@ -423,7 +427,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator+=(
 		DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		a.real += b.real;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] += b.dual[i];
@@ -435,7 +439,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator+=(
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		a.real += b;
 		return a;
 	}
@@ -445,7 +449,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator-=(
 		DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		a.real -= b.real;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] -= b.dual[i];
@@ -457,7 +461,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator-=(
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		a.real -= b;
 		return a;
 	}
@@ -467,7 +471,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator*=(
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		a.real *= b;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] *= b;
@@ -480,7 +484,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator*=(
 		DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		Scalar ogReal = a.real;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] = ogReal * b.dual[i] + a.dual[i] * b.real;
@@ -494,7 +498,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator/=(
 		DualNumber_T<Scalar, NVar>& a,
 		Scalar b
-	) {
+		) {
 		if (b == Scalar(0)) {
 			throw std::runtime_error(
 				"Division by zero in DualNumber_T operator/="
@@ -512,7 +516,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar>& operator/=(
 		DualNumber_T<Scalar, NVar>& a,
 		const DualNumber_T<Scalar, NVar>& b
-	) {
+		) {
 		Scalar ogReal = a.real;
 		for (size_t i = 0; i < NVar; ++i) {
 			a.dual[i] = (a.dual[i] * b.real - ogReal * b.dual[i]) / (b.real * b.real);
@@ -530,5 +534,200 @@ namespace mathlib {
 	// Numeric Limits Specialisation for DualNumber_T
 	// -----
 
-	// TODO: Add specialisation of std::numeric_limits for DualNumber_T to define properties like infinity, NaN, epsilon, etc. based on the underlying Scalar type.
+	// Function to return a DualNumber_T representing infinity (real part is infinity, dual parts are zero)
+	template<typename scalar, size_t NVar>
+	inline DualNumber_T<scalar, NVar> numeric_limits_infinity() {
+		return DualNumber_T<scalar, NVar>(
+			std::numeric_limits<scalar>::infinity(),
+			std::array<scalar, NVar>()
+		);
+	}
+
+	// Alternative absolute value function that simply negates the dual number if the real part is negative (this is less smooth but can be more efficient and avoids issues with zero)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> abs(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out = (a.real < Scalar(0)) ? -a : a;
+		return out;
+	}
+	// Absolute value function with epsilon threshold to avoid non-differentiability at zero (scales dual part by the sign of the real part, but treats values within epsilon of zero as zero)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> abs(
+		const DualNumber_T<Scalar, NVar>& a,
+		Scalar epsilon
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		if (std::abs(a.real) < epsilon) {
+			out.real = Scalar(0);
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = Scalar(0);
+			}
+		}
+		else {
+			out.real = std::abs(a.real);
+			Scalar sign = (a.real > Scalar(0)) - (a.real < Scalar(0)); // Sign of the real part
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = sign * a.dual[i];
+			}
+		}
+		return out;
+	}
+
+
+	// Sign function for DualNumber_T (returns the sign of the real part, dual parts are zero)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> sign(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		out.real = (a.real > Scalar(0)) - (a.real < Scalar(0)); // Sign of the real part
+		for (size_t i = 0; i < NVar; ++i) {
+			out.dual[i] = Scalar(0);
+		}
+		return out;
+	}
+
+	// Minimum function for DualNumber_T (returns the minimum of the real parts, scales dual part by the indicator of which real part is smaller)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> min(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		if (a.real < b.real) {
+			out.real = a.real;
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = a.dual[i];
+			}
+		}
+		else {
+			out.real = b.real;
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = b.dual[i];
+			}
+		}
+		return out;
+	}
+
+	// Maximum function for DualNumber_T (returns the maximum of the real parts, scales dual part by the indicator of which real part is larger)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> max(
+		const DualNumber_T<Scalar, NVar>& a,
+		const DualNumber_T<Scalar, NVar>& b
+	) {
+		DualNumber_T<Scalar, NVar> out;
+		if (a.real > b.real) {
+			out.real = a.real;
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = a.dual[i];
+			}
+		}
+		else {
+			out.real = b.real;
+			for (size_t i = 0; i < NVar; ++i) {
+				out.dual[i] = b.dual[i];
+			}
+		}
+		return out;
+	}
+
+	// Since dual numbers are not complex, the real part is just the real part of the dual number (for non-dual types, this is just the value itself)
+	template<typename T>
+	inline T real(const T& x) {
+		return x;
+	}
+
+	// Since dual numbers are not complex, the real part is just the real part of the dual number
+	template<typename Scalar, size_t NVar>
+	inline Scalar real(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return a.real;
+	}
+
+	// Since dual numbers are not complex, the imaginary part is always zero
+	template<typename Scalar, size_t NVar>
+	inline Scalar imaginary(
+		const DualNumber_T<Scalar, NVar>& /*a*/
+	) {
+		return Scalar(0);
+	}
+
+	// Since dual numbers are not complex, the complex conjugate is just the dual number itself
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> conj(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return a;
+	}
+
+	// Since dual numbers are not complex, the norm is just the absolute value of the real part
+	template<typename Scalar, size_t NVar>
+	inline Scalar norm(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return std::abs(a.real);
+	}
+
+	// Since dual numbers are not complex, the squared norm is just the square of the absolute value of the real part
+	template<typename Scalar, size_t NVar>
+	inline Scalar abs2(
+		const DualNumber_T<Scalar, NVar>& a
+	) {
+		return a.real * a.real;
+	}
+
+	template<typename Scalar, size_t NVar>
+	inline bool is_dual_number_v(
+		const DualNumber_T<Scalar, NVar>& /*a*/
+	) {
+		return true;
+	}
+
+	// Traits class to identify dual numbers and extract the base scalar type
+	template<typename T>
+	struct DualTraits {
+		using BaseScalar = T;
+		static constexpr bool is_dual = false;
+	};
+
+	// Specialization of DualTraits for DualNumber_T
+	template<typename Scalar, size_t NVar>
+	struct DualTraits<DualNumber_T<Scalar, NVar>> {
+		using BaseScalar = Scalar;
+		static constexpr bool is_dual = true;
+	};
+}
+
+namespace Eigen {
+	// Specialization of NumTraits for DualNumber_T to allow it to be used with Eigen's matrix and vector types
+	template<typename Scalar, size_t NVar>
+	struct NumTraits<mathlib::DualNumber_T<Scalar, NVar>> : GenericNumTraits<mathlib::DualNumber_T<Scalar, NVar>> {
+		typedef mathlib::DualNumber_T<Scalar, NVar> Real;
+		typedef mathlib::DualNumber_T<Scalar, NVar> NonInteger;
+		typedef mathlib::DualNumber_T<Scalar, NVar> Nested;
+		enum {
+			IsComplex = 0,
+			IsInteger = 0,
+			IsSigned = 1,
+			RequireInitialization = 1,
+			ReadCost = 1,
+			AddCost = 3,
+			MulCost = 3
+		};
+		static EIGEN_DEVICE_FUNC Real epsilon() {
+			return Real(std::numeric_limits<Scalar>::epsilon());
+		}
+		static EIGEN_DEVICE_FUNC Real dummy_precision() {
+			return Real(Scalar(1e-12));
+		}
+		static EIGEN_DEVICE_FUNC Real highest() {
+			return Real(std::numeric_limits<Scalar>::max());
+		}
+		static EIGEN_DEVICE_FUNC Real lowest() {
+			return Real(std::numeric_limits<Scalar>::lowest());
+		}
+	};
 }

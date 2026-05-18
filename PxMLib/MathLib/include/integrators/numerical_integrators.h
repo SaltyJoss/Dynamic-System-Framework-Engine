@@ -82,8 +82,28 @@ namespace integration {
 			Func&& f,
 			JacFunc&& jac = nullptr,
 			int maxIter = 8,
-			Scalar tol = 1e-6
+			Scalar tol = Scalar(1e-6)
 		);
+		// Overload without Jacobian
+		template<typename Scalar, typename Func>
+		mathlib::VecX_T<Scalar> ImplicitEuler(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar t,
+			Scalar dt,
+			Func&& f,
+			int maxIter,
+			Scalar tol
+		) {
+			return ImplicitEuler(
+				x,
+				t,
+				dt,
+				std::forward<Func>(f),
+				nullptr,
+				maxIter,
+				tol
+			);
+		}
 
 		// Implicit Midpoint method
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -94,8 +114,28 @@ namespace integration {
 			Func&& f,
 			JacFunc&& jac = nullptr,
 			int maxIter = 10,
-			Scalar tol = 1e-7
+			Scalar tol = Scalar(1e-7)
 		);
+		// Overload without Jacobian
+		template<typename Scalar, typename Func>
+		mathlib::VecX_T<Scalar> ImplicitMidpoint(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar t,
+			Scalar dt,
+			Func&& f,
+			int maxIter,
+			Scalar tol
+		) {
+			return ImplicitMidpoint(
+				x,
+				t,
+				dt,
+				std::forward<Func>(f),
+				nullptr,
+				maxIter,
+				tol
+			);
+		}
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -106,8 +146,28 @@ namespace integration {
 			Func&& f,
 			JacFunc&& jac = nullptr,
 			int maxIter = 50,
-			Scalar tol = 1e-6
+			Scalar tol = Scalar(1e-6)
 		);
+		// Overload without Jacobian
+		template<typename Scalar, typename Func>
+		mathlib::VecX_T<Scalar> GLRK2(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar t,
+			Scalar dt,
+			Func&& f,
+			int maxIter,
+			Scalar tol
+		) {
+			return GLRK2(
+				x,
+				t,
+				dt,
+				std::forward<Func>(f),
+				nullptr,
+				maxIter,
+				tol
+			);
+		}
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
 		template<typename Scalar, typename Func, typename JacFunc = std::nullptr_t>
@@ -118,8 +178,28 @@ namespace integration {
 			Func&& f,
 			JacFunc&& jac = nullptr,
 			int maxIter = 150,
-			Scalar tol = 1e-14
+			Scalar tol = Scalar(1e-14)
 		);
+		// Overload without Jacobian
+		template<typename Scalar, typename Func>
+		mathlib::VecX_T<Scalar> GLRK3(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar t,
+			Scalar dt,
+			Func&& f,
+			int maxIter,
+			Scalar tol
+		) {
+			return GLRK3(
+				x,
+				t,
+				dt,
+				std::forward<Func>(f),
+				nullptr,
+				maxIter,
+				tol
+			);
+		}
 
 	private:
 
