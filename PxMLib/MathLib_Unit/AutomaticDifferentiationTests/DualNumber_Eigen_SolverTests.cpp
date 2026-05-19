@@ -8,24 +8,6 @@ namespace {
 	constexpr double EPS = 1e-9;
 }
 
-TEST("DualNumber_T Eigen Solvers", PartialPivLU) {
-	Eigen::Matrix<Dual, 2, 2> A;
-	Eigen::Matrix<Dual, 2, 1> b;
-
-	A(0, 0) = Dual(4.0, { 0.5 });
-	A(0, 1) = Dual(2.0, { 0.5 });
-	A(1, 0) = Dual(1.0, { 0.5 });
-	A(1, 1) = Dual(3.0, { 0.5 });
-	b << Dual(10.0, { 1.0 }), Dual(11.0, { 1.0 });
-
-	auto solver = A.partialPivLu();
-
-	auto x = solver.solve(b);
-	
-	ASSERT_TRUE(std::isfinite(x(0).real), "Real part of solution should be finite");
-	ASSERT_TRUE(std::isfinite(x(0).dual[0]), "Dual part of solution should be finite");
-}
-
 TEST("DualNumber_T Eigen Solvers", MaxCoeff) {
 	Eigen::Matrix<Dual, 2, 2> A;
 
@@ -38,7 +20,6 @@ TEST("DualNumber_T Eigen Solvers", MaxCoeff) {
 
 	ASSERT_TRUE(std::isfinite(m.real), "Max coefficient real part should be finite");
 }
-
 TEST("DualNumber_T Eigen Solvers", CwiseAbsMaxCoeff) {
 	Eigen::Matrix<Dual, 2, 2> A;
 
@@ -50,4 +31,44 @@ TEST("DualNumber_T Eigen Solvers", CwiseAbsMaxCoeff) {
 	auto m = A.cwiseAbs().maxCoeff();
 
 	ASSERT_TRUE(std::isfinite(m), "CwiseAbsMaxCoeff real part should be finite");
+}
+TEST("DualNumber_T Eigen Solvers", PartialPivLU) {
+	Eigen::Matrix<Dual, 2, 2> A;
+	Eigen::Matrix<Dual, 2, 1> b;
+	A(0, 0) = Dual(4.0, { 0.5 });
+	A(0, 1) = Dual(2.0, { 0.5 });
+	A(1, 0) = Dual(1.0, { 0.5 });
+	A(1, 1) = Dual(3.0, { 0.5 });
+	b << Dual(10.0, { 1.0 }), Dual(11.0, { 1.0 });
+	auto solver = A.partialPivLu();
+	auto x = solver.solve(b);
+	ASSERT_TRUE(std::isfinite(x(0).real), "Real part of solution should be finite");
+	ASSERT_TRUE(std::isfinite(x(0).dual[0]), "Dual part of solution should be finite");
+}
+TEST("DualNumber_T Eigen Solvers", LDLT) {
+	Eigen::Matrix<Dual, 2, 2> A;
+	Eigen::Matrix<Dual, 2, 1> b;
+	A(0, 0) = Dual(4.0, { 0.5 });
+	A(0, 1) = Dual(2.0, { 0.5 });
+	A(1, 0) = Dual(1.0, { 0.5 });
+	A(1, 1) = Dual(3.0, { 0.5 });
+	b << Dual(10.0, { 1.0 }), Dual(11.0, { 1.0 });
+	auto solver = A.ldlt();
+	auto x = solver.solve(b);
+	ASSERT_TRUE(std::isfinite(x(0).real), "Real part of solution should be finite");
+	ASSERT_TRUE(std::isfinite(x(0).dual[0]), "Dual part of solution should be finite");
+}
+
+TEST("DualNumber_T Eigen Solvers", LDLTComputeOnly) {
+	Eigen::Matrix<Dual, 2, 2> A;
+
+	A <<
+		Dual(4.0), Dual(1.0),
+		Dual(1.0), Dual(3.0);
+
+	Eigen::LDLT<Eigen::Matrix<Dual, 2, 2>> ldlt;
+
+	ldlt.compute(A);
+
+	SUCCEED();
 }
