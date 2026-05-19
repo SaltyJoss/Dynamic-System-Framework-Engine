@@ -348,37 +348,11 @@ namespace robots {
 
 		// Define the derivative function for integration, capturing necessary variables by reference
 		auto f_deriv = [&, kp_frozen, kd_frozen](auto t, const auto& xIn) {
-			using Scalar = std::decay_t<decltype(t)>;
-
-			DynamicsScratch<Scalar> scratch;
-			DynamicsResult<Scalar> result;
-
-			SpatialModel<Scalar> spatialModel_s;
-
-			spatialModel_s.linkNameToIndex = _spatialModel.linkNameToIndex;
-			spatialModel_s.joints.resize(_spatialModel.joints.size());
-
-			for (size_t i = 0; i < _spatialModel.joints.size(); ++i) {
-
-				const auto& src = _spatialModel.joints[i];
-				auto& dst = spatialModel_s.joints[i];
-
-				dst.parent = src.parent;
-				dst.type = src.type;
-				dst.name = src.name;
-
-				dst.Xtree = src.Xtree.template cast<Scalar>();
-				dst.inertia = src.inertia.template cast<Scalar>();
-				dst.S.v = src.S.v.template cast<Scalar>();
-			}
-
-			auto snap_s = robots::castSnapshot<Scalar>(snap);
-
-			return _dynamics->template derivative_spatial<Scalar>(
-				spatialModel_s,
+			return _dynamics->derivative_spatial<double>(
+				_spatialModel,
 				t, xIn,
-				snap_s,
-				scratch, result
+				snap,
+				_dynScratch, _dynResult
 			);
 		};
 		// Define the Jacobian function for integration, capturing necessary variables by reference
