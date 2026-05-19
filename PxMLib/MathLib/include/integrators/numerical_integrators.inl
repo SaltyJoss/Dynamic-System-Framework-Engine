@@ -858,7 +858,7 @@ namespace integration {
 		mathlib::VecX_T<Scalar> x = x0, g, x_trial;
 		mathlib::VecX_T<Scalar> delta = mathlib::VecX_T<Scalar>::Constant(x0.size(), std::numeric_limits<Scalar>::infinity());
 		mathlib::MatX_T<Scalar> J;
-		Eigen::ColPivHouseholderQR<mathlib::MatX_T<Scalar>> solver;
+		Eigen::PartialPivLU<mathlib::MatX_T<Scalar>> solver;
 
 		for (int iter = 0; iter < maxIter; ++iter) {
 			eval_g(x, g);
@@ -923,7 +923,7 @@ namespace integration {
 		using BaseScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		mathlib::VecX_T<Scalar> delta = mathlib::VecX_T<Scalar>::Constant(x0.size(), Scalar(std::numeric_limits<BaseScalar>::infinity()));
 		mathlib::MatX_T<Scalar> J;
-		Eigen::ColPivHouseholderQR<mathlib::MatX_T<Scalar>> solver;
+		Eigen::PartialPivLU<mathlib::MatX_T<Scalar>> solver;
 		for (int iter = 0; iter < maxIter; ++iter) {
 			eval_g(x, g);
 			if (!g.allFinite()) {
