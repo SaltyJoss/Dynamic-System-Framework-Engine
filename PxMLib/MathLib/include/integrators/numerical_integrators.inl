@@ -995,26 +995,27 @@ namespace integration {
 
 	// Automatic Difference Jacobian
 	template<typename Scalar, typename Func>
-	mathlib::MatX_T<Scalar> NumericalIntegrator::automaticDifferenceJacobian(
+	mathlib::MatX_T<typename mathlib::DualTraits<Scalar>::BaseScalar> NumericalIntegrator::automaticDifferenceJacobian(
 		Func&& f,
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x
 	) {
+		using RealScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
+
 		const int n = static_cast<int>(x.size());
 		auto f0 = f(t, x);
 		const int m = static_cast<int>(f0.size());
 
-		mathlib::MatX_T<Scalar> J(m, n);
+		mathlib::MatX_T<RealScalar> J(m, n);
 		for (int i = 0; i < n; ++i) {
-			using BaseScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
-			using Dual_T = mathlib::DualNumber_T<BaseScalar, 1>;
+			using Dual_T = mathlib::DualNumber_T<RealScalar, 1>;
 
 			mathlib::VecX_T<Dual_T> x_dual(n);
 			for (int k = 0; k < n; ++k) {
 				x_dual(k) = Dual_T(
 					mathlib::real(x(k)),
-					std::array<BaseScalar, 1>{
-					(k == i) ? BaseScalar(1) : BaseScalar(0)
+					std::array<RealScalar, 1>{
+					(k == i) ? RealScalar(1) : RealScalar(0)
 				}
 				);
 			}

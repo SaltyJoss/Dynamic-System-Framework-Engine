@@ -190,7 +190,7 @@ namespace integration {
 		);
 
 		template<typename Scalar, typename Func>
-		mathlib::MatX_T<Scalar> automaticDifferenceJacobian(
+		mathlib::MatX_T<typename mathlib::DualTraits<Scalar>::BaseScalar> automaticDifferenceJacobian(
 			Func&& f,
 			Scalar t,
 			const mathlib::VecX_T<Scalar>& x
