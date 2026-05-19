@@ -15,6 +15,22 @@
 #include <ostream>
 
 namespace mathlib {
+	// Forward declaration of the DualNumber_T template class
+	template<typename Scalar, size_t NVar>
+	class DualNumber_T;
+
+	// Helper struct to extract the underlying scalar type from a dual number
+	template<typename T>
+	struct BaseScalar {
+		using type = T;
+	};
+
+	// Specialisation for dual numbers to extract the underlying scalar type
+	template<typename Scalar, size_t NVar>
+	struct BaseScalar<mathlib::DualNumber_T<Scalar, NVar>> {
+		using type = Scalar;
+	};
+
 	// Template version of dual number
 	template<typename Scalar, size_t NVar>
 	class DualNumber_T {
