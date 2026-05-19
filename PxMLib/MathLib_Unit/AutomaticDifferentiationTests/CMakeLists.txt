@@ -10,10 +10,6 @@ add_executable(MathLib_ADTests
     ADJacobianTests.cpp
     ADExplicitIntegratorTests.cpp
     ADImplicitIntegratorTests.cpp
-    DualNumber_Eigen_BasicTests.cpp
-    DualNumber_Eigen_ArithmeticTests.cpp
-    DualNumber_Eigen_SolverTests.cpp
-    DualNumber_Eigen_ADTests.cpp
 )
 
 target_link_libraries(MathLib_ADTests PRIVATE

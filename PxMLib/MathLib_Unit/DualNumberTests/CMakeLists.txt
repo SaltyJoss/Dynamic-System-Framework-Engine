@@ -11,6 +11,10 @@ add_executable(MathLib_DualNumberTests
     AssignmentOperatorTests.cpp
     DifferentiationTests.cpp
     TranscendentalTests.cpp
+    DualNumber_Eigen_BasicTests.cpp
+    DualNumber_Eigen_ArithmeticTests.cpp
+    DualNumber_Eigen_SolverTests.cpp
+    DualNumber_Eigen_ADTests.cpp
 )
 
 target_link_libraries(MathLib_DualNumberTests PRIVATE
