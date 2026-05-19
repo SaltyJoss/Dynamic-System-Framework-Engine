@@ -89,122 +89,122 @@ namespace {
 	}
 
 	integration::NumericalIntegrator integrator;
-
-	// Test that the Euler method correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Euler Method", Euler_ExponentialDecaySensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 1>>& x,
-			DualNumber_T<double, 1> t,
-			DualNumber_T<double, 1> dt
-		) {
-			return integrator.eulerStep(x, t, dt, expDecay<double, 1>);
-		};
-
-		verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
-	}
-	// Test that the Euler method correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Euler Method", Euler_HarmonicOscillatorSensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 2>>& x,
-			DualNumber_T<double, 2> t,
-			DualNumber_T<double, 2> dt
-		) {
-			return integrator.eulerStep(x, t, dt, harmonicOsc<double, 2>);
-		};
-		verifyHarmonicOscillatorSensitivity(stepFn, 5e-2, 5e-2, 1e-1, 2000);
-	}
-
-	// Tests that the Midpoint method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Midpoint Method (RK2)", Midpoint_ExponentialDecaySensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 1>>& x,
-			DualNumber_T<double, 1> t,
-			DualNumber_T<double, 1> dt
-			) {
-			return integrator.midpointStep(x, t, dt, expDecay<double, 1>);
-		};
-		verifyExpDecaySensitivity(stepFn, 1e-5, 500);
-	}
-	// Test that the Midpoint method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Midpoint Method (RK2)", Midpoint_HarmonicOscillatorSensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 2>>& x,
-			DualNumber_T<double, 2> t,
-			DualNumber_T<double, 2> dt
-			) {
-			return integrator.midpointStep(x, t, dt, harmonicOsc<double, 2>);
-		};
-		verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
-	}
-
-	// Tests that the Heun method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Heun Method (RK2)", Heun_ExponentialDecaySensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 1>>& x,
-			DualNumber_T<double, 1> t,
-			DualNumber_T<double, 1> dt
-			) {
-			return integrator.heunStep(x, t, dt, expDecay<double, 1>);
-		};
-		verifyExpDecaySensitivity(stepFn, 1e-5, 500);
-	}
-	// Test that the Heun method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Heun Method (RK2)", Heun_HarmonicOscillatorSensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 2>>& x,
-			DualNumber_T<double, 2> t,
-			DualNumber_T<double, 2> dt
-			) {
-			return integrator.heunStep(x, t, dt, harmonicOsc<double, 2>);
-		};
-		verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
-	}
-
-	// Tests that the Ralston method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Ralston Method (RK2)", Ralston_ExponentialDecaySensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 1>>& x,
-			DualNumber_T<double, 1> t,
-			DualNumber_T<double, 1> dt
-		) {
-			return integrator.ralstonStep(x, t, dt, expDecay<double, 1>);
-		};
-		verifyExpDecaySensitivity(stepFn, 1e-5, 500);
-	}
-	// Test that the Ralston method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD Ralston Method (RK2)", Ralston_HarmonicOscillatorSensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 2>>& x,
-			DualNumber_T<double, 2> t,
-			DualNumber_T<double, 2> dt
-		) {
-			return integrator.ralstonStep(x, t, dt, harmonicOsc<double, 2>);
-		};
-		verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
-	}
-
-	// Tests that the RK4 method correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD RK4 Method", RK4_ExponentialDecaySensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 1>>& x,
-			DualNumber_T<double, 1> t,
-			DualNumber_T<double, 1> dt
-		) {
-			return integrator.rk4Step(x, t, dt, expDecay<double, 1>);
-		};
-		verifyExpDecaySensitivity(stepFn, 1e-6, 200);
-	}
-	// Test that the RK4 method correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
-	TEST("AD RK4 Method", RK4_HarmonicOscillatorSensitivity) {
-		auto stepFn = [&](
-			const VecX_T<DualNumber_T<double, 2>>& x,
-			DualNumber_T<double, 2> t,
-			DualNumber_T<double, 2> dt
-		) {
-			return integrator.rk4Step(x, t, dt, harmonicOsc<double, 2>);
-		};
-		verifyHarmonicOscillatorSensitivity(stepFn, 1e-5, 1e-5, 1e-6, 100);
-	}
-
-	// RK45 method is not tested due to further complexity with using an adapative step, implementation will be tested separately LATER once confirmed these work.
 }
+
+// Test that the Euler method correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Euler Method", Euler_ExponentialDecaySensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 1>>& x,
+		DualNumber_T<double, 1> t,
+		DualNumber_T<double, 1> dt
+		) {
+		return integrator.eulerStep(x, t, dt, expDecay<double, 1>);
+	};
+
+	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+}
+// Test that the Euler method correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Euler Method", Euler_HarmonicOscillatorSensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 2>>& x,
+		DualNumber_T<double, 2> t,
+		DualNumber_T<double, 2> dt
+		) {
+		return integrator.eulerStep(x, t, dt, harmonicOsc<double, 2>);
+	};
+	verifyHarmonicOscillatorSensitivity(stepFn, 5e-2, 5e-2, 1e-1, 2000);
+}
+
+// Tests that the Midpoint method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Midpoint Method (RK2)", Midpoint_ExponentialDecaySensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 1>>& x,
+		DualNumber_T<double, 1> t,
+		DualNumber_T<double, 1> dt
+		) {
+		return integrator.midpointStep(x, t, dt, expDecay<double, 1>);
+	};
+	verifyExpDecaySensitivity(stepFn, 1e-5, 500);
+}
+// Test that the Midpoint method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Midpoint Method (RK2)", Midpoint_HarmonicOscillatorSensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 2>>& x,
+		DualNumber_T<double, 2> t,
+		DualNumber_T<double, 2> dt
+		) {
+		return integrator.midpointStep(x, t, dt, harmonicOsc<double, 2>);
+	};
+	verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
+}
+
+// Tests that the Heun method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Heun Method (RK2)", Heun_ExponentialDecaySensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 1>>& x,
+		DualNumber_T<double, 1> t,
+		DualNumber_T<double, 1> dt
+		) {
+		return integrator.heunStep(x, t, dt, expDecay<double, 1>);
+	};
+	verifyExpDecaySensitivity(stepFn, 1e-5, 500);
+}
+// Test that the Heun method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Heun Method (RK2)", Heun_HarmonicOscillatorSensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 2>>& x,
+		DualNumber_T<double, 2> t,
+		DualNumber_T<double, 2> dt
+		) {
+		return integrator.heunStep(x, t, dt, harmonicOsc<double, 2>);
+	};
+	verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
+}
+
+// Tests that the Ralston method (RK2) correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Ralston Method (RK2)", Ralston_ExponentialDecaySensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 1>>& x,
+		DualNumber_T<double, 1> t,
+		DualNumber_T<double, 1> dt
+		) {
+		return integrator.ralstonStep(x, t, dt, expDecay<double, 1>);
+	};
+	verifyExpDecaySensitivity(stepFn, 1e-5, 500);
+}
+// Test that the Ralston method (RK2) correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
+TEST("AD Ralston Method (RK2)", Ralston_HarmonicOscillatorSensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 2>>& x,
+		DualNumber_T<double, 2> t,
+		DualNumber_T<double, 2> dt
+		) {
+		return integrator.ralstonStep(x, t, dt, harmonicOsc<double, 2>);
+	};
+	verifyHarmonicOscillatorSensitivity(stepFn, 5e-4, 5e-4, 5e-3, 1000);
+}
+
+// Tests that the RK4 method correctly integrates the exponential decay ODE, and that the dual number derivatives match the analytical derivatives.
+TEST("AD RK4 Method", RK4_ExponentialDecaySensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 1>>& x,
+		DualNumber_T<double, 1> t,
+		DualNumber_T<double, 1> dt
+		) {
+		return integrator.rk4Step(x, t, dt, expDecay<double, 1>);
+	};
+	verifyExpDecaySensitivity(stepFn, 1e-6, 200);
+}
+// Test that the RK4 method correctly integrates a simple harmonic oscillator, and that the dual number derivatives match the analytical derivatives.
+TEST("AD RK4 Method", RK4_HarmonicOscillatorSensitivity) {
+	auto stepFn = [&](
+		const VecX_T<DualNumber_T<double, 2>>& x,
+		DualNumber_T<double, 2> t,
+		DualNumber_T<double, 2> dt
+		) {
+		return integrator.rk4Step(x, t, dt, harmonicOsc<double, 2>);
+	};
+	verifyHarmonicOscillatorSensitivity(stepFn, 1e-5, 1e-5, 1e-6, 100);
+}
+
+// RK45 method is not tested due to further complexity with using an adapative step, implementation will be tested separately LATER once confirmed these work.
