@@ -128,18 +128,18 @@ namespace {
 
 // AD Implicit Euler Tests
 // Test case for the GLRK2 method on the exponenital decay ODE.
-//TEST("AD Implicit Euler Method", ImplicitEuler_ExponentialDecay) {
-//	VecX_T<DualNumber_T<double, 1>> x(1);
-//	x(0) = DualNumber_T<double, 1>(1.0, { 0.0 });
-//	double T = 1.0;
-//	DualNumber_T<double, 1> dt(T / 1000.0, { 0.0 });
-//	DualNumber_T<double, 1> t(0.0, { 0.0 });
-//	for (int i = 0; i < 1000; ++i) {
-//		x = integrator.implicitEuler_AD(x, t, dt, expDecay<double, 1>, 8, DualNumber_T<double, 1>(1e-6, { 0.0 }));
-//		t += dt;
-//	}
-//	ASSERT_TRUE(std::abs(x(0).real - std::exp(-1.0)) < tol_low, "Implicit Euler exponential decay error too large");
-//}
+TEST("AD Implicit Euler Method", ImplicitEuler_ExponentialDecay) {
+	VecX_T<DualNumber_T<double, 1>> x(1);
+	x(0) = DualNumber_T<double, 1>(1.0, { 0.0 });
+	double T = 1.0;
+	DualNumber_T<double, 1> dt(T / 1000.0, { 0.0 });
+	DualNumber_T<double, 1> t(0.0, { 0.0 });
+	for (int i = 0; i < 1000; ++i) {
+		x = integrator.implicitEuler_AD(x, t, dt, expDecay<double, 1>, 8, DualNumber_T<double, 1>(1e-6, { 0.0 }));
+		t += dt;
+	}
+	ASSERT_TRUE(std::abs(x(0).real - std::exp(-1.0)) < tol_low, "Implicit Euler exponential decay error too large");
+}
 //// Test case for the implicit Euler method on the exponential decay ODE.
 //TEST("AD Implicit Euler Method", ImplicitEuler_ExponentialDecaySensitivity) {
 //	auto stepFn = [&](

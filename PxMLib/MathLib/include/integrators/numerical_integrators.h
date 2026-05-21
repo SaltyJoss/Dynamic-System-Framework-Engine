@@ -198,4 +198,6 @@ namespace integration {
 	};
 }// namespace integration
 
-#include "numerical_integrators.inl"
+#include "explicit_integrators.inl"
+#include "implicit_integrators.inl"
+#include "ad_implicit_integrators.inl"
