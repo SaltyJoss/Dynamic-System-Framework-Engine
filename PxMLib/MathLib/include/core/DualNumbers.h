@@ -35,14 +35,10 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	class DualNumber_T {
 	public:
-		using ScalarT = Scalar;
-
 		DualNumber_T(const Scalar& real = Scalar(0))
 			: real(real) { dual.fill(Scalar(0)); }
-
 		DualNumber_T(const Scalar& real, const std::array<Scalar, NVar>& dual)
 			: real(real), dual(dual) {}
-
 		DualNumber_T(Scalar real, std::initializer_list<Scalar> duals)
 			: real(real) {
 			dual.fill(Scalar(0));
@@ -52,6 +48,8 @@ namespace mathlib {
 				dual.begin()
 			);
 		}
+
+		explicit operator Scalar() const { return real; }
 
 		Scalar real;
 		std::array<Scalar, NVar> dual;
@@ -95,7 +93,6 @@ namespace mathlib {
 	inline bool operator<=(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b) { return a.real <= b.real; }
 	template<typename Scalar, size_t NVar>
 	inline bool operator>=(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b) { return a.real >= b.real; }
-
 	// Comparison with scalar (compare only the real part)
 	template<typename Scalar, size_t NVar>
 	inline bool operator==(const DualNumber_T<Scalar, NVar>& a, Scalar b) { return a.real == b; }
@@ -109,6 +106,19 @@ namespace mathlib {
 	inline bool operator<=(const DualNumber_T<Scalar, NVar>& a, Scalar b) { return a.real <= b; }
 	template<typename Scalar, size_t NVar>
 	inline bool operator>=(const DualNumber_T<Scalar, NVar>& a, Scalar b) { return a.real >= b; }
+	// Comparison with scalar (scalar on left)
+	template<typename Scalar, size_t NVar>
+	inline bool operator==(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return b == a; }
+	template<typename Scalar, size_t NVar>
+	inline bool operator!=(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return !(b == a); }
+	template<typename Scalar, size_t NVar>
+	inline bool operator<(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return a < b.real; }
+	template<typename Scalar, size_t NVar>
+	inline bool operator>(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return a > b.real; }
+	template<typename Scalar, size_t NVar>
+	inline bool operator<=(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return a <= b.real; }
+	template<typename Scalar, size_t NVar>
+	inline bool operator>=(Scalar a, const DualNumber_T<Scalar, NVar>& b) { return a >= b.real; }
 
 	// -----
 	// Scalar Interactions
@@ -382,7 +392,6 @@ namespace mathlib {
 	inline DualNumber_T<scalar, NVar> numeric_limits_infinity() {
 		return DualNumber_T<scalar, NVar>(std::numeric_limits<scalar>::infinity(), std::array<scalar, NVar>());
 	}
-
 	// Alternative absolute value function that simply negates the dual number if the real part is negative (this is less smooth but can be more efficient and avoids issues with zero)
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> abs(const DualNumber_T<Scalar, NVar>& a) {
@@ -441,7 +450,6 @@ namespace mathlib {
 		}
 		return out;
 	}
-
 	// Since dual numbers are not complex, the real part is just the real part of the dual number (for non-dual types, this is just the value itself)
 	template<typename T>
 	inline T real(const T& x) { return x; }
@@ -475,7 +483,6 @@ namespace mathlib {
 		using BaseScalar = Scalar;
 		static constexpr bool is_dual = true;
 	};
-
 	// Dual Part
 	template<typename Scalar, size_t N>
 	Scalar dualPart(const DualNumber_T<Scalar, N>& x) { return x.dual[0]; }
@@ -570,7 +577,6 @@ namespace Eigen {
 		template<typename Scalar, size_t NVar>
 		struct scalar_abs_op<mathlib::DualNumber_T<Scalar, NVar>> {
 			using Dual = mathlib::DualNumber_T<Scalar, NVar>;
-
 			EIGEN_DEVICE_FUNC Scalar operator()(const Dual& x) const { return std::abs(x.real); }
 		};
 
@@ -598,21 +604,50 @@ namespace Eigen {
 			typedef Scalar return_type;
 			EIGEN_DEVICE_FUNC static return_type run(const mathlib::DualNumber_T<Scalar, NVar>& x) { return x.real; }
 		};
-
 		// Specialisation of Eigen's imag_impl
 		template<typename Scalar, size_t NVar>
 		struct imag_impl<mathlib::DualNumber_T<Scalar, NVar>> {
 			typedef Scalar return_type;
 			EIGEN_DEVICE_FUNC static return_type run(const mathlib::DualNumber_T<Scalar, NVar>&) { return Scalar(0); }
 		};
-
 		// Specialisation of Eigen's abs2_impl
 		template<typename Scalar, size_t NVar>
 		struct abs2_impl<mathlib::DualNumber_T<Scalar, NVar>> {
 			typedef Scalar return_type;
 			EIGEN_DEVICE_FUNC static return_type run(const mathlib::DualNumber_T<Scalar, NVar>& x) { return x.real * x.real; }
 		};
+
+		// Definition of scalar_product_op for DualNumber_T
+		template<typename Scalar, size_t NVar>
+		struct scalar_product_op<mathlib::DualNumber_T<Scalar, NVar>, Scalar> {
+			typedef mathlib::DualNumber_T<Scalar, NVar> result_type;
+		};
+		template<typename Scalar, size_t NVar>
+		struct scalar_product_op<Scalar, mathlib::DualNumber_T<Scalar, NVar>> {
+			typedef mathlib::DualNumber_T<Scalar, NVar> result_type;
+		};
 	} // namespace internal
+
+	// Specialisation for dual + scalar (the result is still a dual number)
+	template<typename Scalar, size_t NVar>
+	struct ScalarBinaryOpTraits<mathlib::DualNumber_T<Scalar, NVar>, Scalar, internal::add_assign_op<mathlib::DualNumber_T<Scalar, NVar>, Scalar>> {
+		typedef mathlib::DualNumber_T<Scalar, NVar> ReturnType;
+	};
+	// Specialisation for scalar + dual (the order of the operands is reversed, but the result is still a dual number)
+	template<typename Scalar, size_t NVar>
+	struct ScalarBinaryOpTraits<Scalar, mathlib::DualNumber_T<Scalar, NVar>, internal::add_assign_op<Scalar, mathlib::DualNumber_T<Scalar, NVar>>> {
+		typedef mathlib::DualNumber_T<Scalar, NVar> ReturnType;
+	};
+	// Specialisation for dual - scalar (the result is still a dual number)
+	template<typename Scalar, size_t NVar>
+	struct ScalarBinaryOpTraits<mathlib::DualNumber_T<Scalar, NVar>, Scalar, internal::sub_assign_op<mathlib::DualNumber_T<Scalar, NVar>, Scalar>> {
+		typedef mathlib::DualNumber_T<Scalar, NVar> ReturnType;
+	};
+	// Specialisation for scalar - dual (the order of the operands is reversed, but the result is still a dual number)
+	template<typename Scalar, size_t NVar>
+	struct ScalarBinaryOpTraits<Scalar, mathlib::DualNumber_T<Scalar, NVar>, internal::sub_assign_op<Scalar, mathlib::DualNumber_T<Scalar, NVar>>> {
+		typedef mathlib::DualNumber_T<Scalar, NVar> ReturnType;
+	};
 
 	// Specialisation of Eigen's numext functions for DualNumber_T to allow Eigen's algorithms that rely on these functions (like abs, real, imag, conj) to work correctly with dual numbers
 	namespace numext {

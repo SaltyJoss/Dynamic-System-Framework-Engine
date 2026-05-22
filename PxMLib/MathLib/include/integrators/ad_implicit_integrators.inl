@@ -303,7 +303,7 @@ namespace integration {
 		return x_f;
 	}
 
-	// AD version of Newton-Raphson solver for systems of nonlinear equations g(x) = 0 (DOES NOT USE NEWTON RAPHSON CALL)
+	// AD version of Newton-Raphson solver for systems of nonlinear equations g(x) = 0
 	template<typename Scalar, typename EvalG, typename EvalJ>
 	mathlib::VecX_T<Scalar> NumericalIntegrator::newtonRaphson_AD(
 		EvalG&& eval_g,
@@ -325,9 +325,9 @@ namespace integration {
 			eval_j(x, J);
 			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter)); }
 			solver.compute(J);
-			delta = solver.solve(-g);
+			delta = solver.solve((-g).template cast<Real>());
 			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter)); }
-			x += delta;
+			x += delta.template cast<Scalar>();
 			if (delta.norm() < tol * (Scalar(1) + x.norm())) { return x; }
 			if (!x.allFinite()) { throw std::runtime_error("Newton state became non-finite at iter = " + std::to_string(iter)); }
 		}
