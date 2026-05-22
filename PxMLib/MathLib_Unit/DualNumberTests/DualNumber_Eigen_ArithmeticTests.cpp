@@ -61,13 +61,3 @@ TEST("DualNumber_T Eigen Arithmetic", DotProduct) {
 	ASSERT_TRUE(dotProduct.real == 11.0 && dotProduct.dual[0] == 17.0,
 		"The dot product should be the sum of the products of corresponding elements");
 }
-
-//TEST("DualNumber_T Eigen Arithmetic", MatrixScalarMultiplication) {
-//	Eigen::Matrix<Dual, 2, 2> A;
-//	A(0, 0) = Dual(1.0, { 0.5 });
-//	A(1, 1) = Dual(2.0, { 1.5 });
-//	double scalar = 2.0;
-//	Eigen::Matrix<Dual, 2, 2> B = A * scalar;
-//	ASSERT_TRUE(B(0, 0).real == 2.0 && B(0, 0).dual[0] == 1.0, "B(0, 0) should be the product of A and scalar");
-//	ASSERT_TRUE(B(1, 1).real == 4.0 && B(1, 1).dual[0] == 3.0, "B(1, 1) should be the product of A and scalar");
-//}

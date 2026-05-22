@@ -618,11 +618,17 @@ namespace Eigen {
 		template<typename Scalar, size_t NVar>
 		struct scalar_product_op<mathlib::DualNumber_T<Scalar, NVar>, Scalar> {
 			typedef mathlib::DualNumber_T<Scalar, NVar> result_type;
+			EIGEN_DEVICE_FUNC inline result_type operator()(const mathlib::DualNumber_T<Scalar, NVar>& a, Scalar b) const {
+				return a * b; // Use the previously defined operator* for DualNumber_T and scalar
+			}
 		};
 		// Same as above but with the order of the operands reversed (LHS is scalar, RHS is dual)
 		template<typename Scalar, size_t NVar>
 		struct scalar_product_op<Scalar, mathlib::DualNumber_T<Scalar, NVar>> {
 			typedef mathlib::DualNumber_T<Scalar, NVar> result_type;
+			EIGEN_DEVICE_FUNC inline result_type operator()(Scalar a, const mathlib::DualNumber_T<Scalar, NVar>& b) const {
+				return b * a; // Use the previously defined operator* for DualNumber_T and scalar
+			}
 		};
 	} // namespace internal
 

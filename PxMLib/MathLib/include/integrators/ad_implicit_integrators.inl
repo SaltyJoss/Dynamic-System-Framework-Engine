@@ -47,13 +47,15 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
+		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
+
 		// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
 
 		// Numerical Jacobian for Newton-Raphson
-		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Real>& J_out) {
 			int n = (int)x_guess.size();
-			mathlib::MatX_T<Scalar> F;
+			mathlib::MatX_T<Real> F;
 			bool analytical_success = false;
 
 			F = automaticDifferenceJacobian(
@@ -63,10 +65,10 @@ namespace integration {
 				Dual t_mid = (t_pert + dt) / Dual(2);
 				return f(t_mid, x_mid);
 			},
-				t + dt / Scalar(2),
+				t + dt / Real(2),
 				x_guess
 			);
-			J_out = mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F; // J = I - dt * df/dx
+			J_out = (mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F).template cast<Real>(); // J = I - dt * df/dx
 		};
 
 		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
@@ -89,17 +91,17 @@ namespace integration {
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
-		mathlib::VecX_T<Real> c(2);
+		mathlib::VecX_T<Scalar> c(2);
 		c <<
-			Real(0.5) - sqrt(Real(3)) / Real(6),
-			Real(0.5) + sqrt(Real(3)) / Real(6); // Stage time fractions
+			Scalar(0.5) - sqrt(Scalar(3)) / Scalar(6),
+			Scalar(0.5) + sqrt(Scalar(3)) / Scalar(6); // Stage time fractions
 
-		mathlib::MatX_T<Real> A(2, 2);
+		mathlib::MatX_T<Scalar> A(2, 2);
 		A <<
-			Real(0.25), Real(0.25) - sqrt(Real(3)) / Real(6),
-			Real(0.25) + sqrt(Real(3)) / Real(6), Real(0.25);
+			Scalar(0.25), Scalar(0.25) - sqrt(Scalar(3)) / Scalar(6),
+			Scalar(0.25) + sqrt(Scalar(3)) / Scalar(6), Scalar(0.25);
 
-		const Real b = Real(0.5); // Weights for final update
+		const Scalar b = Scalar(0.5); // Weights for final update
 
 		// Initial guess for the stage values k1, k2, k3
 		mathlib::VecX_T<Scalar> k(2 * n); // 2 stages
@@ -122,7 +124,7 @@ namespace integration {
 			g.segment(n, n) = k2 - f2;
 		};
 
-		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Real>& J) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
@@ -150,10 +152,10 @@ namespace integration {
 			);
 
 			J.setZero(2 * n, 2 * n);
-			J.block(0, 0, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1;
-			J.block(0, n, n, n) = -dt * A(0, 1) * F1;
-			J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
-			J.block(n, n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2;
+			J.block(0, 0, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1).template cast<Real>;
+			J.block(0, n, n, n) = (- dt * A(0, 1) * F1).template cast<Real>;
+			J.block(n, 0, n, n) = (- dt * A(1, 0) * F2).template cast<Real>;
+			J.block(n, n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2).template cast<Real>;
 		};
 
 		// Solve the nonlinear system for the stage values using Newton-Raphson
@@ -192,20 +194,20 @@ namespace integration {
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
-		mathlib::VecX_T<Real> c(3);
+		mathlib::VecX_T<Scalar> c(3);
 		c <<
-			Real(0.5) - sqrt(Real(15)) / Real(10),
-			Real(0.5),
-			Real(0.5) + sqrt(Real(15)) / Real(10); // Stage time fractions
+			Scalar(0.5) - sqrt(Scalar(15)) / Scalar(10),
+			Scalar(0.5),
+			Scalar(0.5) + sqrt(Scalar(15)) / Scalar(10); // Stage time fractions
 
-		mathlib::Mat3_T<Real> A(3, 3);
+		mathlib::Mat3_T<Scalar> A(3, 3);
 		A <<
-			Real(5) / Real(36), Real(2) / Real(9) - sqrt(Real(15)) / Real(15), Real(5) / Real(36) - sqrt(Real(15)) / Real(30),
-			Real(5) / Real(36) + sqrt(Real(15)) / Real(24), Real(2) / Real(9), Real(5) / Real(36) - sqrt(Real(15)) / Real(24),
-			Real(5) / Real(36) + sqrt(Real(15)) / Real(30), Real(2) / Real(9) + sqrt(Real(15)) / Real(15), Real(5) / Real(36);
+			Scalar(5) / Scalar(36), Scalar(2) / Scalar(9) - sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(30),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(24), Scalar(2) / Scalar(9), Scalar(5) / Scalar(36) - sqrt(Scalar(15)) / Scalar(24),
+			Scalar(5) / Scalar(36) + sqrt(Scalar(15)) / Scalar(30), Scalar(2) / Scalar(9) + sqrt(Scalar(15)) / Scalar(15), Scalar(5) / Scalar(36);
 
-		mathlib::VecX_T<Real> b(3);
-		b << Real(5) / Real(18), Real(4) / Real(9), Real(5) / Real(18); // Weights for final update
+		mathlib::VecX_T<Scalar> b(3);
+		b << Scalar(5) / Scalar(18), Scalar(4) / Scalar(9), Scalar(5) / Scalar(18); // Weights for final update
 
 		// Initial guess for the stage values k1, k2, k3
 		mathlib::VecX_T<Scalar> k(3 * n); // 3 stages
@@ -234,7 +236,7 @@ namespace integration {
 			g.segment(2 * n, n) = k3 - f3;
 		};
 
-		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Scalar>& J) {
+		auto eval_j = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::MatX_T<Real>& J) {
 			// Extract the stage values k1, k2, k3 from the input guess vector
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
@@ -276,23 +278,21 @@ namespace integration {
 				x3
 			);
 			J.setZero(3 * n, 3 * n);
-			J.block(0, 0, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1;
-			J.block(0, n, n, n) = -dt * A(0, 1) * F1;
-			J.block(0, 2 * n, n, n) = -dt * A(0, 2) * F1;
-			J.block(n, 0, n, n) = -dt * A(1, 0) * F2;
-			J.block(n, n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2;
-			J.block(n, 2 * n, n, n) = -dt * A(1, 2) * F2;
-			J.block(2 * n, 0, n, n) = -dt * A(2, 0) * F3;
-			J.block(2 * n, n, n, n) = -dt * A(2, 1) * F3;
-			J.block(2 * n, 2 * n, n, n) = mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(2, 2) * F3;
+			J.block(0, 0, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1).template cast<Real>;
+			J.block(0, n, n, n) = (- dt * A(0, 1) * F1).template cast<Real>;
+			J.block(0, 2 * n, n, n) = (- dt * A(0, 2) * F1).template cast<Real>;
+			J.block(n, 0, n, n) = (- dt * A(1, 0) * F2).template cast<Real>;
+			J.block(n, n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2).template cast<Real>;
+			J.block(n, 2 * n, n, n) = (- dt * A(1, 2) * F2).template cast<Real>;
+			J.block(2 * n, 0, n, n) = (- dt * A(2, 0) * F3).template cast<Real>;
+			J.block(2 * n, n, n, n) = (- dt * A(2, 1) * F3).template cast<Real>;
+			J.block(2 * n, 2 * n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(2, 2) * F3).template cast<Real>;
 		};
 
 		// Solve the nonlinear system for the stage values using Newton-Raphson
 		k = newtonRaphson_AD(eval_g, eval_j, k, maxIter, tol);
 		mathlib::VecX_T<Scalar> g_check;
 		eval_g(k, g_check);
-
-		//if (residual > 1e-8) { std::cout << "[GLRK3] Large final residual: " << residual << std::endl; }
 
 		// Compute the final update for x using the stage values
 		mathlib::VecX_T<Scalar> k1 = k.segment(0, n);
