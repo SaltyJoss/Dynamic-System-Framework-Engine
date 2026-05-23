@@ -20,12 +20,12 @@ namespace integration {
 			case eIntegrationMethod::Ralston:  return { _integrator->ralstonStep(x, t, dt, std::forward<Func>(f)), dt, dt };
 			case eIntegrationMethod::RK4:      return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
 			case eIntegrationMethod::RK45:	   return step_adaptive(eIntegrationMethod::RK45, x, t, dt, std::forward<Func>(f), _rtol, _atol);
-				// Implicit methods
-				//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
+			// Implicit methods
+			//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
 			case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicitEuler(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
 			case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicitMidpoint(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
-			case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
-			case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
+			case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 80, 1e-10), dt, dt };
+			case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 150, 1e-14), dt, dt };
 			default:
 			LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
 			return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };

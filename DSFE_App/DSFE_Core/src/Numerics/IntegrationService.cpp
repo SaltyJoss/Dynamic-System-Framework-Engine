@@ -60,7 +60,12 @@ namespace integration {
 	const std::string IntegrationService::IntegratorName(eIntegrationMethod m) { return std::string(toString(m)); }
 
 	// Constructor
-	IntegrationService::IntegrationService() 
+	IntegrationService::IntegrationService()
 		: _integrator(std::make_unique<integration::NumericalIntegrator>()), method(eIntegrationMethod::RK4), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {
+	}
+
+	// Constructor for autodiff
+	DifferentiableIntegrator::DifferentiableIntegrator()
+		: _integrator(std::make_unique<integration::NumericalIntegrator>()), _m(eAutoDiffIntegrationMethod::AD_ImplicitEuler) {
 	}
 } // namespace integration
