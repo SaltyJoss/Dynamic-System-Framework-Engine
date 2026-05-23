@@ -59,8 +59,11 @@ namespace integration {
 
 		template<typename Scalar, typename Func>
 		StepOut_T<Scalar> step(eAutoDiffIntegrationMethod m, mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f);
+		const std::string IntegratorName(eAutoDiffIntegrationMethod m);
 
 	private:
+		const char* toString(eAutoDiffIntegrationMethod m);
+
 		integration::eAutoDiffIntegrationMethod _m;
 		std::unique_ptr<integration::NumericalIntegrator> _integrator;
 		std::string _mStr = "AD_ImplicitEuler";

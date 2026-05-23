@@ -35,15 +35,9 @@ namespace robots {
 	// Step Result struct
 	template<typename Scalar>
 	struct RobotStepResult_T {
-		integration::StepOut_T<Scalar> integration;
+		integration::StepOut_T<Scalar> stepOut;
 		RobotSimSnapshot_T<Scalar> snap;
-		std::vector<Pose_T<Scalar>> T_world;
-		std::vector<Pose_T<Scalar>> jointWorldPoses;
-		mathlib::MatX_T<Scalar> M;
 		mathlib::VecX_T<Scalar> tau_rnea;
-		mathlib::VecX_T<Scalar> tau_g;
-		Scalar dt_taken;
-		Scalar dt_sug;
 	};
 
 	class DSFE_API RobotSystem {
@@ -130,6 +124,8 @@ namespace robots {
 		RobotSimSnapshot takeSnapshot(Scalar simTime) const;
 
 		void step(double dt, double simTime);
+		template<size_t NVar>
+		void step_AD(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
@@ -154,6 +150,10 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+
+		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
+		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) { _curIntMethod_AD = method; }
+		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
 
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
@@ -187,6 +187,9 @@ namespace robots {
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
+
+		std::unique_ptr<integration::DifferentiableIntegrator> _AD_integrator;
+		integration::eAutoDiffIntegrationMethod _curIntMethod_AD{};
 
 		eRole _role = eRole::Simulation;
 
@@ -269,9 +272,9 @@ namespace robots {
 		double _baseYawAcc = 0.0;
 
 		// Tunables
-		double _baseMass = 62.0;           // kg (H1 ~60–65)
-		double _baseLinearDamping = 6.0;   // Ns/m
-		double _baseYawDamping = 2.0;      // Nms/rad
+		double _baseMass = 62.0;			// kg (H1 ~60–65)
+		double _baseLinearDamping = 6.0;	// Ns/m
+		double _baseYawDamping = 2.0;		// Nms/rad
 		double _lastBaseForwardForce = 0.0;
 
 		// Double-buffer design
