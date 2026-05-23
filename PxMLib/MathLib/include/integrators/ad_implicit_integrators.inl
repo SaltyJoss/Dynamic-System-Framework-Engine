@@ -53,19 +53,34 @@ namespace integration {
 			mathlib::MatX_T<Real> F;
 			auto perturbation_func = [&](auto t_pert, const auto& x_pert) {
 				using Dual = std::decay_t<decltype(x_pert(0))>;
-				auto x_real = x.template cast<Real>();
-				mathlib::VecX_T<Dual> x_cast = x_real.template cast<Dual>();
+				mathlib::VecX_T<Dual> x_cast = x.template cast<Dual>();
 				mathlib::VecX_T<Dual> x_mid = (x_cast + x_pert) / Dual(2);
-				Dual t_mid = (t_pert + Dual(static_cast<Real>(dt))) / Dual(2);
-				auto f_eval = f(t_mid, x_mid);
-				return f_eval.template cast<Dual>();
+				Dual t_mid = t_pert + Dual(static_cast<Real>(dt)) / Dual(2);
+				return f(t_mid, x_mid);
 			};
 			F = automaticDifferenceJacobian(perturbation_func, t, x_guess);
 			Real dt_real = static_cast<Real>(dt);
-			J_out = mathlib::MatX_T<Real>::Identity(n, n) - Real(0.5) * dt_real * F; // J = I - dt * df/dx
+			J_out = mathlib::MatX_T<Real>::Identity(n, n) - dt_real * F; // J = I - dt * df/dx
 		};
 		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
-		return newtonRaphson_AD(g, J, x0, maxIter, tol);
+		mathlib::VecX_T<Scalar> res = newtonRaphson_AD(g, J, x0, maxIter, tol);
+
+		// Right-Side Factof Implicit Midpoint (missing from the generic `newtonRaphson_AD` method
+		constexpr size_t n = mathlib::DualTraits<Scalar>::Dimension;
+		mathlib::MatX_T<Real> Fx;
+		auto midpoint_func = [&](auto /*t_pert*/, const auto& x_pert) { return f(t + Scalar(dt) / Scalar(2), x_pert); };
+		mathlib::VecX_T<Scalar> x_mid = (x + res) / Scalar(2);
+		Fx = automaticDifferenceJacobian(midpoint_func, t, x_mid);
+		mathlib::MatX_T<Real> A = mathlib::MatX_T<Real>::Identity(x.size(), x.size()) - Real(0.5) * static_cast<Real>(dt) * Fx;
+		mathlib::MatX_T<Real> B = mathlib::MatX_T<Real>::Identity(x.size(), x.size()) + Real(0.5) * static_cast<Real>(dt) * Fx;
+		Eigen::FullPivLU<mathlib::MatX_T<Real>> solver(A);
+		for (size_t d = 0; d < n; ++d) {
+			mathlib::VecX_T<Real> s_old(x.size());
+			for (Eigen::Index i = 0; i < x.size(); ++i) { s_old(i) = x(i).dual[d]; }
+			mathlib::VecX_T<Real> s_new = solver.solve(B * s_old);
+			for (Eigen::Index i = 0; i < x.size(); ++i) { res(i).dual[d] = s_new(i); }
+		}
+		return res;
 	}
 
 	// AD version of Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
@@ -121,9 +136,8 @@ namespace integration {
 			F1 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = t_pert + Dual(c(0)) * static_cast<Real>(dt);
-					auto f_eval = f(t_eval, x_pert);
-					return f_eval.template cast<Dual>();
+					Dual t_eval = t_pert + Dual(c(0)) * static_cast<Real>(dt); 
+					return f(t_eval, x_pert);
 				},
 				t + c(0) * dt,
 				x1
@@ -132,8 +146,7 @@ namespace integration {
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
 					Dual t_eval = t_pert + Dual(c(1)) * static_cast<Real>(dt);
-					auto f_eval = f(t_eval, x_pert);
-					return f_eval.template cast<Dual>();
+					return f(t_eval, x_pert);
 				},
 				t + c(1) * dt,
 				x2
@@ -246,8 +259,7 @@ namespace integration {
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
 					Dual t_eval = t_pert + Dual(c(0)) * static_cast<Real>(dt);
-					auto f_eval = f(t_eval, x_pert);
-					return f_eval.template cast<Dual>();
+					return f(t_eval, x_pert);
 				},
 				t + c(0) * dt,
 				x1
@@ -257,8 +269,7 @@ namespace integration {
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
 					Dual t_eval = t_pert + Dual(c(1)) * static_cast<Real>(dt);
-					auto f_eval = f(t_eval, x_pert);
-					return f_eval.template cast<Dual>();
+					return f(t_eval, x_pert);
 				},
 				t + c(1) * dt,
 				x2
@@ -268,8 +279,7 @@ namespace integration {
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
 					Dual t_eval = t_pert + Dual(c(2)) * static_cast<Real>(dt);
-					auto f_eval = f(t_eval, x_pert);
-					return f_eval.template cast<Dual>();
+					return f(t_eval, x_pert);
 				},
 				t + c(2) * dt,
 				x3
