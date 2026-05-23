@@ -9,6 +9,7 @@
 #include <string>
 #include <functional>
 #include <iostream>
+#include <format>
 
 // Numerical integration methods
 namespace integration {
@@ -189,11 +190,11 @@ namespace integration {
 			const mathlib::VecX_T<Scalar>& x
 		);
 
-		template<typename Scalar, typename Func>
-		mathlib::MatX_T<typename mathlib::DualTraits<Scalar>::BaseScalar> automaticDifferenceJacobian(
+		template<typename RealScalar, size_t NVar, typename Func>
+		mathlib::MatX_T<RealScalar> automaticDifferenceJacobian(
 			Func&& f,
-			Scalar t,
-			const mathlib::VecX_T<Scalar>& x
+			mathlib::DualNumber_T<RealScalar, NVar> t,
+			const mathlib::VecX_T<mathlib::DualNumber_T<RealScalar, NVar>>& x
 		);
 	};
 }// namespace integration

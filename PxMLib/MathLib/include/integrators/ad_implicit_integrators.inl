@@ -58,17 +58,24 @@ namespace integration {
 			mathlib::MatX_T<Real> F;
 			bool analytical_success = false;
 
-			F = automaticDifferenceJacobian(
-				[&](auto t_pert, const auto& x_pert) {
+			auto perturbation_func = [&](auto t_pert, const auto& x_pert) {
 				using Dual = std::decay_t<decltype(x_pert(0))>;
-				mathlib::VecX_T<Dual> x_mid = (x.template cast<Dual>() + x_pert) / Dual(2);
-				Dual t_mid = (t_pert + dt) / Dual(2);
-				return f(t_mid, x_mid);
-			},
-				t + dt / Real(2),
+				auto x_real = x.template cast<Real>();
+				mathlib::VecX_T<Dual> x_cast = x_real.template cast<Dual>();
+				mathlib::VecX_T<Dual> x_mid = (x_cast + x_pert) / Dual(2);
+				Dual t_mid = (t_pert + Dual(static_cast<Real>(dt))) / Dual(2);
+				auto f_eval = f(t_mid, x_mid);
+				return f_eval.template cast<Dual>();
+			};
+
+			F = automaticDifferenceJacobian(
+				perturbation_func,
+				t,
 				x_guess
 			);
-			J_out = (mathlib::MatX_T<Scalar>::Identity(n, n) - Scalar(0.5) * dt * F).template cast<Real>(); // J = I - dt * df/dx
+
+			Real dt_real = static_cast<Real>(dt);
+			J_out = mathlib::MatX_T<Real>::Identity(n, n) - Real(0.5) * dt_real * F; // J = I - dt * df/dx
 		};
 
 		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
@@ -102,7 +109,7 @@ namespace integration {
 			Scalar(0.25) + sqrt(Scalar(3)) / Scalar(6), Scalar(0.25);
 
 		const Scalar b = Scalar(0.5); // Weights for final update
-
+		
 		// Initial guess for the stage values k1, k2, k3
 		mathlib::VecX_T<Scalar> k(2 * n); // 2 stages
 		mathlib::VecX_T<Scalar> f0 = f(t, x);
@@ -335,30 +342,27 @@ namespace integration {
 	}
 
 	// Automatic Difference Jacobian
-	template<typename Scalar, typename Func>
-	mathlib::MatX_T<typename mathlib::DualTraits<Scalar>::BaseScalar> NumericalIntegrator::automaticDifferenceJacobian(
+	template<typename RealScalar, size_t NVar, typename Func>
+	mathlib::MatX_T<RealScalar> NumericalIntegrator::automaticDifferenceJacobian(
 		Func&& f,
-		Scalar t,
-		const mathlib::VecX_T<Scalar>& x
+		mathlib::DualNumber_T<RealScalar, NVar> t,
+		const mathlib::VecX_T<mathlib::DualNumber_T<RealScalar, NVar>>& x
 	) {
-		using RealScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
-
 		const int n = static_cast<int>(x.size());
+		
+		using SysScalar = mathlib::DualNumber_T<RealScalar, NVar>;
 		auto f0 = f(t, x);
 		const int m = static_cast<int>(f0.size());
 
 		mathlib::MatX_T<RealScalar> J(m, n);
 		for (int i = 0; i < n; ++i) {
-			using Dual_T = mathlib::DualNumber_T<RealScalar, 1>;
+			using Dual_T = mathlib::DualNumber_T<RealScalar, NVar>;
 
 			mathlib::VecX_T<Dual_T> x_dual(n);
 			for (int k = 0; k < n; ++k) {
-				x_dual(k) = Dual_T(
-					mathlib::real(x(k)),
-					std::array<RealScalar, 1>{
-					(k == i) ? RealScalar(1) : RealScalar(0)
-				}
-				);
+				std::array<RealScalar, NVar> seed_array{};
+				if (k == 1) { seed_array.fill(RealScalar(0)); seed_array[0] = RealScalar(1); }
+				x_dual(k) = Dual_T(mathlib::real(x(k)), seed_array);
 			}
 
 			Dual_T t_dual(mathlib::real(t));
