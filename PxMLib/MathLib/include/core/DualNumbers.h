@@ -297,6 +297,27 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = out.real * a.dual[i]; }
 		return out;
 	}
+
+	// Exponential function (Scalar)
+	template<typename Scalar>
+	inline Scalar exp(const Scalar& x) { return std::exp(x); }
+	// Logarithm function (Scalar)
+	template<typename Scalar>
+	inline Scalar log(const Scalar& x) { return std::log(x); }
+	// Sine function (Scalar)
+	template<typename Scalar>
+	inline Scalar sin(const Scalar& x) { return std::sin(x); }
+	// Cosine function (Scalar)
+	template<typename Scalar>
+	inline Scalar cos(const Scalar& x) { return std::cos(x); }
+	// Tangent function (Scalar)
+	template<typename Scalar>
+	inline Scalar tan(const Scalar& x) { return std::tan(x); }
+	// Hyperbolic Tangnet (Scalar)
+	template<typename Scalar>
+	inline Scalar tanh(const Scalar& x) { return std::tanh(x); }
+
+
 	// Smooth step function for smooth interpolation between 0 and 1
 	template<typename Scalar>
 	inline Scalar smoothStep(const Scalar& x) { return x * x * (Scalar(3) - Scalar(2) * x); }
@@ -319,9 +340,16 @@ namespace mathlib {
 		return out;
 	}
 
-	// LogSumExp Smooth Max
+	// LogSumExp Smooth Max (DualNumber)
+	template<typename Scalar, size_t NVar>
+	inline Scalar LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
+		Scalar m = (a.real > b.real) ? a.real : b.real;
+		return DualNumber_T<Scalar, NVar>(m) + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
+	}
+
+	// LogSumExp Smooth Max (Scalar)
 	template<typename Scalar>
-	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(15)) {
+	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(10)) {
 		Scalar m = (a > b) ? a : b;
 		return m + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
 	}
