@@ -125,8 +125,8 @@ namespace integration {
 			Scalar dt,
 			Func&& f,
 			JacFunc&& jac = nullptr,
-			int maxIter = 50,
-			Scalar tol = Scalar(1e-6)
+			int maxIter = 80,
+			Scalar tol = Scalar(1e-10)
 		);
 		// AD version of GLRK2
 		template<typename Scalar, typename Func>
