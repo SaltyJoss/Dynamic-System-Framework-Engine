@@ -58,6 +58,14 @@ namespace integration {
 		double _dt_last = 0.0; // last successful step
 		double _dt_max = 0.0;  // maximum allowed step size
 	};
+
+	template<typename Scalar>
+	class DSFE_API DifferentiableIntegrator {
+	public:
+		template<typename Func>
+		mathlib::VecX_T<Scalar> step(eAutoDiffIntegrationMethod m, mathlib::VecX_T < Scalar> x, Scalar t, Scalar dt, Func&& f);
+	};
+
 } // namespace integration
 
 #include "IntegrationStep.inl"
