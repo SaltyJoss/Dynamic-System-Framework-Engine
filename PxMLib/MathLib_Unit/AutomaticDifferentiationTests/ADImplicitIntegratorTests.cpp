@@ -92,6 +92,7 @@ namespace {
 	void verifyExpDecaySensitivity(
 		StepFn stepFn,
 		double tol,
+		double exactFinal,
 		int N
 	) {
 		using Dual = DualNumber_T<double, 1>;
@@ -99,14 +100,13 @@ namespace {
 		x0(0) = Dual(1.0, { 1.0 });
 		VecX_T<Dual> r = integrateToTime(stepFn, x0, 1.0, N);
 		double eps = 1e-6;
-		VecX_T<Dual> x0_plus(1);
+		VecX_T<Dual> x0_plus(1), x0_minus(1);
 		x0_plus(0) = Dual(1.0 + eps, {0.0});
-		VecX_T<Dual> x0_minus(1);
 		x0_minus(0) = Dual(1.0 - eps, {0.0});
 		VecX_T<Dual> r_plus = integrateToTime(stepFn, x0_plus, 1.0, N);
 		VecX_T<Dual> r_minus = integrateToTime(stepFn, x0_minus, 1.0, N);
 		double expectedSensitivity = (r_plus(0).real - r_minus(0).real) / (2.0 * eps);
-		ASSERT_TRUE(std::abs(r(0).real - std::exp(-1.0)) < tol, "AtD decay error too large");
+		ASSERT_TRUE(std::abs(r(0).real - exactFinal) < tol, "State error too large");
 		ASSERT_TRUE(std::abs(r(0).dual[0] - expectedSensitivity) < 5e-3, "AD decay sensitivity error too large");
 		ASSERT_TRUE(std::abs(r(0).dual[0]) > 0.0, "Sensitivity vanished during propagation");
 	}
@@ -125,22 +125,20 @@ namespace {
 		VecX_T<Dual> r = integrateToTime(stepFn, x0, TWO_PI_d, N);
 		double eps = 1e-6;
 
-		VecX_T<Dual> x0_u_plus(2);
+		VecX_T<Dual> x0_u_plus(2), x0_u_minus(2);
 		x0_u_plus(0) = Dual(1.0 + eps, {0.0, 0.0});
 		x0_u_plus(1) = Dual(0.0, { 0.0, 0.0 });
-		VecX_T<Dual> x0_u_minus(2);
 		x0_u_minus(0) = Dual(1.0 - eps, {0.0, 0.0});
 		x0_u_minus(1) = Dual(0.0, { 0.0, 0.0 });
 		VecX_T<Dual> r_u_plus = integrateToTime(stepFn, x0_u_plus, TWO_PI_d, N);
 		VecX_T<Dual> r_u_minus = integrateToTime(stepFn, x0_u_minus, TWO_PI_d, N);
 		double expected_du_du0 = (r_u_plus(0).real - r_u_minus(0).real) / (2.0 * eps);
 
-		VecX_T<Dual> x0_v_plus(2);
-		x0_v_plus(0) = Dual(1.0 + eps, { 0.0, 0.0 });
-		x0_v_plus(1) = Dual(0.0, { 0.0, 0.0 });
-		VecX_T<Dual> x0_v_minus(2);
-		x0_v_minus(0) = Dual(1.0 - eps, { 0.0, 0.0 });
-		x0_v_minus(1) = Dual(0.0, { 0.0, 0.0 });
+		VecX_T<Dual> x0_v_plus(2), x0_v_minus(2);
+		x0_v_plus(0) = Dual(1.0, { 0.0, 0.0 });
+		x0_v_plus(1) = Dual(0.0 + eps, { 0.0, 0.0 });
+		x0_v_minus(0) = Dual(1.0, { 0.0, 0.0 });
+		x0_v_minus(1) = Dual(0.0 - eps, { 0.0, 0.0 });
 		VecX_T<Dual> r_v_plus = integrateToTime(stepFn, x0_v_plus, TWO_PI_d, N);
 		VecX_T<Dual> r_v_minus = integrateToTime(stepFn, x0_v_minus, TWO_PI_d, N);
 		double expected_dv_dv0 = (r_v_plus(1).real - r_v_minus(1).real) / (2.0 * eps);
@@ -150,7 +148,7 @@ namespace {
 		ASSERT_TRUE(std::abs(r(0).real - expectedPosition) < tol, "Harmonic oscillator position state error too large");
 		ASSERT_TRUE(std::abs(r(1).real - expectedVelocity) < tol, "Harmonic oscillator velocity state error too large");
 		ASSERT_TRUE(std::abs(r(0).dual[0] - expected_du_du0) < 5e-3, "Position sensitivity AD track broken");
-		ASSERT_TRUE(std::abs(r(1).dual[1] - expected_dv_dv0) < 5e-3, "Position sensitivity AD track broken");
+		ASSERT_TRUE(std::abs(r(1).dual[1] - expected_dv_dv0) < 5e-3, "Velocity sensitivity AD track broken");
 	}
 }
 
@@ -177,7 +175,7 @@ TEST("AD Implicit Euler Method", ImplicitEuler_ExponentialDecaySensitivity) {
 		) {
 		return integrator.implicitEuler_AD(x, t, dt, expDecay<double, 1>, 50, 1e-5);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 100);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-1.0), 100);
 }
 // Test case for the Implicit Midpoint method on the linear decay ODE.
 TEST("AD Implicit Euler Method", ImplicitEuler_LinearDecay) {
@@ -201,7 +199,7 @@ TEST("AD Implicit Euler Method", ImplicitEuler_LinearDecaySensitivity) {
 		) {
 		return integrator.implicitEuler_AD(x, t, dt, linearDecay<double, 1>, 50, 1e-5);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-2.0), 1000);
 }
 // Test case for the Implicit Euler method on the stiff decay ODE.
 TEST("AD Implicit Euler Method", ImplicitEuler_StiffDecay) {
@@ -232,7 +230,7 @@ TEST("AD Implicit Euler Method", ImplicitEuler_StiffDecaySensitivity) {
 		) {
 		return integrator.implicitEuler_AD(x, t, dt, stiffDecay<double, 1>, 50, 1e-5);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-100.0), 1000);
 }
 // Test large step performance of implicit midpoint
 TEST("AD Implicit Euler Method", ImplicitEuler_Stability_LargeStep) {
@@ -274,7 +272,7 @@ TEST("AD Implicit Midpoint Method", ImplicitMidpoint_ExponentialDecaySensitivity
 	) {
 		return integrator.implicitMidpoint_AD(x, t, dt, expDecay<double, 1>, 20, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-1.0), 1000);
 }
 // Test case for the Implicit Midpoint method on the harmonic oscillator ODE.
 TEST("AD Implicit Midpoint Method", ImplicitMidpoint_HarmonicOscillator_EnergyPreservation) {
@@ -326,7 +324,7 @@ TEST("AD Implicit Midpoint Method", ImplicitMidpoint_LinearDecaySensitivity) {
 	) {
 		return integrator.implicitMidpoint_AD(x, t, dt, linearDecay<double, 1>, 20, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-2.0), 1000);
 }
 // Test case for the Implicit Midpoint method on the stiff decay ODE.
 TEST("AD Implicit Midpoint Method", ImplicitMidpoint_StiffDecay) {
@@ -357,7 +355,7 @@ TEST("AD Implicit Midpoint Method", ImplicitMidpoint_StiffDecaySensitivity) {
 	) {
 		return integrator.implicitMidpoint_AD(x, t, dt, stiffDecay<double, 1>, 20, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-2, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-2, std::exp(-100.0), 1000);
 }
 // Test large step performance of implicit midpoint
 TEST("AD Implicit Midpoint Method", ImplicitMidpoint_Stability_LargeStep) {
@@ -399,7 +397,7 @@ TEST("AD GLRK2 Method", GLRK2_ExponentialDecaySensitivity) {
 	) {
 		return integrator.GLRK2_AD(x, t, dt, expDecay<double, 1>, 50, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-4, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-4, std::exp(-1.0), 1000);
 }
 // Test case for the GLRK2 method on the harmonic oscillator ODE.
 TEST("AD GLRK2 Method", GLRK2_HarmonicOscillator_EnergyPreservation) {
@@ -451,7 +449,7 @@ TEST("AD GLRK2 Method", GLRK2_LinearDecaySensitivity) {
 	) {
 		return integrator.GLRK2_AD(x, t, dt, linearDecay<double, 1>, 50, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-4, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-4, std::exp(-2.0), 1000);
 }
 // Test case for the GLRK2 method on the stiff decay ODE.
 TEST("AD GLRK2 Method", GLRK2_StiffDecay) {
@@ -482,7 +480,7 @@ TEST("AD GLRK2 Method", GLRK2_StiffDecaySensitivity) {
 	) {
 		return integrator.GLRK2_AD(x, t, dt, stiffDecay<double, 1>, 50, 1e-6);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-4, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-4, std::exp(-100.0), 1000);
 }
 // Test case for the GLRK2 method on the nonlinear decay ODE.
 TEST("AD GLRK2 Method", GLRK2_NonlinearDecay) {
@@ -511,16 +509,16 @@ TEST("AD GLRK2 Method", GLRK2_StiffNonlinearDecay) {
 	double T = 0.5;
 	DualNumber_T<double, 1> dt(T / 500.0);
 	DualNumber_T<double, 1> t(0.0);
-	double expected = 1.0 / 51.0;
 	auto stiff_nl_f = [](auto t, const auto& x) {
 		auto dx = x;
-		dx(0) = -100.0 * x(0) - x(0) * x(0);
+		dx(0) = -x(0) * (100.0 + x(0));
 		return dx;
 	};
 	for (int i = 0; i < 500; ++i) {
 		x = integrator.GLRK2_AD(x, t, dt, stiff_nl_f, 50, 1e-6);
 		t += dt;
 	}
+	double expected = 100.0 / (101.0 * std::exp(100.0 * T) - 1.0);
 	double rel_err = std::abs(x(0).real - expected) / expected;
 	ASSERT_TRUE(rel_err < tol_low, "GLRK2 stiff nonlinear decay error too large");
 }
@@ -562,9 +560,10 @@ TEST("AD GLRK3 Method", GLRK3_ExponentialDecaySensitivity) {
 		DualNumber_T<double, 1> t,
 		DualNumber_T<double, 1> dt
 	) {
-		return integrator.GLRK3_AD(x, t, dt, expDecay<double, 1>, 80, 1e-7);
+		auto f = [](auto t, const auto& x) { return expDecay(t, x); };
+		return integrator.GLRK3_AD(x, t, dt, f, 80, 1e-7);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-4, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-4, std::exp(-1.0), 1000);
 }
 // Test case for the GLRK3 method on the harmonic oscillator ODE.
 TEST("AD GLRK3 Method", GLRK3_HarmonicOscillator_EnergyPreservation) {
@@ -590,7 +589,8 @@ TEST("AD GLRK3 Method", GLRK3_HarmonicOscillatorSensitivity) {
 		DualNumber_T<double, 2> t,
 		DualNumber_T<double, 2> dt
 	) {
-		return integrator.GLRK3_AD(x, t, dt, harmonicOsc<double, 2>, 80, 1e-7);
+		auto f = [](auto t, const auto& x) { return harmonicOsc(t, x); };
+		return integrator.GLRK3_AD(x, t, dt, f, 80, 1e-7);
 	};
 	verifyHarmonicOscillatorSensitivity(stepFn, 1e-4, 1000);
 }
@@ -613,10 +613,11 @@ TEST("AD GLRK3 Method", GLRK3_LinearDecaySensitivity) {
 		const VecX_T<DualNumber_T<double, 1>>& x,
 		DualNumber_T<double, 1> t,
 		DualNumber_T<double, 1> dt
-		) {
-		return integrator.GLRK3_AD(x, t, dt, linearDecay<double, 1>, 80, 1e-7);
+	) {
+		auto f = [](auto t, const auto& x) { return linearDecay(t, x); };
+		return integrator.GLRK3_AD(x, t, dt, f, 80, 1e-7);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-12, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-12, std::exp(-2.0), 1000);
 }
 // Test case for the GLRK3 method on the stiff decay ODE.
 TEST("AD GLRK3 Method", GLRK3_StiffDecay) {
@@ -645,9 +646,10 @@ TEST("AD GLRK3 Method", GLRK3_StiffDecaySensitivity) {
 		DualNumber_T<double, 1> t,
 		DualNumber_T<double, 1> dt
 	) {
-		return integrator.GLRK3_AD(x, t, dt, stiffDecay<double, 1>, 150, 1e-12);
+		auto f = [](auto t, const auto& x) { return stiffDecay(t, x); };
+		return integrator.GLRK3_AD(x, t, dt, f, 150, 1e-12);
 	};
-	verifyExpDecaySensitivity(stepFn, 1e-12, 1000);
+	verifyExpDecaySensitivity(stepFn, 1e-12, std::exp(-100.0), 1000);
 }
 // Test case for the GLRK3 method on the nonlinear decay ODE.
 TEST("AD GLRK3 Method", GLRK3_NonlinearDecay) {
@@ -676,16 +678,16 @@ TEST("AD GLRK3 Method", GLRK3_StiffNonlinearDecay) {
 	double T = 0.5;
 	DualNumber_T<double, 1> dt(T / 500.0);
 	DualNumber_T<double, 1> t(0.0);
-	double expected = 1.0 / 51.0;
 	auto stiff_nl_f = [](auto t, const auto& x) {
 		auto dx = x.eval();
-		dx(0) = -100.0 * x(0) - x(0) * x(0);
+		dx(0) = -x(0) * (100.0 + x(0));
 		return dx;
 	};
 	for (int i = 0; i < 500; ++i) {
 		x = integrator.GLRK3_AD(x, t, dt, stiff_nl_f, 80, 1e-7);
 		t += dt;
 	}
+	double expected = 100.0 / (101.0 * std::exp(100.0 * T) - 1.0);
 	double rel_err = std::abs(x(0).real - expected) / expected;
 	ASSERT_TRUE(rel_err < tol_low, "GLRK3 stiff nonlinear decay error too large");
 }

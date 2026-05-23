@@ -121,7 +121,7 @@ namespace integration {
 			F1 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = (t_pert + Dual(c(0))) * static_cast<Real>(dt);
+					Dual t_eval = t_pert + Dual(c(0)) * static_cast<Real>(dt);
 					auto f_eval = f(t_eval, x_pert);
 					return f_eval.template cast<Dual>();
 				},
@@ -131,7 +131,7 @@ namespace integration {
 			F2 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = (t_pert + Dual(c(1))) * static_cast<Real>(dt);
+					Dual t_eval = t_pert + Dual(c(1)) * static_cast<Real>(dt);
 					auto f_eval = f(t_eval, x_pert);
 					return f_eval.template cast<Dual>();
 				},
@@ -245,7 +245,7 @@ namespace integration {
 			F1 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = (t_pert + Dual(c(0))) * static_cast<Real>(dt);
+					Dual t_eval = t_pert + Dual(c(0)) * static_cast<Real>(dt);
 					auto f_eval = f(t_eval, x_pert);
 					return f_eval.template cast<Dual>();
 				},
@@ -256,7 +256,7 @@ namespace integration {
 			F2 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = (t_pert + Dual(c(1))) * static_cast<Real>(dt);
+					Dual t_eval = t_pert + Dual(c(1)) * static_cast<Real>(dt);
 					auto f_eval = f(t_eval, x_pert);
 					return f_eval.template cast<Dual>();
 				},
@@ -267,7 +267,7 @@ namespace integration {
 			F3 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
 					using Dual = std::decay_t<decltype(x_pert(0))>;
-					Dual t_eval = (t_pert + Dual(c(2))) * static_cast<Real>(dt);
+					Dual t_eval = t_pert + Dual(c(2)) * static_cast<Real>(dt);
 					auto f_eval = f(t_eval, x_pert);
 					return f_eval.template cast<Dual>();
 				},
@@ -290,7 +290,7 @@ namespace integration {
 			J.block(n, n, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(1, 1) * F2;
 			J.block(n, 2 * n, n, n) = -dt_r * A_r(1, 2) * F2;
 			J.block(2 * n, 0, n, n) = -dt_r * A_r(2, 0) * F3;
-			J.block(2 * n, n, n, n) = dt_r * A_r(2, 1) * F3;
+			J.block(2 * n, n, n, n) = -dt_r * A_r(2, 1) * F3;
 			J.block(2 * n, 2 * n, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(2, 2) * F3;
 		};
 
@@ -349,7 +349,7 @@ namespace integration {
 		eval_j(x_final, J);
 		solver.compute(J);
 		mathlib::VecX_T<Scalar> g_final;
-		eval_g(x0, g_final);
+		eval_g(x_final, g_final);
 
 		constexpr size_t NVar = mathlib::DualTraits<Scalar>::Dimension;
 		for (size_t d = 0; d < NVar; ++d) {
@@ -381,7 +381,7 @@ namespace integration {
 			mathlib::VecX_T<Dual_T> x_dual(n);
 			for (int k = 0; k < n; ++k) {
 				std::array<RealScalar, NVar> seed_array{};
-				if (k == 1) { seed_array.fill(RealScalar(0)); seed_array[0] = RealScalar(1); }
+				if (k == i) { seed_array.fill(RealScalar(0)); seed_array[0] = RealScalar(1); }
 				x_dual(k) = Dual_T(mathlib::real(x(k)), seed_array);
 			}
 
