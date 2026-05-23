@@ -363,7 +363,7 @@ TEST("AD Implicit Midpoint Method", ImplicitMidpoint_Stability_LargeStep) {
 	x(0) = DualNumber_T<double, 1>(1.0, { 1.0 });
 	double T = 1.0;
 	DualNumber_T<double, 1> t(0.0);
-	DualNumber_T<double, 1> dt(1.0 / 10.0);
+	DualNumber_T<double, 1> dt(1.0 / 100.0);
 	DualNumber_T<double, 1> prev = x(0);
 	for (int i = 0; i < 10; ++i) {
 		x = integrator.implicitMidpoint_AD(x, t, dt, stiffDecay<double, 1>, 50, 1e-6);
