@@ -321,7 +321,7 @@ namespace mathlib {
 
 	// LogSumExp Smooth Max
 	template<typename Scalar>
-	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(10)) {
+	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(15)) {
 		Scalar m = (a > b) ? a : b;
 		return m + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
 	}
