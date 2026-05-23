@@ -92,7 +92,7 @@ namespace mathlib {
 	inline bool operator<=(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b) { return a.real <= b.real; }
 	template<typename Scalar, size_t NVar>
 	inline bool operator>=(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b) { return a.real >= b.real; }
-	// Comparison with scalar (compare only the real part)
+	// Comparison with scalar (scalar on the right)
 	template<typename Scalar, size_t NVar>
 	inline bool operator==(const DualNumber_T<Scalar, NVar>& a, Scalar b) { return a.real == b; }
 	template<typename Scalar, size_t NVar>
@@ -179,6 +179,38 @@ namespace mathlib {
 	}
 
 	// -----
+	// Scalar Interactions
+	// -----
+	
+	// Power function (Scalar)
+	template<typename Scalar>
+	inline Scalar pow(const Scalar& x, const Scalar& n) { return std::pow(x, n); }
+	// Sqrt function (Scalar)
+	template<typename Scalar>
+	inline Scalar sqrt(const Scalar& x) { return std::sqrt(x); }
+	// Sine function (Scalar)
+	template<typename Scalar>
+	inline Scalar sin(const Scalar& x) { return std::sin(x); }
+	// Cosine function (Scalar)
+	template<typename Scalar>
+	inline Scalar cos(const Scalar& x) { return std::cos(x); }
+	// Tangent function (Scalar)
+	template<typename Scalar>
+	inline Scalar tan(const Scalar& x) { return std::tan(x); }
+	// Arctangent function (Scalar)
+	template<typename Scalar>
+	inline Scalar atan(const Scalar& x) { return std::atan(x); }
+	// Hyperbolic Tangnet (Scalar)
+	template<typename Scalar>
+	inline Scalar tanh(const Scalar& x) { return std::tanh(x); }
+	// Exponential function (Scalar)
+	template<typename Scalar>
+	inline Scalar exp(const Scalar& x) { return std::exp(x); }
+	// Logarithm function (Scalar)
+	template<typename Scalar>
+	inline Scalar log(const Scalar& x) { return std::log(x); }
+
+	// -----
 	// Dual Number Interactions
 	// -----
 
@@ -230,8 +262,8 @@ namespace mathlib {
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
 			return out;
 		}
-		out.real = std::pow(a.real, n);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = n * std::pow(a.real, n - Scalar(1)) * a.dual[i]; }
+		out.real = pow(a.real, n);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = n * pow(a.real, n - Scalar(1)) * a.dual[i]; }
 		return out;
 	}
 	// Square root function
@@ -239,7 +271,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> sqrt(const DualNumber_T<Scalar, NVar>& a) {
 		if (a.real < Scalar(0)) { throw std::runtime_error("sqrt() domain error for DualNumber_T"); }
 		DualNumber_T<Scalar, NVar> out;
-		const Scalar sqrtReal = std::sqrt(a.real);
+		const Scalar sqrtReal = sqrt(a.real);
 		out.real = sqrtReal;
 		if (sqrtReal == Scalar(0)) {
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
@@ -253,31 +285,31 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> sin(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::sin(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = std::cos(a.real) * a.dual[i]; }
+		out.real = sin(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = cos(a.real) * a.dual[i]; }
 		return out;
 	}
 	// Cosine function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> cos(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::cos(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = -std::sin(a.real) * a.dual[i]; }
+		out.real = cos(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = -sin(a.real) * a.dual[i]; }
 		return out;
 	}
 	// Tangent function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> tan(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::tan(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (std::cos(a.real) * std::cos(a.real)); }
+		out.real = tan(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (cos(a.real) * cos(a.real)); }
 		return out;
 	}
 	// Arctangent function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> atan(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::atan(a.real);
+		out.real = atan(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (Scalar(1) + a.real * a.real); }
 		return out;
 	}
@@ -285,7 +317,7 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> tanh(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::tanh(a.real);
+		out.real = tanh(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] * (Scalar(1) - out.real * out.real); }
 		return out;
 	}
@@ -293,30 +325,23 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> exp(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = std::exp(a.real);
+		out.real = exp(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = out.real * a.dual[i]; }
 		return out;
 	}
+	// Logarithm function
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> log(const DualNumber_T<Scalar, NVar>& a) {
+		if (a.real <= Scalar(0)) { throw std::runtime_error("log() domain error for DualNumber_T"); }
+		DualNumber_T<Scalar, NVar> out;
+		out.real = log(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / a.real; }
+		return out;
+	}
 
-	// Exponential function (Scalar)
-	template<typename Scalar>
-	inline Scalar exp(const Scalar& x) { return std::exp(x); }
-	// Logarithm function (Scalar)
-	template<typename Scalar>
-	inline Scalar log(const Scalar& x) { return std::log(x); }
-	// Sine function (Scalar)
-	template<typename Scalar>
-	inline Scalar sin(const Scalar& x) { return std::sin(x); }
-	// Cosine function (Scalar)
-	template<typename Scalar>
-	inline Scalar cos(const Scalar& x) { return std::cos(x); }
-	// Tangent function (Scalar)
-	template<typename Scalar>
-	inline Scalar tan(const Scalar& x) { return std::tan(x); }
-	// Hyperbolic Tangnet (Scalar)
-	template<typename Scalar>
-	inline Scalar tanh(const Scalar& x) { return std::tanh(x); }
-
+	// -----
+	// Smoothing
+	// -----
 
 	// Smooth step function for smooth interpolation between 0 and 1
 	template<typename Scalar>
@@ -330,28 +355,17 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = derivative * x.dual[i]; }
 		return out;
 	}
-	// Logarithm function
-	template<typename Scalar, size_t NVar>
-	inline DualNumber_T<Scalar, NVar> log(const DualNumber_T<Scalar, NVar>& a) {
-		if (a.real <= Scalar(0)) { throw std::runtime_error("log() domain error for DualNumber_T"); }
-		DualNumber_T<Scalar, NVar> out;
-		out.real = std::log(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / a.real; }
-		return out;
-	}
-
-	// LogSumExp Smooth Max (DualNumber)
-	template<typename Scalar, size_t NVar>
-	inline Scalar LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
-		Scalar m = (a.real > b.real) ? a.real : b.real;
-		return DualNumber_T<Scalar, NVar>(m) + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
-	}
-
 	// LogSumExp Smooth Max (Scalar)
 	template<typename Scalar>
 	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(10)) {
 		Scalar m = (a > b) ? a : b;
 		return m + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
+	}
+	// LogSumExp Smooth Max (DualNumber)
+	template<typename Scalar, size_t NVar>
+	inline Scalar LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
+		Scalar m = (a.real > b.real) ? a.real : b.real;
+		return DualNumber_T<Scalar, NVar>(m) + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
 	}
 
 	// -----
@@ -421,38 +435,50 @@ namespace mathlib {
 	// Numeric Limits Specialisation for DualNumber_T
 	// -----
 
+	// Absolute value function (Scalar)
+	template<typename Scalar>
+	inline Scalar abs(const Scalar& a) { return (a < Scalar(0)) ? -a : a; }
+	// Maximum value function (Scalar)
+	template<typename Scalar>
+	inline Scalar max(const Scalar& a, const Scalar& b) { return (a > b) ? a : b; }
+	// Minimum value function (Scalar)
+	template<typename Scalar>
+	inline Scalar min(const Scalar& a, const Scalar& b) { return (a < b) ? a : b; }
+	// Sign function (Scalar)
+	template<typename Scalar>
+	inline Scalar sgn(const Scalar& a) { return (a > Scalar(0)) - (a < Scalar(0)); }
+	// Is finite function (Scalar)
+	template<typename Scalar>
+	inline Scalar isfinite(const Scalar& a) { return std::isfinite(a); }
+
 	// Function to return a DualNumber_T representing infinity (real part is infinity, dual parts are zero)
-	template<typename scalar, size_t NVar>
-	inline DualNumber_T<scalar, NVar> numeric_limits_infinity() {
-		return DualNumber_T<scalar, NVar>(std::numeric_limits<scalar>::infinity(), std::array<scalar, NVar>());
-	}
-	// Alternative absolute value function that simply negates the dual number if the real part is negative (this is less smooth but can be more efficient and avoids issues with zero)
 	template<typename Scalar, size_t NVar>
-	inline DualNumber_T<Scalar, NVar> abs(const DualNumber_T<Scalar, NVar>& a) {
-		DualNumber_T<Scalar, NVar> out;
-		out = (a.real < Scalar(0)) ? -a : a;
-		return out;
+	inline DualNumber_T<Scalar, NVar> numeric_limits_infinity() {
+		return DualNumber_T<Scalar, NVar>(std::numeric_limits<Scalar>::infinity(), std::array<Scalar, NVar>());
 	}
+	// Absolute value function that simply negates the dual number if the real part is negative (this is less smooth but can be more efficient and avoids issues with zero)
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> abs(const DualNumber_T<Scalar, NVar>& a) { return abs(a.real); }
 	// Absolute value function with epsilon threshold to avoid non-differentiability at zero (scales dual part by the sign of the real part, but treats values within epsilon of zero as zero)
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> abs(const DualNumber_T<Scalar, NVar>& a, Scalar epsilon) {
 		DualNumber_T<Scalar, NVar> out;
-		if (std::abs(a.real) < epsilon) {
+		if (abs(a.real) < epsilon) {
 			out.real = Scalar(0);
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
 		}
 		else {
-			out.real = std::abs(a.real);
-			Scalar sign = (a.real > Scalar(0)) - (a.real < Scalar(0)); // Sign of the real part
+			out.real = abs(a.real);
+			Scalar sign = sgn(a.real);
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = sign * a.dual[i]; }
 		}
 		return out;
 	}
-	// Sign function for DualNumber_T (returns the sign of the real part, dual parts are zero)
+	// Signum function for DualNumber_T (returns the sign of the real part, dual parts are zero)
 	template<typename Scalar, size_t NVar>
-	inline DualNumber_T<Scalar, NVar> sign(const DualNumber_T<Scalar, NVar>& a) {
+	inline DualNumber_T<Scalar, NVar> sgn(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = (a.real > Scalar(0)) - (a.real < Scalar(0)); // Sign of the real part
+		out.real = sgn(a.real); // Signum of the real part
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
 		return out;
 	}
@@ -498,7 +524,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> conj(const DualNumber_T<Scalar, NVar>& a) { return a; }
 	// Since dual numbers are not complex, the norm is just the absolute value of the real part
 	template<typename Scalar, size_t NVar>
-	inline Scalar norm(const DualNumber_T<Scalar, NVar>& a) { return std::abs(a.real); }
+	inline Scalar norm(const DualNumber_T<Scalar, NVar>& a) { return abs(a.real); }
 	// Since dual numbers are not complex, the squared norm is just the square of the absolute value of the real part
 	template<typename Scalar, size_t NVar>
 	inline Scalar abs2(const DualNumber_T<Scalar, NVar>& a) { return a.real * a.real; }
@@ -540,11 +566,11 @@ namespace mathlib {
 	}
 	// Check if the real part and all dual parts are finite
 	template<typename Scalar, size_t NVar>
-	inline bool isFinite(const DualNumber_T<Scalar, NVar>& x) {
-		if (!std::isfinite(x.real)) { return false; }
+	inline bool isfinite(const DualNumber_T<Scalar, NVar>& x) {
+		if (!isfinite(x.real)) { return false; }
 
 		for (size_t i = 0; i < NVar; ++i) {
-			if (!std::isfinite(x.dual[i])) { return false; }
+			if (!isfinite(x.dual[i])) { return false; }
 		}
 
 		return true;
@@ -612,7 +638,7 @@ namespace Eigen {
 		struct scalar_abs_op<mathlib::DualNumber_T<Scalar, NVar>> {
 			using Dual = mathlib::DualNumber_T<Scalar, NVar>;
 			typedef Scalar result_type;
-			EIGEN_DEVICE_FUNC inline Scalar operator()(const Dual& x) const { return std::abs(x.real); }
+			EIGEN_DEVICE_FUNC inline Scalar operator()(const Dual& x) const { return  mathlib::abs(x.real); }
 		};
 
 		// Specialisation of scalar_score_coeff_op for DualNumber_T to allow Eigen's internal sorting and selection algorithms to work correctly with dual numbers
@@ -621,7 +647,7 @@ namespace Eigen {
 			struct result_type {
 				Scalar score;
 				result_type(int i = 0) : score(i) {} // Default constructor for compatibility with Eigen's internal mechanisms
-				result_type(const mathlib::DualNumber_T<Scalar, NVar>& x) : score(std::abs(x.real)) {}
+				result_type(const mathlib::DualNumber_T<Scalar, NVar>& x) : score(mathlib::abs(x.real)) {}
 
 				friend bool operator <(const result_type& a, const result_type& b) { return a.score < b.score; }
 				friend bool operator >(const result_type& a, const result_type& b) { return a.score > b.score; }
@@ -729,11 +755,11 @@ namespace Eigen {
 		template<typename Scalar, size_t NVar>
 		inline Scalar imag(const mathlib::DualNumber_T<Scalar, NVar>&) { return Scalar(0); }
 		template<typename Scalar, size_t NVar>
-		inline Scalar abs(const mathlib::DualNumber_T<Scalar, NVar>& x) { return std::abs(x.real); }
+		inline Scalar abs(const mathlib::DualNumber_T<Scalar, NVar>& x) { return mathlib::abs(x.real); }
 		template<typename Scalar, size_t NVar>
 		inline Scalar abs2(const mathlib::DualNumber_T<Scalar, NVar>& x) { return x.real * x.real; }
 		template<typename Scalar, size_t NVar>
-		inline Scalar norm1(const mathlib::DualNumber_T<Scalar, NVar>& x) { return std::abs(x.real); }
+		inline Scalar norm1(const mathlib::DualNumber_T<Scalar, NVar>& x) { return  mathlib::abs(x.real); }
 		template<typename Scalar, size_t NVar>
 		inline mathlib::DualNumber_T<Scalar, NVar> conj(const mathlib::DualNumber_T<Scalar, NVar>& x) { return x; }
 	}// namespace numext
