@@ -96,4 +96,4 @@ namespace test {
 #define ASSERT_TRUE(cond, msg)  test::assertTrue((cond), (msg))
 #define ASSERT_EQ(a, b, tol, msg) test::assertTrue(std::abs((a) - (b)) < (tol), (msg)
 #define SUCCEED() return
-#define EXPECT_NEAR(a, b, tol) test::assertTrue(std::abs((a) - (b)) < (tol), "Expected " #a " and " #b " to be within " #tol)
+#define ASSERT_NEAR(a, b, tol) test::assertTrue(std::abs((a) - (b)) < (tol), "Expected " #a " and " #b " to be within " #tol)
