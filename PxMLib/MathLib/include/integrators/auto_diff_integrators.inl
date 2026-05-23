@@ -1,4 +1,4 @@
-// PxM/MathLib ad_implicit_integrators.inl
+// PxM/MathLib auto_diff_integrators.inl
 #pragma once
 
 namespace integration {

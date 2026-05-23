@@ -201,4 +201,4 @@ namespace integration {
 
 #include "explicit_integrators.inl"
 #include "implicit_integrators.inl"
-#include "ad_implicit_integrators.inl"
+#include "auto_diff_integrators.inl"

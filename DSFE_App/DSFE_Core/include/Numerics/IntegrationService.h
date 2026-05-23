@@ -28,94 +28,10 @@ namespace integration {
 		IntegrationService();
 
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		StepOut step(eIntegrationMethod m, mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
-			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
-				if (f == nullptr) {
-					D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
-					return { _integrator->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				}
-			}
-
-			switch (m) {
-				// Explicit methods
-				//  * currently all explicit methods use fixed step size, apart from RK45 as it is an adaptive method
-				case eIntegrationMethod::Euler:    return { _integrator->eulerStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Midpoint: return { _integrator->midpointStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Heun:     return { _integrator->heunStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::Ralston:  return { _integrator->ralstonStep(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::RK4:      return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
-				case eIntegrationMethod::RK45:	   return step_adaptive(eIntegrationMethod::RK45, x, t, dt, std::forward<Func>(f), _rtol, _atol);
-				// Implicit methods
-				//  * currently use fixed step size (no error estimation), but are likely to support adaptive stepping in the future
-				case eIntegrationMethod::ImplicitEuler:    return { _integrator->implicitEuler(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
-				case eIntegrationMethod::ImplicitMidpoint: return { _integrator->implicitMidpoint(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac)), dt, dt };
-				case eIntegrationMethod::GLRK2:			   return { _integrator->GLRK2(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
-				case eIntegrationMethod::GLRK3:			   return { _integrator->GLRK3(x, t, dt, std::forward<Func>(f), std::forward<JacFunc>(jac), 50, 1e-10), dt, dt };
-				default:
-				LOG_WARN("Unknown integration method: %s. Defaulting to RK4.", toString(m));
-				return { _integrator->rk4Step(x, t, dt, std::forward<Func>(f)), dt, dt };
-			}
-		}
+		StepOut step(eIntegrationMethod m, mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac);
 
 		template<typename Func>
-		StepOut step_adaptive(eIntegrationMethod m, mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
-			if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
-				if (f == nullptr) {
-					LOG_WARN("No derivative function provided for adaptive integration - returning state unchanged");
-					return { x, dt_try, dt_try };
-				}
-			}
-			if (m != eIntegrationMethod::RK45) {
-				LOG_WARN("Adaptive step size integration is only implemented for RK45 method. Defaulting to RK45 Method", toString(m));
-			}
-
-			// Start with the last successful step size or the initial guess
-			double h_init = (_dt_last > 0.0) ? _dt_last : dt_try;
-
-			// Enforce maximum step size if set
-			if (_dt_max > 0.0) {
-				h_init = std::min(h_init, _dt_max);
-			}
-			double h = std::min(h_init, dt_try);
-
-			// Target end time for this adaptive step
-			const double t_end = t + dt_try;	 // target end time for this step
-			const double eps = 1e-12 * dt_try; // small epsilon to prevent division by zero
-
-			// Initialise current state and time for the adaptive stepping loop
-			mathlib::VecX x_curr = x;	  // current state during the adaptive step
-			double t_curr = t;	  // current time during the adaptive step
-			double t_total = 0.0; // total time taken for the step
-
-			// Limit the number of substeps to prevent infinite loop
-			int substeps = 0;
-			const int max_substeps = 500; // safety limit
-
-			// Loop until we reach the target end time or exceed the maximum number of substeps
-			while (t_curr < t_end && substeps < max_substeps) {
-				double h_try = std::min(h, t_end - t_curr);
-				double dt_used = 0.0;
-
-				mathlib::VecX x_next = _integrator->rk45Step(x_curr, t_curr, h_try, dt_used, std::forward<Func>(f), rtol, atol);
-
-				// Update rk45step
-				t_curr += dt_used;
-				t_total += dt_used;
-				x_curr = x_next;
-				h = h_try;
-
-				++substeps;
-			}
-
-			// If substep limit was reached, a warning is logged
-			if (substeps >= max_substeps) {
-				LOG_WARN("Adaptive integration exceeded maximum substeps (%d) at time %f. Returning last computed state.", max_substeps, t_curr);
-			}
-
-			// Persist the last good step size for next frame
-			_dt_last = h;
-			return { x_curr, t_total, h };
-		}
+		StepOut step_adaptive(eIntegrationMethod m, mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
@@ -143,3 +59,5 @@ namespace integration {
 		double _dt_max = 0.0;  // maximum allowed step size
 	};
 } // namespace integration
+
+#include "IntegrationStep.inl"
