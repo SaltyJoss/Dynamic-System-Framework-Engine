@@ -48,9 +48,8 @@ namespace mathlib {
 				dual.begin()
 			);
 		}
-
 		explicit operator Scalar() const { return real; }
-
+		static constexpr size_t Dimension = NVar;
 		Scalar real;
 		std::array<Scalar, NVar> dual;
 	};
@@ -476,12 +475,14 @@ namespace mathlib {
 	struct DualTraits {
 		using BaseScalar = T;
 		static constexpr bool is_dual = false;
+		static constexpr size_t Dimension = 1;
 	};
 	// Specialization of DualTraits for DualNumber_T
 	template<typename Scalar, size_t NVar>
 	struct DualTraits<DualNumber_T<Scalar, NVar>> {
 		using BaseScalar = Scalar;
 		static constexpr bool is_dual = true;
+		static constexpr size_t Dimension = NVar;
 	};
 	// Dual Part
 	template<typename Scalar, size_t N>

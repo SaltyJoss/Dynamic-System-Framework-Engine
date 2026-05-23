@@ -319,26 +319,50 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		mathlib::VecX_T<Scalar> x = x0, g, x_trial;
-		using BaseScalar = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
-		mathlib::VecX_T<Real> delta = mathlib::VecX_T<Real>::Constant(x0.size(), Real(std::numeric_limits<BaseScalar>::infinity()));
-		mathlib::MatX_T<Real> J;
-		Eigen::PartialPivLU<mathlib::MatX_T<Real>> solver;
+		const Eigen::Index n = x0.size();
+
+		mathlib::VecX_T<Real> x_real = x0.template cast<Real>();
+		mathlib::VecX_T<Real> g_real(n);
+		mathlib::VecX_T<Real> delta(n);
+		mathlib::MatX_T<Real> J(n, n);
+		Eigen::FullPivLU<mathlib::MatX_T<Real>> solver;
+		bool converged = false;
+
 		for (int iter = 0; iter < maxIter; ++iter) {
-			eval_g(x, g);
-			if (!g.allFinite()) { throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter) + ", residual norm = " + std::to_string(g.norm())); }
-			if (g.norm() < tol) { return x; }
-			eval_j(x, J);
+			mathlib::VecX_T<Scalar> g_dual;
+			eval_g(x_real.template cast<Scalar>(), g_dual);
+			g_real = g_dual.template cast<Real>();
+			if (!g_real.allFinite()) { throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter)); }
+			if (g_real.norm() < static_cast<Real>(tol)) { converged = true; break; }
+			eval_j(x_real.template cast<Scalar>(), J);
 			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter)); }
 			solver.compute(J);
-			delta = solver.solve((-g).template cast<Real>());
+			delta = solver.solve(-g_real);
 			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter)); }
-			x += delta.template cast<Scalar>();
-			if (delta.norm() < tol * (Scalar(1) + x.norm())) { return x; }
-			if (!x.allFinite()) { throw std::runtime_error("Newton state became non-finite at iter = " + std::to_string(iter)); }
+			x_real += delta;
+			Real x_norm = x_real.norm();
+			if (delta.norm() < static_cast<Real>(tol) * (Real(1) + x_norm)) { converged = true; break; }
 		}
-		throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations. Final residual norm = " + std::to_string(g.norm()) + ", final step norm = " + std::to_string(delta.norm()));
+
+		if (!converged) { throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations."); }
+
+		mathlib::VecX_T<Scalar> x_final = x_real.template cast<Scalar>();
+		eval_j(x_final, J);
+		solver.compute(J);
+		mathlib::VecX_T<Scalar> g_final;
+		eval_g(x0, g_final);
+
+		constexpr size_t NVar = mathlib::DualTraits<Scalar>::Dimension;
+		for (Eigen::Index i = 0; i < n; ++i) {
+			for (size_t d = 0; d < NVar; ++d) {
+				mathlib::VecX_T<Real> rhs_seed(n);
+				for (Eigen::Index j = 0; j < n; ++j) { rhs_seed(j) = g_final(j).dual[d]; }
+				mathlib::VecX_T<Real> corrected_sensitivies = solver.solve(-rhs_seed);
+				x_final(i).dual[d] = corrected_sensitivies(i);
+			}
+		}
+		return x_final;
 	}
 
 	// Automatic Difference Jacobian
