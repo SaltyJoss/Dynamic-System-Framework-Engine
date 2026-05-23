@@ -10,7 +10,7 @@ namespace integration {
 		Scalar dt,
 		Func&& f,
 		int maxIter,
-		Scalar tol
+		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 
@@ -20,19 +20,15 @@ namespace integration {
 		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Real>& J_out) {
 			int n = (int)x_guess.size();
 			mathlib::MatX_T<Real> F;
-			F = automaticDifferenceJacobian(
-				[&](auto t_pert, const auto& x_pert) {
+			auto perturbation_func = [&](auto t_pert, const auto& x_pert) { 
 				using Dual = std::decay_t<decltype(x_pert(0))>;
 				Dual t_eval = Dual(t_pert) + Dual(dt);
-				return f(t_eval, x_pert);
-			},
-				t + dt,
-				x_guess
-			);
-
-			J_out = mathlib::MatX_T<Real>::Identity(n, n) - mathlib::real(dt) * F; // J = I - dt * df/dx
+				return f(t_eval, x_pert); 
+			};
+			F = automaticDifferenceJacobian(perturbation_func, t + dt, x_guess);
+			Real dt_real = static_cast<Real>(dt);
+			J_out = mathlib::MatX_T<Real>::Identity(n, n) - dt_real * F; // J = I - dt * df/dx
 		};
-
 		mathlib::VecX_T<Scalar> x0 = x + dt * f(t + dt, x); // Initial guess for Newton-Raphson
 		return newtonRaphson_AD(g, J, x0, maxIter, tol);
 	}
@@ -45,19 +41,16 @@ namespace integration {
 		Scalar dt,
 		Func&& f,
 		int maxIter,
-		Scalar tol
+		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 
 		// The function g(x_guess) = 0 that we want to solve for the implicit midpoint step
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
-
 		// Numerical Jacobian for Newton-Raphson
 		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Real>& J_out) {
 			int n = (int)x_guess.size();
 			mathlib::MatX_T<Real> F;
-			bool analytical_success = false;
-
 			auto perturbation_func = [&](auto t_pert, const auto& x_pert) {
 				using Dual = std::decay_t<decltype(x_pert(0))>;
 				auto x_real = x.template cast<Real>();
@@ -67,17 +60,10 @@ namespace integration {
 				auto f_eval = f(t_mid, x_mid);
 				return f_eval.template cast<Dual>();
 			};
-
-			F = automaticDifferenceJacobian(
-				perturbation_func,
-				t,
-				x_guess
-			);
-
+			F = automaticDifferenceJacobian(perturbation_func, t, x_guess);
 			Real dt_real = static_cast<Real>(dt);
 			J_out = mathlib::MatX_T<Real>::Identity(n, n) - Real(0.5) * dt_real * F; // J = I - dt * df/dx
 		};
-
 		mathlib::VecX_T<Scalar> x0 = x + dt * f((t + dt) / Scalar(2), x); // Initial guess for Newton-Raphson
 		return newtonRaphson_AD(g, J, x0, maxIter, tol);
 	}
@@ -90,11 +76,10 @@ namespace integration {
 		Scalar dt,
 		Func&& f,
 		int maxIter,
-		Scalar tol
+		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		using std::sqrt;
-
 		const Eigen::Index n = x.size();
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
@@ -102,12 +87,10 @@ namespace integration {
 		c <<
 			Scalar(0.5) - sqrt(Scalar(3)) / Scalar(6),
 			Scalar(0.5) + sqrt(Scalar(3)) / Scalar(6); // Stage time fractions
-
 		mathlib::MatX_T<Scalar> A(2, 2);
 		A <<
 			Scalar(0.25), Scalar(0.25) - sqrt(Scalar(3)) / Scalar(6),
 			Scalar(0.25) + sqrt(Scalar(3)) / Scalar(6), Scalar(0.25);
-
 		const Scalar b = Scalar(0.5); // Weights for final update
 		
 		// Initial guess for the stage values k1, k2, k3
@@ -185,7 +168,7 @@ namespace integration {
 		Scalar dt,
 		Func&& f,
 		int maxIter,
-		Scalar tol
+		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		using std::sqrt;
@@ -317,7 +300,7 @@ namespace integration {
 		EvalJ&& eval_j,
 		mathlib::VecX_T<Scalar> x0,
 		int maxIter,
-		Scalar tol
+		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		const Eigen::Index n = x0.size();
@@ -334,7 +317,7 @@ namespace integration {
 			eval_g(x_real.template cast<Scalar>(), g_dual);
 			g_real = g_dual.template cast<Real>();
 			if (!g_real.allFinite()) { throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter)); }
-			if (g_real.norm() < static_cast<Real>(tol)) { converged = true; break; }
+			if (g_real.norm() < tol) { converged = true; break; }
 			eval_j(x_real.template cast<Scalar>(), J);
 			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter)); }
 			solver.compute(J);
@@ -342,7 +325,7 @@ namespace integration {
 			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter)); }
 			x_real += delta;
 			Real x_norm = x_real.norm();
-			if (delta.norm() < static_cast<Real>(tol) * (Real(1) + x_norm)) { converged = true; break; }
+			if (delta.norm() < tol * (Real(1) + x_norm)) { converged = true; break; }
 		}
 
 		if (!converged) { throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations."); }
@@ -354,13 +337,11 @@ namespace integration {
 		eval_g(x0, g_final);
 
 		constexpr size_t NVar = mathlib::DualTraits<Scalar>::Dimension;
-		for (Eigen::Index i = 0; i < n; ++i) {
-			for (size_t d = 0; d < NVar; ++d) {
-				mathlib::VecX_T<Real> rhs_seed(n);
-				for (Eigen::Index j = 0; j < n; ++j) { rhs_seed(j) = g_final(j).dual[d]; }
-				mathlib::VecX_T<Real> corrected_sensitivies = solver.solve(-rhs_seed);
-				x_final(i).dual[d] = corrected_sensitivies(i);
-			}
+		for (size_t d = 0; d < NVar; ++d) {
+			mathlib::VecX_T<Real> rhs_seed(n);
+			for (Eigen::Index j = 0; j < n; ++j) { rhs_seed(j) = g_final(j).dual[d]; }
+			mathlib::VecX_T<Real> corrected_sensitivies = solver.solve(-rhs_seed);
+			for (Eigen::Index i = 0; i < n; ++i) { x_final(i).dual[d] = corrected_sensitivies(i); }
 		}
 		return x_final;
 	}

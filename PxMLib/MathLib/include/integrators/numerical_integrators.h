@@ -92,7 +92,7 @@ namespace integration {
 			Scalar dt,
 			Func&& f,
 			int maxIter,
-			Scalar tol
+			typename mathlib::DualTraits<Scalar>::BaseScalar tol
 		);
 
 		// Implicit Midpoint method
@@ -114,7 +114,7 @@ namespace integration {
 			Scalar dt,
 			Func&& f,
 			int maxIter,
-			Scalar tol
+			typename mathlib::DualTraits<Scalar>::BaseScalar tol
 		);
 
 		// Gauss-Legendre Runge-Kutta method (2 stages, 4th order)
@@ -136,7 +136,7 @@ namespace integration {
 			Scalar dt,
 			Func&& f,
 			int maxIter,
-			Scalar tol
+			typename mathlib::DualTraits<Scalar>::BaseScalar tol
 		);
 
 		// Gauss-Legendre Runge-Kutta method (3 stages, 6th order)
@@ -158,7 +158,7 @@ namespace integration {
 			Scalar dt,
 			Func&& f,
 			int maxIter,
-			Scalar tol
+			typename mathlib::DualTraits<Scalar>::BaseScalar tol
 		);
 
 	private:
@@ -179,7 +179,7 @@ namespace integration {
 			EvalJ&& eval_j,
 			mathlib::VecX_T<Scalar> x0,
 			int maxIter,
-			Scalar tol
+			typename mathlib::DualTraits<Scalar>::BaseScalar tol
 		);
 
 		// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
