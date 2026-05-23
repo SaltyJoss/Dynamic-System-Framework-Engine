@@ -78,9 +78,9 @@ namespace integration {
 		int maxIter,
 		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
+		const Eigen::Index n = x.size();
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		using std::sqrt;
-		const Eigen::Index n = x.size();
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 		mathlib::VecX_T<Scalar> c(2);
@@ -102,13 +102,10 @@ namespace integration {
 		auto eval_g = [&](const mathlib::VecX_T<Scalar>& k_guess, mathlib::VecX_T<Scalar>& g) {
 			mathlib::VecX_T<Scalar> k1 = k_guess.segment(0, n);
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
-
 			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
 			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
-
 			mathlib::VecX_T<Scalar> f1 = f(t + c(0) * dt, x1);
 			mathlib::VecX_T<Scalar> f2 = f(t + c(1) * dt, x2);
-
 			g.resize(2 * n);
 			g.segment(0, n) = k1 - f1;
 			g.segment(n, n) = k2 - f2;
@@ -119,33 +116,40 @@ namespace integration {
 			mathlib::VecX_T<Scalar> k2 = k_guess.segment(n, n);
 			mathlib::VecX_T<Scalar> x1 = x + dt * (A(0, 0) * k1 + A(0, 1) * k2);
 			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2);
-			mathlib::MatX_T<Scalar> F1(n, n), F2(n, n);
-			bool analytical_success = false;
+			mathlib::MatX_T<Real> F1(n, n), F2(n, n);
 
 			F1 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-				using Dual = std::decay_t<decltype(x_pert(0))>;
-				Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
-				return f(t_eval, x_pert);
-			},
+					using Dual = std::decay_t<decltype(x_pert(0))>;
+					Dual t_eval = (t_pert + Dual(c(0))) * static_cast<Real>(dt);
+					auto f_eval = f(t_eval, x_pert);
+					return f_eval.template cast<Dual>();
+				},
 				t + c(0) * dt,
 				x1
 			);
 			F2 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-				using Dual = std::decay_t<decltype(x_pert(0))>;
-				Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
-				return f(t_eval, x_pert);
-			},
+					using Dual = std::decay_t<decltype(x_pert(0))>;
+					Dual t_eval = (t_pert + Dual(c(1))) * static_cast<Real>(dt);
+					auto f_eval = f(t_eval, x_pert);
+					return f_eval.template cast<Dual>();
+				},
 				t + c(1) * dt,
 				x2
 			);
 
+			Real dt_r = static_cast<Real>(dt);
+			mathlib::MatX_T<Real> A_r(2, 2);
+			A_r <<
+				static_cast<Real>(A(0, 0)), static_cast<Real>(A(0, 1)),
+				static_cast<Real>(A(1, 0)), static_cast<Real>(A(1, 1));
+
 			J.setZero(2 * n, 2 * n);
-			J.block(0, 0, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1).template cast<Real>;
-			J.block(0, n, n, n) = (- dt * A(0, 1) * F1).template cast<Real>;
-			J.block(n, 0, n, n) = (- dt * A(1, 0) * F2).template cast<Real>;
-			J.block(n, n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2).template cast<Real>;
+			J.block(0, 0, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(0, 0) * F1;
+			J.block(0, n, n, n) = -dt_r * A_r(0, 1) * F1;
+			J.block(n, 0, n, n) = -dt_r * A_r(1, 0) * F2;
+			J.block(n, n, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(1, 1) * F2;
 		};
 
 		// Solve the nonlinear system for the stage values using Newton-Raphson
@@ -170,18 +174,18 @@ namespace integration {
 		int maxIter,
 		typename mathlib::DualTraits<Scalar>::BaseScalar tol
 	) {
+		const Eigen::Index n = x.size();
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		using std::sqrt;
 		using std::pow;
 		using std::abs;
 		using std::max;
 
-		if (mathlib::real(tol) < Real(0)) {
+		if (tol < Real(0)) {
 			Real dt_r = mathlib::real(dt);
 			Real tol_r = max(Real(1e-12), Real(1e-2) * pow(dt_r, Real(7)));
 			tol = Real(tol_r);
 		}
-		const Eigen::Index n = x.size();
 
 		// Coefficients for the 3-stage Gauss-Legendre method (6th order)
 		mathlib::VecX_T<Scalar> c(3);
@@ -236,47 +240,58 @@ namespace integration {
 			mathlib::VecX_T<Scalar> x2 = x + dt * (A(1, 0) * k1 + A(1, 1) * k2 + A(1, 2) * k3);
 			mathlib::VecX_T<Scalar> x3 = x + dt * (A(2, 0) * k1 + A(2, 1) * k2 + A(2, 2) * k3);
 
-			mathlib::MatX_T<Scalar> F1(n, n), F2(n, n), F3(n, n);
+			mathlib::MatX_T<Real> F1(n, n), F2(n, n), F3(n, n);
 			// Compute Jacobians of f at the stage points using automatic differentiation
 			F1 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-				using Dual = std::decay_t<decltype(x_pert(0))>;
-				Dual t_eval = Dual(t_pert) + Dual(c(0)) * Dual(dt);
-				return f(t_eval, x_pert);
-			},
+					using Dual = std::decay_t<decltype(x_pert(0))>;
+					Dual t_eval = (t_pert + Dual(c(0))) * static_cast<Real>(dt);
+					auto f_eval = f(t_eval, x_pert);
+					return f_eval.template cast<Dual>();
+				},
 				t + c(0) * dt,
 				x1
 			);
 			// Compute the Jacobian of f at the second stage using automatic differentiation
 			F2 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-				using Dual = std::decay_t<decltype(x_pert(0))>;
-				Dual t_eval = Dual(t_pert) + Dual(c(1)) * Dual(dt);
-				return f(t_eval, x_pert);
-			},
+					using Dual = std::decay_t<decltype(x_pert(0))>;
+					Dual t_eval = (t_pert + Dual(c(1))) * static_cast<Real>(dt);
+					auto f_eval = f(t_eval, x_pert);
+					return f_eval.template cast<Dual>();
+				},
 				t + c(1) * dt,
 				x2
 			);
 			// Compute the Jacobian of f at the third stage using automatic differentiation
 			F3 = automaticDifferenceJacobian(
 				[&](auto t_pert, const auto& x_pert) {
-				using Dual = std::decay_t<decltype(x_pert(0))>;
-				Dual t_eval = Dual(t_pert) + Dual(c(2)) * Dual(dt);
-				return f(t_eval, x_pert);
-			},
+					using Dual = std::decay_t<decltype(x_pert(0))>;
+					Dual t_eval = (t_pert + Dual(c(2))) * static_cast<Real>(dt);
+					auto f_eval = f(t_eval, x_pert);
+					return f_eval.template cast<Dual>();
+				},
 				t + c(2) * dt,
 				x3
 			);
+
+			Real dt_r = static_cast<Real>(dt);
+			mathlib::Mat3_T<Real> A_r(3, 3);
+			A_r <<
+				static_cast<Real>(A(0, 0)), static_cast<Real>(A(0, 1)), static_cast<Real>(A(0, 2)),
+				static_cast<Real>(A(1, 0)), static_cast<Real>(A(1, 1)), static_cast<Real>(A(1, 2)),
+				static_cast<Real>(A(2, 0)), static_cast<Real>(A(2, 1)), static_cast<Real>(A(2, 2));
+
 			J.setZero(3 * n, 3 * n);
-			J.block(0, 0, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(0, 0) * F1).template cast<Real>;
-			J.block(0, n, n, n) = (- dt * A(0, 1) * F1).template cast<Real>;
-			J.block(0, 2 * n, n, n) = (- dt * A(0, 2) * F1).template cast<Real>;
-			J.block(n, 0, n, n) = (- dt * A(1, 0) * F2).template cast<Real>;
-			J.block(n, n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(1, 1) * F2).template cast<Real>;
-			J.block(n, 2 * n, n, n) = (- dt * A(1, 2) * F2).template cast<Real>;
-			J.block(2 * n, 0, n, n) = (- dt * A(2, 0) * F3).template cast<Real>;
-			J.block(2 * n, n, n, n) = (- dt * A(2, 1) * F3).template cast<Real>;
-			J.block(2 * n, 2 * n, n, n) = (mathlib::MatX_T<Scalar>::Identity(n, n) - dt * A(2, 2) * F3).template cast<Real>;
+			J.block(0, 0, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(0, 0) * F1;
+			J.block(0, n, n, n) = -dt_r * A_r(0, 1) * F1;
+			J.block(0, 2 * n, n, n) = -dt_r * A_r(0, 2) * F1;
+			J.block(n, 0, n, n) = -dt_r * A_r(1, 0) * F2;
+			J.block(n, n, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(1, 1) * F2;
+			J.block(n, 2 * n, n, n) = -dt_r * A_r(1, 2) * F2;
+			J.block(2 * n, 0, n, n) = -dt_r * A_r(2, 0) * F3;
+			J.block(2 * n, n, n, n) = dt_r * A_r(2, 1) * F3;
+			J.block(2 * n, 2 * n, n, n) = mathlib::MatX_T<Real>::Identity(n, n) - dt_r * A_r(2, 2) * F3;
 		};
 
 		// Solve the nonlinear system for the stage values using Newton-Raphson
