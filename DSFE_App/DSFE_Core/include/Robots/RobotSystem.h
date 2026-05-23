@@ -32,6 +32,20 @@ namespace robots {
 		Baseline
 	};
 
+	// Step Result struct
+	template<typename Scalar>
+	struct RobotStepResult_T {
+		integration::StepOut_T<Scalar> integration;
+		RobotSimSnapshot_T<Scalar> snap;
+		std::vector<Pose_T<Scalar>> T_world;
+		std::vector<Pose_T<Scalar>> jointWorldPoses;
+		mathlib::MatX_T<Scalar> M;
+		mathlib::VecX_T<Scalar> tau_rnea;
+		mathlib::VecX_T<Scalar> tau_g;
+		Scalar dt_taken;
+		Scalar dt_sug;
+	};
+
 	class DSFE_API RobotSystem {
 	public:
 		RobotSystem();
@@ -112,7 +126,8 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
-		RobotSimSnapshot takeSnapshot(double simTime) const;
+		template<typename Scalar>
+		RobotSimSnapshot takeSnapshot(Scalar simTime) const;
 
 		void step(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
@@ -163,6 +178,9 @@ namespace robots {
 	private:
         void buildLinkIndex();
 		void buildSpatialModel();
+
+		template<typename Scalar, typename IntegratorT>
+		RobotStepResult_T<Scalar> step_impl(Scalar dt, Scalar t, IntegratorT& integrator);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;

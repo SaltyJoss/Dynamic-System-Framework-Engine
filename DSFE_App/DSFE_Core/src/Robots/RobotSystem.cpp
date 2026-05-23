@@ -256,7 +256,8 @@ namespace robots {
 	}
 
 	// Method to take a snapshot of the current robot state
-	RobotSimSnapshot RobotSystem::takeSnapshot(double simTime) const {
+	template<typename Scalar>
+	RobotSimSnapshot RobotSystem::takeSnapshot(Scalar simTime) const {
 		RobotSimSnapshot snap;
 		snap.model = &_constModel;
 		const size_t n = (size_t)_robot.joints.size();
@@ -292,26 +293,26 @@ namespace robots {
 		return snap;
 	}
 
-	// Method to advance the robot state by dt using the selected integrator
-	void RobotSystem::step(double dt, double simTime) {
-		if (!_hasRobot) { return; }
-		_simTime = simTime;
+	template<typename Scalar, typename IntegratorT>
+	RobotStepResult_T<Scalar> RobotSystem::step_impl(Scalar dt, Scalar t, IntegratorT& integrator) {
+		_simTime = t;
 		mathlib::VecX x = packState();
-
-		RobotSimSnapshot_T<double> snap = takeSnapshot(simTime);
+		RobotStepResult_T<Scalar> result;
+		result.snap = takeSnapshot<Scalar>(t);
+		using snap = result.snap;
 		const size_t n = snap.model->joints.size();
 
-		Eigen::Map<const mathlib::VecX_T<double>> q(x.data(), n);
-		Eigen::Map<const mathlib::VecX_T<double>> qd(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
-		mathlib::VecX_T<double> qdd(n);
+		mathlib::VecX_T<Scalar> qdd(n);
 		for (size_t i = 0; i < n; ++i) { qdd[i] = _robot.joints[i].qdd_ref; }
 
 		std::vector<Pose> T_start(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
 		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
 
-		SpatialDynamics::computeSpatialKinematicsAndBias<double>(
+		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			_spatialModel,
 			q, qd,
 			_dynScratch.spatial.Xup,
@@ -319,36 +320,36 @@ namespace robots {
 		);
 
 		// CRBA only for controller inertia scaling
-		mathlib::MatX_T<double> M_start = SpatialDynamics::CRBA<double>(
+		mathlib::MatX_T<Scalar> M_start = SpatialDynamics::CRBA<Scalar>(
 			_spatialModel,
 			_dynScratch.spatial.Xup,
 			_dynScratch
 		);
 
 		// Cache frozen joint gains for this step
-		mathlib::VecX_T<double> kp_frozen(n), kd_frozen(n);
+		mathlib::VecX_T<Scalar> kp_frozen(n), kd_frozen(n);
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = snap.model->joints[i];
 			if (joint.type == eJointType::FIXED) { continue; }
 
-			_dynScratch.dense.I_eff_controller[i] = std::max(M_start(i, i), 1e-6);
-			const double I_eff = _dynScratch.dense.I_eff_controller[i];
+			_dynScratch.dense.I_eff_controller[i] = mathlib::max(M_start(i, i), 1e-6);
+			const Scalar I_eff = _dynScratch.dense.I_eff_controller[i];
 
 			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
 			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
 		}
 
 		// Compute RNEA torques for feedforward control
-		mathlib::VecX_T<double> tau_rnea = SpatialDynamics::RNEA<double>(
+		mathlib::VecX_T<Scalar> tau_rnea = SpatialDynamics::RNEA<Scalar>(
 			_spatialModel,
 			q, qd, qdd,
 			_dynScratch
 		); // [Nm]
-		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
+		LOG_INFO_ONCE("tau_rnea size = %d", (double)tau_rnea.size());
 
 		// Define the derivative function for integration, capturing necessary variables by reference
 		auto f_deriv = [&, kp_frozen, kd_frozen](auto t, const auto& xIn) {
-			return _dynamics->derivative_spatial<double>(
+			return _dynamics->derivative_spatial<Scalar>(
 				_spatialModel,
 				t, xIn,
 				snap,
@@ -356,49 +357,62 @@ namespace robots {
 			);
 		};
 		// Define the Jacobian function for integration, capturing necessary variables by reference
-		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX_T<double>& xIn, mathlib::MatX_T<double>& J_out) {
-			_dynamics->jacobian_spatial<double>(
+		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX_T<Scalar>& xIn, mathlib::MatX_T<Scalar>& J_out) {
+			_dynamics->jacobian_spatial<Scalar>(
 				_spatialModel,
 				xIn, snap,
 				kp_frozen, kd_frozen,
 				J_out, _dynScratch
 			);
 		};
-		
-		auto step = _integrator->step(_curIntMethod, x, simTime, dt, f_deriv, f_J);
+
+		auto step = _integrator->step(_curIntMethod, x, t, dt, f_deriv, f_J);
 
 		unpackState(step.x_next);
 		_dynamics->setDt(step.dt_taken);
 
-		Eigen::Map<const mathlib::VecX_T<double>> q_next(step.x_next.data(), n);
-		Eigen::Map<const mathlib::VecX_T<double>> qd_next(step.x_next.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> q_next(step.x_next.data(), n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> qd_next(step.x_next.data() + n, n);
 
 		// Enforce joint limits
 		for (auto& j : _robot.joints) { enforceJointLimits(j); }
 
 		// Recompute kinematics and dynamics at the new state for logging and control purposes
-		std::vector<Pose_T<double>> T_world(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState<double>(*snap.model, step.x_next, T_world);
-		std::vector<Pose_T<double>> jointWorldPoses = _kinematics->calcJointWorldPoses<double>(T_world, *snap.model);
+		std::vector<Pose_T<Scalar>> T_world(snap.model->links.size());
+		_kinematics->computeForwardKinematics_fromState<Scalar>(*snap.model, step.x_next, T_world);
+		std::vector<Pose_T<Scalar>> jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(T_world, *snap.model);
 
 		// Compute spatial kinematics and bias terms for the new state
-		SpatialDynamics::computeSpatialKinematicsAndBias<double>(
+		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			_spatialModel,
 			q_next, qd_next,
 			_dynScratch.spatial.Xup,
 			_dynScratch.spatial.v, _dynScratch.spatial.c
 		);
 		// Compute mass matrix at the new state
-		mathlib::MatX_T<double> M_full = SpatialDynamics::CRBA<double>(
-			_spatialModel,
-			_dynScratch.spatial.Xup,
-			_dynScratch
-		);
+		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA<Scalar>(_spatialModel, _dynScratch.spatial.Xup, _dynScratch);
+		mathlib::VecX_T<Scalar> tau_g = _dynamics->computeGravityTorque<Scalar>(*snap.model, T_world, jointWorldPoses);
 
-		mathlib::VecX_T<double> tau_g = _dynamics->computeGravityTorque<double>(*snap.model, T_world, jointWorldPoses);
+		result.integration = integrator;
+		result.T_world = T_world;
+		result.jointWorldPoses = jointWorldPoses;
+		result.M = M;
+		result.tau_rnea = tau_rnea;
+		result.tau_g = tau_g;
+		result.dt_taken = step.dt_taken;
+		result.dt_sug = step.dt_sug;
+
+		return result;
+	}
+
+	// Method to advance the robot state by dt using the selected integrator
+	void RobotSystem::step(double dt, double simTime) {
+		if (!_hasRobot) { return; }
+		const size_t n = _robot.joints.size();
+		auto result = step_impl<double>(dt, simTime, *_integrator);
 
 		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
-		double sys_KE = 0.5 * qd_next.transpose() * M_full * qd_next; // [J], kinetic energy of the robot at configuration q and velocity qd
+		double sys_KE = 0.5 * result.snap.qd.transpose() * result.M * result.snap.qd; // [J], kinetic energy of the robot at configuration q and velocity qd
 
 		// Compute system potential energy at configuration q (relative to gravity)
 		double sys_PE = 0.0;
@@ -407,13 +421,8 @@ namespace robots {
 		for (size_t k = 0; k < _robot.links.size(); ++k) {
 			const RobotLink& link = _robot.links[k];
 			const double m = link.inertial.mass;
-
 			if (m <= 0.0) { continue; }
-
-			Vec3 com_world = 
-				(T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) +
-				T_world[k].block<3, 1>(0, 3);
-
+			Vec3 com_world = (result.T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + result.T_world[k].block<3, 1>(0, 3);
 			sys_PE += m * g * com_world.z();
 		}
 
@@ -432,21 +441,21 @@ namespace robots {
 
 		if (buf) {
 			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = snap.model->joints[i];
+				const RobotJoint& j = _robot.joints[i];
 
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : _dynResult.metrics.I_eff[i];
-				const double err = snap.q_ref[i] - q_next[i];
-				const double err_d = snap.qd_ref[i] - qd_next[i];
+				const double err = result.snap.q_ref[i] - result.snap.q[i];
+				const double err_d = result.snap.qd_ref[i] - result.snap.qd[i];
 
 				JointLogBuffer::JointLogEntry e{};
 
 				e.sim_time = simTime;
-				e.dt_taken = step.dt_taken;
-				e.dt_sug = step.dt_sug;
-				e.theta = q_next[i]; e.omega = qd_next[i]; e.alpha = _dynResult.metrics.qdd[i];
+				e.dt_taken = result.dt_taken;
+				e.dt_sug = result.dt_sug;
+				e.theta = result.snap.q[i]; e.omega = result.snap.qd[i]; e.alpha = _dynResult.metrics.qdd[i];
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
-				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = tau_rnea[i];  e.tau_gravity = tau_g[i];
+				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = result.tau_rnea[i];  e.tau_gravity = result.tau_g[i];
 				e.tau_sat = _dynResult.metrics.tau_sat[i]; 
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = (double)_clampTheta[i]; e.clamp_omega = (double)_clampOmega[i];
