@@ -180,7 +180,7 @@ namespace robots {
 		void buildSpatialModel();
 
 		template<typename Scalar, typename IntegratorT>
-		RobotStepResult_T<Scalar> step_impl(Scalar dt, Scalar t, IntegratorT& integrator);
+		RobotStepResult_T<Scalar> step_impl(const mathlib::VecX_T<Scalar>& x, Scalar dt, Scalar t, IntegratorT& integrator);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;

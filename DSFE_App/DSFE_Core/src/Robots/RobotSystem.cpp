@@ -293,8 +293,7 @@ namespace robots {
 	}
 
 	template<typename Scalar, typename IntegratorT>
-	RobotStepResult_T<Scalar> RobotSystem::step_impl(Scalar dt, Scalar t, IntegratorT& integrator) {
-		mathlib::VecX_T<Scalar> x = packState().template cast<Scalar>();
+	RobotStepResult_T<Scalar> RobotSystem::step_impl(const mathlib::VecX_T<Scalar>& x, Scalar dt, Scalar t, IntegratorT& integrator) {
 		RobotStepResult_T<Scalar> result;
 		result.snap = takeSnapshot<Scalar>(t);
 		auto& snap = result.snap;
@@ -388,7 +387,8 @@ namespace robots {
 		if (!_hasRobot) { return; }
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
-		auto result = step_impl<double>(dt, simTime, *_integrator);
+		mathlib::VecX x = packState();
+		auto result = step_impl<double>(x, dt, simTime, *_integrator);
 
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
@@ -444,6 +444,12 @@ namespace robots {
 		}
 
 		if (buf) {
+			auto q_real = result.snap.q.template cast<double>();
+			auto qd_real = result.snap.qd.template cast<double>();
+			auto q_ref_real = result.snap.q_ref.template cast<double>();
+			auto qd_ref_real = result.snap.qd_ref.template cast<double>();
+			auto tau_rnea_real = result.tau_rnea.template cast<double>();
+
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j = _robot.joints[i];
 
@@ -456,11 +462,11 @@ namespace robots {
 				e.sim_time = simTime;
 				e.dt_taken = result.stepOut.dt_taken;
 				e.dt_sug = result.stepOut.dt_sug;
-				e.theta = result.snap.q[i]; e.omega = result.snap.qd[i]; e.alpha = _dynResult.metrics.qdd[i];
+				e.theta = q_real[i]; e.omega = qd_real[i]; e.alpha = _dynResult.metrics.qdd[i];
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
-				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = result.tau_rnea[i];  e.tau_gravity = tau_g[i];
-				e.tau_sat = _dynResult.metrics.tau_sat[i]; 
+				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = tau_rnea_real[i];  e.tau_gravity = tau_g[i];
+				e.tau_sat = _dynResult.metrics.tau_sat[i];
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = static_cast<double>(_clampTheta[i]); e.clamp_omega = static_cast<double>(_clampOmega[i]);
 				e.sat_flag = _dynResult.metrics.sat_flag[i]; e.joint_index = (int)i;
@@ -481,11 +487,15 @@ namespace robots {
 	template<size_t NVar>
 	void RobotSystem::step_AD(double dt, double simTime) {
 		if (!hasRobot()) { return; }
-		using Dual = mathlib::DualNumber_T<double, NVar>();
+		using Dual = mathlib::DualNumber_T<double, NVar>;
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
-		auto result = step_impl<Dual>(Dual(dt), Dual(simTime), *_AD_integrator);
-		mathlib::VecX x_real = result.stepOut.x_next.template cast<double>();
+		mathlib::VecX_T<Dual> x = packState().template cast<Dual>();
+
+		for (size_t i = 0; i < x.size(); ++i) { x[i].dual[i] = 1.0; }
+
+		auto result = step_impl<Dual>(x, Dual(dt), Dual(simTime), *_AD_integrator);
+		mathlib::VecX x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
 
 		unpackState(x_real);
 		_dynamics->setDt(result.stepOut.dt_taken);
