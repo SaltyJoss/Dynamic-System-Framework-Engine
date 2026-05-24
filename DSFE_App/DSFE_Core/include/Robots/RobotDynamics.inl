@@ -270,7 +270,7 @@ namespace robots {
 			dTau_dq(i, i) = -k_p;
 
 			Scalar qd_i = qd_local[i];
-			Scalar tanh_term = std::tanh(qd_i / eps_f);
+			Scalar tanh_term = mathlib::tanh(qd_i / eps_f);
 			Scalar stiff_friction_slope = c * (1.0 - tanh_term * tanh_term) / eps_f;
 			dTau_dv(i, i) = -k_d - b + stiff_friction_slope;
 		}
@@ -343,7 +343,7 @@ namespace robots {
 			tau_i += scratch.g[i]; // Gravity compensation
 			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
 			tau_i -= b * qd[i]; // subtract viscous damping
-			tau_i -= c * std::tanh(qd[i] / eps_f); // subtract Coulomb friction
+			tau_i -= c * mathlib::tanh(qd[i] / eps_f); // subtract Coulomb friction
 
 
 			scratch.dense.tau[i] = tau_i;
@@ -429,7 +429,7 @@ namespace robots {
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
 			tau_i -= b * qd[i];
-			//tau_i -= b * std::tanh(qd[i] / eps_f);
+			//tau_i -= b * mathlib::tanh(qd[i] / eps_f);
 
 			scratch.dense.tau[i] = tau_i;
 
@@ -488,7 +488,7 @@ namespace robots {
 			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
-			Scalar tanh_term = std::tanh(qd[i] / eps_f);
+			Scalar tanh_term = mathlib::tanh(qd[i] / eps_f);
 			Scalar stiff_friction_slope = -c * (Scalar(1.0) - tanh_term * tanh_term) / eps_f;
 			dTau_dv(i, i) = -kd[i] - b;
 		}
@@ -541,7 +541,7 @@ namespace robots {
 			Scalar tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + mathlib::LSE_smoothMax(scratch.dense.M(i, i), eps) * snap.qdd_ref[i];
 			tau_i += scratch.g[i] + scratch.dense.h[i];
 			tau_i -= b * qd[i];
-			tau_i -= c * std::tanh(qd[i] / eps_f);
+			tau_i -= c * mathlib::tanh(qd[i] / eps_f);
 
 			scratch.dense.tau[i] = tau_i;
 		}
@@ -590,7 +590,7 @@ namespace robots {
 			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
-			Scalar tanh_term = std::tanh(qd[i] / eps_f);
+			Scalar tanh_term = mathlib::tanh(qd[i] / eps_f);
 			Scalar stiff_friction = -c * (Scalar(1.0) - tanh_term * tanh_term) / eps_f;
 			dTau_dv(i, i) = -kd[i] - b + stiff_friction;
 		}

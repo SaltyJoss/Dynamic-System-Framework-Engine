@@ -5,7 +5,8 @@
 #include "MathLibAPI.h"
 #include <core/Types.h>
 #include <core/Types_tpl.h>
-#include <Core/Utils.h>
+#include <core/DualNumbers.h>
+#include <core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 #include "Robots/RobotSimSnapshot.h"
 

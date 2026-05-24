@@ -2,8 +2,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
+#include <core/MathLib.h>
 #include <numbers>
 #include <Kinematics/DH_Params.h>
 

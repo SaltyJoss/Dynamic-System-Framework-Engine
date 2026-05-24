@@ -4,7 +4,6 @@
 #include "EngineCore.h"
 #include "Robots/SpatialModel.h"
 #include "Robots/DynamicsTypes.h"
-#include <core/SpatialMath.h>
 
 namespace robots {
 	class DSFE_API SpatialDynamics {

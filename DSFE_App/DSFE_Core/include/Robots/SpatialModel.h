@@ -1,8 +1,6 @@
 // DSFE_Core SpatialModel.h
 #pragma once
 
-#include "EngineCore.h"
-
 #include <unordered_map>
 #include <core/SpatialMath.h>
 #include "Robots/RobotModel.h"

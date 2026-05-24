@@ -2,9 +2,7 @@
 #include "pch.h"
 
 #include "Robots/RobotLoader.h"
-
-#include <MathLibAPI.h>
-#include <core/constants.h>
+#include <core/MathLib.h>
 
 #include "EngineLib/LogMacros.h"
 #include <nlohmann/json.hpp>
@@ -19,8 +17,7 @@ namespace robots {
 	// --- Static Helper Functions ---
 
 	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
-	static Quat rpyRadToQuat(const Vec3& rpyRad)
-	{
+	static Quat rpyRadToQuat(const Vec3& rpyRad) {
 		const double roll  = rpyRad.x();
 		const double pitch = rpyRad.y();
 		const double yaw   = rpyRad.z();

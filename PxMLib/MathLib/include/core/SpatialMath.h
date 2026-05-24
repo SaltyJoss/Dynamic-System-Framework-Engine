@@ -1,14 +1,9 @@
 // PxMLib SpatialMath.h
 #pragma once
 
-#include "MathLibAPI.h"
-#include "core/Types.h"
-#include "core/Types_tpl.h"
+#include <core/MathLib.h>
 
 namespace mathlib {
-	using Vec3 = Vec3_T<double>;
-	using Mat3 = Mat3_T<double>;
-
 	// Template version of spatial vector
 	template<typename Scalar>
 	struct SpatialVec_T {
@@ -46,7 +41,6 @@ namespace mathlib {
 			out.v = this->v - rhs.v;
 			return out;
 		}
-
 		SpatialVec_T operator*(Scalar rhs) const {
 			SpatialVec_T out;
 			out.v = this->v * rhs;
@@ -63,9 +57,7 @@ namespace mathlib {
 			return *this;
 		}
 
-		Scalar dot(const SpatialVec_T& sv) const {
-			return this->v.dot(sv.v);
-		}
+		Scalar dot(const SpatialVec_T& sv) const { return this->v.dot(sv.v); }
 
 		template<typename ScalarT>
 		SpatialVec_T<ScalarT> cast() const;

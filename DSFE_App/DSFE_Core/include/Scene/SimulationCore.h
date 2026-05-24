@@ -12,9 +12,6 @@
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 
-#include <memory>
-#include <string>
-
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
 

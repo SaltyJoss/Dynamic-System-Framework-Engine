@@ -1,8 +1,7 @@
 // PxM/MathLib M_DualNumbers.h
 #pragma once
 
-#include "MathLibAPI.h"
-#include "core/Types_tpl.h"
+#include <core/MathLib.h>
 
 #define EIGEN_DONT_VECTORIZE
 #define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
@@ -179,38 +178,6 @@ namespace mathlib {
 	}
 
 	// -----
-	// Scalar Interactions
-	// -----
-	
-	// Power function (Scalar)
-	template<typename Scalar>
-	inline Scalar pow(const Scalar& x, const Scalar& n) { return std::pow(x, n); }
-	// Sqrt function (Scalar)
-	template<typename Scalar>
-	inline Scalar sqrt(const Scalar& x) { return std::sqrt(x); }
-	// Sine function (Scalar)
-	template<typename Scalar>
-	inline Scalar sin(const Scalar& x) { return std::sin(x); }
-	// Cosine function (Scalar)
-	template<typename Scalar>
-	inline Scalar cos(const Scalar& x) { return std::cos(x); }
-	// Tangent function (Scalar)
-	template<typename Scalar>
-	inline Scalar tan(const Scalar& x) { return std::tan(x); }
-	// Arctangent function (Scalar)
-	template<typename Scalar>
-	inline Scalar atan(const Scalar& x) { return std::atan(x); }
-	// Hyperbolic Tangnet (Scalar)
-	template<typename Scalar>
-	inline Scalar tanh(const Scalar& x) { return std::tanh(x); }
-	// Exponential function (Scalar)
-	template<typename Scalar>
-	inline Scalar exp(const Scalar& x) { return std::exp(x); }
-	// Logarithm function (Scalar)
-	template<typename Scalar>
-	inline Scalar log(const Scalar& x) { return std::log(x); }
-
-	// -----
 	// Dual Number Interactions
 	// -----
 
@@ -355,12 +322,6 @@ namespace mathlib {
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = derivative * x.dual[i]; }
 		return out;
 	}
-	// LogSumExp Smooth Max (Scalar)
-	template<typename Scalar>
-	inline Scalar LSE_smoothMax(const Scalar& a, const Scalar& b, const Scalar& k = Scalar(10)) {
-		Scalar m = (a > b) ? a : b;
-		return m + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
-	}
 	// LogSumExp Smooth Max (DualNumber)
 	template<typename Scalar, size_t NVar>
 	inline Scalar LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
@@ -434,22 +395,6 @@ namespace mathlib {
 	// -----
 	// Numeric Limits Specialisation for DualNumber_T
 	// -----
-
-	// Absolute value function (Scalar)
-	template<typename Scalar>
-	inline Scalar abs(const Scalar& a) { return (a < Scalar(0)) ? -a : a; }
-	// Maximum value function (Scalar)
-	template<typename Scalar>
-	inline Scalar max(const Scalar& a, const Scalar& b) { return (a > b) ? a : b; }
-	// Minimum value function (Scalar)
-	template<typename Scalar>
-	inline Scalar min(const Scalar& a, const Scalar& b) { return (a < b) ? a : b; }
-	// Sign function (Scalar)
-	template<typename Scalar>
-	inline Scalar sgn(const Scalar& a) { return (a > Scalar(0)) - (a < Scalar(0)); }
-	// Is finite function (Scalar)
-	template<typename Scalar>
-	inline Scalar isfinite(const Scalar& a) { return std::isfinite(a); }
 
 	// Function to return a DualNumber_T representing infinity (real part is infinity, dual parts are zero)
 	template<typename Scalar, size_t NVar>

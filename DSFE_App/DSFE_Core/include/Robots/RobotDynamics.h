@@ -2,9 +2,9 @@
 #pragma once
 
 #include "EngineCore.h"
-#include "MathLibAPI.h"
-#include "core/Types.h"
+#include <core/MathLib.h>
 #include <core/DualNumbers.h>
+
 #include "Robots/DynamicsTypes.h"
 #include "Robots/RobotMetrics.h"
 
@@ -16,7 +16,6 @@
 #include "Robots/TrajectoryManager.h"
 
 #include <cmath>
-#include <Core/Utils.h>
 #include <kinematics/Forward_Kinematics.h>
 
 #include "EngineLib/LogMacros.h"

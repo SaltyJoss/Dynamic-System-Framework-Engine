@@ -35,10 +35,10 @@ namespace robots {
 			// Compute joint motion transform based on joint axis and angle
 			Pose_T<Scalar> T_motion = mathlib::Pose_T<Scalar>::Identity();
 			if (joint.type == eJointType::REVOLUTE) {
-				T_motion = jointMotionTransform(joint.axis, q); // rotation about joint axis
+				T_motion = jointMotionTransform<Scalar>(joint.axis.template cast<Scalar>(), q); // rotation about joint axis
 			}
 			else if (joint.type == eJointType::PRISMATIC) {
-				T_motion.template block<3, 1>(0, 3) = joint.axis.normalized() * q; // translation along joint axis
+				T_motion.template block<3, 1>(0, 3) = mathlib::safeNormalised(joint.axis) * q; // translation along joint axis
 			}
 
 			// compose transforms 

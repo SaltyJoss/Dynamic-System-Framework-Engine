@@ -4,9 +4,7 @@
 #pragma warning(disable : 4251)
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
-#include <core/constants.h>
+#include <core/MathLib.h>
 #include <integrators/numerical_integrators.h>
 #include "Numerics/IntegrationMethods.h"
 
