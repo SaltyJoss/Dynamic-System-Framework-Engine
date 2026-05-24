@@ -3,7 +3,7 @@
 
 namespace integration {
 	template<typename Scalar, typename Func>
-	StepOut_T<Scalar> DifferentiableIntegrator::step(eAutoDiffIntegrationMethod m, mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f) {
+	StepOut_T<Scalar> DifferentiableIntegrator::step(eAutoDiffIntegrationMethod m, const mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 			if (f == nullptr) {

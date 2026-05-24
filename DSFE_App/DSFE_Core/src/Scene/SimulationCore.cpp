@@ -47,6 +47,11 @@ namespace core {
 		if (!_robot) { return; }
 		_robot->getIntegrator()->setIntegrationMethod(method);
 	}
+	// Set the auto-diff integration method for the simulation (also updates the robot's AD integrator if it exists)
+	void SimulationCore::setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+		if (!_robot) { return; }
+		_robot->getADIntegrator()->setIntegrationMethod(method);
+	}
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
@@ -57,6 +62,14 @@ namespace core {
 		if (!_robot) { return integration::eIntegrationMethod::RK4; }
 		return _robot->getIntegrator()->getIntegrationMethod();
 	}
+	// Get the current auto-diff integration method
+	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
+		if (!_robot) { return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; }
+		return _robot->getADIntegrator()->integrationMethod();
+	}
+
+	void SimulationCore::setSimulationBackend(eSimulationBackend backend) { _simBackend = backend; }
+	eSimulationBackend SimulationCore::simulationBackend() const { return _simBackend; }
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
@@ -98,7 +111,7 @@ namespace core {
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
 					_robot->updateTrajectoryInputs(*_traj, simTime);
-					_robot->step(_dt, simTime);
+					_robot->step_AD<DSFE_AD_VARS>(_dt, simTime);
 					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);

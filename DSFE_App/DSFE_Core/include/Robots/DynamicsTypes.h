@@ -164,8 +164,6 @@ namespace robots {
 			g.resize(nJoints);
 		}
 
-
-
 		// Clears all scratch buffers
 		void clear() {
 			dense.clear();

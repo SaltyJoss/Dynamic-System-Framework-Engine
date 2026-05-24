@@ -22,16 +22,16 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations
-namespace integration { enum class eIntegrationMethod; }
 namespace control	  { class TrajectoryManager; }
 namespace robots	  { class RobotSystem; }
 namespace interpreter { class IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
-	constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
-	constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
-	constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
+	inline constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
+	inline constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
+	inline constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
+	inline constexpr size_t DSFE_AD_VARS = 64; 			  // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
 
 	class DSFE_API SimulationCore : public ISimulationCore {
 	public:
@@ -50,6 +50,8 @@ namespace core {
 		void startSimulation() override;
 		void stopSimulation() override;
 		bool isSimRunning() const override { return _simRunning.load(); }
+		void setSimulationBackend(eSimulationBackend backend) override;
+		eSimulationBackend simulationBackend() const override;
 
 		// Time stepping
 		void setFixedDt(double dt) override;
@@ -69,8 +71,10 @@ namespace core {
 		// Integrator
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
+		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
+		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
@@ -165,6 +169,7 @@ namespace core {
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;
+		eSimulationBackend _simBackend = eSimulationBackend::Standard;
 
 		// Last script text for comparison re-use
 		std::string _lastScriptText;

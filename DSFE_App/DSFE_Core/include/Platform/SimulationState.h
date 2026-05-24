@@ -32,10 +32,16 @@ enum class eRunMode {
 	Interactive,
 	Synchronous
 };
+// Current simulation backend integration method (e.g., standard numerical integration[explicit, implicit] vs. auto-differentiation for gradients)
+enum class eSimulationBackend {
+	Standard,
+	AutoDiff
+};
 
 // Struct to hold the current simulation mode and related settings
 struct DSFE_API modes {
 	eRunMode _runMode = eRunMode::Interactive;
+	eSimulationBackend _simBackend = eSimulationBackend::Standard;
 };
 
 

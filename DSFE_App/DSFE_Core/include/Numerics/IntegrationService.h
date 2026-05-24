@@ -29,9 +29,9 @@ namespace integration {
 		IntegrationService();
 
 		template<typename Func, typename JacFunc = std::nullptr_t>
-		StepOut step(eIntegrationMethod m, mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac);
+		StepOut step(eIntegrationMethod m, const mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac);
 		template<typename Func>
-		StepOut step_adaptive(eIntegrationMethod m, mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol);
+		StepOut step_adaptive(eIntegrationMethod m, const mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol);
 
 		void setIntegrationMethod(eIntegrationMethod m) { method = m; }
 		eIntegrationMethod getIntegrationMethod() const { return method; }
@@ -58,8 +58,10 @@ namespace integration {
 		DifferentiableIntegrator();
 
 		template<typename Scalar, typename Func>
-		StepOut_T<Scalar> step(eAutoDiffIntegrationMethod m, mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f);
+		StepOut_T<Scalar> step(eAutoDiffIntegrationMethod m, const mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f);
 		const std::string IntegratorName(eAutoDiffIntegrationMethod m);
+		void setIntegrationMethod(eAutoDiffIntegrationMethod m) { _m = m; }
+		eAutoDiffIntegrationMethod integrationMethod() const { return _m; }
 
 	private:
 		const char* toString(eAutoDiffIntegrationMethod m);

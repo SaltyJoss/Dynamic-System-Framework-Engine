@@ -3,7 +3,7 @@
 
 namespace integration {
 	template<typename Func, typename JacFunc>
-	StepOut_T<double> IntegrationService::step(eIntegrationMethod m, mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
+	StepOut_T<double> IntegrationService::step(eIntegrationMethod m, const mathlib::VecX& x, double t, double dt, Func&& f, JacFunc&& jac) {
 		if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 			if (f == nullptr) {
 				D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative (Euler step)");
@@ -33,7 +33,7 @@ namespace integration {
 	}
 
 	template<typename Func>
-	StepOut_T<double> IntegrationService::step_adaptive(eIntegrationMethod m, mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
+	StepOut_T<double> IntegrationService::step_adaptive(eIntegrationMethod m, const mathlib::VecX& x, double t, double dt_try, Func&& f, double rtol, double atol) {
 		if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 			if (f == nullptr) {
 				LOG_WARN("No derivative function provided for adaptive integration - returning state unchanged");

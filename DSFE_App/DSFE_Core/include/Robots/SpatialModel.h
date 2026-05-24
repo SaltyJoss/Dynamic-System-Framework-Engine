@@ -27,5 +27,9 @@ namespace robots {
 	struct SpatialModel {
 		std::vector<SpatialJoint<Scalar>> joints;
 		std::unordered_map<std::string, int> linkNameToIndex;
+
+		template<typename ScalarT>
+		SpatialModel<ScalarT> cast() const;
 	};
-}
+} // namespace robots
+#include "SpatialModelCast.inl"

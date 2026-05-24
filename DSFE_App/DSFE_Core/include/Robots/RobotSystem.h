@@ -8,6 +8,11 @@
 #include "Robots/RobotSimSnapshot.h"
 #include "Robots/DynamicsTypes.h"
 
+#include <kinematics/Forward_Kinematics.h>
+#include "Robots/RobotKinematics.h"
+#include "Robots/RobotDynamics.h"
+#include "Robots/SpatialDynamics.h"
+
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
 
@@ -16,8 +21,6 @@ namespace control { class TrajectoryManager; }
 
 namespace robots {
 	// Forward declarations
-	class RobotKinematics;
-	class RobotDynamics;
 	enum class eTorqueMode;
 
 	// Joint state structure
@@ -37,6 +40,7 @@ namespace robots {
 	struct RobotStepResult_T {
 		integration::StepOut_T<Scalar> stepOut;
 		RobotSimSnapshot_T<Scalar> snap;
+		DynamicsResult<Scalar> dynamics;
 		mathlib::VecX_T<Scalar> tau_rnea;
 	};
 
@@ -121,11 +125,11 @@ namespace robots {
 		// --- SIMULATION STEP METHOD ---
 
 		template<typename Scalar>
-		RobotSimSnapshot takeSnapshot(Scalar simTime) const;
-
-		void step(double dt, double simTime);
+		RobotSimSnapshot_T<Scalar> takeSnapshot(Scalar simTime) const;
 		template<size_t NVar>
 		void step_AD(double dt, double simTime);
+
+		void step(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
 
 		// --- ROBOT LOADING AND RESET METHODS ---
@@ -142,7 +146,6 @@ namespace robots {
 		void setRobotRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 
 		bool setDefaultPoseDeg();
-
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
 		// --- GET AND SET INTEGRATION METHOD ---
@@ -157,6 +160,9 @@ namespace robots {
 
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
+
+		integration::DifferentiableIntegrator* getADIntegrator();
+		const integration::DifferentiableIntegrator* getADIntegrator() const;
 
 		void setRefBuffer(robots::TrajRefBuffer* buf)  { _refBuffer = buf; }
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
@@ -181,6 +187,9 @@ namespace robots {
 
 		template<typename Scalar, typename IntegratorT>
 		RobotStepResult_T<Scalar> step_impl(const mathlib::VecX_T<Scalar>& x, Scalar dt, Scalar t, IntegratorT& integrator);
+
+		template<typename Scalar>
+		void postStepUpdate(const RobotStepResult_T<Scalar>& result, const mathlib::VecX& x);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
@@ -289,6 +298,7 @@ namespace robots {
 
 	};
 } // namespace robot
+#include "RobotSystemStep.inl"
 
 // --- Logging macros for robot syste debugging ---
 

@@ -12,7 +12,6 @@ namespace mathlib {
 	// Template version of spatial vector
 	template<typename Scalar>
 	struct SpatialVec_T {
-		using ScalarT = Scalar;
 		using Vec3S = Vec3_T<Scalar>;
 		using Vec6S = Vec6_T<Scalar>;
 
@@ -25,7 +24,6 @@ namespace mathlib {
 		Vec6S v;
 		
 		SpatialVec_T() { v.setZero(); }
-
 		SpatialVec_T(const Vec3S& angular, const Vec3S& linear) {
 			v.template segment<3>(0) = angular;
 			v.template segment<3>(3) = linear;
@@ -68,6 +66,9 @@ namespace mathlib {
 		Scalar dot(const SpatialVec_T& sv) const {
 			return this->v.dot(sv.v);
 		}
+
+		template<typename ScalarT>
+		SpatialVec_T<ScalarT> cast() const;
 	};
 	using SpatialVec = SpatialVec_T<double>;
 
@@ -213,3 +214,4 @@ namespace mathlib {
 		return out;
 	}
 } // namespace mathlib
+#include "SpatialVec.inl"
