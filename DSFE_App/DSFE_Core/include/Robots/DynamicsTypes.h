@@ -138,7 +138,7 @@ namespace robots {
 		mathlib::VecX_T<Scalar> dxdt;
 		mathlib::VecX_T<Scalar> qdd;
 
-		RobotMetrics metrics;
+		RobotMetrics<Scalar> metrics;
 
 		void resize(size_t n) {
 			dxdt.resize(2 * n);

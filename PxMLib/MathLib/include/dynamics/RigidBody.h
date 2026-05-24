@@ -1,14 +1,14 @@
 #pragma once
 
-#include "MathLibAPI.h"
-#include "core/Types.h"
+#include <core/MathLib.h>
 
 using namespace mathlib;
 
 namespace dynamics {
-	struct MATHLIB_API LinkInertia {
-		double mass;
-		Vec3 com; // center of mass
-		Mat3 inertia; // inertia tensor
+	template<typename Scalar>
+	struct LinkInertia {
+		Scalar mass;
+		Vec3_T<Scalar> com; // center of mass
+		Mat3_T<Scalar> inertia; // inertia tensor
 	};
 }

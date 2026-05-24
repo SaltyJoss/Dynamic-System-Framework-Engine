@@ -110,7 +110,7 @@ namespace robots {
 
 					const mathlib::Mat3_T<Scalar> R_j = T_joint_j.template block<3, 3>(0, 0);
 					const mathlib::Vec3_T<Scalar> p_j = T_joint_j.template block<3, 1>(0, 3);
-					const mathlib::Vec3_T<Scalar> z_j = (R_j * j_j.axis).normalized();
+					const mathlib::Vec3_T<Scalar> z_j = mathlib::safeNormalised(R_j * j_j.axis);
 
 					mathlib::Vec3_T<Scalar> J_vj = z_j.cross(com - p_j); // linear velocity Jacobian column for joint j
 					mathlib::Vec3_T<Scalar> J_wj = z_j;				  // angular velocity Jacobian column for joint j
@@ -271,7 +271,7 @@ namespace robots {
 
 			Scalar qd_i = qd_local[i];
 			Scalar tanh_term = mathlib::tanh(qd_i / eps_f);
-			Scalar stiff_friction_slope = c * (1.0 - tanh_term * tanh_term) / eps_f;
+			Scalar stiff_friction_slope = c * (Scalar(1) - tanh_term * tanh_term) / eps_f;
 			dTau_dv(i, i) = -k_d - b + stiff_friction_slope;
 		}
 

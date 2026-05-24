@@ -1,7 +1,7 @@
 // MathLib_UnitTests ADExplicitIntegratorTests.cpp
 
 #include "TestHarness.h"
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 #include <integrators/numerical_integrators.h>
 #include <cmath>
 #include <functional>

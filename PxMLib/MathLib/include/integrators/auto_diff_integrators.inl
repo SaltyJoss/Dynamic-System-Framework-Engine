@@ -95,7 +95,6 @@ namespace integration {
 	) {
 		const Eigen::Index n = x.size();
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
-		using std::sqrt;
 
 		// Coefficients for the 2-stage Gauss-Legendre method (4th order)
 		mathlib::VecX_T<Scalar> c(2);
@@ -189,14 +188,10 @@ namespace integration {
 	) {
 		const Eigen::Index n = x.size();
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
-		using std::sqrt;
-		using std::pow;
-		using std::abs;
-		using std::max;
 
 		if (tol < Real(0)) {
 			Real dt_r = mathlib::real(dt);
-			Real tol_r = max(Real(1e-12), Real(1e-2) * pow(dt_r, Real(7)));
+			Real tol_r = max<Real>(Real(1e-12), Real(1e-2) * pow<Real>(dt_r, Real(7)));
 			tol = Real(tol_r);
 		}
 

@@ -1,5 +1,6 @@
+// MathLib_UnitTests DualNumber_Eigen_ArithmeticTests.cpp
 #include "TestHarness.h"
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 
 using namespace mathlib;
 

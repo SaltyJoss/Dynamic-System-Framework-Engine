@@ -24,8 +24,7 @@ namespace robots {
 
 			if (j.type == eJointType::REVOLUTE) {
 				mathlib::Vec3_T<Scalar> axis = mathlib::safeNormalised(j.S.angular());
-				Eigen::AngleAxis<Scalar> aa(q[i], axis);
-				mathlib::Mat3_T<Scalar> R = aa.toRotationMatrix();
+				mathlib::Mat3_T<Scalar> R = mathlib::AngleAxis(q[i], axis);
 				mathlib::Vec3_T<Scalar> r = mathlib::Vec3_T<Scalar>::Zero();
 				XJ = mathlib::spatialTransform(R, r);
 			}

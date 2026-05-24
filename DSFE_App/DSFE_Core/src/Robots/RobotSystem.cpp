@@ -30,9 +30,7 @@ namespace robots {
 	// Destructor
 	RobotSystem::~RobotSystem() = default;
 
-	const robots::RobotModel& RobotSystem::model() const {
-		return _robot;
-	}
+	const robots::RobotModel& RobotSystem::model() const { return _robot; }
 
 	// Helper function to convert std::vector<double> to Eigen::VectorXd
 	static VecX toVecX(const std::vector<double>& a) {
@@ -281,7 +279,7 @@ namespace robots {
 		// Sample trajectories ("ground truth" inputs)
 		for (size_t i = 0; i < n; ++i) {
 			RobotJoint& j = _robot.joints[i];
-			control::TrajState s{};
+			control::TrajState<double> s{};
 			// Try to evaluate trajectory
 			if (traj.tryEval(std::string(j.child), t, s)) {
 				j.q_ref    = clampJointAngle(j, s.q); // set ref angle

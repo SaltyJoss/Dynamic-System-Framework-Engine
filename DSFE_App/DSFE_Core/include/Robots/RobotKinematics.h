@@ -2,11 +2,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include "MathLibAPI.h"
-#include <core/Types.h>
-#include <core/Types_tpl.h>
-#include <core/DualNumbers.h>
-#include <core/Utils.h>
+#include <core/MathLib.h>
 #include <kinematics/Forward_Kinematics.h>
 #include "Robots/RobotSimSnapshot.h"
 
@@ -16,7 +12,6 @@ namespace robots {
 	// Forward declarations
 	struct RobotLink;
 	struct RobotJoint;
-	struct RobotMetrics;
 
 	// Kinematics class responsible for computing forward kinematics and related transformations
 	class DSFE_API RobotKinematics {

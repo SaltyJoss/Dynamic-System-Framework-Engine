@@ -29,8 +29,10 @@ namespace robots {
 			const Scalar q = x[i]; // joint angle from state vector
 
 			mathlib::Pose_T<Scalar> T_origin = mathlib::Pose_T<Scalar>::Identity(); // transform from parent link to joint frame (fixed)
-			T_origin.template block<3, 3>(0, 0) = joint.origin_q.toRotationMatrix(); // rotation from parent link frame to joint frame, derived from rpy in JSON
-			T_origin.template block<3, 1>(0, 3) = joint.origin_xyz;					// translation from parent link to joint frame
+			mathlib::Quat_T<Scalar> q_origin = joint.origin_q.template cast<Scalar>(); // convert quaternion to correct scalar type
+			
+			T_origin.template block<3, 3>(0, 0) = q_origin.toRotationMatrix(); // rotation from parent link frame to joint frame, derived from rpy in JSON
+			T_origin.template block<3, 1>(0, 3) = joint.origin_xyz.template cast<Scalar>(); // translation from parent link to joint frame
 
 			// Compute joint motion transform based on joint axis and angle
 			Pose_T<Scalar> T_motion = mathlib::Pose_T<Scalar>::Identity();
@@ -83,23 +85,20 @@ namespace robots {
 		Scalar q
 	) const {
 		mathlib::Pose_T<Scalar> T = mathlib::Pose_T<Scalar>::Identity(); // homogeneous transformation matrix (4x4)
-
-		Eigen::AngleAxis<Scalar> aa(q, axis_joint.normalized()); // create angle-axis rotation from joint angle and axis
-		T.template block<3, 3>(0, 0) = aa.toRotationMatrix();	 // set upper-left 3x3 block to rotation matrix
-
+		T.template block<3, 3>(0, 0) = mathlib::AngleAxis(q, mathlib::safeNormalised(axis_joint)); // set upper-left 3x3 block to rotation matrix
 		return T; // (4x4) homogeneous transformation
 	}
 
 	// Converts roll-pitch-yaw angles (in radians) to a quaternion representation
 	template<typename Scalar>
 	mathlib::Quat_T<Scalar> RobotKinematics::rpyRadToQuat(const mathlib::Vec3_T<Scalar>& rpyRad) {
-		const double roll = rpyRad.x();
-		const double pitch = rpyRad.y();
-		const double yaw = rpyRad.z();
+		const Scalar roll = rpyRad.x();
+		const Scalar pitch = rpyRad.y();
+		const Scalar yaw = rpyRad.z();
 
-		const Quat_T<Scalar> qx(Eigen::AngleAxis<Scalar>(roll,	mathlib::Vec3_T<Scalar>(Scalar(1), Scalar(0), Scalar(0))));
-		const Quat_T<Scalar> qy(Eigen::AngleAxis<Scalar>(pitch,	mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(1), Scalar(0))));
-		const Quat_T<Scalar> qz(Eigen::AngleAxis<Scalar>(yaw,	mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(0), Scalar(1))));
+		const Quat_T<Scalar> qx(Eigen::AngleAxis<Scalar>(roll, mathlib::Vec3_T<Scalar>(Scalar(1), Scalar(0), Scalar(0))));
+		const Quat_T<Scalar> qy(Eigen::AngleAxis<Scalar>(pitch, mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(1), Scalar(0))));
+		const Quat_T<Scalar> qz(Eigen::AngleAxis<Scalar>(yaw, mathlib::Vec3_T<Scalar>(Scalar(0), Scalar(0), Scalar(1))));
 
 		return (qz * qy * qx).normalized();
 	}

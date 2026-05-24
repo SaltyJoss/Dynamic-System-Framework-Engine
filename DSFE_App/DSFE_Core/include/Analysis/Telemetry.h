@@ -2,6 +2,9 @@
 #pragma once
 
 #include "EngineCore.h"
+
+#include <core/MathLib.h>
+
 #include <vector>
 #include <functional>
 
@@ -22,24 +25,24 @@ namespace diagnostics {
 	// Struct for joint telemetry data
 	struct DSFE_API JointTelemetry{
 		// Actual data
-		double q   = 0.0f; // Joint angle in radians
-		double qd  = 0.0f; // Joint angular velocity in radians per second
+		double q   = 0.0; // Joint angle in radians
+		double qd = 0.0; // Joint angular velocity in radians per second
 
 		// Additional dynamics data
-		double torqueNm = 0.0f; // Joint torque (N·m)
-		double damping  = 0.0f; // Joint damping coefficient  (kg·m²/s)
-		double friction = 0.0f; // Joint friction coefficient (Coulomb friction - N·m)
-		double effort   = 0.0f; // Normalized effort (0 to 1)
+		double torqueNm = 0.0; // Joint torque (N·m)
+		double damping  = 0.0; // Joint damping coefficient  (kg·m²/s)
+		double friction = 0.0; // Joint friction coefficient (Coulomb friction - N·m)
+		double effort   = 0.0; // Normalized effort (0 to 1)
 
 		// Reference data
-		double q_ref   = 0.0f; // Reference joint angle in radians
-		double qd_ref  = 0.0f; // Reference joint angular velocity in radians per second
-		double qdd_ref = 0.0f; // Reference joint angular acceleration in radians per second squared
+		double q_ref   = 0.0; // Reference joint angle in radians
+		double qd_ref  = 0.0; // Reference joint angular velocity in radians per second
+		double qdd_ref = 0.0; // Reference joint angular acceleration in radians per second squared
 
 		// Trajectory data
-		double traj_q    = 0.0f;  // Trajectory joint position
-		double traj_qd   = 0.0f;  // Trajectory joint velocity
-		double traj_qdd  = 0.0f;  // Trajectory joint acceleration
+		double traj_q    = 0.0;  // Trajectory joint position
+		double traj_qd   = 0.0;  // Trajectory joint velocity
+		double traj_qdd  = 0.0;  // Trajectory joint acceleration
 		bool traj_active = false; // Trajectory active state for a joint
 
 		// Limit clamping flags
@@ -54,8 +57,8 @@ namespace diagnostics {
 		std::vector<JointTelemetry> j; // Vector of joint telemetry data
 
 		// Summary statistics (precomputed to relieve analysis load)
-		double err_rms	= 0.0f;	// RMS error across all joints
-		double err_max	= 0.0f;	// Maximum error across all joints
+		double err_rms	= 0.0;	// RMS error across all joints
+		double err_max	= 0.0;	// Maximum error across all joints
 		int clamp_theta = 0;	// Sum of angle clamping events across all joints
 		int clamp_omega = 0;	// Sum of velocity clamping events across all joints
 		int clamp_sum	= 0;	// Sum of clamping events across all joints
@@ -77,7 +80,7 @@ namespace diagnostics {
 
 		// Reset the ring buffer with new capacity
 		void reset(size_t cap) {
-			_cap = std::max<size_t>(cap, 1);
+			_cap = mathlib::max<size_t>(cap, 1);
 			_buf.clear();
 			_buf.resize(_cap);
 			clear();

@@ -1,11 +1,7 @@
 #pragma once
 // File:   numerical_integrators.h
 // GitHub: SaltyJoss
-#include "MathLibAPI.h"
-
-#include <core/Types.h>
-#include <core/Types_tpl.h>
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 #include <string>
 #include <functional>
 #include <iostream>

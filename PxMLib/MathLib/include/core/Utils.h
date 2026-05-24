@@ -2,6 +2,8 @@
 
 #include "MathLibAPI.h"
 #include "core/Types.h"
+#include "core/ScalarStdFunc.h"
+#include "core/ScalarScaling.h"
 #include "core/constants.h"
 
 using namespace mathlib;
@@ -82,9 +84,9 @@ namespace mathlib {
 	// Natural frequency of a mass-spring system
 	template<typename Scalar>
 	inline Scalar natural_freq(Scalar k_p, Scalar I) {
-		if (!isfinite(k_p) || !isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
+		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
 		if (k_p < Scalar(0) || I <= Scalar(0)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
-		return sqrt(k_p / I);
+		return mathlib::sqrt(k_p / I);
 	}
 	// Natural frequency of a mass-spring system (double overload)
 	inline double natural_freq(double k_p, double I) { return natural_freq<double>(k_p, I); }
@@ -92,7 +94,7 @@ namespace mathlib {
 	// Damping ratio of a mass-spring-damper system 
 	template<typename Scalar>
 	inline Scalar damping_ratio(Scalar k_d, Scalar I, Scalar k_p) {
-		if (!isfinite(k_p) || !isfinite(k_d) || !isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
+		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(k_d) || !mathlib::isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
 		if (k_p < Scalar(0) || I <= Scalar(0)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
 		Scalar w_n = natural_freq(k_p, I);
 		return k_d / (Scalar(2) * I * w_n); // damping ratio - zeta

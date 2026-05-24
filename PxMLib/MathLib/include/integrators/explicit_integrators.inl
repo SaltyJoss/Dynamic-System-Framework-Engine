@@ -78,63 +78,63 @@ namespace integration {
 		Scalar rtol,
 		Scalar atol
 	) {
-		const Scalar safety = 0.9;	// safety factor to prevent aggressive step size changes
-		const Scalar fac_min = 0.2;	// minimum factor for reducing step size
-		const Scalar fac_max = 5.0;	// maximum factor for increasing step size
-		const Scalar h_min = 1e-10;	// minimum allowed step size
-		const Scalar h_max = 1.0;	// maximum allowed step size
+		const Scalar safety = Scalar(0.9);	// safety factor to prevent aggressive step size changes
+		const Scalar fac_min = Scalar(0.2);	// minimum factor for reducing step size
+		const Scalar fac_max = Scalar(5.0);	// maximum factor for increasing step size
+		const Scalar h_min = Scalar(1e-10);	// minimum allowed step size
+		const Scalar h_max = Scalar(1.0);	// maximum allowed step size
 
-		dt = std::clamp(dt, h_min, h_max);
+		dt = clamp(dt, h_min, h_max);
 
 		// Try up to 25 attempts to find an acceptable step size
 		for (int attempt = 0; attempt < 25; ++attempt) {
 			// Butcher tableau for Dormand-Prince method (7 stages, 5th order, SHOULD probably be precomputed as static constants, in a matrix or equiv)
 
 			// Coefficients for error estimation
-			const Scalar c2 = 1.0 / 5.0;
-			const Scalar c3 = 3.0 / 10.0;
-			const Scalar c4 = 4.0 / 5.0;
-			const Scalar c5 = 8.0 / 9.0;
-			const Scalar c6 = 1.0;
-			const Scalar c7 = 1.0;
+			const Scalar c2 = Scalar(1) / Scalar(5);
+			const Scalar c3 = Scalar(3) / Scalar(10);
+			const Scalar c4 = Scalar(4) / Scalar(5);
+			const Scalar c5 = Scalar(8) / Scalar(9);
+			const Scalar c6 = Scalar(1);
+			const Scalar c7 = Scalar(1);
 
 			// Dormand-Prince coefficients
-			const Scalar a21 = 1.0 / 5.0;
-			const Scalar a31 = 3.0 / 40.0;
-			const Scalar a32 = 9.0 / 40.0;
-			const Scalar a41 = 44.0 / 45.0;
-			const Scalar a42 = -56.0 / 15.0;
-			const Scalar a43 = 32.0 / 9.0;
-			const Scalar a51 = 19372.0 / 6561.0;
-			const Scalar a52 = -25360.0 / 2187.0;
-			const Scalar a53 = 64448.0 / 6561.0;
-			const Scalar a54 = -212.0 / 729.0;
-			const Scalar a61 = 9017.0 / 3168.0;
-			const Scalar a62 = -355.0 / 33.0;
-			const Scalar a63 = 46732.0 / 5247.0;
-			const Scalar a64 = 49.0 / 176.0;
-			const Scalar a65 = -5103.0 / 18656.0;
-			const Scalar a71 = 35.0 / 384.0;
-			const Scalar a72 = 0.0;
-			const Scalar a73 = 500.0 / 1113.0;
-			const Scalar a74 = 125.0 / 192.0;
-			const Scalar a75 = -2187.0 / 6784.0;
-			const Scalar a76 = 11.0 / 84.0;
+			const Scalar a21 = Scalar(1) / Scalar(5);
+			const Scalar a31 = Scalar(3) / Scalar(40);
+			const Scalar a32 = Scalar(9) / Scalar(40);
+			const Scalar a41 = Scalar(44) / Scalar(45);
+			const Scalar a42 = Scalar(-56) / Scalar(15);
+			const Scalar a43 = Scalar(32) / Scalar(9);
+			const Scalar a51 = Scalar(19372) / Scalar(6561);
+			const Scalar a52 = Scalar(-25360) / Scalar(2187);
+			const Scalar a53 = Scalar(64448) / Scalar(6561);
+			const Scalar a54 = Scalar(-212) / Scalar(729);
+			const Scalar a61 = Scalar(9017) / Scalar(3168);
+			const Scalar a62 = Scalar(-355) / Scalar(33);
+			const Scalar a63 = Scalar(46732) / Scalar(5247.0);
+			const Scalar a64 = Scalar(49) / Scalar(176);
+			const Scalar a65 = Scalar(-5103) / Scalar(18656);
+			const Scalar a71 = Scalar(35) / Scalar(384);
+			const Scalar a72 = Scalar(0);
+			const Scalar a73 = Scalar(500) / Scalar(1113);
+			const Scalar a74 = Scalar(125) / Scalar(192);
+			const Scalar a75 = Scalar(-2187) / Scalar(6784);
+			const Scalar a76 = Scalar(11) / Scalar(84);
 
 			// Weights for 4th and 5th order estimates
-			const Scalar b1 = 35.0 / 384.0;
-			const Scalar b2 = 0.0;
-			const Scalar b3 = 500.0 / 1113.0;
-			const Scalar b4 = 125.0 / 192.0;
-			const Scalar b5 = -2187.0 / 6784.0;
-			const Scalar b6 = 11.0 / 84.0;
-			const Scalar b1s = 5179.0 / 57600.0;
-			const Scalar b2s = 0.0;
-			const Scalar b3s = 7571.0 / 16695.0;
-			const Scalar b4s = 393.0 / 640.0;
-			const Scalar b5s = -92097.0 / 339200.0;
-			const Scalar b6s = 187.0 / 2100.0;
-			const Scalar b7s = 1.0 / 40.0;
+			const Scalar b1 = Scalar(35) / Scalar(384);
+			const Scalar b2 = Scalar(0);
+			const Scalar b3 = Scalar(500) / Scalar(1113);
+			const Scalar b4 = Scalar(125) / Scalar(192);
+			const Scalar b5 = Scalar(-2187) / Scalar(6784);
+			const Scalar b6 = Scalar(11) / Scalar(84);
+			const Scalar b1s = Scalar(5179) / Scalar(57600);
+			const Scalar b2s = Scalar(0);
+			const Scalar b3s = Scalar(7571) / Scalar(16695);
+			const Scalar b4s = Scalar(393) / Scalar(640);
+			const Scalar b5s = Scalar(-92097) / Scalar(339200);
+			const Scalar b6s = Scalar(187) / Scalar(2100);
+			const Scalar b7s = Scalar(1) / Scalar(40);
 
 			// Compute the Runge-Kutta stages (DP -> 7 stages)
 			const mathlib::VecX_T<Scalar> k1 = f(t, x);
@@ -154,32 +154,31 @@ namespace integration {
 			// Compute the error norm
 			Scalar errNorm = 0.0;
 			for (int i = 0; i < e.size(); ++i) {
-				Scalar sc = atol + rtol * std::max<Scalar>(std::abs(x(i)), std::abs(y5(i)));
+				Scalar sc = atol + rtol * max(abs(x(i)), abs(y5(i)));
 				const Scalar r = e(i) / sc;
 				errNorm += r * r;
 			}
-			Scalar err = std::sqrt(errNorm / e.size());
+			Scalar err = sqrt<Scalar>(errNorm / e.size());
 
 			// Adaptive step size control
 
 			// Accept
-			if (err <= 1.0 && std::isfinite(err)) {
+			if (err <= Scalar(1)  && isfinite(err)) {
 				dt_used = dt; // Store the actual step size used for this step
 
 				// Update step size for next iteration
-				const Scalar denom = std::max<Scalar>(err, 1e-10); // prevent division by zero
-				Scalar fac = safety * std::pow(denom, -0.2);	   // exponent for 5th order method
-				fac = std::clamp(fac, fac_min, fac_max);		   // limit step size change
-				dt = std::clamp(dt * fac, h_min, h_max);		   // update step size
+				const Scalar denom = max(err, Scalar(1e-10)); // prevent division by zero
+				Scalar fac = safety * pow(denom, Scalar(-0.2));   // exponent for 5th order method
+				fac = clamp(fac, fac_min, fac_max);		   // limit step size change
+				dt = clamp(dt * fac, h_min, h_max);		   // update step size
 				return y5;
 			}
 			// Reject
 			else {
-				Scalar denom = (std::isfinite(err)
-					? std::max<Scalar>(err, 1e-16) : 1e16);	 // prevent division by zero & NaN
-				Scalar fac = safety * std::pow(denom, -0.2); // exponent for 4th order method
-				fac = std::clamp(fac, fac_min, fac_max);
-				dt = std::clamp(dt * fac, h_min, h_max);
+				Scalar denom = (isfinite(err) ? max(err, Scalar(1e-16)) : Scalar(1e16));	 // prevent division by zero & NaN
+				Scalar fac = safety * pow(denom, Scalar(-0.2)); // exponent for 4th order method
+				fac = clamp(fac, fac_min, fac_max);
+				dt = clamp(dt * fac, h_min, h_max);
 			}
 		}
 		throw std::runtime_error("RK45 failed to converge after maximum attempts");

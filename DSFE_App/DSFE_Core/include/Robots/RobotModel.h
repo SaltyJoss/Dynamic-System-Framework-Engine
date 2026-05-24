@@ -2,6 +2,7 @@
 #pragma once
 
 #include "EngineCore.h"
+
 #include <core/MathLib.h>
 #include <numbers>
 #include <Kinematics/DH_Params.h>
@@ -10,8 +11,6 @@
 
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
-
-constexpr double DEG2RAD = std::numbers::pi / 180.0;
 
 namespace robots {
 	// --- Robot Model Kinematic Models ---
@@ -105,7 +104,7 @@ namespace robots {
 		bool continuous = false;
 		double minAngle = 0.0;
 		double maxAngle = 0.0;
-		double maxqd = 180.0 * DEG2RAD;
+		double maxqd = PI_d;
 		double maxEffort = 0.0; // max torque/force
 		// Soft limits
 		double omegaRefMaxRad_s = 0.0;
@@ -179,7 +178,7 @@ namespace robots {
 
 		// Kinematics model (URDF or DH)
 		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;
-		std::vector<kinematics::DH_Params> dhParams;
+		std::vector<kinematics::DH_Params<double>> dhParams;
 
 		// Visualization options
 		eVisualFrame visualFrame = eVisualFrame::JOINT;

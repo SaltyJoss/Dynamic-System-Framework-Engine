@@ -27,14 +27,14 @@ namespace robots {
 			snap.qdd_ref[i] = j.qdd_ref;
 		}
 
-		snap.robotRootPose = _robotRootPose;
+		snap.robotRootPose = _robotRootPose.template cast<Scalar>();
 		snap.baseIsFree = _baseIsFree;
-		snap.lastBaseForwardForce = _lastBaseForwardForce;
-		snap.gravity = _gravity;
+		snap.lastBaseForwardForce = Scalar(_lastBaseForwardForce);
+		snap.gravity = Scalar(_gravity);
 
 		snap.torqueMode = _robot.torqueMode;
 
-		snap.dt = _dynamics->dt();
+		snap.dt = Scalar(_dynamics->dt());
 		snap.simTime = simTime;
 
 		return snap;
@@ -197,7 +197,7 @@ namespace robots {
 			for (size_t i = 0; i < n; ++i) {
 				const RobotJoint& j = _robot.joints[i];
 
-				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : dynResult.metrics.I_eff[i];
+				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
 				const double err = q_ref_real[i] - q_real[i];
 				const double err_d = qd_ref_real[i] - qd_real[i];
 

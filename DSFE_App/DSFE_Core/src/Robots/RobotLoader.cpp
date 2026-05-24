@@ -333,7 +333,7 @@ namespace robots {
 	}
 
 	// Parse DH parameters if present
-	static bool parseDHParameters(const json& jointData, DH_Params& out) {
+	static bool parseDHParameters(const json& jointData, DH_Params<double>& out) {
 		// Accept "dh" ONLY (your JSON uses "dh")
 		if (!jointData.contains("dh") || !jointData["dh"].is_object()) return false;
 
@@ -463,7 +463,7 @@ namespace robots {
 
 			// If robot is DH-mode, also parse DH table
 			if (robot.kinematicsModel == eKinematicsModel::DH) {
-				DH_Params dh{};
+				DH_Params<double> dh{};
 				if (!parseDHParameters(jointData, dh)) {
 					LOG_WARN("Joint %s missing 'dh' unexpectedly; forcing URDF mode.", joint.name.c_str());
 					robot.kinematicsModel = eKinematicsModel::URDF;

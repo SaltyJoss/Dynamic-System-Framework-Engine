@@ -1,13 +1,16 @@
 // PxM/MathLib M_DualNumbers.h
 #pragma once
 
-#include <core/MathLib.h>
+#include "core/Types_tpl.h"
+#include "core/ScalarStdFunc.h"
+#include "core/ScalarScaling.h"
 
 #define EIGEN_DONT_VECTORIZE
 #define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
 
 #include <Eigen/Core>
 
+#include <cmath>
 #include <limits>
 #include <array>
 #include <algorithm>
@@ -229,8 +232,8 @@ namespace mathlib {
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
 			return out;
 		}
-		out.real = pow(a.real, n);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = n * pow(a.real, n - Scalar(1)) * a.dual[i]; }
+		out.real = std::pow(a.real, n);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = n * std::pow(a.real, n - Scalar(1)) * a.dual[i]; }
 		return out;
 	}
 	// Square root function
@@ -238,7 +241,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> sqrt(const DualNumber_T<Scalar, NVar>& a) {
 		if (a.real < Scalar(0)) { throw std::runtime_error("sqrt() domain error for DualNumber_T"); }
 		DualNumber_T<Scalar, NVar> out;
-		const Scalar sqrtReal = sqrt(a.real);
+		const Scalar sqrtReal = std::sqrt(a.real);
 		out.real = sqrtReal;
 		if (sqrtReal == Scalar(0)) {
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
@@ -252,39 +255,68 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> sin(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = sin(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = cos(a.real) * a.dual[i]; }
+		out.real = std::sin(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = std::cos(a.real) * a.dual[i]; }
+		return out;
+	}
+	// Arcsine function
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> asin(const DualNumber_T<Scalar, NVar>& a) {
+		if (a.real < Scalar(-1) || a.real > Scalar(1)) { throw std::runtime_error("asin() domain error for DualNumber_T"); }
+		DualNumber_T<Scalar, NVar> out;
+		out.real = std::asin(a.real);
+		const Scalar invSqrt = Scalar(1) / std::sqrt(Scalar(1) - a.real * a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = invSqrt * a.dual[i]; }
 		return out;
 	}
 	// Cosine function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> cos(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = cos(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = -sin(a.real) * a.dual[i]; }
+		out.real = std::cos(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = -std::sin(a.real) * a.dual[i]; }
+		return out;
+	}
+	// Arccosine function
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> acos(const DualNumber_T<Scalar, NVar>& a) {
+		if (a.real < Scalar(-1) || a.real > Scalar(1)) { throw std::runtime_error("acos() domain error for DualNumber_T"); }
+		DualNumber_T<Scalar, NVar> out;
+		out.real = std::acos(a.real);
+		const Scalar invSqrt = Scalar(1) / std::sqrt(Scalar(1) - a.real * a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = -invSqrt * a.dual[i]; }
 		return out;
 	}
 	// Tangent function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> tan(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = tan(a.real);
-		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (cos(a.real) * cos(a.real)); }
+		out.real = std::tan(a.real);
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (std::cos(a.real) * std::cos(a.real)); }
 		return out;
 	}
 	// Arctangent function
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> atan(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = atan(a.real);
+		out.real = std::atan(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / (Scalar(1) + a.real * a.real); }
+		return out;
+	}
+	// Arctangent squared function
+	template<typename Scalar, size_t NVar>
+	inline DualNumber_T<Scalar, NVar> atan2(const DualNumber_T<Scalar, NVar>& y, const DualNumber_T<Scalar, NVar>& x) {
+		DualNumber_T<Scalar, NVar> out;
+		out.real = std::atan2(y.real, x.real);
+		Scalar denom = x.real * x.real + y.real * y.real;
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = (x.real * y.dual[i] - y.real * x.dual[i]) / denom; }
 		return out;
 	}
 	// Hyperbolic tangent function (tanh)
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> tanh(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = tanh(a.real);
+		out.real = std::tanh(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] * (Scalar(1) - out.real * out.real); }
 		return out;
 	}
@@ -292,7 +324,7 @@ namespace mathlib {
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> exp(const DualNumber_T<Scalar, NVar>& a) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = exp(a.real);
+		out.real = std::exp(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = out.real * a.dual[i]; }
 		return out;
 	}
@@ -301,7 +333,7 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> log(const DualNumber_T<Scalar, NVar>& a) {
 		if (a.real <= Scalar(0)) { throw std::runtime_error("log() domain error for DualNumber_T"); }
 		DualNumber_T<Scalar, NVar> out;
-		out.real = log(a.real);
+		out.real = std::log(a.real);
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = a.dual[i] / a.real; }
 		return out;
 	}
@@ -310,23 +342,20 @@ namespace mathlib {
 	// Smoothing
 	// -----
 
-	// Smooth step function for smooth interpolation between 0 and 1
-	template<typename Scalar>
-	inline Scalar smoothStep(const Scalar& x) { return x * x * (Scalar(3) - Scalar(2) * x); }
 	// Smooth step function for dual numbers (applies smooth step to the real part, scales dual part by the derivative of the smooth step)
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> smoothStep(const DualNumber_T<Scalar, NVar>& x) {
 		DualNumber_T<Scalar, NVar> out;
-		out.real = smoothStep(x.real);
+		out.real = mathlib::smoothStep(x.real);
 		Scalar derivative = Scalar(6) * x.real * (Scalar(1) - x.real); // Derivative of smooth step with respect to x
 		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = derivative * x.dual[i]; }
 		return out;
 	}
 	// LogSumExp Smooth Max (DualNumber)
 	template<typename Scalar, size_t NVar>
-	inline Scalar LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
+	inline DualNumber_T<Scalar, NVar>LSE_smoothMax(const DualNumber_T<Scalar, NVar>& a, const DualNumber_T<Scalar, NVar>& b, const Scalar& k = Scalar(15)) {
 		Scalar m = (a.real > b.real) ? a.real : b.real;
-		return DualNumber_T<Scalar, NVar>(m) + log(exp(k * (a - m)) + exp(k * (b - m))) / k;
+		return DualNumber_T<Scalar, NVar>(m) + mathlib::log(mathlib::exp(k * (a - m)) + mathlib::exp(k * (b - m))) / k;
 	}
 
 	// -----
@@ -401,6 +430,13 @@ namespace mathlib {
 	inline DualNumber_T<Scalar, NVar> numeric_limits_infinity() {
 		return DualNumber_T<Scalar, NVar>(std::numeric_limits<Scalar>::infinity(), std::array<Scalar, NVar>());
 	}
+	// Function to check if a DualNumber_T is finite (real part is finite and all dual parts are finite)
+	template<typename Scalar, size_t NVar>
+	inline bool isfinite(const DualNumber_T<Scalar, NVar>& a) {
+		if (!mathlib::isfinite(a.real)) { return false; }
+		for (size_t i = 0; i < NVar; ++i) { if (!mathlib::isfinite(a.dual[i])) { return false; } }
+		return true;
+	}
 	// Absolute value function that simply negates the dual number if the real part is negative (this is less smooth but can be more efficient and avoids issues with zero)
 	template<typename Scalar, size_t NVar>
 	inline DualNumber_T<Scalar, NVar> abs(const DualNumber_T<Scalar, NVar>& a) { return abs(a.real); }
@@ -413,8 +449,8 @@ namespace mathlib {
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
 		}
 		else {
-			out.real = abs(a.real);
-			Scalar sign = sgn(a.real);
+			out.real = mathlib::abs(a.real);
+			Scalar sign = mathlib::sgn(a.real);
 			for (size_t i = 0; i < NVar; ++i) { out.dual[i] = sign * a.dual[i]; }
 		}
 		return out;
@@ -508,17 +544,6 @@ namespace mathlib {
 		}
 		os << "] }";
 		return os;
-	}
-	// Check if the real part and all dual parts are finite
-	template<typename Scalar, size_t NVar>
-	inline bool isfinite(const DualNumber_T<Scalar, NVar>& x) {
-		if (!isfinite(x.real)) { return false; }
-
-		for (size_t i = 0; i < NVar; ++i) {
-			if (!isfinite(x.dual[i])) { return false; }
-		}
-
-		return true;
 	}
 
 	// -----

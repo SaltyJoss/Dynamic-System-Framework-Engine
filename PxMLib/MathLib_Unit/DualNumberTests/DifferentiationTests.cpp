@@ -1,7 +1,7 @@
 // MathLib_UnitTests DifferentiationTests.cpp
 
 #include "TestHarness.h"
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 #include <cmath>
 #include <functional>
 
@@ -15,8 +15,8 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(1.0, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - 6.0) < 1e-12, "Polynomial function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - 8.0) < 1e-12, "Polynomial derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.real - 6.0) < 1e-12, "Polynomial function value incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - 8.0) < 1e-12, "Polynomial derivative incorrect");
 	}
 	// Test that the derivative of x^2 is computed correctly by the product rule using dual numbers
 	TEST("Differentiation", DualNumber_ProductRule_xSquared) {
@@ -25,8 +25,8 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(2.0, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - 4.0) < 1e-12, "Product rule function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - 4.0) < 1e-12, "Product rule derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.real - 4.0) < 1e-12, "Product rule function value incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - 4.0) < 1e-12, "Product rule derivative incorrect");
 	}
 	// Test that the sine function's derivative is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_SineDerivative) {
@@ -35,8 +35,8 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(0.5, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - std::sin(0.5)) < 1e-12, "Sine function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - std::cos(0.5)) < 1e-12, "Sine derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.real - std::sin(0.5)) < 1e-12, "Sine function value incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - std::cos(0.5)) < 1e-12, "Sine derivative incorrect");
 	}
 	// Test that the cosine function's derivative is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_CosineDerivative) {
@@ -45,8 +45,8 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(0.5, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - std::cos(0.5)) < 1e-12, "Cosine function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] + std::sin(0.5)) < 1e-12, "Cosine derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.real - std::cos(0.5)) < 1e-12, "Cosine function value incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] + std::sin(0.5)) < 1e-12, "Cosine derivative incorrect");
 	}
 	// Test that the tangent function's derivative is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_TangentDerivative) {
@@ -55,9 +55,9 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(0.5, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - std::tan(0.5)) < 1e-12, "Tangent function value incorrect");
+		ASSERT_TRUE(abs<double>(y.real - std::tan(0.5)) < 1e-12, "Tangent function value incorrect");
 		double sec2 = 1.0 / (std::cos(0.5) * std::cos(0.5));
-		ASSERT_TRUE(std::abs(y.dual[0] - sec2) < 1e-12, "Tangent derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - sec2) < 1e-12, "Tangent derivative incorrect");
 	}
 	// Test that the derivative of the hyperbolic tangent function is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_HyperbolicTangentDerivative) {
@@ -66,9 +66,9 @@ namespace {
 		};
 		DualNumber_T<double, 1> x(0.5, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
-		ASSERT_TRUE(std::abs(y.real - std::tanh(0.5)) < 1e-12, "Hyperbolic tangent function value incorrect");
+		ASSERT_TRUE(abs<double>(y.real - std::tanh(0.5)) < 1e-12, "Hyperbolic tangent function value incorrect");
 		double sech2 = 1.0 / (std::cosh(0.5) * std::cosh(0.5));
-		ASSERT_TRUE(std::abs(y.dual[0] - sech2) < 1e-12, "Hyperbolic tangent derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - sech2) < 1e-12, "Hyperbolic tangent derivative incorrect");
 	}
 	// Test that the partial derivatives of a multivariable function are computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_MultivariableFunction) {
@@ -82,9 +82,9 @@ namespace {
 		double dfdx = 6.0 * x.real + std::cos(x.real); // df/dx = 6x + cos(x)
 		double dfdy = 2.0; // df/dy = 2
 
-		ASSERT_TRUE(std::abs(f(x, y).real - (3.0 * 4.0 + 2.0 * 3.0 + std::sin(2.0))) < 1e-12, "Multivariable function value incorrect");
-		ASSERT_TRUE(std::abs(f(x, y).dual[0] - dfdx) < 1e-12, "Partial derivative with respect to x incorrect");
-		ASSERT_TRUE(std::abs(f(x, y).dual[1] - dfdy) < 1e-12, "Partial derivative with respect to y incorrect");
+		ASSERT_TRUE(abs<double>(f(x, y).real - (3.0 * 4.0 + 2.0 * 3.0 + std::sin(2.0))) < 1e-12, "Multivariable function value incorrect");
+		ASSERT_TRUE(abs<double>(f(x, y).dual[0] - dfdx) < 1e-12, "Partial derivative with respect to x incorrect");
+		ASSERT_TRUE(abs<double>(f(x, y).dual[1] - dfdy) < 1e-12, "Partial derivative with respect to y incorrect");
 	}
 	// Test that the exponential function's derivative is computed correctly using dual numbers
 	TEST("Differentiation", DualNumber_ExponentialDerivative) {
@@ -94,7 +94,7 @@ namespace {
 		DualNumber_T<double, 1> x(0.5, { 1.0 }); // Set dual part to 1 to compute derivative
 		DualNumber_T<double, 1> y = f(x);
 		double expected0 = std::exp(0.5); // f(x) = exp(x) -> f'(x) = exp(x)
-		ASSERT_TRUE(std::abs(y.real - expected0) < 1e-12, "Exponential function value incorrect");
-		ASSERT_TRUE(std::abs(y.dual[0] - expected0) < 1e-12, "Exponential derivative incorrect");
+		ASSERT_TRUE(abs<double>(y.real - expected0) < 1e-12, "Exponential function value incorrect");
+		ASSERT_TRUE(abs<double>(y.dual[0] - expected0) < 1e-12, "Exponential derivative incorrect");
 	}
 }

@@ -1,7 +1,7 @@
 // MathLib_UnitTests TranscendentalTests.cpp
 
 #include "TestHarness.h"
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 #include <cmath>
 #include <functional>
 

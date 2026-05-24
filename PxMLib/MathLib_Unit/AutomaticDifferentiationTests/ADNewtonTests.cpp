@@ -1,7 +1,7 @@
 // MathLib_UnitTests ADNewtonTests.cpp
 
 #include "TestHarness.h"
-#include <core/DualNumbers.h>
+#include <core/MathLib.h>
 #include <cmath>
 #include <functional>
 
@@ -38,7 +38,7 @@ TEST("AD Newton-Raphson", ADNewton_RootFinding) {
 		x = newtonRaphsonStep<double, 1>(x);
 	}
 	double root = x.real;
-	ASSERT_TRUE(std::abs(root - std::sqrt(2.0)) < 1e-6, "Root finding error too large");
+	ASSERT_TRUE(abs<double>(root - sqrt<double>(2.0)) < 1e-6, "Root finding error too large");
 }
 // Test that the Newton-Raphson step using dual numbers converges to the root of the nonlinear function from different initial guesses.
 TEST("AD Newton-Raphson", ADNewton_Convergence) {
@@ -49,10 +49,10 @@ TEST("AD Newton-Raphson", ADNewton_Convergence) {
 			x = newtonRaphsonStep(x);
 		}
 		double root = x.real;
-		double residual = std::abs(nonlinearFunc<double, 1>(x).real);
+		double residual = abs<double>(nonlinearFunc<double, 1>(x).real);
 
 		std::string errorMsg = "Root finding error too large for initial guess " + std::to_string(x_guess);
-		ASSERT_TRUE(std::abs(root - std::sqrt(2.0)) < 1e-6, errorMsg.c_str());
+		ASSERT_TRUE(abs<double>(root - sqrt<double>(2.0)) < 1e-6, errorMsg.c_str());
 		ASSERT_TRUE(residual < 1e-10, "Residual is too large after Newton solve");
 	}
 }
@@ -62,5 +62,5 @@ TEST("AD Newton-Raphson", ADNewton_JacobianAccuracy) {
 	DualNumber_T<double, 1> g = nonlinearFunc<double, 1>(x);
 	double computedJacobian = g.dual[0];
 	double expectedJacobian = nonlinearFuncDerivative<double, 1>(x).real;
-	ASSERT_TRUE(std::abs(computedJacobian - expectedJacobian) < 1e-6, "Jacobian accuracy error too large");
+	ASSERT_TRUE(abs<double>(computedJacobian - expectedJacobian) < 1e-6, "Jacobian accuracy error too large");
 }
