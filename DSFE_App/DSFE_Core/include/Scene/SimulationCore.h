@@ -47,8 +47,6 @@ namespace core {
 		void startSimulation() override;
 		void stopSimulation() override;
 		bool isSimRunning() const override { return _simRunning.load(); }
-		void setSimulationBackend(eSimulationBackend backend) override;
-		eSimulationBackend simulationBackend() const override;
 
 		// Time stepping
 		void setFixedDt(double dt) override;
@@ -166,7 +164,6 @@ namespace core {
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;
-		eSimulationBackend _simBackend = eSimulationBackend::Standard;
 
 		// Last script text for comparison re-use
 		std::string _lastScriptText;

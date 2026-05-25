@@ -31,8 +31,6 @@ namespace core {
         virtual void startSimulation() = 0;
         virtual void stopSimulation() = 0;
         virtual bool isSimRunning() const = 0;
-		virtual void setSimulationBackend(eSimulationBackend backend) = 0;
-		virtual eSimulationBackend simulationBackend() const = 0;
         // Time stepping
         virtual void setFixedDt(double dt) = 0;
         virtual double fixedDt() const = 0;

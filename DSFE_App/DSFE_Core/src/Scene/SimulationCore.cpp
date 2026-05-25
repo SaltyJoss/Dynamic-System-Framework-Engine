@@ -68,9 +68,6 @@ namespace core {
 		return _robot->getADIntegrator()->integrationMethod();
 	}
 
-	void SimulationCore::setSimulationBackend(eSimulationBackend backend) { _simBackend = backend; }
-	eSimulationBackend SimulationCore::simulationBackend() const { return _simBackend; }
-
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
 		double simTime = _simTime.load();

@@ -7,6 +7,7 @@
 #include <core/MathLib.h>
 #include <integrators/numerical_integrators.h>
 #include "Numerics/IntegrationMethods.h"
+#include "Numerics/IntegratorState.h"
 
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
@@ -37,6 +38,7 @@ namespace integration {
 		void setAdaptiveTolerances(double rtol, double atol) { _rtol = rtol; _atol = atol; }
 		void setMaxStep(double max_dt) { _dt_max = max_dt; }
 		void resetAdaptiveState() { _dt_last = 0.0; }
+		std::shared_ptr<const IntegratorState> runtimeState() const { return _state; }
 
 	private:
 		const char* toString(eIntegrationMethod m);
@@ -44,6 +46,8 @@ namespace integration {
 		integration::eIntegrationMethod method;
 		std::unique_ptr<integration::NumericalIntegrator> _integrator;
 		std::string _methodStr = "RK4";
+
+		std::shared_ptr<IntegratorState> _state;
 
 		double _rtol;
 		double _atol;
@@ -60,6 +64,7 @@ namespace integration {
 		const std::string IntegratorName(eAutoDiffIntegrationMethod m);
 		void setIntegrationMethod(eAutoDiffIntegrationMethod m) { _m = m; }
 		eAutoDiffIntegrationMethod integrationMethod() const { return _m; }
+		std::shared_ptr<const IntegratorState> runtimeState() const { return _state; }
 
 	private:
 		const char* toString(eAutoDiffIntegrationMethod m);
@@ -67,6 +72,8 @@ namespace integration {
 		integration::eAutoDiffIntegrationMethod _m;
 		std::unique_ptr<integration::NumericalIntegrator> _integrator;
 		std::string _mStr = "AD_ImplicitEuler";
+
+		std::shared_ptr<IntegratorState> _state;
 	};
 
 } // namespace integration
