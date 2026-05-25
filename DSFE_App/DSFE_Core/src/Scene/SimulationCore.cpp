@@ -101,6 +101,8 @@ namespace core {
 				_scriptRunning.store(false);
 			}
 
+			const auto state = _robot->runtimeIntegratorState();
+
 			// Update physics and robot system if sim is running
 			if (_simRunning.load()) {
 				simTime += _dt;
@@ -108,7 +110,8 @@ namespace core {
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
 					_robot->updateTrajectoryInputs(*_traj, simTime);
-					_robot->step_AD<DSFE_AD_VARS>(_dt, simTime);
+					if (state && state->autoDiff) { _robot->step_AD<DSFE_AD_VARS>(_dt, simTime); }
+					else { _robot->step(_dt, simTime); }
 					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
@@ -314,6 +317,8 @@ namespace core {
 			// Step the program (DSL command execution)
 			program->step(dt);
 
+			const auto state = _robot->runtimeIntegratorState();
+
 			// Step physics and robot if sim is running
 			if (_simRunning.load()) {
 				simTime += dt;
@@ -322,8 +327,8 @@ namespace core {
 					// Update Trajectory Inputs
 					_robot->updateTrajectoryInputs(*_traj, simTime);
 
-					// Step robot system
-					_robot->step(dt, simTime);
+					if (state && state->autoDiff) { _robot->step_AD<DSFE_AD_VARS>(dt, simTime); }
+					else { _robot->step(dt, simTime); }
 
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
