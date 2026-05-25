@@ -253,7 +253,7 @@ namespace robots {
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
 		mathlib::VecX x = packState();
-		auto result = step_impl<double>(x, dt, simTime, *_integrator);
+		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
@@ -376,7 +376,9 @@ namespace robots {
 		_hasRobot = true;
 
 		_dynScratch.resize(n, m);
+		_dynScratch_AD.resize(n, m);
 		_dynResult.resize(n);
+		_dynResult_AD.resize(n);
 
 		resetRobot();
 
@@ -408,7 +410,9 @@ namespace robots {
 		_baseYawAcc = 0.0;
 
 		_dynScratch.resize(_robot.joints.size(), _robot.links.size());
+		_dynScratch_AD.resize(_robot.joints.size(), _robot.links.size());
 		_dynResult.resize(_robot.joints.size());
+		_dynResult_AD.resize(_robot.joints.size());
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();

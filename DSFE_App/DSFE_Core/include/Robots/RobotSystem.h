@@ -198,7 +198,11 @@ namespace robots {
 		void buildSpatialModel();
 
 		template<typename Scalar, typename IntegratorT>
-		RobotStepResult_T<Scalar> step_impl(const mathlib::VecX_T<Scalar>& x, Scalar dt, Scalar t, IntegratorT& integrator);
+		RobotStepResult_T<Scalar> step_impl(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar dt, Scalar t, IntegratorT& integrator,
+			DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
+		);
 
 		template<typename Scalar>
 		void postStepUpdate(const RobotStepResult_T<Scalar>& result, const mathlib::VecX& x);
@@ -247,6 +251,9 @@ namespace robots {
 
 		DynamicsScratch<double> _dynScratch;
 		DynamicsResult<double> _dynResult;
+
+		DynamicsScratch<DualNumber_T<double, 64>> _dynScratch_AD;
+		DynamicsResult<DualNumber_T<double, 64>> _dynResult_AD;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;

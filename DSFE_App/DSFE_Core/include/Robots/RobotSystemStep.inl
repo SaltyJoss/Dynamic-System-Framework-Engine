@@ -41,7 +41,11 @@ namespace robots {
 	}
 
 	template<typename Scalar, typename IntegratorT>
-	RobotStepResult_T<Scalar> RobotSystem::step_impl(const mathlib::VecX_T<Scalar>& x, Scalar dt, Scalar t, IntegratorT& integrator) {
+	RobotStepResult_T<Scalar> RobotSystem::step_impl(
+		const mathlib::VecX_T<Scalar>& x,
+		Scalar dt, Scalar t, IntegratorT& integrator,
+		DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
+	) {
 		RobotStepResult_T<Scalar> result;
 		result.snap = takeSnapshot<Scalar>(t);
 		auto& snap = result.snap;
@@ -58,10 +62,8 @@ namespace robots {
 		std::vector<Pose_T<Scalar>> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
 
 		SpatialModel<Scalar> spatialModel = _spatialModel.template cast<Scalar>();
-		DynamicsScratch<Scalar> dynScratch;
-		DynamicsResult<Scalar> dynResult;
-		dynScratch.resize(n, snap.model->links.size());
-		dynResult.resize(n);
+		DynamicsScratch<Scalar> dynScratch = dynamicScratch;
+		DynamicsResult<Scalar> dynResult = dynamicResult;
 
 		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			spatialModel,
@@ -237,7 +239,7 @@ namespace robots {
 		assert((size_t)x.size() <= NVar && "State size exceeds the number of dual variables."); // Checks state vector size is within the dual variable limit
 		for (size_t i = 0; i < (size_t)x.size(); ++i) { x[i].dual[i] = 1.0; }
 
-		auto result = step_impl<Dual>(x, Dual(dt), Dual(simTime), *_AD_integrator);
+		auto result = step_impl<Dual>(x, Dual(dt), Dual(simTime), *_AD_integrator, _dynScratch_AD, _dynResult_AD);
 		mathlib::VecX x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
 		unpackState(x_real);
 		_dynamics->setDt(result.stepOut.dt_taken);
