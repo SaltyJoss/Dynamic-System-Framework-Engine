@@ -36,7 +36,7 @@ namespace core {
 
 	// Simulation System
 	void SimulationCore::setupSimulationIntegrator() {
-		if (!_robot) return;
+		if (!_robot) { return;  }
 		auto* intgr = _robot->getIntegrator();
 		intgr->resetAdaptiveState();
 		intgr->setAdaptiveTolerances(1e-3, 1e-6);
@@ -137,6 +137,7 @@ namespace core {
 		if (_simRunning.load()) { return; }
 		telemetry().clear();
 		D_RUNTIME("starting simulation");
+		LOG_INFO("Starting Simulation -> Debug Log");
 
 		_simTime.store(0.0, std::memory_order_relaxed);
 		_accum = 0.0;

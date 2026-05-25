@@ -249,14 +249,19 @@ namespace robots {
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) { return; }
+		LOG_INFO("Entered step()");
+
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
+		LOG_INFO("Packing state");
 		mathlib::VecX x = packState();
 		auto result = step_impl<double>(x, dt, simTime, *_integrator);
 
+		LOG_INFO("Unpacking state");
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
 
+		LOG_INFO("PostStepUpadates state");
 		postStepUpdate(result, result.stepOut.x_next);
 
 		// Update base pose if free-floating
@@ -385,7 +390,7 @@ namespace robots {
 
 	// Method to reset the robot to its home position
 	void RobotSystem::resetRobot() {
-		if (!_hasRobot || !_robotHomeValid) { return; }
+		if (!_hasRobot || !_robotHomeValid) { LOG_ERROR("Reset aborterd."); return; }
 		_robotRootPose = _robotRootHome;
 		_robot.setJointVector(_robotQHome);
 

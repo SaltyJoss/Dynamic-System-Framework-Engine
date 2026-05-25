@@ -60,6 +60,10 @@ namespace robots {
 		SpatialModel<Scalar> spatialModel = _spatialModel.template cast<Scalar>();
 		DynamicsScratch<Scalar> dynScratch;
 		DynamicsResult<Scalar> dynResult;
+		dynScratch.resize(n, snap.model->links.size());
+		LOG_INFO("dynScratch resized");
+		dynResult.resize(n);
+		LOG_INFO("dynResult resized");
 
 		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			spatialModel,
@@ -69,18 +73,23 @@ namespace robots {
 		);
 
 		// CRBA only for controller inertia scaling
+		LOG_INFO("Computing M_start via CRBA");
 		mathlib::MatX_T<Scalar> M_start = SpatialDynamics::CRBA<Scalar>(
 			spatialModel,
 			dynScratch.spatial.Xup,
 			dynScratch
 		);
+		LOG_INFO("M_start dims = %d x %d", (int)M_start.rows(), (int)M_start.cols());
 
 		// Cache frozen joint gains for this step
 		mathlib::VecX_T<Scalar> kp_frozen(n), kd_frozen(n);
 		for (size_t i = 0; i < n; ++i) {
 			const auto& joint = snap.model->joints[i];
+			LOG_INFO("Snap model joint name = %s", joint.name.c_str());
 			if (joint.type == eJointType::FIXED) { continue; }
 
+			LOG_INFO("Max of M_start and 1e-6: %.3f", mathlib::max(M_start(i, i), Scalar(1e-6)));
+			LOG_INFO("I_eff_controller size = %d", (int)dynScratch.dense.I_eff_controller.size());
 			dynScratch.dense.I_eff_controller[i] = mathlib::max(M_start(i, i), Scalar(1e-6));
 			const Scalar I_eff = dynScratch.dense.I_eff_controller[i];
 
