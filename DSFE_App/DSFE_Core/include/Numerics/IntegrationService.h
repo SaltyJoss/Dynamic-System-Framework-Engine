@@ -38,6 +38,7 @@ namespace integration {
 		void setAdaptiveTolerances(double rtol, double atol) { _rtol = rtol; _atol = atol; }
 		void setMaxStep(double max_dt) { _dt_max = max_dt; }
 		void resetAdaptiveState() { _dt_last = 0.0; }
+		std::shared_ptr<IntegratorState> runtimeState() { return _state; }
 		std::shared_ptr<const IntegratorState> runtimeState() const { return _state; }
 
 	private:
@@ -64,6 +65,7 @@ namespace integration {
 		const std::string IntegratorName(eAutoDiffIntegrationMethod m);
 		void setIntegrationMethod(eAutoDiffIntegrationMethod m) { _m = m; }
 		eAutoDiffIntegrationMethod integrationMethod() const { return _m; }
+		std::shared_ptr<IntegratorState> runtimeState() { return _state; }
 		std::shared_ptr<const IntegratorState> runtimeState() const { return _state; }
 
 	private:
