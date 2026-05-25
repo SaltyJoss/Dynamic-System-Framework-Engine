@@ -3,6 +3,7 @@
 
 #include "EngineCore.h"
 #include <core/MathLib.h>
+#include <dynamics/FrictionModels.h>
 
 #include "Robots/DynamicsTypes.h"
 #include "Robots/RobotMetrics.h"

@@ -55,6 +55,9 @@ namespace core {
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
+
+
+
 		return _robot->getIntegratorName();
 	} 
 	// Get the current integration method
@@ -169,11 +172,14 @@ namespace core {
 			_robot->setRefBuffer(&_trajRefBuffer);
 		}
 
+		const auto state = _robot->runtimeIntegratorState();
+		std::string intName = (state && state->autoDiff) ? _robot->AD_integratorName() : _robot->getIntegratorName();
+
 		_data.setParentFolder(paths::runs().string());
 
 		// Ensure reference sim system have their integrators configured for the new run
 		setupSimulationIntegrator();
-		_data.setIntegratorName(integrationMethodName());
+		_data.setIntegratorName(intName);
 		_data.setRunTag(_runTag);
 
 		_simRunning.store(true);

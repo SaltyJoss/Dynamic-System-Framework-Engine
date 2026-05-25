@@ -342,8 +342,8 @@ namespace robots {
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
 			tau_i += scratch.g[i]; // Gravity compensation
 			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
-			tau_i -= b * qd[i]; // subtract viscous damping
-			tau_i -= c * mathlib::tanh(qd[i] / eps_f); // subtract Coulomb friction
+			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
+			tau_i += tau_f;
 
 
 			scratch.dense.tau[i] = tau_i;
@@ -428,8 +428,8 @@ namespace robots {
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			tau_i -= b * qd[i];
-			//tau_i -= b * mathlib::tanh(qd[i] / eps_f);
+			tau_i -= b * qd[i];						   // viscous damping
+			tau_i -= c * mathlib::tanh(qd[i] / eps_f); // friction
 
 			scratch.dense.tau[i] = tau_i;
 
