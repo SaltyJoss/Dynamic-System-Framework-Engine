@@ -151,18 +151,20 @@ namespace robots {
 		// --- GET AND SET INTEGRATION METHOD ---
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
-		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 
 		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
-		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) { _curIntMethod_AD = method; }
 		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
+		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) { _curIntMethod_AD = method; }
 
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
 
 		integration::DifferentiableIntegrator* getADIntegrator();
 		const integration::DifferentiableIntegrator* getADIntegrator() const;
+
+		std::shared_ptr<const integration::IntegratorState> runtimeIntegratorState() const;
 
 		void setRefBuffer(robots::TrajRefBuffer* buf)  { _refBuffer = buf; }
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }

@@ -11,6 +11,7 @@
 
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
+#include "Numerics/IntegratorState.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
@@ -70,6 +71,7 @@ namespace core {
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
 		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
+
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access

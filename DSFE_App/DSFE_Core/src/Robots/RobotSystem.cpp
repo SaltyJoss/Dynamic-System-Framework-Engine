@@ -431,6 +431,10 @@ namespace robots {
 	integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() { return _AD_integrator.get(); }
 	const integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() const { return _AD_integrator.get(); }
 
+	std::shared_ptr<const integration::IntegratorState> RobotSystem::runtimeIntegratorState() const {
+		return (_integrator->getIntegrationMethod() == _curIntMethod) ? _integrator->runtimeState() : _AD_integrator->runtimeState();
+	}
+
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
 
 	std::string RobotSystem::findRootLink() const {

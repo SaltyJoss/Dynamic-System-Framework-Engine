@@ -61,11 +61,13 @@ namespace integration {
 	
 	// Constructor
 	IntegrationService::IntegrationService()
-		: _integrator(std::make_unique<integration::NumericalIntegrator>()), method(eIntegrationMethod::RK4), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {
+		: _integrator(std::make_unique<integration::NumericalIntegrator>()), method(eIntegrationMethod::RK4),
+		_state(std::make_shared<IntegratorState>()), _rtol(1e-3), _atol(1e-6), _dt_last(), _dt_max() {
 	}
 
 	// Constructor for autodiff
 	DifferentiableIntegrator::DifferentiableIntegrator()
-		: _integrator(std::make_unique<integration::NumericalIntegrator>()), _m(eAutoDiffIntegrationMethod::AD_ImplicitEuler) {
+		: _integrator(std::make_unique<integration::NumericalIntegrator>()), _m(eAutoDiffIntegrationMethod::AD_ImplicitEuler),
+		_state(std::make_shared<IntegratorState>()) {
 	}
 } // namespace integration
