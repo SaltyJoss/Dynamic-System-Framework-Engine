@@ -160,6 +160,7 @@ namespace gui {
 		bool _showDisplaySettings = false;
         bool autoScroll = true;
         bool scrollToBottom = false;
+        bool _useAutoDiff = false;
 
 		// Render Presets
         render::ResolutionPreset r;

@@ -203,11 +203,12 @@ namespace gui {
 
 	// --- ControlPanel Implementation ---
 
-    ControlPanel::ControlPanel(SimManager* sim) :
+	ControlPanel::ControlPanel(SimManager* sim) :
 		_sim(sim), _controlMode(&sim->ctrlMode), _obj(nullptr), _light(nullptr),
 		r(render::ResolutionPreset::R_1080p), q(render::QualityPreset::Medium),
-        _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
-        _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
+		_meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+		_hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+		_useAutoDiff(false)
     {
 		diagTime = 0.0f; // initialize diagnostic time
 		simTime = 0.0f;  // initialize simulation time
@@ -420,10 +421,14 @@ namespace gui {
 
 		robots::RobotSystem* robot = _sim->robotSystem();
         auto currentIntEnum = robot->getIntegrationMethod();
+		auto currentIntEnum_AD = robot->AD_IntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
 		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint", "GLRK2", "GLRK3" };
         const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
+
+		static const char* intMethodNames_AD[] = { "Implicit Euler (AutoDiff)", "Implicit Midpoint (AutoDiff)", "GLRK2 (AutoDiff)", "GLRK3 (AutoDiff)" };
+		const char* currentIntMethod_AD = intMethodNames_AD[static_cast<int>(currentIntEnum_AD)];
 
 		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
 		const char* currentTorqueMode = torqueModeNames[static_cast<int>(currentTauEnum)];
@@ -431,48 +436,82 @@ namespace gui {
         
 		// Disable controls while sim is running to prevent conflicts and ensure stability of the simulations
 		ImGui::BeginDisabled(_sim->isSimRunning());
-
+		
 		// Integration method combo box
-		ImGui::SectionHeader("Integration Method");
+		ImGui::SectionHeader("Integration Methods");
+
 		ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##", currentIntMethod)) {
-            for (int n = 0; n < IM_ARRAYSIZE(intMethodNames); ++n) {
-                bool isSelected = (n == static_cast<int>(currentIntEnum));
+		ImGui::Checkbox("Enable Automatic Differentiable Integrators", &_useAutoDiff);
 
-				// When a new method is selected, update the robot's integration method and log the change
-                if (ImGui::Selectable(intMethodNames[n], isSelected)) {
-                    auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
-                    robot->setIntegrationMethod(updatedMethod);
+		ImGui::SetNextItemWidth(150.0f);
+		if (_useAutoDiff) {
+			if (ImGui::BeginCombo("##", currentIntMethod_AD)) {
+				for (int n = 0; n < IM_ARRAYSIZE(intMethodNames_AD); ++n) {
+					bool isSelected = (n == static_cast<int>(currentIntEnum_AD));
 
-                    switch (updatedMethod) {
-                    case integration::eIntegrationMethod::Euler:
-                        D_INFO("Integrator set to Euler"); break;
-                    case integration::eIntegrationMethod::Midpoint:
-                        D_INFO("Integrator set to RK2 (Midpoint)"); break;
-                    case integration::eIntegrationMethod::Heun:
-                        D_INFO("Integrator set to RK2 (Heun)"); break;
-                    case integration::eIntegrationMethod::Ralston:
-                        D_INFO("Integrator set to RK2 (Ralston)"); break;
-                    case integration::eIntegrationMethod::RK4:
-                        D_INFO("Integrator set to RK4"); break;
-                    case integration::eIntegrationMethod::RK45:
-						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
-					case integration::eIntegrationMethod::ImplicitEuler:
-						D_INFO("Integrator set to Implicit Euler"); break;
-					case integration::eIntegrationMethod::ImplicitMidpoint:
-						D_INFO("Integrator set to Implicit Midpoint"); break;
-					case integration::eIntegrationMethod::GLRK2:
-						D_INFO("Integrator set to GLRK2 (Gauss-Legendre Runge-Kutta 2-stage)"); break;
-					case integration::eIntegrationMethod::GLRK3:
-						D_INFO("Integrator set to GLRK3 (Gauss-Legendre Runge-Kutta 3-stage)"); break;
-                    default:
-                        break;
-                    }
-                }
-                if (isSelected) { ImGui::SetItemDefaultFocus(); }
-            }
-            ImGui::EndCombo();
-        }
+					// When a new method is selected, update the robot's integration method and log the change
+					if (ImGui::Selectable(intMethodNames_AD[n], isSelected)) {
+						auto updatedMethod = static_cast<integration::eAutoDiffIntegrationMethod>(n);
+						robot->setIntegrationMethod(updatedMethod);
+
+						switch (updatedMethod) {
+							case integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler:
+							D_INFO("Integrator set to Implicit Euler (AutoDiff)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_ImplicitMidpoint:
+							D_INFO("Integrator set to Implicit Midpoint (AutoDiff)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_GLRK2:
+							D_INFO("Integrator set to GLRK2 (AutoDiff Gauss-Legendre Runge-Kutta 2-stage)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_GLRK3:
+							D_INFO("Integrator set to GLRK3 (AutoDiff Gauss-Legendre Runge-Kutta 3-stage)"); break;
+							default:
+							break;
+						}
+					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else {
+			if (ImGui::BeginCombo("##", currentIntMethod)) {
+				for (int n = 0; n < IM_ARRAYSIZE(intMethodNames); ++n) {
+					bool isSelected = (n == static_cast<int>(currentIntEnum));
+
+					// When a new method is selected, update the robot's integration method and log the change
+					if (ImGui::Selectable(intMethodNames[n], isSelected)) {
+						auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
+						robot->setIntegrationMethod(updatedMethod);
+
+						switch (updatedMethod) {
+							case integration::eIntegrationMethod::Euler:
+							D_INFO("Integrator set to Euler"); break;
+							case integration::eIntegrationMethod::Midpoint:
+							D_INFO("Integrator set to RK2 (Midpoint)"); break;
+							case integration::eIntegrationMethod::Heun:
+							D_INFO("Integrator set to RK2 (Heun)"); break;
+							case integration::eIntegrationMethod::Ralston:
+							D_INFO("Integrator set to RK2 (Ralston)"); break;
+							case integration::eIntegrationMethod::RK4:
+							D_INFO("Integrator set to RK4"); break;
+							case integration::eIntegrationMethod::RK45:
+							D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
+							case integration::eIntegrationMethod::ImplicitEuler:
+							D_INFO("Integrator set to Implicit Euler"); break;
+							case integration::eIntegrationMethod::ImplicitMidpoint:
+							D_INFO("Integrator set to Implicit Midpoint"); break;
+							case integration::eIntegrationMethod::GLRK2:
+							D_INFO("Integrator set to GLRK2 (Gauss-Legendre Runge-Kutta 2-stage)"); break;
+							case integration::eIntegrationMethod::GLRK3:
+							D_INFO("Integrator set to GLRK3 (Gauss-Legendre Runge-Kutta 3-stage)"); break;
+							default:
+							break;
+						}
+					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
+				}
+				ImGui::EndCombo();
+			}
+		}
 
 		// Torque mode combo box
 		ImGui::SectionHeader("Torque Mode");
