@@ -42,6 +42,7 @@ namespace core {
         virtual std::string integrationMethodName() const = 0;
         virtual integration::eIntegrationMethod integrationMethod() const = 0;
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
+		virtual void enableAutoDiff(bool enable) = 0;
         // Setter for run tag name of current script
         virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems

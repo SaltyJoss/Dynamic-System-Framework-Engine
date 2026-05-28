@@ -12,6 +12,8 @@ namespace integration {
 			}
 		}
 
+		LOG_INFO_ONCE("Using AutoDiff integration method: %s", IntegratorName(m).c_str());
+
 		Real dt_r = mathlib::real(dt);
 
 		_state->backend = eIntegrationBackend::AutoDiff;

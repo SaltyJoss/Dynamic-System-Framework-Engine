@@ -210,8 +210,8 @@ namespace gui {
 		_hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
 		_useAutoDiff(false)
     {
-		diagTime = 0.0f; // initialize diagnostic time
-		simTime = 0.0f;  // initialize simulation time
+		diagTime = 0.0f; // initialise diagnostic time
+		simTime = 0.0f;  // initialise simulation time
 
         diagRunning = false;
 		simulationRunning = false;
@@ -420,8 +420,8 @@ namespace gui {
 		ImGui::SectionDivider();
 
 		robots::RobotSystem* robot = _sim->robotSystem();
-        auto currentIntEnum = robot->getIntegrationMethod();
-		auto currentIntEnum_AD = robot->AD_IntegrationMethod();
+		auto currentIntEnum = _sim->integrationMethod();
+		auto currentIntEnum_AD = _sim->autoDiffIntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
 		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint", "GLRK2", "GLRK3" };
@@ -440,8 +440,9 @@ namespace gui {
 		// Integration method combo box
 		ImGui::SectionHeader("Integration Methods");
 
-		ImGui::SetNextItemWidth(150.0f);
+		/*ImGui::SetNextItemWidth(150.0f);
 		ImGui::Checkbox("Enable Automatic Differentiable Integrators", &_useAutoDiff);
+		robot->enableAutoDiff(_useAutoDiff);*/
 
 		ImGui::SetNextItemWidth(150.0f);
 		if (_useAutoDiff) {
@@ -451,10 +452,12 @@ namespace gui {
 
 					// When a new method is selected, update the robot's integration method and log the change
 					if (ImGui::Selectable(intMethodNames_AD[n], isSelected)) {
-						auto updatedMethod = static_cast<integration::eAutoDiffIntegrationMethod>(n);
-						robot->setIntegrationMethod(updatedMethod);
+						auto updatedMethod_AD = static_cast<integration::eAutoDiffIntegrationMethod>(n);
+						auto state = robot->runtimeIntegratorState();
+						state->autoDiff = true; // ensure autodiff flag is set in state
+						robot->getADIntegrator()->setIntegrationMethod(updatedMethod_AD);
 
-						switch (updatedMethod) {
+						switch (updatedMethod_AD) {
 							case integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler:
 							D_INFO("Integrator set to Implicit Euler (AutoDiff)"); break;
 							case integration::eAutoDiffIntegrationMethod::AD_ImplicitMidpoint:
@@ -480,7 +483,9 @@ namespace gui {
 					// When a new method is selected, update the robot's integration method and log the change
 					if (ImGui::Selectable(intMethodNames[n], isSelected)) {
 						auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
-						robot->setIntegrationMethod(updatedMethod);
+						const auto state = robot->runtimeIntegratorState();
+						state->autoDiff = false; // ensure autodiff flag is set in state
+						_sim->setIntegrationMethod(updatedMethod);
 
 						switch (updatedMethod) {
 							case integration::eIntegrationMethod::Euler:

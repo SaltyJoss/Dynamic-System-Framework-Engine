@@ -20,4 +20,9 @@ namespace integration {
 		AD_GLRK2 = 2,
 		AD_GLRK3 = 3
 	};
+
+	inline bool isStandardMethod(eIntegrationMethod method) {
+		auto val = static_cast<int>(method);
+		return val >= static_cast<int>(eIntegrationMethod::Euler) && val <= static_cast<int>(eIntegrationMethod::GLRK3);
+	}
 }

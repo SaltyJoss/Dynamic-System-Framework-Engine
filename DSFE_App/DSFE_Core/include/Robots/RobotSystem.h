@@ -157,6 +157,7 @@ namespace robots {
 			const auto state = _integrator->runtimeState();
 			state->backend = integration::eIntegrationBackend::Standard;
 			state->autoDiff = false;
+			_useAutoDiff = false;
 		}
 
 		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
@@ -166,6 +167,7 @@ namespace robots {
 			const auto state = _AD_integrator->runtimeState();
 			state->backend = integration::eIntegrationBackend::AutoDiff;
 			state->autoDiff = true;
+			_useAutoDiff = true;
 		}
 
 		integration::IntegrationService* getIntegrator();
@@ -174,6 +176,10 @@ namespace robots {
 		integration::DifferentiableIntegrator* getADIntegrator();
 		const integration::DifferentiableIntegrator* getADIntegrator() const;
 
+		bool autoDiffEnabled() const { return _useAutoDiff; }
+		void enableAutoDiff(bool enable) { _useAutoDiff = enable; }
+
+		std::shared_ptr<integration::IntegratorState> runtimeIntegratorState();
 		std::shared_ptr<const integration::IntegratorState> runtimeIntegratorState() const;
 
 		void setRefBuffer(robots::TrajRefBuffer* buf)  { _refBuffer = buf; }
@@ -205,7 +211,7 @@ namespace robots {
 		);
 
 		template<typename Scalar>
-		void postStepUpdate(const RobotStepResult_T<Scalar>& result, const mathlib::VecX& x);
+		void postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<Scalar>& scratch, const RobotStepResult_T<Scalar>& result);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
@@ -220,6 +226,8 @@ namespace robots {
 
 		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
 		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
+
+		bool _useAutoDiff = false;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;

@@ -36,11 +36,14 @@ namespace core {
 
 	// Simulation System
 	void SimulationCore::setupSimulationIntegrator() {
-		if (!_robot) { return;  }
+		if (!_robot) { return; }
 		auto* intgr = _robot->getIntegrator();
+		auto* adIntgr = _robot->getADIntegrator();
 		intgr->resetAdaptiveState();
 		intgr->setAdaptiveTolerances(1e-3, 1e-6);
 		intgr->setMaxStep(_dt);
+		adIntgr->runtimeState()->last_dt_taken = _dt;
+		adIntgr->runtimeState()->last_dt_sug = _dt;
 	}
 	// Set the integration method for the simulation (also updates the robot's integrator if it exists)
 	void SimulationCore::setIntegrationMethod(integration::eIntegrationMethod method) {
@@ -55,10 +58,16 @@ namespace core {
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
+		std::string intName;
+		if (_robot->runtimeIntegratorState() && _robot->runtimeIntegratorState()->autoDiff) {
+			intName = _robot->getADIntegrator()->IntegratorName(_robot->getADIntegrator()->integrationMethod());
+		}
+		else {
+			intName = _robot->getIntegrator()->IntegratorName(_robot->getIntegrator()->getIntegrationMethod());
+		}
+		LOG_INFO("Integration Method: %s", intName.c_str());
 
-
-
-		return _robot->getIntegratorName();
+		return intName;
 	} 
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
@@ -69,6 +78,10 @@ namespace core {
 	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
 		if (!_robot) { return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; }
 		return _robot->getADIntegrator()->integrationMethod();
+	}
+	void SimulationCore::enableAutoDiff(bool enable) {
+		if (!_robot) { return; }
+		_robot->enableAutoDiff(enable);
 	}
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
@@ -174,6 +187,7 @@ namespace core {
 
 		const auto state = _robot->runtimeIntegratorState();
 		std::string intName = (state && state->autoDiff) ? _robot->AD_integratorName() : _robot->getIntegratorName();
+		LOG_INFO("Integrator for this run: %s", intName.c_str());
 
 		_data.setParentFolder(paths::runs().string());
 
@@ -209,7 +223,8 @@ namespace core {
 	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now();
 
-		const std::string intName = _robot->getIntegratorName();
+		const auto state = _robot->runtimeIntegratorState();
+		const std::string intName = (state && state->autoDiff) ? _robot->AD_integratorName() : _robot->getIntegratorName();
 		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
 		const std::string header = robotName + "_sim_" + intName;
 
@@ -429,6 +444,8 @@ namespace core {
 	// Setter and getter for the active script program
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
+
+	// Setter for the 
 
 	// Thread-based methods
 

@@ -62,8 +62,8 @@ namespace robots {
 		std::vector<Pose_T<Scalar>> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
 
 		SpatialModel<Scalar> spatialModel = _spatialModel.template cast<Scalar>();
-		DynamicsScratch<Scalar> dynScratch = dynamicScratch;
-		DynamicsResult<Scalar> dynResult = dynamicResult;
+		auto& dynScratch = dynamicScratch;
+		auto& dynResult = dynamicResult;
 
 		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			spatialModel,
@@ -95,6 +95,10 @@ namespace robots {
 
 			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
 			kd_frozen[i] = Scalar(2) * joint.zeta_target * I_eff * joint.wn_target;
+
+			//LOG_INFO("I_eff[%d] = %.12f", (int)i, (double)mathlib::real(I_eff));
+			//LOG_INFO("kp[%d] = %.12f", (int)i, (double)mathlib::real(kp_frozen[i]));
+			//LOG_INFO("kd[%d] = %.12f", (int)i, (double)mathlib::real(kd_frozen[i]));
 		}
 
 		// Compute RNEA torques for feedforward control
@@ -145,7 +149,7 @@ namespace robots {
 	}
 
 	template<typename Scalar>
-	void RobotSystem::postStepUpdate(const RobotStepResult_T<Scalar>& result, const mathlib::VecX& x) {
+	void RobotSystem::postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<Scalar>& dynScratch, const RobotStepResult_T<Scalar>& result) {
 		const size_t n = result.snap.model->joints.size();
 
 		Eigen::Map<const mathlib::VecX> q_next(x.data(), n);
@@ -159,17 +163,8 @@ namespace robots {
 		_kinematics->computeForwardKinematics_fromState<double>(*result.snap.model, x, T_world);
 		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses<double>(T_world, *result.snap.model);
 
-		DynamicsScratch<double> dynScratch;
-
-		// Compute spatial kinematics and bias terms for the new state
-		SpatialDynamics::computeSpatialKinematicsAndBias<double>(
-			_spatialModel,
-			q_next, qd_next,
-			dynScratch.spatial.Xup,
-			dynScratch.spatial.v, dynScratch.spatial.c
-		);
 		// Compute mass matrix at the new state
-		mathlib::MatX M = SpatialDynamics::CRBA<double>(_spatialModel, dynScratch.spatial.Xup, dynScratch);
+		mathlib::MatX M = dynScratch.dense.M.unaryExpr([](const auto& v) { return mathlib::real(v); });
 		mathlib::VecX tau_g = _dynamics->computeGravityTorque<double>(*result.snap.model, T_world, jointWorldPoses);
 
 		// Extract real parts of relevant variables for logging and control
@@ -210,6 +205,11 @@ namespace robots {
 				const double err = q_ref_real[i] - q_real[i];
 				const double err_d = qd_ref_real[i] - qd_real[i];
 
+				//LOG_INFO("q norm: %.12f", q_real.norm());
+				//LOG_INFO("qd norm: %.12f", qd_real.norm());
+				//LOG_INFO("qdd norm: %.12f", dynResult.metrics.qdd.norm());
+				//LOG_INFO("tau_rnea norm : % .12f", tau_rnea_real.norm());
+
 				JointLogBuffer::JointLogEntry e{};
 
 				e.sim_time = _simTime;
@@ -244,7 +244,7 @@ namespace robots {
 		unpackState(x_real);
 		_dynamics->setDt(result.stepOut.dt_taken);
 
-		postStepUpdate(result, x_real);
+		// postStepUpdate(x_real, _dynScratch_AD, result);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {

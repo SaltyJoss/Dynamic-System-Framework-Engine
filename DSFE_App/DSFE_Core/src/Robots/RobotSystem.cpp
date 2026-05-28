@@ -250,6 +250,16 @@ namespace robots {
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) { return; }
 
+		// If AutoDiff is enabled, route the step through the AD path. This
+		// prevents the non-AD integrator (e.g., RK4) from being used when the
+		// user expects AutoDiff-enabled integration. The AD path uses a
+		// compile-time dual-width; match the width used for the AD scratch
+		// buffers (64) so the DynamicsScratch/_dynResult_AD types align.
+		if (_useAutoDiff) {
+			step_AD<64>(dt, simTime);
+			return;
+		}
+
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
 		mathlib::VecX x = packState();
@@ -258,7 +268,7 @@ namespace robots {
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
 
-		postStepUpdate(result, result.stepOut.x_next);
+		//postStepUpdate(result.stepOut.x_next, _dynScratch, result);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
@@ -436,8 +446,12 @@ namespace robots {
 	integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() { return _AD_integrator.get(); }
 	const integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() const { return _AD_integrator.get(); }
 
+	std::shared_ptr<integration::IntegratorState> RobotSystem::runtimeIntegratorState() {
+		return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState();
+	}
+
 	std::shared_ptr<const integration::IntegratorState> RobotSystem::runtimeIntegratorState() const {
-		return (_integrator->getIntegrationMethod() == _curIntMethod) ? _integrator->runtimeState() : _AD_integrator->runtimeState();
+		return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState();
 	}
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
@@ -810,9 +824,7 @@ namespace robots {
 	double RobotSystem::computeForwardDrive() const {
 		double drive = 0.0;
 		for (const auto& j : _robot.joints) {
-			if (j.name.find("hip_pitch") != std::string::npos) {
-				drive += -j.qd;
-			}
+			if (j.name.find("hip_pitch") != std::string::npos) { drive += -j.qd; }
 		}
 		return drive;
 	}
@@ -841,12 +853,8 @@ namespace robots {
 		_baseVel += _baseAcc * dt;
 		_basePos += _baseVel * dt;
 
-		LOG_INFO_ONCE("hipL=%.3f hipR=%.3f gaitPhase=%.3f",
-			hipL, hipR, hipR - hipL
-		);
-		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)",
-			_baseVel.x(), _baseVel.y(), _baseVel.z()
-		);
+		LOG_INFO_ONCE("hipL=%.3f hipR=%.3f gaitPhase=%.3f", hipL, hipR, hipR - hipL);
+		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)", _baseVel.x(), _baseVel.y(), _baseVel.z());
 	}
 
 	// Method to update the robot root pose based on the integrated base translation (for legged robots)

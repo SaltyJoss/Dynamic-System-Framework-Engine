@@ -390,6 +390,19 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
 		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
 
+		// Quick guard: check for non-finite states and bail with zero derivative
+		for (size_t i = 0; i < n; ++i) {
+			double q_r = mathlib::real(q[i]);
+			double qd_r = mathlib::real(qd[i]);
+			if (!std::isfinite(q_r) || !std::isfinite(qd_r)) {
+				LOG_ERROR("Non-finite state detected in derivative_spatial: q[%zu]=%g qd[%zu]=%g", i, q_r, i, qd_r);
+				// Return zero derivative to avoid propagating NaNs
+				dx.setZero();
+				out.qdd.setZero();
+				return dx;
+			}
+		}
+
 		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			model, q, qd,
 			scratch.spatial.Xup,
@@ -398,6 +411,19 @@ namespace robots {
 		);
 
 		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA<Scalar>(model, scratch.spatial.Xup, scratch);
+
+		// Validate mass matrix diagonal entries to avoid singular/NaN matrices.
+		// Regularize any non-finite or tiny diagonal entries to stabilize the LDLT solve.
+		{
+			const double eps_reg = 1e-8;
+			for (size_t i = 0; i < n; ++i) {
+				double mii = mathlib::real(M(i, i));
+				if (!std::isfinite(mii) || mii < eps_reg) {
+					LOG_WARN("Regularizing mass matrix diagonal M(%zu,%zu) = %g", i, i, mii);
+					M(i, i) = M(i, i) + static_cast<Scalar>(eps_reg);
+				}
+			}
+		}
 		// RNEA to compute gravity compensation (q, 0, 0) for gravity, (q, qd, 0) for Coriolis
 		mathlib::VecX_T<Scalar> qd_zero = mathlib::VecX_T<Scalar>::Zero(n);
 		mathlib::VecX_T<Scalar> qdd_zero = mathlib::VecX_T<Scalar>::Zero(n);
