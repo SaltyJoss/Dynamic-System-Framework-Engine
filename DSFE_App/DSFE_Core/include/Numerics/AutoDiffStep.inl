@@ -8,7 +8,7 @@ namespace integration {
 		if constexpr (std::is_pointer_v<std::decay_t<Func>> || requires { f == nullptr; }) {
 			if (f == nullptr) {
 				D_WARN_ONCE("No derivative function provided for integration - Assuming constant derivative.");
-				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 8, 1e-6), dt, dt };
+				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 30, 1e-6), dt, dt };
 			}
 		}
 
@@ -21,12 +21,14 @@ namespace integration {
 		_state->last_dt_taken = (_state->last_dt_taken != dt && !_state->adaptive) ? dt_r : _state->last_dt_taken; // Unless RK45-or other adaptive methods-it is static.
 		_state->last_dt_sug = (_state->last_dt_sug != dt && !_state->adaptive) ? dt_r : _state->last_dt_sug; // Unless RK45-or other adaptive methods-it is static.
 
+		auto* state = runtimeState().get();
+
 		// Though right now all methods hold the same fundamental state in AD, I am employing the same structure for consistency
 		switch (m) {
 			case eAutoDiffIntegrationMethod::AD_ImplicitEuler:
 				_state->name = IntegratorName(m);
 				_state->adaptive = false; _state->implicit = true;
-				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 8, 1e-6), dt_r, dt_r };
+				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 30, 1e-6), dt_r, dt_r };
 			case eAutoDiffIntegrationMethod::AD_ImplicitMidpoint:
 				_state->name = IntegratorName(m);
 				_state->adaptive = false; _state->implicit = true;
@@ -43,7 +45,7 @@ namespace integration {
 				LOG_WARN("Unknown Integrator, defaulting to ImplicitEuler (AutoDiff).");
 				_state->name = IntegratorName(eAutoDiffIntegrationMethod::AD_ImplicitEuler);
 				_state->adaptive = false; _state->implicit = true;
-				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 8, 1e-6), dt_r, dt_r };
+				return { _integrator->implicitEuler_AD(x, t, dt, std::forward<Func>(f), 30, 1e-6), dt_r, dt_r };
 		}
 	}
 } // namespace integration

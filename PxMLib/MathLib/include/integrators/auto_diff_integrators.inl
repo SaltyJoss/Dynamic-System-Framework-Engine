@@ -333,22 +333,87 @@ namespace integration {
 		bool converged = false;
 
 		for (int iter = 0; iter < maxIter; ++iter) {
+			if (iter > 20) { 
+				std::ostringstream oss;
+				oss << "iter=" << iter << '\n'
+					<< "residual=" << g_real.norm() << '\n'
+					<< "delta=" << delta.norm() << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+			}
+
+
 			mathlib::VecX_T<Scalar> g_dual;
 			eval_g(x_real.template cast<Scalar>(), g_dual);
 			g_real = g_dual.template cast<Real>();
-			if (!g_real.allFinite()) { throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter)); }
-			if (g_real.norm() < tol) { converged = true; break; }
+			if (!g_real.allFinite()) {
+				std::ostringstream oss;
+				oss << "Newton received non-finite residual at iter = " << iter << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+				throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter));
+			}
+			if (g_real.norm() < tol) {
+				std::ostringstream oss;
+				oss << "'g_real.norm()' Converged at iter=" << iter << '\n'
+					<< "residual=" << g_real.norm() << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+				converged = true;
+				break;
+			}
 			eval_j(x_real.template cast<Scalar>(), J);
-			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter)); }
+			if (!J.allFinite()) {
+				std::ostringstream oss;
+				oss << "Newton received non-finite Jacobian at iter = " << iter << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+				throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter));
+			}
+
+			std::cout << "J rows=" << J.rows() << " cols=" << J.cols() << '\n';
+			double cond_est = J.fullPivLu().rcond();
+			std::cout
+				<< "iter=" << iter
+				<< " residual=" << g_real.norm()
+				<< " rcond=" << cond_est
+				<< std::endl;
+
 			solver.compute(J);
 			delta = solver.solve(-g_real);
-			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter)); }
+			if (!delta.allFinite()) {
+				std::ostringstream oss;
+				oss << "Newton produced non-finite step at iter = " << iter << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+				throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter));
+			}
+
 			x_real += delta;
 			Real x_norm = x_real.norm();
-			if (delta.norm() < tol * (Real(1) + x_norm)) { converged = true; break; }
+			if (delta.norm() < tol * (Real(1) + x_norm)) { 
+				std::ostringstream oss;
+				oss << "'delta.norm()' Converged at iter=" << iter << '\n'
+					<< "residual=" << g_real.norm() << '\n'
+					<< "delta=" << delta.norm() << '\n'
+					<< "xnorm=" << x_norm << '\n';
+				std::cerr << oss.str();
+				OutputDebugStringA(oss.str().c_str());
+				converged = true;
+				break;
+			}
 		}
 
-		if (!converged) { throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations."); }
+		if (!converged) {
+			std::ostringstream oss;
+			oss << "Newton failed to converge." << '\n'
+				<< "iter=" << maxIter << '\n'
+				<< "residual=" << g_real.norm() << '\n'
+				<< "tol=" << tol << '\n';
+			std::cerr << oss.str();
+			OutputDebugStringA(oss.str().c_str());
+			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations.");
+		}
 
 		mathlib::VecX_T<Scalar> x_final = x_real.template cast<Scalar>();
 		eval_j(x_final, J);
@@ -386,14 +451,14 @@ namespace integration {
 			mathlib::VecX_T<Dual_T> x_dual(n);
 			for (int k = 0; k < n; ++k) {
 				std::array<RealScalar, NVar> seed_array{};
-				if (k == i) { seed_array.fill(RealScalar(0)); seed_array[0] = RealScalar(1); }
+				if (k == i) { seed_array.fill(RealScalar(0)); seed_array[i] = RealScalar(1); } // Set the seed for the i-th variable to 1, others to 0 <I think this was the first major error>
 				x_dual(k) = Dual_T(mathlib::real(x(k)), seed_array);
 			}
 
 			Dual_T t_dual(mathlib::real(t));
 			auto f_dual = f(t_dual, x_dual);
 			for (int j = 0; j < m; ++j) {
-				J(j, i) = mathlib::dualPart(f_dual(j));
+				J(j, i) = f_dual(j).dual[i]; // The Jacobian entry J(j, i) is the dual part of f_dual(j) corresponding to the seed for x(i) <I think this was the second major error>
 			}
 		}
 		return J;

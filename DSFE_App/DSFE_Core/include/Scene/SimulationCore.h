@@ -29,7 +29,6 @@ namespace core {
 	inline constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
 	inline constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
 	inline constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
-	inline constexpr size_t DSFE_AD_VARS = 64; 			  // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
 
 	class DSFE_API SimulationCore : public ISimulationCore {
 	public:

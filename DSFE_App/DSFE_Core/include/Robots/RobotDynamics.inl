@@ -30,7 +30,7 @@ namespace robots {
 		// Rotation from link frame to world frame
 		mathlib::Mat3_T<Scalar> R_joint = jointWorldPose.template block<3, 3>(0, 0);
 		// Joint axis in world frame
-		mathlib::Vec3_T<Scalar> axis_world = (R_joint * joint.axis).normalized();
+		mathlib::Vec3_T<Scalar> axis_world = mathlib::safeNormalised(R_joint * joint.axis);
 
 		// Position of joint in world frame
 		mathlib::Vec3_T<Scalar> joint_pos_world = jointWorldPose.template block<3, 1>(0, 3);
@@ -94,7 +94,7 @@ namespace robots {
 				// Rotation from joint i frame to world frame
 				const mathlib::Mat3_T<Scalar> R_i = T_joint_i.template block<3, 3>(0, 0); // rotation from joint i frame to world frame
 				const mathlib::Vec3_T<Scalar> p_i = T_joint_i.template block<3, 1>(0, 3); // joint position in world frame
-				const mathlib::Vec3_T<Scalar> z_i = (R_i * j_i.axis).normalized(); // joint axis in world frame
+				const mathlib::Vec3_T<Scalar> z_i = mathlib::safeNormalised(R_i * j_i.axis); // joint axis in world frame
 
 				mathlib::Vec3_T<Scalar> J_vi = z_i.cross(com - p_i); // linear velocity Jacobian column for joint i
 				mathlib::Vec3_T<Scalar> J_wi = z_i;				  // angular velocity Jacobian column for joint i
@@ -161,6 +161,9 @@ namespace robots {
 			jointWorldPoses_eps = _kinematics->calcJointWorldPoses<Scalar>(T_world_eps, robot);
 			computeMassMatrix(robot, T_world_eps, jointWorldPoses_eps, M_plus); // mass matrix for the perturbed configuration
 
+			if (!M_plus.allFinite()) { throw std::runtime_error("Mass matrix contains non-finite values"); }
+			if (!M_plus.isApprox(M_plus, Scalar(1e-8))) { throw std::runtime_error("Mass matrix lost symmetry"); }
+
 			dM_dq[k] = (M_plus - M) / eps; // [kg*m^2/rad], partial derivative of mass matrix with
 		}
 
@@ -199,7 +202,7 @@ namespace robots {
 
 			const mathlib::Mat3_T<Scalar> R_i = T_joint.block<3, 3>(0, 0);
 			const mathlib::Vec3_T<Scalar> p_i = T_joint.block<3, 1>(0, 3);
-			const mathlib::Vec3_T<Scalar> axis_world = (R_i * robot.joints[i].axis).normalized();
+			const mathlib::Vec3_T<Scalar> axis_world = mathlib::safeNormalised(R_i * robot.joints[i].axis);
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
 			for (size_t k = 0; k < robot.links.size(); ++k) {
@@ -304,12 +307,13 @@ namespace robots {
 		scratch.dense.jointWorldPoses = _kinematics->calcJointWorldPoses<Scalar>(scratch.dense.T_world, *snap.model);
 
 		computeMassMatrix<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M); // [kg*m^2], full mass matrix for the robot at configuration q
-		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M); // [Nm], full Coriolis and centrifugal torque vector
+		scratch.dense.h = mathlib::VecX_T<Scalar>::Zero(n); // Temp test to isolate potential issues
+		//scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M); // [Nm], full Coriolis and centrifugal torque vector
+
+		if (!scratch.dense.M.allFinite()) { throw std::runtime_error("Mass matrix contains non-finite values"); }
 
 		scratch.g.setZero();
-		if (snap.torqueMode != eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
-		}
+		if (snap.torqueMode != eTorqueMode::NONE) { scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
@@ -342,8 +346,8 @@ namespace robots {
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
 			tau_i += scratch.g[i]; // Gravity compensation
 			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
-			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
-			tau_i += tau_f;
+			// Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
+			// tau_i += tau_f;
 
 
 			scratch.dense.tau[i] = tau_i;
@@ -356,16 +360,26 @@ namespace robots {
 
 			out.metrics.I_eff[i] = mathlib::real(I_eff);
 			out.metrics.tau[i] = mathlib::real(tau_i);
-
-			//_metrics.tau_sat[i] = tau_sat;
-			//_metrics.sat_flag[i] = saturated;
 		}
 
 		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)
 		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
 
 		// Solve for Accelerations
-		out.qdd = scratch.dense.M.ldlt().solve(scratch.dense.rhs); // [rad/s^2], joint accelerations computed from dynamics
+		Eigen::LDLT<mathlib::MatX_T<Scalar>> solver(scratch.dense.M);
+
+		if (solver.info() != Eigen::Success) {
+			LOG_ERROR("LDLT decomposition failed for mass matrix M. Matrix may be singular or ill-conditioned.");
+			throw std::runtime_error("LDLT decomposition failed for mass matrix M");
+		}
+			
+		out.qdd = solver.solve(scratch.dense.rhs); // [rad/s^2], joint accelerations computed from dynamics
+
+		if (!out.qdd.allFinite()) {
+			LOG_ERROR("Non-finite joint accelerations computed. Check for singularities or numerical issues in the mass matrix.");
+			throw std::runtime_error("Non-finite joint accelerations computed from dynamics");
+		}
+
 		out.metrics.qdd = out.qdd;
 
 		// Fill derivatives
@@ -411,20 +425,6 @@ namespace robots {
 		);
 
 		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA<Scalar>(model, scratch.spatial.Xup, scratch);
-
-		// Validate mass matrix diagonal entries to avoid singular/NaN matrices.
-		// Regularize any non-finite or tiny diagonal entries to stabilize the LDLT solve.
-		{
-			const double eps_reg = 1e-8;
-			for (size_t i = 0; i < n; ++i) {
-				double mii = mathlib::real(M(i, i));
-				if (!std::isfinite(mii) || mii < eps_reg) {
-					LOG_WARN("Regularizing mass matrix diagonal M(%zu,%zu) = %g", i, i, mii);
-					M(i, i) = M(i, i) + static_cast<Scalar>(eps_reg);
-				}
-			}
-		}
-		// RNEA to compute gravity compensation (q, 0, 0) for gravity, (q, qd, 0) for Coriolis
 		mathlib::VecX_T<Scalar> qd_zero = mathlib::VecX_T<Scalar>::Zero(n);
 		mathlib::VecX_T<Scalar> qdd_zero = mathlib::VecX_T<Scalar>::Zero(n);
 		mathlib::VecX_T<Scalar> tau_g = SpatialDynamics::RNEA<Scalar>(model, q, qd_zero, qdd_zero, scratch);
@@ -454,8 +454,10 @@ namespace robots {
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			tau_i -= b * qd[i];						   // viscous damping
-			tau_i -= c * mathlib::tanh(qd[i] / eps_f); // friction
+			tau_i += scratch.g[i]; // Gravity compensation
+			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
+			// Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
+			// tau_i += tau_f;
 
 			scratch.dense.tau[i] = tau_i;
 
@@ -520,8 +522,20 @@ namespace robots {
 		}
 
 		Eigen::LDLT<mathlib::MatX_T<Scalar>> solver(scratch.dense.M); // compute the Cholesky decomposition of the mass matrix for efficient solving
+
 		mathlib::MatX_T<Scalar> dqdd_dtau_q = solver.solve(dTau_dq); // compute the partial derivative of qdd with respect to q
+
+		if (solver.info() != Eigen::Success) {
+			LOG_ERROR("LDLT decomposition failed for mass matrix M in jacobian_spatial. Matrix may be singular or ill-conditioned.");
+			throw std::runtime_error("LDLT decomposition failed for mass matrix M in jacobian_spatial");
+		}
+
 		mathlib::MatX_T<Scalar> dqdd_dtau_v = solver.solve(dTau_dv); // compute the partial derivative of qdd with respect to qd
+
+		if (solver.info() != Eigen::Success) {
+			LOG_ERROR("LDLT decomposition failed for mass matrix M in jacobian_spatial. Matrix may be singular or ill-conditioned.");
+			throw std::runtime_error("LDLT decomposition failed for mass matrix M in jacobian_spatial");
+		}
 
 		F_out.block(n, 0, n, n) = dqdd_dtau_q; // fill the Jacobian block for qdd with respect to q
 		F_out.block(n, n, n, n) = dqdd_dtau_v; // fill the Jacobian block for qdd with respect to qd)

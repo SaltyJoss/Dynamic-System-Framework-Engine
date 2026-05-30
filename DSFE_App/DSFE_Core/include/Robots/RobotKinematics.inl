@@ -15,13 +15,13 @@ namespace robots {
 
 		T_world_out.resize(robot.links.size());
 
-		mathlib::Pose_T<Scalar> T = mathlib::Pose_T<Scalar>::Identity(); // world -> base
-		T_world_out[0] = T;	   // base link
-
 		if (T_world_out.empty()) {
 			LOG_ERROR("T_world_out is empty");
 			return;
 		}
+
+		mathlib::Pose_T<Scalar> T = mathlib::Pose_T<Scalar>::Identity(); // world -> base
+		T_world_out[0] = T;	   // base link
 
 		// Compute the transform to the next link using each joint
 		for (size_t i = 0; i < n; ++i) {

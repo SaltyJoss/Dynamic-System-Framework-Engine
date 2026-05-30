@@ -250,20 +250,23 @@ namespace robots {
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) { return; }
 
-		// If AutoDiff is enabled, route the step through the AD path. This
-		// prevents the non-AD integrator (e.g., RK4) from being used when the
-		// user expects AutoDiff-enabled integration. The AD path uses a
-		// compile-time dual-width; match the width used for the AD scratch
-		// buffers (64) so the DynamicsScratch/_dynResult_AD types align.
 		if (_useAutoDiff) {
-			step_AD<64>(dt, simTime);
+			step_AD<AD_VARS>(dt, simTime);
 			return;
 		}
 
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
 		mathlib::VecX x = packState();
+
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
+
+		Eigen::Index dof = x.size() / 2;
+		size_t links = _robot.links.size();
+
+		assert(_dynScratch.dense.M.rows() == dof);
+		assert(_dynScratch.dense.M.cols() == dof);
+		assert(_dynScratch.spatial.Xup.size() == links);
 
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
@@ -385,11 +388,6 @@ namespace robots {
 		buildSpatialModel();
 		_hasRobot = true;
 
-		_dynScratch.resize(n, m);
-		_dynScratch_AD.resize(n, m);
-		_dynResult.resize(n);
-		_dynResult_AD.resize(n);
-
 		resetRobot();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
@@ -419,10 +417,21 @@ namespace robots {
 		_baseYawRate = 0.0;
 		_baseYawAcc = 0.0;
 
+		_dynScratch.clear();
+		_dynScratch_AD.clear();
+
+		_dynResult.resize(0);
+		_dynResult_AD.resize(0);
+
 		_dynScratch.resize(_robot.joints.size(), _robot.links.size());
 		_dynScratch_AD.resize(_robot.joints.size(), _robot.links.size());
 		_dynResult.resize(_robot.joints.size());
 		_dynResult_AD.resize(_robot.joints.size());
+
+		LOG_INFO("dynScratch=%p", &_dynScratch);
+		LOG_INFO("dynScratchAD=%p", &_dynScratch_AD);
+		LOG_INFO("M rows=%d cols=%d", (int)_dynScratch.dense.M.rows(), (int)_dynScratch.dense.M.cols());
+		LOG_INFO("Xup size=%d", (int)_dynScratch.spatial.Xup.size());
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();

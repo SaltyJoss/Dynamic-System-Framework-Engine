@@ -63,7 +63,7 @@ namespace integration {
 		template<typename Scalar, typename Func>
 		StepOut_T<Scalar> step(eAutoDiffIntegrationMethod m, const mathlib::VecX_T<Scalar>& x, Scalar t, Scalar dt, Func&& f);
 		const std::string IntegratorName(eAutoDiffIntegrationMethod m);
-		void setIntegrationMethod(eAutoDiffIntegrationMethod m) { _m = m; }
+		void setIntegrationMethod(eAutoDiffIntegrationMethod m) { LOG_INFO("AD integrator changed to enum %d", (int)_m); _m = m; }
 		eAutoDiffIntegrationMethod integrationMethod() const { return _m; }
 		std::shared_ptr<IntegratorState> runtimeState() { return _state; }
 		std::shared_ptr<const IntegratorState> runtimeState() const { return _state; }

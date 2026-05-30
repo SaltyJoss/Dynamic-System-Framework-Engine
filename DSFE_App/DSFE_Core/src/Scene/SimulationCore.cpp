@@ -59,7 +59,7 @@ namespace core {
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
 		std::string intName;
-		if (_robot->runtimeIntegratorState() && _robot->runtimeIntegratorState()->autoDiff) {
+		if (_robot->autoDiffEnabled()) {
 			intName = _robot->getADIntegrator()->IntegratorName(_robot->getADIntegrator()->integrationMethod());
 		}
 		else {
@@ -126,8 +126,7 @@ namespace core {
 				// Update robot trajectory inputs and step the robot forward in time
 				if (hasRobot()) {
 					_robot->updateTrajectoryInputs(*_traj, simTime);
-					if (state && state->autoDiff) { _robot->step_AD<DSFE_AD_VARS>(_dt, simTime); }
-					else { _robot->step(_dt, simTime); }
+					_robot->step(_dt, simTime);
 					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
@@ -186,8 +185,7 @@ namespace core {
 		}
 
 		const auto state = _robot->runtimeIntegratorState();
-		std::string intName = (state && state->autoDiff) ? _robot->AD_integratorName() : _robot->getIntegratorName();
-		LOG_INFO("Integrator for this run: %s", intName.c_str());
+		std::string intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
 
 		_data.setParentFolder(paths::runs().string());
 
@@ -349,8 +347,7 @@ namespace core {
 					// Update Trajectory Inputs
 					_robot->updateTrajectoryInputs(*_traj, simTime);
 
-					if (state && state->autoDiff) { _robot->step_AD<DSFE_AD_VARS>(dt, simTime); }
-					else { _robot->step(dt, simTime); }
+					_robot->step(dt, simTime);
 
 					// Telemetry beginRun
 					if (!_telemetryBegun) {

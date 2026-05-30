@@ -69,5 +69,6 @@ namespace integration {
 	DifferentiableIntegrator::DifferentiableIntegrator()
 		: _integrator(std::make_unique<integration::NumericalIntegrator>()), _m(eAutoDiffIntegrationMethod::AD_ImplicitEuler),
 		_state(std::make_shared<IntegratorState>()) {
+		LOG_INFO("DifferentiableIntegrator constructed. Default=%d", (int)_m);
 	}
 } // namespace integration

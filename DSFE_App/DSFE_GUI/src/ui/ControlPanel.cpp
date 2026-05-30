@@ -440,9 +440,9 @@ namespace gui {
 		// Integration method combo box
 		ImGui::SectionHeader("Integration Methods");
 
-		/*ImGui::SetNextItemWidth(150.0f);
+		ImGui::SetNextItemWidth(150.0f);
 		ImGui::Checkbox("Enable Automatic Differentiable Integrators", &_useAutoDiff);
-		robot->enableAutoDiff(_useAutoDiff);*/
+		robot->enableAutoDiff(_useAutoDiff);
 
 		ImGui::SetNextItemWidth(150.0f);
 		if (_useAutoDiff) {

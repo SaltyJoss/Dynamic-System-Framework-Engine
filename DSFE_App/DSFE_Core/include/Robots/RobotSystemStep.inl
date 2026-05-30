@@ -73,13 +73,11 @@ namespace robots {
 		);
 
 		// CRBA only for controller inertia scaling
-		//LOG_INFO("Computing M_start via CRBA");
 		mathlib::MatX_T<Scalar> M_start = SpatialDynamics::CRBA<Scalar>(
 			spatialModel,
 			dynScratch.spatial.Xup,
 			dynScratch
 		);
-		//LOG_INFO("M_start dims = %d x %d", (int)M_start.rows(), (int)M_start.cols());
 
 		// Cache frozen joint gains for this step
 		mathlib::VecX_T<Scalar> kp_frozen(n), kd_frozen(n);
@@ -88,17 +86,11 @@ namespace robots {
 			//LOG_INFO("Snap model joint name = %s", joint.name.c_str());
 			if (joint.type == eJointType::FIXED) { continue; }
 
-			//LOG_INFO("Max of M_start and 1e-6: %.3f", mathlib::max(M_start(i, i), Scalar(1e-6)));
-			//LOG_INFO("I_eff_controller size = %d", (int)dynScratch.dense.I_eff_controller.size());
 			dynScratch.dense.I_eff_controller[i] = mathlib::max(M_start(i, i), Scalar(1e-6));
 			const Scalar I_eff = dynScratch.dense.I_eff_controller[i];
 
 			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
 			kd_frozen[i] = Scalar(2) * joint.zeta_target * I_eff * joint.wn_target;
-
-			//LOG_INFO("I_eff[%d] = %.12f", (int)i, (double)mathlib::real(I_eff));
-			//LOG_INFO("kp[%d] = %.12f", (int)i, (double)mathlib::real(kp_frozen[i]));
-			//LOG_INFO("kd[%d] = %.12f", (int)i, (double)mathlib::real(kd_frozen[i]));
 		}
 
 		// Compute RNEA torques for feedforward control
@@ -144,6 +136,7 @@ namespace robots {
 			const auto v = mathlib::real(result.stepOut.x_next[i]);
 			if (std::isnan(v) || std::isinf(v)) { LOG_ERROR("Non-finite x_next[%d] = %f", i, (double)v); } // TODO add Scalar isnan and isinf checks to mathlib and use those instead (need to handle both float and double cases)
 		}
+
 		result.dynamics = dynResult;
 		return result;
 	}
@@ -238,7 +231,7 @@ namespace robots {
 
 		assert((size_t)x.size() <= NVar && "State size exceeds the number of dual variables."); // Checks state vector size is within the dual variable limit
 		for (size_t i = 0; i < (size_t)x.size(); ++i) { x[i].dual[i] = 1.0; }
-
+		
 		auto result = step_impl<Dual>(x, Dual(dt), Dual(simTime), *_AD_integrator, _dynScratch_AD, _dynResult_AD);
 		mathlib::VecX x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
 		unpackState(x_real);

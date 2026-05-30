@@ -44,6 +44,8 @@ namespace robots {
 		mathlib::VecX_T<Scalar> tau_rnea;
 	};
 
+	inline constexpr size_t AD_VARS = 14; 			  // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
+
 	class DSFE_API RobotSystem {
 	public:
 		RobotSystem();
@@ -153,6 +155,7 @@ namespace robots {
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
 		void setIntegrationMethod(integration::eIntegrationMethod method) {
+			LOG_INFO("Integrator changed to enum %d", (int)method);
 			_curIntMethod = method;
 			const auto state = _integrator->runtimeState();
 			state->backend = integration::eIntegrationBackend::Standard;
@@ -163,6 +166,7 @@ namespace robots {
 		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
 		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
 		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+			LOG_INFO("AD integrator changed to enum %d", (int)method);
 			_curIntMethod_AD = method;
 			const auto state = _AD_integrator->runtimeState();
 			state->backend = integration::eIntegrationBackend::AutoDiff;
@@ -260,8 +264,8 @@ namespace robots {
 		DynamicsScratch<double> _dynScratch;
 		DynamicsResult<double> _dynResult;
 
-		DynamicsScratch<DualNumber_T<double, 64>> _dynScratch_AD;
-		DynamicsResult<DualNumber_T<double, 64>> _dynResult_AD;
+		DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
+		DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;
