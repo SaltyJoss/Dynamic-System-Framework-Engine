@@ -264,7 +264,10 @@ namespace robots {
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
 
-		//postStepUpdate(result.stepOut.x_next, _dynScratch, result);
+		const auto scratchCopy = _dynScratch;
+		const auto resultCopy = result;
+
+		//postStepUpdate(resultCopy.stepOut.x_next, scratchCopy, resultCopy);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
@@ -420,6 +423,8 @@ namespace robots {
 		_dynScratch_AD.resize(_robot.joints.size(), _robot.links.size());
 		_dynResult.resize(_robot.joints.size());
 		_dynResult_AD.resize(_robot.joints.size());
+
+		_dynScratch.g.setConstant(_gravity);
 
 		LOG_INFO("dynScratch=%p", &_dynScratch);
 		LOG_INFO("dynScratchAD=%p", &_dynScratch_AD);

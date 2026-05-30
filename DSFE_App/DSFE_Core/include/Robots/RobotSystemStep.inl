@@ -121,6 +121,9 @@ namespace robots {
 			);
 		};
 
+		if (!x.allFinite()) { LOG_ERROR("[step_impl] input state already non-finite"); }
+		LOG_ERROR("[step_impl] input qd = %.17g %.17g %.17g %.17g %.17g %.17g %.17g", x[7], x[8], x[9], x[10], x[11], x[12], x[13]);
+
 		if constexpr (std::is_same_v<std::remove_cvref_t<IntegratorT>, integration::IntegrationService>) {
 			mathlib::VecX x_real = x.template cast<double>();
 			auto step = integrator.step(_curIntMethod, x_real, static_cast<double>(t), static_cast<double>(dt), f_deriv, f_J);
@@ -129,6 +132,7 @@ namespace robots {
 			result.stepOut.dt_sug = step.dt_sug;
 		}
 		else if constexpr (std::is_same_v<std::remove_cvref_t<IntegratorT>, integration::DifferentiableIntegrator>) {
+			_curIntMethod_AD = integrator.integrationMethod();
 			result.stepOut = integrator.step(_curIntMethod_AD, x, t, dt, f_deriv);
 		}
 
@@ -149,7 +153,7 @@ namespace robots {
 		Eigen::Map<const mathlib::VecX> qd_next(x.data() + n, n);
 
 		// Enforce joint limits
-		for (auto& j : _robot.joints) { enforceJointLimits(j); }
+		/*for (auto& j : _robot.joints) { enforceJointLimits(j); }*/
 
 		// Recompute kinematics and dynamics at the new state for logging and control purposes
 		std::vector<Pose> T_world(result.snap.model->links.size());
@@ -197,12 +201,6 @@ namespace robots {
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
 				const double err = q_ref_real[i] - q_real[i];
 				const double err_d = qd_ref_real[i] - qd_real[i];
-
-				//LOG_INFO("q norm: %.12f", q_real.norm());
-				//LOG_INFO("qd norm: %.12f", qd_real.norm());
-				//LOG_INFO("qdd norm: %.12f", dynResult.metrics.qdd.norm());
-				//LOG_INFO("tau_rnea norm : % .12f", tau_rnea_real.norm());
-
 				JointLogBuffer::JointLogEntry e{};
 
 				e.sim_time = _simTime;

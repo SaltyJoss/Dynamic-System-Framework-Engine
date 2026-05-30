@@ -454,8 +454,6 @@ namespace robots {
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			tau_i += scratch.g[i]; // Gravity compensation
-			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
 			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, c, b); // add friction compensation
 			tau_i += tau_f;
 
