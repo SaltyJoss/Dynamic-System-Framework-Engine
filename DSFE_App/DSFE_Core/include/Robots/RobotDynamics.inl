@@ -456,8 +456,8 @@ namespace robots {
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
 			tau_i += scratch.g[i]; // Gravity compensation
 			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
-			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
-			tau_i -= tau_f;
+			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, c, b); // add friction compensation
+			tau_i += tau_f;
 
 			scratch.dense.tau[i] = tau_i;
 
@@ -512,11 +512,11 @@ namespace robots {
 			const SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) { continue; }
 			dTau_dq(i, i) = -kp[i];
-			const Scalar b = -static_cast<Scalar>(0.2); // viscous damping coefficient
+			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
 			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
-			dTau_dv(i, i) = -kd[i] + b;
+			dTau_dv(i, i) = -kd[i] - b;
 		}
 
 		Eigen::LDLT<mathlib::MatX_T<Scalar>> solver(scratch.dense.M); // compute the Cholesky decomposition of the mass matrix for efficient solving

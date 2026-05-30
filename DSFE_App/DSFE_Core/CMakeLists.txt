@@ -8,6 +8,9 @@ find_package(Threads REQUIRED)
 find_package(HDF5 CONFIG REQUIRED)
 
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
+if (MSVC)
+target_compile_options(DSFE_Core PRIVATE /bigobj)
+endif()
 
 set(CORE_SRC
     src/EngineCore.cpp

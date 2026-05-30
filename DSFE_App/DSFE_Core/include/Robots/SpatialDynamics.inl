@@ -45,10 +45,7 @@ namespace robots {
 			c_out[i] = crossMotion(v_out[i], vJ); // Coriolis Term
 
 			using corScalar = typename std::decay_t<decltype(c_out[i].v(0))>;
-			static_assert(
-				std::is_same_v<corScalar, Scalar>,
-				"c_out scalar type does not match model scalar type"
-			);
+			static_assert(std::is_same_v<corScalar, Scalar>, "c_out scalar type does not match model scalar type");
 		}
 	}
 

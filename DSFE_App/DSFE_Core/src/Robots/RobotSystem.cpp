@@ -261,13 +261,6 @@ namespace robots {
 
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 
-		Eigen::Index dof = x.size() / 2;
-		size_t links = _robot.links.size();
-
-		assert(_dynScratch.dense.M.rows() == dof);
-		assert(_dynScratch.dense.M.cols() == dof);
-		assert(_dynScratch.spatial.Xup.size() == links);
-
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
 

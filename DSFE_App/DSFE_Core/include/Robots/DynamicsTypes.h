@@ -114,6 +114,12 @@ namespace robots {
 			u.resize(nJoints);
 			d.resize(nJoints);
 
+			dXup_dq.resize(nJoints);
+			dv_dq.resize(nJoints);
+			dv_dqd.resize(nJoints);
+			dc_dq.resize(nJoints);
+			dc_dqd.resize(nJoints);
+
 			jointCap = nJoints;
 		}
 
@@ -128,6 +134,13 @@ namespace robots {
 			U.clear();
 			u.resize(0);
 			d.resize(0);
+
+			dXup_dq.clear();
+			dv_dq.clear();
+			dv_dqd.clear();
+			dc_dq.clear();
+			dc_dqd.clear();
+
 			jointCap = 0;
 		}
 	};
