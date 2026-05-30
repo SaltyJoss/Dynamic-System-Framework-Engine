@@ -333,16 +333,6 @@ namespace integration {
 		bool converged = false;
 
 		for (int iter = 0; iter < maxIter; ++iter) {
-			if (iter > 20) { 
-				std::ostringstream oss;
-				oss << "iter=" << iter << '\n'
-					<< "residual=" << g_real.norm() << '\n'
-					<< "delta=" << delta.norm() << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
-			}
-
-
 			mathlib::VecX_T<Scalar> g_dual;
 			eval_g(x_real.template cast<Scalar>(), g_dual);
 			g_real = g_dual.template cast<Real>();
@@ -353,15 +343,8 @@ namespace integration {
 				OutputDebugStringA(oss.str().c_str());
 				throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter));
 			}
-			if (g_real.norm() < tol) {
-				std::ostringstream oss;
-				oss << "'g_real.norm()' Converged at iter=" << iter << '\n'
-					<< "residual=" << g_real.norm() << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
-				converged = true;
-				break;
-			}
+			if (g_real.norm() < tol) { converged = true; break; }
+
 			eval_j(x_real.template cast<Scalar>(), J);
 			if (!J.allFinite()) {
 				std::ostringstream oss;
@@ -370,14 +353,6 @@ namespace integration {
 				OutputDebugStringA(oss.str().c_str());
 				throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter));
 			}
-
-			std::cout << "J rows=" << J.rows() << " cols=" << J.cols() << '\n';
-			double cond_est = J.fullPivLu().rcond();
-			std::cout
-				<< "iter=" << iter
-				<< " residual=" << g_real.norm()
-				<< " rcond=" << cond_est
-				<< std::endl;
 
 			solver.compute(J);
 			delta = solver.solve(-g_real);
@@ -391,17 +366,7 @@ namespace integration {
 
 			x_real += delta;
 			Real x_norm = x_real.norm();
-			if (delta.norm() < tol * (Real(1) + x_norm)) { 
-				std::ostringstream oss;
-				oss << "'delta.norm()' Converged at iter=" << iter << '\n'
-					<< "residual=" << g_real.norm() << '\n'
-					<< "delta=" << delta.norm() << '\n'
-					<< "xnorm=" << x_norm << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
-				converged = true;
-				break;
-			}
+			if (delta.norm() < tol * (Real(1) + x_norm)) { converged = true; break; }
 		}
 
 		if (!converged) {
