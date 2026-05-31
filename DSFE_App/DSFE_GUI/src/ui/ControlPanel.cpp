@@ -455,7 +455,7 @@ namespace gui {
 						auto updatedMethod_AD = static_cast<integration::eAutoDiffIntegrationMethod>(n);
 						auto state = robot->runtimeIntegratorState();
 						state->autoDiff = true; // ensure autodiff flag is set in state
-						robot->getADIntegrator()->setIntegrationMethod(updatedMethod_AD);
+						_sim->setADIntegrationMethod(updatedMethod_AD);
 
 						switch (updatedMethod_AD) {
 							case integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler:

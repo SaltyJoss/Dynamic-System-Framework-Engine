@@ -246,7 +246,7 @@ namespace gui {
         // Setters for Integration state / method
 		void setIntegrationMethod(integration::eIntegrationMethod method);
 		const integration::eIntegrationMethod integrationMethod() const;
-        void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
+        void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
 		const integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const;
 
 		// Access to the underlying StudyRunner for running batch studies from the GUI

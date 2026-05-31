@@ -1399,8 +1399,8 @@ namespace gui {
 	const integration::eIntegrationMethod SimManager::integrationMethod() const {
 		return _core->integrationMethod();
 	}
-	void SimManager::setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
-		_core->setIntegrationMethod(method);
+	void SimManager::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+		_core->setADIntegrationMethod(method);
 	}
 	const integration::eAutoDiffIntegrationMethod SimManager::autoDiffIntegrationMethod() const {
 		return _core->autoDiffIntegrationMethod();

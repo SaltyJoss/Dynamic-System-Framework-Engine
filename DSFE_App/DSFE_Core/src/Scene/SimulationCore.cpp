@@ -48,22 +48,22 @@ namespace core {
 	// Set the integration method for the simulation (also updates the robot's integrator if it exists)
 	void SimulationCore::setIntegrationMethod(integration::eIntegrationMethod method) {
 		if (!_robot) { return; }
-		_robot->getIntegrator()->setIntegrationMethod(method);
+		_robot->setStandardIntegrator(method);
 	}
 	// Set the auto-diff integration method for the simulation (also updates the robot's AD integrator if it exists)
-	void SimulationCore::setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+	void SimulationCore::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
 		if (!_robot) { return; }
-		_robot->getADIntegrator()->setIntegrationMethod(method);
+		_robot->setADIntegrator(method);
 	}
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		if (!_robot) { return "no_robot"; }
 		std::string intName;
 		if (_robot->autoDiffEnabled()) {
-			intName = _robot->getADIntegrator()->IntegratorName(_robot->getADIntegrator()->integrationMethod());
+			intName = _robot->getIntegratorName();
 		}
 		else {
-			intName = _robot->getIntegrator()->IntegratorName(_robot->getIntegrator()->getIntegrationMethod());
+			intName = _robot->AD_integratorName();
 		}
 		LOG_INFO("Integration Method: %s", intName.c_str());
 
@@ -72,12 +72,12 @@ namespace core {
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
 		if (!_robot) { return integration::eIntegrationMethod::RK4; }
-		return _robot->getIntegrator()->getIntegrationMethod();
+		return _robot->getIntegrationMethod();
 	}
 	// Get the current auto-diff integration method
 	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
 		if (!_robot) { return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; }
-		return _robot->getADIntegrator()->integrationMethod();
+		return _robot->AD_IntegrationMethod();
 	}
 	void SimulationCore::enableAutoDiff(bool enable) {
 		if (!_robot) { return; }
@@ -300,15 +300,22 @@ namespace core {
 		_trajRefBuffer.clear();
 		// Inject reference buffer only
 		_robot->setRefBuffer(&_trajRefBuffer);
+		// Set integrator on both physics and robot systems
+		_robot->setStandardIntegrator(method);
 
+		scriptParallelisation(program);
+
+		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
+		return (_telemetry.ring.size() >= 2);
+	}
+
+	void SimulationCore::scriptParallelisation(interpreter::IStoredProgram* program) {
 		// Reset simulation state
 		_simTime.store(0.0, std::memory_order_relaxed);
 		_simRunning.store(false);
 		_telemetryBegun = false;
 		_accum = 0.0;
-
-		// Set integrator on both physics and robot systems
-		_robot->setIntegrationMethod(method);
 
 		_activeProgram = program;
 		_scriptRunning.store(true);
@@ -316,46 +323,41 @@ namespace core {
 		// Set run mode to synchronous for the duration of this run
 		_runMode = eRunMode::Synchronous;
 
+		const double dt = _dt;
+		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
+
 		// enable sim stepping and telemetry for synchronous run
 		startSimulation();
 
 		LOG_INFO("SimulationCore::runScriptToCompletion -> startSimulation called; simRunning=%d simTime=%.6f", (int)_simRunning, _simTime.load());
 
 		// Run tight simulation loop until program completes
-		const double dt = _dt;
 		double simTime = _simTime.load();
-		const int maxSteps = static_cast<int>((24.0 * 3600.0) / dt); // safety to prevent infinite loops in faulty scripts (max 24 hours of sim time)
 
 		// Main loop: step the program and simulation until completion
 		for (int step = 0; step < maxSteps; ++step) {
 			// Check program completion
 			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
-			LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped());
-			break;
+				LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped());
+				break;
 			}
 
 			// Step the program (DSL command execution)
 			program->step(dt);
 
-			const auto state = _robot->runtimeIntegratorState();
-
 			// Step physics and robot if sim is running
 			if (_simRunning.load()) {
 				simTime += dt;
-
 				if (hasRobot()) {
 					// Update Trajectory Inputs
 					_robot->updateTrajectoryInputs(*_traj, simTime);
-
 					_robot->step(dt, simTime);
-
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-
 					// Telemetry update
 					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
@@ -368,7 +370,7 @@ namespace core {
 		else {
 			_simTime.store(0.0);
 		}
-	
+
 		// Clean up
 		stopSimulation();
 
@@ -380,10 +382,6 @@ namespace core {
 		_scriptRunning.store(false);
 		_simRunning.store(false);
 		_telemetryBegun = false;
-
-		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
-		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
-		return (_telemetry.ring.size() >= 2);
 	}
 	
 	// Setter for fixed timestep duration

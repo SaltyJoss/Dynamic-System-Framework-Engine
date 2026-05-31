@@ -38,7 +38,7 @@ namespace core {
         virtual SimulationSnapshot snapshot() const = 0;
         // Integrator
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
-		virtual void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) = 0;
+		virtual void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) = 0;
         virtual std::string integrationMethodName() const = 0;
         virtual integration::eIntegrationMethod integrationMethod() const = 0;
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;

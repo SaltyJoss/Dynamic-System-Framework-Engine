@@ -66,7 +66,7 @@ namespace core {
 		// Integrator
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
-		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) override;
+		void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
 		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
@@ -135,6 +135,7 @@ namespace core {
 	private:
 		// Export thread management
 		void exportThreadMain();
+		void scriptParallelisation(interpreter::IStoredProgram* program);
 
 		std::thread _expThread;
 		std::mutex _expMutex;
