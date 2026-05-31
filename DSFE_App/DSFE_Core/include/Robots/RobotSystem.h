@@ -203,7 +203,7 @@ namespace robots {
 		);
 
 		template<typename T>
-		void postStepUpdate(const mathlib::VecX_T<T>& x, const DynamicsScratch<T>& scratch, const RobotStepResult_T<T>& result);
+		void postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<T>& scratch, const RobotStepResult_T<T>& result);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;

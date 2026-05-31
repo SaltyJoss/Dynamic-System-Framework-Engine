@@ -150,11 +150,11 @@ namespace robots {
 	}
 
 	template<typename T>
-	void RobotSystem::postStepUpdate(const mathlib::VecX_T<T>& x, const DynamicsScratch<T>& dynScratch, const RobotStepResult_T<T>& result) {
+	void RobotSystem::postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<T>& dynScratch, const RobotStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
 
-		Eigen::Map<const mathlib::VecX_T<T>> q_next(x.data(), n);
-		Eigen::Map<const mathlib::VecX_T<T>> qd_next(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX> q_next(x.data(), n);
+		Eigen::Map<const mathlib::VecX> qd_next(x.data() + n, n);
 
 		// Enforce joint limits
 		/*for (auto& j : _robot.joints) { enforceJointLimits(j); }*/
@@ -239,8 +239,7 @@ namespace robots {
 		_dynamics->setDt(result.stepOut.dt_taken);
 
 		auto x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
-
-		//postStepUpdate(x_real, _dynScratch_AD, result);
+		postStepUpdate(x_real, _dynScratch_AD, result);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
