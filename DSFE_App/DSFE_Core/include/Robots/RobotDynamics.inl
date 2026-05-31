@@ -451,11 +451,16 @@ namespace robots {
 
 			const Scalar b = static_cast<Scalar>(snap.model->joints[i].dynamics.damping); // viscous damping coefficient
 			const Scalar c = static_cast<Scalar>(snap.model->joints[i].dynamics.friction); // Coulomb friction coefficient
-			const Scalar eps_f = static_cast<Scalar>(1e-2);
+			const Scalar eps_f = static_cast<Scalar>(1e-3);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, c, b); // add friction compensation
+			Scalar tau_f = c * mathlib::tanh(qd[i] / Scalar(0.1)) + b * qd[i]; // simple friction model with viscous and Coulomb friction <going back to the tanh-based friction compensation for better numerical stability>
 			tau_i += tau_f;
+
+			const Scalar Q_max = static_cast<Scalar>(snap.model->joints[i].limits.maxEffort);
+			LOG_INFO_ONCE("Max effort for joint %zu: %g Nm", i, mathlib::real(Q_max));
+
+			tau_i = Q_max * mathlib::tanh(tau_i / Q_max); // saturate control torque to max effort using smooth tanh saturation
 
 			scratch.dense.tau[i] = tau_i;
 
