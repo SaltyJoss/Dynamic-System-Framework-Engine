@@ -248,15 +248,12 @@ namespace robots {
 			Dual theta_out = clampJointAngle_T<Dual>(j, theta_in);
 
 			// max |omega|
-			Dual wMax_hw = mathlib::abs(j.limits.maxqd);
+			const double wMax_hw = mathlib::abs(j.limits.maxqd);
 			Dual omega_out = omega_in;
 
 			// Velocity limit clamping
-			if (wMax_hw > Dual(0)) {
-				const Dual eps = Dual(5e-2);
-				if (mathlib::abs(omega_in) > (Dual(1) + eps) * wMax_hw) {
-					omega_out = std::clamp(omega_in, -wMax_hw, wMax_hw);
-				}
+			if (wMax_hw > 0.0) {
+				omega_out = wMax_hw * mathlib::tanh(omega_in / wMax_hw); // smoothly clamp omega to wMax_hw using a tanh function
 			}
 
 			// Velocity limit enforcement
