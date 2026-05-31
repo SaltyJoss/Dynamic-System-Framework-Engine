@@ -364,7 +364,9 @@ namespace integration {
 				throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter));
 			}
 
-			x_real += delta;
+			Real relax = (iter > 10) ? Real(0.5) : Real(1.0); // Simple relaxation strategy after 10 iterations
+
+			x_real += relax * delta;
 			Real x_norm = x_real.norm();
 			if (delta.norm() < tol * (Real(1) + x_norm)) { converged = true; break; }
 		}
