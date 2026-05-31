@@ -54,6 +54,8 @@ namespace robots {
         // --- Utility Methods ---
 
         static double clampJointAngle(const RobotJoint& joint, double angleRad);
+		template<typename T>
+		static T clampJointAngle_T(const RobotJoint& joint, T angleRad);
 
         // ---- Accessors ---
 
@@ -126,8 +128,8 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
-		template<typename Scalar>
-		RobotSimSnapshot_T<Scalar> takeSnapshot(Scalar simTime) const;
+		template<typename T>
+		RobotSimSnapshot_T<T> takeSnapshot(T simTime) const;
 		template<size_t NVar>
 		void step_AD(double dt, double simTime);
 
@@ -154,32 +156,18 @@ namespace robots {
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
-		void setIntegrationMethod(integration::eIntegrationMethod method) {
-			LOG_INFO("Integrator changed to enum %d", (int)method);
-			_curIntMethod = method;
-			const auto state = _integrator->runtimeState();
-			state->backend = integration::eIntegrationBackend::Standard;
-			state->autoDiff = false;
-			_useAutoDiff = false;
-		}
+		void setStandardIntegrator(integration::eIntegrationMethod m) { _curIntMethod = m; }
 
 		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
 		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
-		void setIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
-			LOG_INFO("AD integrator changed to enum %d", (int)method);
-			_curIntMethod_AD = method;
-			const auto state = _AD_integrator->runtimeState();
-			state->backend = integration::eIntegrationBackend::AutoDiff;
-			state->autoDiff = true;
-			_useAutoDiff = true;
-		}
+		void setADIntegrator(integration::eAutoDiffIntegrationMethod m) { _curIntMethod_AD = m; }
 
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
 
 		integration::DifferentiableIntegrator* getADIntegrator();
 		const integration::DifferentiableIntegrator* getADIntegrator() const;
-
+		
 		bool autoDiffEnabled() const { return _useAutoDiff; }
 		void enableAutoDiff(bool enable) { _useAutoDiff = enable; }
 
@@ -214,8 +202,8 @@ namespace robots {
 			DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
 		);
 
-		template<typename Scalar>
-		void postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<Scalar>& scratch, const RobotStepResult_T<Scalar>& result);
+		template<typename T>
+		void postStepUpdate(const mathlib::VecX_T<T>& x, const DynamicsScratch<T>& scratch, const RobotStepResult_T<T>& result);
 
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
@@ -243,6 +231,13 @@ namespace robots {
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
+
+		template<typename T>
+		void unpackState(const mathlib::VecX_T<T>& x);
+
+		// State packing and unpacking using a DualNumber vector.
+		mathlib::VecX_T<DualNumber_T<double, 14>> packState_AD() const;
+		void unpackState_AD(const mathlib::VecX_T<DualNumber_T<double, 14>>& x);
 
 		// Reference state packing and unpacking
 		mathlib::VecX packRefState() const;

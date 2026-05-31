@@ -2,10 +2,16 @@
 #pragma once
 
 namespace robots {
+	template<typename T>
+	T RobotSystem::clampJointAngle_T(const RobotJoint& joint, T angleRad) {
+		if (joint.limits.continuous) { return mathlib::wrapRad<T>(angleRad); }
+		else { return std::clamp(angleRad, T(joint.limits.minAngle), T(joint.limits.maxAngle)); }
+	}
+
 	// Method to take a snapshot of the current robot state
-	template<typename Scalar>
-	RobotSimSnapshot_T<Scalar> RobotSystem::takeSnapshot(Scalar simTime) const {
-		RobotSimSnapshot_T<Scalar> snap;
+	template<typename T>
+	RobotSimSnapshot_T<T> RobotSystem::takeSnapshot(T simTime) const {
+		RobotSimSnapshot_T<T> snap;
 		snap.model = &_constModel;
 		const size_t n = (size_t)_robot.joints.size();
 
@@ -27,14 +33,14 @@ namespace robots {
 			snap.qdd_ref[i] = j.qdd_ref;
 		}
 
-		snap.robotRootPose = _robotRootPose.template cast<Scalar>();
+		snap.robotRootPose = _robotRootPose.template cast<T>();
 		snap.baseIsFree = _baseIsFree;
-		snap.lastBaseForwardForce = Scalar(_lastBaseForwardForce);
-		snap.gravity = Scalar(_gravity);
+		snap.lastBaseForwardForce = T(_lastBaseForwardForce);
+		snap.gravity = T(_gravity);
 
 		snap.torqueMode = _robot.torqueMode;
 
-		snap.dt = Scalar(_dynamics->dt());
+		snap.dt = T(_dynamics->dt());
 		snap.simTime = simTime;
 
 		return snap;
@@ -122,7 +128,6 @@ namespace robots {
 		};
 
 		if (!x.allFinite()) { LOG_ERROR("[step_impl] input state already non-finite"); }
-		LOG_ERROR("[step_impl] input qd = %.17g %.17g %.17g %.17g %.17g %.17g %.17g", x[7], x[8], x[9], x[10], x[11], x[12], x[13]);
 
 		if constexpr (std::is_same_v<std::remove_cvref_t<IntegratorT>, integration::IntegrationService>) {
 			mathlib::VecX x_real = x.template cast<double>();
@@ -132,7 +137,6 @@ namespace robots {
 			result.stepOut.dt_sug = step.dt_sug;
 		}
 		else if constexpr (std::is_same_v<std::remove_cvref_t<IntegratorT>, integration::DifferentiableIntegrator>) {
-			_curIntMethod_AD = integrator.integrationMethod();
 			result.stepOut = integrator.step(_curIntMethod_AD, x, t, dt, f_deriv);
 		}
 
@@ -145,12 +149,12 @@ namespace robots {
 		return result;
 	}
 
-	template<typename Scalar>
-	void RobotSystem::postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<Scalar>& dynScratch, const RobotStepResult_T<Scalar>& result) {
+	template<typename T>
+	void RobotSystem::postStepUpdate(const mathlib::VecX_T<T>& x, const DynamicsScratch<T>& dynScratch, const RobotStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
 
-		Eigen::Map<const mathlib::VecX> q_next(x.data(), n);
-		Eigen::Map<const mathlib::VecX> qd_next(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<T>> q_next(x.data(), n);
+		Eigen::Map<const mathlib::VecX_T<T>> qd_next(x.data() + n, n);
 
 		// Enforce joint limits
 		/*for (auto& j : _robot.joints) { enforceJointLimits(j); }*/
@@ -158,11 +162,11 @@ namespace robots {
 		// Recompute kinematics and dynamics at the new state for logging and control purposes
 		std::vector<Pose> T_world(result.snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState<double>(*result.snap.model, x, T_world);
-		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses<double>(T_world, *result.snap.model);
+
+		// Alternative would be just 
 
 		// Compute mass matrix at the new state
 		mathlib::MatX M = dynScratch.dense.M.unaryExpr([](const auto& v) { return mathlib::real(v); });
-		mathlib::VecX tau_g = _dynamics->computeGravityTorque<double>(*result.snap.model, T_world, jointWorldPoses);
 
 		// Extract real parts of relevant variables for logging and control
 		mathlib::VecX q_real = result.snap.q.unaryExpr([](const auto& v) { return mathlib::real(v); });
@@ -209,7 +213,7 @@ namespace robots {
 				e.theta = q_real[i]; e.omega = qd_real[i]; e.alpha = mathlib::real(dynResult.metrics.qdd[i]);
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
-				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = tau_g[i];
+				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = 0.0;
 				e.tau_sat = mathlib::real(dynResult.metrics.tau_sat[i]);
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = mathlib::real(_clampTheta[i]); e.clamp_omega = mathlib::real(_clampOmega[i]);
@@ -225,17 +229,18 @@ namespace robots {
 		using Dual = mathlib::DualNumber_T<double, NVar>;
 		_simTime = simTime;
 		const size_t n = _robot.joints.size();
-		mathlib::VecX_T<Dual> x = packState().template cast<Dual>();
+		mathlib::VecX_T<Dual> x = packState_AD();
 
 		assert((size_t)x.size() <= NVar && "State size exceeds the number of dual variables."); // Checks state vector size is within the dual variable limit
 		for (size_t i = 0; i < (size_t)x.size(); ++i) { x[i].dual[i] = 1.0; }
 		
 		auto result = step_impl<Dual>(x, Dual(dt), Dual(simTime), *_AD_integrator, _dynScratch_AD, _dynResult_AD);
-		mathlib::VecX x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
-		unpackState(x_real);
+		unpackState_AD(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
 
-		// postStepUpdate(x_real, _dynScratch_AD, result);
+		auto x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
+
+		//postStepUpdate(x_real, _dynScratch_AD, result);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {

@@ -210,6 +210,72 @@ namespace robots {
 		}
 	}
 
+	// Method to pack robot joint states into a state vector
+	mathlib::VecX_T<DualNumber_T<double, 14>> RobotSystem::packState_AD() const {
+		using Dual = DualNumber_T<double, 14>; // only hardcoded since I am testing the same arm, TODO provide a better final way to derive the NVar val.
+		const size_t n = static_cast<int>(_robot.joints.size());
+		mathlib::VecX_T<Dual> x(2 * n);
+
+		// Pack angles and velocities
+		for (size_t i = 0; i < n; ++i) {
+			auto& j = _robot.joints[i];
+
+			// Current states
+			x[i] = Dual(j.q, { 0.0 });
+			x[i + n] = Dual(j.qd, { 0.0 });
+		}
+		return x; // state vector
+	}
+
+	// Method to unpack state vector into robot joints
+	void RobotSystem::unpackState_AD(const mathlib::VecX_T<DualNumber_T<double, 14>>& x) {
+		using Dual = DualNumber_T<double, 14>;
+		const size_t n = static_cast<int>(_robot.joints.size());
+
+		// Resize clamping vectors if necessary
+		if (_clampTheta.size() != n) { _clampTheta.assign(n, 0); }
+		if (_clampOmega.size() != n) { _clampOmega.assign(n, 0); }
+
+		// For each joint
+		for (size_t i = 0; i < n; ++i) {
+			auto& j = _robot.joints[i];
+
+			// Current states
+			Dual theta_in = x[i];		  // [rad]
+			Dual omega_in = x[i + n];	  // [rad/s]
+
+			// Clamp joint angle
+			Dual theta_out = clampJointAngle_T<Dual>(j, theta_in);
+
+			// max |omega|
+			Dual wMax_hw = mathlib::abs(j.limits.maxqd);
+			Dual omega_out = omega_in;
+
+			// Velocity limit clamping
+			if (wMax_hw > Dual(0)) {
+				const Dual eps = Dual(5e-2);
+				if (mathlib::abs(omega_in) > (Dual(1) + eps) * wMax_hw) {
+					omega_out = std::clamp(omega_in, -wMax_hw, wMax_hw);
+				}
+			}
+
+			// Velocity limit enforcement
+			if (theta_out != theta_in) {
+				const double upperLimit = j.limits.maxAngle;
+				const double lowerLimit = j.limits.minAngle;
+				if (theta_out >= upperLimit && omega_in > Dual(0)) { omega_out = Dual(0); }
+				if (theta_out <= lowerLimit && omega_in < Dual(0)) { omega_out = Dual(0); }
+			}
+
+			// Record clamping
+			_clampTheta[i] = (theta_in != theta_out) ? 1 : 0;
+			_clampOmega[i] = (omega_in != omega_out) ? 1 : 0;
+			// Update joint states
+			j.q = mathlib::real(theta_out);
+			j.qd = mathlib::real(omega_out);
+		}
+	}
+
 	// Method to pack reference state vector (target angles and velocities) for control
 	mathlib::VecX RobotSystem::packRefState() const {
 		const size_t n = (int)_robot.joints.size();
@@ -267,7 +333,7 @@ namespace robots {
 		const auto scratchCopy = _dynScratch;
 		const auto resultCopy = result;
 
-		//postStepUpdate(resultCopy.stepOut.x_next, scratchCopy, resultCopy);
+		postStepUpdate(resultCopy.stepOut.x_next, scratchCopy, resultCopy);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
