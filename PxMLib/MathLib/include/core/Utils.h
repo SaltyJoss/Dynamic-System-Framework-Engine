@@ -10,21 +10,21 @@ using namespace mathlib;
 using namespace constants;
 
 namespace mathlib {
-	// Convert degrees to radians (Scalar)
-	template<typename Scalar>
-	inline Scalar radians(Scalar degrees) { return degrees * (Scalar(PI) / Scalar(180)); }
+	// Convert degrees to radians (T)
+	template<typename T>
+	inline T radians(T degrees) { return degrees * (T(PI) / T(180)); }
 	// Convert degrees to radians (double overload)
 	inline double radians(double degrees) { return  radians<double>(degrees); }
 
 	// Convert radians to degrees
-	template<typename Scalar>
-	inline Scalar degrees(Scalar radians) { return radians * (Scalar(180) / Scalar(PI)); }
+	template<typename T>
+	inline T degrees(T radians) { return radians * (T(180) / T(PI)); }
 	// Convert radians to degrees (double overload)
 	inline double degrees(double radians) { return degrees<double>(radians); }
 
 	// Clamp a value between min and max
-	template<typename Scalar>
-	inline Scalar clamp(Scalar value, Scalar minVal, Scalar maxVal) {
+	template<typename T>
+	inline T clamp(T value, T minVal, T maxVal) {
 		if (value < minVal) { return minVal; }
 		if (value > maxVal) { return maxVal; }
 		return value;
@@ -33,46 +33,43 @@ namespace mathlib {
 	inline double clamp(double value, double minVal, double maxVal) { return clamp<double>(value, minVal, maxVal); }
 
 	// Method to wrap an angle in radians to the range [-pi, pi]
-	template<typename Scalar>
-	inline Scalar wrapToPi(Scalar angleRad) {
-		angleRad = std::fmod(angleRad + Scalar(PI), Scalar(TWO_PI));
-		if (angleRad < Scalar(0)) { angleRad += Scalar(TWO_PI); }
-		return angleRad - Scalar(PI); // [rad]
+	template<typename T>
+	inline T wrapToPi(T angleRad) {
+		angleRad = mathlib::fmod(angleRad + T(PI), T(TWO_PI));
+		if (angleRad < T(0)) { angleRad += T(TWO_PI); }
+		return angleRad - T(PI); // [rad]
 	}
 	// Method to wrap an angle in radians to the range [-pi, pi] (double overload)
 	inline double wrapToPi(double angleRad) { return wrapToPi<double>(angleRad); }
 
 	// Method to wrap an angle in radians to the range [0, 2pi]
-	template<typename Scalar>
-	inline Scalar wrapRad(Scalar angleRad) {
-		angleRad = fmod(angleRad, Scalar(TWO_PI));
-		if (angleRad < Scalar(0)) { angleRad += Scalar(TWO_PI); }
+	template<typename T>
+	inline T wrapRad(T angleRad) {
+		angleRad = mathlib::fmod(angleRad, T(TWO_PI));
+		if (angleRad < T(0)) { angleRad += T(TWO_PI); }
 		return angleRad; // [rad]
 	}
 	// Method to wrap an angle in radians to the range [0, 2pi] (double overload)
 	inline double wrapRad(double angleRad) { return wrapRad<double>(angleRad); }
 
 	// Linear interpolation between a and b by factor t (0 <= t <= 1)
-	template<typename Scalar>
 	inline double lerp(double a, double b, double t) { return a + t * (b - a); }
 
 	// Check if two doubles are approximately equal within a tolerance
-	template<typename Scalar>
 	inline bool approximatelyEqual(double a, double b, double tolerance = 1e-9) { return std::fabs(a - b) <= tolerance; }
 
 	// Check if a value is within a specified range [minVal, maxVal]
-	template<typename Scalar>
 	inline bool isInRange(double value, double minVal, double maxVal) { return (value >= minVal) && (value <= maxVal); }
 
 	// Dot product of two 3D vectors
-	template<typename Scalar>
-	inline Scalar dot(const Vec3_T<Scalar>& v1, const Vec3_T<Scalar>& v2) { return v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z(); }
+	template<typename T>
+	inline T dot(const Vec3_T<T>& v1, const Vec3_T<T>& v2) { return v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z(); }
 	// Dot product of two 3D vectors (double overload)
 	inline double dot(const Vec3& v1, const Vec3& v2) { return dot<double>(v1, v2); }
 	// Cross product of two 3D vectors
-	template<typename Scalar>
-	inline Vec3_T<Scalar> cross(const Vec3_T<Scalar>& v1, const Vec3_T<Scalar>& v2) {
-		return Vec3_T<Scalar>(
+	template<typename T>
+	inline Vec3_T<T> cross(const Vec3_T<T>& v1, const Vec3_T<T>& v2) {
+		return Vec3_T<T>(
 			v1.y() * v2.z() - v1.z() * v2.y(),
 			v1.z() * v2.x() - v1.x() * v2.z(),
 			v1.x() * v2.y() - v1.y() * v2.x()
@@ -82,22 +79,22 @@ namespace mathlib {
 	inline Vec3 cross(const Vec3& v1, const Vec3& v2) { return cross<double>(v1, v2); }
 
 	// Natural frequency of a mass-spring system
-	template<typename Scalar>
-	inline Scalar natural_freq(Scalar k_p, Scalar I) {
-		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
-		if (k_p < Scalar(0) || I <= Scalar(0)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
+	template<typename T>
+	inline T natural_freq(T k_p, T I) {
+		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(I)) { return std::numeric_limits<T>::quiet_NaN(); }
+		if (k_p < T(0) || I <= T(0)) { return std::numeric_limits<T>::quiet_NaN(); }
 		return mathlib::sqrt(k_p / I);
 	}
 	// Natural frequency of a mass-spring system (double overload)
 	inline double natural_freq(double k_p, double I) { return natural_freq<double>(k_p, I); }
 
 	// Damping ratio of a mass-spring-damper system 
-	template<typename Scalar>
-	inline Scalar damping_ratio(Scalar k_d, Scalar I, Scalar k_p) {
-		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(k_d) || !mathlib::isfinite(I)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
-		if (k_p < Scalar(0) || I <= Scalar(0)) { return std::numeric_limits<Scalar>::quiet_NaN(); }
-		Scalar w_n = natural_freq(k_p, I);
-		return k_d / (Scalar(2) * I * w_n); // damping ratio - zeta
+	template<typename T>
+	inline T damping_ratio(T k_d, T I, T k_p) {
+		if (!mathlib::isfinite(k_p) || !mathlib::isfinite(k_d) || !mathlib::isfinite(I)) { return std::numeric_limits<T>::quiet_NaN(); }
+		if (k_p < T(0) || I <= T(0)) { return std::numeric_limits<T>::quiet_NaN(); }
+		T w_n = natural_freq(k_p, I);
+		return k_d / (T(2) * I * w_n); // damping ratio - zeta
 	}
 	// Damping ratio of a mass-spring-damper system (double overload)
 	inline double damping_ratio(double k_d, double I, double k_p) { return damping_ratio<double>(k_d, I, k_p); }

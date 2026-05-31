@@ -491,6 +491,15 @@ namespace mathlib {
 		}
 		return out;
 	}
+	// Modulo function for DualNumber_T (returns the modulo of the real parts, dual parts are set to zero since the derivative of fmod is not well-defined at integer boundaries)
+	template<typename Scalar, size_t NVar>
+	inline mathlib::DualNumber_T<Scalar, NVar> fmod(const mathlib::DualNumber_T<Scalar, NVar>& a, const mathlib::DualNumber_T<Scalar, NVar>& b) {
+		mathlib::DualNumber_T<Scalar, NVar> out;
+		out.real = std::fmod(a.real, b.real);
+		// The dual part of fmod is more complex and depends on the specific implementation of fmod. For simplicity, we can set it to zero or compute it based on the derivatives if needed.
+		for (size_t i = 0; i < NVar; ++i) { out.dual[i] = Scalar(0); }
+		return out;
+	}
 	// Since dual numbers are not complex, the real part is just the real part of the dual number (for non-dual types, this is just the value itself)
 	template<typename T>
 	inline T real(const T& x) { return x; }

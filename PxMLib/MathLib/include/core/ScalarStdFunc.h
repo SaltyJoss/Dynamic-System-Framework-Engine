@@ -62,4 +62,6 @@ namespace mathlib {
 	// Squared normalisation function (Scalar)
 	template<typename Scalar, std::enable_if_t<std::is_arithmetic_v<Scalar>, int> = 0>
 	inline Scalar norm2(const Scalar& a) { return (a == Scalar(0)) ? Scalar(0) : Scalar(1); }
+	template<typename Scalar, std::enable_if_t<std::is_arithmetic_v<Scalar>, int> = 0>
+	inline Scalar fmod(const Scalar& a, const Scalar& b) { return std::fmod(a, b); }
 } // namespace mathlib
