@@ -404,26 +404,23 @@ namespace integration {
 		const mathlib::VecX_T<mathlib::DualNumber_T<RealScalar, NVar>>& x
 	) {
 		const int n = static_cast<int>(x.size());
-		
-		using SysScalar = mathlib::DualNumber_T<RealScalar, NVar>;
-		auto f0 = f(t, x);
-		const int m = static_cast<int>(f0.size());
-
+		using Dual_T = mathlib::DualNumber_T<RealScalar, NVar>;
+		// Create dual numbers for each input variable in x
+		mathlib::VecX_T<Dual_T> x_dual(n);
+		for (int k = 0; k < n; ++k) {
+			std::array<RealScalar, NVar> seed_array{};
+			if (k < static_cast<int>(NVar)) { seed_array[k] = RealScalar(1); } // Set the k-th variable's seed to 1 for forward mode AD, and the rest to 0
+			x_dual(k) = Dual_T(mathlib::real(x(k)), seed_array); // Initialise the dual number for x(k) with the real part from x(k) and the appropriate seed for the dual part
+		}
+		Dual_T t_dual(mathlib::real(t));
+		auto f_dual = f(t_dual, x_dual);
+		const int m = static_cast<int>(f_dual.size());
+		// Construct the Jacobian matrix J where J(j, i) = df_j/dx_i is the dual part of the j-th output corresponding to the seed for the i-th input variable
 		mathlib::MatX_T<RealScalar> J(m, n);
 		for (int i = 0; i < n; ++i) {
-			using Dual_T = mathlib::DualNumber_T<RealScalar, NVar>;
-
-			mathlib::VecX_T<Dual_T> x_dual(n);
-			for (int k = 0; k < n; ++k) {
-				std::array<RealScalar, NVar> seed_array{};
-				if (k == i) { seed_array.fill(RealScalar(0)); seed_array[i] = RealScalar(1); } // Set the seed for the i-th variable to 1, others to 0 <I think this was the first major error>
-				x_dual(k) = Dual_T(mathlib::real(x(k)), seed_array);
-			}
-
-			Dual_T t_dual(mathlib::real(t));
-			auto f_dual = f(t_dual, x_dual);
 			for (int j = 0; j < m; ++j) {
-				J(j, i) = f_dual(j).dual[i]; // The Jacobian entry J(j, i) is the dual part of f_dual(j) corresponding to the seed for x(i) <I think this was the second major error>
+				if (i < static_cast<int>(NVar)) { J(j, i) = f_dual(j).dual[i]; } // The Jacobian entry J(j, i) is the dual part of the j-th output corresponding to the seed for the i-th input variable
+				else { J(j, i) = RealScalar(0); } // If i >= NVar, then the seed for that variable is zero, so the Jacobian entry is zero
 			}
 		}
 		return J;
