@@ -266,7 +266,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 4.0,
+                "zeta_target": 0.8
             }
         },
 
@@ -288,7 +290,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 4.0,
+                "zeta_target": 0.8
             }
         },
 
@@ -310,7 +314,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 2.5,
+                "zeta_target": 1.0
             }
         },
 
@@ -332,7 +338,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 2.5,
+                "zeta_target": 1.0
             }
         },
 
@@ -354,7 +362,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 1.5,
+                "zeta_target": 1.3
             }
         },
 
@@ -376,7 +386,9 @@
             },
             "dynamics": {
                 "damping": 0.2,
-                "friction": 0.05
+                "friction": 0.05,
+                "wn_target": 1.5,
+                "zeta_target": 1.3
             }
         }
     ]

@@ -320,6 +320,8 @@ namespace robots {
 		const auto& D = jointData["dynamics"];
 		joint.dynamics.damping = D.value("damping", joint.dynamics.damping);
 		joint.dynamics.friction = D.value("friction", joint.dynamics.friction);
+		joint.wn_target = D.value("wn_target", joint.wn_target);
+		joint.zeta_target = D.value("zeta_target", joint.zeta_target);
 
 		if (joint.dynamics.damping < 0.0) { joint.dynamics.damping = 0.0; }
 		if (joint.dynamics.friction < 0.0) { joint.dynamics.friction = 0.0; }
@@ -341,7 +343,7 @@ namespace robots {
 		out.a = dh.value("a", 0.0);
 		out.alpha = dh.value("alpha", 0.0);
 		out.d = dh.value("d", 0.0);
-		out.theta = dh.value("theta0", 0.0);          // your key is theta0
+		out.theta = dh.value("theta0", 0.0);
 		out.type = parseDHType(dh.value("type", "revolute"));
 		return true;
 	}

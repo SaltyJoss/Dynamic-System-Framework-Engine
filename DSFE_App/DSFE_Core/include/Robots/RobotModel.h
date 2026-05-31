@@ -154,8 +154,8 @@ namespace robots {
 		double qdd_ref = 0.0; // rad/s^2
 
 		// --- Control Parameters ---
-		double wn_target = 5.0;	 // rad/s
-		double zeta_target = 0.7;	 // damping ratio
+		double wn_target = 0.0;	 // rad/s
+		double zeta_target = 0.0;	 // damping ratio
 
 		// --- Precomputed transforms ---
 		mathlib::Mat4 jointToChildRest = mathlib::Mat4::Identity();
