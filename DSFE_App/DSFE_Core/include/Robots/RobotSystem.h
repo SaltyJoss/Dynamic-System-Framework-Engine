@@ -44,7 +44,7 @@ namespace robots {
 		mathlib::VecX_T<Scalar> tau_rnea;
 	};
 
-	inline constexpr size_t AD_VARS = 14; 			  // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
+	inline constexpr size_t AD_VARS = 14; // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
 
 	class DSFE_API RobotSystem {
 	public:

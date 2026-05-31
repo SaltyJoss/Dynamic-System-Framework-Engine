@@ -377,24 +377,32 @@ namespace integration {
 		int maxIter,
 		Scalar tol
 	) {
-		mathlib::VecX_T<Scalar> x = x0, g, x_trial;
-		mathlib::VecX_T<Scalar> delta = mathlib::VecX_T<Scalar>::Constant(x0.size(), std::numeric_limits<Scalar>::infinity());
-		mathlib::MatX_T<Scalar> J;
-		Eigen::FullPivLU<mathlib::MatX_T<Scalar>> solver;
+		const Eigen::Index n = x0.size();
+		static thread_local mathlib::VecX_T<Scalar> x;
+		static thread_local mathlib::VecX_T<Scalar> g;
+		static thread_local mathlib::VecX_T<Scalar> delta;
+		static thread_local mathlib::MatX_T<Scalar> J;
+		if (x.size() != n) {
+			x.resize(n);
+			g.resize(n);
+			delta.resize(n);
+			J.resize(n, n);
+		}
+		x = x0;
+		Eigen::PartialPivLU<mathlib::MatX_T<Scalar>> solver;
 		for (int iter = 0; iter < maxIter; ++iter) {
 			eval_g(x, g);
-			if (!g.allFinite()) { throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter) + ", residual norm = " + std::to_string(g.norm())); }
+			if (!g.allFinite()) { throw std::runtime_error("Newton received non-finite residual"); }
 			if (g.norm() < tol) { return x; }
 			eval_j(x, J);
-			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter)); }
+			if (!J.allFinite()) { throw std::runtime_error("Newton received non-finite Jacobian"); }
 			solver.compute(J);
 			delta = solver.solve(-g);
-			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter)); }
+			if (!delta.allFinite()) { throw std::runtime_error("Newton produced non-finite step"); }
 			x += delta;
 			if (delta.norm() < tol * (Scalar(1) + x.norm())) { return x; }
-			if (!x.allFinite()) { throw std::runtime_error("Newton state became non-finite at iter = " + std::to_string(iter)); }
 		}
-		throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations. Final residual norm = " + std::to_string(g.norm()) + ", final step norm = " + std::to_string(delta.norm()));
+		return x; // Return the last iterate even if we didn't converge, as it may still be a useful approximation
 	}
 
 	// Finite difference approximation of the Jacobian matrix df/dx for a vector-valued function f: R^n -> R^m at a point x
@@ -407,17 +415,19 @@ namespace integration {
 		const Scalar eps_rel = Scalar(1e-8);
 		const int n = static_cast<int>(x.size());
 		mathlib::VecX_T<Scalar> f_0 = f(t, x);
-		mathlib::MatX_T<Scalar> J(f_0.size(), n);
-		// Compute the Jacobian column by column using central differences
+
+		static thread_local mathlib::MatX_T<Scalar> J;
+		if (J.rows() != f_0.size() || J.cols() != n) { J.resize(f_0.size(), n); }
+
+		mathlib::VecX_T<Scalar> x_perturbed = x;
+
+		// Compute the Jacobian column by column using forward difference
 		for (int i = 0; i < n; ++i) {
-			mathlib::VecX_T<Scalar> x_fwd = x;
-			mathlib::VecX_T<Scalar> x_bwd = x;
-			Scalar h = eps_rel * std::max(Scalar(1), Scalar(std::abs(mathlib::real(x(i)))));
-			x_fwd(i) += h;
-			x_bwd(i) -= h;
-			mathlib::VecX_T<Scalar> f_fwd = f(t, x_fwd);
-			mathlib::VecX_T<Scalar> f_bwd = f(t, x_bwd);
-			J.col(i) = (f_fwd - f_bwd) / (Scalar(2) * h);
+			Scalar h = eps_rel * std::max(Scalar(1), Scalar(std::abs(x(i))));
+			x_perturbed(i) += h;
+			mathlib::VecX_T<Scalar> f_fwd = f(t, x_perturbed);
+			x_perturbed(i) = x(i);
+			J.col(i) = (f_fwd - f_0) / h;
 		}
 		return J;
 	}

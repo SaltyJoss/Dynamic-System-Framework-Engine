@@ -349,7 +349,6 @@ namespace robots {
 			// Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
 			// tau_i += tau_f;
 
-
 			scratch.dense.tau[i] = tau_i;
 
 			out.metrics.q[i] = mathlib::real(q[i]);

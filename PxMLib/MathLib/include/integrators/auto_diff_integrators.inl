@@ -324,16 +324,30 @@ namespace integration {
 	) {
 		using Real = typename mathlib::DualTraits<Scalar>::BaseScalar;
 		const Eigen::Index n = x0.size();
+		constexpr size_t NVar = mathlib::DualTraits<Scalar>::Dimension;
+
+		static thread_local mathlib::VecX_T<Real> g_real;
+		static thread_local mathlib::VecX_T<Real> delta;
+		static thread_local mathlib::MatX_T<Real> J;
+		static thread_local mathlib::MatX_T<Real> RHS_seed;
+		static thread_local mathlib::MatX_T<Real> corrected_sensitivies;
+
+		if (g_real.size() != n) {
+			g_real.resize(n);
+			delta.resize(n);
+			J.resize(n, n);
+			RHS_seed.resize(n, NVar);
+			corrected_sensitivies.resize(n, NVar);
+		}
 
 		mathlib::VecX_T<Real> x_real = x0.template cast<Real>();
-		mathlib::VecX_T<Real> g_real(n);
-		mathlib::VecX_T<Real> delta(n);
-		mathlib::MatX_T<Real> J(n, n);
-		Eigen::FullPivLU<mathlib::MatX_T<Real>> solver;
+		Eigen::PartialPivLU<mathlib::MatX_T<Real>> solver;
 		bool converged = false;
 
+		mathlib::VecX_T<Scalar> g_dual;
+		g_dual.resize(n);
+
 		for (int iter = 0; iter < maxIter; ++iter) {
-			mathlib::VecX_T<Scalar> g_dual;
 			eval_g(x_real.template cast<Scalar>(), g_dual);
 			g_real = g_dual.template cast<Real>();
 			if (!g_real.allFinite()) {
@@ -388,12 +402,12 @@ namespace integration {
 		mathlib::VecX_T<Scalar> g_final;
 		eval_g(x_final, g_final);
 
-		constexpr size_t NVar = mathlib::DualTraits<Scalar>::Dimension;
-		for (size_t d = 0; d < NVar; ++d) {
-			mathlib::VecX_T<Real> rhs_seed(n);
-			for (Eigen::Index j = 0; j < n; ++j) { rhs_seed(j) = g_final(j).dual[d]; }
-			mathlib::VecX_T<Real> corrected_sensitivies = solver.solve(-rhs_seed);
-			for (Eigen::Index i = 0; i < n; ++i) { x_final(i).dual[d] = corrected_sensitivies(i); }
+		for (Eigen::Index j = 0; j < n; ++j) {
+			for (size_t d = 0; d < NVar; ++d) { RHS_seed(j, d) = g_final(j).dual[d]; }
+		}
+		corrected_sensitivies = solver.solve(-RHS_seed);
+		for (Eigen::Index i = 0; i < n; ++i) {
+			for (size_t d = 0; d < NVar; ++d) { x_final(i).dual[d] = corrected_sensitivies(i, d); }
 		}
 		return x_final;
 	}
