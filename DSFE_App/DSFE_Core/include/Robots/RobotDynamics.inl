@@ -264,10 +264,10 @@ namespace robots {
 			const Scalar I_eff = mathlib::LSE_smoothMax(scratch.M(i, i), eps);
 
 			const Scalar k_p = I_eff * wn * wn;
-			const Scalar k_d = Scalar(2.0) * z * I_eff * wn;
+			const Scalar k_d = Scalar(2) * z * I_eff * wn;
 
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(joint.dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			dTau_dq(i, i) = -k_p;
@@ -339,8 +339,8 @@ namespace robots {
 			const Scalar k_p = I_eff * wn * wn;		 // [Nm/rad], proportional gain
 			const Scalar k_d = Scalar(2.0) * z * I_eff * wn; // [Nm/(rad/s)], derivative gain
 
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(joint.dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
@@ -437,8 +437,8 @@ namespace robots {
 				continue;
 			}
 
-			const Scalar wn = static_cast<Scalar>(5);
-			const Scalar z = static_cast<Scalar>(0.7);
+			const Scalar wn = static_cast<Scalar>(snap.model->joints[i].wn_target);
+			const Scalar z = static_cast<Scalar>(snap.model->joints[i].zeta_target);
 
 			const Scalar err = snap.q_ref[i] - q[i];
 			const Scalar err_d = snap.qd_ref[i] - qd[i];
@@ -449,8 +449,8 @@ namespace robots {
 			const Scalar k_p = I_eff * wn * wn;
 			const Scalar k_d = Scalar(2) * z * I_eff * wn;
 
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(snap.model->joints[i].dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(snap.model->joints[i].dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
@@ -510,8 +510,8 @@ namespace robots {
 			const SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) { continue; }
 			dTau_dq(i, i) = -kp[i];
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(snap.model->joints[i].dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(snap.model->joints[i].dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			dTau_dv(i, i) = -kd[i] - b;
@@ -567,11 +567,12 @@ namespace robots {
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
-			if (snap.model->joints[i].type == eJointType::FIXED) continue;
+			const RobotJoint& joint = snap.model->joints[i];
+			if (joint.type == eJointType::FIXED) continue;
 
 			const Scalar eps = static_cast < Scalar>(1e-6);
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(joint.dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + mathlib::LSE_smoothMax(scratch.dense.M(i, i), eps) * snap.qdd_ref[i];
@@ -618,12 +619,13 @@ namespace robots {
 		mathlib::MatX_T<Scalar> dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);
 
 		for (size_t i = 0; i < n; ++i) {
-			if (snap.model->joints[i].type == eJointType::FIXED) continue;
+			const RobotJoint& joint = snap.model->joints[i];
+			if (joint.type == eJointType::FIXED) continue;
 
 			dTau_dq(i, i) = -kp[i];
 
-			const Scalar b = static_cast<Scalar>(0.2); // viscous damping coefficient
-			const Scalar c = static_cast<Scalar>(0.05); // Coulomb friction coefficient
+			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
+			const Scalar c = static_cast<Scalar>(joint.dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tanh_term = mathlib::tanh(qd[i] / eps_f);
