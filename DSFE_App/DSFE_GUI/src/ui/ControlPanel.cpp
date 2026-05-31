@@ -751,6 +751,9 @@ namespace gui {
 		drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 		ImGui::TextDisabled("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
 		ImGui::Spacing();
+		ImGui::Text("Joint (1-%d) Errors:", (int)robot->joints().size());
+		drawJointErrorPlot();
+		ImGui::Spacing();
 		// Reset joint properties to initial conditions
 		ImGui::Spacing();
 		ImGui::Text("Reset Robot:");
@@ -1276,6 +1279,53 @@ namespace gui {
 		}
 	}
 
+	void ControlPanel::drawJointErrorPlot() {
+		// Get the latest telemetry record
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+
+		if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry data yet."); return; }
+
+		const auto& last = ring.at(ring.size() - 1);
+
+		static std::vector<float> rX;
+		static std::vector<std::vector<float>> rY;
+
+		const size_t sampleCount = ring.size();
+		const size_t jointCount = last.j.size();
+
+		rX.resize(sampleCount);
+
+		if (rY.size() != jointCount) { rY.resize(jointCount); }
+		for (size_t j = 0; j < jointCount; ++j) { rY[j].resize(sampleCount); }
+
+		for (int k = 0; k < sampleCount; ++k) {
+			const auto& s = ring.at(k);
+			rX[k] = (float)s.timeSec;
+
+			const size_t m = std::min(jointCount, s.j.size());
+			for (size_t j = 0; j < m; ++j) {
+				rY[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
+			}
+			for (size_t j = m; j < jointCount; ++j) {
+				rY[j][k] = 0.0f;
+			}
+		}
+
+		// --- Joint Error Overlay ---
+		const ImVec2 plotSz(ImGui::GetContentRegionAvail().x, 250.0f);
+		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (size_t j = 0; j < jointCount; ++j) {
+				char label[16];
+				snprintf(label, sizeof(label), "J%02d", (int)j);
+				ImPlot::PlotLine(label, rX.data(), rY[j].data(), (int)sampleCount);
+			}
+			ImPlot::EndPlot();
+		}
+	}
+
 	// --- CSV Export ---
 
 	// Export telemetry data to CSV for external analysis (e.g. Python, Excel)
@@ -1682,7 +1732,7 @@ namespace gui {
 			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
 		}
 
-		const auto& last = ring.at(ring.size() - 1);
+		const auto& last = ring.at(ring.size() - 1); // get the latest sample for summary info
 
 		ImGui::TextDisabled("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
 		ImGui::Separator();
