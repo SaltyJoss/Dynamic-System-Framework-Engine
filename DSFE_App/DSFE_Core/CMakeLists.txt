@@ -8,6 +8,9 @@ find_package(Threads REQUIRED)
 find_package(HDF5 CONFIG REQUIRED)
 
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
+if (MSVC)
+target_compile_options(DSFE_Core PRIVATE /bigobj)
+endif()
 
 set(CORE_SRC
     src/EngineCore.cpp
@@ -20,7 +23,6 @@ set(CORE_SRC
     src/Robots/RobotSystem.cpp
     src/Robots/TrajectoryManager.cpp
     src/Robots/RobotSimSnapshot.cpp
-    src/Robots/SpatialDynamics.cpp
 
     src/Interpreter/Command.cpp
     src/Interpreter/CommandContext.cpp
@@ -85,7 +87,7 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_Core
     PUBLIC 
-        PxMLib
+        MathLib
         Eigen3::Eigen
         hdf5::hdf5-shared
         Threads::Threads

@@ -2,13 +2,7 @@
 #include "pch.h"
 
 #include "Robots/RobotSystem.h"
-
-#include <kinematics/Forward_Kinematics.h>
-#include "Robots/RobotKinematics.h"
-#include "Robots/RobotDynamics.h"
 #include "Robots/RobotLoader.h"
-
-#include <Robots/SpatialDynamics.h>
 
 #include <stack>
 #include <unordered_set>
@@ -28,16 +22,15 @@ namespace robots {
 	// Constructor
 	RobotSystem::RobotSystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
+		_AD_integrator(std::make_unique<integration::DifferentiableIntegrator>()), _curIntMethod_AD(integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler),
 		_kinematics(std::make_unique<RobotKinematics>()), _dynamics(std::make_unique<RobotDynamics>()),
 		_torqueMode(eTorqueMode::CONTROLLED) {
-		if (!_integrator) { LOG_WARN("RobotSystem got null IntegrationService*"); }
+		if (!_integrator ) { LOG_WARN("RobotSystem got null IntegrationService*"); }
 	}
 	// Destructor
 	RobotSystem::~RobotSystem() = default;
 
-	const robots::RobotModel& RobotSystem::model() const {
-		return _robot;
-	}
+	const robots::RobotModel& RobotSystem::model() const { return _robot; }
 
 	// Helper function to convert std::vector<double> to Eigen::VectorXd
 	static VecX toVecX(const std::vector<double>& a) {
@@ -92,7 +85,7 @@ namespace robots {
 
 		for (size_t i = 0; i < n; ++i) {
 			const RobotJoint& j = _robot.joints[i];
-			SpatialJoint& sj = _spatialModel.joints[i];
+			auto& sj = _spatialModel.joints[i];
 
 			sj.name = j.name;
 			sj.type = j.type;
@@ -204,7 +197,6 @@ namespace robots {
 			if (theta_out != theta_in) {
 				const double upperLimit = j.limits.maxAngle;
 				const double lowerLimit = j.limits.minAngle;
-
 				if (theta_out >= upperLimit && omega_in > 0.0f) { omega_out = 0.0f; }
 				if (theta_out <= lowerLimit && omega_in < 0.0f) { omega_out = 0.0f; }
 			}
@@ -212,10 +204,72 @@ namespace robots {
 			// Record clamping
 			_clampTheta[i] = (theta_in != theta_out) ? 1 : 0;
 			_clampOmega[i] = (omega_in != omega_out) ? 1 : 0;
-
 			// Update joint states
 			j.q = theta_out;
 			j.qd = omega_out;
+		}
+	}
+
+	// Method to pack robot joint states into a state vector
+	mathlib::VecX_T<DualNumber_T<double, 14>> RobotSystem::packState_AD() const {
+		using Dual = DualNumber_T<double, 14>; // only hardcoded since I am testing the same arm, TODO provide a better final way to derive the NVar val.
+		const size_t n = static_cast<int>(_robot.joints.size());
+		mathlib::VecX_T<Dual> x(2 * n);
+
+		// Pack angles and velocities
+		for (size_t i = 0; i < n; ++i) {
+			auto& j = _robot.joints[i];
+
+			// Current states
+			x[i] = Dual(j.q, { 0.0 });
+			x[i + n] = Dual(j.qd, { 0.0 });
+		}
+		return x; // state vector
+	}
+
+	// Method to unpack state vector into robot joints
+	void RobotSystem::unpackState_AD(const mathlib::VecX_T<DualNumber_T<double, 14>>& x) {
+		using Dual = DualNumber_T<double, 14>;
+		const size_t n = static_cast<int>(_robot.joints.size());
+
+		// Resize clamping vectors if necessary
+		if (_clampTheta.size() != n) { _clampTheta.assign(n, 0); }
+		if (_clampOmega.size() != n) { _clampOmega.assign(n, 0); }
+
+		// For each joint
+		for (size_t i = 0; i < n; ++i) {
+			auto& j = _robot.joints[i];
+
+			// Current states
+			Dual theta_in = x[i];		  // [rad]
+			Dual omega_in = x[i + n];	  // [rad/s]
+
+			// Clamp joint angle
+			Dual theta_out = clampJointAngle_T<Dual>(j, theta_in);
+
+			// max |omega|
+			const double wMax_hw = mathlib::abs(j.limits.maxqd);
+			Dual omega_out = omega_in;
+
+			// Velocity limit clamping
+			if (wMax_hw > 0.0) {
+				omega_out = wMax_hw * mathlib::tanh(omega_in / wMax_hw); // smoothly clamp omega to wMax_hw using a tanh function
+			}
+
+			// Velocity limit enforcement
+			if (theta_out != theta_in) {
+				const double upperLimit = j.limits.maxAngle;
+				const double lowerLimit = j.limits.minAngle;
+				if (theta_out >= upperLimit && omega_in > Dual(0)) { omega_out = Dual(0); }
+				if (theta_out <= lowerLimit && omega_in < Dual(0)) { omega_out = Dual(0); }
+			}
+
+			// Record clamping
+			_clampTheta[i] = (theta_in != theta_out) ? 1 : 0;
+			_clampOmega[i] = (omega_in != omega_out) ? 1 : 0;
+			// Update joint states
+			j.q = mathlib::real(theta_out);
+			j.qd = mathlib::real(omega_out);
 		}
 	}
 
@@ -255,199 +309,28 @@ namespace robots {
 		if (j.q > hi) { j.q = hi; if (j.qd > 0.0f) { j.qd = 0.0f; }}
 	}
 
-	// Method to take a snapshot of the current robot state
-	RobotSimSnapshot RobotSystem::takeSnapshot(double simTime) const {
-		RobotSimSnapshot snap;
-		snap.model = &_constModel;
-
-		const size_t n = (size_t)_robot.joints.size();
-
-		snap.q.resize(n);
-		snap.qd.resize(n);
-		snap.q_ref.resize(n);
-		snap.qd_ref.resize(n);
-		snap.qdd_ref.resize(n);
-
-		for (size_t i = 0; i < n; ++i) {
-			const auto& j = _robot.joints[i];
-			snap.q[i] = j.q;
-			snap.qd[i] = j.qd;
-			snap.q_ref[i] = j.q_ref;
-			snap.qd_ref[i] = j.qd_ref;
-			snap.qdd_ref[i] = j.qdd_ref;
-		}
-
-		snap.robotRootPose = _robotRootPose;
-		snap.baseIsFree = _baseIsFree;
-		snap.lastBaseForwardForce = _lastBaseForwardForce;
-		snap.gravity = _gravity;
-
-		snap.torqueMode = _robot.torqueMode;
-		snap.dt = _dynamics->dt();
-		snap.simTime = simTime;
-
-		return snap;
-	}
-
 	// Method to advance the robot state by dt using the selected integrator
 	void RobotSystem::step(double dt, double simTime) {
 		if (!_hasRobot) { return; }
+
+		if (_useAutoDiff) {
+			step_AD<AD_VARS>(dt, simTime);
+			return;
+		}
+
 		_simTime = simTime;
+		const size_t n = _robot.joints.size();
 		mathlib::VecX x = packState();
 
-		RobotSimSnapshot snap = takeSnapshot(simTime);
-		const size_t n = snap.model->joints.size();
+		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 
-		Eigen::Map<const VecX> q(x.data(), n);
-		Eigen::Map<const VecX> qd(x.data() + n, n);
+		unpackState(result.stepOut.x_next);
+		_dynamics->setDt(result.stepOut.dt_taken);
 
-		mathlib::VecX qdd(n);
-		for (size_t i = 0; i < n; ++i) { qdd[i] = _robot.joints[i].qdd_ref; }
+		const auto scratchCopy = _dynScratch;
+		const auto resultCopy = result;
 
-		std::vector<Pose> T_start(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
-		std::vector<Pose> jointWorldPoses_start = _kinematics->calcJointWorldPoses(T_start, *snap.model);
-
-		SpatialDynamics::computeSpatialKinematicsAndBias(
-			_spatialModel,
-			q, qd,
-			_dynScratch.spatial.Xup,
-			_dynScratch.spatial.v, _dynScratch.spatial.c
-		);
-
-		// CRBA only for controller inertia scaling
-		mathlib::MatX M_start = SpatialDynamics::CRBA(
-			_spatialModel,
-			_dynScratch.spatial.Xup,
-			_dynScratch
-		);
-
-		// Cache frozen joint gains for this step
-		mathlib::VecX kp_frozen(n), kd_frozen(n);
-		for (size_t i = 0; i < n; ++i) {
-			const auto& joint = snap.model->joints[i];
-			if (joint.type == eJointType::FIXED) { continue; }
-
-			_dynScratch.dense.I_eff_controller[i] = std::max(M_start(i, i), 1e-6);
-			const double I_eff = _dynScratch.dense.I_eff_controller[i];
-
-			kp_frozen[i] = I_eff * joint.wn_target * joint.wn_target;
-			kd_frozen[i] = 2.0 * joint.zeta_target * I_eff * joint.wn_target;
-		}
-
-		// Compute RNEA torques for feedforward control
-		mathlib::VecX tau_rnea = SpatialDynamics::RNEA(
-			_spatialModel,
-			q, qd, qdd,
-			_dynScratch
-		); // [Nm]
-		LOG_INFO_ONCE("tau_rnea size = %lld", (long long)tau_rnea.size());
-
-		// Define the derivative function for integration, capturing necessary variables by reference
-		auto f_deriv = [&, kp_frozen, kd_frozen](double t, const mathlib::VecX& xIn) {
-			return _dynamics->derivative_spatial(_spatialModel,
-				t, xIn, snap,
-				_dynScratch, _dynResult
-			);
-		};
-		// Define the Jacobian function for integration, capturing necessary variables by reference
-		auto f_J = [&, kp_frozen, kd_frozen](const mathlib::VecX& xIn, mathlib::MatX& J_out) {
-			_dynamics->jacobian_spatial(_spatialModel,
-				xIn, snap,
-				kp_frozen, kd_frozen,
-				J_out, _dynScratch
-			);
-		};
-		
-		auto step = _integrator->stepODE(_curIntMethod, x, simTime, dt, f_deriv, f_J);
-
-		unpackState(step.x_next);
-		_dynamics->setDt(step.dt_taken);
-
-		Eigen::Map<const VecX> q_next(step.x_next.data(), n);
-		Eigen::Map<const VecX> qd_next(step.x_next.data() + n, n);
-
-		// Enforce joint limits
-		for (auto& j : _robot.joints) { enforceJointLimits(j); }
-
-		// Recompute kinematics and dynamics at the new state for logging and control purposes
-		std::vector<Pose> T_world(snap.model->links.size());
-		_kinematics->computeForwardKinematics_fromState(*snap.model, step.x_next, T_world);
-		std::vector<Pose> jointWorldPoses = _kinematics->calcJointWorldPoses(T_world, *snap.model);
-
-		// Compute spatial kinematics and bias terms for the new state
-		SpatialDynamics::computeSpatialKinematicsAndBias(
-			_spatialModel,
-			q_next, qd_next,
-			_dynScratch.spatial.Xup,
-			_dynScratch.spatial.v, _dynScratch.spatial.c
-		);
-		// Compute mass matrix at the new state
-		MatX M_full = SpatialDynamics::CRBA(
-			_spatialModel,
-			_dynScratch.spatial.Xup,
-			_dynScratch
-		);
-
-		VecX tau_g = _dynamics->computeGravityTorque(*snap.model, T_world, jointWorldPoses);
-
-		// Compute system kinetic energy: E_kin = 0.5 * qd^T * M(q) * qd
-		double sys_KE = 0.5 * qd_next.transpose() * M_full * qd_next; // [J], kinetic energy of the robot at configuration q and velocity qd
-
-		// Compute system potential energy at configuration q (relative to gravity)
-		double sys_PE = 0.0;
-		double g = _dynamics->getGravity();
-
-		for (size_t k = 0; k < _robot.links.size(); ++k) {
-			const RobotLink& link = _robot.links[k];
-			const double m = link.inertial.mass;
-
-			if (m <= 0.0) { continue; }
-
-			Vec3 com_world = 
-				(T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) +
-				T_world[k].block<3, 1>(0, 3);
-
-			sys_PE += m * g * com_world.z();
-		}
-
-		const double sys_E = sys_KE + sys_PE; // total mechanical energy of the system
-
-		// Log metrics to buffer if logging is enabled
-		robots::JointLogBuffer* buf = nullptr;
-
-		// If using internal logging, get the active buffer
-		if (_useInternalLogging) {
-			int idx = _activeLogBufIdx.load(std::memory_order_acquire);
-			buf = &_logBuffers[idx];
-		} else {
-			buf = _logBuffer;
-		}
-
-		if (buf) {
-			for (size_t i = 0; i < n; ++i) {
-				const RobotJoint& j = snap.model->joints[i];
-
-				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : _dynResult.metrics.I_eff[i];
-				const double err = snap.q_ref[i] - q_next[i];
-				const double err_d = snap.qd_ref[i] - qd_next[i];
-
-				JointLogBuffer::JointLogEntry e{};
-
-				e.sim_time = simTime;
-				e.dt_taken = step.dt_taken;
-				e.dt_sug = step.dt_sug;
-				e.theta = q_next[i]; e.omega = qd_next[i]; e.alpha = _dynResult.metrics.qdd[i];
-				e.err = err; e.err_d = err_d;
-				e.I_eff = I_eff;
-				e.tau = _dynResult.metrics.tau[i]; e.tau_ff = tau_rnea[i];  e.tau_gravity = tau_g[i];
-				e.tau_sat = _dynResult.metrics.tau_sat[i]; 
-				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
-				e.clamp_theta = (double)_clampTheta[i]; e.clamp_omega = (double)_clampOmega[i];
-				e.sat_flag = _dynResult.metrics.sat_flag[i]; e.joint_index = (int)i;
-				buf->push_entry(e);
-			}
-		}
+		postStepUpdate(resultCopy.stepOut.x_next, scratchCopy, resultCopy);
 
 		// Update base pose if free-floating
 		if (_baseIsFree) {
@@ -469,7 +352,7 @@ namespace robots {
 		// Sample trajectories ("ground truth" inputs)
 		for (size_t i = 0; i < n; ++i) {
 			RobotJoint& j = _robot.joints[i];
-			control::TrajState s{};
+			control::TrajState<double> s{};
 			// Try to evaluate trajectory
 			if (traj.tryEval(std::string(j.child), t, s)) {
 				j.q_ref    = clampJointAngle(j, s.q); // set ref angle
@@ -564,9 +447,6 @@ namespace robots {
 		buildSpatialModel();
 		_hasRobot = true;
 
-		_dynScratch.resize(n, m);
-		_dynResult.resize(n);
-
 		resetRobot();
 
 		LOG_INFO("Loaded robot model -> %s", name.c_str());
@@ -575,7 +455,7 @@ namespace robots {
 
 	// Method to reset the robot to its home position
 	void RobotSystem::resetRobot() {
-		if (!_hasRobot || !_robotHomeValid) { return; }
+		if (!_hasRobot || !_robotHomeValid) { LOG_ERROR("Reset aborterd."); return; }
 		_robotRootPose = _robotRootHome;
 		_robot.setJointVector(_robotQHome);
 
@@ -596,8 +476,18 @@ namespace robots {
 		_baseYawRate = 0.0;
 		_baseYawAcc = 0.0;
 
+		_dynScratch.clear();
+		_dynScratch_AD.clear();
+
+		_dynResult.resize(0);
+		_dynResult_AD.resize(0);
+
 		_dynScratch.resize(_robot.joints.size(), _robot.links.size());
+		_dynScratch_AD.resize(_robot.joints.size(), _robot.links.size());
 		_dynResult.resize(_robot.joints.size());
+		_dynResult_AD.resize(_robot.joints.size());
+
+		_dynScratch.g.setConstant(_gravity);
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
@@ -617,6 +507,17 @@ namespace robots {
 
 	integration::IntegrationService* RobotSystem::getIntegrator() { return _integrator.get(); }
 	const integration::IntegrationService* RobotSystem::getIntegrator() const { return _integrator.get(); }
+
+	integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() { return _AD_integrator.get(); }
+	const integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() const { return _AD_integrator.get(); }
+
+	std::shared_ptr<integration::IntegratorState> RobotSystem::runtimeIntegratorState() {
+		return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState();
+	}
+
+	std::shared_ptr<const integration::IntegratorState> RobotSystem::runtimeIntegratorState() const {
+		return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState();
+	}
 
 	// --- ROBOT KINEMATICS AND JOINT STATE METHODS ---
 
@@ -988,9 +889,7 @@ namespace robots {
 	double RobotSystem::computeForwardDrive() const {
 		double drive = 0.0;
 		for (const auto& j : _robot.joints) {
-			if (j.name.find("hip_pitch") != std::string::npos) {
-				drive += -j.qd;
-			}
+			if (j.name.find("hip_pitch") != std::string::npos) { drive += -j.qd; }
 		}
 		return drive;
 	}
@@ -1019,12 +918,8 @@ namespace robots {
 		_baseVel += _baseAcc * dt;
 		_basePos += _baseVel * dt;
 
-		LOG_INFO_ONCE("hipL=%.3f hipR=%.3f gaitPhase=%.3f",
-			hipL, hipR, hipR - hipL
-		);
-		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)",
-			_baseVel.x(), _baseVel.y(), _baseVel.z()
-		);
+		LOG_INFO_ONCE("hipL=%.3f hipR=%.3f gaitPhase=%.3f", hipL, hipR, hipR - hipL);
+		LOG_INFO_ONCE("baseVel = (%.3f, %.3f, %.3f)", _baseVel.x(), _baseVel.y(), _baseVel.z());
 	}
 
 	// Method to update the robot root pose based on the integrated base translation (for legged robots)

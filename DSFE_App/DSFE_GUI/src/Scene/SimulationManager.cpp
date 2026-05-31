@@ -1392,6 +1392,20 @@ namespace gui {
 	core::SimulationCore* SimManager::simCore() { return _core.get(); }
 	const core::SimulationCore* SimManager::simCore() const { return _core.get(); }
 
+	// Set the integrator method for the current simulation run
+	void SimManager::setIntegrationMethod(integration::eIntegrationMethod method) {
+		_core->setIntegrationMethod(method);
+	}
+	const integration::eIntegrationMethod SimManager::integrationMethod() const {
+		return _core->integrationMethod();
+	}
+	void SimManager::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+		_core->setADIntegrationMethod(method);
+	}
+	const integration::eAutoDiffIntegrationMethod SimManager::autoDiffIntegrationMethod() const {
+		return _core->autoDiffIntegrationMethod();
+	}
+
 	// Helper to replace the integrator method in the script text
 	// A hacky approach my idea, but it works for me and honestly im starting to write up the dissertation so IT WILL DO :)
 	// PS:If anyone has any better solution msg me

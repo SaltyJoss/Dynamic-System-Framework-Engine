@@ -3,6 +3,7 @@
 
 #include "EngineCore.h"
 #include "Robots/RobotModel.h"
+#include <core/Types_tpl.h>
 
 namespace robots {
 	// Immutable robot data needed by solver threads
@@ -22,24 +23,59 @@ namespace robots {
 	};
 
 	// Runtime snapshot for one integration/derivative step
-	struct DSFE_API RobotSimSnapshot {
+	template<typename Scalar>
+	struct RobotSimSnapshot_T {
+
 		const RobotConstModel* model = nullptr;
 
-		mathlib::VecX q;   // joint angles
-		mathlib::VecX qd;  // joint velocities
+		mathlib::VecX_T<Scalar> q;   // joint angles
+		mathlib::VecX_T<Scalar> qd;  // joint velocities
 
-		mathlib::VecX q_ref;   // reference joint angles
-		mathlib::VecX qd_ref;  // reference joint velocities
-		mathlib::VecX qdd_ref; // reference joint accelerations
+		mathlib::VecX_T<Scalar> q_ref;   // reference joint angles
+		mathlib::VecX_T<Scalar> qd_ref;  // reference joint velocities
+		mathlib::VecX_T<Scalar> qdd_ref; // reference joint accelerations
 
-		mathlib::Mat4 robotRootPose = mathlib::Mat4::Identity();
+		mathlib::Mat4_T<Scalar> robotRootPose = mathlib::Mat4_T<Scalar>::Identity();
 
 		bool baseIsFree = false;
-		double lastBaseForwardForce = 0.0;
-		double gravity = 0.0;
+
+		Scalar lastBaseForwardForce = Scalar(0);
+		Scalar gravity = Scalar(0);
 
 		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
-		double dt = 0.0;
-		double simTime = 0.0; // simulation time in seconds
+
+		Scalar dt = Scalar(0);
+		Scalar simTime = Scalar(0);
 	};
+	using RobotSimSnapshot = RobotSimSnapshot_T<double>;
+
+	template<typename ToScalar, typename FromScalar>
+	inline RobotSimSnapshot_T<ToScalar> castSnapshot(
+		const RobotSimSnapshot_T<FromScalar>& src
+	) {
+		RobotSimSnapshot_T<ToScalar> dst;
+
+		dst.model = src.model;
+
+		dst.q = src.q.template cast<ToScalar>();
+		dst.qd = src.qd.template cast<ToScalar>();
+
+		dst.q_ref = src.q_ref.template cast<ToScalar>();
+		dst.qd_ref = src.qd_ref.template cast<ToScalar>();
+		dst.qdd_ref = src.qdd_ref.template cast<ToScalar>();
+
+		dst.robotRootPose = src.robotRootPose.template cast<ToScalar>();
+
+		dst.baseIsFree = src.baseIsFree;
+
+		dst.lastBaseForwardForce = ToScalar(src.lastBaseForwardForce);
+		dst.gravity = ToScalar(src.gravity);
+
+		dst.torqueMode = src.torqueMode;
+
+		dst.dt = ToScalar(src.dt);
+		dst.simTime = ToScalar(src.simTime);
+
+		return dst;
+	}
 } // namespace robots

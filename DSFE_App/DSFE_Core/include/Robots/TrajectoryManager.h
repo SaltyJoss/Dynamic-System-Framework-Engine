@@ -5,8 +5,7 @@
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
+#include <core/MathLib.h>
 #include <Control/IJointTrajectory.h>
 
 namespace robots { class DSFE_API RobotSystem; }
@@ -34,7 +33,7 @@ namespace control {
 		bool empty() const { return _active.empty(); }
 
 		//
-		bool tryEval(const std::string& link, double t, control::TrajState& out) const;
+		bool tryEval(const std::string& link, double t, control::TrajState<double>& out) const;
 		// Check if a trajectory is active for a specific robot link
 		bool hasActive(const std::string& link) const;
 

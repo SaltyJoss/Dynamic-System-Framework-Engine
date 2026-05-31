@@ -243,6 +243,12 @@ namespace gui {
 		core::SimulationCore* simCore();
 		const core::SimulationCore* simCore() const;
 
+        // Setters for Integration state / method
+		void setIntegrationMethod(integration::eIntegrationMethod method);
+		const integration::eIntegrationMethod integrationMethod() const;
+        void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
+		const integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const;
+
 		// Access to the underlying StudyRunner for running batch studies from the GUI
 		StudyRunner* studyRunner() { return _studyRunner.get(); }
 

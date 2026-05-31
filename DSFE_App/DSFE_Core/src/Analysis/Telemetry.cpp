@@ -49,7 +49,7 @@ namespace diagnostics {
 
 			// Clamping flags
 			jt.clampTheta = (j.q <= j.limits.minAngle) || (j.q >= j.limits.maxAngle);
-			jt.clampOmega = (std::abs(j.qd) >= j.limits.maxqd);
+			jt.clampOmega = (mathlib::abs<double>(j.qd) >= j.limits.maxqd);
 
 			// Accumulate clamping events
 			clampThetaSum += (int)jt.clampTheta;
@@ -58,7 +58,7 @@ namespace diagnostics {
 
 			// Trajectory data
 			if (trajOpt) {
-				control::TrajState ts{};
+				control::TrajState<double> ts{};
 				if (trajOpt->tryEval(std::string(j.child), t, ts)) {
 					jt.traj_q   = ts.q;
 					jt.traj_qd  = ts.qd;
@@ -79,7 +79,7 @@ namespace diagnostics {
 		}
 
 		// Error statistics
-		s.err_rms	  = (n > 0) ? std::sqrt(sum_e2 / (double)n) : 0.0f; // RMS error
+		s.err_rms	  = (n > 0) ? mathlib::sqrt<double>(sum_e2 / (double)n) : 0.0f; // RMS error
 		s.err_max	  = max_abs_e;	   // max error
 		s.clamp_theta = clampThetaSum; // total angle clamping events
 		s.clamp_omega = clampOmegaSum; // total velocity clamping events

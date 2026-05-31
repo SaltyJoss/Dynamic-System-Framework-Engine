@@ -203,14 +203,15 @@ namespace gui {
 
 	// --- ControlPanel Implementation ---
 
-    ControlPanel::ControlPanel(SimManager* sim) :
+	ControlPanel::ControlPanel(SimManager* sim) :
 		_sim(sim), _controlMode(&sim->ctrlMode), _obj(nullptr), _light(nullptr),
 		r(render::ResolutionPreset::R_1080p), q(render::QualityPreset::Medium),
-        _meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
-        _hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal)
+		_meshLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+		_hdrLoad(ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_NoModal),
+		_useAutoDiff(false)
     {
-		diagTime = 0.0f; // initialize diagnostic time
-		simTime = 0.0f;  // initialize simulation time
+		diagTime = 0.0f; // initialise diagnostic time
+		simTime = 0.0f;  // initialise simulation time
 
         diagRunning = false;
 		simulationRunning = false;
@@ -419,11 +420,15 @@ namespace gui {
 		ImGui::SectionDivider();
 
 		robots::RobotSystem* robot = _sim->robotSystem();
-        auto currentIntEnum = robot->getIntegrationMethod();
+		auto currentIntEnum = _sim->integrationMethod();
+		auto currentIntEnum_AD = _sim->autoDiffIntegrationMethod();
 		auto currentTauEnum = robot->getTorqueMode();
 
 		static const char* intMethodNames[] = { "Euler", "Midpoint", "Heun", "Ralston", "RK4", "RK45", "Implicit Euler", "Implicit Midpoint", "GLRK2", "GLRK3" };
         const char* currentIntMethod = intMethodNames[static_cast<int>(currentIntEnum)];
+
+		static const char* intMethodNames_AD[] = { "Implicit Euler (AutoDiff)", "Implicit Midpoint (AutoDiff)", "GLRK2 (AutoDiff)", "GLRK3 (AutoDiff)" };
+		const char* currentIntMethod_AD = intMethodNames_AD[static_cast<int>(currentIntEnum_AD)];
 
 		static const char* torqueModeNames[] = { "None", "Passive", "Controlled" };
 		const char* currentTorqueMode = torqueModeNames[static_cast<int>(currentTauEnum)];
@@ -431,76 +436,115 @@ namespace gui {
         
 		// Disable controls while sim is running to prevent conflicts and ensure stability of the simulations
 		ImGui::BeginDisabled(_sim->isSimRunning());
-
+		
 		// Integration method combo box
-		ImGui::SectionHeader("Integration Method");
+		ImGui::SectionHeader("Integration Methods");
+
 		ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##", currentIntMethod)) {
-            for (int n = 0; n < IM_ARRAYSIZE(intMethodNames); ++n) {
-                bool isSelected = (n == static_cast<int>(currentIntEnum));
+		ImGui::Checkbox("Enable Automatic Differentiable Integrators", &_useAutoDiff);
+		robot->enableAutoDiff(_useAutoDiff);
 
-				// When a new method is selected, update the robot's integration method and log the change
-                if (ImGui::Selectable(intMethodNames[n], isSelected)) {
-                    auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
-                    robot->setIntegrationMethod(updatedMethod);
-
-                    switch (updatedMethod) {
-                    case integration::eIntegrationMethod::Euler:
-                        D_INFO("Integrator set to Euler"); break;
-                    case integration::eIntegrationMethod::Midpoint:
-                        D_INFO("Integrator set to RK2 (Midpoint)"); break;
-                    case integration::eIntegrationMethod::Heun:
-                        D_INFO("Integrator set to RK2 (Heun)"); break;
-                    case integration::eIntegrationMethod::Ralston:
-                        D_INFO("Integrator set to RK2 (Ralston)"); break;
-                    case integration::eIntegrationMethod::RK4:
-                        D_INFO("Integrator set to RK4"); break;
-                    case integration::eIntegrationMethod::RK45:
-						D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
-					case integration::eIntegrationMethod::ImplicitEuler:
-						D_INFO("Integrator set to Implicit Euler"); break;
-					case integration::eIntegrationMethod::ImplicitMidpoint:
-						D_INFO("Integrator set to Implicit Midpoint"); break;
-					case integration::eIntegrationMethod::GLRK2:
-						D_INFO("Integrator set to GLRK2 (Gauss-Legendre Runge-Kutta 2-stage)"); break;
-					case integration::eIntegrationMethod::GLRK3:
-						D_INFO("Integrator set to GLRK3 (Gauss-Legendre Runge-Kutta 3-stage)"); break;
-                    default:
-                        break;
-                    }
-                }
-                if (isSelected) { ImGui::SetItemDefaultFocus(); }
-            }
-            ImGui::EndCombo();
-        }
-
-		// Torque mode combo box
-		ImGui::SectionHeader("Torque Mode");
 		ImGui::SetNextItemWidth(150.0f);
-		if (ImGui::BeginCombo("##tau_mode", currentTorqueMode)) {
-			for (int n = 0; n < IM_ARRAYSIZE(torqueModeNames); ++n) {
-				bool isSelected = (n == static_cast<int>(currentTauEnum));
+		if (_useAutoDiff) {
+			if (ImGui::BeginCombo("##", currentIntMethod_AD)) {
+				for (int n = 0; n < IM_ARRAYSIZE(intMethodNames_AD); ++n) {
+					bool isSelected = (n == static_cast<int>(currentIntEnum_AD));
 
-				// When a new mode is selected, update the robot's torque mode and log the change
-				if (ImGui::Selectable(torqueModeNames[n], isSelected)) {
-					auto updatedMode = static_cast<robots::eTorqueMode>(n);
-					robot->setTorqueMode(updatedMode);
+					// When a new method is selected, update the robot's integration method and log the change
+					if (ImGui::Selectable(intMethodNames_AD[n], isSelected)) {
+						auto updatedMethod_AD = static_cast<integration::eAutoDiffIntegrationMethod>(n);
+						auto state = robot->runtimeIntegratorState();
+						state->autoDiff = true; // ensure autodiff flag is set in state
+						_sim->setADIntegrationMethod(updatedMethod_AD);
 
-					switch (updatedMode) {
-					case robots::eTorqueMode::NONE:
-						D_INFO("Torque mode set to None"); break;
-					case robots::eTorqueMode::PASSIVE:
-						D_INFO("Torque mode set to Passive"); break;
-					case robots::eTorqueMode::CONTROLLED:
-						D_INFO("Torque mode set to Controlled"); break;
-					default:
-						break;
+						switch (updatedMethod_AD) {
+							case integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler:
+							D_INFO("Integrator set to Implicit Euler (AutoDiff)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_ImplicitMidpoint:
+							D_INFO("Integrator set to Implicit Midpoint (AutoDiff)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_GLRK2:
+							D_INFO("Integrator set to GLRK2 (AutoDiff Gauss-Legendre Runge-Kutta 2-stage)"); break;
+							case integration::eAutoDiffIntegrationMethod::AD_GLRK3:
+							D_INFO("Integrator set to GLRK3 (AutoDiff Gauss-Legendre Runge-Kutta 3-stage)"); break;
+							default:
+							break;
+						}
 					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
 				}
-				if (isSelected) { ImGui::SetItemDefaultFocus(); }
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
 		}
+		else {
+			if (ImGui::BeginCombo("##", currentIntMethod)) {
+				for (int n = 0; n < IM_ARRAYSIZE(intMethodNames); ++n) {
+					bool isSelected = (n == static_cast<int>(currentIntEnum));
+
+					// When a new method is selected, update the robot's integration method and log the change
+					if (ImGui::Selectable(intMethodNames[n], isSelected)) {
+						auto updatedMethod = static_cast<integration::eIntegrationMethod>(n);
+						const auto state = robot->runtimeIntegratorState();
+						state->autoDiff = false; // ensure autodiff flag is set in state
+						_sim->setIntegrationMethod(updatedMethod);
+
+						switch (updatedMethod) {
+							case integration::eIntegrationMethod::Euler:
+							D_INFO("Integrator set to Euler"); break;
+							case integration::eIntegrationMethod::Midpoint:
+							D_INFO("Integrator set to RK2 (Midpoint)"); break;
+							case integration::eIntegrationMethod::Heun:
+							D_INFO("Integrator set to RK2 (Heun)"); break;
+							case integration::eIntegrationMethod::Ralston:
+							D_INFO("Integrator set to RK2 (Ralston)"); break;
+							case integration::eIntegrationMethod::RK4:
+							D_INFO("Integrator set to RK4"); break;
+							case integration::eIntegrationMethod::RK45:
+							D_INFO("Integrator set to RK45 (Dormand-Prince)"); break;
+							case integration::eIntegrationMethod::ImplicitEuler:
+							D_INFO("Integrator set to Implicit Euler"); break;
+							case integration::eIntegrationMethod::ImplicitMidpoint:
+							D_INFO("Integrator set to Implicit Midpoint"); break;
+							case integration::eIntegrationMethod::GLRK2:
+							D_INFO("Integrator set to GLRK2 (Gauss-Legendre Runge-Kutta 2-stage)"); break;
+							case integration::eIntegrationMethod::GLRK3:
+							D_INFO("Integrator set to GLRK3 (Gauss-Legendre Runge-Kutta 3-stage)"); break;
+							default:
+							break;
+						}
+					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		//// Torque mode combo box
+		//ImGui::SectionHeader("Torque Mode");
+		//ImGui::SetNextItemWidth(150.0f);
+		//if (ImGui::BeginCombo("##tau_mode", currentTorqueMode)) {
+		//	for (int n = 0; n < IM_ARRAYSIZE(torqueModeNames); ++n) {
+		//		bool isSelected = (n == static_cast<int>(currentTauEnum));
+
+		//		// When a new mode is selected, update the robot's torque mode and log the change
+		//		if (ImGui::Selectable(torqueModeNames[n], isSelected)) {
+		//			auto updatedMode = static_cast<robots::eTorqueMode>(n);
+		//			robot->setTorqueMode(updatedMode);
+
+		//			switch (updatedMode) {
+		//			case robots::eTorqueMode::NONE:
+		//				D_INFO("Torque mode set to None"); break;
+		//			case robots::eTorqueMode::PASSIVE:
+		//				D_INFO("Torque mode set to Passive"); break;
+		//			case robots::eTorqueMode::CONTROLLED:
+		//				D_INFO("Torque mode set to Controlled"); break;
+		//			default:
+		//				break;
+		//			}
+		//		}
+		//		if (isSelected) { ImGui::SetItemDefaultFocus(); }
+		//	}
+		//	ImGui::EndCombo();
+		//}
 		ImGui::EndDisabled();
 
 		// Delta time controls
@@ -674,15 +718,11 @@ namespace gui {
         ImGui::BeginDisabled(_sim->isSimRunning());
 
         ImGui::Text("Joint Dynamics:");
-		// Damping controls
-        ImGui::Text("Damping:");
+		// Damping display (just displays current val from model)
         ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::DragFloat("kg/s##damp", &c, 0.001f, minDamping, maxDamping)) { j.dynamics.damping = c; }
-        ImGui::Spacing();
-		// Friction controls
-        ImGui::Text("Friction:");
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::DragFloat("##fric", &f, 0.001f, minFriction, maxFriction)) { j.dynamics.friction = f; }
+		ImGui::TextDisabled("Damping: %.3f", c);
+		ImGui::SetNextItemWidth(150.0f);
+		ImGui::TextDisabled("Friction: %.3f", f);
         ImGui::Spacing();
 
 		// Gravity controls with preset menu
@@ -710,6 +750,9 @@ namespace gui {
 		// Draw telemetry inspector for the selected joint, showing its state over time
 		drawTrajectoryInspector(rec, (int)robot->joints().size(), _selection.index);
 		ImGui::TextDisabled("Selected Joint: %s - Child Link: %s", j.name.c_str(), L.name.c_str());
+		ImGui::Spacing();
+		ImGui::Text("Joint (1-%d) Errors:", (int)robot->joints().size());
+		drawJointErrorPlot();
 		ImGui::Spacing();
 		// Reset joint properties to initial conditions
 		ImGui::Spacing();
@@ -1236,6 +1279,53 @@ namespace gui {
 		}
 	}
 
+	void ControlPanel::drawJointErrorPlot() {
+		// Get the latest telemetry record
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+
+		if (ring.size() < 2) { ImGui::TextUnformatted("No telemetry data yet."); return; }
+
+		const auto& last = ring.at(ring.size() - 1);
+
+		static std::vector<float> rX;
+		static std::vector<std::vector<float>> rY;
+
+		const size_t sampleCount = ring.size();
+		const size_t jointCount = last.j.size();
+
+		rX.resize(sampleCount);
+
+		if (rY.size() != jointCount) { rY.resize(jointCount); }
+		for (size_t j = 0; j < jointCount; ++j) { rY[j].resize(sampleCount); }
+
+		for (int k = 0; k < sampleCount; ++k) {
+			const auto& s = ring.at(k);
+			rX[k] = (float)s.timeSec;
+
+			const size_t m = std::min(jointCount, s.j.size());
+			for (size_t j = 0; j < m; ++j) {
+				rY[j][k] = (float)(s.j[j].q_ref - s.j[j].q);
+			}
+			for (size_t j = m; j < jointCount; ++j) {
+				rY[j][k] = 0.0f;
+			}
+		}
+
+		// --- Joint Error Overlay ---
+		const ImVec2 plotSz(ImGui::GetContentRegionAvail().x, 250.0f);
+		if (ImPlot::BeginPlot("Joint Error Overlay##results", plotSz)) {
+			ImPlot::SetupAxes("t (s)", "e (rad)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
+			for (size_t j = 0; j < jointCount; ++j) {
+				char label[16];
+				snprintf(label, sizeof(label), "J%02d", (int)j);
+				ImPlot::PlotLine(label, rX.data(), rY[j].data(), (int)sampleCount);
+			}
+			ImPlot::EndPlot();
+		}
+	}
+
 	// --- CSV Export ---
 
 	// Export telemetry data to CSV for external analysis (e.g. Python, Excel)
@@ -1642,7 +1732,7 @@ namespace gui {
 			ImGui::TextDisabled("  Robot: %s", _requestedRobot.c_str());
 		}
 
-		const auto& last = ring.at(ring.size() - 1);
+		const auto& last = ring.at(ring.size() - 1); // get the latest sample for summary info
 
 		ImGui::TextDisabled("Total Time: %.3f s  |  Samples: %d", last.timeSec, (int)ring.size());
 		ImGui::Separator();

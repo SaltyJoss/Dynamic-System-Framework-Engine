@@ -1,7 +1,6 @@
 #pragma once
 
-#include "MathLibAPI.h"
-#include "core/Types.h"
+#include <core/MathLib.h>
 
 using namespace mathlib;
 
@@ -15,7 +14,7 @@ namespace kinematics {
 		FLOATING,
 		PLANAR
 	};
-	// URDF Link Collision Shape Types
+	// URDF Link Collision Shape Types (May remove now, but Ill leave until full refactor is done)
 	enum class CollisionShapeType_URDF {
 		BOX,
 		CYLINDER,
@@ -23,12 +22,13 @@ namespace kinematics {
 		MESH
 	};
 	// URDF Joint Structure
+	template<typename Scalar>
 	struct JointURDF {
-		Vec3 origin_xyz;			// joint origin translation
-		Mat3 origin_R;				// joint origin rotation
-		Vec3 axis;					// joint axis
-		JointType_URDF type;        // Revolute / Prismatic / ...	
-		bool axixInJointFrame;   // true for "axis_frame":"joint"
+		Vec3_T<Scalar> origin_xyz; // joint origin translation
+		Mat3_T<Scalar> origin_R;   // joint origin rotation
+		Vec3_T<Scalar> axis;	   // joint axis
+		JointType_URDF type;   // Revolute / Prismatic / ...
+		bool axixInJointFrame; // true for "axis_frame":"joint"
 	};
 
 }

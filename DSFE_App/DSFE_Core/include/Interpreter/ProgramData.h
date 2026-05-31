@@ -49,7 +49,11 @@ namespace program_data {
 		ImplicitEuler,
 		ImplicitMidpoint,
 		GLRK2,
-		GLRK3
+		GLRK3,
+		AD_ImplicitEuler,
+		AD_ImplicitMidpoint,
+		AD_GLRK2,
+		AD_GLRK3
 	};
 
 	// Enum for preset colours

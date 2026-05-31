@@ -265,8 +265,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 4.0,
+                "zeta_target": 0.8
             }
         },
 
@@ -287,8 +289,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 4.0,
+                "zeta_target": 0.8
             }
         },
 
@@ -309,8 +313,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 2.5,
+                "zeta_target": 1.0
             }
         },
 
@@ -331,8 +337,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 2.5,
+                "zeta_target": 1.0
             }
         },
 
@@ -353,8 +361,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 1.5,
+                "zeta_target": 1.3
             }
         },
 
@@ -375,8 +385,10 @@
                 "effort": 50
             },
             "dynamics": {
-                "damping": 0.0,
-                "friction": 0.0
+                "damping": 0.2,
+                "friction": 0.05,
+                "wn_target": 1.5,
+                "zeta_target": 1.3
             }
         }
     ]

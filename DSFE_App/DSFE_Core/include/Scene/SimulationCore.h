@@ -11,9 +11,7 @@
 
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
-
-#include <memory>
-#include <string>
+#include "Numerics/IntegratorState.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
@@ -22,16 +20,15 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations
-namespace integration { enum class eIntegrationMethod; }
 namespace control	  { class TrajectoryManager; }
 namespace robots	  { class RobotSystem; }
 namespace interpreter { class IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
-	constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
-	constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
-	constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
+	inline constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
+	inline constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
+	inline constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
 
 	class DSFE_API SimulationCore : public ISimulationCore {
 	public:
@@ -69,8 +66,12 @@ namespace core {
 		// Integrator
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
+		void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
+		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
+		void enableAutoDiff(bool enable) override;
+
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
@@ -134,6 +135,7 @@ namespace core {
 	private:
 		// Export thread management
 		void exportThreadMain();
+		void scriptParallelisation(interpreter::IStoredProgram* program);
 
 		std::thread _expThread;
 		std::mutex _expMutex;

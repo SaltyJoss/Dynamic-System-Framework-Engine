@@ -151,7 +151,12 @@ namespace interpreter {
 			if (_core->hasRobot()) {
 				robots::RobotSystem* robot = _core->robotSystem();
 				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
-				robot->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
+				if (method == IntegratorMethod::AD_ImplicitEuler || method == IntegratorMethod::AD_ImplicitMidpoint || method == IntegratorMethod::AD_GLRK2 || method == IntegratorMethod::AD_GLRK3) {
+					_core->setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(method));
+				}
+				else {
+					_core->setIntegrationMethod(static_cast<integration::eIntegrationMethod>(method));
+				}
 			}
 		}
 	}

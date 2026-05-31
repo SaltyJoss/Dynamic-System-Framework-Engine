@@ -141,6 +141,7 @@ namespace gui {
 		void selectJointAndFollow(int jointIndex);
 		//void drawTelemetryPlots(const diagnostics::TelemetryRecorder& rec);
 		void drawTrajectoryInspector(const diagnostics::TelemetryRecorder& rec, int jointCount, int& selectedJoint);
+		void drawJointErrorPlot();
 
 		// Results Methods
 		void drawResultsWindow();
@@ -160,6 +161,7 @@ namespace gui {
 		bool _showDisplaySettings = false;
         bool autoScroll = true;
         bool scrollToBottom = false;
+        bool _useAutoDiff = false;
 
 		// Render Presets
         render::ResolutionPreset r;
