@@ -315,7 +315,7 @@ namespace robots {
 		joint.dynamics.damping = 0.0;
 		joint.dynamics.friction = 0.0;
 
-		if (!jointData.contains("dynamics") || !jointData["dynamics"].is_object()) { return; }
+		if (!jointData.contains("dynamics") || !jointData["dynamics"].is_object()) { LOG_ERROR("Could not find joint dynamic data"); return; }
 
 		const auto& D = jointData["dynamics"];
 		joint.dynamics.damping = D.value("damping", joint.dynamics.damping);
@@ -450,8 +450,8 @@ namespace robots {
 				joint.type = eJointType::FIXED;
 				joint.axis = Vec3::Zero();
 				joint.limits.continuous = false;
-				joint.limits.minAngle = 0.0f;
-				joint.limits.maxAngle = 0.0f;
+				joint.limits.minAngle = 0.0;
+				joint.limits.maxAngle = 0.0;
 			}
 			else {
 				parseJointAxis(jointData, joint);
@@ -475,16 +475,16 @@ namespace robots {
 			}
 
 			if (abs(joint.limits.minAngle) == abs(joint.limits.maxAngle) && !joint.limits.continuous) {
-				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
-				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
 			}
 			else {
-				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
-				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f | Dampling: % .2f, | Friction : % .2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);;
 			}
 		}
 

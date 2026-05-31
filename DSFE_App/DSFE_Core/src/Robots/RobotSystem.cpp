@@ -492,11 +492,6 @@ namespace robots {
 
 		_dynScratch.g.setConstant(_gravity);
 
-		LOG_INFO("dynScratch=%p", &_dynScratch);
-		LOG_INFO("dynScratchAD=%p", &_dynScratch_AD);
-		LOG_INFO("M rows=%d cols=%d", (int)_dynScratch.dense.M.rows(), (int)_dynScratch.dense.M.cols());
-		LOG_INFO("Xup size=%d", (int)_dynScratch.spatial.Xup.size());
-
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
 
