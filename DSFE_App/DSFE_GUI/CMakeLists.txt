@@ -40,6 +40,8 @@ target_include_directories(stb INTERFACE
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
+    src/MainWindow/DockWidgets/ViewportDock.cpp
+    src/MainWindow/Widgets/ViewportWidget.cpp
 )
 
 set(RENDER_SRC

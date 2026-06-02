@@ -57,7 +57,7 @@ Application::Application(const std::string& appName) {
 		int argc = 0;
 		gQtApp = new QApplication(argc, nullptr);
 		gQtWindow = new window::DSFE_MainWindow();
-		gQtWindow->show();`
+		gQtWindow->show();
 	}
 
 	_window = std::make_unique<window::GLWindow>();

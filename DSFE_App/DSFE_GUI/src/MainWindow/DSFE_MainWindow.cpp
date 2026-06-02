@@ -7,6 +7,8 @@ namespace window {
 		setWindowTitle("DSFE");
 		resize(800, 600);
 
-		setCentralWidget(new Workspace::ProjectPage(this));
+		auto* page = new Workspace::ProjectPage(this);
+		setCentralWidget(page);
+		page->show();
 	}
 } // namespace window
