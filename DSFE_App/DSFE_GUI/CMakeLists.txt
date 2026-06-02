@@ -39,6 +39,7 @@ target_include_directories(stb INTERFACE
 
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
+    src/MainWindow/Workspace/ProjectPage.cpp
 )
 
 set(RENDER_SRC
@@ -128,6 +129,7 @@ target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
 
     PRIVATE
         ${imfilebrowser_ROOT}
