@@ -4,10 +4,21 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 cmake_minimum_required(VERSION 3.10)
 project(DSFE_GUI LANGUAGES C CXX)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_PREFIX_PATH "C:/Qt/6.11.1/msvc2022_64")
+
 add_library(DSFE_GUI SHARED)
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core
+    Gui
+    Widgets
+    OpenGLWidgets
+)
 
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
@@ -133,4 +144,8 @@ target_link_libraries(DSFE_GUI
         glm::glm
         imgui
         OpenGL::GL
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::OpenGLWidgets
 )
