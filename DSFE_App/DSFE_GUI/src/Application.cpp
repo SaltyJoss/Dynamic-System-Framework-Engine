@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include "Platform/WindowManager.h"
+#include "MainWindow/DSFE_MainWindow.h"
 #include "Scene/Camera.h"
 
 #ifdef __gl_h_
@@ -22,7 +23,7 @@ namespace fs = std::filesystem;
 Application* Application::sInstance = nullptr;
 
 static QApplication* gQtApp = nullptr;
-static QMainWindow* gQtWindow = nullptr;
+static window::DSFE_MainWindow* gQtWindow = nullptr;
 
 // Constructor: Initialises paths, sets up data manager, and creates the main application window
 Application::Application(const std::string& appName) {
@@ -55,11 +56,8 @@ Application::Application(const std::string& appName) {
 		QCoreApplication::addLibraryPath("C:/Qt/6.11.1/msvc2022_64/plugins");
 		int argc = 0;
 		gQtApp = new QApplication(argc, nullptr);
-		gQtWindow = new QMainWindow();
-		gQtWindow->setWindowTitle(QString::fromStdString(appName));
-		gQtWindow->resize(800, 600);
-		gQtWindow->show();
-		LOG_INFO("Qt application and main window created with title '%s'", appName.c_str());
+		gQtWindow = new window::DSFE_MainWindow();
+		gQtWindow->show();`
 	}
 
 	_window = std::make_unique<window::GLWindow>();

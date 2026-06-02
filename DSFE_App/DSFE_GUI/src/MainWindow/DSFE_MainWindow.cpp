@@ -3,7 +3,7 @@
 
 namespace window {
 	DSFE_MainWindow::DSFE_MainWindow(QWidget* parent) : QMainWindow(parent) {
-		setWindowTitle("DSFE Simulator");
+		setWindowTitle("DSFE");
 		resize(800, 600);
 	}
 }
