@@ -53,7 +53,6 @@ Application::Application(const std::string& appName) {
 
 	if (!gQtApp) {
 		QCoreApplication::addLibraryPath("C:/Qt/6.11.1/msvc2022_64/plugins");
-		qputenv("QT_DEBUG_PLUGINS", "1");
 		int argc = 0;
 		gQtApp = new QApplication(argc, nullptr);
 		gQtWindow = new QMainWindow();

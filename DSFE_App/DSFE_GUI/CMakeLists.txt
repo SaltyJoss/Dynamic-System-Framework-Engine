@@ -37,6 +37,10 @@ target_include_directories(stb INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+set(MAIN_WINDOW_SRC
+    src/MainWindow/DSFE_MainWindow.cpp
+)
+
 set(RENDER_SRC
     src/Rendering/CubeVertices.cpp
     src/Rendering/GUIContext.cpp
@@ -82,6 +86,7 @@ set(ASSETS_SRC
 )
 
 target_sources(DSFE_GUI PRIVATE
+    ${MAIN_WINDOW_SRC}
     ${RENDER_SRC}
     ${SCENE_SRC}
     ${UI_SRC}
