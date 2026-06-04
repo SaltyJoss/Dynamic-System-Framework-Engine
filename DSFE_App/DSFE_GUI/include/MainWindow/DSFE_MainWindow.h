@@ -3,9 +3,11 @@
 
 #include <QMainWindow>
 
+namespace gui { class SimManager; }
+
 namespace window {
 	class DSFE_MainWindow : public QMainWindow {
 	public:
-		explicit DSFE_MainWindow(QWidget* parent = nullptr);
+		explicit DSFE_MainWindow(gui::SimManager* sim, QWidget* parent = nullptr);
 	};
 }

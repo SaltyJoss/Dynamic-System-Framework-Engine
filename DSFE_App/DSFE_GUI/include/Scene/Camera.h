@@ -138,6 +138,14 @@ namespace scene {
 		void setMinDistance(float d) { _minDistance = glm::max(0.05f, d); }
 
 	private:
+		enum class eKeyCode {
+			W, A, S, D,
+			LShift, Ctrl,
+			Space,
+			Tab,
+			Unknown
+		};
+
 		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
 		void updateProjectionMatrix() {
 			if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }

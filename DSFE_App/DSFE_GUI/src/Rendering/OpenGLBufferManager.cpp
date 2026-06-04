@@ -242,11 +242,10 @@ namespace render {
 		// CRITICAL: reset ALL framebuffer targets, not just GL_FRAMEBUFFER
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		// Restore default backbuffer state
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
+		//// Restore default backbuffer state
+		//glDrawBuffer(GL_BACK);
+		//glReadBuffer(GL_BACK);
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
@@ -256,8 +255,8 @@ namespace render {
 	void OpenGLFrameBuffer::endSetup() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
+		//glDrawBuffer(GL_BACK);
+		//glReadBuffer(GL_BACK);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
 	}

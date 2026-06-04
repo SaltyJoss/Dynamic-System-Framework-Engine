@@ -40,7 +40,6 @@ target_include_directories(stb INTERFACE
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
-    src/MainWindow/DockWidgets/ViewportDock.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
 )
 
@@ -62,6 +61,17 @@ set(SCENE_SRC
     src/Scene/Mesh.cpp
     src/Scene/Object.cpp
     src/Scene/SimulationManager.cpp
+)
+
+set(MANAGER_SRC
+    src/Scene/Manager/SimBackend.cpp
+    src/Scene/Manager/SimCamera.cpp
+    src/Scene/Manager/SimObjects.cpp
+    src/Scene/Manager/SimPostFX.cpp
+    src/Scene/Manager/SimRendering.cpp
+    src/Scene/Manager/SimRobots.cpp
+    src/Scene/Manager/SimUI.cpp
+    src/Scene/Manager/SimViewport.cpp
 )
 
 set(UI_SRC
@@ -92,6 +102,7 @@ target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
     ${RENDER_SRC}
     ${SCENE_SRC}
+    ${MANAGER_SRC}
     ${UI_SRC}
     ${ROBOT_SRC}
     ${PLATFORM_SRC}
@@ -132,6 +143,7 @@ target_include_directories(DSFE_GUI
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
 
     PRIVATE
         ${imfilebrowser_ROOT}

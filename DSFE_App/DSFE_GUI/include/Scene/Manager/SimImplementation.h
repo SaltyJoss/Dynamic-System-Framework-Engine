@@ -49,7 +49,7 @@ namespace gui {
 		enum class ViewMode { Single, Quad };
 
 		// Current View Mode
-		ViewMode viewMode = ViewMode::Single;
+		ViewMode viewMode;
 
 		// Viewport Structure
 		struct Viewport {
@@ -69,7 +69,7 @@ namespace gui {
 
 		// Viewports
 		std::array<Viewport, (size_t)ViewID::COUNT> _views;
-		VID activeView = VID::Manual;
+		VID activeView;
 
 		// Skybox & IBL
 		std::unique_ptr<render::IBL> _ibl;
@@ -77,6 +77,7 @@ namespace gui {
 
 		// Post-Processing Shader
 		std::unique_ptr<shaders::Shader> _postShader;
+		std::unique_ptr<shaders::Shader> _presentShader;
 		std::shared_ptr<shaders::Shader> _shaderBasic;
 		std::shared_ptr<shaders::Shader> _shaderLit;
 		std::shared_ptr<shaders::Shader> _shaderPBR;
@@ -131,8 +132,15 @@ namespace gui {
 		std::vector<glm::vec3> _ssaoKernel;
 
 		Impl(SimManager& owner) {
+			activeView = VID::Manual;
+			viewMode = ViewMode::Single;
+		}
+
+		void initGLResources(SimManager& owner) {
 			_postShader = std::make_unique<shaders::Shader>();
 			_postShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "post.frag.glsl").string());
+			_presentShader = std::make_unique<shaders::Shader>();
+			_presentShader->load((paths::assets() / "shaders" / "post.vert.glsl").string(), (paths::assets() / "shaders" / "present.frag.glsl").string());
 
 			glGenVertexArrays(1, &_fullscreenVAO);
 
@@ -254,7 +262,6 @@ namespace gui {
 
 			// Robot system with mesh loading (for normal simulation)
 			_robotSystem = std::make_unique<robots::RobotSystem>();
-
 			_robotRenderer = std::make_unique<RobotRenderer>();
 
 			// SSAO shaders
@@ -496,6 +503,8 @@ namespace gui {
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
+
+			LOG_INFO_ONCE("Background = %.3f %.3f %.3f", owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b);
 
 			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

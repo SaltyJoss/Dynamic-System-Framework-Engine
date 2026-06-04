@@ -79,8 +79,7 @@ int main(int argc, char** argv) {
         }
 
         Application app("DSFE");
-        app.run();
-        return 0;
+        return app.run();
     }
 
 	// Batch mode: parse batch-specific arguments

@@ -3,9 +3,11 @@
 
 #include <QWidget>
 
+namespace gui { class SimManager; }
+
 namespace Workspace {
 	class ProjectPage : public QWidget {
 	public:
-		explicit ProjectPage(QWidget* parent = nullptr);
+		explicit ProjectPage(gui::SimManager* sim, QWidget* parent = nullptr);
 	};
 } // namespace Workspace

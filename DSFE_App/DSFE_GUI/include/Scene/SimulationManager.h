@@ -6,12 +6,15 @@
 #include <string>
 #include <mutex>
 #include <vector>
+#include <unordered_set>
 #include "Platform/StudyRunner.h"
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
 #include "FpsCounter.h"
+
+#include "Platform/KeyCode.h"
 
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
@@ -52,6 +55,8 @@ namespace gui {
 
 	// Forward Declarations for Axis Orientator
 	class AxisOrientator;
+	// Forward Declarations for eKeyCode
+    enum class eKeyCode;
 
     // Control Modes & Camera
     enum class ControlMode {
@@ -68,6 +73,9 @@ namespace gui {
 
 		// OpenGL Initialisation
         void initGL();
+
+		void renderViewport(int w, int h);
+        void setDisplaySize(int w, int h);
 
 		// Light
         scene::Light* getLight();
@@ -163,6 +171,8 @@ namespace gui {
         void render();
         void tick(double dt);
         void resize(int32_t width, int32_t height);
+
+		void setPresentationFBO(GLuint fbo) { _presentationFBO = fbo; }
 
 		void syncRobotToScene();
 
@@ -261,8 +271,8 @@ namespace gui {
 
         // Input Handling
         void processMovementKey(int key, float delta);
-        void handleContinuousMovement(GLFWwindow* window, float dt);
-        void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
+        void handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt);
+        void handleMouseLook(double xpos, double ypos, bool mouseCaptured);
         void onMouseMove(double x, double y, scene::eInputButton button);
         void onMouseWheel(double delta);
         void resetMouseDelta();
@@ -329,6 +339,8 @@ namespace gui {
 		robots::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
 		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
         bool _telemetryBegun = false;
+
+		GLuint _presentationFBO = 0; // FBO for final post-processed output to the screen
 
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};

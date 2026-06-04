@@ -1,5 +1,6 @@
 // DSFE_GUI ProjectPage.cpp
 #include "Workspace/ProjectPage.h"
+#include "Scene/SimulationManager.h"
 #include "Widgets/ViewportWidget.h"
 
 #include <QLabel>
@@ -7,13 +8,14 @@
 #include <QSplitter>
 
 namespace Workspace {
-	ProjectPage::ProjectPage(QWidget* parent) : QWidget(parent) {
+	ProjectPage::ProjectPage(gui::SimManager* sim, QWidget* parent) : QWidget(parent) {
 		auto* layout = new QVBoxLayout(this);
+		layout->setContentsMargins(0, 0, 0, 0);
 		auto* splitter = new QSplitter(Qt::Horizontal, this);
-		splitter->addWidget(new widgets::ViewportWidget(splitter));
+		splitter->addWidget(new widgets::ViewportWidget(sim, splitter));
 		splitter->addWidget(new QLabel("Properties(PlaceHolder)", splitter));
+		layout->addWidget(splitter);
 		splitter->setStretchFactor(0, 4); // Viewport takes 4/5 of space
 		splitter->setStretchFactor(1, 1); // Properties takes 1/5 of space
-		layout->addWidget(splitter);
 	}
 } // namespace Workspace

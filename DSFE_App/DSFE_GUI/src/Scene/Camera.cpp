@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 #include "Scene/Camera.h"
 
+#include "Platform/KeyCode.h"
+
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
@@ -26,12 +28,12 @@ namespace scene {
 		float velocity = _currentSpeed * dt;
 
 		switch (key) {
-		case GLFW_KEY_W:			moveForward(velocity);	break;
-		case GLFW_KEY_S:			moveBackward(velocity); break;
-		case GLFW_KEY_A:			moveLeft(velocity);		break;
-		case GLFW_KEY_D:			moveRight(velocity);	break;
-		case GLFW_KEY_SPACE:		moveUp(velocity);		break;
-		case GLFW_KEY_LEFT_SHIFT:	moveDown(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::W):		moveForward(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::A):		moveLeft(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::S):		moveBackward(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::D):		moveRight(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::Space):	moveUp(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::LShift):	moveDown(velocity);		break;
 		}
 
 		updateViewMatrix();

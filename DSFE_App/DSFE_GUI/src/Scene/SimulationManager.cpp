@@ -19,6 +19,8 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
 #include <Platform/WindowManager.h>
 
+#include "Platform/KeyCode.h"
+
 #include <filesystem>
 #include "Platform/Paths.h"
 
@@ -89,6 +91,8 @@ namespace gui {
 	void SimManager::initGL() {
 		if (_glReady) return;
 		_glReady = true;
+
+		_impl->initGLResources(*this);
 
 		InitShadowResource(_settingsCurrent.shadowMapRes);
 		InitIBL();
@@ -186,7 +190,42 @@ namespace gui {
 		drawViewportWindow();
 	} 
 
-	void SimManager::tick(double dt) { _core->tick(dt); }
+	void SimManager::tick(double dt) { 
+		if (!hasRobot()) { return; }
+		_core->tick(dt);
+	}
+
+	void SimManager::renderViewport(int w, int h) {
+		LOG_INFO_ONCE("renderViewport entered");
+		if (!_glReady || !_impl) { return; }
+		if (w <= 0 || h <= 0) { return; }
+		if (_impl->_robotSystem && hasRobot()) {
+			_impl->_robotRenderer->applyTransforms(
+				_impl->_robotSystem->model(),
+				_impl->_robotSystem->worldTransforms()
+			);
+		}
+		if (_core->robotPresentationDirty()) {
+			loadRobot(_core->robotSystem()->robotName());
+			_core->clearRobotPresentationDirty();
+		}
+		_fpsCounter.update();
+		auto& view = _impl->_views[static_cast<size_t>(_impl->activeView)];
+		_impl->renderView(*this, view, w, h);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, _presentationFBO);
+		glViewport(0, 0, w, h);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		_impl->_presentShader->use();
+		_impl->_presentShader->setInt1(0, "screenTexture");
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, view.post->getTexture());
+		glBindVertexArray(_impl->_fullscreenVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 
 	void SimManager::syncRobotToScene() {
 		if (!hasRobot()) return;
@@ -227,6 +266,14 @@ namespace gui {
 		//LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
+	void SimManager::setDisplaySize(int w, int h) {
+		if (w <= 0.0f || h <= 0.0f) return;
+		_displaySize = { w, h };
+		for (auto& v : _impl->_views) {
+			v.displayW = 0; v.displayH = 0; // Force per-view reallocation next frame
+		}
+	}
+
 	// --------------------------------------------------
 	//					INPUT HANDLING
 	// --------------------------------------------------
@@ -237,45 +284,40 @@ namespace gui {
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
 	}
 
-	void gui::SimManager::handleContinuousMovement(GLFWwindow* window, float dt) {
-		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
-		if (!win || !win->isMouseCaptured()) return;
+	void gui::SimManager::handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt) {
+		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No keyboard movement in quad view
 
 		float kspd = 0.2f * dt; // base speed m/s
 
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_W)) { processMovementKey(GLFW_KEY_W, kspd); }
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_S)) { processMovementKey(GLFW_KEY_S, kspd); }
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_A)) { processMovementKey(GLFW_KEY_A, kspd); }
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_D)) { processMovementKey(GLFW_KEY_D, kspd); }
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_SPACE)) { processMovementKey(GLFW_KEY_SPACE, kspd); }
-		if (scene::Input::IsKeyPressed(window, GLFW_KEY_LEFT_SHIFT)) { processMovementKey(GLFW_KEY_LEFT_SHIFT, kspd); }
+		LOG_INFO("dt = %f", dt);
+
+		if (pressedKeys.contains(eKeyCode::W)) { processMovementKey((int)eKeyCode::W, kspd); }
+		if (pressedKeys.contains(eKeyCode::A)) { processMovementKey((int)eKeyCode::A, kspd); }
+		if (pressedKeys.contains(eKeyCode::S)) { processMovementKey((int)eKeyCode::S, kspd); }
+		if (pressedKeys.contains(eKeyCode::D)) { processMovementKey((int)eKeyCode::D, kspd); }
+		if (pressedKeys.contains(eKeyCode::Space)) { processMovementKey((int)eKeyCode::Space, kspd); }
+		if (pressedKeys.contains(eKeyCode::LShift)) { processMovementKey((int)eKeyCode::LShift, kspd); }
 	}
 
-	void gui::SimManager::handleMouseLook(GLFWwindow* window, double xpos, double ypos) {
+	void gui::SimManager::handleMouseLook(double xpos, double ypos, bool mouseCaptured) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
-		auto* win = static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window));
-		if (!win || !win->isMouseCaptured()) { return; }
-
-		bool captured = true;
-		if (win == static_cast<window::GLWindow*>(glfwGetWindowUserPointer(window))) { captured = win->isMouseCaptured(); }
-
-		if (!captured && !_isHovered) {
-			_lastMousePos = { (float)xpos, (float)ypos };
+		if (!mouseCaptured) {
+			_lastMousePos = { static_cast<float>(xpos), static_cast<float>(ypos) };
 			_firstMouse = true;
 			return;
 		}
 
 		if (_firstMouse) {
-			_lastMousePos = { (float)xpos, (float)ypos };
+			_lastMousePos = { static_cast<float>(xpos), static_cast<float>(ypos) };
 			_firstMouse = false;
 		}
 
-		double xoffset = xpos - _lastMousePos.x;
-		double yoffset = _lastMousePos.y - ypos;
-		_lastMousePos = { (float)xpos, (float)ypos };
+		double xoffset = xpos;
+		double yoffset = ypos;
+		_lastMousePos = { static_cast<float>(xpos), static_cast<float>(ypos) };
 
-		if (ctrlMode == ControlMode::Camera) { cam->processMouseMovement((float)xoffset, (float)yoffset); }
+		if (ctrlMode == ControlMode::Camera) { cam->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset)); }
 		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right); }
 	}
 

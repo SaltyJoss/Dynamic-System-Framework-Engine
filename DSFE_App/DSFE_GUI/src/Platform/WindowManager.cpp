@@ -142,7 +142,7 @@ namespace window {
         smoothedDt = glm::mix(smoothedDt, dt, 0.2f);
 
         if (_sim) {
-            _sim->handleContinuousMovement(_window, smoothedDt);
+            //_sim->handleContinuousMovement(_window, smoothedDt);
             //_sim->getCamera()->applyGravity(smoothedDt, _sim->getPlaneHeight());
         }
     }
@@ -192,7 +192,6 @@ namespace window {
 	// Forward window resize events to the SimManager to adjust the internal rendering resolution and aspect ratio
     void window::GLWindow::onCursorPos(double xpos, double ypos) {
 		// LOG_INFO("Mouse moved to: X=%.2f, Y=%.2f", xpos, ypos);
-		if (_sim) { _sim->handleMouseLook(_window, xpos, ypos); }
 	}
 
 	// Window states
