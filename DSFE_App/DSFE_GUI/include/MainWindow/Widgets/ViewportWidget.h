@@ -2,7 +2,6 @@
 #pragma once
 
 #include <QOpenGLWidget>
-#include <QOpenGLFunctions_4_5_Core>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QKeyEvent>
@@ -14,7 +13,7 @@
 namespace gui { class SimManager; enum class eKeyCode; }
 
 namespace widgets {
-	class ViewportWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_5_Core {
+	class ViewportWidget : public QOpenGLWidget {
 	public:
 		explicit ViewportWidget(gui::SimManager* sim, QWidget* parent = nullptr);
 
