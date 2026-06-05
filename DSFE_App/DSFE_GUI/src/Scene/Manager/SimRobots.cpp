@@ -5,6 +5,7 @@
 #undef __gl_h_
 #endif
 #include "Manager/SimImplementation.h"
+#include "Platform/ScopeGLContext.h"
 
 namespace gui {
 	// Load a robot by name from the robot system
@@ -24,6 +25,7 @@ namespace gui {
 
 		size_t startIdx = _impl->_objects.size();
 
+		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook);
 		_impl->buildRobotPresentationFromModel(_impl->_robotSystem->model(), *this);
 
 		_impl->_robotRenderer->applyTransforms(

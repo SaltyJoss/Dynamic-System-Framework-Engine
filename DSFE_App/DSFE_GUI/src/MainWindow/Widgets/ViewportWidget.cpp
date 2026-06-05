@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 
+#include <QThread>
 #include "Platform/KeyCode.h"
 
 namespace widgets {
@@ -23,10 +24,8 @@ namespace widgets {
 	}
 
 	void ViewportWidget::initializeGL() {
-		initializeOpenGLFunctions();
-
 		auto* ctx = QOpenGLContext::currentContext();
-
+		if (_sim) { _sim->setContextHooks([this]() { this->makeCurrent(); }, [this]() { this->doneCurrent(); }); }
 		if (!ctx) {
 			LOG_ERROR("No current OpenGL context");
 			return;

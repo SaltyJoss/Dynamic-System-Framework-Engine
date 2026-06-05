@@ -134,6 +134,9 @@ namespace gui {
 		Impl(SimManager& owner) {
 			activeView = VID::Manual;
 			viewMode = ViewMode::Single;
+
+			// Robot system with mesh loading (for normal simulation)
+			_robotSystem = std::make_unique<robots::RobotSystem>();
 		}
 
 		void initGLResources(SimManager& owner) {
@@ -260,8 +263,6 @@ namespace gui {
 			_mesh = std::make_shared<scene::Mesh>();
 			_mesh->init();
 
-			// Robot system with mesh loading (for normal simulation)
-			_robotSystem = std::make_unique<robots::RobotSystem>();
 			_robotRenderer = std::make_unique<RobotRenderer>();
 
 			// SSAO shaders
@@ -509,12 +510,8 @@ namespace gui {
 			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			if (owner._settingsCurrent.msaaSamples > 1) {
-				glEnable(GL_MULTISAMPLE);
-			}
-			else {
-				glDisable(GL_MULTISAMPLE);
-			}
+			if (owner._settingsCurrent.msaaSamples > 1) { glEnable(GL_MULTISAMPLE); }
+			else { glDisable(GL_MULTISAMPLE); }
 
 			// Update Follow Target: use the explicitly bound target (e.g. end-effector from loadRobot),
 			// only fall back to _selectedObject if no explicit target was set via setViewFollowTarget

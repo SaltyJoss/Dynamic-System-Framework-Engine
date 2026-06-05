@@ -74,6 +74,11 @@ namespace gui {
 		// OpenGL Initialisation
         void initGL();
 
+		void setContextHooks(std::function<void()> makeCurrentHook, std::function<void()> doneCurrentHook) {
+			_makeCurrentHook = makeCurrentHook;
+			_doneCurrentHook = doneCurrentHook;
+		}
+
 		void renderViewport(int w, int h);
         void setDisplaySize(int w, int h);
 
@@ -278,6 +283,9 @@ namespace gui {
         void resetMouseDelta();
 
     private:
+        std::function<void()> _makeCurrentHook;
+        std::function<void()> _doneCurrentHook;
+
         std::unique_ptr<core::SimulationCore> _core = nullptr;
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;
@@ -371,3 +379,10 @@ namespace gui {
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
 } // namespace gui
+
+#define GL_CHECKPOINT(name) \
+do { \
+    GLenum err = glGetError(); \
+    if (err != GL_NO_ERROR) \
+        LOG_ERROR("%s -> 0x%X", name, err); \
+} while (0)
