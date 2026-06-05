@@ -41,6 +41,8 @@ set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
+    src/MainWindow/Widgets/RobotSelectorWidget.cpp
+    src/MainWindow/Widgets/ControlPanelWidget.cpp
 )
 
 set(RENDER_SRC
