@@ -4,7 +4,6 @@
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Rendering/OpenGLBufferManager.h"
 
 #include "EngineLib/LogMacros.h"
@@ -38,8 +37,6 @@ namespace render {
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(assets::VertexHolder), (void*)offsetof(assets::VertexHolder, _texCoord));
 
 		glBindVertexArray(0);
-
-		//LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
 	// Deletes the VAO, VBO, and EBO associated with this buffer

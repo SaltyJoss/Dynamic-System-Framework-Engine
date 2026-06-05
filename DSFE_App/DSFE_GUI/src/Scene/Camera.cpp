@@ -5,7 +5,6 @@
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Scene/Camera.h"
 
 #include "Platform/KeyCode.h"

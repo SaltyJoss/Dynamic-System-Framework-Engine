@@ -38,8 +38,6 @@ Application::Application(const std::string& appName) : _name(appName) {
 	_qtArgv.reserve(_qtArgStorage.size());
 	for (std::string& arg : _qtArgStorage) { _qtArgv.push_back(arg.data()); }
 
-	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
-
 	QSurfaceFormat format;
 	format.setProfile(QSurfaceFormat::CoreProfile);
 	format.setVersion(4, 5);
@@ -47,6 +45,7 @@ Application::Application(const std::string& appName) : _name(appName) {
 	format.setStencilBufferSize(8);
 	QSurfaceFormat::setDefaultFormat(format);
 
+	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
 	_sim = std::make_unique<gui::SimManager>();
 
 	int winW = 1920, winH = 1080;

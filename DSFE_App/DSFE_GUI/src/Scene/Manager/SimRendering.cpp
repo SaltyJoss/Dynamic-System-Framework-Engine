@@ -178,19 +178,17 @@ namespace gui {
 			const float splitDist0 = nearPlane + splitFrac0 * farPlane;
 			const float splitDist1 = nearPlane + splitFrac1 * farPlane;
 
-			shader->setFlt2(splitDist0, splitDist1, "cascadeSplits");
+			shader->setFltArray2(splitDist0, splitDist1, "cascadeSplits");
 		}
 
-		// Camera / SunLight / light common to all mesh shaders
+		// Update camera and light uniforms (only those relevant to the current shader mode)
 		cam->update(shader);
 		_impl->_light->update(shader);
 
 		// Main mesh rendering loop
 		for (auto& obj : _impl->_objects) {
-			if (!obj || !obj->getMesh()) continue;
-
+			if (!obj || !obj->getMesh()) { continue; }
 			if (_impl->_cameraFollowTarget == obj.get()) { cam->setFollowTarget(obj->transform.position, obj->transform.rotQ); }
-
 			glm::mat4 model = obj->transform.toMatrix() * obj->getMesh()->localTransform;
 			shader->setMat4(model, "model");
 
@@ -287,7 +285,7 @@ namespace gui {
 				obj->getMesh()->render();
 			}
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, _presentationFBO);
 		glViewport(0, 0, (int)_internalSize.x, (int)_internalSize.y);
 
 		glDisable(GL_POLYGON_OFFSET_FILL);

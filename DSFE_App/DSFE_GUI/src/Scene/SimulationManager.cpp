@@ -13,12 +13,8 @@ extern "C" void DestroySimulationCore(core::ISimulationCore*);
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 #include "Manager/SimImplementation.h"
-
-#include <Platform/WindowManager.h>
-
 #include "Platform/KeyCode.h"
 
 #include <filesystem>
