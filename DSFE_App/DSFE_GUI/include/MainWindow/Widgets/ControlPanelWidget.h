@@ -33,6 +33,8 @@ class QVBoxLayout;
 class QCheckBox;
 class QComboBox;
 class QGroupBox;
+class QLabel;
+class QSlider;
 
 namespace widgets {
 	class ControlPanelWidget : public QWidget {
@@ -51,8 +53,11 @@ namespace widgets {
 
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
+		void buildDtFractions();
 
 		void jointInfoPanel();
+		void displayJointInfo(const diagnostics::TelemetryRecorder& rec, int& selectedJoint, QVBoxLayout* layout);
+
 		void displayPanel();
 		void selectJointAndFollow(int jointIdx);
 
@@ -62,6 +67,12 @@ namespace widgets {
 		QGroupBox* _simPropertiesGroup = nullptr;
 		QCheckBox* _useAutoDiffCheck = nullptr;
 		QComboBox* _integratorCombo = nullptr;
+		QLabel* _currentIntegratorLabel = nullptr;
+
+		QGroupBox* _jointInfoGroup = nullptr;
+		QSlider* _jointIdxSlider = nullptr;
+		QLabel* _currentSimTimeJointLabel = nullptr;
+
 
 		static constexpr IntegratorEntry integrators[] = {
 			{ integration::eIntegrationMethod::Euler, "Euler" },
