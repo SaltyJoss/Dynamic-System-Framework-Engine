@@ -30,13 +30,62 @@ namespace window {
 
 		// File menu
 		{
-			auto* openAction = fileMenu->addAction("Open");
-			connect(openAction, &QAction::triggered, this, []() { 
-				LOG_INFO("Menu clicked: File -> Open");
+			auto* newMenu = fileMenu->addMenu("New");
+			connect(newMenu, &QMenu::aboutToShow, this, [this, newMenu]() {
+				LOG_INFO("Menu clicked: File -> New");
+				auto* newProjectAction = newMenu->addAction("Project");
+				connect(newProjectAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> New -> New Project");
+				});
+				newMenu->addSeparator();
+				auto* newScriptAction = newMenu->addAction("Script");
+				connect(newScriptAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> New -> New Script");
+				});
 			});
-			auto* saveAction = fileMenu->addAction("Save");
-			connect(saveAction, &QAction::triggered, this, []() {
+			auto* openMenu = fileMenu->addMenu("Open");
+			connect(openMenu, &QMenu::aboutToShow, this, [this, openMenu]() {
+				LOG_INFO("Menu clicked: File -> Open");
+				auto* openProjectAction = openMenu->addAction("Project");
+				connect(openProjectAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Open -> Project");
+				});
+				openMenu->addSeparator();
+				auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
+				connect(openScriptAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Open -> Script");
+				});
+			});
+			fileMenu->addSeparator();
+			auto* saveMenu = fileMenu->addMenu("Save");
+			connect(saveMenu, &QMenu::aboutToShow, this, [this, saveMenu]() {
 				LOG_INFO("Menu clicked: File -> Save");
+				auto* saveProjectAction = saveMenu->addAction("Project");
+				connect(saveProjectAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Save -> Project");
+				});
+				auto* saveScriptAction = saveMenu->addAction("Script");
+				connect(saveScriptAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Save -> Script");
+					QString path = QFileDialog::getSaveFileName(nullptr, "Save Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					if (path.isEmpty()) { return; }
+					LOG_INFO("Selected path: %s", path.toStdString().c_str());
+				});
+			});
+			auto* saveAsMenu = fileMenu->addMenu("Save As");
+			connect(saveAsMenu, &QMenu::aboutToShow, this, [this, saveAsMenu]() {
+				LOG_INFO("Menu clicked: File -> Save As");
+				auto* saveProjectAsAction = saveAsMenu->addAction("Project");
+				connect(saveProjectAsAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Save As -> Project");
+				});
+				auto* saveScriptAsAction = saveAsMenu->addAction("Script");
+				connect(saveScriptAsAction, &QAction::triggered, this, []() {
+					LOG_INFO("Menu clicked: File -> Save As -> Script");
+					QString path = QFileDialog::getSaveFileName(nullptr, "Save Script As", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					if (path.isEmpty()) { return; }
+					LOG_INFO("Selected path: %s", path.toStdString().c_str());
+				});
 			});
 			fileMenu->addSeparator();
 			auto* exitAction = fileMenu->addAction("Exit");
@@ -70,14 +119,14 @@ namespace window {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
 				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", "", "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
 				if (path.isEmpty()) { return; }
-				_sim->loadMesh(path.toStdString());
+				_sim->loadMesh(path.toStdString()); // Crashes at the moment, TODO fix crash
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
 				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", "", "HDRI Files (*.hdr *.exr)");
 				if (path.isEmpty()) { return; }
-				_sim->loadNewHDR(path.toStdString());
+				_sim->loadNewHDR_UI(path.toStdString());
 			});
 		}
 		// View menu
