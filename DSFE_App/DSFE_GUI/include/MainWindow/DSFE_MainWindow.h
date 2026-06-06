@@ -9,5 +9,9 @@ namespace window {
 	class DSFE_MainWindow : public QMainWindow {
 	public:
 		explicit DSFE_MainWindow(gui::SimManager* sim, QWidget* parent = nullptr);
+
+	private:
+		void buildMenuBar();
+		gui::SimManager* _sim;
 	};
 }

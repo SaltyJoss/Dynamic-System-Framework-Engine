@@ -20,4 +20,4 @@ namespace widgets {
 		scrollArea->setWidget(content);
 		rootLayout->addWidget(scrollArea);
 	}
-} // namespace widgets}
+} // namespace widgets
