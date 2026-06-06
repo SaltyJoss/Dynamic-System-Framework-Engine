@@ -12,11 +12,20 @@ namespace Workspace {
 	ProjectPage::ProjectPage(gui::SimManager* sim, QWidget* parent) : QWidget(parent) {
 		auto* layout = new QVBoxLayout(this);
 		layout->setContentsMargins(0, 0, 0, 0);
-		auto* splitter = new QSplitter(Qt::Horizontal, this);
-		splitter->addWidget(new widgets::ViewportWidget(sim, splitter));
-		splitter->addWidget(new widgets::ControlPanelWidget(sim, splitter));
-		layout->addWidget(splitter);
-		splitter->setStretchFactor(0, 4); // Viewport takes 4/5 of space
-		splitter->setStretchFactor(1, 1); // Properties takes 1/5 of space
+		auto* rootSplitter = new QSplitter(Qt::Horizontal, this);
+		auto* centreSplitter = new QSplitter(Qt::Vertical);
+		auto* rightSplitter = new QSplitter(Qt::Vertical);
+		rootSplitter->addWidget(new QLabel("Script Editor (TODO)", this));
+		centreSplitter->addWidget(new widgets::ViewportWidget(sim, this));
+		centreSplitter->addWidget(new QLabel("Console Output (TODO)", this));
+		rightSplitter->addWidget(new widgets::ControlPanelWidget(sim, this));
+		rightSplitter->addWidget(new QLabel("Scene Object? (TODO)", this));
+		rootSplitter->addWidget(centreSplitter);
+		rootSplitter->addWidget(rightSplitter);
+		layout->addWidget(rootSplitter);
+		// Sizing reused from the old imgui layout
+		rootSplitter->setSizes({ 635, 1016, 393 });
+		centreSplitter->setSizes({ 733, 396 });
+		rightSplitter->setSizes({ 733, 396 });
 	}
 } // namespace Workspace
