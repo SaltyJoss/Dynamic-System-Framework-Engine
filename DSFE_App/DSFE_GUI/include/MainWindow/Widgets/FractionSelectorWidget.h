@@ -5,6 +5,7 @@
 
 namespace widgets {
 	class FractionSelectorWidget : public QWidget {
+		Q_OBJECT
 	public:
 		explicit FractionSelectorWidget(bool telemetryMode = false, QWidget* parent = nullptr);
 		double dt() const;

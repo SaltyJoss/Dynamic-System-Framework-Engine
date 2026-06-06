@@ -44,6 +44,7 @@ set(MAIN_WINDOW_SRC
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
     src/MainWindow/Widgets/ControlPanelWidget.cpp
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
+    include/MainWindow/Widgets/FractionSelectorWidget.h
 )
 
 set(RENDER_SRC
