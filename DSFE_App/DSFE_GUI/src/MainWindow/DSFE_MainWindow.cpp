@@ -3,10 +3,12 @@
 #include "Scene/SimulationManager.h"
 #include "Workspace/ProjectPage.h"
 
+#include "Platform/SystemMap.h"
+
 #include <QAction>
 #include <QApplication>
-#include <QMenu>
 #include <QMenuBar>
+#include <QFileDialog>
 
 namespace window {
 	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent) : QMainWindow(parent), _sim(sim) {
@@ -21,23 +23,23 @@ namespace window {
 
 	void DSFE_MainWindow::buildMenuBar() {
 		auto* fileMenu = menuBar()->addMenu("&File");
-		auto* editMenu = menuBar()->addMenu("&Project");
+		auto* projectMenu = menuBar()->addMenu("&Project");
 		auto* viewMenu = menuBar()->addMenu("&View");
-		auto* ToolsMenu = menuBar()->addMenu("&Tools");
+		auto* toolsMenu = menuBar()->addMenu("&Tools");
 		auto* helpMenu = menuBar()->addMenu("&Help");
 
 		// File menu
 		{
-			auto* openAction = new QAction("Open", this);
+			auto* openAction = fileMenu->addAction("Open");
 			connect(openAction, &QAction::triggered, this, []() { 
 				LOG_INFO("Menu clicked: File -> Open");
 			});
-			auto* saveAction = new QAction("Save", this);
+			auto* saveAction = fileMenu->addAction("Save");
 			connect(saveAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: File -> Save");
 			});
 			fileMenu->addSeparator();
-			auto* exitAction = new QAction("Exit", this);
+			auto* exitAction = fileMenu->addAction("Exit");
 			connect(exitAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: File -> Exit");
 				QApplication::quit();
@@ -45,40 +47,46 @@ namespace window {
 		}
 		// Project menu
 		{
-			auto* newProjectAction = new QAction("New Project", this);
+			auto* newProjectAction = projectMenu->addAction("New Project");
 			connect(newProjectAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Project -> New Project");
 			});
-			auto* loadProjectAction = new QAction("Load Project", this);
+			auto* loadProjectAction = projectMenu->addAction("Load Project");
 			connect(loadProjectAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Project -> Load Project");
 			});
-			auto* saveProjectAction = new QAction("Save Project", this);
+			auto* saveProjectAction = projectMenu->addAction("Save Project");
 			connect(saveProjectAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Project -> Save Project");
 			});
-			fileMenu->addSeparator();
-			auto* loadRobotAction = new QAction("Load Robot", this);
-			connect(loadRobotAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: Project -> Load Robot");
-				_sim->loadRobot("panda");
+			projectMenu->addSeparator();
+			auto* robotMenu = projectMenu->addMenu("Load Robot");
+			connect(robotMenu, &QMenu::aboutToShow, this, [this, robotMenu]() {
+				robotMenu->clear();
+				buildRobotMenu(robotMenu);
 			});
-			auto* loadMeshAction = new QAction("Load Mesh", this);
-			connect(loadMeshAction, &QAction::triggered, this, []() {
+			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
+			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", "", "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
+				if (path.isEmpty()) { return; }
+				_sim->loadMesh(path.toStdString());
 			});
-			auto* loadHDRAction = new QAction("Load HDRI", this);
-			connect(loadHDRAction, &QAction::triggered, this, []() {
+			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
+			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", "", "HDRI Files (*.hdr *.exr)");
+				if (path.isEmpty()) { return; }
+				_sim->loadNewHDR(path.toStdString());
 			});
 		}
 		// View menu
 		{
-			auto* resetCameraAction = new QAction("Reset Camera", this);
+			auto* resetCameraAction = viewMenu->addAction("Reset Camera");
 			connect(resetCameraAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: View -> Reset Camera");
 			});
-			auto* toggleGridAction = new QAction("Toggle Grid", this);
+			auto* toggleGridAction = viewMenu->addAction("Toggle Grid");
 			toggleGridAction->setCheckable(true);
 			toggleGridAction->setChecked(true);
 			connect(toggleGridAction, &QAction::toggled, this, [](bool checked) {
@@ -87,27 +95,48 @@ namespace window {
 		}
 		// Tools menu
 		{
-			auto* physicsDebugAction = new QAction("Toggle Physics Debug", this);
+			auto* physicsDebugAction = toolsMenu->addAction("Toggle Physics Debug");
 			physicsDebugAction->setCheckable(true);
 			physicsDebugAction->setChecked(false);
 			connect(physicsDebugAction, &QAction::toggled, this, [](bool checked) {
 				LOG_INFO("Menu toggled: Tools -> Toggle Physics Debug -> %s", checked ? "On" : "Off");
 			});
-			auto* reloadShadersAction = new QAction("Reload Shaders", this);
-			connect(reloadShadersAction, &QAction::triggered, this, []() {
+			auto* reloadShadersAction = toolsMenu->addAction("Reload Shaders");
+			connect(reloadShadersAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Tools -> Reload Shaders");
+				_sim->reloadAllShaders();
 			});
-			auto* diagnosticsAction = new QAction("Run Diagnostics", this);
+			auto* diagnosticsAction = toolsMenu->addAction("Run Diagnostics");
+			connect(diagnosticsAction, &QAction::triggered, this, []() {
+				LOG_INFO("Menu clicked: Tools -> Run Diagnostics");
+			});
 		}
 		// Help menu
 		{
-			auto* aboutAction = new QAction("About", this);
+			auto* aboutAction = helpMenu->addAction("About");
 			connect(aboutAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Help -> About");
 			});
-			auto* docsAction = new QAction("Documentation", this);
+			auto* docsAction = helpMenu->addAction("Documentation");
 			connect(docsAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Help -> Documentation");
+			});
+		}
+	}
+
+	void DSFE_MainWindow::buildRobotMenu(QMenu* projectMenu) {
+		const auto& robotMap = platform::getRobotSystemMap();
+		std::unordered_map<platform::eRoboticSystemFamilies, QMenu*> familyMenus;
+		for (const auto& [sys, family] : robotMap) {
+			if (!familyMenus.contains(family)) {
+				QString familyName = QString::fromStdString(platform::RoboticSystems().toString(family));
+				familyMenus[family] = projectMenu->addMenu(familyName);
+			}
+			QString robotName = QString::fromStdString(platform::RoboticSystems().toString(sys));
+			QAction* robotAction = familyMenus[family]->addAction(robotName);
+			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
+				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
+				_sim->loadRobot(robotName.toStdString());
 			});
 		}
 	}

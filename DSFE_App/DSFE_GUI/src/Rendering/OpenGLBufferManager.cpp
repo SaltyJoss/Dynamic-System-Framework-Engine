@@ -174,7 +174,7 @@ namespace render {
 	// Deletes the framebuffer and its associated attachments
 	void OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
-			LOG_INFO("Deleting framebuffer buffers");
+			/*LOG_INFO("Deleting framebuffer buffers");*/
 			if (_msaaFBO) glDeleteFramebuffers(1, &_msaaFBO);
 			if (_msaaColour) glDeleteTextures(1, &_msaaColour);
 			if (_msaaDepthRBO) glDeleteRenderbuffers(1, &_msaaDepthRBO);

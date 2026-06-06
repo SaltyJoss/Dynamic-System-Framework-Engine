@@ -2,7 +2,6 @@
 #include "Widgets/RobotSelectorWidget.h"
 #include "Scene/SimulationManager.h"
 
-#include <unordered_map>
 #include "Platform/SystemMap.h"
 
 #include <QVBoxLayout>
@@ -19,16 +18,16 @@ namespace widgets {
 			return;
 		}
 
-		const std::unordered_map<platform::eRoboticArms, platform::eRoboticArmFamilies>& robotMap = platform::getRoboticArmMap();
+		const std::unordered_map<platform::eRoboticSystems, platform::eRoboticSystemFamilies>& robotMap = platform::getRobotSystemMap();
 
 		if (robotMap.empty()) {
 			layout->addWidget(new QLabel("No robotic arms available", this));
 			return;
 		}
 
-		for (const auto& [arm, family] : robotMap) {
-			const QString robotName = QString::fromStdString(platform::RoboticArms().toString(arm));
-			const QString familyName = QString::fromStdString(platform::RoboticArms().toString(family));
+		for (const auto& [sys, family] : robotMap) {
+			const QString robotName = QString::fromStdString(platform::RoboticSystems().toString(sys));
+			const QString familyName = QString::fromStdString(platform::RoboticSystems().toString(family));
 			addRobotButton(robotName, familyName);
 		}
 	}

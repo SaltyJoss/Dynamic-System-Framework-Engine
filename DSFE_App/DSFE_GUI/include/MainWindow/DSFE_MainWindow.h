@@ -2,9 +2,9 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QMenu>
 
 namespace gui { class SimManager; }
-
 namespace window {
 	class DSFE_MainWindow : public QMainWindow {
 	public:
@@ -13,5 +13,7 @@ namespace window {
 	private:
 		void buildMenuBar();
 		gui::SimManager* _sim;
+
+		void buildRobotMenu(QMenu* projectMenu);
 	};
 }

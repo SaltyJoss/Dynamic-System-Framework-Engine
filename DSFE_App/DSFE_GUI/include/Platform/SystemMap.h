@@ -5,7 +5,7 @@
 #include <string>
 
 namespace platform {
-	enum class eRoboticArms {
+	enum class eRoboticSystems {
 		Z1 = 0,
 		UR5e = 1,
 		Panda = 2,
@@ -14,47 +14,48 @@ namespace platform {
 		H1 = 5
 	};
 
-	enum class eRoboticArmFamilies {
+	enum class eRoboticSystemFamilies {
 		Unitree = 0,
 		Universal = 1,
 		Franka = 2,
 		KUKA = 3,
-		Airbus = 4
+		Airbus = 4,
+		Othjer = 5
 	};
 
-	struct RoboticArms {
-		std::unordered_map<eRoboticArms, eRoboticArmFamilies> armMap = {
-			{ eRoboticArms::Z1, eRoboticArmFamilies::Unitree },
-			{ eRoboticArms::UR5e, eRoboticArmFamilies::Universal },
-			{ eRoboticArms::Panda, eRoboticArmFamilies::Franka },
-			{ eRoboticArms::iiwa14, eRoboticArmFamilies::KUKA },
-			{ eRoboticArms::VISPA, eRoboticArmFamilies::Airbus },
-			{ eRoboticArms::H1, eRoboticArmFamilies::Unitree }
+	struct RoboticSystems {
+		std::unordered_map<eRoboticSystems, eRoboticSystemFamilies> robotMap = {
+			{ eRoboticSystems::Z1, eRoboticSystemFamilies::Unitree },
+			{ eRoboticSystems::UR5e, eRoboticSystemFamilies::Universal },
+			{ eRoboticSystems::Panda, eRoboticSystemFamilies::Franka },
+			{ eRoboticSystems::iiwa14, eRoboticSystemFamilies::KUKA },
+			{ eRoboticSystems::VISPA, eRoboticSystemFamilies::Airbus },
+			{ eRoboticSystems::H1, eRoboticSystemFamilies::Unitree }
 		};
 
-		inline std::string toString(eRoboticArms arm) {
-			switch (arm) {
-				case eRoboticArms::Z1: return "Z1";
-				case eRoboticArms::UR5e: return "UR5e";
-				case eRoboticArms::Panda: return "Panda";
-				case eRoboticArms::iiwa14: return "iiwa14";
-				case eRoboticArms::VISPA: return "VISPA";
-				case eRoboticArms::H1: return "H1";
+		inline std::string toString(eRoboticSystems sys) {
+			switch (sys) {
+				case eRoboticSystems::Z1: return "Z1";
+				case eRoboticSystems::UR5e: return "UR5e";
+				case eRoboticSystems::Panda: return "Panda";
+				case eRoboticSystems::iiwa14: return "iiwa14";
+				case eRoboticSystems::VISPA: return "VISPA";
+				case eRoboticSystems::H1: return "H1";
 				default: return "Unknown";
 			}
 		}
 
-		inline std::string toString(eRoboticArmFamilies family) {
+		inline std::string toString(eRoboticSystemFamilies family) {
 			switch (family) {
-				case eRoboticArmFamilies::Unitree: return "Unitree Robotics";
-				case eRoboticArmFamilies::Universal: return "Universal Robots";
-				case eRoboticArmFamilies::Franka: return "Franka Robotics";
-				case eRoboticArmFamilies::KUKA: return "KUKA";
-				case eRoboticArmFamilies::Airbus: return "Airbus";
+				case eRoboticSystemFamilies::Unitree: return "Unitree Robotics";
+				case eRoboticSystemFamilies::Universal: return "Universal Robots";
+				case eRoboticSystemFamilies::Franka: return "Franka Robotics";
+				case eRoboticSystemFamilies::KUKA: return "KUKA";
+				case eRoboticSystemFamilies::Airbus: return "Airbus";
 				default: return "Unknown";
 			}
 		}
 	};
 
-	std::unordered_map<eRoboticArms, eRoboticArmFamilies> getRoboticArmMap() { return RoboticArms().armMap; }
+	inline std::unordered_map<eRoboticSystems, eRoboticSystemFamilies> getRobotSystemMap() { return RoboticSystems().robotMap; }
 }
