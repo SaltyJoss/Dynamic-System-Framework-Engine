@@ -2,6 +2,7 @@
 #include "MainWindow/DSFE_MainWindow.h"
 #include "Scene/SimulationManager.h"
 #include "Workspace/ProjectPage.h"
+#include "Widgets/DSLEditorWidget.h"
 
 #include "Platform/SystemMap.h"
 
@@ -11,13 +12,16 @@
 #include <QFileDialog>
 
 namespace window {
-	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent) : QMainWindow(parent), _sim(sim) {
+	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent)
+		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
+	{
 		setWindowTitle("DSFE");
 		resize(1280, 720);
 
 		buildMenuBar();
 
 		auto* page = new Workspace::ProjectPage(sim, this);
+		_dslEditor = page->editor();
 		setCentralWidget(page);
 	}
 
@@ -52,8 +56,10 @@ namespace window {
 				});
 				openMenu->addSeparator();
 				auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
-				connect(openScriptAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> Open -> Script");
+				connect(openScriptAction, &QAction::triggered, this, [this]() {
+					QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					if (fileName.isEmpty()) { return; }
+					_dslEditor->loadScript(fileName);
 				});
 			});
 			fileMenu->addSeparator();
@@ -65,11 +71,11 @@ namespace window {
 					LOG_INFO("Menu clicked: File -> Save -> Project");
 				});
 				auto* saveScriptAction = saveMenu->addAction("Script");
-				connect(saveScriptAction, &QAction::triggered, this, []() {
+				connect(saveScriptAction, &QAction::triggered, this, [this]() {
 					LOG_INFO("Menu clicked: File -> Save -> Script");
-					QString path = QFileDialog::getSaveFileName(nullptr, "Save Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
-					if (path.isEmpty()) { return; }
-					LOG_INFO("Selected path: %s", path.toStdString().c_str());
+					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					if (fileName.isEmpty()) { return; }
+					_dslEditor->saveScript(fileName);
 				});
 			});
 			auto* saveAsMenu = fileMenu->addMenu("Save As");
@@ -80,11 +86,11 @@ namespace window {
 					LOG_INFO("Menu clicked: File -> Save As -> Project");
 				});
 				auto* saveScriptAsAction = saveAsMenu->addAction("Script");
-				connect(saveScriptAsAction, &QAction::triggered, this, []() {
+				connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
 					LOG_INFO("Menu clicked: File -> Save As -> Script");
-					QString path = QFileDialog::getSaveFileName(nullptr, "Save Script As", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
-					if (path.isEmpty()) { return; }
-					LOG_INFO("Selected path: %s", path.toStdString().c_str());
+					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					if (fileName.isEmpty()) { return; }
+					_dslEditor->saveScript(fileName);
 				});
 			});
 			fileMenu->addSeparator();

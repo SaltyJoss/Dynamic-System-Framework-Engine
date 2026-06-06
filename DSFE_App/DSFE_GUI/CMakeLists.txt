@@ -43,6 +43,8 @@ set(MAIN_WINDOW_SRC
     src/MainWindow/Widgets/ViewportWidget.cpp
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
     src/MainWindow/Widgets/ControlPanelWidget.cpp
+     src/MainWindow/Widgets/DSLEditorWidget.cpp
+
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
     include/MainWindow/Widgets/FractionSelectorWidget.h
 )
