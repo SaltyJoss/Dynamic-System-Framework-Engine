@@ -37,6 +37,8 @@ class QLabel;
 class QSlider;
 
 namespace widgets {
+	class FractionSelectorWidget;
+
 	class ControlPanelWidget : public QWidget {
 	public:
 		explicit ControlPanelWidget(gui::SimManager* sim, QWidget* parent = nullptr);
@@ -68,6 +70,8 @@ namespace widgets {
 		QCheckBox* _useAutoDiffCheck = nullptr;
 		QComboBox* _integratorCombo = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
+		FractionSelectorWidget* _simDtSelector = nullptr;
+		FractionSelectorWidget* _telemetryDtSelector = nullptr;
 
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;

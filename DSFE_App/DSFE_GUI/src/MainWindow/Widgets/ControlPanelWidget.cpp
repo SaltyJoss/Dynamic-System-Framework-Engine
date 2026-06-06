@@ -11,6 +11,8 @@
 #include <QSignalBlocker>
 #include <QFont>
 
+#include "Widgets/FractionSelectorWidget.h"
+
 #include "Scene/Mesh.h"
 #include "Scene/Object.h"
 #include "Scene/Light.h"
@@ -46,14 +48,28 @@ namespace widgets {
 	// SimSetupPanel for 
 	void ControlPanelWidget::simPropertiesPanel() {
 		auto* robot = _sim->robotSystem();
+
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
+		
 		_useAutoDiffCheck = new QCheckBox("Enable Automatic Differentiable Integrators");
 		layout->addWidget(_useAutoDiffCheck);
 		_integratorCombo = new QComboBox();
 		layout->addWidget(_integratorCombo);
-		_contentLayout->addWidget(_simPropertiesGroup);
+
 		_currentIntegratorLabel = new QLabel();
+		layout->addWidget(_currentIntegratorLabel);
+
+		layout->addSpacing(5);
+
+		_simDtSelector = new FractionSelectorWidget(false);
+		layout->addWidget(new QLabel("Simulation Time Step (dt):"));
+		layout->addWidget(_simDtSelector);
+		_telemetryDtSelector = new FractionSelectorWidget(true);
+		layout->addWidget(new QLabel("Telemetry Time Step (dt):"));
+		layout->addWidget(_telemetryDtSelector);
+
+		_contentLayout->addWidget(_simPropertiesGroup);
 
 		buildIntegratorCombos();
 		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, robot](bool checked) {
@@ -66,18 +82,19 @@ namespace widgets {
 			if (_useAutoDiff) {
 				auto selectedMethod = static_cast<integration::eAutoDiffIntegrationMethod>(_integratorCombo->currentData().toInt());
 				_sim->setADIntegrationMethod(selectedMethod);
+				_currentIntegratorLabel->setWordWrap(true);
 				_currentIntegratorLabel->setText(QString("Current Integrator: ") + _integratorCombo->currentText());
 			}
 			else {
 				auto selectedMethod = static_cast<integration::eIntegrationMethod>(_integratorCombo->currentData().toInt());
 				_sim->setIntegrationMethod(selectedMethod);
+				_currentIntegratorLabel->setWordWrap(true);
 				_currentIntegratorLabel->setText(QString("Current Integrator: ") + _integratorCombo->currentText());
 			}
 		});
-		_currentIntegratorLabel->setWordWrap(true);
-		layout->addWidget(_currentIntegratorLabel);
 
-		// TODO reintroduce old dt selection logic here, my aim is to still use the visual fraction selection as it looks way better (and its cool).
+		connect(_simDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setFixedDt(dt); });
+		connect(_telemetryDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setTelemetryHz(1.0/dt); });
 	}
 
 	void ControlPanelWidget::buildIntegratorCombos() {
