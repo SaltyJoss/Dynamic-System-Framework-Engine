@@ -27,17 +27,12 @@
 
 namespace widgets {
 	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, QWidget* parent) 
-		: QWidget(parent), _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr)
+		: QWidget(parent), _sim(sim), _parser(nullptr), _program(nullptr), _wrapper(nullptr), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
 	{
 		auto* rootLayout = new QVBoxLayout(this);
 		auto* buttonLayout = new QHBoxLayout();
 
 		_runStopButton = new QPushButton("Run", this); // May also move to the menu, but I want to test the logic first
-
-		buttonLayout->addStretch();
-		buttonLayout->addWidget(_runStopButton);
-
-		rootLayout->addLayout(buttonLayout);
 
 		_tabs = new QTabWidget(this);
 		rootLayout->addWidget(_tabs);
@@ -46,7 +41,11 @@ namespace widgets {
 		buildHelpTab();
 
 		_statusLabel = new QLabel("Idle", this);
+		
 		rootLayout->addWidget(_statusLabel);
+		buttonLayout->addStretch();
+		buttonLayout->addWidget(_runStopButton);
+		rootLayout->addLayout(buttonLayout);
 
 		_stateTimer = new QTimer(this);
 		connect(_stateTimer, &QTimer::timeout, this, [this]() { pollScriptState(); });
@@ -128,6 +127,7 @@ namespace widgets {
 
 	void DSLEditorWidget::runScript() {
 		if (_sim->isScriptRunning()) { return; }
+		_sim->setScriptRunning(!_sim->isScriptRunning());
 		LOG_INFO("DSL script started."); D_INFO("DSL script started.");
 
 		_sim->setActiveProgram(nullptr);
@@ -139,14 +139,24 @@ namespace widgets {
 		_parser = new interpreter::Parser(_program);
 		_wrapper = new interpreter::RunWrapper(_parser, _program);
 
+		LOG_INFO("ScriptEditor content size = %d", _scriptEditor->toPlainText().size());
 		_scriptText = _scriptEditor->toPlainText().toStdString();
+		LOG_INFO("Script size = %zu", _scriptText.size());
 
 		_sim->setActiveProgram(_program);
 		_sim->setScriptRunning(true);
+
+		LOG_INFO("Program = %p", _program);
+		LOG_INFO("Parser = %p", _parser);
+		LOG_INFO("Wrapper = %p", _wrapper);
+
 		_sim->setLastScriptText(_scriptText);
 
 		std::string code = _scriptText;
+		LOG_INFO("Original script size = %zu", code.size());
 		if (!code.empty() && code.back() == '\0') { code.pop_back(); }
+
+		LOG_INFO("Running script:\n%s", code.c_str());
 
 		_wrapper->runProgram(_scriptText);
 
@@ -180,7 +190,7 @@ namespace widgets {
 		delete _program; _program = nullptr;
 		updateButtonState(false);
 		setStatusMessage(reason);
-		_statusLabel->setStyleSheet(fault ? "color: rgb(180,40,40);" : "color: rgb(40,180,40);");
+		_statusLabel->setStyleSheet(fault ? "color: rgb(180,40,40);" : "");
 	}
 
 	void DSLEditorWidget::pollScriptState() {
@@ -195,7 +205,7 @@ namespace widgets {
 
 	void DSLEditorWidget::updateButtonState(bool running) {
 		_runStopButton->setText(running ? "Stop" : "Run");
-		_runStopButton->setStyleSheet(running ? "background-color: rgb(180,40,40);" : "background-color: rgb(40,180,40);");
+		_runStopButton->setStyleSheet(running ? "background-color: rgb(180,40,40);" : "");
 	}
 
 } // namespace widgets

@@ -51,6 +51,8 @@ namespace widgets {
 		interpreter::IStoredProgram* _program;
 		interpreter::RunWrapper* _wrapper;
 
+		std::string _scriptWorkingDir;
+
 		QTabWidget* _tabs = nullptr;
 		QWidget* _editorTab = nullptr;
 		QWidget* _helpTab = nullptr;

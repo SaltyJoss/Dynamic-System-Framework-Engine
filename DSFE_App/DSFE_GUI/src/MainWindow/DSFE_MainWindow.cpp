@@ -11,6 +11,8 @@
 #include <QMenuBar>
 #include <QFileDialog>
 
+#include "Platform/Paths.h"
+
 namespace window {
 	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent)
 		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
@@ -57,7 +59,7 @@ namespace window {
 				openMenu->addSeparator();
 				auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
 				connect(openScriptAction, &QAction::triggered, this, [this]() {
-					QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 					if (fileName.isEmpty()) { return; }
 					_dslEditor->loadScript(fileName);
 				});
@@ -73,7 +75,7 @@ namespace window {
 				auto* saveScriptAction = saveMenu->addAction("Script");
 				connect(saveScriptAction, &QAction::triggered, this, [this]() {
 					LOG_INFO("Menu clicked: File -> Save -> Script");
-					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
 					if (fileName.isEmpty()) { return; }
 					_dslEditor->saveScript(fileName);
 				});
@@ -88,7 +90,7 @@ namespace window {
 				auto* saveScriptAsAction = saveAsMenu->addAction("Script");
 				connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
 					LOG_INFO("Menu clicked: File -> Save As -> Script");
-					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", "", "DSL Script Files (*.dsl);;Text Files (*.txt)");
+					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 					if (fileName.isEmpty()) { return; }
 					_dslEditor->saveScript(fileName);
 				});
@@ -123,14 +125,14 @@ namespace window {
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", "", "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
 				if (path.isEmpty()) { return; }
 				_sim->loadMesh(path.toStdString()); // Crashes at the moment, TODO fix crash
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", "", "HDRI Files (*.hdr *.exr)");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "hdr").string()), "HDRI Files (*.hdr *.exr)");
 				if (path.isEmpty()) { return; }
 				_sim->loadNewHDR_UI(path.toStdString());
 			});
