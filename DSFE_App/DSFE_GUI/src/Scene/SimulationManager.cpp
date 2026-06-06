@@ -285,8 +285,6 @@ namespace gui {
 
 		float kspd = 0.2f * dt; // base speed m/s
 
-		LOG_INFO("dt = %f", dt);
-
 		if (pressedKeys.contains(eKeyCode::W)) { processMovementKey((int)eKeyCode::W, kspd); }
 		if (pressedKeys.contains(eKeyCode::A)) { processMovementKey((int)eKeyCode::A, kspd); }
 		if (pressedKeys.contains(eKeyCode::S)) { processMovementKey((int)eKeyCode::S, kspd); }
