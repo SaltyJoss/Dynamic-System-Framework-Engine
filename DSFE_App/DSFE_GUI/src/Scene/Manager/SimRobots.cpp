@@ -25,7 +25,7 @@ namespace gui {
 
 		size_t startIdx = _impl->_objects.size();
 
-		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook);
+		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook); // Hooks may be empty under Qt: In that case the guard becomes a no-op.
 		_impl->buildRobotPresentationFromModel(_impl->_robotSystem->model(), *this);
 
 		_impl->_robotRenderer->applyTransforms(

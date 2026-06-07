@@ -7,6 +7,8 @@
 
 #include <imgui.h>
 
+// TODO: Convert logic to Qt6 and only ever use ImGui for debugging at most (or not at all)
+
 namespace gui {
 	// Main Dockspace with Menu Bar
 	void SimManager::drawMainDockspace() {

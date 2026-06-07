@@ -87,15 +87,14 @@ void RobotRenderer::bind(const RobotRenderBinding& binding) {
 void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world) {
 	const bool isAligned = robot.baseFrameIsEngineAligned;
 	const size_t n = robot.links.size();
-
-	LOG_INFO_ONCE("applyTransforms world size = %zu", world.size());
-
+	if (world.size() < robot.links.size()) {
+		LOG_ERROR("Transform mismatch: links=%zu world=%zu", robot.links.size(), world.size());
+		return;
+	}
 	for (size_t i = 0; i < n; ++i) {
 		const auto& link = robot.links[i];
-
 		auto it = linkRenderMap.find(link.name);
 		if (it == linkRenderMap.end()) { continue; }
-
 		glm::mat4 T = toGlm(world[i]);
 		glm::vec3 pos = glm::vec3(T[3]); // Extract translation from the 4x4 matrix
 		glm::quat q = glm::quat_cast(T); // Extract rotation as a quaternion

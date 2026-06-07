@@ -85,7 +85,7 @@ namespace gui {
 		// World Grid & Shadow Shaders
 		std::unique_ptr<shaders::Shader> _worldGridShader;
 		std::unique_ptr<shaders::Shader> _shadowShader;
-		shaders::Shader* currentShader;
+		shaders::Shader* currentShader = nullptr;
 
 		// Fullscreen Quad VAO
 		GLuint _fullscreenVAO = 0;
