@@ -1,6 +1,8 @@
 // DSFE_GUI DSFE_MainWindow.h
 #pragma once
 
+#include "GUIExports.h"
+
 #include <QMainWindow>
 #include <QMenu>
 

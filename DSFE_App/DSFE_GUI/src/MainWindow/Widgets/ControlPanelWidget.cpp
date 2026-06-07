@@ -10,6 +10,9 @@
 #include <QSlider>
 #include <QSignalBlocker>
 #include <QFont>
+#include <QTimer>
+
+#include <cmath>
 
 #include "Widgets/FractionSelectorWidget.h"
 
@@ -42,6 +45,14 @@ namespace widgets {
 		simPropertiesPanel();
 		jointInfoPanel();
 
+		auto* timer = new QTimer(this);
+		connect(timer, &QTimer::timeout, this, [this]() {
+			updateSimClock();
+			jointInfoPanel();
+			updateTelemetryDisplay();
+		});
+		timer->start(7);
+
 		_contentLayout->addStretch();
 	}
 
@@ -68,6 +79,11 @@ namespace widgets {
 		_telemetryDtSelector = new FractionSelectorWidget(true);
 		layout->addWidget(new QLabel("Telemetry Time Step (dt):"));
 		layout->addWidget(_telemetryDtSelector);
+		_simTimeLabel = new QLabel();
+		_simTimeLabel->setTextFormat(Qt::RichText);
+		_simTimeLabel->setWordWrap(true);
+		layout->addWidget(new QLabel("<b>Simulation Time:</b>"));
+		layout->addWidget(_simTimeLabel);
 
 		_contentLayout->addWidget(_simPropertiesGroup);
 
@@ -123,73 +139,70 @@ namespace widgets {
 	}
 
 	void ControlPanelWidget::jointInfoPanel() {
-		_jointInfoGroup = new QGroupBox("Robot Joint Information");
-		auto* layout = new QVBoxLayout(_jointInfoGroup);
-		_contentLayout->addWidget(_jointInfoGroup);
+		if (!_jointInfoGroup) {
+			_jointInfoGroup = new QGroupBox("Robot Joint Information");
+			auto* layout = new QVBoxLayout(_jointInfoGroup);
+			_jointInfoGroup->setLayout(layout);
+			_currentSimTimeJointLabel = new QLabel(_jointInfoGroup);
+			layout->addWidget(_currentSimTimeJointLabel);
 
-		if (!_sim->hasRobot()) {
-			layout->addWidget(new QLabel("No Robot Loaded."));
+			_jointIdxSlider = new QSlider(Qt::Horizontal, _jointInfoGroup);
+			_jointIdxSlider->setMinimum(1);
+			_jointIdxSlider->setValue(1);
+			connect(_jointIdxSlider, &QSlider::valueChanged, this, [this](int value) { selectJointAndFollow(value - 1); });
+			layout->addWidget(_jointIdxSlider);
+
+			buildTelemetryWidgets(layout);
+
+			_contentLayout->addWidget(_jointInfoGroup);
+		}
+
+		if (!_sim || !_sim->hasRobot()) {
+			_jointInfoGroup->setVisible(false);
 			return;
 		}
 		robots::RobotSystem* robot = _sim->robotSystem();
 		if (!robot) {
-			layout->addWidget(new QLabel("Robotic system unavailable"));
+			_jointInfoGroup->setVisible(false);
 			return;
 		}
 		auto& joints = robot->joints();
 		auto& links = robot->links();
 
-
-		_jointIdxSlider = new QSlider(Qt::Orientation::Horizontal);
-		layout->addWidget(_jointIdxSlider);
+		_jointInfoGroup->setVisible(!joints.empty() && !links.empty());
+		if (joints.empty() || links.empty()) { _jointInfoGroup->setVisible(false); return; }
+		_jointInfoGroup->setVisible(true);
+		_jointIdxSlider->setMaximum(static_cast<int>(joints.size()));
 
 		static int currentJointIndex = 0;
 		currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
-
-		auto& j = joints[currentJointIndex];
-		int linkIndex = currentJointIndex;
-		linkIndex = std::clamp(linkIndex, 0, (int)links.size() - 1);
-		auto& l = links[linkIndex];
-
-		const auto& rec = _sim->telemetry();
-		displayJointInfo(rec, currentJointIndex, layout);
-		layout->addSpacing(5);
-		layout->addWidget(new QLabel("Selected Joint: " + QString::fromStdString(j.name) + " - Child Link: " + QString::fromStdString(l.name)));
 	}
 
-	void ControlPanelWidget::displayJointInfo(const diagnostics::TelemetryRecorder& rec, int& selectedJoint, QVBoxLayout* layout) {
-		const auto& ring = rec.ring;
-		if (ring.size() < 1) { return; }
-		const diagnostics::TelemetrySample& s = ring.at(ring.size() - 1); // Get the most recent sample
-		if (selectedJoint < 0) { selectedJoint = 0; }
-		if (selectedJoint >= (int)s.j.size()) { selectedJoint = (int)s.j.size() - 1; }
-
-		_currentSimTimeJointLabel = new QLabel(QString("Current Simulation Time: ") + QString::number(s.timeSec) + " s");
-		layout->addWidget(_currentSimTimeJointLabel);
-
-		int currentJ = selectedJoint + 1;
-		if (!_jointIdxSlider) {
-			selectedJoint = currentJ - 1;
-			
-			_jointIdxSlider->setMinimum(1);
-			_jointIdxSlider->setMaximum((int)s.j.size());
-			_jointIdxSlider->setValue(currentJ);
-			connect(_jointIdxSlider, &QSlider::valueChanged, this, [this](int value) {
-				int jointIdx = value - 1;
-				selectJointAndFollow(jointIdx);
-			});
-		}
-		else {
-			selectedJoint = currentJ - 1;
-			_jointIdxSlider->setMaximum((int)s.j.size());
-			_jointIdxSlider->setValue(currentJ);
-		}
-
-		const diagnostics::JointTelemetry& j = s.j[selectedJoint];
+	void ControlPanelWidget::updateTelemetryInfo(const diagnostics::JointTelemetry& j) {
+		auto& t = _telemetryLabels;
 		const float e = static_cast<float>(j.q_ref - j.q);
 
-		layout->addSpacing(10);
+		t.q->setText(QString("pos:\t%1 rad").arg(j.q));
+		t.qd->setText(QString("vel:\t%1 rad/s").arg(j.qd));
+		t.tau->setText(QString("torque:\t%1 Nm").arg(j.torqueNm));
 
+		t.qRef->setText(QString("pos_ref:\t%1 rad").arg(j.q_ref));
+		t.qdRef->setText(QString("vel_ref:\t%1 rad/s").arg(j.qd_ref));
+		t.qddRef->setText(QString("acc_ref:\t%1 rad/s²").arg(j.qdd_ref));
+		t.err->setText(QString("error:\t%1 rad").arg(e));
+
+		t.qTraj->setText(QString("pos_traj:\t%1 rad").arg(j.traj_q));
+		t.qdTraj->setText(QString("vel_traj:\t%1 rad/s").arg(j.traj_qd));
+		t.qddTraj->setText(QString("acc_traj:\t%1 rad/s²").arg(j.traj_qdd));
+
+		t.qClamped->setText(QString("pos_clamped:\t%1").arg(j.clampTheta ? "true" : "false"));
+		t.qdClamped->setText(QString("vel_clamped:\t%1").arg(j.clampOmega ? "true" : "false"));
+
+		t.damping->setText(QString("damping:\t%1 kg·m²/s").arg(j.damping));
+		t.friction->setText(QString("friction:\t%1 N·m").arg(j.friction));
+	}
+
+	void ControlPanelWidget::buildTelemetryWidgets(QVBoxLayout* layout) {
 		auto headerFont = [](QLabel* label) {
 			QFont font = label->font();
 			font.setBold(true);
@@ -197,54 +210,90 @@ namespace widgets {
 			label->setFont(font);
 		};
 
-		
-		auto* stateLabel = new QLabel(QString("State: "));
-		headerFont(stateLabel);
-		auto* refLabel = new QLabel(QString("Reference: "));
-		headerFont(refLabel);
-		auto* trajLabel = new QLabel(QString("Trajectory: "));
-		headerFont(trajLabel);
-		auto* clampLabel = new QLabel(QString("Clamped: "));
-		headerFont(clampLabel);
-		auto* constLabel = new QLabel(QString("Constants: "));
-		headerFont(constLabel);
+		auto& t = _telemetryLabels;
 
-		// Joint State Telemetry
-		layout->addWidget(stateLabel);
-		layout->addWidget(new QLabel(QString("pos:	") + QString::number(j.q) + " rad"));
-		layout->addWidget(new QLabel(QString("vel:	") + QString::number(j.qd) + " rad/s"));
-		layout->addWidget(new QLabel(QString("torque: ") + QString::number(j.torqueNm) + " Nm"));
+		t.stateHeader = new QLabel("State:");
+		t.referenceHeader = new QLabel("Reference:");
+		t.trajectoryHeader = new QLabel("Trajectory:");
+		t.clampedHeader = new QLabel("Clamped:");
+		t.constantsHeader = new QLabel("Constants:");
 
-		layout->addSpacing(5);
+		headerFont(t.stateHeader);
+		headerFont(t.referenceHeader);
+		headerFont(t.trajectoryHeader);
+		headerFont(t.clampedHeader);
+		headerFont(t.constantsHeader);
 
-		// Joint Reference Telemetry
-		layout->addWidget(refLabel);
-		layout->addWidget(new QLabel(QString("pos_ref: ") + QString::number(j.q_ref) + " rad"));
-		layout->addWidget(new QLabel(QString("vel_ref: ") + QString::number(j.qd_ref) + " rad/s"));
-		layout->addWidget(new QLabel(QString("acc_ref: ") + QString::number(j.qdd_ref) + " rad/s²"));
-		layout->addWidget(new QLabel(QString("error:	") + QString::number(e) + " rad"));
+		t.q = new QLabel();
+		t.qd= new QLabel();
+		t.tau = new QLabel();
 
-		layout->addSpacing(5);
+		t.qRef = new QLabel();
+		t.qdRef = new QLabel();
+		t.qddRef = new QLabel();
+		t.err = new QLabel();
 
-		// Joint Trajectory Telemetry
-		layout->addWidget(trajLabel);
-		layout->addWidget(new QLabel(QString("pos_traj: ") + QString::number(j.traj_q) + " rad"));
-		layout->addWidget(new QLabel(QString("vel_traj: ") + QString::number(j.traj_qd) + " rad/s"));
-		layout->addWidget(new QLabel(QString("acc_traj: ") + QString::number(j.traj_qdd) + " rad/s²"));
+		t.qTraj = new QLabel();
+		t.qdTraj = new QLabel();
+		t.qddTraj = new QLabel();
+
+		t.qClamped = new QLabel();
+		t.qdClamped = new QLabel();
+
+		t.damping = new QLabel();
+		t.friction = new QLabel();
 
 		layout->addSpacing(5);
 
-		// Joint Clamping Telemetry
-		layout->addWidget(clampLabel);
-		layout->addWidget(new QLabel(QString("pos_clamped: ") + QString(j.clampTheta ? "true" : "false")));
-		layout->addWidget(new QLabel(QString("vel_clamped: ") + QString(j.clampOmega ? "true" : "false")));
+		layout->addWidget(t.stateHeader);
+		layout->addWidget(t.q);
+		layout->addWidget(t.qd);
+		layout->addWidget(t.tau);
 
 		layout->addSpacing(5);
 
-		// Joint Constants Telemetry
-		layout->addWidget(constLabel);
-		layout->addWidget(new QLabel(QString("damping: ") + QString::number(j.damping) + " kg·m²/s"));
-		layout->addWidget(new QLabel(QString("friction: ") + QString::number(j.friction) + " N·m"));
+		layout->addWidget(t.referenceHeader);
+		layout->addWidget(t.qRef);
+		layout->addWidget(t.qdRef);
+		layout->addWidget(t.qddRef);
+		layout->addWidget(t.err);
+
+		layout->addSpacing(5);
+
+		layout->addWidget(t.trajectoryHeader);
+		layout->addWidget(t.qTraj);
+		layout->addWidget(t.qdTraj);
+		layout->addWidget(t.qddTraj);
+
+		layout->addSpacing(5);
+
+		layout->addWidget(t.clampedHeader);
+		layout->addWidget(t.qClamped);
+		layout->addWidget(t.qdClamped);
+
+		layout->addSpacing(5);
+
+		layout->addWidget(t.constantsHeader);
+		layout->addWidget(t.damping);
+		layout->addWidget(t.friction);
+	}
+
+	void ControlPanelWidget::updateTelemetryDisplay() {
+		if (!_sim) { return; }
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+		if (ring.size() < 1) { return; }
+		const auto& s = ring.at(ring.size() - 1);
+		if (s.j.empty()) { return; }
+		int jointIdx = _selection.type == SelectionType::JOINT ? _selection.index : 0;
+		jointIdx = std::clamp(jointIdx, 0, static_cast<int>(s.j.size()) - 1);
+		if (_jointIdxSlider) {
+			QSignalBlocker blocker(_jointIdxSlider);
+			_jointIdxSlider->setMaximum(static_cast<int>(s.j.size()));
+			_jointIdxSlider->setValue(jointIdx + 1);
+		}
+		updateTelemetryInfo(s.j[jointIdx]);
+		if (_currentSimTimeJointLabel) { _currentSimTimeJointLabel->setText(QString("Current Simulation Time: %1 s").arg(simTime, 0, 'f', 3)); }
 	}
 
 	void ControlPanelWidget::displayPanel() {
@@ -270,5 +319,30 @@ namespace widgets {
 		_selection.source = SelectionSource::CONTROL_PANEL;
 
 		_sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
+	}
+
+	void ControlPanelWidget::updateSimClock() {
+		if (!_sim || !_simTimeLabel) { return; }
+
+		const double elapsed = _sim->simTime();
+		const bool running = _sim->isSimRunning();
+
+		if (!running && elapsed <= 0.0) {
+			_simTimeLabel->clear();
+			_simTimeLabel->setVisible(false);
+			return;
+		}
+
+		_simTimeLabel->setVisible(true);
+		_simTimeLabel->setTextFormat(Qt::RichText);
+		_simTimeLabel->setWordWrap(true);
+
+		if (_sim->isSimRunning()) {
+			simTime = _sim->simTime();
+			_simTimeLabel->setText(QString("<b>Elapsed Time:</b> %1 s").arg(_sim->simTime(), 0, 'f', 3));
+		}
+		else {
+			_simTimeLabel->setText(QString("<b>Elapsed Time:</b> %1 s").arg(_sim->simTime(), 0, 'f', 3));
+		}
 	}
 } // namespace widgets

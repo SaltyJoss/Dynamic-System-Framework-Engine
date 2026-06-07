@@ -25,8 +25,7 @@ namespace render {
 }
 
 namespace robots { class RobotSystem; }
-namespace diagnostics { class TelemetryRecorder; }
-
+namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
 namespace gui { class SimManager; }
 
 class QVBoxLayout;
@@ -53,15 +52,52 @@ namespace widgets {
 			const char* name;
 		};
 
+		struct TelemetryLabels {
+			// Headers
+			QLabel* stateHeader = nullptr;
+			QLabel* referenceHeader = nullptr;
+			QLabel* trajectoryHeader = nullptr;
+			QLabel* clampedHeader = nullptr;
+			QLabel* constantsHeader = nullptr;
+
+			// State
+			QLabel* q = nullptr;
+			QLabel* qd = nullptr;
+			QLabel* tau = nullptr;
+
+			// Reference
+			QLabel* qRef = nullptr;
+			QLabel* qdRef = nullptr;
+			QLabel* qddRef = nullptr;
+			QLabel* err = nullptr;
+
+			// Trajectory
+			QLabel* qTraj = nullptr;
+			QLabel* qdTraj = nullptr;
+			QLabel* qddTraj = nullptr;
+
+			// Clamping
+			QLabel* qClamped = nullptr;
+			QLabel* qdClamped = nullptr;
+
+			// Constants
+			QLabel* damping = nullptr;
+			QLabel* friction = nullptr;
+		};
+
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
-		void buildDtFractions();
 
 		void jointInfoPanel();
-		void displayJointInfo(const diagnostics::TelemetryRecorder& rec, int& selectedJoint, QVBoxLayout* layout);
+		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
+		void buildTelemetryWidgets(QVBoxLayout* layout);
+
+		void updateTelemetryDisplay();
 
 		void displayPanel();
 		void selectJointAndFollow(int jointIdx);
+
+		void updateSimClock();
 
 		gui::SimManager* _sim = nullptr;
 
@@ -70,6 +106,7 @@ namespace widgets {
 		QCheckBox* _useAutoDiffCheck = nullptr;
 		QComboBox* _integratorCombo = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
+		QLabel* _simTimeLabel = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
 		FractionSelectorWidget* _telemetryDtSelector = nullptr;
 
@@ -97,6 +134,8 @@ namespace widgets {
 			{ integration::eAutoDiffIntegrationMethod::AD_GLRK2, "GLRK2 (AutoDiff)" },
 			{ integration::eAutoDiffIntegrationMethod::AD_GLRK3, "GLRK3 (AutoDiff)" }
 		};
+
+		TelemetryLabels _telemetryLabels;
 
 		// Current selection state
 		Selection _selection;

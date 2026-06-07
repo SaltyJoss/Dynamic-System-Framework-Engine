@@ -40,21 +40,12 @@ target_include_directories(stb INTERFACE
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
-    src/MainWindow/Widgets/ViewportWidget.cpp
-    src/MainWindow/Widgets/RobotSelectorWidget.cpp
-    src/MainWindow/Widgets/ControlPanelWidget.cpp
-     src/MainWindow/Widgets/DSLEditorWidget.cpp
-
-    src/MainWindow/Widgets/FractionSelectorWidget.cpp
-    include/MainWindow/Widgets/FractionSelectorWidget.h
 )
 
 set(RENDER_SRC
     src/Rendering/CubeVertices.cpp
-    src/Rendering/GUIContext.cpp
     src/Rendering/IBL.cpp
     src/Rendering/OpenGLBufferManager.cpp
-    src/Rendering/OpenGLContext.cpp
     src/Rendering/ShaderUtil.cpp
     src/Rendering/SkyboxRenderer.cpp
     src/Rendering/Texture.cpp
@@ -80,11 +71,13 @@ set(MANAGER_SRC
 )
 
 set(UI_SRC
-    src/ui/CommandScriptEditor.cpp
-    src/ui/ControlPanel.cpp
-    src/ui/DebugPanel.cpp
     src/ui/RenderPreset.cpp
-    src/ui/Styles.cpp
+    src/MainWindow/Widgets/ViewportWidget.cpp
+    src/MainWindow/Widgets/RobotSelectorWidget.cpp
+    src/MainWindow/Widgets/ControlPanelWidget.cpp
+    src/MainWindow/Widgets/DSLEditorWidget.cpp
+    src/MainWindow/Widgets/FractionSelectorWidget.cpp
+    include/MainWindow/Widgets/FractionSelectorWidget.h
 )
 
 set(ROBOT_SRC
@@ -93,7 +86,6 @@ set(ROBOT_SRC
 )
 
 set(PLATFORM_SRC 
-    src/Platform/WindowManager.cpp
     src/Application.cpp
 )
 

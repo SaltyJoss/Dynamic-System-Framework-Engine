@@ -58,7 +58,6 @@ namespace widgets {
 		_stateTimer->start(100); // Poll every 100 ms
 
 		connect(_runStopButton, &QPushButton::clicked, this, [this]() { _sim->isScriptRunning() ? stopScript() : runScript(); });
-
 		pollScriptState();
 	}
 
@@ -214,6 +213,7 @@ namespace widgets {
 	}
 
 	void DSLEditorWidget::pollScriptState() {
+		updateButtonState(_sim->isScriptRunning());
 		if (!_sim->isScriptRunning()) { return; }
 		auto* prog = _sim->activeProgram();
 		if (!prog) { terminateScript("No active program found in simulation manager.", true); return; }

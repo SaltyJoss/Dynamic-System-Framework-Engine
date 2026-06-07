@@ -3,7 +3,10 @@
 #include "Scene/SimulationManager.h"
 #include "Scene/SimulationCore.h"
 
+#include <thread>
+#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <algorithm>
 
 extern "C" core::ISimulationCore* CreateSimulationCore_v1();
 extern "C" void DestroySimulationCore(core::ISimulationCore*);
@@ -64,9 +67,7 @@ namespace gui {
 	// Helper: create CorePtr (unique_ptr with std::function deleter)
 	static CorePtr makeCoreFactory() {
 		core::ISimulationCore* raw = CreateSimulationCore_v1();
-		if (!raw) {
-			return CorePtr(nullptr, [](core::ISimulationCore*) {});
-		}
+		if (!raw) { return CorePtr(nullptr, [](core::ISimulationCore*) {}); }
 		// std::function deleter is constructed from the lambda implicitly
 		return CorePtr(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
 	}
@@ -316,6 +317,4 @@ namespace gui {
 	}
 
 	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }
-
-	// --- Helpers ---
 }
