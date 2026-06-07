@@ -3,7 +3,6 @@
 #include "Scene/SimulationManager.h"
 #include "Scene/SimulationCore.h"
 
-#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 extern "C" core::ISimulationCore* CreateSimulationCore_v1();
@@ -76,7 +75,7 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
+	SimManager::SimManager() : _internalSize(1280, 720), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
 		_core->setRobotSystem(_impl->_robotSystem.get());
@@ -153,68 +152,37 @@ namespace gui {
 		return copy;
 	}
 
-	// Main render function called by the application
-	void SimManager::render() {
+	void SimManager::tick(double dt) {
+		_core->tick(dt);
+		if (_core->robotPresentationDirty()) {
+			loadRobot(_impl->_robotSystem->robotName());
+			_core->clearRobotPresentationDirty();
+		}
+	}
+
+	void SimManager::renderViewport(int w, int h) {
+		if (!_glReady || !_impl) { return; }
+		if (w <= 0 || h <= 0) { return; }
 		if (hasCompletedStudy()) {
 			auto results = consumeCompletedStudy();
-
 			for (const auto& r : results) {
 				LOG_INFO("Study completed: %s", r.tag.c_str());
 				// TODO: update plots, telemetry graphs, UI panels here
 			}
 		}
-
-		ImGuiIO& io = ImGui::GetIO();
-
-		tick(io.DeltaTime);
-
 		if (_impl->_robotSystem && hasRobot()) {
-			_impl->_robotRenderer->applyTransforms(
-				_impl->_robotSystem->model(),
-				_impl->_robotSystem->worldTransforms()
-			);
-		}
-		
-		if (_core->robotPresentationDirty()) {
-			loadRobot(_core->robotSystem()->robotName());
-			_core->clearRobotPresentationDirty();
-		}
-
-		_fpsCounter.update();
-
-		drawMainDockspace();
-		drawViewportWindow();
-	} 
-
-	void SimManager::tick(double dt) { 
-		if (!hasRobot()) { return; }
-		_core->tick(dt);
-	}
-
-	void SimManager::renderViewport(int w, int h) {
-		LOG_INFO_ONCE("renderViewport entered");
-		if (!_glReady || !_impl) { return; }
-		if (w <= 0 || h <= 0) { return; }
-		if (_impl->_robotSystem && hasRobot()) {
-			_impl->_robotRenderer->applyTransforms(
-				_impl->_robotSystem->model(),
-				_impl->_robotSystem->worldTransforms()
-			);
-		}
-		if (_core->robotPresentationDirty()) {
-			loadRobot(_core->robotSystem()->robotName());
-			_core->clearRobotPresentationDirty();
+			_impl->_robotRenderer->applyTransforms(_impl->_robotSystem->model(), _impl->_robotSystem->worldTransforms());
 		}
 		_fpsCounter.update();
 		auto& view = _impl->_views[static_cast<size_t>(_impl->activeView)];
 		_impl->renderView(*this, view, w, h);
-
 		glBindFramebuffer(GL_FRAMEBUFFER, _presentationFBO);
 		glViewport(0, 0, w, h);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		_impl->_presentShader->use();
 		_impl->_presentShader->setInt1(0, "screenTexture");
+		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, view.post->getTexture());
 		glBindVertexArray(_impl->_fullscreenVAO);
@@ -224,7 +192,7 @@ namespace gui {
 	}
 
 	void SimManager::syncRobotToScene() {
-		if (!hasRobot()) return;
+		if (!hasRobot()) { return; }
 		auto* rs = robotSystem();
 		const auto& model = rs->model();
 		const auto& T = rs->worldTransforms();

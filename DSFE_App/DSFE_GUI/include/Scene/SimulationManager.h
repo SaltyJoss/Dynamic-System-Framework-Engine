@@ -79,9 +79,6 @@ namespace gui {
 			_doneCurrentHook = doneCurrentHook;
 		}
 
-		void renderViewport(int w, int h);
-        void setDisplaySize(int w, int h);
-
 		// Light
         scene::Light* getLight();
         void setLightColour(const glm::vec3& c);
@@ -166,15 +163,13 @@ namespace gui {
 		// Render Settings & Profiles
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
-
-		// Reset HDR to default
 		void resetHDRToPreset();
-		// Reload shaders (e.g. after editing source files)
         void reloadAllShaders();
 
 		// Rendering Entry Points
-        void render();
         void tick(double dt);
+        void renderViewport(int w, int h);
+        void setDisplaySize(int w, int h);
         void resize(int32_t width, int32_t height);
 
 		void setPresentationFBO(GLuint fbo) { _presentationFBO = fbo; }
