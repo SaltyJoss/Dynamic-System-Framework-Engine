@@ -73,7 +73,6 @@ set(MANAGER_SRC
     src/Scene/Manager/SimBackend.cpp
     src/Scene/Manager/SimCamera.cpp
     src/Scene/Manager/SimObjects.cpp
-    src/Scene/Manager/SimPostFX.cpp
     src/Scene/Manager/SimRendering.cpp
     src/Scene/Manager/SimRobots.cpp
     src/Scene/Manager/SimUI.cpp

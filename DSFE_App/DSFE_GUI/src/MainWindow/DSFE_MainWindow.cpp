@@ -18,7 +18,7 @@ namespace window {
 		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
 	{
 		setWindowTitle("DSFE");
-		resize(1280, 720);
+		resize(1920, 1080);
 
 		buildMenuBar();
 
@@ -61,6 +61,7 @@ namespace window {
 				connect(openScriptAction, &QAction::triggered, this, [this]() {
 					QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 					if (fileName.isEmpty()) { return; }
+					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 					_dslEditor->loadScript(fileName);
 				});
 			});
@@ -77,6 +78,7 @@ namespace window {
 					LOG_INFO("Menu clicked: File -> Save -> Script");
 					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
 					if (fileName.isEmpty()) { return; }
+					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 					_dslEditor->saveScript(fileName);
 				});
 			});
@@ -92,6 +94,7 @@ namespace window {
 					LOG_INFO("Menu clicked: File -> Save As -> Script");
 					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 					if (fileName.isEmpty()) { return; }
+					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 					_dslEditor->saveScript(fileName);
 				});
 			});
@@ -127,7 +130,7 @@ namespace window {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
 				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
 				if (path.isEmpty()) { return; }
-				_sim->loadMesh(path.toStdString()); // Crashes at the moment, TODO fix crash
+				_sim->loadMesh(path.toStdString());
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
