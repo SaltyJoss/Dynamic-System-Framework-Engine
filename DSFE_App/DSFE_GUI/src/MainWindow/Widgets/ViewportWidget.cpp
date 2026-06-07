@@ -10,6 +10,7 @@
 
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPointer>
 
 #include <QThread>
 #include "Platform/KeyCode.h"
@@ -23,9 +24,10 @@ namespace widgets {
 		_updateTimer.start(7); // ~144 FPS
 	}
 
+	ViewportWidget::~ViewportWidget() { if (_sim) _sim->setContextHooks({}, {}); }
+
 	void ViewportWidget::initializeGL() {
 		auto* ctx = QOpenGLContext::currentContext();
-		if (_sim) { _sim->setContextHooks([this]() { this->makeCurrent(); }, [this]() { this->doneCurrent(); }); }
 		if (!ctx) {
 			LOG_ERROR("No current OpenGL context");
 			return;

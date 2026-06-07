@@ -16,6 +16,7 @@ namespace widgets {
 	class ViewportWidget : public QOpenGLWidget {
 	public:
 		explicit ViewportWidget(gui::SimManager* sim, QWidget* parent = nullptr);
+		~ViewportWidget();
 
 	protected:
 		void initializeGL() override;
