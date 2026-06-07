@@ -7,6 +7,11 @@
 #include <mutex>
 #include <vector>
 #include <string>
+#include "Platform/StudyRunner.h"
+#include <MathLibAPI.h>
+#include <core/Types.h>
+#include <unordered_set>
+#include "Interpreter/RunWrapper.h"
 
 class QTextEdit;
 class QLabel;
@@ -18,7 +23,13 @@ namespace gui { class SimManager; }
 namespace interpreter {
 	class Parser;
 	class IStoredProgram;
-	class RunWrapper;
+}
+
+namespace runs {
+	struct ActiveRun {
+		std::future<StudyResult> fut;
+		std::string tag;
+	};
 }
 
 namespace widgets {
@@ -28,8 +39,17 @@ namespace widgets {
 
 		bool loadScript(const QString& fileName);
 		bool saveScript(const QString& fileName);
+		void runButtonHandler();
 
 	private:
+		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
+		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
+
+		gui::SimManager* _sim = nullptr;
+		interpreter::Parser* _parser = nullptr;
+		interpreter::IStoredProgram* _program = nullptr;
+		interpreter::RunWrapper* _wrapper = nullptr;
+
 		void runScript();
 		void stopScript();
 
@@ -44,14 +64,12 @@ namespace widgets {
 		void setScript(const std::string& s) { _scriptText = s; }
 		std::string getScript() const { return _scriptText; }
 
-		std::string _scriptText;
-		
-		gui::SimManager* _sim = nullptr;
-		interpreter::Parser* _parser;
-		interpreter::IStoredProgram* _program;
-		interpreter::RunWrapper* _wrapper;
+		bool _loadedFromFile = false;
 
+		std::string _scriptText;
 		std::string _scriptWorkingDir;
+		std::vector<std::string> _script;
+		int lastClickedLine = -1;
 
 		QTabWidget* _tabs = nullptr;
 		QWidget* _editorTab = nullptr;
@@ -60,6 +78,8 @@ namespace widgets {
 		QTextEdit* _dslHelp = nullptr;
 		QPushButton* _runStopButton = nullptr;
 		QLabel* _statusLabel = nullptr;
+		QLabel* _scriptLinesLabel = nullptr;
+		QLabel* _scriptCharsLabel = nullptr;
 		QString _currentScriptPath;
 		QTimer* _stateTimer = nullptr;
 	};
