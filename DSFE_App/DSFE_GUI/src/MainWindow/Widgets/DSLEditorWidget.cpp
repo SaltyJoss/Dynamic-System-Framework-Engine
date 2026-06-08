@@ -17,6 +17,7 @@
 #include "Interpreter/StoredProgram.h"
 
 #include "Widgets/ConsoleOutputWidget.h"
+#include "DSL/DSLSyntaxHighlighter.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -112,6 +113,7 @@ namespace widgets {
 		_editorTab = new QWidget(this);
 		auto* layout = new QVBoxLayout(_editorTab);
 		_scriptEditor = new QTextEdit(_editorTab);
+		_highlighter = new DSLSyntaxHighlighter(_scriptEditor->document());
 		layout->addWidget(_scriptEditor);
 		_tabs->addTab(_editorTab, "Script Editor");
 	}

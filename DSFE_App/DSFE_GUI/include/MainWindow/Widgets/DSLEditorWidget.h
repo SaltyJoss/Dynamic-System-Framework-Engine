@@ -34,6 +34,7 @@ namespace runs {
 
 namespace widgets {
 	class ConsoleOutputWidget;
+	class DSLSyntaxHighlighter;
 
 	class DSLEditorWidget : public QWidget {
 	public:
@@ -53,6 +54,7 @@ namespace widgets {
 		interpreter::RunWrapper* _wrapper = nullptr;
 
 		ConsoleOutputWidget* _log = nullptr;
+		DSLSyntaxHighlighter* _highlighter = nullptr;
 
 		void runScript();
 		void stopScript();
