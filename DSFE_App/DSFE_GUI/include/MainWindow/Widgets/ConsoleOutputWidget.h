@@ -11,18 +11,19 @@ class QTabWidget;
 class QPushButton;
 
 // Colours for log levels (Will eventually move to a separate file for global UI constants)
-#define TRACE_COLOUR   QColor(160, 160, 160)
-#define DEBUG_COLOUR   QColor(80,  170, 240)
-#define INFO_COLOUR    QColor(80,  160, 255)
-#define WARN_COLOUR    QColor(255, 180, 0)
-#define ERROR_COLOUR   QColor(220, 60,  70)
-#define OK_COLOUR	   QColor(0,   190, 100)
-#define FAIL_COLOUR	   QColor(170, 0,   50)
-#define RUNTIME_COLOUR QColor(190, 120, 225)
-#define OUTPUT_COLOUR  QColor(220, 220, 220)
+constexpr QColor TRACE_COLOUR(160, 160, 160);
+constexpr QColor DEBUG_COLOUR(80, 170, 240);
+constexpr QColor INFO_COLOUR(80, 160, 255);
+constexpr QColor WARN_COLOUR(255, 180, 0);
+constexpr QColor ERROR_COLOUR(220, 60,  70);
+constexpr QColor OK_COLOUR(0, 190, 100);
+constexpr QColor FAIL_COLOUR(170, 0, 50);
+constexpr QColor RUNTIME_COLOUR(190, 120, 225);
+constexpr QColor OUTPUT_COLOUR(220, 220, 220);
+constexpr QColor ROTATE_COLOUR(120, 180, 255);
+constexpr QColor TRANSLATE_COLOUR(120, 255, 180);
 
-#define ROTATE_COLOUR    QColor(120, 180, 255)
-#define TRANSLATE_COLOUR QColor(120, 255, 180)
+constexpr size_t MAX_TERMINAL_ENTRIES = 10000; // Maximum number of terminal entries to keep in memory for display
 
 namespace widgets {
 	class ConsoleOutputWidget : public QWidget {
@@ -35,7 +36,6 @@ namespace widgets {
 		QTabWidget* _tabs = nullptr;
 		QTextEdit* _terminalLog = nullptr;
 		QTextEdit* _simLog = nullptr;
-		QPushButton* _clearTerminalButton = nullptr;
 
 		size_t _lastTerminalCount = 0;
 		size_t _lastSimCount = 0;

@@ -78,17 +78,6 @@ namespace widgets {
 		_tabs->addTab(_simLog, "Simulation");
 		rootLayout->addWidget(_tabs);
 
-		auto* buttonLayout = new QHBoxLayout();
-		_clearTerminalButton = new QPushButton("Clear Terminal Log", this);
-		buttonLayout->addWidget(_clearTerminalButton);
-		rootLayout->addLayout(buttonLayout);
-
-		connect(_clearTerminalButton, &QPushButton::clicked, this, [this]() {
-			gLog.Instance().clear();
-			_terminalLog->clear();
-			_lastTerminalCount = 0;
-		});
-
 		auto* timer = new QTimer(this);
 		connect(timer, &QTimer::timeout, this, &ConsoleOutputWidget::updateLog);
 		timer->start(100); // Update every 100 ms
@@ -129,6 +118,15 @@ namespace widgets {
 			cursor.insertText(QString::fromStdString(e.message), msgFmt);
 			cursor.insertBlock();
 			++_lastSimCount;
+		}
+
+		while (_terminalLog->document()->blockCount() > MAX_TERMINAL_ENTRIES) {
+			QTextCursor cursor = _terminalLog->textCursor();
+			cursor.movePosition(QTextCursor::Start);
+			cursor.select(QTextCursor::BlockUnderCursor);
+			cursor.removeSelectedText();
+			cursor.deleteChar(); // Remove the block itself
+			--_lastTerminalCount; // Adjust count since we've removed an entry
 		}
 
 		if (autoScroll) {
