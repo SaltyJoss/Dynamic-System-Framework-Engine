@@ -70,12 +70,13 @@ set(MANAGER_SRC
     src/Scene/Manager/SimViewport.cpp
 )
 
-set(UI_SRC
+set(WIDGETS_SRC
     src/ui/RenderPreset.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
     src/MainWindow/Widgets/ControlPanelWidget.cpp
     src/MainWindow/Widgets/DSLEditorWidget.cpp
+    src/MainWindow/Widgets/ConsoleOutputWidget.cpp
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
     include/MainWindow/Widgets/FractionSelectorWidget.h
 )
@@ -100,7 +101,7 @@ target_sources(DSFE_GUI PRIVATE
     ${RENDER_SRC}
     ${SCENE_SRC}
     ${MANAGER_SRC}
-    ${UI_SRC}
+    ${WIDGETS_SRC}
     ${ROBOT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
