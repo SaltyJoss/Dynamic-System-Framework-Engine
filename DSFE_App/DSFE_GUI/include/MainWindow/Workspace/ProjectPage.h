@@ -4,7 +4,10 @@
 #include <QWidget>
 
 namespace gui { class SimManager; }
-namespace widgets { class DSLEditorWidget; }
+namespace widgets {
+	class ConsoleOutputWidget;
+	class DSLEditorWidget;
+}
 
 namespace Workspace {
 	class ProjectPage : public QWidget {
@@ -13,6 +16,7 @@ namespace Workspace {
 		widgets::DSLEditorWidget* editor() const;
 
 	private:
+		widgets::ConsoleOutputWidget* _log = nullptr;
 		widgets::DSLEditorWidget* _editor = nullptr;
 	};
 } // namespace Workspace

@@ -16,11 +16,13 @@
 #include "Numerics/IntegrationMethods.h"
 #include "Interpreter/StoredProgram.h"
 
+#include "Widgets/ConsoleOutputWidget.h"
+
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, QWidget* parent) 
-		: QWidget(parent), _sim(sim), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
+	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* log, QWidget* parent)
+		: QWidget(parent), _sim(sim), _log(log), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
 	{
 		auto* rootLayout = new QVBoxLayout(this);
 		auto* scriptStateLayout = new QHBoxLayout();
@@ -159,6 +161,7 @@ namespace widgets {
 		_scriptText = _scriptEditor->toPlainText().toStdString();
 		LOG_INFO("Script size = %zu", _scriptText.size());
 
+		if (_log) { _log->clearSimLog(); }
 		_sim->setActiveProgram(_program);
 		_sim->setScriptRunning(true);
 		LOG_INFO("DSL script started."); D_INFO("DSL script started.");

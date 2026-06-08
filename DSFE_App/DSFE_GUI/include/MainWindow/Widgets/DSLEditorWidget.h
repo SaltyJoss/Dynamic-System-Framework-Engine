@@ -33,9 +33,11 @@ namespace runs {
 }
 
 namespace widgets {
+	class ConsoleOutputWidget;
+
 	class DSLEditorWidget : public QWidget {
 	public:
-		explicit DSLEditorWidget(gui::SimManager* sim, QWidget* parent = nullptr);
+		explicit DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* _log, QWidget* parent = nullptr);
 
 		bool loadScript(const QString& fileName);
 		bool saveScript(const QString& fileName);
@@ -49,6 +51,8 @@ namespace widgets {
 		interpreter::Parser* _parser = nullptr;
 		interpreter::IStoredProgram* _program = nullptr;
 		interpreter::RunWrapper* _wrapper = nullptr;
+
+		ConsoleOutputWidget* _log = nullptr;
 
 		void runScript();
 		void stopScript();
