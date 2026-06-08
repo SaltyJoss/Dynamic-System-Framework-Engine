@@ -24,7 +24,6 @@ namespace Workspace {
 		centreSplitter->addWidget(new widgets::ViewportWidget(sim, this));
 		centreSplitter->addWidget(_log);
 		rightSplitter->addWidget(new widgets::ControlPanelWidget(sim, this));
-		rightSplitter->addWidget(new QLabel("Scene Object? (TODO)", this));
 		rootSplitter->addWidget(centreSplitter);
 		rootSplitter->addWidget(rightSplitter);
 		layout->addWidget(rootSplitter);
