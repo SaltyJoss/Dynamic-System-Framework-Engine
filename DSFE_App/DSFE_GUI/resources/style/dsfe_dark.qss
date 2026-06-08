@@ -1,0 +1,142 @@
+QMainWindow {
+	background-color: rgb(36,36,36);
+}
+
+QWidget {
+	background-color: rgb(36,36,36);
+	color: rgb(220,220,220);
+}
+
+QGroupBox {
+	background-color: rgb(40,40,40);
+	border: 1px solid rgb(70,70,70);
+	border-radius: 4px;
+	margin-top: 8px;
+	padding-top: 10px;
+	font-weight: bold;
+}
+
+QGroupBox::title {
+	subcontrol-origin: margin;
+	left: 8px;
+	padding: 0px 4px;
+	color: rgb(220,220,220);
+}
+
+QTextEdit {
+	background-color: rgb(26,26,26);
+	border: 1px solid rgb(70,70,70);
+	color: rgb(220,220,220);
+	selection-background-color: rgb(86,156,214);
+	font-family: Consolas, monospace;
+	font-size: 12px;
+}
+
+QPlainTextEdit {
+	background-color: rgb(26,26,26);
+	border: 1px solid rgb(70,70,70);
+	color: rgb(220,220,220);
+	selection-background-color: rgb(86,156,214);
+	font-family: Consolas, monospace;
+	font-size: 12px;
+}
+
+QTabWidget::pane {
+	border: 1px solid rgb(70,70,70);
+	background-color: rgb(36,36,36);
+}
+
+QTabBar::tab {
+	background-color: rgb(40,40,40);
+	border: 1px solid rgb(70,70,70);
+	padding: 4px 8px;
+}
+
+QTabBar::tab:selected {
+	background-color: rgb(55,55,55);
+}
+
+QMenuBar {
+	background-color: rgb(36,36,36);
+}
+
+QMenuBar::item {
+	background: transparent;
+	padding: 4px 8px;
+}
+
+QMenuBar::item:selected {
+	background-color: rgb(55,55,55);
+}
+
+QMenu {
+	background-color: rgb(40,40,40);
+	border: 1px solid rgb(70,70,70);
+}
+
+QMenu::item:selected {
+	background-color: rgb(86,156,214);
+}
+
+QComboBox {
+	background-color: rgb(40,40,40);
+	border: 1px solid rgb(70,70,70);
+	border-radius: 3px;
+	padding: 2px 6px;
+	min-height: 20px;
+}
+
+QComboBox::drop-down {
+	border: none;
+}
+
+QPushButton {
+	background-color: rgb(50,50,50);
+	border: 1px solid rgb(70,70,70);
+	border-radius: 3px;
+	padding: 4px 10px;
+}
+
+QPushButton:hover {
+	background-color: rgb(65,65,65);
+}
+
+QPushButton:pressed {
+	background-color: rgb(86,156,214);
+}
+
+QScrollBar:vertical {
+	background-color: rgb(30,30,30);
+	width: 12px;
+}
+
+QScrollBar::handle:vertical {
+	background-color: rgb(80,80,80);
+	min-height: 20px;
+}
+
+QSlider::groove:horizontal {
+	height: 4px;
+	background-color: rgb(70,70,70);
+	border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal {
+	background-color: rgb(86,156,214);
+	border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+	background-color: rgb(220,220,220);
+	width: 12px;
+	margin: -5px 0px;
+	border-radius: 6px;
+}
+
+QCheckBox {
+	spacing: 6px;
+}
+
+QLabel {
+	background-color: transparent;
+}

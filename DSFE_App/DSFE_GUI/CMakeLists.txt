@@ -40,6 +40,7 @@ target_include_directories(stb INTERFACE
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
+    src/MainWindow/style/DSFETheme.cpp
 )
 
 set(RENDER_SRC
@@ -79,6 +80,7 @@ set(WIDGETS_SRC
     src/MainWindow/Widgets/ConsoleOutputWidget.cpp
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
     include/MainWindow/Widgets/FractionSelectorWidget.h
+    src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
 )
 
 set(ROBOT_SRC
@@ -96,6 +98,10 @@ set(ASSETS_SRC
     src/Assets/importObj.cpp
 )
 
+set(QT_RESOURCES 
+    resources/DSFE_GUI.qrc
+)
+
 target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
     ${RENDER_SRC}
@@ -105,6 +111,7 @@ target_sources(DSFE_GUI PRIVATE
     ${ROBOT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
+    ${QT_RESOURCES}
 )
 
 set(imfilebrowser_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/imfilebrowser)
@@ -142,6 +149,7 @@ target_include_directories(DSFE_GUI
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
 
     PRIVATE
         ${imfilebrowser_ROOT}

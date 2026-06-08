@@ -11,6 +11,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QSurfaceFormat>
+#include "MainWindow/style/DSFETheme.h"
 
 namespace fs = std::filesystem;
 // Initialise the static instance pointer to nullptr
@@ -46,6 +47,7 @@ Application::Application(const std::string& appName) : _name(appName) {
 	QSurfaceFormat::setDefaultFormat(format);
 
 	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
+	style::applyTheme(*_qtApp);
 	_sim = std::make_unique<gui::SimManager>();
 
 	int winW = 1920, winH = 1080;

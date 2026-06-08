@@ -112,7 +112,6 @@ namespace widgets {
 
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;
-		QLabel* _currentSimTimeJointLabel = nullptr;
 
 
 		static constexpr IntegratorEntry integrators[] = {
