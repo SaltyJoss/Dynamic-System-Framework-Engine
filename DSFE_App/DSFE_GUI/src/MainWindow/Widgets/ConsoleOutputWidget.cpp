@@ -106,6 +106,7 @@ namespace widgets {
 		}
 		
 		const auto& simEntries = gLog.Instance().SimEntries();
+		if (_lastSimCount > simEntries.size()) { _lastSimCount = 0; _simLog->clear(); }
 		while (_lastSimCount < simEntries.size()) {
 			const auto& e = simEntries[_lastSimCount];
 			QTextCursor cursor = _simLog->textCursor();
@@ -126,7 +127,11 @@ namespace widgets {
 			cursor.select(QTextCursor::BlockUnderCursor);
 			cursor.removeSelectedText();
 			cursor.deleteChar(); // Remove the block itself
-			--_lastTerminalCount; // Adjust count since we've removed an entry
+		}
+
+		if (_lastTerminalCount > entries.size()) {
+			_terminalLog->clear();
+			_lastTerminalCount = 0;
 		}
 
 		if (autoScroll) {

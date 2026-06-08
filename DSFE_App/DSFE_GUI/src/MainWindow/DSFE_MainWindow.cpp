@@ -50,37 +50,31 @@ namespace window {
 				});
 			});
 			auto* openMenu = fileMenu->addMenu("Open");
-			connect(openMenu, &QMenu::aboutToShow, this, [this, openMenu]() {
-				LOG_INFO("Menu clicked: File -> Open");
-				auto* openProjectAction = openMenu->addAction("Project");
-				connect(openProjectAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> Open -> Project");
-				});
-				openMenu->addSeparator();
-				auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
-				connect(openScriptAction, &QAction::triggered, this, [this]() {
-					QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
-					if (fileName.isEmpty()) { return; }
-					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
-					_dslEditor->loadScript(fileName);
-				});
+			auto* openProjectAction = openMenu->addAction("Project");
+			connect(openProjectAction, &QAction::triggered, this, []() {
+				LOG_INFO("Menu clicked: File -> Open -> Project");
+			});
+			openMenu->addSeparator();
+			auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
+			connect(openScriptAction, &QAction::triggered, this, [this]() {
+				QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
+				if (fileName.isEmpty()) { return; }
+				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
+				_dslEditor->loadScript(fileName);
 			});
 			fileMenu->addSeparator();
 			auto* saveMenu = fileMenu->addMenu("Save");
-			connect(saveMenu, &QMenu::aboutToShow, this, [this, saveMenu]() {
-				LOG_INFO("Menu clicked: File -> Save");
-				auto* saveProjectAction = saveMenu->addAction("Project");
-				connect(saveProjectAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> Save -> Project");
-				});
-				auto* saveScriptAction = saveMenu->addAction("Script");
-				connect(saveScriptAction, &QAction::triggered, this, [this]() {
-					LOG_INFO("Menu clicked: File -> Save -> Script");
-					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
-					if (fileName.isEmpty()) { return; }
-					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
-					_dslEditor->saveScript(fileName);
-				});
+			auto* saveProjectAction = saveMenu->addAction("Project");
+			connect(saveProjectAction, &QAction::triggered, this, []() {
+				LOG_INFO("Menu clicked: File -> Save -> Project");
+			});
+			auto* saveScriptAction = saveMenu->addAction("Script");
+			connect(saveScriptAction, &QAction::triggered, this, [this]() {
+				LOG_INFO("Menu clicked: File -> Save -> Script");
+				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
+				if (fileName.isEmpty()) { return; }
+				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
+				_dslEditor->saveScript(fileName);
 			});
 			auto* saveAsMenu = fileMenu->addMenu("Save As");
 			connect(saveAsMenu, &QMenu::aboutToShow, this, [this, saveAsMenu]() {
