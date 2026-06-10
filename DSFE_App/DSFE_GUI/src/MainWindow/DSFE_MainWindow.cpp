@@ -4,9 +4,12 @@
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
 
+#include "ui/RenderPreset.h"
+
 #include "Platform/SystemMap.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QMenuBar>
 #include <QFileDialog>
@@ -136,6 +139,8 @@ namespace window {
 		}
 		// View menu
 		{
+			auto* graphicsMenu = viewMenu->addMenu("Graphics Options");
+			buildGraphicsMenu(graphicsMenu);
 			auto* resetCameraAction = viewMenu->addAction("Reset Camera");
 			connect(resetCameraAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: View -> Reset Camera");
@@ -155,11 +160,6 @@ namespace window {
 			connect(physicsDebugAction, &QAction::toggled, this, [](bool checked) {
 				LOG_INFO("Menu toggled: Tools -> Toggle Physics Debug -> %s", checked ? "On" : "Off");
 			});
-			auto* reloadShadersAction = toolsMenu->addAction("Reload Shaders");
-			connect(reloadShadersAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: Tools -> Reload Shaders");
-				_sim->reloadAllShaders();
-			});
 			auto* diagnosticsAction = toolsMenu->addAction("Run Diagnostics");
 			connect(diagnosticsAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: Tools -> Run Diagnostics");
@@ -176,6 +176,138 @@ namespace window {
 				LOG_INFO("Menu clicked: Help -> Documentation");
 			});
 		}
+	}
+
+	void DSFE_MainWindow::buildGraphicsMenu(QMenu* graphicsMenu) {
+		// Quality submenu
+		auto* qualityMenu = graphicsMenu->addMenu("Quality");
+		auto* lowQualityAction = qualityMenu->addAction("Low");
+		auto* mediumQualityAction = qualityMenu->addAction("Medium");
+		auto* highQualityAction = qualityMenu->addAction("High");
+		auto* ultraQualityAction = qualityMenu->addAction("Ultra");
+		lowQualityAction->setCheckable(true);
+		mediumQualityAction->setCheckable(true);
+		highQualityAction->setCheckable(true);
+		ultraQualityAction->setCheckable(true);
+		auto* qualityGroup = new QActionGroup(this);
+		qualityGroup->setExclusive(true);
+		qualityGroup->addAction(lowQualityAction);
+		qualityGroup->addAction(mediumQualityAction);
+		qualityGroup->addAction(highQualityAction);
+		qualityGroup->addAction(ultraQualityAction);
+		mediumQualityAction->setChecked(true);
+		// LOW
+		connect(lowQualityAction, &QAction::triggered, this, [this]() {
+			q = render::QualityPreset::Low;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Graphics Quality -> Low");
+		});
+		// MEDIUM
+		connect(mediumQualityAction, &QAction::triggered, this, [this]() {
+			q = render::QualityPreset::Medium;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Graphics Quality -> Medium");
+		});
+		// HIGH
+		connect(highQualityAction, &QAction::triggered, this, [this]() {
+			q = render::QualityPreset::High;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Graphics Quality -> High");
+		});
+		// ULTRA
+		connect(ultraQualityAction, &QAction::triggered, this, [this]() {
+			q = render::QualityPreset::Ultra;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Graphics Quality -> Ultra");
+		});
+
+		// Resolution submenu
+		auto* resolutionMenu = graphicsMenu->addMenu("Resolution");
+		auto* r720Action = resolutionMenu->addAction("720p");
+		auto* r1080Action = resolutionMenu->addAction("1080p");
+		auto* r1440Action = resolutionMenu->addAction("1440p");
+		auto* r4kAction = resolutionMenu->addAction("4K");
+		r720Action->setCheckable(true);
+		r1080Action->setCheckable(true);
+		r1440Action->setCheckable(true);
+		r4kAction->setCheckable(true);
+		auto* resolutionGroup = new QActionGroup(this);
+		resolutionGroup->setExclusive(true);
+		resolutionGroup->addAction(r720Action);
+		resolutionGroup->addAction(r1080Action);
+		resolutionGroup->addAction(r1440Action);
+		resolutionGroup->addAction(r4kAction);
+		r1080Action->setChecked(true);
+		// 720p
+		connect(r720Action, &QAction::triggered, this, [this]() {
+			r = render::ResolutionPreset::R_720p;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Resolution -> 720p");
+		});
+		// 1080p
+		connect(r1080Action, &QAction::triggered, this, [this]() {
+			r = render::ResolutionPreset::R_1080p;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Resolution -> 1080p");
+		});
+		// 1440p
+		connect(r1440Action, &QAction::triggered, this, [this]() {
+			r = render::ResolutionPreset::R_1440p;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Resolution -> 1440p");
+		});
+		// 4K
+		connect(r4kAction, &QAction::triggered, this, [this]() {
+			r = render::ResolutionPreset::R_4K;
+			auto s = render::MakeSettings(r, q);
+			_sim->applyRenderProfile(s, r);
+			LOG_INFO("Resolution -> 4K");
+		});
+
+		// Shader submenu
+		auto* shaderMenu = graphicsMenu->addMenu("Shaders");
+		auto* basicShaderAction = shaderMenu->addAction("Basic");
+		auto* litShaderAction = shaderMenu->addAction("Lit");
+		auto* pbrShaderAction = shaderMenu->addAction("PBR");
+		basicShaderAction->setCheckable(true);
+		litShaderAction->setCheckable(true);
+		pbrShaderAction->setCheckable(true);
+		auto* shaderGroup = new QActionGroup(this);
+		shaderGroup->setExclusive(true);
+		shaderGroup->addAction(basicShaderAction);
+		shaderGroup->addAction(litShaderAction);
+		shaderGroup->addAction(pbrShaderAction);
+		pbrShaderAction->setChecked(true);
+		// BASIC
+		connect(basicShaderAction, &QAction::triggered, this, [this]() {
+			_sim->currentShaderMode = gui::SimManager::ShaderMode::Basic;
+			LOG_INFO("Shader Mode -> Basic");
+		});
+		// LIT
+		connect(litShaderAction, &QAction::triggered, this, [this]() {
+			_sim->currentShaderMode = gui::SimManager::ShaderMode::Lit;
+			LOG_INFO("Shader Mode -> Lit");
+		});
+		// PBR
+		connect(pbrShaderAction, &QAction::triggered, this, [this]() {
+			_sim->currentShaderMode = gui::SimManager::ShaderMode::PBR;
+			LOG_INFO("Shader Mode -> PBR");
+		});
+
+		shaderMenu->addSeparator();
+
+		auto* reloadShadersAction = shaderMenu->addAction("Reload Shaders");
+		connect(reloadShadersAction, &QAction::triggered, this, [this]() {
+			LOG_INFO("Menu clicked: Reload Shaders");
+			_sim->reloadAllShaders();
+		});
 	}
 
 	void DSFE_MainWindow::buildRobotMenu(QMenu* projectMenu) {
