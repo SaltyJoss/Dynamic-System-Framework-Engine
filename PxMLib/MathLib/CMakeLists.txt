@@ -1,6 +1,5 @@
 # CMakeLists.txt for MathLib
-
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 project(MathLib LANGUAGES CXX)
 
 add_library(MathLib STATIC

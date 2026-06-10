@@ -1,5 +1,5 @@
 # CMakeLists.txt for PxMLib project
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 project(PxMLib LANGUAGES CXX)
 
 # Add projects within the DSFE_App directory

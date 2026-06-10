@@ -1,7 +1,7 @@
 # CMakeLists.txt for DSFE_GUI module
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 project(DSFE_GUI LANGUAGES C CXX)
 
 set(CMAKE_AUTOMOC ON)

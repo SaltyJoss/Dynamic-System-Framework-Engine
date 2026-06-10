@@ -1,5 +1,5 @@
 # CMakeLists.txt for DSFE_Core library
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 project(DSFE_Core LANGUAGES C CXX)
 
 add_library(DSFE_Core SHARED)

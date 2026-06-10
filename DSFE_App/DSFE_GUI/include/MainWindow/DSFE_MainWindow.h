@@ -9,6 +9,11 @@
 namespace gui { class SimManager; }
 namespace widgets { class DSLEditorWidget; }
 
+namespace render {
+	enum class ResolutionPreset;
+	enum class QualityPreset;
+}
+
 namespace window {
 	class DSFE_MainWindow : public QMainWindow {
 	public:
@@ -16,9 +21,13 @@ namespace window {
 
 	private:
 		void buildMenuBar();
+		void buildGraphicsMenu(QMenu* graphicsMenu);
+		void buildRobotMenu(QMenu* projectMenu);
+
+		render::ResolutionPreset r;
+		render::QualityPreset q;
+
 		gui::SimManager* _sim;
 		widgets::DSLEditorWidget* _dslEditor = nullptr;
-
-		void buildRobotMenu(QMenu* projectMenu);
 	};
 }
