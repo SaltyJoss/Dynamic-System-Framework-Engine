@@ -25,48 +25,39 @@ namespace single_body_system::dynamics {
 
 		mathlib::VecX derivatives(Body& body, const mathlib::VecX& x, mathlib::Vec3& F_ext, mathlib::Vec3& tau_ext, double dt) {
 			mathlib::VecX dxdt(13);
+			dxdt.setZero();
 
 			mathlib::Vec3 p = x.block<3, 1>(0, 0);
 			mathlib::Vec3 pd = x.block<3, 1>(3, 0);
-			mathlib::Vec4 v = x.block<4, 1>(6, 0);
-			mathlib::Quat q_coeffs(v);
+			mathlib::Vec4 qv = x.block<4, 1>(6, 0);
+			mathlib::Quat q(qv);
 			mathlib::Vec3 w = x.block<3, 1>(10, 0);
 
-			if (F_ext == mathlib::Vec3::Zero()) { body.state.pdd = F_ext; }
-			else { body.state.pdd = (F_ext / body.inertia.mass).eval(); }
+			const double m = body.inertia.mass;
 
-			// Update linear velocity and position
-			body.state.pd = body.state.pdd * dt;
-			body.state.p = body.state.pd * dt;
+			mathlib::Vec3 pdd;
+			if (m <= 1e-12) { pdd = mathlib::Vec3(0.0, 0.0, 0.0); }
+			else { pdd = F_ext / m; }
 
-			if (tau_ext == mathlib::Vec3::Zero()) {
-				body.state.wd = tau_ext;
-				body.state.w = tau_ext;
-			}
-			else {
-				mathlib::Mat3 inertiaInv = body.inertia.inertiaTensor.inverse();
-				body.state.wd = inertiaInv * (tau_ext - body.state.w.cross(body.inertia.inertiaTensor * body.state.w));
-				body.state.w = body.state.wd * dt;
+			mathlib::Vec3 wd = mathlib::Vec3::Zero();
+			mathlib::Mat3 I = body.inertia.inertiaTensor;
+			mathlib::Mat3 I_inv = I.inverse();
+
+			if (I.determinant() > 1e-12) {
+				wd = I_inv * (tau_ext - w.cross(I * w));
 			}
 
-			// Update orientation quaternion
-			if (q_coeffs.norm() > 1e-12) {
-				body.state.q = mathlib::Quat(q_coeffs).normalized();
-			}
-			else {
-				body.state.q.coeffs() = mathlib::Quat(1.0, 0.0, 0.0, 0.0).coeffs();
-			}
+			dxdt.block<3, 1>(0, 0) = pd; // dp/dt = v
+			dxdt.block<3, 1>(3, 0) = pdd; // dpd/dt = a
 
-			double theta = body.state.w.norm() * dt;
-			if (theta > 1e-12) {
-				mathlib::Quat dq(Eigen::AngleAxis(theta, body.state.w.normalized()));
-				body.state.q = (body.state.q * dq).normalized();
-			}
+			mathlib::Quat dq;
+			mathlib::Vec3 omega = w;
 
-			dxdt.block<3, 1>(0, 0) = body.state.pd; // dp/dt = pd
-			dxdt.block<3, 1>(3, 0) = body.state.pdd; // dpd/dt = pdd
-			dxdt.block<4, 1>(6, 0) = body.state.q.coeffs(); // dq/dt = q (quaternion)
-			dxdt.block<3, 1>(10, 0) = body.state.w; // dw/dt = w
+			mathlib::Quat omega_quat(0.0, omega.x(), omega.y(), omega.z());
+			dq.coeffs() = 0.5 * (omega_quat * q).coeffs();
+
+			dxdt.block<4, 1>(6, 0) = dq.coeffs(); // dq/dt = 0.5 * q * w
+			dxdt.block<3, 1>(10, 0) = wd;
 
 			return dxdt;
 		}

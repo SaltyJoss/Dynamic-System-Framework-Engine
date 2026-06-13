@@ -9,7 +9,7 @@ using namespace constants;
 namespace single_body_system {
 	// Inertia struct representing the mass and inertia tensor of a rigid body
 	struct BodyInertia {
-		double mass = 0.0;
+		double mass = 1.0;
 		mathlib::Vec3 com_xyz = mathlib::Vec3::Zero();; // Center of mass position in the body frame
 		mathlib::Mat3 inertiaTensor = mathlib::Mat3::Zero();; // Inertia tensor in the body frame
 	};

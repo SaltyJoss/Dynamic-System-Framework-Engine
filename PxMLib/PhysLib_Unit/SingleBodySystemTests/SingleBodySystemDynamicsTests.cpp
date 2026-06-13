@@ -7,6 +7,8 @@
 #include "core/MathLib.h"
 #include "integrators/numerical_integrators.h"
 
+#include <iostream>
+
 namespace {
 	auto f = [](const mathlib::VecX& x, double t) -> mathlib::VecX {
 		mathlib::VecX dxdt(13);
@@ -104,7 +106,7 @@ TEST("Single Body Dynamics Derivatives Method Test with Zero External Forces and
 	single_body_system::dynamics::SingleBodyDynamics dynamics;
 	mathlib::VecX dxdt = dynamics.derivatives(body, x, F_ext, tau_ext, dt);
 	// Check that the derivatives are as expected (no change in velocity or angular velocity)
-	ASSERT_NEAR(dxdt[3], 1.0, 1e-6); // Velocity in x-direction should remain constant
+	ASSERT_NEAR(dxdt[3], 0.0, 1e-6); // Velocity in x-direction should remain constant
 	ASSERT_NEAR(dxdt[4], 0.0, 1e-6); // Velocity in y-direction should be zero
 	ASSERT_NEAR(dxdt[5], 0.0, 1e-6); // Velocity in z-direction should be zero
 	ASSERT_NEAR(dxdt[10], 0.0, 1e-6); // Angular velocity in x-direction should be zero
