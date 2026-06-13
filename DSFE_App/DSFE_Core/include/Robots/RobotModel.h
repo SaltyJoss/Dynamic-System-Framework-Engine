@@ -46,7 +46,7 @@ namespace robots {
 
 	// Inertial properties of a link
 	struct Inertial {
-		double mass = 0.0f;
+		double mass = 0.0;
 		mathlib::Vec3 com_xyz{ 0.0,0.0,0.0 };
 		Inertia inertia{};
 	};
