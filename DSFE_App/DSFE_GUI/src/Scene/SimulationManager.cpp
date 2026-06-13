@@ -11,11 +11,6 @@
 extern "C" core::ISimulationCore* CreateSimulationCore_v1();
 extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
-#include <glad/glad.h>
-
 #include "Manager/SimImplementation.h"
 #include "Platform/KeyCode.h"
 
@@ -76,7 +71,7 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	SimManager::SimManager() : _internalSize(1280, 720), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
+	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
 		_core->setRobotSystem(_impl->_robotSystem.get());
@@ -174,7 +169,6 @@ namespace gui {
 		if (_impl->_robotSystem && hasRobot()) {
 			_impl->_robotRenderer->applyTransforms(_impl->_robotSystem->model(), _impl->_robotSystem->worldTransforms());
 		}
-		_fpsCounter.update();
 		auto& view = _impl->_views[static_cast<size_t>(_impl->activeView)];
 		_impl->renderView(*this, view, w, h);
 		glBindFramebuffer(GL_FRAMEBUFFER, _presentationFBO);
@@ -262,6 +256,8 @@ namespace gui {
 		if (pressedKeys.contains(eKeyCode::LShift)) { processMovementKey((int)eKeyCode::LShift, kspd); }
 	}
 
+// Handle mouse look (camera rotation) based on mouse movement. **OLD LOGIC FOR IMGUI AND GLFW**
+#pragma region DecrepatedInputLogic
 	void gui::SimManager::handleMouseLook(double xpos, double ypos, bool mouseCaptured) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
@@ -281,10 +277,9 @@ namespace gui {
 		_lastMousePos = { static_cast<float>(xpos), static_cast<float>(ypos) };
 
 		if (ctrlMode == ControlMode::Camera) { cam->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset)); }
-		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right); }
+		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { return; /*_impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);*/ }
 	}
-
-	void SimManager::onMouseMove(double x, double y, scene::eInputButton button) {
+	void SimManager::onMouseMove(double x, double y) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		glm::vec2 pos2d{ x, y };
 		glm::vec2 delta = pos2d - _lastMousePos;
@@ -298,10 +293,9 @@ namespace gui {
 			return;
 		}
 
-		if (ctrlMode == ControlMode::Camera) { cam->onMouseMove(x, y, button); }
-		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(x, y, button); }
+		//if (ctrlMode == ControlMode::Camera) { cam->onMouseMove(x, y, button); }
+		//else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(x, y, button); }
 	}
-
 	void SimManager::onMouseWheel(double delta) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* obj = _impl->_selectedObject;
@@ -317,4 +311,5 @@ namespace gui {
 	}
 
 	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }
+#pragma endregion
 }

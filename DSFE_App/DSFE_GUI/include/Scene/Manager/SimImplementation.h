@@ -10,7 +10,6 @@
 #include <string>
 #include <regex>
 
-#include "Scene/Input.h"
 #include "Scene/Camera.h"
 #include "Scene/Mesh.h"
 #include "Assets/MeshLoader.h"

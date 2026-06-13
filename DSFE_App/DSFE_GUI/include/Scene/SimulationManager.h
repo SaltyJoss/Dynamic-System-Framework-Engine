@@ -1,6 +1,10 @@
 // DSFE_GUI SimulationManager.h
 #pragma once
 
+#ifdef __gl_h_
+#undef __gl_h_
+#endif
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
@@ -12,7 +16,6 @@
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
-#include "FpsCounter.h"
 
 #include "Platform/KeyCode.h"
 
@@ -31,10 +34,8 @@ namespace shaders { class Shader; }
 
 // Forward Declarations for Scene
 namespace scene {
-    enum class eInputButton;
     class Light;
     class Camera;
-    class Input;
     class Mesh;
     class Object;
     class SceneRenderer;
@@ -273,7 +274,7 @@ namespace gui {
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt);
         void handleMouseLook(double xpos, double ypos, bool mouseCaptured);
-        void onMouseMove(double x, double y, scene::eInputButton button);
+        void onMouseMove(double x, double y);
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
@@ -360,9 +361,6 @@ namespace gui {
         bool _settingsValid = false;
         bool _shadowsInit = false;
         bool _hdrUserOverride = false;
-
-        // Editor & UI
-        gui::FpsCounter _fpsCounter;
 
 		// View management
         bool _isHovered = false;
