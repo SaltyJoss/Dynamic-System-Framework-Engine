@@ -5,15 +5,34 @@
 namespace single_body_system::dynamics {
 	class SingleBodyDynamics {
 	public:
+		void buildInertiaTensor(Body& body) {
+			// Compute the inertia tensor based on the body's mass and center of mass
+			double m = body.inertia.mass;
+			mathlib::Vec3 com = body.inertia.com_xyz;
+			// Inertia tensor for a point mass at the center of mass
+			mathlib::Mat3 I = mathlib::Mat3::Zero(); // Local inertia tensor
+			I <<
+				(1.0 / 12.0) * m * (com.y() * com.y() + com.z() * com.z()), 0, 0,
+				0, (1.0 / 12.0)* m * (com.x() * com.x() + com.z() * com.z()), 0,
+				0, 0, (1.0 / 12.0)* m * (com.x() * com.x() + com.y() * com.y());
+			body.inertia.inertiaTensor = I; // Assign the computed inertia tensor to the body
+		}
+
+		void buildParticleInertia(Body& body) {
+			// For a particle, in the simple case the body is treated as a point mass, so the inertia tensor is zero
+			body.inertia.inertiaTensor = mathlib::Mat3::Zero();
+		}
+
 		void computeDynamics(Body& body, mathlib::Vec3& externalForce, mathlib::Vec3& externalTorque, double dt) {
 			// Compute linear acceleration
-			body.state.xdd = (externalForce / body.inertia.mass).eval();
+			if (externalForce == mathlib::Vec3(0.0, 0.0, 0.0)) { body.state.pdd = mathlib::Vec3(0.0, 0.0, 0.0); }
+			else { body.state.pdd = (externalForce / body.inertia.mass).eval(); }
 			// Compute angular acceleration
 			mathlib::Mat3 inertiaInv = body.inertia.inertiaTensor.inverse();
 			body.state.wd = inertiaInv * (externalTorque - body.state.w.cross(body.inertia.inertiaTensor * body.state.w));
 			// Update linear velocity and position
-			body.state.xd += body.state.xdd * dt;
-			body.state.x += body.state.xd * dt;
+			body.state.pd += body.state.pdd * dt;
+			body.state.p += body.state.pd * dt;
 			// Update angular velocity and orientation (using quaternion integration)
 			body.state.w += body.state.wd * dt;
 			mathlib::Quat dq = mathlib::Quat(0.0, body.state.w * dt);
