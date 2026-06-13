@@ -21,4 +21,6 @@
 #include <ctime>
 #include <array>
 
+#include <core/MathLib.h> // All of PhysLib depends on MathLib, necessary here to avoid circular dependencies
+
 #endif //PCH_H

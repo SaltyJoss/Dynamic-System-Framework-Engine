@@ -4,5 +4,5 @@ project(PxMLib LANGUAGES CXX)
 
 # Add projects within the DSFE_App directory
 add_subdirectory(MathLib)
-add_subdirectory(PhysLib)
 add_subdirectory(MathLib_Unit)
+add_subdirectory(PhysLib)

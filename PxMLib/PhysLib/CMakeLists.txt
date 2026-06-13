@@ -19,4 +19,5 @@ target_include_directories(PhysLib
 
 target_link_libraries(PhysLib PUBLIC
     Eigen3::Eigen
+    MathLib
 )
