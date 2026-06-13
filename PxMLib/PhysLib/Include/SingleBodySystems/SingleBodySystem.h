@@ -30,7 +30,7 @@ namespace single_body_system {
 		mathlib::Vec3 xddMax;		 // Maximum acceleration limits (xdd, ydd, zdd)
 	};
 
-	struct SingleBodySystem {
+	struct Body {
 		std::string name = "UnnamedBody";
 		float scale = 1.0f;
 

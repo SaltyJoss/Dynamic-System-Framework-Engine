@@ -5,7 +5,7 @@
 namespace single_body_system::dynamics {
 	class SingleBodyDynamics {
 	public:
-		void computeDynamics(SingleBodySystem& body, mathlib::Vec3& externalForce, mathlib::Vec3& externalTorque, double dt) {
+		void computeDynamics(Body& body, mathlib::Vec3& externalForce, mathlib::Vec3& externalTorque, double dt) {
 			// Compute linear acceleration
 			body.state.xdd = (externalForce / body.inertia.mass).eval();
 			// Compute angular acceleration
@@ -20,7 +20,7 @@ namespace single_body_system::dynamics {
 			body.state.q = (body.state.q.coeffs() + (0.5 * dq.coeffs() * body.state.q.coeffs())).normalized();
 		}
 
-		void derivatives(const SingleBodySystem& body, mathlib::Vec3& externalForce, mathlib::Vec3& externalTorque, mathlib::Mat3& dxdot_dx, mathlib::Mat3& dxdot_dxdot) {
+		void derivatives(const Body& body, mathlib::Vec3& externalForce, mathlib::Vec3& externalTorque, mathlib::Mat3& dxdot_dx, mathlib::Mat3& dxdot_dxdot) {
 			// Compute the Jacobian of the dynamics with respect to state variables
 			dxdot_dx.setZero();
 			dxdot_dxdot.setZero();

@@ -1,8 +1,9 @@
-// DSFE_CORE SingleBodySystem.h
+// DSFE_CORE Body.h
 #pragma once
 
 #include "EngineCore.h"
-#include <MathLib.h>
+#include <PhysLib.h>
+#include "SingleBodySystems/Dynamics.h"
 #include "Numerics/IntegrationService.h"
 
 namespace single_body_system {
@@ -11,10 +12,7 @@ namespace single_body_system {
 		SingleBodySystem() = default;
 		~SingleBodySystem() = default;
 
-
-
 		void step(double dt, double t);
-
 
 		integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
@@ -25,14 +23,18 @@ namespace single_body_system {
 		void setADIntegrator(integration::eAutoDiffIntegrationMethod m) { _curIntMethod_AD = m; }
 
 	private:
-		double _mass;
+		void packState(mathlib::VecX& x) const;
+		void unpackState(const mathlib::VecX& x);
 
-		/*std::unique_ptr<SingleBodyDynamics> _dynamics;*/
+		Body* _body;
+		std::unique_ptr<dynamics::SingleBodyDynamics> _dynamics;
 
 		std::unique_ptr<integration::IntegrationService> _integrator;
 		integration::eIntegrationMethod _curIntMethod{};
-
 		std::unique_ptr<integration::DifferentiableIntegrator> _AD_integrator;
 		integration::eAutoDiffIntegrationMethod _curIntMethod_AD{};
+
+		double _mass = 1.0;
+		mathlib::Vec3 _g{ 0.0, 0.0, 0.0 };
 	};
 }

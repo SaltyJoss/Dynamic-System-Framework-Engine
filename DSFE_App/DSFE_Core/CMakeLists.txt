@@ -18,7 +18,7 @@ set(DEP_CORE_SRC
 )
 
 set(SINGLE_BODY_SYS_SRC
-    src/SingleBodySystem/SingleBodySystem.cpp
+    src/SingleBodySystem/Body.cpp
 )
 
 set(MULTI_BODY_SYS_SRC
@@ -35,7 +35,6 @@ set(PLATFORM_SRC
     src/Platform/Logger.cpp
     src/Platform/Paths.cpp
     src/Platform/StudyRunner.cpp
-
     src/Analysis/Telemetry.cpp
 )
 
@@ -96,9 +95,10 @@ target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_Core
-    PUBLIC 
-        MathLib
+    PUBLIC
         Eigen3::Eigen
+        MathLib
+        PhysLib
         hdf5::hdf5-shared
         Threads::Threads
 
