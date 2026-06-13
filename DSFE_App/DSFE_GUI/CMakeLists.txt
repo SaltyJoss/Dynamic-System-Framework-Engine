@@ -22,7 +22,6 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
-    IMGUI_ENABLE_DOCKING
     GLM_ENABLE_EXPERIMENTAL
 )
 
@@ -55,7 +54,6 @@ set(RENDER_SRC
 set(SCENE_SRC
     src/Scene/AxisOrientator.cpp
     src/Scene/Camera.cpp
-    src/Scene/Input.cpp
     src/Scene/Mesh.cpp
     src/Scene/Object.cpp
     src/Scene/SimulationManager.cpp
@@ -67,7 +65,6 @@ set(MANAGER_SRC
     src/Scene/Manager/SimObjects.cpp
     src/Scene/Manager/SimRendering.cpp
     src/Scene/Manager/SimRobots.cpp
-    src/Scene/Manager/SimUI.cpp
     src/Scene/Manager/SimViewport.cpp
 )
 
@@ -114,35 +111,6 @@ target_sources(DSFE_GUI PRIVATE
     ${QT_RESOURCES}
 )
 
-set(imfilebrowser_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/imfilebrowser)
-
-add_library(imgui STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
-
-target_include_directories(imgui PUBLIC
-    ${imgui_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}/backends
-)
-
-target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
-
-add_library(implot STATIC
-    ${implot_SOURCE_DIR}/implot.cpp
-    ${implot_SOURCE_DIR}/implot_items.cpp
-)
-
-target_include_directories(implot PUBLIC
-    ${implot_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}
-)
-
 target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -163,13 +131,10 @@ target_link_libraries(DSFE_GUI
         Threads::Threads
 
     PRIVATE
-        implot
         stb
         assimp
-        glfw
         glad
         glm::glm
-        imgui
         OpenGL::GL
         Qt6::Core
         Qt6::Gui

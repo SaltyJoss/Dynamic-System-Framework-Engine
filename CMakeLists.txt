@@ -22,13 +22,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(eigen)
 
-FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG 3.4
-)
-FetchContent_MakeAvailable(glfw)
-
 # Fetch GLM from GitHub
 FetchContent_Declare(
   glm
@@ -56,22 +49,6 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-
-FetchContent_Declare(
-  imgui
-  GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG docking
-  GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(imgui)
-
-FetchContent_Declare(
-  implot
-  GIT_REPOSITORY https://github.com/epezent/implot.git
-  GIT_TAG v0.17
-  GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(implot)
 
 FetchContent_Declare(
     nlohmann_json
