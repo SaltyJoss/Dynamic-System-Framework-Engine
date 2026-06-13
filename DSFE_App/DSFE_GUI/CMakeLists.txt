@@ -85,6 +85,10 @@ set(ROBOT_SRC
     src/Robots/RobotRenderer.cpp
 )
 
+set(OBJECT_SRC
+    src/Assets/MeshPresentationBuilder.cpp
+)
+
 set(PLATFORM_SRC 
     src/Application.cpp
 )
@@ -106,6 +110,7 @@ target_sources(DSFE_GUI PRIVATE
     ${MANAGER_SRC}
     ${WIDGETS_SRC}
     ${ROBOT_SRC}
+    ${OBJECT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
     ${QT_RESOURCES}
@@ -118,9 +123,6 @@ target_include_directories(DSFE_GUI
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
-
-    PRIVATE
-        ${imfilebrowser_ROOT}
 )
 
 # Link DSFE_Core against its dependencies
