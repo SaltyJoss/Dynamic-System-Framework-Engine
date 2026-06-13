@@ -201,11 +201,9 @@ namespace gui {
 			const glm::mat4& world = toGlm(T[i]);
 
 			for (scene::Object* obj : it->second) {
-				if (!obj) continue;
-
+				if (!obj) { continue; }
 				glm::vec3 pos = glm::vec3(world[3]);
 				glm::quat q = glm::quat_cast(world);
-
 				obj->transform.position = pos;
 				obj->transform.rotQ = q;
 			}
@@ -257,7 +255,6 @@ namespace gui {
 	}
 
 // Handle mouse look (camera rotation) based on mouse movement. **OLD LOGIC FOR IMGUI AND GLFW**
-#pragma region DecrepatedInputLogic
 	void gui::SimManager::handleMouseLook(double xpos, double ypos, bool mouseCaptured) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
@@ -279,23 +276,6 @@ namespace gui {
 		if (ctrlMode == ControlMode::Camera) { cam->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset)); }
 		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { return; /*_impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);*/ }
 	}
-	void SimManager::onMouseMove(double x, double y) {
-		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
-		glm::vec2 pos2d{ x, y };
-		glm::vec2 delta = pos2d - _lastMousePos;
-		_lastMousePos = pos2d;
-
-		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse drag in quad view
-
-		if (!_isHovered) {
-			cam->setCurrentPos2D(pos2d);
-			_impl->_selectedObject->setLastMousePos(pos2d);
-			return;
-		}
-
-		//if (ctrlMode == ControlMode::Camera) { cam->onMouseMove(x, y, button); }
-		//else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { _impl->_selectedObject->onMouseMove(x, y, button); }
-	}
 	void SimManager::onMouseWheel(double delta) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* obj = _impl->_selectedObject;
@@ -311,5 +291,4 @@ namespace gui {
 	}
 
 	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }
-#pragma endregion
 }

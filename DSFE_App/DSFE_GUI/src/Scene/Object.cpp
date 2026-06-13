@@ -25,7 +25,7 @@ namespace scene {
 
 	// --- Object Implementation ---
 
-	// Constructor initializes transform and physics state
+	// Constructor initialises transform and physics state
 	Object::Object(std::shared_ptr<Mesh> mesh) : _mesh(std::move(mesh)) {
 		transform.position = glm::vec3(0.0f);
 		transform.rotQ = glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f };
@@ -43,26 +43,4 @@ namespace scene {
 
 	// Update method passes material properties to the shader
 	void Object::update(shaders::Shader* shader) { if (_mesh) _mesh->update(shader); }
-
-	// Handle mouse movement for object manipulation **DECREPATED**
-	void Object::onMouseMove(double x, double y, eInputButton button) {
-		glm::vec2 pos2d{ x, y };
-		glm::vec2 delta = pos2d - _lastMousePos;
-		_lastMousePos = pos2d;
-
-		//if (button == eInputButton::Right) {
-		//	delta *= 0.004f;
-		//	float yaw = delta.x;
-		//	float pitch = -delta.y;
-
-		//	glm::quat qYaw = glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-		//	glm::vec3 right = transform.rotQ * glm::vec3(1.0f, 0.0f, 0.0f);
-		//	glm::quat qPitch = glm::angleAxis(pitch, glm::normalize(right));
-
-		//}
-		//else if (button == eInputButton::Left) {
-		//	delta *= 0.003f;
-		//	transform.position += glm::vec3(delta.x * _distance, -delta.y * _distance, 0.0f);
-		//}
-	}
 }

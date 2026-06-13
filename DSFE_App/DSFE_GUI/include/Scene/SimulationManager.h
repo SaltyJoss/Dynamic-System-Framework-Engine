@@ -274,7 +274,6 @@ namespace gui {
         void processMovementKey(int key, float delta);
         void handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt);
         void handleMouseLook(double xpos, double ypos, bool mouseCaptured);
-        void onMouseMove(double x, double y);
         void onMouseWheel(double delta);
         void resetMouseDelta();
 

@@ -6,9 +6,7 @@
 #endif
 #include <glad/glad.h>
 #include "Scene/Camera.h"
-
 #include "Platform/KeyCode.h"
-
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
@@ -187,8 +185,8 @@ namespace scene {
 		if (len < 1e-6f) return;
 		dir /= len;
 
-		// Match your yaw/pitch convention:
-		// Your default: _yaw = -pi/2 gives forward (0,0,-1).
+		// Match yaw/pitch convention:
+		// Default: _yaw = -pi/2 gives forward (0,0,-1).
 		// That corresponds to:
 		// forward.x = cos(yaw)*cos(pitch)
 		// forward.y = sin(pitch)

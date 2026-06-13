@@ -109,7 +109,6 @@ namespace gui {
 
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
-
 		// Robot Rendering
 		std::unique_ptr <RobotRenderer> _robotRenderer; // rendering
 		RobotRenderBinding _currentBinding; // current render binding 
@@ -292,30 +291,39 @@ namespace gui {
 
 		void buildRobotPresentationFromModel(const robots::RobotModel& model, SimManager& owner) {
 			clearRobotPresentation();
-
 			RobotPresentationBuilder builder;
 			RobotRenderBinding binding = builder.build(model);
-
-			for (auto& owned : binding.ownedObjects) {
-				_objects.push_back(std::move(owned));
-			}
-
+			for (auto& owned : binding.ownedObjects) { _objects.push_back(std::move(owned)); }
 			_robotRenderer->bind(binding);
-
 			for (const auto& [linkName, visuals] : binding.linkVisuals) {
 				auto& target = _linkToObjects[linkName];
-
 				for (auto* obj : visuals) {
 					if (!obj) { continue; }
-
 					target.push_back(obj);
-
-					if (!_primaryLinkObject.contains(linkName)) {
-						_primaryLinkObject[linkName] = obj;
-					}
+					if (!_primaryLinkObject.contains(linkName)) { _primaryLinkObject[linkName] = obj; }
 				}
 			}
 		}
+
+		//void clearObjectPresentation() { _objects.clear(); }
+		//void buildObjectPresentation(const std::vector<std::shared_ptr<scene::Mesh>>& meshes) {
+		//	clearObjectPresentation();
+		//	presentation::MeshPresentationBuilder builder;
+		//	presentation::MeshRenderBinding binding = builder.build(meshes);
+		//	for (auto& owned : binding.owndObjs) {
+		//		owned->state.q = mathlib::Quat(1.0, 0.0, 0.0, 0.0);
+		//		owned->state.linearVelocity = mathlib::Vec3::Zero();
+		//		owned->state.angularVelocity = mathlib::Vec3::Zero();
+		//		owned->state.forces = mathlib::Vec3::Zero();
+		//		owned->state.torques = mathlib::Vec3::Zero();
+		//		owned->state.mass = 1.0;
+		//		owned->state.damping = 0.0;
+		//		owned->state.inertia = mathlib::Mat3::Identity();
+		//		owned->visible = true;
+		//		owned->internal = false;
+		//		_objects.push_back(std::move(owned));
+		//	}
+		//}
 
 		// Random number generation for SSAO kernel and noise
 		std::mt19937 _rng{ std::random_device{}() };

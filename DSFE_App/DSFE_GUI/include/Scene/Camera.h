@@ -4,9 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
-
 #include "Scene/Element.h"
-
 #include "Platform/Logger.h"
 
 namespace scene {
@@ -57,35 +55,7 @@ namespace scene {
 			updateViewMatrix();
 		}
 
-		void onMouseWheel(double delta) {
-			// Negative delta = scroll forward = zoom in (decrease distance)
-			setDistance((float)(-delta * 0.5f));
-		}
-
-		//void onMouseMove(double x, double y) {
-		//	glm::vec2 pos2d{ x, y };
-
-		//	if () {
-		//		glm::vec2 delta = (pos2d - _currentPos2D) * 0.004f;
-
-		//		float sign = getUp().y < 0 ? -1.0f : 1.0f;
-
-		//		_yaw += sign * delta.x * _rotationSpeed;
-		//		_pitch += delta.y * _rotationSpeed;
-
-		//		updateViewMatrix();
-		//	}
-		//	else if (false) {
-		//		glm::vec2 delta = (pos2d - _currentPos2D) * 0.003f;
-
-		//		_focus += -getRight() * delta.x * _distance;
-		//		_focus += getUp() * delta.y * _distance;
-
-		//		updateViewMatrix();
-		//	}
-
-		//	_currentPos2D = pos2d;
-		//}
+		void onMouseWheel(double delta) { setDistance((float)(-delta * 0.5f)); }
 
 		void startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset);
 		void clearFollow() { _following = false; }
@@ -95,7 +65,6 @@ namespace scene {
 		}
 
 		void updateViewMatrix();
-
 		void fall();
 
 		void moveForward(float delta);

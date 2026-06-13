@@ -58,7 +58,7 @@ namespace window {
 				LOG_INFO("Menu clicked: File -> Open -> Project");
 			});
 			openMenu->addSeparator();
-			auto* openScriptAction = openMenu->addAction("Script (*.dsl *.txt)");
+			auto* openScriptAction = openMenu->addAction("Script");
 			connect(openScriptAction, &QAction::triggered, this, [this]() {
 				QString fileName = QFileDialog::getOpenFileName(nullptr, "Open Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 				if (fileName.isEmpty()) { return; }
@@ -125,7 +125,7 @@ namespace window {
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files (*.obj *.fbx *.gltf *.dae *.stl");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
 				if (path.isEmpty()) { return; }
 				_sim->loadMesh(path.toStdString());
 			});
