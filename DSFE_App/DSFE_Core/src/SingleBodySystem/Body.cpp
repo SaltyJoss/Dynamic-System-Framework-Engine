@@ -11,12 +11,12 @@ namespace single_body_system {
 	}
 
 	mathlib::VecX SingleBodySystem::packState() const {
-		if (!_body) { LOG_ERROR("Body not initialised!"); return; }
 		mathlib::VecX x(13);
 		x.segment<3>(0) = _body->state.p; // position
 		x.segment<3>(3) = _body->state.pd; // linear velocity
-		x.segment<4>(6) = _body->state.w; // angular velocity
-		x.segment<3>(9) = _body->state.q.coeffs(); // quaternion coefficients <- included because this should work for various single bodies, but in the case of a particle we can just use a different state representation via particle_packState()
+		x.segment<4>(6) = _body->state.q.coeffs();
+		x.segment<3>(10) = _body->state.w; // angular velocity
+
 		return x;
 	}
 
@@ -29,7 +29,7 @@ namespace single_body_system {
 
 		auto& p_in = x.segment<3>(0);
 		auto& pd_in = x.segment<3>(3);
-		auto& w_in = x.segment<3>(6);
+		auto& w_in = x.segment<3>(10);
 
 		for (int i = 0; i < 3; ++i) {
 			double pd_i = pd_in[i]; // Store the original value before clamping
@@ -59,7 +59,7 @@ namespace single_body_system {
 			_body->state.pd[i] = pd_i_out;
 			_body->state.w[i] = w_i_out;
 		}
-		_body->state.q.coeffs() = x.segment<4>(9);
+		_body->state.q.coeffs() = x.segment<4>(6);
 
 
 		if (_clampVel[0] || _clampVel[1] || _clampVel[2]) { LOG_WARN("Linear velocity clamping applied: pd = [%f, %f, %f]", pd_in[0], pd_in[1], pd_in[2]); }
@@ -73,27 +73,11 @@ namespace single_body_system {
 		
 		_simTime = t;
 		VecX x = packState();
-		// Not going to use the dynamics methods initially, just want a straight cut test first.
-		auto func = [this](const mathlib::VecX& x, mathlib::VecX& dxdt) {
-			// Unpack the state vector into the body state
-			unpackState(x);
-			// Compute the derivatives of the state (dx/dt)
-			mathlib::Vec3 externalForce{ 0.0, 0.0, 0.0 }; // Placeholder for external forces
-			mathlib::Vec3 externalTorque{ 0.0, 0.0, 0.0 }; // Placeholder for external torques
-			// Compute linear acceleration
-			if (externalForce == mathlib::Vec3(0.0, 0.0, 0.0)) { _body->state.pdd = mathlib::Vec3(0.0, 0.0, 0.0); }
-			else { _body->state.pdd = (externalForce / _body->inertia.mass).eval(); }
-			// Compute angular acceleration
-			mathlib::Mat3 inertiaInv = _body->inertia.inertiaTensor.inverse();
-			_body->state.wd = inertiaInv * (externalTorque - _body->state.w.cross(_body->inertia.inertiaTensor * _body->state.w));
-			// Fill in the derivative vector dxdt
-			dxdt.segment<3>(0) = _body->state.pd; // dp/dt = pd
-			dxdt.segment<3>(3) = _body->state.pdd; // dpd/dt = pdd
-			dxdt.segment<4>(6) = _body->state.w; // dw/dt = w
-			dxdt.segment<3>(10) = _body->state.wd; // dwd/dt = wd
-		};
+		// Not going to use the computeDynamics methods initially, just want a straight cut test first.
+		auto f_deriv = [&](auto t, const auto& x) { return _dynamics->derivatives(*_body, x, _F_ext, _tau_ext, dt); };
+		auto f_jac = [&](const auto& x, auto& J_out) { _dynamics->jacobian(*_body, x, J_out); };
 
-		auto step = _integrator->step(_curIntMethod, x, t, dt, func, nullptr); // Wont work with Implicit since no jacobian provided, but will work with RK4 and other explicit methods
+		auto step = _integrator->step(_curIntMethod, x, t, dt, f_deriv, f_jac); // Wont work with Implicit since no jacobian provided, but will work with RK4 and other explicit methods
 		// Also will not with adaptive (probably) since no rtol/atol provided, but will work with fixed step methods
 		VecX x_next = step.x_next;
 

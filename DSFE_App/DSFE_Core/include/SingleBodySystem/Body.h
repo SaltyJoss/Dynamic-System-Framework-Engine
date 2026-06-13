@@ -39,6 +39,9 @@ namespace single_body_system {
 		std::unique_ptr<integration::DifferentiableIntegrator> _AD_integrator;
 		integration::eAutoDiffIntegrationMethod _curIntMethod_AD{};
 
+		mathlib::Vec3 _F_ext{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 _tau_ext{ 0.0, 0.0, 0.0 };
+
 		// precomputed clamp lookup tables
 		mutable std::vector<uint8_t> _clampVel;
 		mutable std::vector<uint8_t> _clampAngVel;
