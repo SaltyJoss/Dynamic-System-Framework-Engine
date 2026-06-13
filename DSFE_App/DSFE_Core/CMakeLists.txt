@@ -12,18 +12,34 @@ if (MSVC)
 target_compile_options(DSFE_Core PRIVATE /bigobj)
 endif()
 
-set(CORE_SRC
+set(DEP_CORE_SRC
     src/EngineCore.cpp
-
     src/Numerics/IntegrationService.cpp
+)
 
+set(SINGLE_BODY_SYS_SRC
+    src/SingleBodySystem/SingleBodySystem.cpp
+)
+
+set(MULTI_BODY_SYS_SRC
     src/Robots/RobotDynamics.cpp
     src/Robots/RobotKinematics.cpp
     src/Robots/RobotLoader.cpp
     src/Robots/RobotSystem.cpp
     src/Robots/TrajectoryManager.cpp
     src/Robots/RobotSimSnapshot.cpp
+)
 
+set(PLATFORM_SRC
+    src/Platform/DataManager.cpp
+    src/Platform/Logger.cpp
+    src/Platform/Paths.cpp
+    src/Platform/StudyRunner.cpp
+
+    src/Analysis/Telemetry.cpp
+)
+
+set(DSL_SRC
     src/Interpreter/Command.cpp
     src/Interpreter/CommandContext.cpp
     src/Interpreter/CommandFactory.cpp
@@ -50,22 +66,16 @@ set(CORE_SRC
     src/Interpreter/Commands/WaitCmd.cpp
 )
 
-set(PLATFORM_SRC
-    src/Platform/DataManager.cpp
-    src/Platform/Logger.cpp
-    src/Platform/Paths.cpp
-    src/Platform/StudyRunner.cpp
-
-    src/Analysis/Telemetry.cpp
-)
-
-set(SCENE_SRC src/Scene/SimulationCore.cpp)
+set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)
 
 # Add sources for DSFE_Core, including ImGui files
 target_sources(DSFE_Core PRIVATE
-    ${CORE_SRC}
+    ${DEP_CORE_SRC}
+    ${SINGLE_BODY_SYS_SRC}
+    ${MULTI_BODY_SYS_SRC}
     ${PLATFORM_SRC}
-    ${SCENE_SRC}
+    ${DSL_SRC}
+    ${SIM_CORE_SRC}
 )
 
 # Add Windows-specific source files
