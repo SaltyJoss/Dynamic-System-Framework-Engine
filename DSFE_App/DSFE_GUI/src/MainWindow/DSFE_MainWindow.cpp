@@ -1,6 +1,7 @@
 //DSFE_GUI DSFE_MainWindow.cpp
 #include "MainWindow/DSFE_MainWindow.h"
 #include "Scene/SimulationManager.h"
+#include "Scene/SimulationCore.h"
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
 
@@ -322,7 +323,7 @@ namespace window {
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
-				_sim->loadRobot(robotName.toStdString());
+				_sim->simCore()->loadRobot(robotName.toStdString());
 			});
 		}
 	}
