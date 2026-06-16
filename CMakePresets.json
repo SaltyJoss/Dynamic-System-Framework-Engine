@@ -63,7 +63,10 @@
             },
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake",
+                "HDF5_DIR": "",
+                "CMAKE_IGNORE_PATH": "/mnt/c/Program Files/HDF_Group/HDF5/2.0.0"
             },
             "architecture": {
                 "value": "x64",
@@ -81,7 +84,10 @@
             },
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake",
+                "HDF5_DIR": "",
+                "CMAKE_IGNORE_PATH": "/mnt/c/Program Files/HDF_Group/HDF5/2.0.0"
             },
             "architecture": {
                 "value": "x64",
