@@ -63,11 +63,8 @@ namespace single_body_system::dynamics {
 		}
 
 		void jacobian(Body& body, const mathlib::VecX& x, mathlib::MatX& J_out) {
-			auto p = x.block<3, 1>(0, 0); // Position
-			auto pd = x.block<3, 1>(3, 0); // Velocity
-			auto qv = x.block<4, 1>(6, 0); // Quaternion
-			auto w = x.block<3, 1>(10, 0); // Angular velocity
-			J_out.setZero(13, 13);
+			Eigen::Index n = x.size();
+			J_out.setZero(n, n);
 			// Partial derivatives for position and velocity
 			J_out.block<3, 3>(0, 3) = mathlib::Mat3::Identity(); // dp/dt = pd
 			J_out.block<3, 3>(3, 10) = mathlib::Mat3::Identity(); // dpd/dt = pdd
