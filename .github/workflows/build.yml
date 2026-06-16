@@ -25,18 +25,6 @@ jobs:
         run: |
           .\vcpkg\vcpkg.exe install hdf5:x64-windows
 
-      - name: List Qt versions (debug)
-        shell: pwsh
-        run: |
-            python -m pip install aqtinstall
-            python -m aqt list-qt windows desktop
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: 6.6.2
-          arch: win64_msvc2022_64
-
       - name: Configure
         shell: pwsh
         run: |
