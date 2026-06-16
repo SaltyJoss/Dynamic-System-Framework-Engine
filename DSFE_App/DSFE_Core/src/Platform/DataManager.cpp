@@ -497,8 +497,7 @@ namespace data {
 			// Scalar numeric types -> 1D double dataset
 			if (std::holds_alternative<double>(val) ||
 				std::holds_alternative<int64_t>(val) ||
-				std::holds_alternative<uint64_t>(val) ||
-				std::holds_alternative<long>(val)) {
+				std::holds_alternative<uint64_t>(val)) {
 
 				if (auto it = _ds1D_D.find(dPath); it != _ds1D_D.end()) { return it->second; }
 
@@ -558,9 +557,6 @@ namespace data {
 			}
 			else if (std::holds_alternative<uint64_t>(value)) {
 				appendDouble1D(ds, static_cast<double>(std::get<uint64_t>(value)));
-			}
-			else if (std::holds_alternative<long>(value)) {
-				appendDouble1D(ds, static_cast<double>(std::get<long>(value)));
 			}
 			else if (std::holds_alternative<std::vector<double>>(value)) {
 				appendDouble2D(ds, std::get<std::vector<double>>(value));
