@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <algorithm>
 
-#include <Core/Utils.h>
+#include <core/Utils.h>
 #include "Robots/TrajectoryManager.h"
 #include "Platform/Paths.h"
 
