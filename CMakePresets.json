@@ -7,6 +7,15 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "DSFE_ENABLE_GUI": "OFF"
+            }
+        },
+        {
+            "name": "base-gui",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "DSFE_ENABLE_GUI": "ON"
             }
         },
@@ -14,6 +23,21 @@
             "name": "windows-x64",
             "displayName": "Windows x64",
             "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generator": "Visual Studio 18 2026",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            }
+        },
+        {
+            "name": "windows-x64-gui",
+            "displayName": "Windows x64 (GUI)",
+            "inherits": "base-gui",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -74,6 +98,16 @@
         {
             "name": "windows-x64-release",
             "configurePreset": "windows-x64",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-x64-gui-debug",
+            "configurePreset": "windows-x64-gui",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-x64-gui-release",
+            "configurePreset": "windows-x64-gui",
             "configuration": "Release"
         },
         {

@@ -102,6 +102,5 @@ target_link_libraries(DSFE_Core
         Threads::Threads
 
     PRIVATE
-        assimp
         nlohmann_json::nlohmann_json
 )
