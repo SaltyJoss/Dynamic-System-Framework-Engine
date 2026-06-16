@@ -35,7 +35,7 @@ TEST("Single Body Dynamics Derivatives Method Test", SingleBodyDynamics_Derivati
 	mathlib::Vec3 tau_ext(0.0, 0.0, 1.0); // External torque around z-axis
 	double dt = 1.0;
 	single_body_system::dynamics::SingleBodyDynamics dynamics;
-	mathlib::VecX dxdt = dynamics.derivatives(body, x, F_ext, tau_ext, dt);
+	mathlib::VecX dxdt = dynamics.derivatives(body, x, F_ext, tau_ext);
 	// Check that the derivatives are as expected
 	ASSERT_NEAR(dxdt[3], 1.0, 1e-6); // Velocity in x-direction should be constant
 	ASSERT_NEAR(dxdt[4], 0.0, 1e-6); // Velocity in y-direction should be zero
@@ -104,7 +104,7 @@ TEST("Single Body Dynamics Derivatives Method Test with Zero External Forces and
 	mathlib::Vec3 tau_ext(0.0, 0.0, 0.0); // No external torque
 	double dt = 1.0;
 	single_body_system::dynamics::SingleBodyDynamics dynamics;
-	mathlib::VecX dxdt = dynamics.derivatives(body, x, F_ext, tau_ext, dt);
+	mathlib::VecX dxdt = dynamics.derivatives(body, x, F_ext, tau_ext);
 	// Check that the derivatives are as expected (no change in velocity or angular velocity)
 	ASSERT_NEAR(dxdt[3], 0.0, 1e-6); // Velocity in x-direction should remain constant
 	ASSERT_NEAR(dxdt[4], 0.0, 1e-6); // Velocity in y-direction should be zero

@@ -1,7 +1,5 @@
 // DSFE_Core DataManager.h
 #pragma once
-
-#pragma warning(disable : 4251)
 #include "EngineCore.h"
 #include <string>
 #include <string_view>

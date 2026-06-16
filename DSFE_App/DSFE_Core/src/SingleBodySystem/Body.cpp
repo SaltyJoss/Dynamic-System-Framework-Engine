@@ -74,7 +74,7 @@ namespace single_body_system {
 		_simTime = t;
 		VecX x = packState();
 		// Not going to use the computeDynamics methods initially, just want a straight cut test first.
-		auto f_deriv = [&](auto /*t*/, const auto& x) { return _dynamics->derivatives(*_body, x, _F_ext, _tau_ext, dt); };
+		auto f_deriv = [&](auto /*t*/, const auto& x) { return _dynamics->derivatives(*_body, x, _F_ext, _tau_ext); };
 		auto f_jac = [&](const auto& x, auto& J_out) { _dynamics->jacobian(*_body, x, J_out); };
 		auto step = _integrator->step(_curIntMethod, x, t, dt, f_deriv, f_jac); // Wont work with Implicit since no jacobian provided, but will work with RK4 and other explicit methods
 		VecX x_next = step.x_next;
