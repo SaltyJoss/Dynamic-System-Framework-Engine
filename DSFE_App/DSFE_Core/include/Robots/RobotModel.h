@@ -1,14 +1,11 @@
 // DSFE_Core RobotModel.h
 #pragma once
-
 #include "EngineCore.h"
 
 #include <core/MathLib.h>
 #include <numbers>
-#include <Kinematics/DH_Params.h>
-
+#include <kinematics/DH_Params.h>
 #include <unordered_map>
-
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
