@@ -124,6 +124,16 @@
             "name": "windows-x64-release",
             "configurePreset": "windows-x64",
             "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "windows-x64-gui-release",
+            "configurePreset": "windows-x64-gui",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "linux-x64-release",
+            "configurePreset": "linux-x64-release",
+            "output": { "outputOnFailure": true }
         }
     ]
 }
