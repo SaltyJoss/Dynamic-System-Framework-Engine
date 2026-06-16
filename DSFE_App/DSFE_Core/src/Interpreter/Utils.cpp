@@ -135,7 +135,7 @@ namespace utils {
 	}
 
 	// Helper function to parse double from string_view
-	double utils::parseDouble(const std::string_view s) {
+	double parseDouble(const std::string_view s) {
 		double out = 0.0;
 		auto first = s.data();
 		auto last = s.data() + s.size();
@@ -145,7 +145,7 @@ namespace utils {
 		return out;
 	}
 
-	float utils::parseFloat(const std::string s) {
+	float parseFloat(const std::string s) {
 		float out = 0.0f;
 		auto first = s.data();
 		auto last = s.data() + s.size();
@@ -156,7 +156,7 @@ namespace utils {
 	}
 
 	// Helper function to parse Vec3 from string (format: "{x, y, z}")
-	mathlib::Vec3 utils::parseVec3(const std::string& str) {
+	mathlib::Vec3 parseVec3(const std::string& str) {
 		std::string s = stripBraces(str);
 		std::vector<std::string> vStr;
 		std::string cur;
@@ -179,7 +179,7 @@ namespace utils {
 	}
 
 	// Helper function to parse an axis mask from a string (e.g. "X", "YZ", "{X Y Z}")
-	AxisMask utils::parseAxisMask(const std::string& args) {
+	AxisMask parseAxisMask(const std::string& args) {
 		std::string s = stripBraces(args);
 
 		AxisMask mask{}; // <-- start empty (no recursion - trust me this was a pain)
