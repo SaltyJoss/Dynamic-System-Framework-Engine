@@ -1,5 +1,5 @@
 # CMakeLists.txt for the DSFE_Engine executable
-
+option(DSFE_ENABLE_GUI "Enable GUI module" ON)
 find_package(Threads REQUIRED)
 
 add_executable(DSFE_Engine
@@ -12,10 +12,14 @@ target_include_directories(DSFE_Engine PRIVATE
 )
 
 target_link_libraries(DSFE_Engine PRIVATE 
-    DSFE_GUI
     DSFE_Core
     Threads::Threads
 )
+
+if (DSFE_ENABLE_GUI)
+    target_link_libraries(DSFE_Engine PRIVATE DSFE_GUI)
+    target_compile_definitions(DSFE_Engine PRIVATE DSFE_ENABLE_GUI)
+endif()
 
 add_custom_command(TARGET DSFE_Engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

@@ -4,9 +4,12 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include <Application.h>
 #include "BatchEntry.h"
 #include "BatchArgs.h"
+
+#ifdef DSFE_ENABLE_GUI
+    #include <Application.h>
+#endif
 
 // Helper function to split a comma-separated string into a vector of strings, trimming whitespace
 static std::vector<std::string> splitComma(const std::string& input) {
@@ -46,40 +49,47 @@ int main(int argc, char** argv) {
             batchMode = true;
             break;
         }
+        else if (arg == "--about") {
+            std::cout
+                << "DSFE (Dynamic Systems Framework Engine)\n"
+                << " > A research-focused simulation engine for numerically modelling dynamic systems with different integration methods (explicit and implicit).\n"
+                << " > Version 0.9.1-alpha\n"
+                << " > Developed by Joss Salton\n";
+            return 0;
+        }
+		else if (arg == "--help" || arg == "-h") {
+			std::cout
+				<< "Usage:\n"
+				<< "  --batch -t <script> [options]   Run in batch mode with specified script\n"
+				<< "  --about                         Show information about the engine\n"
+				<< "  --help, -h                      Show this help message\n";
+            return EXIT_FAILURE;
+		}
+        else {
+            
+			std::cerr << "Unknown argument: " << arg << "\n";
+            return 0;
+        }
     }
 
 	// Non-batch mode: simple pass to handle GUI-specific options
     if (!batchMode) {
+#ifdef DSFE_ENABLE_GUI
         for (int i = 1; i < argc; ++i) {
             std::string arg(argv[i]);
-            if (arg == "--about") {
-                std::cout
-                    << "DSFE (Dynamic Systems Framework Engine)\n"
-                    << " > A research-focused simulation engine for numerically modelling dynamic systems with different integration methods (explicit and implicit).\n"
-                    << " > Version 0.7.2r-alpha\n"
-                    << " > Developed by Joss Salton\n";
-                return 0;
-            }
-            else if (arg == "--help" || arg == "-h") {
-                std::cout << "Batch mode usage:\n";
-                std::cout << "  --batch -t <script> [options]\n";
-                std::cout << "Options:\n";
-                std::cout << "  --basedt <value>       Baseline timestep (required)\n";
-                std::cout << "  --baseint <method>    Baseline integrator (required)\n";
-                std::cout << "  --dt <list>           Comma-separated list of timesteps to sweep\n";
-                std::cout << "  --int <list>          Comma-separated list of integrators to sweep\n";
-                std::cout << "  --name <value>        Run name for output organization\n";
-                return 0;
-            }
-            else if (arg.starts_with("--")) {
-                std::cerr << "Unknown option in GUI mode: " << arg << "\n";
-				std::cout << "ERROR: Unknown option in GUI mode: " << arg << "\n";
+            if (arg.starts_with("--")) {
+				std::cout << "GUI mode does not accept additional arguments. Use --batch for batch mode.\n";
                 return 0;
             }
         }
 
         Application app("DSFE");
         return app.run();
+#else
+        std::cout << "ERROR: GUI mode is not enabled in this build. Use --batch for batch mode.\n";
+        std::cerr << "GUI mode is not enabled in this build. Use --batch for batch mode.\n";
+        return EXIT_FAILURE;
+#endif
     }
 
 	// Batch mode: parse batch-specific arguments
