@@ -11,7 +11,7 @@
 namespace integration {
 	constexpr bool USE_AD_JACOBIANS = false;
 	// Ordinary Differential Equation (ODE) solvers
-	class MATHLIB_API NumericalIntegrator {
+	class NumericalIntegrator {
 	public:
 		// Euler method
 		template<typename Scalar, typename Func>

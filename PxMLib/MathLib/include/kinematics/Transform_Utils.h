@@ -6,7 +6,7 @@
 using namespace mathlib;
 
 namespace kinematics {
-	class MATHLIB_API Transform_Utils {
+	class Transform_Utils {
 	public:
 		/// <summary>
 		/// Create a transformation matrix from translation and rotation

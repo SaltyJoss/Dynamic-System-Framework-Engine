@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include "Platform/StudyRunner.h"
-#include <MathLibAPI.h>
+
 #include <core/Types.h>
 #include <unordered_set>
 #include "Interpreter/RunWrapper.h"

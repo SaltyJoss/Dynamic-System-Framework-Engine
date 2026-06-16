@@ -1,7 +1,6 @@
 // PxM/MathLib Types_tpl.h
 #pragma once
 
-#include "MathLibAPI.h"
 #include <Eigen/Dense>
 
 namespace mathlib {

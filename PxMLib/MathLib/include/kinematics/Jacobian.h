@@ -7,7 +7,7 @@
 using namespace mathlib;
 
 namespace kinematics {
-	class MATHLIB_API Jacobian {
+	class Jacobian {
 	public:
 		/// <summary>
 		/// Compute the geometric Jacobian matrix for a robotic manipulator

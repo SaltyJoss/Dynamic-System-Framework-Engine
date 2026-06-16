@@ -7,7 +7,7 @@
 using namespace mathlib;
 
 namespace control {
-	class MATHLIB_API Metrics {
+	class Metrics {
 	public:
 		/// <summary>
 		/// Calculates the Mean Squared Error (MSE) of the provided error signals.
