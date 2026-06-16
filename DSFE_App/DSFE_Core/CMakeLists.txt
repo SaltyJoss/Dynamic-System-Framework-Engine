@@ -5,13 +5,7 @@ project(DSFE_Core LANGUAGES C CXX)
 add_library(DSFE_Core SHARED)
 
 find_package(Threads REQUIRED)
-if (WIN32)
-    find_package(HDF5 CONFIG REQUIRED)
-    target_link_libraries(DSFE_Core PRIVATE hdf5::hdf5-shared)
-else()
-    find_package(HDF5 REQUIRED)
-    target_link_libraries(DSFE_Core PRIVATE ${HDF5_LIBRARIES})
-endif()
+find_package(HDF5 REQUIRED)
 
 target_compile_features(DSFE_Core PUBLIC cxx_std_23)
 if (MSVC)
@@ -107,7 +101,6 @@ endif()
 target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${HDF5_INCLUDE_DIRS}
 )
 
 # Use precompiled headers
@@ -119,9 +112,18 @@ target_link_libraries(DSFE_Core
         Eigen3::Eigen
         MathLib
         PhysLib
-        hdf5::hdf5-shared
         Threads::Threads
 
     PRIVATE
         nlohmann_json::nlohmann_json
 )
+
+if (TARGET hdf5::hdf5-shared)
+    target_link_libraries(DSFE_Core PRIVATE hdf5::hdf5-shared)
+
+elseif (TARGET HDF5::HDF5)
+    target_link_libraries(DSFE_Core PRIVATE HDF5::HDF5)
+
+else()
+    target_link_libraries(DSFE_Core PRIVATE ${HDF5_LIBRARIES})
+endif()
