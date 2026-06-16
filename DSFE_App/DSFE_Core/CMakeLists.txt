@@ -7,9 +7,24 @@ add_library(DSFE_Core SHARED)
 find_package(Threads REQUIRED)
 find_package(HDF5 CONFIG REQUIRED)
 
-target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
+target_compile_features(DSFE_Core PUBLIC cxx_std_23)
 if (MSVC)
     target_compile_options(DSFE_Core PRIVATE /bigobj)
+else()
+    target_compile_options(DSFE_Core PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
+
+target_compile_definitions(DSFE_Core PUBLIC
+    $<$<PLATFORM_ID:Windows>:DSFE_PLATFORM_WINDOWS>
+    $<$<PLATFORM_ID:Linux>:DSFE_PLATFORM_LINUX>
+)
+
+if (NOT MSVC)
+    set_target_properties(DSFE_Core PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES
+    )
 endif()
 
 set(DEP_CORE_SRC
