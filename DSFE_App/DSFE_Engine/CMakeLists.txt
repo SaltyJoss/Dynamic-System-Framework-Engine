@@ -1,5 +1,4 @@
 # CMakeLists.txt for the DSFE_Engine executable
-option(DSFE_ENABLE_GUI "Enable GUI module" ON)
 find_package(Threads REQUIRED)
 
 add_executable(DSFE_Engine

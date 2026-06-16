@@ -2,6 +2,28 @@
 cmake_minimum_required(VERSION 3.17)
 project(DSFE_GUI LANGUAGES C CXX)
 
+include(FetchContent)
+
+# Fetch GLM from GitHub
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG 1.0.3
+)
+FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG  v6.0.4
+)
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(assimp)
+
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_AUTOMOC ON)
