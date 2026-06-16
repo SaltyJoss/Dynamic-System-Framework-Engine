@@ -1,7 +1,5 @@
+// DSFE_CORE Logger.h
 #pragma once
-// File:   Logger.h
-// GitHub: SaltyJoss
-#pragma warning(disable : 4251)
 #include "EngineCore.h"
 
 #include <filesystem>
@@ -14,6 +12,7 @@
 #include <fstream>
 #include <string>
 #include <ostream>
+#include <ctime>
 
 // Log levels for debug panel and sim log
 enum class LogLevel { Trace, Debug, Info, Export, Warning, Error, Success, Fail, Runtime, Output };
@@ -47,7 +46,11 @@ public:
 		auto now = std::chrono::system_clock::now();
 		std::time_t now_time = std::chrono::system_clock::to_time_t(now);
 		std::tm tm_data;
+	#ifdef _WIN32
 		localtime_s(&tm_data, &now_time);
+	#else
+		localtime_r(&now_time, &tm_data);
+	#endif
 
 		std::ostringstream oss;
 		oss << "Log/session_" << std::put_time(&tm_data, "%Y%m%d_%H%M%S") << ".txt";
