@@ -6,9 +6,9 @@
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"
 
-#include "Control/TrapezoidTrajectory.h"
-#include "Control/SinusoidalTrajectory.h"
-#include "Control/MultisineTrajectory.h"
+#include "control/TrapezoidTrajectory.h"
+#include "control/SinusoidalTrajectory.h"
+#include "control/MultisineTrajectory.h"
 
 #include <algorithm>
 #include <cctype>
