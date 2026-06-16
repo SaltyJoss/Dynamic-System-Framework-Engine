@@ -1,9 +1,6 @@
 // DSFE_Core Command.h
 #pragma once
-#pragma warning(disable : 4100)
-
 #include "EngineCore.h"
-
 #include "ICommand.h"
 #include "MainContext.h"
 

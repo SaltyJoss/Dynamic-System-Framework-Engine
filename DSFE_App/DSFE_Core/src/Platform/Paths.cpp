@@ -1,6 +1,5 @@
+// DSFE_Core Paths.cpp
 #include "pch.h"
-// File:   Paths.cpp
-// GitHub: SaltyJoss
 #include "Platform/Paths.h"
 // Windows-specific includes for known folder paths
 #ifdef _WIN32
@@ -60,7 +59,7 @@ namespace {
 			return std::filesystem::path(home) / ".local" / "share";
 		}
 		return std::filesystem::current_path(); // Fallback to current path if all else fails
-	#endif()
+	#endif
 	}
 }
 

@@ -1,13 +1,8 @@
 // DSFE_Core ProgramData.h
 #pragma once
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
-
-
 #include <core/Types.h>
 #include <core/constants.h>
-
 #include <string>
 #include <vector>
 

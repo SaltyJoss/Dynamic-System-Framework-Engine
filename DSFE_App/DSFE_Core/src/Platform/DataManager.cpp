@@ -42,12 +42,6 @@ namespace data {
 				oss << std::setprecision(10) << d;
 				return oss.str();
 			}
-			std::string operator()(long l) const {
-				std::ostringstream oss;
-				oss.setf(std::ios::fixed);
-				oss << std::setprecision(10) << l;
-				return oss.str();
-			}
 			std::string operator()(const std::vector<double>& vec) const {
 				std::ostringstream oss;
 				oss << "[";
