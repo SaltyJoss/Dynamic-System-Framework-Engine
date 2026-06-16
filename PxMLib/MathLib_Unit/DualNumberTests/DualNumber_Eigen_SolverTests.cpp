@@ -67,8 +67,8 @@ TEST("DualNumber_T Eigen Solvers", LDLT) {
 	b << Dual(10.0, { 1.0 }), Dual(11.0, { 1.0 });
 	auto solver = A.ldlt();
 	auto x = solver.solve(b);
-	ASSERT_TRUE(isfinite<double>(x(0).real), "Real part of solution should be finite");
-	ASSERT_TRUE(isfinite<double>(x(0).dual[0]), "Dual part of solution should be finite");
+	ASSERT_TRUE(isfinite(x(0).real), "Real part of solution should be finite");
+	ASSERT_TRUE(isfinite(x(0).dual[0]), "Dual part of solution should be finite");
 }
 
 TEST("DualNumber_T Eigen Solvers", FullPivLUComputeAndSolve_DecompWithDualCasts) {
