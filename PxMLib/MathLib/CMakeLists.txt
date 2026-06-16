@@ -2,21 +2,12 @@
 cmake_minimum_required(VERSION 3.17)
 project(MathLib LANGUAGES CXX)
 
-add_library(MathLib STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/pch.cpp
+add_library(MathLib INTERFACE)
+
+target_include_directories(MathLib INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_precompile_headers(MathLib PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pch.h
-)
-
-target_include_directories(MathLib
-    PUBLIC 
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-)
-
-target_link_libraries(MathLib PUBLIC
+target_link_libraries(MathLib INTERFACE
     Eigen3::Eigen
-)
+)`
