@@ -118,5 +118,12 @@
             "name": "linux-x64-release",
             "configurePreset": "linux-x64-release"
         }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-x64-release",
+            "configurePreset": "windows-x64",
+            "output": { "outputOnFailure": true }
+        }
     ]
 }
