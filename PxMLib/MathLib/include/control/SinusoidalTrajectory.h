@@ -10,14 +10,12 @@ namespace control {
 	template<typename Scalar>
 	class SinusoidalTrajectory : public IJointTrajectory {
 	public:
-		template<typename Scalar>
 		SinusoidalTrajectory(
 			Scalar t0, Scalar tf, Scalar q0,
 			Scalar amp, Scalar freqHz, Scalar phaseRad = Scalar(0)
 		) : _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
 
 		// Evaluate the trajectory state at time t (Scale)
-		template<typename Scalar>
 		inline TrajState<Scalar> eval(Scalar t) const {
 			if (t <= _t0) { return { _q0, Scalar(0), Scalar(0) }; } // before start time
 			// after end time
@@ -44,8 +42,6 @@ namespace control {
 			const Scalar qdd = -_A * w * w * s; // acceleration
 			return { q, qd, qdd };
 		}
-		// Evaluate the trajectory state at time t (double overload, for current compatibility)
-		TrajState<double> eval(double t) const override { return eval<double>(t); }
 
 		// Get the time span of the trajectory
 		TrajTimeSpan<double> span() const override { return { _t0, _tf }; }

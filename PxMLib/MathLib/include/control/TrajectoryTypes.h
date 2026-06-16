@@ -1,6 +1,5 @@
-// PxM/
+// PxM/MathLib TrajectoryTypes.h
 #pragma once
-
 #include <core/MathLib.h>
 
 using namespace mathlib;
