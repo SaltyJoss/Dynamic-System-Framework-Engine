@@ -19,6 +19,7 @@
 #include "Robots/RobotSystem.h"
 #include "Robots/RobotModel.h"
 #include "Robots/TrajectoryManager.h"
+#include "SingleBodySystem/Body.h"
 
 #include "Rendering/SkyboxRenderer.h"
 #include "Rendering/ShaderUtil.h"
@@ -109,6 +110,8 @@ namespace gui {
 
 		// Robot System
 		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
+		// Single Body System
+		std::unique_ptr<single_body_system::SingleBodySystem> _singleBody; // simulation
 		// Robot Rendering
 		std::unique_ptr <RobotRenderer> _robotRenderer; // rendering
 		RobotRenderBinding _currentBinding; // current render binding 
@@ -135,6 +138,7 @@ namespace gui {
 
 			// Robot system with mesh loading (for normal simulation)
 			_robotSystem = std::make_unique<robots::RobotSystem>();
+			_singleBody = std::make_unique<single_body_system::SingleBodySystem>();
 		}
 
 		void initGLResources(SimManager& owner) {

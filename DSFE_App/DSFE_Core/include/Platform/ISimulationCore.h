@@ -9,6 +9,7 @@
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; enum class eAutoDiffIntegrationMethod; }
 namespace robots { class RobotSystem; }
+namespace single_body_system { class SingleBodySystem; }
 namespace control { class TrajectoryManager; }
 namespace diagnostics { class TelemetryRecorder; }
 namespace interpreter { class IStoredProgram; }
@@ -47,7 +48,11 @@ namespace core {
         virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems
         virtual robots::RobotSystem* robotSystem() = 0;
+        virtual single_body_system::SingleBodySystem* singleBodySystem() = 0;
         virtual control::TrajectoryManager* trajectoryManager() = 0;
+		// Body management
+		virtual bool hasSingleBody() const = 0;
+		virtual void loadSingleBody(const std::string& name) = 0;
         // Robot management
         virtual bool hasRobot() const = 0;
         virtual void loadRobot(const std::string& name) = 0;

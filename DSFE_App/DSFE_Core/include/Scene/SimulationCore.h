@@ -22,6 +22,7 @@
 // Forward Declarations
 namespace control	  { class TrajectoryManager; }
 namespace robots	  { class RobotSystem; }
+namespace single_body_system { class SingleBodySystem; }
 namespace interpreter { class IStoredProgram; }
 
 namespace core {
@@ -77,9 +78,16 @@ namespace core {
 		// Subsystems access
 		robots::RobotSystem* robotSystem() override;
 		const robots::RobotSystem* robotSystem() const;
+		single_body_system::SingleBodySystem* singleBodySystem() override;
+		const single_body_system::SingleBodySystem* singleBodySystem() const;
 		control::TrajectoryManager* trajectoryManager() override;
 		const control::TrajectoryManager* trajectoryManager() const;
 		
+		// Body management
+		bool hasSingleBody() const override;
+		void loadSingleBody(const std::string& name) override;
+		void loadSingleBodyInternal(const std::string& name); // Internal method that assumes ownership
+
 		// Robot management
 		bool hasRobot() const override;
 		void loadRobot(const std::string& name) override;
@@ -95,6 +103,7 @@ namespace core {
 
 		// Setters for subsystems and scene objects
 		void setRobotSystem(robots::RobotSystem* robot);
+		void setSingleBodySystem(single_body_system::SingleBodySystem* singleBody);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
 		void setJointLogBuffer(robots::JointLogBuffer* buffer);
 		void setTrajRefBuffer(robots::TrajRefBuffer* buffer);
@@ -146,11 +155,13 @@ namespace core {
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<robots::RobotSystem> _robotOwned;
+		std::unique_ptr<single_body_system::SingleBodySystem> _singleBodyOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
 
 		// Non-owning access (always used by logic)
 		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		robots::RobotSystem* _robot = nullptr;
+		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
 
 		mutable std::mutex _stateMutex;
@@ -175,6 +186,7 @@ namespace core {
 		// Active Script Program
 		interpreter::IStoredProgram* _activeProgram = nullptr;
 		bool _robotPresentationDirty = false;
+		bool _singleBodyPresentationDirty = false;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder

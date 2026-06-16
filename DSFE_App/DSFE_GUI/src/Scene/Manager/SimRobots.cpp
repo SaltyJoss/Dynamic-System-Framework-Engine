@@ -68,10 +68,15 @@ namespace gui {
 		_impl->eeObject = nullptr;
 	}
 	const bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
+	const bool SimManager::hasBody() const { return _impl->_singleBody && _impl->_singleBody->hasBody(); }
 
 	// Access the robot system (non-const and const versions)
 	robots::RobotSystem* SimManager::robotSystem() { return _core->robotSystem(); }
 	const robots::RobotSystem* SimManager::robotSystem() const { return _core->robotSystem(); }
+
+	// Access the single body system (non-const and const versions)
+	single_body_system::SingleBodySystem* SimManager::singleBodySystem() { return _core->singleBodySystem(); }
+	const single_body_system::SingleBodySystem* SimManager::singleBodySystem() const { return _core->singleBodySystem(); }
 
 	// Access the trajectory manager (non-const and const versions)
 	control::TrajectoryManager* SimManager::traj() { return _core->trajectoryManager(); }

@@ -176,6 +176,7 @@ namespace gui {
 		void setPresentationFBO(GLuint fbo) { _presentationFBO = fbo; }
 
 		void syncRobotToScene();
+		void syncBodyToScene();
 
 		// Scene Objects Management
         void setSelectedObject(scene::Object* obj);
@@ -194,15 +195,19 @@ namespace gui {
         void clearRobot();
         const bool hasRobot() const;
 
+		const bool hasBody() const;
+
 		// Setters for robot joint states (angle in radians)
         void setRobotLinkRotation(const std::string& linkName, double angle);
         void setRobotRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
         void setRobotRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
 
-
 		// Accesors for the robot system (non-const and const versions)
         robots::RobotSystem* robotSystem();
         const robots::RobotSystem* robotSystem() const;
+
+		single_body_system::SingleBodySystem* singleBodySystem();
+		const single_body_system::SingleBodySystem* singleBodySystem() const;
 
 		// Accessors for the trajectory manager (non-const and const versions)
         control::TrajectoryManager* traj();

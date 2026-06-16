@@ -12,6 +12,7 @@ extern "C" core::ISimulationCore* CreateSimulationCore_v1();
 extern "C" void DestroySimulationCore(core::ISimulationCore*);
 
 #include "Manager/SimImplementation.h"
+#include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/KeyCode.h"
 
 #include <filesystem>
@@ -207,6 +208,25 @@ namespace gui {
 				obj->transform.position = pos;
 				obj->transform.rotQ = q;
 			}
+		}
+	}
+
+	void SimManager::syncBodyToScene() {
+		if (!hasBody()) { return; }
+		auto* sys = singleBodySystem();
+		const auto& body = sys->body();
+		;
+		auto it = _impl->_linkToObjects.find(body->name);
+		if (it == _impl->_linkToObjects.end()) return;
+
+		// For a single body, world transform are redundant, in fact the body->transform is already in world space so we can 
+		auto& state = body->state;
+		for (scene::Object* obj : it->second) {
+			if (!obj) { continue; }
+			glm::vec3 pos = toGlm(state.p);
+			glm::quat q = toGlm(state.q);
+			obj->transform.position = pos;
+			obj->transform.rotQ = q;
 		}
 	}
 

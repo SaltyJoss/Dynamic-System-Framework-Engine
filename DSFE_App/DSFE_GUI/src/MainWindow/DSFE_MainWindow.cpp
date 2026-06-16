@@ -128,6 +128,9 @@ namespace window {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
 				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
 				if (path.isEmpty()) { return; }
+				// Covert path name to just the file name without extension or path
+				std::string bodyName = QFileInfo(path).baseName().toStdString();
+				_sim->simCore()->loadSingleBody(bodyName);
 				_sim->loadMesh(path.toStdString());
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");

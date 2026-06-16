@@ -44,11 +44,11 @@ namespace single_body_system {
 			// TODO: Check the correct way to clamp the velocities close the S.o.L
 			//	* Not really sure if I have done this correctly
 			if (pdMax_hpd > 0.0) {
-				if (pdMax_hpd == constants::c_0) { std::clamp(pd_i, -pdMax_hpd, pdMax_hpd); }
+				if (pdMax_hpd == constants::c_0) { pd_i_out = std::clamp(pd_i, -pdMax_hpd, pdMax_hpd); }
 				else if (std::abs(pd_i) > (1.0 + eps) * pdMax_hpd) { pd_i_out = std::clamp(pd_i, -pdMax_hpd, pdMax_hpd); }
 			}
 			if (wMax_hw > 0.0) {
-				if (wMax_hw == constants::c_0) { std::clamp(w_i, -wMax_hw, wMax_hw); }
+				if (wMax_hw == constants::c_0) { w_i_out = std::clamp(w_i, -wMax_hw, wMax_hw); }
 				else if (std::abs(w_i) > (1.0 + eps) * wMax_hw) { w_i_out = std::clamp(w_i, -wMax_hw, wMax_hw); }
 			}
 
@@ -76,11 +76,36 @@ namespace single_body_system {
 		// Not going to use the computeDynamics methods initially, just want a straight cut test first.
 		auto f_deriv = [&](auto t, const auto& x) { return _dynamics->derivatives(*_body, x, _F_ext, _tau_ext, dt); };
 		auto f_jac = [&](const auto& x, auto& J_out) { _dynamics->jacobian(*_body, x, J_out); };
-
 		auto step = _integrator->step(_curIntMethod, x, t, dt, f_deriv, f_jac); // Wont work with Implicit since no jacobian provided, but will work with RK4 and other explicit methods
-		// Also will not with adaptive (probably) since no rtol/atol provided, but will work with fixed step methods
 		VecX x_next = step.x_next;
 
 		unpackState(x);
+
+		for (int i = 0; i < x_next.size(); ++i) {
+			const auto v = mathlib::real(x_next[i]);
+			if (std::isnan(v) || std::isinf(v)) { LOG_ERROR("Non-finite x_next[%d] = %f", i, (double)v); }
+		}
 	}
+
+	void SingleBodySystem::loadBody(const std::string& name) {
+		if (!_body) { LOG_ERROR("Body not initialised!"); return; }
+		_body->name = name;
+	}
+
+	void SingleBodySystem::resetBody() {
+		if (!_body) { LOG_ERROR("Body not initialised!"); return; }
+		_body->state.p = mathlib::Vec3::Zero();
+		_body->state.pd = mathlib::Vec3::Zero();
+		_body->state.q = mathlib::Quat::Identity();
+		_body->state.w = mathlib::Vec3::Zero();
+	}
+
+	integration::IntegrationService* SingleBodySystem::getIntegrator() { return _integrator.get(); }
+	const integration::IntegrationService* SingleBodySystem::getIntegrator() const { return _integrator.get(); }
+
+	integration::DifferentiableIntegrator* SingleBodySystem::getADIntegrator() { return _AD_integrator.get(); }
+	const integration::DifferentiableIntegrator* SingleBodySystem::getADIntegrator() const { return _AD_integrator.get(); }
+
+	std::shared_ptr<integration::IntegratorState> SingleBodySystem::runtimeIntegratorState() { return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState(); }
+	std::shared_ptr<const integration::IntegratorState> SingleBodySystem::runtimeIntegratorState() const { return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState(); }
 }
