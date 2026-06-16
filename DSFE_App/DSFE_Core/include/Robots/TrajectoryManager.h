@@ -6,7 +6,7 @@
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
 #include "EngineCore.h"
 #include <core/MathLib.h>
-#include <Control/IJointTrajectory.h>
+#include <control/IJointTrajectory.h>
 
 namespace robots { class DSFE_API RobotSystem; }
 
