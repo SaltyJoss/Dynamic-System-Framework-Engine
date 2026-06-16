@@ -25,11 +25,6 @@ jobs:
         run: |
           .\vcpkg\vcpkg.exe install hdf5:x64-windows
 
-      - name: Install Qt
-        shell: pwsh
-        run: |
-          .\vcpkg\vcpkg.exe install qtbase:x64-windows
-
       - name: Configure
         shell: pwsh
         run: |
