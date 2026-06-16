@@ -9,7 +9,7 @@ find_package(HDF5 CONFIG REQUIRED)
 
 target_compile_definitions(DSFE_Core PRIVATE DSFE_CORE_EXPORTS)
 if (MSVC)
-target_compile_options(DSFE_Core PRIVATE /bigobj)
+    target_compile_options(DSFE_Core PRIVATE /bigobj)
 endif()
 
 set(DEP_CORE_SRC
@@ -86,7 +86,6 @@ endif()
 target_include_directories(DSFE_Core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-
     ${HDF5_INCLUDE_DIRS}
 )
 

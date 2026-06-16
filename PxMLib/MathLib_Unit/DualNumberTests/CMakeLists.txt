@@ -1,7 +1,4 @@
 # CMakeLists.txt for MathLib_Unit_Tests executable
-cmake_minimum_required(VERSION 3.17)
-project(MathLib_DualNumberTests LANGUAGES C CXX)
-
 enable_testing()
 
 add_executable(MathLib_DualNumberTests

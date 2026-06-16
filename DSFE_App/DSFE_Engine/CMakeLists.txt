@@ -1,6 +1,4 @@
 # CMakeLists.txt for the DSFE_Engine executable
-cmake_minimum_required(VERSION 3.17)
-project(DSFE_Engine LANGUAGES C CXX)
 
 find_package(Threads REQUIRED)
 

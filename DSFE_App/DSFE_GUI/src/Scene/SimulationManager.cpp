@@ -8,9 +8,6 @@
 #include <glm/gtc/quaternion.hpp>
 #include <algorithm>
 
-extern "C" core::ISimulationCore* CreateSimulationCore_v1();
-extern "C" void DestroySimulationCore(core::ISimulationCore*);
-
 #include "Manager/SimImplementation.h"
 #include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/KeyCode.h"
