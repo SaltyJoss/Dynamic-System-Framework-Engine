@@ -10,4 +10,4 @@ target_include_directories(MathLib INTERFACE
 
 target_link_libraries(MathLib INTERFACE
     Eigen3::Eigen
-)`
+)
