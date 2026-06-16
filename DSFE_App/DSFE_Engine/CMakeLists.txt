@@ -21,11 +21,14 @@ if (DSFE_ENABLE_GUI)
 endif()
 
 add_custom_command(TARGET DSFE_Engine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_RUNTIME_DLLS:DSFE_Engine>"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:DSFE_Engine>"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_RUNTIME_DLLS:DSFE_Engine>
+        "$<TARGET_FILE_DIR:DSFE_Engine>"
+
     COMMAND_EXPAND_LISTS
-    COMMENT "Copying runtime DLLs..."
 )
 
 # Defines the source and destination for assets and configs
