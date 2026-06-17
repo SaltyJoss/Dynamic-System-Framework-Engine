@@ -1,3 +1,4 @@
+// DSFE_Core IntegrationMethods.h
 #pragma once
 
 namespace integration {
@@ -13,4 +14,16 @@ namespace integration {
 		GLRK2 = 8,		// Gauss-Legendre Runge-Kutta Method (2 stages, 4th order, implicit)
 		GLRK3 = 9		// Gauss-Legendre Runge-Kutta Method (3 stages, 6th order, implicit)
 	};
+
+	enum class eAutoDiffIntegrationMethod {
+		AD_ImplicitEuler = 0,
+		AD_ImplicitMidpoint = 1,
+		AD_GLRK2 = 2,
+		AD_GLRK3 = 3
+	};
+
+	inline bool isStandardMethod(eIntegrationMethod method) {
+		auto val = static_cast<int>(method);
+		return val >= static_cast<int>(eIntegrationMethod::Euler) && val <= static_cast<int>(eIntegrationMethod::GLRK3);
+	}
 }

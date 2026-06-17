@@ -15,8 +15,6 @@
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	enum class eInputButton;
-	class Input;
 	class Mesh;
 
 	enum class ObjectCategory { General, RobotLink };
@@ -125,7 +123,6 @@ namespace scene {
 		}
 
 		void onMouseWheel(double delta) { _distance += (float)delta * 0.5f; }
-		void onMouseMove(double x, double y, eInputButton button);
 		void setLastMousePos(const glm::vec2& pos) { _lastMousePos = pos; }
 		glm::vec2 getLastMousePos() const { return _lastMousePos; }
 

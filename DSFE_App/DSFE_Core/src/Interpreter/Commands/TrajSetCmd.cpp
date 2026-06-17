@@ -6,9 +6,9 @@
 #include "Robots/RobotSystem.h"
 #include "Robots/TrajectoryManager.h"
 
-#include "Control/TrapezoidTrajectory.h"
-#include "Control/SinusoidalTrajectory.h"
-#include "Control/MultisineTrajectory.h"
+#include "control/TrapezoidTrajectory.h"
+#include "control/SinusoidalTrajectory.h"
+#include "control/MultisineTrajectory.h"
 
 #include <algorithm>
 #include <cctype>
@@ -98,7 +98,7 @@ namespace commands {
 			const double vmax = degToRad(_params[1]);
 			const double amax = degToRad(_params[2]);
 
-			auto traj = std::make_unique<control::TrapezoidTrajectory>(t0, q0, q1, vmax, amax);
+			auto traj = std::make_unique<control::TrapezoidTrajectory<double>>(t0, q0, q1, vmax, amax);
 			auto trajMgr = core->trajectoryManager();
 			trajMgr->set(_link, std::move(traj));
 	
@@ -148,7 +148,7 @@ namespace commands {
 			// Phase
 			double phi = (_params.size() == 5) ? degToRad(_params[4]) : 0.0; // radians
 
-			auto traj = std::make_unique<control::SinusoidalTrajectory>(t0, t0 + dur, centre, amp, fHz, phi);
+			auto traj = std::make_unique<control::SinusoidalTrajectory<double>>(t0, t0 + dur, centre, amp, fHz, phi);
 			auto trajMgr = core->trajectoryManager();
 			trajMgr->set(_link, std::move(traj));
 
@@ -186,11 +186,11 @@ namespace commands {
 				return { CmdState::Failed, {}, "trajSet(MSINE): params after duration must be triples (amp,f,phase)." };
 			}
 
-			std::vector<control::SineComponent> comps;
+			std::vector<control::SineComponent<double>> comps;
 			comps.reserve(rest / 3);
 
 			for (size_t k = 2; k + 2 < _params.size(); k += 3) {
-				control::SineComponent comp;
+				control::SineComponent<double> comp;
 				comp.amp = degToRad(_params[k + 0]);	  // radians
 				comp.freqHz = _params[k + 1];			  // Hz
 				comp.phaseRad = degToRad(_params[k + 2]); // radians
@@ -218,7 +218,7 @@ namespace commands {
 
 			}
 
-			auto traj = std::make_unique<control::MultisineTrajectory>(t0, t0 + dur, centre, std::move(comps));
+			auto traj = std::make_unique<control::MultisineTrajectory<double>>(t0, t0 + dur, centre, std::move(comps));
 			auto trajMgr = core->trajectoryManager();
 			trajMgr->set(_link, std::move(traj));
 

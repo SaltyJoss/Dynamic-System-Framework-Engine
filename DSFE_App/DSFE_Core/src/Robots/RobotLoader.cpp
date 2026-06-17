@@ -2,9 +2,7 @@
 #include "pch.h"
 
 #include "Robots/RobotLoader.h"
-
-#include <MathLibAPI.h>
-#include <core/constants.h>
+#include <core/MathLib.h>
 
 #include "EngineLib/LogMacros.h"
 #include <nlohmann/json.hpp>
@@ -19,8 +17,7 @@ namespace robots {
 	// --- Static Helper Functions ---
 
 	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
-	static Quat rpyRadToQuat(const Vec3& rpyRad)
-	{
+	static Quat rpyRadToQuat(const Vec3& rpyRad) {
 		const double roll  = rpyRad.x();
 		const double pitch = rpyRad.y();
 		const double yaw   = rpyRad.z();
@@ -318,11 +315,13 @@ namespace robots {
 		joint.dynamics.damping = 0.0;
 		joint.dynamics.friction = 0.0;
 
-		if (!jointData.contains("dynamics") || !jointData["dynamics"].is_object()) { return; }
+		if (!jointData.contains("dynamics") || !jointData["dynamics"].is_object()) { LOG_ERROR("Could not find joint dynamic data"); return; }
 
 		const auto& D = jointData["dynamics"];
 		joint.dynamics.damping = D.value("damping", joint.dynamics.damping);
 		joint.dynamics.friction = D.value("friction", joint.dynamics.friction);
+		joint.wn_target = D.value("wn_target", joint.wn_target);
+		joint.zeta_target = D.value("zeta_target", joint.zeta_target);
 
 		if (joint.dynamics.damping < 0.0) { joint.dynamics.damping = 0.0; }
 		if (joint.dynamics.friction < 0.0) { joint.dynamics.friction = 0.0; }
@@ -336,7 +335,7 @@ namespace robots {
 	}
 
 	// Parse DH parameters if present
-	static bool parseDHParameters(const json& jointData, DH_Params& out) {
+	static bool parseDHParameters(const json& jointData, DH_Params<double>& out) {
 		// Accept "dh" ONLY (your JSON uses "dh")
 		if (!jointData.contains("dh") || !jointData["dh"].is_object()) return false;
 
@@ -344,7 +343,7 @@ namespace robots {
 		out.a = dh.value("a", 0.0);
 		out.alpha = dh.value("alpha", 0.0);
 		out.d = dh.value("d", 0.0);
-		out.theta = dh.value("theta0", 0.0);          // your key is theta0
+		out.theta = dh.value("theta0", 0.0);
 		out.type = parseDHType(dh.value("type", "revolute"));
 		return true;
 	}
@@ -453,8 +452,8 @@ namespace robots {
 				joint.type = eJointType::FIXED;
 				joint.axis = Vec3::Zero();
 				joint.limits.continuous = false;
-				joint.limits.minAngle = 0.0f;
-				joint.limits.maxAngle = 0.0f;
+				joint.limits.minAngle = 0.0;
+				joint.limits.maxAngle = 0.0;
 			}
 			else {
 				parseJointAxis(jointData, joint);
@@ -466,7 +465,7 @@ namespace robots {
 
 			// If robot is DH-mode, also parse DH table
 			if (robot.kinematicsModel == eKinematicsModel::DH) {
-				DH_Params dh{};
+				DH_Params<double> dh{};
 				if (!parseDHParameters(jointData, dh)) {
 					LOG_WARN("Joint %s missing 'dh' unexpectedly; forcing URDF mode.", joint.name.c_str());
 					robot.kinematicsModel = eKinematicsModel::URDF;
@@ -478,16 +477,16 @@ namespace robots {
 			}
 
 			if (abs(joint.limits.minAngle) == abs(joint.limits.maxAngle) && !joint.limits.continuous) {
-				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
-				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle);
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Max Speed: %.2f, | Angle Limit: +-%.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.maxqd, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
 			}
 			else {
-				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
-				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f",
-					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle);
+				LOG_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f | Dampling: %.2f, | Friction: %.2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);
+				D_INFO("Joint: %s | Parent: %s, | Child: %s, | Continuous: %s, | Max Speed: %.2f, | Min Angle: %.2f, | Max Angle: %.2f | Dampling: % .2f, | Friction : % .2f",
+					joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), joint.limits.continuous ? "True" : "False", joint.limits.maxqd, joint.limits.minAngle, joint.limits.maxAngle, joint.dynamics.damping, joint.dynamics.friction);;
 			}
 		}
 

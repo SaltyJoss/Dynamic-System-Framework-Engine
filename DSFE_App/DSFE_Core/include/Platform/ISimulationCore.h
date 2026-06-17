@@ -7,11 +7,14 @@
 #include <string>
 
 // Forward Declarations
-namespace integration { enum class eIntegrationMethod; }
+namespace integration { enum class eIntegrationMethod; enum class eAutoDiffIntegrationMethod; }
 namespace robots { class RobotSystem; }
+namespace single_body_system { class SingleBodySystem; }
 namespace control { class TrajectoryManager; }
 namespace diagnostics { class TelemetryRecorder; }
 namespace interpreter { class IStoredProgram; }
+
+enum class eSimulationBackend;
 
 namespace core {
     struct DSFE_API SimulationSnapshot {
@@ -36,13 +39,20 @@ namespace core {
         virtual SimulationSnapshot snapshot() const = 0;
         // Integrator
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
+		virtual void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) = 0;
         virtual std::string integrationMethodName() const = 0;
         virtual integration::eIntegrationMethod integrationMethod() const = 0;
+		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
+		virtual void enableAutoDiff(bool enable) = 0;
         // Setter for run tag name of current script
         virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems
         virtual robots::RobotSystem* robotSystem() = 0;
+        virtual single_body_system::SingleBodySystem* singleBodySystem() = 0;
         virtual control::TrajectoryManager* trajectoryManager() = 0;
+		// Body management
+		virtual bool hasSingleBody() const = 0;
+		virtual void loadSingleBody(const std::string& name) = 0;
         // Robot management
         virtual bool hasRobot() const = 0;
         virtual void loadRobot(const std::string& name) = 0;

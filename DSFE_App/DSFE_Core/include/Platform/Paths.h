@@ -1,6 +1,5 @@
+// DSFE_Core Paths.h
 #pragma once
-// File:   Paths.h
-// GitHub: SaltyJoss
 #include "EngineCore.h"
 #include <string>
 #include <filesystem>

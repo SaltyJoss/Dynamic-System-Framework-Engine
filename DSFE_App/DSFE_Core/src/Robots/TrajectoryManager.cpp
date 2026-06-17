@@ -1,13 +1,11 @@
+// DSFE_Core TrajectoryManager.cpp
 #include "pch.h"
-// File:   TrajectoryManager.cpp
-// GitHub: SaltyJoss
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
-#include "Control/IJointTrajectory.h"
 
-#include <Control/TrapezoidTrajectory.h>
-#include <Control/SinusoidalTrajectory.h>
-#include <Control/MultisineTrajectory.h>
+#include <control/TrapezoidTrajectory.h>
+#include <control/SinusoidalTrajectory.h>
+#include <control/MultisineTrajectory.h>
 
 namespace control {
 	// Clear trajectory for a specific robot link
@@ -17,7 +15,7 @@ namespace control {
 	void TrajectoryManager::clearAll() { _active.clear(); }
 
 	// Evaluate the trajectory for a specific robot link at time t, returning the desired state in out
-	bool TrajectoryManager::tryEval(const std::string& link, double t, control::TrajState& out) const {
+	bool TrajectoryManager::tryEval(const std::string& link, double t, control::TrajState<double>& out) const {
 		auto it = _active.find(link);
 		if (it == _active.end()) { return false; }
 		const auto r = it->second->eval(t);

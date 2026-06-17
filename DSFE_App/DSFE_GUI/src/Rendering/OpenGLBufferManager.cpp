@@ -4,7 +4,6 @@
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Rendering/OpenGLBufferManager.h"
 
 #include "EngineLib/LogMacros.h"
@@ -38,8 +37,6 @@ namespace render {
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(assets::VertexHolder), (void*)offsetof(assets::VertexHolder, _texCoord));
 
 		glBindVertexArray(0);
-
-		//LOG_INFO("OpenGLVertexIndexBuffer buffers created successfully");
 	}
 
 	// Deletes the VAO, VBO, and EBO associated with this buffer
@@ -177,7 +174,7 @@ namespace render {
 	// Deletes the framebuffer and its associated attachments
 	void OpenGLFrameBuffer::deleteBuffers() {
 		if (_FBO) {
-			LOG_INFO("Deleting framebuffer buffers");
+			/*LOG_INFO("Deleting framebuffer buffers");*/
 			if (_msaaFBO) glDeleteFramebuffers(1, &_msaaFBO);
 			if (_msaaColour) glDeleteTextures(1, &_msaaColour);
 			if (_msaaDepthRBO) glDeleteRenderbuffers(1, &_msaaDepthRBO);
@@ -242,11 +239,10 @@ namespace render {
 		// CRITICAL: reset ALL framebuffer targets, not just GL_FRAMEBUFFER
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		// Restore default backbuffer state
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
+		//// Restore default backbuffer state
+		//glDrawBuffer(GL_BACK);
+		//glReadBuffer(GL_BACK);
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
@@ -256,8 +252,8 @@ namespace render {
 	void OpenGLFrameBuffer::endSetup() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glDrawBuffer(GL_BACK);
-		glReadBuffer(GL_BACK);
+		//glDrawBuffer(GL_BACK);
+		//glReadBuffer(GL_BACK);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDisable(GL_SCISSOR_TEST);
 	}

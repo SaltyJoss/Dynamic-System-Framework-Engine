@@ -28,17 +28,16 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
-          cmake -S . -B build `
-              -A x64 `
+          cmake --preset windows-x64 `
               -DVCPKG_TARGET_TRIPLET=x64-windows `
               -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         shell: pwsh
         run: |
-            cmake --build build --config Release --verbose
+          cmake --build --preset windows-x64-release --verbose
 
       - name: Run tests
         shell: pwsh
         run: |
-           ctest --test-dir build --output-on-failure
+          ctest --preset windows-x64-release --output-on-failure

@@ -1,7 +1,6 @@
 // DSFE_GUI RenderBase.h
 #pragma once
 
-#include "Platform/Window.h"
 #include "Assets/VertexHolder.h"
 
 #include <cstdint>
@@ -65,18 +64,10 @@ namespace render {
 		virtual ~RenderContext() = default;
 
 		// Centeralised way to gain context on the renders' process -> see OpenGLContext
-		RenderContext() : _window(nullptr) {}
-
-		virtual bool init(window::IWindow* win) {
-			_window = win;
-			return true;
-		}
 
 		virtual void preRender() = 0;
 		virtual void postRender() = 0;
 		virtual void end() = 0;
 
-	protected:
-		window::IWindow* _window;
 	};
 } // namespace render

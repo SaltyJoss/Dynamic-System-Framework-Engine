@@ -1,7 +1,5 @@
 #pragma once
 
-#include "MathLibAPI.h"
-
 namespace constants {
 	// Mathematical constants
 	static constexpr long double e_n			= 2.718281828459045235L; // Euler's number

@@ -4,83 +4,92 @@
 #include "EngineCore.h"
 #include "Robots/SpatialModel.h"
 #include "Robots/DynamicsTypes.h"
-#include <core/SpatialMath.h>
 
 namespace robots {
-
 	class DSFE_API SpatialDynamics {
 	public:
+		template<typename Scalar>
 		static void computeSpatialKinematicsAndBias(
-			const SpatialModel& model,
-			const mathlib::VecX& q, const mathlib::VecX& qd,
-			std::vector<mathlib::SpatialMat>& Xup_out,
-			std::vector<mathlib::SpatialVec>& v_out,
-			std::vector<mathlib::SpatialVec>& c_out
+			const SpatialModel<Scalar>& model,
+			const mathlib::VecX_T<Scalar>& q,
+			const mathlib::VecX_T<Scalar>& qd,
+			std::vector<mathlib::SpatialMat_T<Scalar>>& Xup_out,
+			std::vector<mathlib::SpatialVec_T<Scalar>>& v_out,
+			std::vector<mathlib::SpatialVec_T<Scalar>>& c_out
 		);
-
+		
+		template<typename Scalar>
 		static void computeAccelerations_RNEA(
-			const SpatialModel& model,
-			const mathlib::VecX& qdd,
-			const std::vector<mathlib::SpatialMat>& Xup,
-			const std::vector<mathlib::SpatialVec>& c,
-			const mathlib::VecX& g,
-			std::vector<mathlib::SpatialVec>& a_out
+			const SpatialModel<Scalar>& model,
+			const mathlib::VecX_T<Scalar>& qdd,
+			const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
+			const std::vector<mathlib::SpatialVec_T<Scalar>>& c,
+			const mathlib::VecX_T<Scalar>& g,
+			std::vector<mathlib::SpatialVec_T<Scalar>>& a_out
 		);
 
+		template<typename Scalar>
 		static void computeBackwardForces_RNEA(
-			const SpatialModel& model,
-			const std::vector<mathlib::SpatialMat>& Xup,
-			const std::vector<mathlib::SpatialVec>& v, 
-			const std::vector<mathlib::SpatialVec>& a,
-			mathlib::VecX& tau_out
+			const SpatialModel<Scalar>& model,
+			const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
+			const std::vector<mathlib::SpatialVec_T<Scalar>>& v,
+			const std::vector<mathlib::SpatialVec_T<Scalar>>& a,
+			mathlib::VecX_T<Scalar>& tau_out
 		);
 
-		static mathlib::VecX RNEA(
-			const SpatialModel& model,
-			const mathlib::VecX& q,
-			const mathlib::VecX& qd,
-			const mathlib::VecX& qdd,
-			DynamicsScratch& scratch
+		template<typename Scalar>
+		static mathlib::VecX_T<Scalar> RNEA(
+			const SpatialModel<Scalar>& model,
+			const mathlib::VecX_T<Scalar>& q,
+			const mathlib::VecX_T<Scalar>& qd,
+			const mathlib::VecX_T<Scalar>& qdd,
+			DynamicsScratch<Scalar>& scratch
 		);
 
-		static mathlib::MatX CRBA(
-			const SpatialModel& model,
-			const std::vector<mathlib::SpatialMat>& Xup,
-			DynamicsScratch& scratch
+		template<typename Scalar>
+		static mathlib::MatX_T<Scalar> CRBA(
+			const SpatialModel<Scalar>& model,
+			const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
+			DynamicsScratch<Scalar>& scratch
 		);
 
+		template<typename Scalar>
 		static void computeArticulatedBodies_ABA(
-			const SpatialModel& model,
-			const std::vector<SpatialMat>& Xup,
-			const std::vector<SpatialVec>& v, 
-			const std::vector<SpatialVec>& c,
-			const mathlib::VecX& tau,
-			std::vector<SpatialMat>& IA_out,
-			std::vector<SpatialVec>& pA_out,
-			std::vector<SpatialMat>& Ia_out,
-			mathlib::VecX& u_out,
-			mathlib::VecX& d_out,
-			std::vector<SpatialVec>& U_out
+			const SpatialModel<Scalar>& model,
+			const std::vector<SpatialMat_T<Scalar>>& Xup,
+			const std::vector<SpatialVec_T<Scalar>>& v,
+			const std::vector<SpatialVec_T<Scalar>>& c,
+			const mathlib::VecX_T<Scalar>& tau,
+			std::vector<SpatialMat_T<Scalar>>& IA_out,
+			std::vector<SpatialVec_T<Scalar>>& pA_out,
+			std::vector<SpatialMat_T<Scalar>>& Ia_out,
+			mathlib::VecX_T<Scalar>& u_out,
+			mathlib::VecX_T<Scalar>& d_out,
+			std::vector<SpatialVec_T<Scalar>>& U_out
 		);
 
+		template<typename Scalar>
 		static void computeAccelerations_ABA(
-			const SpatialModel& model,
-			const std::vector<SpatialMat>& Xup,
-			const std::vector<SpatialVec>& c,
-			const mathlib::VecX& u_out,
-			const mathlib::VecX& d_out,
-			const std::vector<SpatialVec>& U,
-			const SpatialVec& a0,
-			std::vector<SpatialVec>& a_out,
-			mathlib::VecX& qdd_out
+			const SpatialModel<Scalar>& model,
+			const std::vector<SpatialMat_T<Scalar>>& Xup,
+			const std::vector<SpatialVec_T<Scalar>>& c,
+			const mathlib::VecX_T<Scalar>& u_out,
+			const mathlib::VecX_T<Scalar>& d_out,
+			const std::vector<SpatialVec_T<Scalar>>& U,
+			const SpatialVec_T<Scalar>& a0,
+			std::vector<SpatialVec_T<Scalar>>& a_out,
+			mathlib::VecX_T<Scalar>& qdd_out
 		);
 
-		static mathlib::VecX ABA(
-			const SpatialModel& model,
-			const mathlib::VecX& q,
-			const mathlib::VecX& qd,
-			const mathlib::VecX& tau,
-			DynamicsScratch& scratch
+		template<typename Scalar>
+		static mathlib::VecX_T<Scalar> ABA(
+			const SpatialModel<Scalar>& model,
+			const mathlib::VecX_T<Scalar>& q,
+			const mathlib::VecX_T<Scalar>& qd,
+			const mathlib::VecX_T<Scalar>& tau,
+			DynamicsScratch<Scalar>& scratch
 		);
 	};
 }
+
+#include "Robots/SpatialDynamics.inl"

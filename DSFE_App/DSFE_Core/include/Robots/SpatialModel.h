@@ -1,29 +1,33 @@
 // DSFE_Core SpatialModel.h
 #pragma once
 
-#include "EngineCore.h"
-
 #include <unordered_map>
 #include <core/SpatialMath.h>
 #include "Robots/RobotModel.h"
 
 namespace robots {
 	// Spatial joint struct
-	struct DSFE_API SpatialJoint {
+	template<typename Scalar>
+	struct SpatialJoint {
 		int parent = -1;
 
 		eJointType type = eJointType::FIXED;
 		
-		mathlib::SpatialMat Xtree;
-		mathlib::SpatialMat inertia;
-		mathlib::SpatialVec S;
+		mathlib::SpatialMat_T<Scalar> Xtree;
+		mathlib::SpatialMat_T<Scalar> inertia;
+		mathlib::SpatialVec_T<Scalar> S;
 
 		std::string name;
 	};
 
 	// Spatial model struct
-	struct DSFE_API SpatialModel {
-		std::vector<SpatialJoint> joints;
+	template<typename Scalar>
+	struct SpatialModel {
+		std::vector<SpatialJoint<Scalar>> joints;
 		std::unordered_map<std::string, int> linkNameToIndex;
+
+		template<typename ScalarT>
+		SpatialModel<ScalarT> cast() const;
 	};
-}
+} // namespace robots
+#include "SpatialModelCast.inl"

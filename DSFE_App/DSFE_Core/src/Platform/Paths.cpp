@@ -1,15 +1,20 @@
+// DSFE_Core Paths.cpp
 #include "pch.h"
-// File:   Paths.cpp
-// GitHub: SaltyJoss
 #include "Platform/Paths.h"
+// Windows-specific includes for known folder paths
 #ifdef _WIN32
 	#define NOMINMAX
 	#include <windows.h>
-		#ifdef _MSC_VER
+	#ifdef _MSC_VER
 		#pragma comment(lib, "Shell32.lib")
 	#endif
 	#include <shlobj.h>      // SHGetKnownFolderPath
 	#include <combaseapi.h>  // CoTaskMemFree
+#endif
+// Linux-specific includes for known folder paths
+#ifdef __linux__
+	#include <unistd.h>
+	#include <limits.h>
 #endif
 
 namespace {
@@ -17,13 +22,27 @@ namespace {
 
 	// Get the directory of the currently executing module (executable)
 	inline std::filesystem::path getExecDir() {
+	#ifdef _WIN32
 		wchar_t buf[MAX_PATH]{};
 		GetModuleFileNameW(NULL, buf, MAX_PATH);
 		return std::filesystem::path(buf).parent_path();
+	#elif defined(__linux__)
+		char buf[PATH_MAX]{};
+		ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+		if (len != -1) {
+			buf[len] = '\0';
+			return std::filesystem::path(buf).parent_path();
+		}
+		return std::filesystem::current_path();
+	#else
+		return std::filesystem::current_path(); // Fallback for other platforms
+	#endif
 	}
+
 
 	// Get the LocalAppData directory for the current user
 	inline std::filesystem::path localAppDataDir() {
+	#ifdef _WIN32
 		PWSTR raw = nullptr;
 		if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &raw))) {
 			std::filesystem::path p(raw);
@@ -31,6 +50,16 @@ namespace {
 			return p;
 		}
 		return {};
+	#else
+		// Linux equivalent: use $XDG_DATA_HOME or fallback to ~/.local/share
+		if (const char* xdg = std::getenv("XDG_DATA_HOME")) {
+			return std::filesystem::path(xdg);
+		}
+		if (const char* home = std::getenv("HOME")) {
+			return std::filesystem::path(home) / ".local" / "share";
+		}
+		return std::filesystem::current_path(); // Fallback to current path if all else fails
+	#endif
 	}
 }
 

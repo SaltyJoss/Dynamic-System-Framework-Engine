@@ -11,7 +11,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	// Mesh Initialization
+	// Mesh Initialisation
 	void Mesh::init() {
 		_rndrBffrMngr = std::make_unique<render::OpenGLVertexIndexBuffer>();
 		createBuffers();
@@ -39,7 +39,7 @@ namespace scene {
 	void Mesh::unbind() { _rndrBffrMngr->unbind(); }
 
 	// Render the mesh using the current GPU buffers
-	void Mesh::render() { _rndrBffrMngr->draw((int) _indices.size()); }	
+	void Mesh::render() { _rndrBffrMngr->draw((int)_indices.size()); }	
 
 	// Clean up CPU and GPU buffers
 	void Mesh::clean() {

@@ -1,7 +1,5 @@
 // DSFE_Core DataManager.h
 #pragma once
-
-#pragma warning(disable : 4251)
 #include "EngineCore.h"
 #include <string>
 #include <string_view>
@@ -24,12 +22,7 @@ namespace robots { struct JointLogBuffer; }
 
 namespace data {
     // Variant type to hold different data types
-    using Value = std::variant<
-        std::nullptr_t, bool, int64_t, uint64_t, double, long,
-        std::vector<double>,
-        std::vector<std::string>, std::string
-    >;
-
+    using Value = std::variant<std::nullptr_t, bool, int64_t, uint64_t, double, std::vector<double>, std::vector<std::string>, std::string>;
     // Field type representing a key-value pair
     using Field = std::pair<std::string, Value>;
     // List of fields

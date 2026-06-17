@@ -1,49 +1,53 @@
 #pragma once
 
-#include "MathLibAPI.h"
-#include "core/constants.h"
+#include <core/MathLib.h>
 #include "IJointTrajectory.h"
 
 using namespace mathlib;
 using namespace constants;
 
 namespace control {
+	template<typename Scalar>
 	class SinusoidalTrajectory : public IJointTrajectory {
 	public:
-		SinusoidalTrajectory(double t0, double tf, double q0, double amp, double freqHz, double phaseRad = 0.0)
-			: _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
+		SinusoidalTrajectory(
+			Scalar t0, Scalar tf, Scalar q0,
+			Scalar amp, Scalar freqHz, Scalar phaseRad = Scalar(0)
+		) : _t0(t0), _tf(tf), _q0(q0), _A(amp), _f(freqHz), _phi(phaseRad) {}
 
-		TrajState eval(double t) const override {
-			if (t <= _t0) { return { _q0, 0.0, 0.0 }; } // before start time
+		// Evaluate the trajectory state at time t (Scale)
+		inline TrajState<Scalar> eval(Scalar t) const {
+			if (t <= _t0) { return { _q0, Scalar(0), Scalar(0) }; } // before start time
 			// after end time
 			if (t >= _tf) {
-				const double tau = _tf - _t0;
-				const double w = 2.0 * PI_d * _f;
-				const double s = std::sin(w * tau + _phi); // sine term
-				const double c = std::cos(w * tau + _phi); // cosine term
+				const Scalar tau = _tf - _t0;
+				const Scalar w = Scalar(2) * PI_d * _f;
+				const Scalar s = sin(w * tau + _phi); // sine term
+				const Scalar c = cos(w * tau + _phi); // cosine term
 				
-				const double q = _q0 + _A * s;		// position
-				const double qd = _A * w * c;		// velocity
-				const double qdd = -_A * w * w * s; // acceleration
+				const Scalar q = _q0 + _A * s;		// position
+				const Scalar qd = _A * w * c;		// velocity
+				const Scalar qdd = -_A * w * w * s; // acceleration
 
 				return { q, qd, qdd };
 			}
 
-			const double tau = t - _t0;
-			const double w = 2.0 * PI * _f;
-			const double s = std::sin(w * tau + _phi); // sine term
-			const double c = std::cos(w * tau + _phi); // cosine term
+			const Scalar tau = t - _t0;
+			const Scalar w = Scalar(2) * PI * _f;
+			const Scalar s = sin(w * tau + _phi); // sine term
+			const Scalar c = cos(w * tau + _phi); // cosine term
 
-			const double q = _q0 + _A * s;		// position
-			const double qd = _A * w * c;		// velocity
-			const double qdd = -_A * w * w * s; // acceleration
+			const Scalar q = _q0 + _A * s;		// position
+			const Scalar qd = _A * w * c;		// velocity
+			const Scalar qdd = -_A * w * w * s; // acceleration
 			return { q, qd, qdd };
 		}
 
-		TrajTimeSpan span() const override { return { _t0, _tf }; }
+		// Get the time span of the trajectory
+		TrajTimeSpan<double> span() const override { return { _t0, _tf }; }
 	private:
-		double _t0{ 0 }, _tf{ 0 };					  // start and end times
-		double _q0{ 0 }, _A{ 0 }, _f{ 0 }, _phi{ 0 }; // position offset, amplitude, frequency (Hz), phase (rad)
+		Scalar _t0{ Scalar(0) }, _tf{ Scalar(0) };					  // start and end times
+		Scalar _q0{ Scalar(0) }, _A{ Scalar(0) }, _f{ Scalar(0) }, _phi{ Scalar(0) }; // position offset, amplitude, frequency (Hz), phase (rad)
 
 	};
 } // namespace control

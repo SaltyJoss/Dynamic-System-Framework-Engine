@@ -1,17 +1,49 @@
 # CMakeLists.txt for DSFE_GUI module
+cmake_minimum_required(VERSION 3.17)
+project(DSFE_GUI LANGUAGES C CXX)
+
+include(FetchContent)
+
+# Fetch GLM from GitHub
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG 1.0.3
+)
+set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+set(GLM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG  v6.0.4
+)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(assimp)
+
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-cmake_minimum_required(VERSION 3.10)
-project(DSFE_GUI LANGUAGES C CXX)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+#set(CMAKE_PREFIX_PATH "C:/Qt/6.11.1/msvc2022_64")
 
 add_library(DSFE_GUI SHARED)
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core
+    Gui
+    Widgets
+    OpenGLWidgets
+)
 
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
-    IMGUI_ENABLE_DOCKING
     GLM_ENABLE_EXPERIMENTAL
 )
 
@@ -26,12 +58,16 @@ target_include_directories(stb INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+set(MAIN_WINDOW_SRC
+    src/MainWindow/DSFE_MainWindow.cpp
+    src/MainWindow/Workspace/ProjectPage.cpp
+    src/MainWindow/style/DSFETheme.cpp
+)
+
 set(RENDER_SRC
     src/Rendering/CubeVertices.cpp
-    src/Rendering/GUIContext.cpp
     src/Rendering/IBL.cpp
     src/Rendering/OpenGLBufferManager.cpp
-    src/Rendering/OpenGLContext.cpp
     src/Rendering/ShaderUtil.cpp
     src/Rendering/SkyboxRenderer.cpp
     src/Rendering/Texture.cpp
@@ -40,18 +76,30 @@ set(RENDER_SRC
 set(SCENE_SRC
     src/Scene/AxisOrientator.cpp
     src/Scene/Camera.cpp
-    src/Scene/Input.cpp
     src/Scene/Mesh.cpp
     src/Scene/Object.cpp
     src/Scene/SimulationManager.cpp
 )
 
-set(UI_SRC
-    src/ui/CommandScriptEditor.cpp
-    src/ui/ControlPanel.cpp
-    src/ui/DebugPanel.cpp
+set(MANAGER_SRC
+    src/Scene/Manager/SimBackend.cpp
+    src/Scene/Manager/SimCamera.cpp
+    src/Scene/Manager/SimObjects.cpp
+    src/Scene/Manager/SimRendering.cpp
+    src/Scene/Manager/SimRobots.cpp
+    src/Scene/Manager/SimViewport.cpp
+)
+
+set(WIDGETS_SRC
     src/ui/RenderPreset.cpp
-    src/ui/Styles.cpp
+    src/MainWindow/Widgets/ViewportWidget.cpp
+    src/MainWindow/Widgets/RobotSelectorWidget.cpp
+    src/MainWindow/Widgets/ControlPanelWidget.cpp
+    src/MainWindow/Widgets/DSLEditorWidget.cpp
+    src/MainWindow/Widgets/ConsoleOutputWidget.cpp
+    src/MainWindow/Widgets/FractionSelectorWidget.cpp
+    include/MainWindow/Widgets/FractionSelectorWidget.h
+    src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
 )
 
 set(ROBOT_SRC
@@ -59,8 +107,11 @@ set(ROBOT_SRC
     src/Robots/RobotRenderer.cpp
 )
 
+set(OBJECT_SRC
+    src/Assets/MeshPresentationBuilder.cpp
+)
+
 set(PLATFORM_SRC 
-    src/Platform/WindowManager.cpp
     src/Application.cpp
 )
 
@@ -70,51 +121,30 @@ set(ASSETS_SRC
     src/Assets/importObj.cpp
 )
 
+set(QT_RESOURCES 
+    resources/DSFE_GUI.qrc
+)
+
 target_sources(DSFE_GUI PRIVATE
+    ${MAIN_WINDOW_SRC}
     ${RENDER_SRC}
     ${SCENE_SRC}
-    ${UI_SRC}
+    ${MANAGER_SRC}
+    ${WIDGETS_SRC}
     ${ROBOT_SRC}
+    ${OBJECT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
-)
-
-set(imfilebrowser_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/imfilebrowser)
-
-add_library(imgui STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
-
-target_include_directories(imgui PUBLIC
-    ${imgui_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}/backends
-)
-
-target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
-
-add_library(implot STATIC
-    ${implot_SOURCE_DIR}/implot.cpp
-    ${implot_SOURCE_DIR}/implot_items.cpp
-)
-
-target_include_directories(implot PUBLIC
-    ${implot_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}
+    ${QT_RESOURCES}
 )
 
 target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-
-    PRIVATE
-        ${imfilebrowser_ROOT}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
 )
 
 # Link DSFE_Core against its dependencies
@@ -125,12 +155,13 @@ target_link_libraries(DSFE_GUI
         Threads::Threads
 
     PRIVATE
-        implot
         stb
         assimp
-        glfw
         glad
         glm::glm
-        imgui
         OpenGL::GL
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::OpenGLWidgets
 )

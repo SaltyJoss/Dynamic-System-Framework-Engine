@@ -2,33 +2,33 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <MathLibAPI.h>
-#include <core/Types.h>
+
 
 namespace robots {
 	// Per-joint metrics
+	template<typename Scalar>
 	struct RobotMetrics {
 		// State
-		mathlib::VecX q;
-		mathlib::VecX qd;
-		mathlib::VecX qdd;
+		mathlib::VecX_T<Scalar> q;
+		mathlib::VecX_T<Scalar> qd;
+		mathlib::VecX_T<Scalar> qdd;
 
-		mathlib::VecX err;
-		mathlib::VecX errd;
+		mathlib::VecX_T<Scalar> err;
+		mathlib::VecX_T<Scalar> errd;
 
 		// Dynamics
-		mathlib::VecX I_eff;
-		mathlib::VecX tau;
+		mathlib::VecX_T<Scalar> I_eff;
+		mathlib::VecX_T<Scalar> tau;
 
 		// Constraints / realism
-		mathlib::VecX tau_barrier;
-		mathlib::VecX tau_sat;
+		mathlib::VecX_T<Scalar> tau_barrier;
+		mathlib::VecX_T<Scalar> tau_sat;
 
 		// Energy, Work, & Power
-		mathlib::VecX KE;
-		mathlib::VecX PE;
-		mathlib::VecX E_total;
-		mathlib::VecX W_actuator;
+		mathlib::VecX_T<Scalar> KE;
+		mathlib::VecX_T<Scalar> PE;
+		mathlib::VecX_T<Scalar> E_total;
+		mathlib::VecX_T<Scalar> W_actuator;
 
 		// Stability flags
 		std::vector<uint8_t> sat_flag;

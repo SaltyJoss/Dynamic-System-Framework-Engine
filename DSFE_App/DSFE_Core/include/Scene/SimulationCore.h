@@ -11,9 +11,7 @@
 
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
-
-#include <memory>
-#include <string>
+#include "Numerics/IntegratorState.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
@@ -22,16 +20,16 @@
 #include "Platform/Logger.h"
 
 // Forward Declarations
-namespace integration { enum class eIntegrationMethod; }
 namespace control	  { class TrajectoryManager; }
 namespace robots	  { class RobotSystem; }
+namespace single_body_system { class SingleBodySystem; }
 namespace interpreter { class IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
-	constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
-	constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
-	constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
+	inline constexpr double DEFAULT_INTERACTIVE_MINUTES = 60.0; // long runs for interactive mode
+	inline constexpr double DEFAULT_SYNC_MINUTES = 10.0;        // short runs for synchronous mode
+	inline constexpr size_t MAX_LOG_ENTRIES = 50'000'000;     // hard cap to avoid OutOfMemory crashes
 
 	class DSFE_API SimulationCore : public ISimulationCore {
 	public:
@@ -69,16 +67,27 @@ namespace core {
 		// Integrator
 		void setupSimulationIntegrator();
 		void setIntegrationMethod(integration::eIntegrationMethod method) override;
+		void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) override;
 		std::string integrationMethodName() const override;
 		integration::eIntegrationMethod integrationMethod() const override;
+		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
+		void enableAutoDiff(bool enable) override;
+
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
 		robots::RobotSystem* robotSystem() override;
 		const robots::RobotSystem* robotSystem() const;
+		single_body_system::SingleBodySystem* singleBodySystem() override;
+		const single_body_system::SingleBodySystem* singleBodySystem() const;
 		control::TrajectoryManager* trajectoryManager() override;
 		const control::TrajectoryManager* trajectoryManager() const;
 		
+		// Body management
+		bool hasSingleBody() const override;
+		void loadSingleBody(const std::string& name) override;
+		void loadSingleBodyInternal(const std::string& name); // Internal method that assumes ownership
+
 		// Robot management
 		bool hasRobot() const override;
 		void loadRobot(const std::string& name) override;
@@ -94,6 +103,7 @@ namespace core {
 
 		// Setters for subsystems and scene objects
 		void setRobotSystem(robots::RobotSystem* robot);
+		void setSingleBodySystem(single_body_system::SingleBodySystem* singleBody);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
 		void setJointLogBuffer(robots::JointLogBuffer* buffer);
 		void setTrajRefBuffer(robots::TrajRefBuffer* buffer);
@@ -134,6 +144,7 @@ namespace core {
 	private:
 		// Export thread management
 		void exportThreadMain();
+		void scriptParallelisation(interpreter::IStoredProgram* program);
 
 		std::thread _expThread;
 		std::mutex _expMutex;
@@ -144,11 +155,13 @@ namespace core {
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<robots::RobotSystem> _robotOwned;
+		std::unique_ptr<single_body_system::SingleBodySystem> _singleBodyOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
 
 		// Non-owning access (always used by logic)
 		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		robots::RobotSystem* _robot = nullptr;
+		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
 
 		mutable std::mutex _stateMutex;
@@ -173,6 +186,7 @@ namespace core {
 		// Active Script Program
 		interpreter::IStoredProgram* _activeProgram = nullptr;
 		bool _robotPresentationDirty = false;
+		bool _singleBodyPresentationDirty = false;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder

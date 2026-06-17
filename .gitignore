@@ -476,3 +476,6 @@ vcpkg_downloads/
 !CMakeLists.txt
 !**/imgui.ini
 
+/build-ninja
+/CMakeFiles
+/_deps

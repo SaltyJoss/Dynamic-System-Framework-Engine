@@ -1,19 +1,20 @@
+// PxM/MathLib TrajectoryTypes.h
 #pragma once
-
-#include "MathLibAPI.h"
-#include "core/Types.h"
+#include <core/MathLib.h>
 
 using namespace mathlib;
 
 namespace control {
+	template<typename Scalar>
 	struct TrajState {
-		double q = 0.0;   // Desired position at this trajectory point
-		double qd = 0.0;  // Desired velocity at this trajectory point
-		double qdd = 0.0; // Desired acceleration at this trajectory point
+		Scalar q = Scalar(0);   // Desired position at this trajectory point
+		Scalar qd = Scalar(0);  // Desired velocity at this trajectory point
+		Scalar qdd = Scalar(0); // Desired acceleration at this trajectory point
 	};
 
+	template<typename Scalar>
 	struct TrajTimeSpan {
-		double t0 = 0.0; // Start time of the trajectory segment
-		double tf = 0.0; // End time of the trajectory segment
+		Scalar t0 = Scalar(0); // Start time of the trajectory segment
+		Scalar tf = Scalar(0); // End time of the trajectory segment
 	};
 } // namespace control

@@ -8,6 +8,11 @@
 #include "Robots/RobotSimSnapshot.h"
 #include "Robots/DynamicsTypes.h"
 
+#include <kinematics/Forward_Kinematics.h>
+#include "Robots/RobotKinematics.h"
+#include "Robots/RobotDynamics.h"
+#include "Robots/SpatialDynamics.h"
+
 #include "Analysis/MetricLogger.h"
 #include "Numerics/IntegrationService.h"
 
@@ -16,8 +21,6 @@ namespace control { class TrajectoryManager; }
 
 namespace robots {
 	// Forward declarations
-	class RobotKinematics;
-	class RobotDynamics;
 	enum class eTorqueMode;
 
 	// Joint state structure
@@ -32,6 +35,17 @@ namespace robots {
 		Baseline
 	};
 
+	// Step Result struct
+	template<typename Scalar>
+	struct RobotStepResult_T {
+		integration::StepOut_T<Scalar> stepOut;
+		RobotSimSnapshot_T<Scalar> snap;
+		DynamicsResult<Scalar> dynamics;
+		mathlib::VecX_T<Scalar> tau_rnea;
+	};
+
+	inline constexpr size_t AD_VARS = 14; // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
+
 	class DSFE_API RobotSystem {
 	public:
 		RobotSystem();
@@ -40,6 +54,8 @@ namespace robots {
         // --- Utility Methods ---
 
         static double clampJointAngle(const RobotJoint& joint, double angleRad);
+		template<typename T>
+		static T clampJointAngle_T(const RobotJoint& joint, T angleRad);
 
         // ---- Accessors ---
 
@@ -61,13 +77,11 @@ namespace robots {
         bool hasRobot() const { return _hasRobot; }
 
 		void setGravity(double g);
-		double getGravity() const { return _gravity; }
+		const double getGravity() const { return _gravity; }
 
 		void setNaturalFrequency(double wn) { _wn = wn; }
 		double getNaturalFrequency() const { return _wn; }
-		void resetNaturalFrequencyToTarget() {
-			for (auto& joint : _robot.joints) { joint.wn_target = _wn; }
-		}
+		void resetNaturalFrequencyToTarget() { for (auto& joint : _robot.joints) { joint.wn_target = _wn; } }
 
 		void setDampingRatio(double zeta) { _zeta = zeta; }
 		double getDampingRatio() const { return _zeta; }
@@ -112,7 +126,10 @@ namespace robots {
 
 		// --- SIMULATION STEP METHOD ---
 
-		RobotSimSnapshot takeSnapshot(double simTime) const;
+		template<typename T>
+		RobotSimSnapshot_T<T> takeSnapshot(T simTime) const;
+		template<size_t NVar>
+		void step_AD(double dt, double simTime);
 
 		void step(double dt, double simTime);
 		void updateTrajectoryInputs(control::TrajectoryManager& traj, double t);
@@ -131,17 +148,29 @@ namespace robots {
 		void setRobotRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 
 		bool setDefaultPoseDeg();
-
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
 
 		// --- GET AND SET INTEGRATION METHOD ---
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
-		void setIntegrationMethod(integration::eIntegrationMethod method) { _curIntMethod = method; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
+		void setStandardIntegrator(integration::eIntegrationMethod m) { _curIntMethod = m; }
+
+		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
+		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
+		void setADIntegrator(integration::eAutoDiffIntegrationMethod m) { _curIntMethod_AD = m; }
 
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
+
+		integration::DifferentiableIntegrator* getADIntegrator();
+		const integration::DifferentiableIntegrator* getADIntegrator() const;
+		
+		bool autoDiffEnabled() const { return _useAutoDiff; }
+		void enableAutoDiff(bool enable) { _useAutoDiff = enable; }
+
+		std::shared_ptr<integration::IntegratorState> runtimeIntegratorState();
+		std::shared_ptr<const integration::IntegratorState> runtimeIntegratorState() const;
 
 		void setRefBuffer(robots::TrajRefBuffer* buf)  { _refBuffer = buf; }
 		void setLogBuffer(robots::JointLogBuffer* buf) { _logBuffer = buf; }
@@ -164,16 +193,31 @@ namespace robots {
         void buildLinkIndex();
 		void buildSpatialModel();
 
+		template<typename Scalar, typename IntegratorT>
+		RobotStepResult_T<Scalar> step_impl(
+			const mathlib::VecX_T<Scalar>& x,
+			Scalar dt, Scalar t, IntegratorT& integrator,
+			DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
+		);
+
+		template<typename T>
+		void postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<T>& scratch, const RobotStepResult_T<T>& result);
+
 		std::unique_ptr<RobotKinematics> _kinematics;
 		std::unique_ptr<RobotDynamics> _dynamics;
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
 
+		std::unique_ptr<integration::DifferentiableIntegrator> _AD_integrator;
+		integration::eAutoDiffIntegrationMethod _curIntMethod_AD{};
+
 		eRole _role = eRole::Simulation;
 
 		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
 		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
+
+		bool _useAutoDiff = false;
 
 		// Compute the forward drive (velocity) of the robot's root link based on the current state and robot configuration
 		double computeForwardDrive() const;
@@ -185,6 +229,13 @@ namespace robots {
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
+
+		template<typename T>
+		void unpackState(const mathlib::VecX_T<T>& x);
+
+		// State packing and unpacking using a DualNumber vector.
+		mathlib::VecX_T<DualNumber_T<double, 14>> packState_AD() const;
+		void unpackState_AD(const mathlib::VecX_T<DualNumber_T<double, 14>>& x);
 
 		// Reference state packing and unpacking
 		mathlib::VecX packRefState() const;
@@ -200,11 +251,14 @@ namespace robots {
         RobotModel _robot;
 		eTorqueMode _torqueMode = _robot.torqueMode;
 
-		SpatialModel _spatialModel;
+		SpatialModel<double> _spatialModel;
 		RobotConstModel _constModel;
 
-		DynamicsScratch _dynScratch;
-		DynamicsResult _dynResult;
+		DynamicsScratch<double> _dynScratch;
+		DynamicsResult<double> _dynResult;
+
+		DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
+		DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
 
 		// World to robot base transform (meters)
 		std::vector<Mat4> _worldTransforms;
@@ -251,9 +305,9 @@ namespace robots {
 		double _baseYawAcc = 0.0;
 
 		// Tunables
-		double _baseMass = 62.0;           // kg (H1 ~60–65)
-		double _baseLinearDamping = 6.0;   // Ns/m
-		double _baseYawDamping = 2.0;      // Nms/rad
+		double _baseMass = 62.0;			// kg (H1 ~60–65)
+		double _baseLinearDamping = 6.0;	// Ns/m
+		double _baseYawDamping = 2.0;		// Nms/rad
 		double _lastBaseForwardForce = 0.0;
 
 		// Double-buffer design
@@ -268,29 +322,4 @@ namespace robots {
 
 	};
 } // namespace robot
-
-// --- Logging macros for robot syste debugging ---
-
-// LOG_ROT
-#ifdef LOG_ROT
-#error LOG_ROT macro already defined. Please undefine it before including RobotSystem.h to avoid conflicts.
-#endif
-// Logs the rotation part of a 4x4 matrix with a custom tag
-#define LOG_ROT(tag, M) \
-	LOG_INFO("[ROT] %s | X=(%.2f %.2f %.2f) Y=(%.2f %.2f %.2f) Z=(%.2f %.2f %.2f)", \
-	tag, \
-	M[0][0], M[0][1], M[0][2], \
-	M[1][0], M[1][1], M[1][2], \
-	M[2][0], M[2][1], M[2][2])
-
-#define LOG_MAT4(tag, M) \
-	LOG_INFO("[MAT4] %s:\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]", \
-		tag, \
-		M[0][0], M[1][0], M[2][0], M[3][0], \
-		M[0][1], M[1][1], M[2][1], M[3][1], \
-		M[0][2], M[1][2], M[2][2], M[3][2], \
-		M[0][3], M[1][3], M[2][3], M[3][3])
+#include "RobotSystemStep.inl"

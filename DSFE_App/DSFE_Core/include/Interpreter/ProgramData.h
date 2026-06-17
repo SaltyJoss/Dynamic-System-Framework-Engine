@@ -1,13 +1,8 @@
 // DSFE_Core ProgramData.h
 #pragma once
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
-
-#include <MathLibAPI.h>
 #include <core/Types.h>
 #include <core/constants.h>
-
 #include <string>
 #include <vector>
 
@@ -49,7 +44,11 @@ namespace program_data {
 		ImplicitEuler,
 		ImplicitMidpoint,
 		GLRK2,
-		GLRK3
+		GLRK3,
+		AD_ImplicitEuler,
+		AD_ImplicitMidpoint,
+		AD_GLRK2,
+		AD_GLRK3
 	};
 
 	// Enum for preset colours

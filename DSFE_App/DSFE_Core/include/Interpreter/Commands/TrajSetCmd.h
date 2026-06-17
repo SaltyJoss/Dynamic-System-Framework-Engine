@@ -1,9 +1,6 @@
 // DSFE_Core TrajSetCmd.h
 #pragma once
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
-
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContext.h"

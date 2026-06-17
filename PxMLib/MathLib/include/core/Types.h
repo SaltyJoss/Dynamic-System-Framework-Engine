@@ -1,7 +1,6 @@
 #pragma once
 
-#include "MathLibAPI.h"
-#include <Eigen/Dense>
+#include "Types_tpl.h"
 
 namespace mathlib {
 	// Basic type definitions
@@ -11,21 +10,26 @@ namespace mathlib {
 	using ulong = unsigned long;
 	using ullong = unsigned long long;
 
-	// Eigen type aliases
-	using Vec2 = Eigen::Vector2d;	// A 2D vector, often used to represent positions, directions, or other 2D quantities in space
-	using Vec3 = Eigen::Vector3d;	// A 3D vector, often used to represent positions, directions, or other 3D quantities in space
-	using Vec4 = Eigen::Vector4d;	// A 4D vector, often used to represent homogeneous coordinates (x, y, z, w) in 3D graphics and transformations
-	using VecX = Eigen::VectorXd;	// A dynamic-size vector, where the number of elements can be determined at runtime
-	using Mat2 = Eigen::Matrix2d;	// A 2x2 matrix, often used to represent linear transformations in 2D space
-	using Mat3 = Eigen::Matrix3d;	// A 3x3 matrix, often used to represent rotations in 3D space
-	using Mat4 = Eigen::Matrix4d;	// A 4x4 matrix, often used to represent transformations (rotation + translation) in 3D space
-	using MatX = Eigen::MatrixXd;	// A dynamic-size matrix, where the number of rows and columns can be determined at runtime
+	// Double and float Eigen types using the template aliases defined in Types_tpl.h
+	using Vec2 = Vec2_T<double>;
+	using Vec2f = Vec2_T<float>;
+	using Vec3 = Vec3_T<double>;
+	using Vec3f = Vec3_T<float>;
+	using Vec4 = Vec4_T<double>;
+	using Vec4f = Vec4_T<float>;
+	using VecX = VecX_T<double>;
+	using VecXf = VecX_T<float>;
+	using Mat2 = Mat2_T<double>;
+	using Mat2f = Mat2_T<float>;
+	using Mat3 = Mat3_T<double>;
+	using Mat3f = Mat3_T<float>;
+	using Mat4 = Mat4_T<double>;
+	using Mat4f = Mat4_T<float>;
+	using MatX = MatX_T<double>;
+	using MatXf = MatX_T<float>;
+	using Pose = Pose_T<double>;
+	using Posef = Pose_T<float>;
+	using Quat = Quat_T<double>;
+	using Quatf = Quat_T<float>;
 
-	using Vec6 = Eigen::Matrix<double, 6, 1>;	// A 6D vector, often used to represent spatial velocities (linear and angular) or twists in robotics and kinematics
-	using Vec7 = Eigen::Matrix<double, 7, 1>;	// A 7D vector, commonly used to represent a pose in 3D space (position and orientation) using a combination of translation (3D) and rotation (4D quaternion)
-	using Mat6 = Eigen::Matrix<double, 6, 6>;	// A 6x6 matrix, often used to represent spatial inertia tensors or Jacobians in robotics and kinematics
-
-	using Pose = Eigen::Matrix4d;		// A 4x4 transformation matrix that combines rotation and translation and represents the pose of an object in 3D space
-	using Quat = Eigen::Quaterniond;	// A quaternion representing rotation in 3D space; Eigen uses semantic order (w, x, y, z) with scalar part w and vector part (x, y, z), while coeffs() is stored as (x, y, z, w)
-	using Quatf = Eigen::Quaternionf;	// A single-precision quaternion representing rotation in 3D space; same Eigen convention applies: semantic order (w, x, y, z), coeffs() storage (x, y, z, w)
 }

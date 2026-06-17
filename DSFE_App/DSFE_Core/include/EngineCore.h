@@ -3,13 +3,15 @@
 
 // Conditional compilation for cross-platform symbol export/import
 #ifdef _WIN32
-#ifdef DSFE_CORE_EXPORTS
-#define DSFE_API __declspec(dllexport)
+    #ifdef DSFE_CORE_EXPORTS
+        #define DSFE_API __declspec(dllexport)
+    #else
+        #define DSFE_API __declspec(dllimport)
+    #endif
+#elif defined(__GNUC__) || defined(__clang__)
+    #define DSFE_API __attribute__((visibility("default")))
 #else
-#define DSFE_API __declspec(dllimport)
-#endif
-#else
-#define DSFE_API
+    #define DSFE_API
 #endif
 
 // Forward declarations for core components
