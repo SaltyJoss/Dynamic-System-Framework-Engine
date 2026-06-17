@@ -13,7 +13,6 @@ namespace assets {
 	// Load a mesh from the specified file path and return a vector of shared pointers to Mesh objects
 	std::vector<std::shared_ptr<scene::Mesh>> MeshLoader::load(const std::string& filepath) {
 		_imported.clear();
-
 		const uint32_t importFlags =
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
@@ -30,10 +29,8 @@ namespace assets {
 			LOG_ERROR("Failed to load mesh from %s: %s", filepath.c_str(), importer.GetErrorString());
 			return {};
 		}
-
 		glm::mat4 rootTransform(1.0f);
 		processNode(scene->mRootNode, scene, rootTransform);
-
 		return _imported;
 	}
 
@@ -48,22 +45,18 @@ namespace assets {
 			a.a3, a.b3, a.c3, a.d3,
 			a.a4, a.b4, a.c4, a.d4
 		);
-
 		glm::mat4 globalTransform = parentTransform * nodeTransform;
 
 		// Process meshes in this node
-		for (unsigned int i = 0; i < node->mNumMeshes; i++)
-		{
+		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-				auto m = processMesh(mesh, scene);
+			auto m = processMesh(mesh, scene);
 			m->localTransform = globalTransform;
 			_imported.push_back(std::move(m));
 		}
 
 		// Recursively process child nodes
-		for (unsigned int i = 0; i < node->mNumChildren; i++) {
-			processNode(node->mChildren[i], scene, globalTransform);
-		}
+		for (unsigned int i = 0; i < node->mNumChildren; i++) { processNode(node->mChildren[i], scene, globalTransform); }
 	}
 
 	// Helper method to process an Assimp mesh and convert it into a shared pointer to a scene::Mesh object
@@ -79,21 +72,15 @@ namespace assets {
 				? glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z)
 				: glm::vec3(0.0f, 1.0f, 0.0f);
 
-			if (mesh->mTextureCoords[0]) {
-				vh._texCoord = glm::vec2(mesh->mTextureCoords[0][i].x,
-					mesh->mTextureCoords[0][i].y);
-			}
+			if (mesh->mTextureCoords[0]) { vh._texCoord = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y); }
 			else { vh._texCoord = glm::vec2(0.0f); }
-
 			result->addVertex(vh);
 		}
 
 		// Get the indices for the faces of the mesh and add them to the result mesh, applying the index offset to account for previously added vertices
 		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
 			const aiFace& face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; ++j) {
-				result->addVertexIndex(face.mIndices[j] + indexOffset);
-			}
+			for (unsigned int j = 0; j < face.mNumIndices; ++j) { result->addVertexIndex(face.mIndices[j] + indexOffset); }
 		}
 
 		// Extract material properties from Assimp
@@ -102,42 +89,31 @@ namespace assets {
 
 			// Albedo / diffuse colour
 			aiColor4D diffuse(0.4f, 0.4f, 0.4f, 1.0f);
-			if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse) == AI_SUCCESS ||
-				mat->Get(AI_MATKEY_BASE_COLOR, diffuse) == AI_SUCCESS) {
+			if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse) == AI_SUCCESS || mat->Get(AI_MATKEY_BASE_COLOR, diffuse) == AI_SUCCESS) {
 				result->setAlbedo(glm::vec3(diffuse.r, diffuse.g, diffuse.b));
 			}
 
 			// Metallic (GLTF/PBR key, fallback to reflectivity)
 			float metallic = 0.0f;
-			if (mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) {
-				result->setMetallic(metallic);
-			} else {
+			if (mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) { result->setMetallic(metallic); } else {
 				float reflectivity = 0.0f;
-				if (mat->Get(AI_MATKEY_REFLECTIVITY, reflectivity) == AI_SUCCESS) {
-					result->setMetallic(glm::clamp(reflectivity, 0.0f, 1.0f));
-				}
+				if (mat->Get(AI_MATKEY_REFLECTIVITY, reflectivity) == AI_SUCCESS) { result->setMetallic(glm::clamp(reflectivity, 0.0f, 1.0f)); }
 			}
 
 			// Roughness (GLTF/PBR key, fallback from shininess)
 			float roughness = 0.5f;
-			if (mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
-				result->setRoughness(roughness);
-			} else {
+			if (mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) { result->setRoughness(roughness); }
+			else {
 				float shininess = 0.0f;
-				if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS && shininess > 0.0f) {
-					// Convert Phong shininess to roughness (approximate)
-					result->setRoughness(glm::clamp(1.0f - glm::sqrt(shininess / 1000.0f), 0.05f, 1.0f));
+				if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS && shininess > 0.0f) { 	
+					result->setRoughness(glm::clamp(1.0f - glm::sqrt(shininess / 1000.0f), 0.05f, 1.0f)); // Convert Phong shininess to roughness (approximate)
 				}
 			}
 		}
 
 		// Set mesh name from Assimp
-		if (mesh->mName.length > 0) {
-			result->setName(std::string(mesh->mName.C_Str()));
-		}
-
-		// Update the index offset for the next mesh
-		result->init();
+		if (mesh->mName.length > 0) { result->setName(std::string(mesh->mName.C_Str())); }
+		result->init(); // Initialise the mesh (create GPU buffers, etc.)
 		return result;
 	}
 }

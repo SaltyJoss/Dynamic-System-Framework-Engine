@@ -1,6 +1,5 @@
 #pragma once
 
-#include "MathLibAPI.h"
 #include "core/Types.h"
 #include "core/ScalarStdFunc.h"
 #include "core/ScalarScaling.h"

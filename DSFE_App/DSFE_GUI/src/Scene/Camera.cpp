@@ -5,9 +5,8 @@
 #undef __gl_h_
 #endif
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "Scene/Camera.h"
-
+#include "Platform/KeyCode.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
@@ -26,12 +25,12 @@ namespace scene {
 		float velocity = _currentSpeed * dt;
 
 		switch (key) {
-		case GLFW_KEY_W:			moveForward(velocity);	break;
-		case GLFW_KEY_S:			moveBackward(velocity); break;
-		case GLFW_KEY_A:			moveLeft(velocity);		break;
-		case GLFW_KEY_D:			moveRight(velocity);	break;
-		case GLFW_KEY_SPACE:		moveUp(velocity);		break;
-		case GLFW_KEY_LEFT_SHIFT:	moveDown(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::W):		moveForward(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::A):		moveLeft(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::S):		moveBackward(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::D):		moveRight(velocity);	break;
+			case static_cast<int>(gui::eKeyCode::Space):	moveUp(velocity);		break;
+			case static_cast<int>(gui::eKeyCode::LShift):	moveDown(velocity);		break;
 		}
 
 		updateViewMatrix();
@@ -186,8 +185,8 @@ namespace scene {
 		if (len < 1e-6f) return;
 		dir /= len;
 
-		// Match your yaw/pitch convention:
-		// Your default: _yaw = -pi/2 gives forward (0,0,-1).
+		// Match yaw/pitch convention:
+		// Default: _yaw = -pi/2 gives forward (0,0,-1).
 		// That corresponds to:
 		// forward.x = cos(yaw)*cos(pitch)
 		// forward.y = sin(pitch)

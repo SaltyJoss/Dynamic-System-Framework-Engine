@@ -1,7 +1,6 @@
 // PxM/MathLib ScalarStdFunc.h
 #pragma once
 
-#include "MathLibAPI.h"
 #include "core/Types_tpl.h"
 #include "core/constants.h"
 #include <type_traits>

@@ -8,8 +8,6 @@
 #include <cstdio>
 #include <string>
 
-#include <imgui.h> // needed if you keep any ImGui usage
-
 namespace gui {
 	// --- Static Member Definitions ---
     GLuint AxisOrientator::g_VAO = 0;

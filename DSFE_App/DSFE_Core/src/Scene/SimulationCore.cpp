@@ -5,6 +5,7 @@
 #include "Robots/RobotSystem.h"
 #include "Robots/RobotModel.h"
 #include "Robots/TrajectoryManager.h"
+#include "SingleBodySystem/Body.h"
 
 #include "Interpreter/StoredProgram.h"
 #include "Interpreter/Parser.h"
@@ -15,10 +16,12 @@
 namespace core {
 	// Owned constructed subsystems (default)
 	SimulationCore::SimulationCore()
-		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _robotOwned(std::make_unique<robots::RobotSystem>())
+		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _robotOwned(std::make_unique<robots::RobotSystem>()),
+		_singleBodyOwned(std::make_unique<single_body_system::SingleBodySystem>())
 	{
 		_traj = _trajOwned.get();
 		_robot = _robotOwned.get();
+		_singleBody = _singleBodyOwned.get();
 
 		startExportThread();
 	}
@@ -30,15 +33,23 @@ namespace core {
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
 	SimulationCore::SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj)
-		: _robot(&robot), _traj(&traj) {
+		: _robot(&robot), _traj(&traj), _singleBody(nullptr) {
 		startExportThread();
 	}
 
 	// Simulation System
 	void SimulationCore::setupSimulationIntegrator() {
-		if (!_robot) { return; }
-		auto* intgr = _robot->getIntegrator();
-		auto* adIntgr = _robot->getADIntegrator();
+		if (!_robot && !_singleBody) { return; }
+		integration::IntegrationService* intgr;
+		integration::DifferentiableIntegrator* adIntgr;
+		if (_robot) {
+			intgr = _robot->getIntegrator();
+			adIntgr = _robot->getADIntegrator();
+		}
+		if (_singleBody) {
+			intgr = _singleBody->getIntegrator();
+			adIntgr = _singleBody->getADIntegrator();
+		}
 		intgr->resetAdaptiveState();
 		intgr->setAdaptiveTolerances(1e-3, 1e-6);
 		intgr->setMaxStep(_dt);
@@ -47,37 +58,39 @@ namespace core {
 	}
 	// Set the integration method for the simulation (also updates the robot's integrator if it exists)
 	void SimulationCore::setIntegrationMethod(integration::eIntegrationMethod method) {
-		if (!_robot) { return; }
-		_robot->setStandardIntegrator(method);
+		if (!_robot && !_singleBody) { return; }
+		if (_singleBody) { _singleBody->setStandardIntegrator(method); }
+		if (_robot) { _robot->setStandardIntegrator(method); }
 	}
 	// Set the auto-diff integration method for the simulation (also updates the robot's AD integrator if it exists)
 	void SimulationCore::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
-		if (!_robot) { return; }
-		_robot->setADIntegrator(method);
+		if (!_robot && !_singleBody) { return; }
+		if (_singleBody) { _singleBody->setADIntegrator(method); }
+		if (_robot) { _robot->setADIntegrator(method); }
 	}
 	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
 	std::string SimulationCore::integrationMethodName() const {
-		if (!_robot) { return "no_robot"; }
 		std::string intName;
-		if (_robot->autoDiffEnabled()) {
-			intName = _robot->getIntegratorName();
+		if (_robot) {
+			if (_robot->autoDiffEnabled()) { intName = _robot->getIntegratorName(); }
+			else { intName = _robot->AD_integratorName(); }
 		}
-		else {
-			intName = _robot->AD_integratorName();
-		}
+		else if(_singleBody) { intName = _singleBody->getIntegratorName(); }
+		else { intName = "no_system"; }
 		LOG_INFO("Integration Method: %s", intName.c_str());
-
 		return intName;
 	} 
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
-		if (!_robot) { return integration::eIntegrationMethod::RK4; }
-		return _robot->getIntegrationMethod();
+		if (_robot) { return _robot->getIntegrationMethod(); }
+		if (_singleBody) { return _singleBody->getIntegrationMethod(); }
+		return integration::eIntegrationMethod::RK4;
 	}
 	// Get the current auto-diff integration method
 	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
-		if (!_robot) { return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; }
-		return _robot->AD_IntegrationMethod();
+		if (_robot) { return _robot->AD_IntegrationMethod(); }
+		if (_singleBody) { return _singleBody->AD_IntegrationMethod(); }
+		return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler;
 	}
 	void SimulationCore::enableAutoDiff(bool enable) {
 		if (!_robot) { return; }
@@ -135,6 +148,7 @@ namespace core {
 					}
 					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
+				if (hasSingleBody()) { _singleBody->step(_dt, simTime); }
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
@@ -156,6 +170,8 @@ namespace core {
 
 		_simTime.store(0.0, std::memory_order_relaxed);
 		_accum = 0.0;
+
+		std::string intName;
 
 		// Reset simulation system
 		if (_robot) {
@@ -182,11 +198,16 @@ namespace core {
 			_trajRefBuffer.clear();
 			_trajRefBuffer.reserve(std::max<size_t>(1024, total / (26 / 5))); // 26 to 5 entries, so reserving 1/(26/5) of total steps as a heuristic for ref buffer size
 			_robot->setRefBuffer(&_trajRefBuffer);
+
+			const auto state = _robot->runtimeIntegratorState();
+			intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
 		}
-
-		const auto state = _robot->runtimeIntegratorState();
-		std::string intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
-
+		if (_singleBody) {
+			_singleBody->resetBody();
+			const auto state = _singleBody->runtimeIntegratorState();
+			intName = (_singleBody->autoDiffEnabled()) ? _singleBody->AD_integratorName() : _singleBody->getIntegratorName();
+		}
+	
 		_data.setParentFolder(paths::runs().string());
 
 		// Ensure reference sim system have their integrators configured for the new run
@@ -412,10 +433,29 @@ namespace core {
 		loadRobotInternal(name);
 		_robotPresentationDirty = true;
 	}
-
+	// Internal method to load a robot, assumes ownership of the robot system
 	void SimulationCore::loadRobotInternal(const std::string& name) {
 		if (!_robot) { LOG_ERROR("Cannot load robot: RobotSystem not set"); return; }
 		_robot->loadRobot(name);
+	}
+
+	// Accessor for the single body system (non-const and const versions)
+	single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() { return _singleBody; }
+	const single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() const { return _singleBody; }
+
+	// Setter and checker for Single Body System
+	void SimulationCore::setSingleBodySystem(single_body_system::SingleBodySystem* singleBody) { _singleBody = singleBody; }
+	bool SimulationCore::hasSingleBody() const { return _singleBody && _singleBody->hasBody(); }
+
+	// Loads a single body into the single body system by name
+	void SimulationCore::loadSingleBody(const std::string& name) {
+		loadSingleBodyInternal(name);
+		_singleBodyPresentationDirty = true;
+	}
+	// Internal method to load a single body, assumes ownership of the single body system
+	void SimulationCore::loadSingleBodyInternal(const std::string& name) {
+		if (!_singleBody) { LOG_ERROR("Cannot load single body: SingleBodySystem not set"); return; }
+		_singleBody->loadBody(name);
 	}
 
 	// Setter for the trajectory manager
@@ -439,8 +479,6 @@ namespace core {
 	// Setter and getter for the active script program
 	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
 	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
-
-	// Setter for the 
 
 	// Thread-based methods
 

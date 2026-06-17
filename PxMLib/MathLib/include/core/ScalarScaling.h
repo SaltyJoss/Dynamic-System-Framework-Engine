@@ -1,7 +1,5 @@
 // PxM/MathLib ScalarScaling.h
 #pragma once
-
-#include "MathLibAPI.h"
 #include "core/Types_tpl.h"
 
 namespace mathlib {

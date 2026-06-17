@@ -77,13 +77,11 @@ namespace robots {
         bool hasRobot() const { return _hasRobot; }
 
 		void setGravity(double g);
-		double getGravity() const { return _gravity; }
+		const double getGravity() const { return _gravity; }
 
 		void setNaturalFrequency(double wn) { _wn = wn; }
 		double getNaturalFrequency() const { return _wn; }
-		void resetNaturalFrequencyToTarget() {
-			for (auto& joint : _robot.joints) { joint.wn_target = _wn; }
-		}
+		void resetNaturalFrequencyToTarget() { for (auto& joint : _robot.joints) { joint.wn_target = _wn; } }
 
 		void setDampingRatio(double zeta) { _zeta = zeta; }
 		double getDampingRatio() const { return _zeta; }
@@ -325,29 +323,3 @@ namespace robots {
 	};
 } // namespace robot
 #include "RobotSystemStep.inl"
-
-// --- Logging macros for robot syste debugging ---
-
-// LOG_ROT
-#ifdef LOG_ROT
-#error LOG_ROT macro already defined. Please undefine it before including RobotSystem.h to avoid conflicts.
-#endif
-// Logs the rotation part of a 4x4 matrix with a custom tag
-#define LOG_ROT(tag, M) \
-	LOG_INFO("[ROT] %s | X=(%.2f %.2f %.2f) Y=(%.2f %.2f %.2f) Z=(%.2f %.2f %.2f)", \
-	tag, \
-	M[0][0], M[0][1], M[0][2], \
-	M[1][0], M[1][1], M[1][2], \
-	M[2][0], M[2][1], M[2][2])
-
-#define LOG_MAT4(tag, M) \
-	LOG_INFO("[MAT4] %s:\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]\n" \
-		"[ % .3f % .3f % .3f % .3f ]", \
-		tag, \
-		M[0][0], M[1][0], M[2][0], M[3][0], \
-		M[0][1], M[1][1], M[2][1], M[3][1], \
-		M[0][2], M[1][2], M[2][2], M[3][2], \
-		M[0][3], M[1][3], M[2][3], M[3][3])

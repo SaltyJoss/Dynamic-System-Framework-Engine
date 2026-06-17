@@ -1,17 +1,23 @@
 // DSFE_GUI SimulationManager.h
 #pragma once
 
+#ifdef __gl_h_
+#undef __gl_h_
+#endif
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <mutex>
 #include <vector>
+#include <unordered_set>
 #include "Platform/StudyRunner.h"
 
 #include "Rendering/ModelGroup.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
-#include "FpsCounter.h"
+
+#include "Platform/KeyCode.h"
 
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
@@ -28,10 +34,8 @@ namespace shaders { class Shader; }
 
 // Forward Declarations for Scene
 namespace scene {
-    enum class eInputButton;
     class Light;
     class Camera;
-    class Input;
     class Mesh;
     class Object;
     class SceneRenderer;
@@ -52,6 +56,8 @@ namespace gui {
 
 	// Forward Declarations for Axis Orientator
 	class AxisOrientator;
+	// Forward Declarations for eKeyCode
+    enum class eKeyCode;
 
     // Control Modes & Camera
     enum class ControlMode {
@@ -68,6 +74,11 @@ namespace gui {
 
 		// OpenGL Initialisation
         void initGL();
+
+		void setContextHooks(std::function<void()> makeCurrentHook, std::function<void()> doneCurrentHook) {
+			_makeCurrentHook = makeCurrentHook;
+			_doneCurrentHook = doneCurrentHook;
+		}
 
 		// Light
         scene::Light* getLight();
@@ -153,17 +164,19 @@ namespace gui {
 		// Render Settings & Profiles
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
-
-		// Reset HDR to default
 		void resetHDRToPreset();
-		// Reload shaders (e.g. after editing source files)
         void reloadAllShaders();
 
 		// Rendering Entry Points
-        void render();
+        void tick(double dt);
+        void renderViewport(int w, int h);
+        void setDisplaySize(int w, int h);
         void resize(int32_t width, int32_t height);
 
+		void setPresentationFBO(GLuint fbo) { _presentationFBO = fbo; }
+
 		void syncRobotToScene();
+		void syncBodyToScene();
 
 		// Scene Objects Management
         void setSelectedObject(scene::Object* obj);
@@ -182,15 +195,19 @@ namespace gui {
         void clearRobot();
         const bool hasRobot() const;
 
+		const bool hasBody() const;
+
 		// Setters for robot joint states (angle in radians)
         void setRobotLinkRotation(const std::string& linkName, double angle);
         void setRobotRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
         void setRobotRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
 
-
 		// Accesors for the robot system (non-const and const versions)
         robots::RobotSystem* robotSystem();
         const robots::RobotSystem* robotSystem() const;
+
+		single_body_system::SingleBodySystem* singleBodySystem();
+		const single_body_system::SingleBodySystem* singleBodySystem() const;
 
 		// Accessors for the trajectory manager (non-const and const versions)
         control::TrajectoryManager* traj();
@@ -260,13 +277,15 @@ namespace gui {
 
         // Input Handling
         void processMovementKey(int key, float delta);
-        void handleContinuousMovement(GLFWwindow* window, float dt);
-        void handleMouseLook(GLFWwindow* window, double xpos, double ypos);
-        void onMouseMove(double x, double y, scene::eInputButton button);
+        void handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt);
+        void handleMouseLook(double xpos, double ypos, bool mouseCaptured);
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
     private:
+        std::function<void()> _makeCurrentHook;
+        std::function<void()> _doneCurrentHook;
+
         std::unique_ptr<core::SimulationCore> _core = nullptr;
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;
@@ -329,6 +348,8 @@ namespace gui {
 		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
         bool _telemetryBegun = false;
 
+		GLuint _presentationFBO = 0; // FBO for final post-processed output to the screen
+
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};
 		render::ResolutionPreset _resCurrent = render::ResolutionPreset::R_1080p;
@@ -345,9 +366,6 @@ namespace gui {
         bool _shadowsInit = false;
         bool _hdrUserOverride = false;
 
-        // Editor & UI
-        gui::FpsCounter _fpsCounter;
-
 		// View management
         bool _isHovered = false;
         bool skyboxEnabled = true;
@@ -358,3 +376,10 @@ namespace gui {
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
 } // namespace gui
+
+#define GL_CHECKPOINT(name) \
+do { \
+    GLenum err = glGetError(); \
+    if (err != GL_NO_ERROR) \
+        LOG_ERROR("%s -> 0x%X", name, err); \
+} while (0)

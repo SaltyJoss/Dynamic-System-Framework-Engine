@@ -1,6 +1,5 @@
+// DSFE_CORE EngineCore.cpp
 #include "pch.h"
-// File:   EngineCore.cpp
-// GitHub: SaltyJoss
 #include "EngineCore.h"
 #include "Scene/SimulationCore.h"
 

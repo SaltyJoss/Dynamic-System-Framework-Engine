@@ -22,12 +22,10 @@ namespace control {
 	class MultisineTrajectory : public IJointTrajectory {
 	public:
 		// Constructor
-		template<typename Scalar>
 		MultisineTrajectory(Scalar t0, Scalar tf, Scalar q0, std::vector<SineComponent<Scalar>> comps)
 			: _t0(t0), _tf(tf), _q0(q0), _comps(std::move(comps)) {}
 
 		// Get the trajectory state at time t
-		template<typename Scalar>
 		inline TrajState<Scalar> eval(double t) const {
 			if (t <= _t0) { return { _q0, Scalar(0), Scalar(0) }; } // before start time
 
@@ -75,8 +73,6 @@ namespace control {
 			}
 			return { q, qd, qdd };
 		}
-		// Double overload
-		TrajState<double> eval(double t) const override { return eval<double>(t); }
 
 		// Get the time span of the trajectory
 		TrajTimeSpan<double> span() const override { return { _t0, _tf }; }

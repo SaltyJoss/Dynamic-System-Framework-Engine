@@ -9,7 +9,7 @@ namespace control {
 	/// Structure to hold PID controller gains.
 	/// </summary>
 	template<typename Scalar>
-	struct MATHLIB_API PID_Gains_T {
+	struct PID_Gains_T {
 		VecX_T<Scalar> Kp; // Proportional gains
 		VecX_T<Scalar> Ki; // Integral gains
 		VecX_T<Scalar> Kd; // Derivative gains
@@ -19,7 +19,7 @@ namespace control {
 	/// Structure to hold the state of the PID controller.
 	/// </summary>
 	template<typename Scalar>
-	struct MATHLIB_API PID_State_T {
+	struct PID_State_T {
 		VecX_T<Scalar> integral;      // Integral of the error
 		VecX_T<Scalar> prev_error;    // Previous error for derivative calculation
 		bool first_update = true; // Flag to check if it's the first update

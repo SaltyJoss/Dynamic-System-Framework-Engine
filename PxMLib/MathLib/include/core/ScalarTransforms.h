@@ -1,7 +1,6 @@
 // PxM/MathLib ScalarTransforms.h
 #pragma once
 
-#include "MathLibAPI.h"
 #include "core/Types_tpl.h"
 #include "core/SpatialMath.h"
 

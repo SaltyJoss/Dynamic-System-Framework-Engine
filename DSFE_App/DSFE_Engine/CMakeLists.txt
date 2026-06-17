@@ -1,7 +1,4 @@
 # CMakeLists.txt for the DSFE_Engine executable
-cmake_minimum_required(VERSION 3.10)
-project(DSFE_Engine LANGUAGES C CXX)
-
 find_package(Threads REQUIRED)
 
 add_executable(DSFE_Engine
@@ -14,17 +11,26 @@ target_include_directories(DSFE_Engine PRIVATE
 )
 
 target_link_libraries(DSFE_Engine PRIVATE 
-    DSFE_GUI
     DSFE_Core
     Threads::Threads
 )
 
+if (DSFE_ENABLE_GUI)
+    target_link_libraries(DSFE_Engine PRIVATE DSFE_GUI)
+    target_compile_definitions(DSFE_Engine PRIVATE DSFE_ENABLE_GUI)
+endif()
+
 add_custom_command(TARGET DSFE_Engine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_RUNTIME_DLLS:DSFE_Engine>"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:DSFE_Engine>"
+
+    COMMAND $<$<BOOL:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>:${CMAKE_COMMAND}>
+            $<$<BOOL:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>:-E>
+            $<$<BOOL:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>:copy_if_different>
+            $<$<BOOL:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>
+            $<$<BOOL:$<TARGET_RUNTIME_DLLS:DSFE_Engine>>:$<TARGET_FILE_DIR:DSFE_Engine>>
+
     COMMAND_EXPAND_LISTS
-    COMMENT "Copying runtime DLLs..."
 )
 
 # Defines the source and destination for assets and configs

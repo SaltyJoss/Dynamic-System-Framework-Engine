@@ -9,7 +9,7 @@ namespace control {
 	/// Structure to hold pose error information.
 	/// </summary>
 	template<typename Scalar>
-	struct MATHLIB_API PoseError_T {
+	struct PoseError_T {
 		Vec3_T<Scalar> position; // Positional error (x, y, z)
 		Vec3_T<Scalar> orientation; // Orientational error (roll, pitch, yaw)
 	};

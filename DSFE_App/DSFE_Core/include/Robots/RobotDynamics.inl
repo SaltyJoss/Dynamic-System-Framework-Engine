@@ -47,7 +47,7 @@ namespace robots {
 		Scalar I_trans = m * (axis_world.cross(r)).squaredNorm();
 
 		// Rotational contribution
-		mathlib::Mat3_T<Scalar> I_local = computeLinkInertiaTensor(link);
+		mathlib::Mat3_T<Scalar> I_local = computeLinkInertiaTensor<Scalar>(link);
 		mathlib::Mat3_T<Scalar> I_world = R_link * I_local * R_link.transpose();
 
 		// Rotational contribution to inertia about the joint axis
@@ -80,7 +80,7 @@ namespace robots {
 			const mathlib::Vec3_T<Scalar> p = T_world[k].template block<3, 1>(0, 3);  // Center of mass of the link in world frame
 			const mathlib::Vec3_T<Scalar> com = R * link.inertial.com_xyz + p; // Center of mass in world frame
 
-			mathlib::Mat3_T<Scalar> I_local = computeLinkInertiaTensor(link); // inertia tensor in link frame
+			mathlib::Mat3_T<Scalar> I_local = computeLinkInertiaTensor<Scalar>(link); // inertia tensor in link frame
 			mathlib::Mat3_T<Scalar> I_world = R * I_local * R.transpose();	   // inertia tensor in world frame
 
 			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
@@ -200,8 +200,8 @@ namespace robots {
 
 			const mathlib::Pose_T<Scalar>& T_joint = jointWorldPoses[i]; // pose of joint i in world frame
 
-			const mathlib::Mat3_T<Scalar> R_i = T_joint.block<3, 3>(0, 0);
-			const mathlib::Vec3_T<Scalar> p_i = T_joint.block<3, 1>(0, 3);
+			const mathlib::Mat3_T<Scalar> R_i = T_joint.template block<3, 3>(0, 0);
+			const mathlib::Vec3_T<Scalar> p_i = T_joint.template block<3, 1>(0, 3);
 			const mathlib::Vec3_T<Scalar> axis_world = mathlib::safeNormalised(R_i * robot.joints[i].axis);
 
 			// For each link, compute the gravitational force and its torque contribution about joint i

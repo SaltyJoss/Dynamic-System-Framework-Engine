@@ -351,30 +351,21 @@ namespace integration {
 			eval_g(x_real.template cast<Scalar>(), g_dual);
 			g_real = g_dual.template cast<Real>();
 			if (!g_real.allFinite()) {
-				std::ostringstream oss;
-				oss << "Newton received non-finite residual at iter = " << iter << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
+				std::cout << "Newton received non-finite residual at iter = " << iter << std::endl;
 				throw std::runtime_error("Newton received non-finite residual at iter = " + std::to_string(iter));
 			}
 			if (g_real.norm() < tol) { converged = true; break; }
 
 			eval_j(x_real.template cast<Scalar>(), J);
 			if (!J.allFinite()) {
-				std::ostringstream oss;
-				oss << "Newton received non-finite Jacobian at iter = " << iter << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
+				std::cout << "Newton received non-finite Jacobian at iter = " << iter << std::endl;
 				throw std::runtime_error("Newton received non-finite Jacobian at iter = " + std::to_string(iter));
 			}
 
 			solver.compute(J);
 			delta = solver.solve(-g_real);
 			if (!delta.allFinite()) {
-				std::ostringstream oss;
-				oss << "Newton produced non-finite step at iter = " << iter << '\n';
-				std::cerr << oss.str();
-				OutputDebugStringA(oss.str().c_str());
+				std::cout << "Newton produced non-finite step at iter = " << iter << std::endl;
 				throw std::runtime_error("Newton produced non-finite step at iter = " + std::to_string(iter));
 			}
 
@@ -386,13 +377,7 @@ namespace integration {
 		}
 
 		if (!converged) {
-			std::ostringstream oss;
-			oss << "Newton failed to converge." << '\n'
-				<< "iter=" << maxIter << '\n'
-				<< "residual=" << g_real.norm() << '\n'
-				<< "tol=" << tol << '\n';
-			std::cerr << oss.str();
-			OutputDebugStringA(oss.str().c_str());
+			std::cout << "Newton-Raphson failed to converge after " << maxIter << " iterations." << std::endl;
 			throw std::runtime_error("Newton-Raphson failed to converge after " + std::to_string(maxIter) + " iterations.");
 		}
 

@@ -114,7 +114,7 @@ namespace scene {
 		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
 
 		int id = 0;
-		std::string  _name = "obj" + id;
+		std::string _name = "obj_" + id;
 
 		// Default material properties
 		glm::vec3 _albedo = glm::vec3(0.4, 0.4, 0.4);

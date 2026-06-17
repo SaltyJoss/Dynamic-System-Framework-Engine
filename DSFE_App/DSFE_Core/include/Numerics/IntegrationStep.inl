@@ -105,6 +105,11 @@ namespace integration {
 		int substeps = 0;
 		const int max_substeps = 500; // safety limit
 
+		if (h <= eps) {
+			LOG_WARN("Adaptive integration step size is too small (%e). Returning last computed state.", h);
+			return { x_curr, t_total, h };
+		}
+
 		// Loop until we reach the target end time or exceed the maximum number of substeps
 		while (t_curr < t_end && substeps < max_substeps) {
 			double h_try = std::min(h, t_end - t_curr);

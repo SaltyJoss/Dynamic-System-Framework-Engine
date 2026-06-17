@@ -127,6 +127,11 @@ namespace shaders {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());
 		glUniform3f(matLoc, a, b, c);
 	}
+	void Shader::setFltArray2(float a, float b, const std::string& name) {
+		GLint loc = glGetUniformLocation(getProgramID(), name.c_str());
+		float vals[2] = { a, b };
+		glUniform1fv(loc, 2, vals);
+	}
 	// Set a vec4 uniform in the shader program
 	void Shader::setVec2(const glm::vec2& vec2, const std::string& name) {
 		GLint matLoc = glGetUniformLocation(getProgramID(), name.c_str());

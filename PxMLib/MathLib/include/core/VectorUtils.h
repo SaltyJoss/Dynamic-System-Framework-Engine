@@ -7,10 +7,8 @@
 
 namespace mathlib {
 	template<typename Derived>
-	inline auto safeNorm(const Eigen::MatrixBase<Derived>& v) {
-		using Scalar = typename Derived::Scalar;
-		return mathlib::sqrt(v.dot(v));
-	}
+	inline auto safeNorm(const Eigen::MatrixBase<Derived>& v) { return mathlib::sqrt(v.dot(v)); }
+
 	template<typename Derived>
 	inline typename Derived::PlainObject safeNormalised(const Eigen::MatrixBase<Derived>& v) {
 		using Scalar = typename Derived::Scalar;

@@ -66,13 +66,13 @@ namespace integration {
 		auto g = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::VecX_T<Scalar>& g_out) { g_out = x_guess - x - dt * f((t + dt) / Scalar(2), (x + x_guess) / Scalar(2)); };
 
 		// Numerical Jacobian for Newton-Raphson
-		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) {
+		auto J = [&](const mathlib::VecX_T<Scalar>& x_guess, mathlib::MatX_T<Scalar>& J_out) { 
 			int n = (int)x_guess.size();
 			mathlib::MatX_T<Scalar> F;
 			bool analytical_success = false;
 
 			if constexpr (!std::is_same_v<std::decay_t<JacFunc>, std::nullptr_t>) {
-				if constexpr (std::is_pointer_v<std::decay_t<JacFunc>> || requires { bool(jac); }) {
+				if constexpr (std::is_pointer_v<std::decay_t<JacFunc>> || requires { bool(jac); }) { 
 					if (jac) {
 						jac((x + x_guess) / Scalar(2), F); // User-provided Jacobian
 						analytical_success = true;
@@ -85,9 +85,7 @@ namespace integration {
 			}
 			if (!analytical_success) {
 				F = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2));
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f((t + dt) / Scalar(2), (x + x_pert) / Scalar(2)); },
 					t + dt / Scalar(2),
 					x_guess
 				);
@@ -175,16 +173,12 @@ namespace integration {
 
 			if (!analytical_success) {
 				F1 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(0) * dt, x_pert);
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(0) * dt, x_pert); },
 					t + c(0) * dt,
 					x1
 				);
 				F2 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(1) * dt, x_pert);
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(1) * dt, x_pert); },
 					t + c(1) * dt,
 					x2
 				);
@@ -311,25 +305,19 @@ namespace integration {
 
 			if (!analytical_success) {
 				F1 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(0) * dt, x_pert);
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(0) * dt, x_pert); },
 					t + c(0) * dt,
 					x1
 				);
 
 				F2 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(1) * dt, x_pert);
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(1) * dt, x_pert); },
 					t + c(1) * dt,
 					x2
 				);
 
 				F3 = finiteDifferenceJacobian(
-					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) {
-					return f(t + c(2) * dt, x_pert);
-				},
+					[&](Scalar, const mathlib::VecX_T<Scalar>& x_pert) { return f(t + c(2) * dt, x_pert); },
 					t + c(2) * dt,
 					x3
 				);
@@ -352,9 +340,6 @@ namespace integration {
 
 		mathlib::VecX_T<Scalar> g_check;
 		eval_g(k, g_check);
-
-		auto residual = mathlib::real(g_check.norm());
-		//if (residual > 1e-8) { std::cout << "[GLRK3] Large final residual: " << residual << std::endl; }
 
 		// Compute the final update for x using the stage values
 		mathlib::VecX_T<Scalar> k1 = k.segment(0, n);

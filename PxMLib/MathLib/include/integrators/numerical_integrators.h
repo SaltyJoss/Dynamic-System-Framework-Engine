@@ -1,22 +1,17 @@
+// PxMLib/MathLib numerical_integrators.h
 #pragma once
-// File:   numerical_integrators.h
-// GitHub: SaltyJoss
 #include <core/MathLib.h>
 #include <string>
 #include <functional>
 #include <iostream>
 #include <format>
-// TEMP
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include <sstream>
 
 // Numerical integration methods
 namespace integration {
 	constexpr bool USE_AD_JACOBIANS = false;
 	// Ordinary Differential Equation (ODE) solvers
-	class MATHLIB_API NumericalIntegrator {
+	class NumericalIntegrator {
 	public:
 		// Euler method
 		template<typename Scalar, typename Func>

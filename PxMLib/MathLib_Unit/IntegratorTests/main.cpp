@@ -1,7 +1,4 @@
-// File:   main.cpp
-// GitHub: SaltyJoss
-// Entry point for the integration test runner
-
+// PxMLib/MathLib_Unit/IntegratorTests main.cpp
 #include "TestHarness.h"
 
 #ifdef _WIN32

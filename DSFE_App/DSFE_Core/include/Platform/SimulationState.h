@@ -38,4 +38,12 @@ struct DSFE_API modes {
 	eRunMode _runMode = eRunMode::Interactive;
 };
 
-
+// Struct to hold comparison results for integrator analysis
+struct ComparisonSnapshot {
+	std::string integratorName;
+	std::vector<float> time;      // time samples
+	std::vector<float> errRms;    // RMS error time series
+	std::vector<float> errMax;    // Max error time series
+	std::vector<std::vector<float>> jointErr; // [joint][sample]
+	int jointCount = 0;
+};

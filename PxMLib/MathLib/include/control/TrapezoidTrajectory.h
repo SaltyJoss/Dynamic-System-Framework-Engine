@@ -9,7 +9,6 @@ namespace control {
 	template<typename Scalar>
 	class TrapezoidTrajectory : public IJointTrajectory {
 	public:
-		template<typename Scalar>
 		TrapezoidTrajectory(Scalar t0, Scalar q0, Scalar q1, Scalar vMax, Scalar aMax)
 			: _t0(t0), _q0(q0), _q1(q1), _vMax(mathlib::abs(vMax)), _aMax(mathlib::abs(aMax)) {
 			const Scalar dq = _q1 - _q0; // total displacement
@@ -46,7 +45,6 @@ namespace control {
 			_tf = _t3;		 // final time
 		}
 
-		template<typename Scalar>
 		inline TrajState<Scalar> eval(Scalar t) const {
 			if (t <= _t0) { return { _q0, Scalar(0), Scalar(0) }; }
 			if (t >= _tf) { return { _q1, Scalar(0), Scalar(0) }; }
@@ -83,8 +81,6 @@ namespace control {
 				return { q, qd, qdd };
 			}
 		}
-		// Get the time span of the trajectory
-		inline TrajState<double> eval(double t) const override { return eval<double>(t); }
 		
 		// Get the time span of the trajectory
 		TrajTimeSpan<double> span() const override { return { _t0, _tf }; }

@@ -123,13 +123,11 @@ namespace integration {
 
 			// Weights for 4th and 5th order estimates
 			const Scalar b1 = Scalar(35) / Scalar(384);
-			const Scalar b2 = Scalar(0);
 			const Scalar b3 = Scalar(500) / Scalar(1113);
 			const Scalar b4 = Scalar(125) / Scalar(192);
 			const Scalar b5 = Scalar(-2187) / Scalar(6784);
 			const Scalar b6 = Scalar(11) / Scalar(84);
 			const Scalar b1s = Scalar(5179) / Scalar(57600);
-			const Scalar b2s = Scalar(0);
 			const Scalar b3s = Scalar(7571) / Scalar(16695);
 			const Scalar b4s = Scalar(393) / Scalar(640);
 			const Scalar b5s = Scalar(-92097) / Scalar(339200);

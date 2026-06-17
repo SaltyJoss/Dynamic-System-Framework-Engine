@@ -1,18 +1,17 @@
 #pragma once
 
-#include "MathLibAPI.h"
 #include <vector>
 #include <string>
 
 namespace integration {
-	struct MATHLIB_API ErrorStats {
+	struct ErrorStats {
 		double maxError;	// Maximum error observed
 		double minError;	// Minimum error observed
 		double meanError;	// Mean (average) error
 		double rmsError;	// Root Mean Square (RMS) error
 	};
 
-	struct MATHLIB_API ErrorSample {
+	struct ErrorSample {
 		double time;			// Time at which the error is sampled
 		double errorEuler;		// Error for Euler method
 		double errorMidpoint;	// Error for Midpoint method
@@ -21,7 +20,7 @@ namespace integration {
 		double errorRK4;		// Error for Fourth-order Runge-Kutta method
 	};
 
-	class MATHLIB_API analysis {
+	class analysis {
 	public:
 		// Compute error statistics from a collection of error values
 		ErrorStats computeErrorStats(const std::vector<double>& errors);

@@ -1,8 +1,5 @@
+// DSFE_Core IntegrationService.h
 #pragma once
-// File:   IntegrationService.h
-// GitHub: SaltyJoss
-#pragma warning(disable : 4251)
-
 #include "EngineCore.h"
 #include <core/MathLib.h>
 #include <integrators/numerical_integrators.h>

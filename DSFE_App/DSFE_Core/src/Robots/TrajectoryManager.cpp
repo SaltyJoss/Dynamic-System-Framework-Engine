@@ -1,13 +1,11 @@
+// DSFE_Core TrajectoryManager.cpp
 #include "pch.h"
-// File:   TrajectoryManager.cpp
-// GitHub: SaltyJoss
 #include "Robots/TrajectoryManager.h"
 #include "Robots/RobotSystem.h"
-#include "Control/IJointTrajectory.h"
 
-#include <Control/TrapezoidTrajectory.h>
-#include <Control/SinusoidalTrajectory.h>
-#include <Control/MultisineTrajectory.h>
+#include <control/TrapezoidTrajectory.h>
+#include <control/SinusoidalTrajectory.h>
+#include <control/MultisineTrajectory.h>
 
 namespace control {
 	// Clear trajectory for a specific robot link
