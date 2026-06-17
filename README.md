@@ -22,7 +22,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About DSFE
-The **Dynamic Systems Framework Engine (DSFE)** is a final year Computer Science project developed to support the design, simulation, and analysis of numerical integration methods under varying dynamic conditions in single or many-body systems.
+The **Dynamic Systems Framework Engine (DSFE)** is a computational framework that supports the design, simulation, and analysis of numerical integration methods under varying dynamic conditions in single- and many-body systems.
 <br />
 
 Although physically grounded, DSFE **prioritises numerical-transparency first**, and visualisation second. The framework is designed for researching mathematic models through controlled numerical simulations, producing reproducible amd quantitative output data while remaining consistent with physically-valid system and enivronment parameters.
@@ -144,8 +144,7 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
  * [ ] Support `multiple articulated systems` within a single simulation instance. **(CORE)**
  * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged). **(CORE)**
  * [ ] Rework DSL to be fully independent of the framework, rather used by the DSFE framework in a specific way via a internal libraries to further integrate specific features. **(CORE)**
- * [ ] Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, even `higher-stage(and therefore order) GLRK methods`). **(MATH)**
- * [ ] Get DSFE to work on `Linux`. **(CORE)**
+ * [ ] Get DSFE GUI to support on `Linux`. **(CORE)**
  * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`. **(MATH)**
 
 ### Completed Tasks:
@@ -157,7 +156,9 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
  * [x] <s>Migrate to a `CMake-only` build system</s> **(CORE)**
  * [x] <s>Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers</s> **(CORE)**
  * [x] <s>Need to look at using `CRBA` instead of just looping through a mass matrix loop. **(MATH)**</s>
+ * [x] <s>Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, maybe `Automatic Differentitation`). **(MATH)**</s>
  * [x] <s>Implement `RNEA`, `CRBA`, and `ABA` to replace FDM for approximating `M(q)` and `qdd`. **(MATH)**</s>
+ * [x] <s>Get DSFE CLI to work on `Linux`. **(CORE)**</s>
 
 <br />
 
