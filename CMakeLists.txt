@@ -22,13 +22,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(eigen)
 
 FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG v1.14.0
-  GIT_SHALLOW TRUE
+    pxmlib
+    GIT_REPOSITORY https://github.com/SaltyJoss/PxM-Lib.git
+    GIT_TAG v1.0.0
 )
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(pxmlib)
 
 FetchContent_Declare(
     nlohmann_json
@@ -37,6 +35,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+option(DSFE_ENABLE_UNIT_TESTS "Build tests" ON)
+if (DSFE_ENABLE_UNIT_TESTS)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+        GIT_SHALLOW TRUE
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+    
+    enable_testing()
+endif()
+
 # --- Project Subdirectories ---
-add_subdirectory(PxMLib)
 add_subdirectory(DSFE_App)

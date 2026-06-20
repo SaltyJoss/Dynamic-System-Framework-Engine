@@ -4,6 +4,9 @@
 #include "Platform/DataManager.h"
 #include "Analysis/MetricLogger.h"
 
+// HDF5 C API
+#include <hdf5.h>
+
 namespace data {
 	// Escape a string for CSV format
 	static inline std::string escape_csv(const std::string_view s) {

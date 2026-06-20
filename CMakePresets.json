@@ -7,7 +7,8 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "DSFE_ENABLE_GUI": "OFF"
+                "DSFE_ENABLE_GUI": "OFF",
+                "DSFE_ENABLE_UNIT_TESTS": "OFF"
             }
         },
         {
@@ -16,7 +17,8 @@
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "DSFE_ENABLE_GUI": "ON"
+                "DSFE_ENABLE_GUI": "ON",
+                "DSFE_ENABLE_UNIT_TESTS": "ON"
             }
         },
         {

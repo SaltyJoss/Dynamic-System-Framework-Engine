@@ -120,10 +120,8 @@ target_link_libraries(DSFE_Core
 
 if (TARGET hdf5::hdf5-shared)
     target_link_libraries(DSFE_Core PRIVATE hdf5::hdf5-shared)
-
 elseif (TARGET HDF5::HDF5)
     target_link_libraries(DSFE_Core PRIVATE HDF5::HDF5)
-
 else()
     target_link_libraries(DSFE_Core PRIVATE ${HDF5_LIBRARIES})
 endif()

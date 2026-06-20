@@ -15,8 +15,7 @@
 #include <sstream>
 #include <iostream>
 
-// HDF5 C API
-#include <hdf5.h>
+typedef int64_t hid_t; // Placeholder for HDF5 type, compiled file will include the actual HDF5 headers
 
 namespace robots { struct JointLogBuffer; }
 
