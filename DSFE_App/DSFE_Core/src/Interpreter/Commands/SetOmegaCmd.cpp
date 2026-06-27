@@ -1,6 +1,6 @@
+// DSFE_Core SetOmegaCmd.cpp
 #include "pch.h"
-// File:   SetOmegaCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/SetOmegaCmd.h"
 #include "Robots/RobotSystem.h"
 
@@ -27,20 +27,15 @@ namespace commands {
 
 	// Updates setOmega command
 	program_data::CmdResult SetOmegaCmd::update(CommandContext& cntx, double dt) {
-		auto* robot = cntx.Robot();
-		if (!robot) {
-			markFailed("setOmega: no RobotSystem in simulation.");
-			D_ERROR("setOmega: no RobotSystem in simulation.");
-			return { CmdState::Failed, {}, "setOmega failed: no RobotSystem in simulation." };
-		}
-		if (!robot->hasLinkName(_link)) {
+		auto& rs = cntx.Robot();
+		if (!rs.hasLinkName(_link)) {
 			markFailed("setOmega: link '" + _link + "' not found in robot.");
 			return { CmdState::Failed, {}, "setOmega failed: link '" + _link + "' not found in robot." };
 		}
 
 		double omegaRad = degToRad(_omega);
 
-		if (!robot->injectJointOmegaRad(_link, omegaRad)) {
+		if (!rs.injectJointOmegaRad(_link, omegaRad)) {
 			markFailed("setOmega: failed to set joint omega for link='" + _link + "'.");
 			return { CmdState::Failed, {}, "setOmega failed to set joint omega for link='" + _link + "'." };
 		}

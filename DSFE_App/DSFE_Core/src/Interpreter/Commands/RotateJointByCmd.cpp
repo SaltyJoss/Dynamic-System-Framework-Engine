@@ -24,7 +24,7 @@ namespace commands {
 
 	// Core update loop for rotateJointBy command
 	program_data::CmdResult RotateJointByCmd::update(CommandContext& cntx, double dt) {
-		auto* robot = cntx.Robot();
+		auto& rs = cntx.Robot();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
 		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms
 		if (dt < 0.0) dt = 0.0;
@@ -50,7 +50,7 @@ namespace commands {
 
 			// Get starting angle
 			double theta0 = 0.0f;
-			if (!robot->tryGetJointAngleRad(_link, theta0)) {
+			if (!rs.tryGetJointAngleRad(_link, theta0)) {
 				markFailed("rotateJointBy: joint not found (angle)."); 
 				D_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
 				return CmdResult{ CmdState::Failed, {}, "rotateJointBy: joint not found (angle)." };
@@ -93,8 +93,8 @@ namespace commands {
 		double theta = 0.0f;
 		double omega = 0.0f;
 
-		const bool gotTheta = robot->tryGetJointAngleRad(_link, theta);
-		const bool gotOmega = robot->tryGetJointOmegaRad(_link, omega);
+		const bool gotTheta = rs.tryGetJointAngleRad(_link, theta);
+		const bool gotOmega = rs.tryGetJointOmegaRad(_link, omega);
 
 		if (!gotTheta) {
 			markFailed("rotateJointBy: joint not found (angle).");
@@ -115,7 +115,7 @@ namespace commands {
 			_noProgressT += dt; 
 		}
 
-		const bool posOK = robot->isJointAtTargetRad(_link, tolPosRad); // consider at target if within position tolerance
+		const bool posOK = rs.isJointAtTargetRad(_link, tolPosRad); // consider at target if within position tolerance
 		const bool omegaOK = (absOm <= tolOmegaRad); // consider stopped if omega is small enough
 
 		if (posOK && omegaOK) {
