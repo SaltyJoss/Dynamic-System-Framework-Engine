@@ -2,8 +2,8 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <PhysLib.h>
-#include "SingleBodySystems/Dynamics.h"
+#include <PhysLib>
+#include <SingleBodySystems/Dynamics>"
 #include "Numerics/IntegrationService.h"
 
 #include "Analysis/MetricLogger.h"

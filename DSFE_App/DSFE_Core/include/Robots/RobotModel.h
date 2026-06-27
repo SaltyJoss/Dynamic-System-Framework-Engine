@@ -2,7 +2,7 @@
 #pragma once
 #include "EngineCore.h"
 
-#include <core/MathLib.h>
+#include <MathLib>
 #include <numbers>
 #include <kinematics/DH_Params.h>
 #include <unordered_map>

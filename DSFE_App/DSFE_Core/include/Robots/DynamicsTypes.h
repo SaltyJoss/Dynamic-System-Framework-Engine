@@ -3,7 +3,7 @@
 
 #include "EngineCore.h"
 #include <core/Types.h>
-#include <core/SpatialMath.h>
+#include <core/SpatialMath>
 
 #include "Robots/RobotMetrics.h"
 

@@ -2,7 +2,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <core/SpatialMath.h>
+#include <core/SpatialMath>
 #include "Robots/RobotModel.h"
 
 namespace robots {

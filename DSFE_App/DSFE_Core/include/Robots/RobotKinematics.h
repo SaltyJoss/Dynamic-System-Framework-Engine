@@ -2,7 +2,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <core/MathLib.h>
+#include <MathLib>
 #include <kinematics/Forward_Kinematics.h>
 #include "Robots/RobotSimSnapshot.h"
 
