@@ -76,12 +76,12 @@ namespace core {
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
-		robots::RobotSystem* robotSystem() override;
-		const robots::RobotSystem* robotSystem() const;
-		single_body_system::SingleBodySystem* singleBodySystem() override;
-		const single_body_system::SingleBodySystem* singleBodySystem() const;
-		control::TrajectoryManager* trajectoryManager() override;
-		const control::TrajectoryManager* trajectoryManager() const;
+		robots::RobotSystem& robotSystem() override;
+		const robots::RobotSystem& robotSystem() const;
+		single_body_system::SingleBodySystem& singleBodySystem() override;
+		const single_body_system::SingleBodySystem& singleBodySystem() const;
+		control::TrajectoryManager& trajectoryManager() override;
+		const control::TrajectoryManager& trajectoryManager() const;
 		
 		// Body management
 		bool hasSingleBody() const override;

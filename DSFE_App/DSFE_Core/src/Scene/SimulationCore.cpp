@@ -421,8 +421,8 @@ namespace core {
 	// --- Setters and Getters for Systems and State ---
 
 	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
-	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
+	robots::RobotSystem& SimulationCore::robotSystem() { return *_robot; }
+	const robots::RobotSystem& SimulationCore::robotSystem() const { return *_robot; }
 
 	// Setter and checker for Robot System
 	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
@@ -440,8 +440,8 @@ namespace core {
 	}
 
 	// Accessor for the single body system (non-const and const versions)
-	single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() { return _singleBody; }
-	const single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() const { return _singleBody; }
+	single_body_system::SingleBodySystem& SimulationCore::singleBodySystem() { return *_singleBody; }
+	const single_body_system::SingleBodySystem& SimulationCore::singleBodySystem() const { return *_singleBody; }
 
 	// Setter and checker for Single Body System
 	void SimulationCore::setSingleBodySystem(single_body_system::SingleBodySystem* singleBody) { _singleBody = singleBody; }
@@ -462,8 +462,8 @@ namespace core {
 	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj = traj; }
 
 	// Accessor for the trajectory manager (non-const and const versions)
-	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj; }
-	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj; }
+	control::TrajectoryManager& SimulationCore::trajectoryManager() { return *_traj; }
+	const control::TrajectoryManager& SimulationCore::trajectoryManager() const { return *_traj; }
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
