@@ -1,6 +1,6 @@
+// DSFE_Core StopCmd.cpp
 #include "pch.h"
-// File:   StopCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/StopCmd.h"
 
 #include "EngineLib/LogMacros.h"

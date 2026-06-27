@@ -1,6 +1,6 @@
+// DSFE_Core ParallelGroupCmd.cpp
 #include "pch.h"
-// File:   ParallelGroupCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/ParallelGroupCmd.h"
 #include "Robots/RobotSystem.h"
 

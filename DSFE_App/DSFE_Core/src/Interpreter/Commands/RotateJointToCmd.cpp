@@ -1,6 +1,6 @@
+// DSFE_Core RotateJointToCmd.cpp
 #include "pch.h"
-// File:   RotateJointToCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/RotateJointToCmd.h"
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"

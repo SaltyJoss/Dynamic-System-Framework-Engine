@@ -1,6 +1,6 @@
+// DSFE_Core SetCmd.cpp
 #include "pch.h"
-// File:   SetCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/SetCmd.h"
 #include "Interpreter/IStoredProgram.h"
 #include "Interpreter/Utils.h"

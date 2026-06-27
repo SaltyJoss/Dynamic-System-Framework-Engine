@@ -1,6 +1,6 @@
+// DSFE_Core RotateJointByCmd.cpp
 #include "pch.h"
-// File:   RotateJointByCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/RotateJointByCmd.h"
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"

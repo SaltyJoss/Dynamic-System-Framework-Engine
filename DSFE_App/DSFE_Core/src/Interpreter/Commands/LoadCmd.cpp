@@ -1,6 +1,6 @@
+// DSFE_Core LoadCmd.cpp
 #include "pch.h"
-// File:   LoadCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/LoadCmd.h"
 #include "Interpreter/Utils.h"
 
