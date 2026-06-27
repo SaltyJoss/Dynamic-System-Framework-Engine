@@ -31,15 +31,12 @@ namespace commands {
         core::ISimulationCore* core = cntx.Core();
         if (!core) return { CmdState::Failed, {}, "trajClear: no sim in context." };
 
-		auto trajMgr = core->trajectoryManager();
-		if (!trajMgr) return { CmdState::Failed, {}, "trajClear: no trajectory manager in sim." };
-		trajMgr->clearAll(); // clear all trajectories
+		auto& trajMgr = core->trajectoryManager();
+		trajMgr.clearAll(); // clear all trajectories
 
         // Zero qd/qdd refs for all joints so nothing lingers
-        auto* robot = cntx.Robot();
-        if (robot) {
-            robot->tryZeroJointRefDerivatives(); // make sure this exists as a NO-ARG method (see step 4)
-        }
+        auto& rs = cntx.Robot();
+        rs.tryZeroJointRefDerivatives(); // make sure this exists as a NO-ARG method (see step 4)
 
         SIM_SUCCESS("trajClear(): cleared all trajectories and zeroed ref derivatives");
         _done = true;
