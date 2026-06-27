@@ -222,27 +222,27 @@ namespace gui {
         void stopSimulation();
 
 		// Simulation State
-        const bool isSimRunning() const;
+        bool isSimRunning() const;
 
         // Setter and getter for current simulation time (seconds)
-        void setSimTime(double t);
-        const double simTime() const;
+        void setSimTime(double time);
+        double simTime() const;
 
         // Setter and getter for fixed timestep (seconds)
         void setFixedDt(double dt);
-        const double fixedDt() const;
+        double fixedDt() const;
 
         // Setter and getter for telemetry frequency (Hz)
         void setTelemetryHz(double hz);
-        const double telemetryHz() const;
+        double telemetryHz() const;
 
 		// Setters for script and simulation running states
         void setScriptRunning(bool running);
-        const bool isScriptRunning() const;
+        bool isScriptRunning() const;
 
 		// Setters and getters for last script text
 		void setLastScriptText(const std::string& text);
-		const std::string& lastScriptText() const;
+		std::string& lastScriptText() const;
 
 		// Accessors for the last script text
         void setActiveProgram(interpreter::IStoredProgram* program);

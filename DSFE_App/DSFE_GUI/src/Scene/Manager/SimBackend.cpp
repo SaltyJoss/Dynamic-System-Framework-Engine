@@ -1,5 +1,5 @@
 // DSFE_GUI SimBackend.cpp
-#include "Scene/SimulationCore.h"
+#include "Platform/ISimulationCore.h"
 #include "Scene/SimulationManager.h"
 #ifdef __gl_h_
 #undef __gl_h_
@@ -18,7 +18,8 @@ namespace gui {
 			return;
 		}
 		if (hasRobot() && !_bodyLoaded) {
-			loadRobot(_impl->_robotSystem->robotName());
+			auto& rs = _core->robotSystem();
+			loadRobot(rs.robotName());
 			return;
 		}
 		_core->startSimulation();
@@ -28,27 +29,27 @@ namespace gui {
 	void SimManager::stopSimulation() { _core->stopSimulation(); }
 
 	// Check if the simulation is currently running
-	const bool SimManager::isSimRunning() const { return _core->isSimRunning(); }
+	bool SimManager::isSimRunning() const { return _core->isSimRunning(); }
 
 	// Setter for current simulation time (in seconds)
 	void SimManager::setSimTime(double time) { _core->setSimTime(time); }
-	const double SimManager::simTime() const { return _core->simTime(); }
+	double SimManager::simTime() const { return _core->simTime(); }
 
 	// Setter and gettter for fixed timstep (in seconds)
 	void SimManager::setFixedDt(double dt) { _core->setFixedDt(dt); }
-	const double SimManager::fixedDt() const { return _core->fixedDt(); }
+	double SimManager::fixedDt() const { return _core->fixedDt(); }
 
 	// Setter and getter for telemetry frequency (in Hz)
 	void SimManager::setTelemetryHz(double hz) { _core->setTelemetryHz(hz); }
-	const double SimManager::telemetryHz() const { return _core->telemetryHz(); }
+	double SimManager::telemetryHz() const { return _core->telemetryHz(); }
 
 	// Set whether a script is currently running (used to disable UI elements, etc.)
 	void SimManager::setScriptRunning(bool running) { _core->setScriptRunning(running); }
-	const bool SimManager::isScriptRunning() const { return _core->isScriptRunning(); }
+	bool SimManager::isScriptRunning() const { return _core->isScriptRunning(); }
 
 	// Setters and getters for last script text
 	void SimManager::setLastScriptText(const std::string& text) { _core->setLastScriptText(text); }
-	const std::string& SimManager::lastScriptText() const { return _core->lastScriptText(); }
+	std::string& SimManager::lastScriptText() const { return _core->lastScriptText(); }
 
 	// Accessors for the Simulation Core's telemetry data
 	diagnostics::TelemetryRecorder& SimManager::telemetry() { return _core->telemetry(); }
@@ -62,10 +63,6 @@ namespace gui {
 	// Access the simulation core interface (non-const and const versions)
 	core::ISimulationCore* SimManager::simCoreInterface() { return _core.get(); }
 	const core::ISimulationCore* SimManager::simCoreInterface() const { return _core.get(); }
-
-	// Access the concrete simulation core (non-const and const versions)
-	core::SimulationCore* SimManager::simCore() { return _core.get(); }
-	const core::SimulationCore* SimManager::simCore() const { return _core.get(); }
 
 	// Set the integrator method for the current simulation run
 	void SimManager::setIntegrationMethod(integration::eIntegrationMethod method) {

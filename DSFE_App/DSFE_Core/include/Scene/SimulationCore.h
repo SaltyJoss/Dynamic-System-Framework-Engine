@@ -51,8 +51,8 @@ namespace core {
 
 		// Time stepping
 		void setFixedDt(double dt) override;
-		void setSimTime(double t) { _simTime = t; }
 		double fixedDt() const override;
+		void setSimTime(double t) override { _simTime = t; }
 		double simTime() const override;
 
 		SimulationSnapshot snapshot() const override {
@@ -77,11 +77,8 @@ namespace core {
 
 		// Subsystems access
 		robots::RobotSystem& robotSystem() override;
-		const robots::RobotSystem& robotSystem() const;
 		single_body_system::SingleBodySystem& singleBodySystem() override;
-		const single_body_system::SingleBodySystem& singleBodySystem() const;
 		control::TrajectoryManager& trajectoryManager() override;
-		const control::TrajectoryManager& trajectoryManager() const;
 		
 		// Body management
 		bool hasSingleBody() const override;
@@ -98,7 +95,6 @@ namespace core {
 
 		// Telemetry
 		diagnostics::TelemetryRecorder& telemetry() override;
-		const diagnostics::TelemetryRecorder& telemetry() const;
 		size_t telemetrySampleCount() const override;
 
 		// Setters for subsystems and scene objects
@@ -123,20 +119,20 @@ namespace core {
 		}
 
 		// Script Running State
-		void setScriptRunning(bool running) { _scriptRunning.store(running); }
-		const bool isScriptRunning() const { return _scriptRunning.load(); }
+		void setScriptRunning(bool running) override { _scriptRunning.store(running); }
+		bool isScriptRunning() const override { return _scriptRunning.load(); }
 
 		// Setter and getter for telemetry frequency (Hz)
-		void setTelemetryHz(double hz) { _telHz = hz; }
-		const double telemetryHz() const { return _telHz; }
+		void setTelemetryHz(double hz) override { _telHz = hz; }
+		double telemetryHz() const override { return _telHz; }
 
 		// Last script text (stored on run for comparison re-use)
-		void setLastScriptText(const std::string& text) { _lastScriptText = text; }
-		const std::string& lastScriptText() const { return _lastScriptText; }
+		void setLastScriptText(const std::string& text) override { _lastScriptText = text; }
+		std::string& lastScriptText() override { return _lastScriptText; }
 
 		// Accesors for the active script program
-		void setActiveProgram(interpreter::IStoredProgram* p);
-		interpreter::IStoredProgram* activeProgram() const;
+		void setActiveProgram(interpreter::IStoredProgram* p) override;
+		interpreter::IStoredProgram* activeProgram() const override;
 
 		bool robotPresentationDirty() const { return _robotPresentationDirty; }
 		void clearRobotPresentationDirty() { _robotPresentationDirty = false; }
