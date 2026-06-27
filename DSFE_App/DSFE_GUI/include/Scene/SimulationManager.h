@@ -1,10 +1,6 @@
 // DSFE_GUI SimulationManager.h
 #pragma once
 
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
@@ -42,13 +38,15 @@ namespace scene {
 }
 
 // Forward Declarations for Simulation Core
-namespace core { class SimulationCore; }
+namespace core { class ISimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
 namespace interpreter { class IStoredProgram; }
 namespace robots { class RobotSystem; }
 namespace control { class TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
+
+using GLuint = unsigned int;
 
 namespace gui {
     // View IDs
@@ -63,6 +61,12 @@ namespace gui {
     enum class ControlMode {
         Camera,
         Object
+    };
+
+    struct CoreDeleter{
+        void operator()(core::ISimulationCore* p) const {
+            if (p) { DestroySimulationCore(p); }
+        }
     };
 
 	// SimManager Class (Plan on renaming later)
@@ -203,15 +207,15 @@ namespace gui {
         void setRobotRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
 
 		// Accesors for the robot system (non-const and const versions)
-        robots::RobotSystem* robotSystem();
-        const robots::RobotSystem* robotSystem() const;
+        robots::RobotSystem& robotSystem();
+        const robots::RobotSystem& robotSystem() const;
 
-		single_body_system::SingleBodySystem* singleBodySystem();
-		const single_body_system::SingleBodySystem* singleBodySystem() const;
+		single_body_system::SingleBodySystem& singleBodySystem();
+		const single_body_system::SingleBodySystem& singleBodySystem() const;
 
 		// Accessors for the trajectory manager (non-const and const versions)
-        control::TrajectoryManager* traj();
-        const control::TrajectoryManager* traj() const;
+        control::TrajectoryManager& traj();
+        const control::TrajectoryManager& traj() const;
 
         // Simulation Control
         void startSimulation();
@@ -257,8 +261,8 @@ namespace gui {
         const core::ISimulationCore* simCoreInterface() const;
 
         // Accesor for Simulation Core (non-const and const versions)
-		core::SimulationCore* simCore();
-		const core::SimulationCore* simCore() const;
+		core::ISimulationCore* simCore();
+		const core::ISimulationCore* simCore() const;
 
         // Setters for Integration state / method
 		void setIntegrationMethod(integration::eIntegrationMethod method);
@@ -286,7 +290,7 @@ namespace gui {
         std::function<void()> _makeCurrentHook;
         std::function<void()> _doneCurrentHook;
 
-        std::unique_ptr<core::SimulationCore> _core = nullptr;
+        std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;
 
@@ -376,10 +380,3 @@ namespace gui {
         glm::vec2 _lastMousePos{ 0.f, 0.f };
     };
 } // namespace gui
-
-#define GL_CHECKPOINT(name) \
-do { \
-    GLenum err = glGetError(); \
-    if (err != GL_NO_ERROR) \
-        LOG_ERROR("%s -> 0x%X", name, err); \
-} while (0)

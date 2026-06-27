@@ -110,10 +110,6 @@ namespace gui {
 		std::unordered_map<std::string, std::vector<scene::Object*>> _linkToObjects;
 		std::unordered_map<std::string, scene::Object*> _primaryLinkObject;
 
-		// Robot System
-		std::unique_ptr<robots::RobotSystem> _robotSystem;	  // simulation
-		// Single Body System
-		std::unique_ptr<single_body_system::SingleBodySystem> _singleBody; // simulation
 		// Robot Rendering
 		std::unique_ptr <RobotRenderer> _robotRenderer; // rendering
 		RobotRenderBinding _currentBinding; // current render binding 
@@ -121,9 +117,6 @@ namespace gui {
 		// Robot Follow Target
 		bool eeFollowBound = false;
 		scene::Object* eeObject = nullptr;
-
-		// Trajectory Manager
-		control::TrajectoryManager _traj;
 
 		// SSAO Resources
 		std::unique_ptr<shaders::Shader> _ssaoShader;
@@ -137,10 +130,6 @@ namespace gui {
 		Impl() {
 			activeView = VID::Manual;
 			viewMode = ViewMode::Single;
-
-			// Robot system with mesh loading (for normal simulation)
-			_robotSystem = std::make_unique<robots::RobotSystem>();
-			_singleBody = std::make_unique<single_body_system::SingleBodySystem>();
 		}
 
 		void initGLResources(SimManager& owner) {
