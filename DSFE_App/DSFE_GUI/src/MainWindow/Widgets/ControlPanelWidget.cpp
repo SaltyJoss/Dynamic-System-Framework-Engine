@@ -58,7 +58,7 @@ namespace widgets {
 
 	// SimSetupPanel for 
 	void ControlPanelWidget::simPropertiesPanel() {
-		auto* robot = _sim->robotSystem();
+		auto& rs = _sim->robotSystem();
 
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
@@ -107,9 +107,9 @@ namespace widgets {
 
 		buildIntegratorCombos();
 
-		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, robot](bool checked) {
+		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, &rs](bool checked) {
 			_useAutoDiff = checked;
-			robot->enableAutoDiff(checked);
+			rs.enableAutoDiff(checked);
 			buildIntegratorCombos();
 		});
 
@@ -177,13 +177,9 @@ namespace widgets {
 			_jointInfoGroup->setVisible(false);
 			return;
 		}
-		robots::RobotSystem* robot = _sim->robotSystem();
-		if (!robot) {
-			_jointInfoGroup->setVisible(false);
-			return;
-		}
-		auto& joints = robot->joints();
-		auto& links = robot->links();
+		auto& rs = _sim->robotSystem();
+		auto& joints = rs.joints();
+		auto& links = rs.links();
 
 		_jointInfoGroup->setVisible(!joints.empty() && !links.empty());
 		if (joints.empty() || links.empty()) { _jointInfoGroup->setVisible(false); return; }
@@ -362,11 +358,9 @@ namespace widgets {
 	void ControlPanelWidget::selectJointAndFollow(int jointIdx) {
 		if (!_sim || !_sim->hasRobot()) { return; }
 
-		robots::RobotSystem* robot = _sim->robotSystem();
-		if (!robot) { return; }
-
-		auto& joints = robot->joints();
-		auto& links = robot->links();
+		auto& rs = _sim->robotSystem();
+		auto& joints = rs.joints();
+		auto& links = rs.links();
 		if (joints.empty()) { return; }
 
 		jointIdx = std::clamp(jointIdx, 0, (int)joints.size() - 1);
