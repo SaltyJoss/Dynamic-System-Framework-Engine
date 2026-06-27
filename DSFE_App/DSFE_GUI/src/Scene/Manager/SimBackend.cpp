@@ -61,8 +61,8 @@ namespace gui {
 	const interpreter::IStoredProgram* SimManager::activeProgram() const { return _core->activeProgram(); }
 
 	// Access the simulation core interface (non-const and const versions)
-	core::ISimulationCore* SimManager::simCoreInterface() { return _core.get(); }
-	const core::ISimulationCore* SimManager::simCoreInterface() const { return _core.get(); }
+	core::ISimulationCore* SimManager::simCore() { return _core.get(); }
+	const core::ISimulationCore* SimManager::simCore() const { return _core.get(); }
 
 	// Set the integrator method for the current simulation run
 	void SimManager::setIntegrationMethod(integration::eIntegrationMethod method) {

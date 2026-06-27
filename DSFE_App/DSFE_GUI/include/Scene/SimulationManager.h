@@ -257,12 +257,8 @@ namespace gui {
         const diagnostics::TelemetryRecorder& telemetry() const;
 
 		// Accessors for the Simulation Core interface (non-const and const versions)
-        core::ISimulationCore* simCoreInterface();
-        const core::ISimulationCore* simCoreInterface() const;
-
-        // Accesor for Simulation Core (non-const and const versions)
-		core::ISimulationCore* simCore();
-		const core::ISimulationCore* simCore() const;
+        core::ISimulationCore* simCore();
+        const core::ISimulationCore* simCore() const;
 
         // Setters for Integration state / method
 		void setIntegrationMethod(integration::eIntegrationMethod method);
