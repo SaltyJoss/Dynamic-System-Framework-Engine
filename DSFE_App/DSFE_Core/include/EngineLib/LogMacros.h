@@ -107,23 +107,10 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #include "EngineCore.h"
-#include <filesystem>
-#include <stdarg.h>
 
 // Forward declaration of Debug class
 class Debug;
 extern DSFE_API Debug gLog;
-
-static const char* getFileName(const char* path) {
-    const char* win = strrchr(path, '\\');
-    const char* unix = strrchr(path, '/');
-    if (win && (!unix || win > unix)) {
-        return win + 1;
-    } else if (unix) {
-        return unix + 1;
-    }
-    return path; // No directory separator found, return the original path
-}
 
 // ============================================
 //         GLOBAL EXCEPTION HANDLING
@@ -132,10 +119,10 @@ static const char* getFileName(const char* path) {
 // --------------------------------------------
 // Global logging macros
 // --------------------------------------------
-#define LOG_INFO(fmt, ...) gLog.logInfo((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_EXPORT(fmt, ...) gLog.logExport((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...)  gLog.logWarning((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) gLog.logError((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...) gLog.logInfo((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_EXPORT(fmt, ...) gLog.logExport((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...)  gLog.logWarning((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) gLog.logError((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
 // --------------------------------------------
 // Once variants for global logging macros
 // --------------------------------------------
