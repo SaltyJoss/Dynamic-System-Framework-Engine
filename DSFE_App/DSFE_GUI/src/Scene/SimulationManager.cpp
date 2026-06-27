@@ -1,9 +1,12 @@
 // DSFE_GUI SimulationManager.cpp
-#include "Scene/SimulationCore.h"
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
 
 #include <thread>
+#ifdef __gl_h_
+#undef __gl_h_
+#endif
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <algorithm>
@@ -70,10 +73,8 @@ namespace gui {
 	// --------------------------------------------------
 
 	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
-		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>()), _core(std::make_unique<core::SimulationCore>()),
+		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>()), _core(CreateSimulationCore_v1(), CoreDeleter()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
-		_core->setRobotSystem(_impl->_robotSystem.get());
-		_core->setTrajectoryManager(&_impl->_traj);
 	}
 
 	// Initialises OpenGL resources, including framebuffers, shaders, and IBL. Also picks an internal resolution preset based on the display size to balance quality and performance.
@@ -146,14 +147,16 @@ namespace gui {
 		return copy;
 	}
 
+	// --------------------------------------------------
+	//				SIMULATION TICK & RENDER
+	// --------------------------------------------------
+	
+	// Method to tick the simulation core, advancing the simulation state by the specified time step. This is typically called once per frame or at a fixed interval.
 	void SimManager::tick(double dt) {
 		_core->tick(dt);
-		if (_core->robotPresentationDirty()) {
-			loadRobot(_impl->_robotSystem->robotName());
-			_core->clearRobotPresentationDirty();
-		}
 	}
 
+	// Method to render the active viewport, applying post-processing and presenting the final image to the screen. This method handles completed studies, updates robot transforms, and manages OpenGL state for rendering.
 	void SimManager::renderViewport(int w, int h) {
 		if (!_glReady || !_impl) { return; }
 		if (w <= 0 || h <= 0) { return; }
@@ -164,8 +167,9 @@ namespace gui {
 				// TODO: update plots, telemetry graphs, UI panels here
 			}
 		}
-		if (_impl->_robotSystem && hasRobot()) {
-			_impl->_robotRenderer->applyTransforms(_impl->_robotSystem->model(), _impl->_robotSystem->worldTransforms());
+		if (hasRobot()) {
+			auto& rs = _core->robotSystem();
+			_impl->_robotRenderer->applyTransforms(rs.model(), rs.worldTransforms());
 		}
 		auto& view = _impl->_views[static_cast<size_t>(_impl->activeView)];
 		_impl->renderView(*this, view, w, h);
@@ -186,9 +190,9 @@ namespace gui {
 
 	void SimManager::syncRobotToScene() {
 		if (!hasRobot()) { return; }
-		auto* rs = robotSystem();
-		const auto& model = rs->model();
-		const auto& T = rs->worldTransforms();
+		auto& rs = _core->robotSystem();
+		const auto& model = rs.model();
+		const auto& T = rs.worldTransforms();
 
 		for (size_t i = 0; i < model.links.size(); ++i) {
 			const std::string& linkName = model.links[i].name;
@@ -210,8 +214,8 @@ namespace gui {
 
 	void SimManager::syncBodyToScene() {
 		if (!hasBody()) { return; }
-		auto* sys = singleBodySystem();
-		const auto& body = sys->body();
+		auto& sys = _core->singleBodySystem();
+		const auto& body = sys.body();
 		;
 		auto it = _impl->_linkToObjects.find(body->name);
 		if (it == _impl->_linkToObjects.end()) return;
