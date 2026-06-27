@@ -57,8 +57,8 @@ namespace commands {
 		utils::OpResult stopJointOmega(const std::string& childLink);
 
 		// --- HELPER METHODS ---
-		core::ISimulationCore* Core() const { return _core; }
-		robots::RobotSystem* Robot() const { return _robot; }
+		core::ISimulationCore* Core() const;
+		robots::RobotSystem& Robot() const;
 
 
 		// --- ROTATION COMMAND METHODS ---
@@ -80,7 +80,6 @@ namespace commands {
 
 	private:
 		core::ISimulationCore* _core = nullptr;
-		robots::RobotSystem* _robot = nullptr;
 
 		utils::AngularUnits _angularUnits = utils::AngularUnits::DegPerSec;
 		double _omegaClamp = 0.0; // Default: no clamp

@@ -14,8 +14,7 @@ using namespace utils;
 namespace commands {
 	// Constructor
 	CommandContext::CommandContext(core::ISimulationCore* core)
-		: _core(core), _robot(core ? core->robotSystem() : nullptr), 
-		_angularUnits(AngularUnits::DegPerSec) {
+		: _core(core), _angularUnits(AngularUnits::DegPerSec) {
 	}
 
 	// --- INITIALISATION METHODS ---
@@ -50,8 +49,7 @@ namespace commands {
 		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
 		if (bodyName.empty()) return OpResult::Failure("Robot name is empty.");
 		_core->loadRobot(bodyName); // only load robot for now, as multibody is not finished
-		_robot = _core->robotSystem();
-		if (!_robot) return OpResult::Failure("Multibody system is null after load.");
+		auto& rs = _core->robotSystem();
 		return OpResult::Success(true);
 	}
 
@@ -63,15 +61,16 @@ namespace commands {
 	double CommandContext::getOmegaClamp() const { return _omegaClamp; }
 
 	utils::OpResult CommandContext::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		double omegaRadPerSec = degToRad(omegaDegPerSec);
-		_robot->trySetJointOmegaRad(childLink, omegaRadPerSec);
+		auto& rs = _core->robotSystem();
+		rs.trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
 	 
-	utils::OpResult CommandContext::stopJointOmega(const std::string& childLink) {
-		return setJointOmega(childLink, 0.0);
-	}
+	utils::OpResult CommandContext::stopJointOmega(const std::string& childLink) { return setJointOmega(childLink, 0.0); }
+
+	core::ISimulationCore* CommandContext::Core() const { return _core; }
+	robots::RobotSystem& CommandContext::Robot() const { return _core->robotSystem(); }
 
 	Vec3 CommandContext::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
@@ -87,26 +86,27 @@ namespace commands {
 	}
 
 	double CommandContext::getJointAngleRad(const std::string& link) const {
-		if (!_robot) return 0.0;
+		auto& rs = _core->robotSystem();
 		double a = 0.0f;
-		if (_robot->tryGetJointAngleRad(link, a)) return (double)a;
+		if (rs.tryGetJointAngleRad(link, a)) { return (double)a; }
+		else { LOG_WARN("Failed to get joint angle for link '%s'", link.c_str()); }
 		return 0.0;
 	}
 
 	// --- JOINT ANGLE METHODS ---
 
 	utils::OpResult CommandContext::setJointTargetRad(const std::string& link, double thetaTargetRad) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointTargetRad(link, thetaTargetRad)) { 
+		auto& rs = _core->robotSystem();
+		if (!rs.trySetJointTargetRad(link, thetaTargetRad)) { 
 			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	utils::OpResult CommandContext::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		auto& rs = _core->robotSystem();
 		double refRad = 0.0f;
-		if (!_robot->tryGetJointTargetRad(link, refRad)) { 
+		if (!rs.tryGetJointTargetRad(link, refRad)) { 
 			return OpResult::Failure("Failed to get joint angle -> Joint not found."); 
 		}
 		const double targetRad = refRad + deltaRad;
@@ -114,9 +114,9 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContext::setJointMaxOmegaRad(const std::string& link, double maxqd) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
+		auto& rs = _core->robotSystem();
 		if (maxqd <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
-		if (!_robot->trySetJointOmegaMaxRad(link, maxqd)) { 
+		if (!rs.trySetJointOmegaMaxRad(link, maxqd)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
@@ -124,8 +124,8 @@ namespace commands {
 
 	// Sets the reference angular velocity for a joint (rad/s)
 	utils::OpResult CommandContext::setJointOmegaRefRad(const std::string& link, double qd_ref) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointOmegaRefRad(link, qd_ref)) { 
+		auto& rs = _core->robotSystem();
+		if (!rs.trySetJointOmegaRefRad(link, qd_ref)) { 
 			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
@@ -133,18 +133,18 @@ namespace commands {
 
 	// Sets the reference angular acceleration for a joint (rad/s^2)
 	utils::OpResult CommandContext::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
-		if (!_robot->trySetJointAlphaRefRad(link, qdd_ref)) { 
+		auto& rs = _core->robotSystem();
+		if (!rs.trySetJointAlphaRefRad(link, qdd_ref)) { 
 			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
 		}
 		return OpResult::Success(true);
 	}
 
 	utils::OpResult CommandContext::updateJointRotateTo(double /*dt*/) {
-		if (!_robot) { return OpResult::Failure("No robot loaded."); }
 		if (!_jnt.active) { return OpResult::Success(true); }
 
-		const bool done = _robot->isJointAtTargetRad(_jnt.link, _jnt.epsAngle);
+		auto& rs = _core->robotSystem();
+		const bool done = rs.isJointAtTargetRad(_jnt.link, _jnt.epsAngle);
 		if (done) { _jnt.active = false; return OpResult::Success(true); }
 
 		SIM_ROTATE("Updating joint rotate to link='%s'", _jnt.link.c_str());
@@ -153,7 +153,7 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContext::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
-		if (!_robot) return OpResult::Failure("beginJointRotateTo -> no robot.");
+		auto& rs = _core->robotSystem();
 		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
 
 		const double current = getJointAngleRad(link);
@@ -359,8 +359,8 @@ namespace commands {
 
 	// Checks if the current context has a valid robot and if the specified link index is within bounds
 	bool CommandContext::hasLink(std::size_t linkIndex) const {
-		if (!_robot) return false;
-		return _robot && linkIndex < _robot->links().size();
+		auto& rs = _core->robotSystem();
+		return linkIndex < rs.links().size();
 	}
 
 	// --- PRIVATE METHODS ---
