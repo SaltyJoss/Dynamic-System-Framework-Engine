@@ -98,11 +98,9 @@ namespace gui {
 			return false;
 		}
 
-		robots::RobotSystem* rs = robotSystem();
-		if (!rs) return false;
-
-		auto& joints = rs->joints();
-		auto& links = rs->links();
+		auto& rs = _core->robotSystem();
+		auto& joints = rs.joints();
+		auto& links = rs.links();
 
 		// 1) Find joint by name
 		const robots::RobotJoint* jPtr = nullptr;
