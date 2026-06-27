@@ -1,7 +1,7 @@
 // DSFE_GUI SimulationManager.cpp
+#include "Scene/SimulationCore.h"
 #include "Scene/Object.h"
 #include "Scene/SimulationManager.h"
-#include "Scene/SimulationCore.h"
 
 #include <thread>
 #include <glm/glm.hpp>
@@ -70,7 +70,7 @@ namespace gui {
 	// --------------------------------------------------
 
 	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
-		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>(*this)), _core(std::make_unique<core::SimulationCore>()),
+		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>()), _core(std::make_unique<core::SimulationCore>()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
 		_core->setRobotSystem(_impl->_robotSystem.get());
 		_core->setTrajectoryManager(&_impl->_traj);
@@ -263,12 +263,12 @@ namespace gui {
 
 		float kspd = 0.2f * dt; // base speed m/s
 
-		if (pressedKeys.contains(eKeyCode::W)) { processMovementKey((int)eKeyCode::W, kspd); }
-		if (pressedKeys.contains(eKeyCode::A)) { processMovementKey((int)eKeyCode::A, kspd); }
-		if (pressedKeys.contains(eKeyCode::S)) { processMovementKey((int)eKeyCode::S, kspd); }
-		if (pressedKeys.contains(eKeyCode::D)) { processMovementKey((int)eKeyCode::D, kspd); }
-		if (pressedKeys.contains(eKeyCode::Space)) { processMovementKey((int)eKeyCode::Space, kspd); }
-		if (pressedKeys.contains(eKeyCode::LShift)) { processMovementKey((int)eKeyCode::LShift, kspd); }
+		if (pressedKeys.find(eKeyCode::W) != pressedKeys.end()) { processMovementKey((int)eKeyCode::W, kspd); }
+		if (pressedKeys.find(eKeyCode::A) != pressedKeys.end()) { processMovementKey((int)eKeyCode::A, kspd); }
+		if (pressedKeys.find(eKeyCode::S) != pressedKeys.end()) { processMovementKey((int)eKeyCode::S, kspd); }
+		if (pressedKeys.find(eKeyCode::D) != pressedKeys.end()) { processMovementKey((int)eKeyCode::D, kspd); }
+		if (pressedKeys.find(eKeyCode::Space) != pressedKeys.end()) { processMovementKey((int)eKeyCode::Space, kspd); }
+		if (pressedKeys.find(eKeyCode::LShift) != pressedKeys.end()) { processMovementKey((int)eKeyCode::LShift, kspd); }
 	}
 
 // Handle mouse look (camera rotation) based on mouse movement. **OLD LOGIC FOR IMGUI AND GLFW**
