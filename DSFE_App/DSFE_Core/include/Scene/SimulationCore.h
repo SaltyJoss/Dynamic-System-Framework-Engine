@@ -58,9 +58,9 @@ namespace core {
 		SimulationSnapshot snapshot() const override {
 			std::lock_guard<std::mutex> lock(_stateMutex); // Ensure thread-safe access to snapshot data
 			return SimulationSnapshot{
-				.simTime = _simTime.load(),
-				.simRunning = _simRunning.load(),
-				.scriptRunning = _scriptRunning.load()
+				_simTime.load(),
+				_simRunning.load(),
+				_scriptRunning.load()
 			};
 		}
 
@@ -109,7 +109,7 @@ namespace core {
 		void setTrajRefBuffer(robots::TrajRefBuffer* buffer);
 
 		// Helpers
-		void tick(double frame_dt);
+		void tick(double frame_dt) override;
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
