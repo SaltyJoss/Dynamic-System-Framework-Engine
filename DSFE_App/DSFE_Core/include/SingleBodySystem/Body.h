@@ -3,7 +3,7 @@
 
 #include "EngineCore.h"
 #include <PhysLib>
-#include <SingleBodySystems/Dynamics>"
+#include <SingleBodySystems/Dynamics>
 #include "Numerics/IntegrationService.h"
 
 #include "Analysis/MetricLogger.h"
