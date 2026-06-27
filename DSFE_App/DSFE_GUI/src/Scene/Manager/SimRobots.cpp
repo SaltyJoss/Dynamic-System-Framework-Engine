@@ -20,22 +20,15 @@ namespace gui {
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 
-		if (!_impl->_robotSystem) { return; }
-		_core->loadRobotInternal(name);
+		_core->loadRobot(name);
+		auto& rs = _core->robotSystem();
 
 		size_t startIdx = _impl->_objects.size();
 
 		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook); // Hooks may be empty under Qt: In that case the guard becomes a no-op.
-		_impl->buildRobotPresentationFromModel(_impl->_robotSystem->model(), *this);
-
-		_impl->_robotRenderer->applyTransforms(
-			_impl->_robotSystem->model(),
-			_impl->_robotSystem->worldTransforms()
-		);
-
-		if (auto* simInteg = _impl->_robotSystem->getIntegrator()) {
-			simInteg->resetAdaptiveState();
-		}
+		_impl->buildRobotPresentationFromModel(rs.model(), *this);
+		_impl->_robotRenderer->applyTransforms(rs.model(), rs.worldTransforms());
+		if (auto* simInteg = rs.getIntegrator()) { simInteg->resetAdaptiveState(); }
 
 		// Attempt to find an end-effector candidate among the newly added objects and bind the Follow view to it
 		scene::Object* ee = _impl->findEndEffectorFromRange(startIdx);
@@ -46,18 +39,15 @@ namespace gui {
 			LOG_INFO("Follow view bound to end-effector candidate: %s", ee->name.c_str());
 		}
 	}
-	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) {
-		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotLinkRotation(linkName, angle); }
-	}
-	void SimManager::setRobotRootPose(const Vec3& pos, Quat& rot) {
-		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootPose(pos, rot); }
-	}
-	void SimManager::setRobotRootHome(const Vec3& pos, Quat& rot) {
-		if (_impl->_robotSystem) { _impl->_robotSystem->setRobotRootHome(pos, rot); }
-	}
-	void SimManager::resetRobot() {
-		if (_impl->_robotSystem) { _impl->_robotSystem->resetRobot(); }
-	}
+	// Set the rotation of a specific robot link by name
+	void SimManager::setRobotLinkRotation(const std::string& linkName, double angle) { _core->robotSystem().setRobotLinkRotation(linkName, angle); }
+	// Set the position and rotation of the robot's root link
+	void SimManager::setRobotRootPose(const Vec3& pos, Quat& rot) { _core->robotSystem().setRobotRootPose(pos, rot);}
+	// Set the home position and rotation of the robot's root link
+	void SimManager::setRobotRootHome(const Vec3& pos, Quat& rot) { _core->robotSystem().setRobotRootHome(pos, rot); }
+	// Reset the robot system to its initial state
+	void SimManager::resetRobot() { _core->robotSystem().resetRobot(); }
+	// Clear the currently loaded robot and its associated scene objects
 	void SimManager::clearRobot() {
 		setSelectedObject(nullptr); // deselect any selected object
 		_impl->clearRobotPresentation();
@@ -67,18 +57,20 @@ namespace gui {
 		_impl->eeFollowBound = false;
 		_impl->eeObject = nullptr;
 	}
-	const bool SimManager::hasRobot() const { return _impl->_robotSystem && _impl->_robotSystem->hasRobot(); }
-	const bool SimManager::hasBody() const { return _impl->_singleBody && _impl->_singleBody->hasBody(); }
+
+	// Conditional accessors for the robot system and single body system
+	const bool SimManager::hasRobot() const { return _core->robotSystem().hasRobot(); }
+	const bool SimManager::hasBody() const { return _core->singleBodySystem().hasBody(); }
 
 	// Access the robot system (non-const and const versions)
-	robots::RobotSystem* SimManager::robotSystem() { return _core->robotSystem(); }
-	const robots::RobotSystem* SimManager::robotSystem() const { return _core->robotSystem(); }
+	robots::RobotSystem& SimManager::robotSystem() { return _core->robotSystem(); }
+	const robots::RobotSystem& SimManager::robotSystem() const { return _core->robotSystem(); }
 
 	// Access the single body system (non-const and const versions)
-	single_body_system::SingleBodySystem* SimManager::singleBodySystem() { return _core->singleBodySystem(); }
-	const single_body_system::SingleBodySystem* SimManager::singleBodySystem() const { return _core->singleBodySystem(); }
+	single_body_system::SingleBodySystem& SimManager::singleBodySystem() { return _core->singleBodySystem(); }
+	const single_body_system::SingleBodySystem& SimManager::singleBodySystem() const { return _core->singleBodySystem(); }
 
 	// Access the trajectory manager (non-const and const versions)
-	control::TrajectoryManager* SimManager::traj() { return _core->trajectoryManager(); }
-	const control::TrajectoryManager* SimManager::traj() const { return _core->trajectoryManager(); }
+	control::TrajectoryManager& SimManager::traj() { return _core->trajectoryManager(); }
+	const control::TrajectoryManager& SimManager::traj() const { return _core->trajectoryManager(); }
 }
