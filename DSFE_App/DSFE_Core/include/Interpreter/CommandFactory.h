@@ -1,6 +1,6 @@
+// DSFE_Core CommandFactory.h
 #pragma once
-// File:    CommandFactory.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "ICommand.h"
 #include <unordered_map>

@@ -1,6 +1,6 @@
+// DSFE_Core Parser.h
 #pragma once
-// File:    Parser.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "ProgramData.h"
 #include "IStoredProgram.h"

@@ -1,6 +1,6 @@
+// DSFE_Core RunWrapper.h
 #pragma once
-// File:    RunWrapper.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "Parser.h"
 #include "IStoredProgram.h"

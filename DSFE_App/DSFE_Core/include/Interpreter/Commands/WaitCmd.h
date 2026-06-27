@@ -1,16 +1,14 @@
 // DSFE_Core WaitCmd.h
 #pragma once
-#pragma warning(disable : 4100)
 
 #include "EngineCore.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContext.h"
-
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace commands {
 	class DSFE_API WaitCmd final : public Command {

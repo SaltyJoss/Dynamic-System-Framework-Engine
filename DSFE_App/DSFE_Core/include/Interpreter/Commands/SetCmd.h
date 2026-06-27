@@ -2,16 +2,13 @@
 #pragma once
 
 #include "EngineCore.h"
-
-
 #include <core/Types.h>
-
-#include "Interpreter/Command.h"
-#include "Interpreter/CommandContext.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Interpreter/Command.h"
+#include "Interpreter/CommandContext.h"
 
 #include "Platform/Logger.h"
 

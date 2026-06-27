@@ -1,6 +1,6 @@
+// DSFE_Core MainContext.h
 #pragma once
-// File:    MainContext.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include "SimFwd.h"
 #include "Interpreter/CommandContext.h"

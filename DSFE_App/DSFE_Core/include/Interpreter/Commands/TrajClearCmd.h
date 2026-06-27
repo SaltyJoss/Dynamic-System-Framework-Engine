@@ -1,6 +1,8 @@
 // DSFE_Core TrajClearCmd.h
 #pragma once
+
 #include "EngineCore.h"
+
 #include "Interpreter/SimFwd.h"
 #include "Interpreter/Command.h"
 #include "Interpreter/CommandContext.h"
