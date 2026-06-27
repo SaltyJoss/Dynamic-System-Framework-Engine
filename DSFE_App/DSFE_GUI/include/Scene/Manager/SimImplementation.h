@@ -1,4 +1,6 @@
 // DSFE_GUI SimImplementation.h
+#pragma once
+
 #include "Scene/SimulationManager.h"
 #include "Scene/Object.h"
 
@@ -132,7 +134,7 @@ namespace gui {
 		int _ssaoW = 0, _ssaoH = 0;
 		std::vector<glm::vec3> _ssaoKernel;
 
-		Impl(SimManager& owner) {
+		Impl() {
 			activeView = VID::Manual;
 			viewMode = ViewMode::Single;
 
@@ -304,7 +306,7 @@ namespace gui {
 				for (auto* obj : visuals) {
 					if (!obj) { continue; }
 					target.push_back(obj);
-					if (!_primaryLinkObject.contains(linkName)) { _primaryLinkObject[linkName] = obj; }
+					if (_primaryLinkObject.find(linkName) == _primaryLinkObject.end()) { _primaryLinkObject[linkName] = obj; }
 				}
 			}
 		}
