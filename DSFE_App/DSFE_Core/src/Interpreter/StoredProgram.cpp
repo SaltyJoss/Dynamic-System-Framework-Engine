@@ -74,14 +74,14 @@ namespace interpreter {
 	// Stop simulation
 	void StoredProgram::stopSim() {
 		if (_core->isSimRunning()) { _core->stopSimulation(); }
-		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
+		if (_core->hasRobot()) { _cntx.motion().Robot().stopAll(); }
 	}
 
 	// Pause program execution
 	void StoredProgram::pause() {
 		if (!_core) { return; }
 		_state = ProgramState::Paused;
-		if (_core->hasRobot()) { _cntx.motion().Robot()->stopAll(); }
+		if (_core->hasRobot()) { _cntx.motion().Robot().stopAll(); }
 	}
 
 	// Wait for simulation to run for dt seconds
@@ -149,8 +149,7 @@ namespace interpreter {
 		_integratorMethod = method;
 		if (_core) {
 			if (_core->hasRobot()) {
-				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
+				auto& rs = _core->robotSystem();
 				if (method == IntegratorMethod::AD_ImplicitEuler || method == IntegratorMethod::AD_ImplicitMidpoint || method == IntegratorMethod::AD_GLRK2 || method == IntegratorMethod::AD_GLRK3) {
 					_core->setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(method));
 				}
@@ -182,9 +181,8 @@ namespace interpreter {
 		_gravity = gravity;
 		if (_core) {
 			if (_core->hasRobot()) {
-				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return; }
-				robot->setGravity(gravity);
+				auto& rs = _core->robotSystem();
+				rs.setGravity(gravity);
 			}
 		}
 	}
@@ -192,9 +190,8 @@ namespace interpreter {
 	double StoredProgram::getGravity() const {
 		if (_core) {
 			if (_core->hasRobot()) {
-				robots::RobotSystem* robot = _core->robotSystem();
-				if (!robot) { LOG_ERROR("No robot system found in simulation manager."); return _gravity; }
-				return robot->getGravity();
+				const auto& rs = _core->robotSystem();
+				return rs.getGravity();
 			}
 		}
 		return _gravity;
