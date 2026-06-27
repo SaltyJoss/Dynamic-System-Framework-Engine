@@ -107,10 +107,23 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #include "EngineCore.h"
+#include <filesystem>
+#include <stdarg.h>
 
 // Forward declaration of Debug class
 class Debug;
 extern DSFE_API Debug gLog;
+
+static const char* getFileName(const char* path) {
+    const char* win = strrchr(path, '\\');
+    const char* unix = strrchr(path, '/');
+    if (win && (!unix || win > unix)) {
+        return win + 1;
+    } else if (unix) {
+        return unix + 1;
+    }
+    return path; // No directory separator found, return the original path
+}
 
 // ============================================
 //         GLOBAL EXCEPTION HANDLING
@@ -119,13 +132,14 @@ extern DSFE_API Debug gLog;
 // --------------------------------------------
 // Global logging macros
 // --------------------------------------------
-#define LOG_INFO(fmt, ...) gLog.logInfo((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_EXPORT(fmt, ...) gLog.logExport((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...)  gLog.logWarning((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) gLog.logError((std::string(strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...) gLog.logInfo((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_EXPORT(fmt, ...) gLog.logExport((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...)  gLog.logWarning((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) gLog.logError((std::string(getFileName(__FILE__)) + std::string("::") + __func__).c_str(), fmt, ##__VA_ARGS__)
 // --------------------------------------------
 // Once variants for global logging macros
 // --------------------------------------------
+//  * These macros can only be used once in the global scope of a function, as they use a static variable to track if the log has already been made.
 #define LOG_INFO_ONCE(fmt, ...) \
     do { \
         static bool _logged = false; \
@@ -160,6 +174,44 @@ extern DSFE_API Debug gLog;
             LOG_ERROR(fmt, ##__VA_ARGS__); \
             _errored = true; \
         } \
+    } while(0)
+// --------------------------------------------
+// Once per loop iteration variants for global logging macros 
+// --------------------------------------------
+#define LOG_INFO_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_INFO(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_EXPORT_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_EXPORT(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_WARN_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_WARN(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_ERROR_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_ERROR(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
     } while(0)
 // --------------------------------------------
 
