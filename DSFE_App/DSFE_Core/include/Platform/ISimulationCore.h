@@ -17,10 +17,16 @@ namespace interpreter { class IStoredProgram; }
 enum class eSimulationBackend;
 
 namespace core {
+    // Simulation Snapshot Structure
     struct DSFE_API SimulationSnapshot {
         double simTime;
         bool simRunning;
         bool scriptRunning;
+    };
+
+    // Configuration structure for the Simulation Core
+    struct DSFE_API CoreConfig {
+        // Placeholder... Added so I remmember to add this later
     };
 
     // Headless API for the Simulation Core
@@ -47,9 +53,9 @@ namespace core {
         // Setter for run tag name of current script
         virtual void setRunTag(const std::string& tag) = 0;
         // Subsystems
-        virtual robots::RobotSystem* robotSystem() = 0;
-        virtual single_body_system::SingleBodySystem* singleBodySystem() = 0;
-        virtual control::TrajectoryManager* trajectoryManager() = 0;
+        virtual robots::RobotSystem& robotSystem() = 0;
+        virtual single_body_system::SingleBodySystem& singleBodySystem() = 0;
+        virtual control::TrajectoryManager& trajectoryManager() = 0;
 		// Body management
 		virtual bool hasSingleBody() const = 0;
 		virtual void loadSingleBody(const std::string& name) = 0;
