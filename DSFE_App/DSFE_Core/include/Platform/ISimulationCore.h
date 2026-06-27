@@ -38,6 +38,7 @@ namespace core {
         virtual void startSimulation() = 0;
         virtual void stopSimulation() = 0;
         virtual bool isSimRunning() const = 0;
+        virtual void tick(double frame_dt) = 0;
         // Time stepping
         virtual void setFixedDt(double dt) = 0;
         virtual double fixedDt() const = 0;
