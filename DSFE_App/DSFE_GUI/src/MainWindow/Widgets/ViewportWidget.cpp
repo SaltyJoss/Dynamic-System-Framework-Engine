@@ -1,8 +1,9 @@
 // DSFE_GUI ViewportWidget.cpp
+#include <glad/glad.h>
+
 #include "Widgets/ViewportWidget.h"
 #include "Scene/SimulationManager.h"
 
-#include <glad/glad.h>
 #include <QOpenGLContext>
 
 #include <QVBoxLayout>
