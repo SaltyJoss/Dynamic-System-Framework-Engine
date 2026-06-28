@@ -62,6 +62,8 @@ namespace core {
         // Robot management
         virtual bool hasRobot() const = 0;
         virtual void loadRobot(const std::string& name) = 0;
+        virtual bool robotPresentationDirty() const = 0;
+        virtual void clearRobotPresentationDirty() = 0;
         // Script execution
         virtual void setRunTag(const std::string& tag) = 0;
         virtual void setScriptRunning(bool running) = 0;

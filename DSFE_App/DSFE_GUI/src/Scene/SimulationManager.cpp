@@ -154,11 +154,12 @@ namespace gui {
 	// Method to tick the simulation core, advancing the simulation state by the specified time step. This is typically called once per frame or at a fixed interval.
 	void SimManager::tick(double dt) {
 		_core->tick(dt);
-		if (hasRobot()) {
-        	auto& rs = _core->robotSystem();
-        	_impl->_robotRenderer->applyTransforms(rs.model(), rs.worldTransforms());
+		if (hasRobot() && _core->robotPresentationDirty()) {
+			auto& rs = _core->robotSystem();
+			_impl->buildRobotPresentationFromModel(rs.model());
+			_impl->_robotRenderer->applyTransforms( rs.model(), rs.worldTransforms());
+			_core->clearRobotPresentationDirty();
 		}
-    	syncRobotToScene(); // if still used
 	}
 
 	// Method to render the active viewport, applying post-processing and presenting the final image to the screen. This method handles completed studies, updates robot transforms, and manages OpenGL state for rendering.

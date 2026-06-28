@@ -134,8 +134,8 @@ namespace core {
 		void setActiveProgram(interpreter::IStoredProgram* p) override;
 		interpreter::IStoredProgram* activeProgram() const override;
 
-		bool robotPresentationDirty() const { return _robotPresentationDirty; }
-		void clearRobotPresentationDirty() { _robotPresentationDirty = false; }
+		bool robotPresentationDirty() const override { return _robotPresentationDirty; }
+		void clearRobotPresentationDirty() override { _robotPresentationDirty = false; }
 
 	private:
 		// Export thread management
