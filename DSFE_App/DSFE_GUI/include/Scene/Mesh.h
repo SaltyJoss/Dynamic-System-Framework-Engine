@@ -45,7 +45,7 @@ namespace scene {
 
 		// Getters & Setters for Mesh Name
 		std::string getName() const { return _name; }
-		std::string setName(const std::string& name) { return _name = name.c_str() + id; }
+		std::string setName(const std::string& name) { return _name = name + "_" + std::to_string(id); }
 
 		// Material Properties
 		float getMetallic() const { return _metallic; }
@@ -114,7 +114,7 @@ namespace scene {
 		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
 
 		int id = 0;
-		std::string _name = "obj_" + id;
+		std::string _name = std::string("obj_") + std::to_string(id);
 
 		// Default material properties
 		glm::vec3 _albedo = glm::vec3(0.4, 0.4, 0.4);
