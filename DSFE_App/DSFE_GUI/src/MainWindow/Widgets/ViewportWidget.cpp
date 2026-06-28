@@ -45,7 +45,10 @@ namespace widgets {
 		}
 
 		_frameTimer.start();
-		if (_sim) { _sim->initGL(); }
+		if (_sim) { 
+			_sim->initGL();
+			_sim->setContextHooks([this]() { makeCurrent(); }, [this]() { doneCurrent(); });
+		}
 	}
 	void ViewportWidget::resizeGL(int w, int h) {
 		if (_sim) { _sim->setDisplaySize(w, h); }
