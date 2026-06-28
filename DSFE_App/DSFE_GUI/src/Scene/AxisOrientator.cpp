@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   AxisOrientator.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI AxisOrientator.cpp
 #include "Scene/AxisOrientator.h"
 
 #include <glad/glad.h>

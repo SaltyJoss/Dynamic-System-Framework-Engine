@@ -1,9 +1,6 @@
 // DSFE_GUI SimBackend.cpp
 #include "Platform/ISimulationCore.h"
 #include "Scene/SimulationManager.h"
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include "Manager/SimImplementation.h"
 
 #include "Interpreter/IStoredProgram.h"

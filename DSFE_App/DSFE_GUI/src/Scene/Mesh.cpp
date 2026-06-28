@@ -1,13 +1,11 @@
-#include "pch.h"
-// File:   Mesh.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI Mesh.cpp
 #include "Assets/MeshLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include "Scene/Mesh.h"
-#include "Rendering/OpenGLBufferManager.h"
 
+#include "Rendering/OpenGLBufferManager.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {

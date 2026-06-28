@@ -1,7 +1,4 @@
 // DSFE_GUI Texture.cpp
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include "Rendering/Texture.h"

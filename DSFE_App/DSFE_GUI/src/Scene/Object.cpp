@@ -1,10 +1,7 @@
 // DSFE_GUI Object.cpp
 #include "Scene/Object.h"
-
-
 #include <core/Types.h>
 #include <core/constants.h>
-
 #include <glm/gtx/quaternion.hpp>
 
 #include "Physics/PhysicsState.h"

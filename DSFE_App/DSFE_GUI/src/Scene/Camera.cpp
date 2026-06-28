@@ -1,9 +1,5 @@
-#include "pch.h"
-// File:   Camera.cpp
-// GitHub: SaltyJoss
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
+// DSFE_GUI Camera.cpp
+#include <array>
 #include <glad/glad.h>
 #include "Scene/Camera.h"
 #include "Platform/KeyCode.h"

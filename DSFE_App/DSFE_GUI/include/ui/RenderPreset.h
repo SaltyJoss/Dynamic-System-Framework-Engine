@@ -1,6 +1,5 @@
+// DSFE_GUI RenderPreset.h
 #pragma once
-// File:    RenderPreset.h
-// GitHub:  SaltyJoss
 
 namespace render {
 	enum class ResolutionPreset { R_720p, R_1080p, R_1440p, R_4K };

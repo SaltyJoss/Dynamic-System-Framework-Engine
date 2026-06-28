@@ -1,7 +1,4 @@
 // DSFE_GUI SkyboxRenderer.cpp
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include <glad/glad.h>
 
 #include "Rendering/SkyboxRenderer.h"

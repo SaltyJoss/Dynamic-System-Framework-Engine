@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   ShaderUtil.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI ShaderUtil.cpp
 #include <glad/glad.h>
 #include "Rendering/ShaderUtil.h"
 

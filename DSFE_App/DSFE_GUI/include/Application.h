@@ -1,5 +1,5 @@
 // DSFE_Engine Application.h
-# pragma once
+#pragma once
 
 #include "GUIExports.h"
 
@@ -34,14 +34,4 @@ private:
 	std::unique_ptr<QApplication> _qtApp;
 	std::unique_ptr<gui::SimManager> _sim;
 	std::unique_ptr<window::DSFE_MainWindow> _mainW;
-
-//#ifdef _MSC_VER
-//#pragma warning(push)
-//#pragma warning(disable: 4251) // Suppress C4251 for private members
-//#endif
-//	std::unique_ptr<window::GLWindow> _window;
-//	std::unique_ptr<scene::Camera> _camera;
-//#ifdef _MSC_VER
-//#pragma warning(pop)
-//#endif
 };

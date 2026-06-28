@@ -1,8 +1,8 @@
 // DSFE_GUI AxisOrientator.h
 #pragma once
-
-#include <glad/glad.h>
 #include <glm/glm.hpp>
+
+using GLuint = unsigned int;
 
 namespace gui {
 	class AxisOrientator

@@ -2,9 +2,6 @@
 #include "Widgets/ViewportWidget.h"
 #include "Scene/SimulationManager.h"
 
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include <glad/glad.h>
 #include <QOpenGLContext>
 

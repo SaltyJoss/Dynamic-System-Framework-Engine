@@ -1,9 +1,6 @@
 // DSFE_GUI SimRobots.cpp
 #include "Scene/SimulationCore.h"
 #include "Scene/SimulationManager.h"
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include "Manager/SimImplementation.h"
 #include "Platform/ScopeGLContext.h"
 

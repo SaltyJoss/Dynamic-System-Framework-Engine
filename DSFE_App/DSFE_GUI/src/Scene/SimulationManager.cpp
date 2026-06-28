@@ -3,9 +3,6 @@
 #include "Scene/SimulationManager.h"
 
 #include <thread>
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
