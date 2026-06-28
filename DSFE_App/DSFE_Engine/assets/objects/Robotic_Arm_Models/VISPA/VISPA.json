@@ -40,8 +40,8 @@
             },
 
             "Steel": {
-                "Metallic": 1.0,
-                "Roughness": 0.4
+                "Metallic": 0.9,
+                "Roughness": 0.45
             }
         }
     },

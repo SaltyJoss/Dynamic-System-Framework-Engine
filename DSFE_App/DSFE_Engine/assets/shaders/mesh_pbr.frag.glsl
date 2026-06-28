@@ -17,7 +17,7 @@ uniform vec3  albedo;      // base colour
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
-uniform float ambientStrength = 0.3; // IBL ambient multiplier
+uniform float ambientStrength = 0.5; // IBL ambient multiplier
 
 uniform bool        useTexture;
 uniform sampler2D   albedoTex;
