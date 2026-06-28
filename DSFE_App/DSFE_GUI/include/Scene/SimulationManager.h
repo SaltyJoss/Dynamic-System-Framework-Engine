@@ -182,6 +182,9 @@ namespace gui {
 		void syncRobotToScene();
 		void syncBodyToScene();
 
+        // Rendering Hooks
+        void setContentHooks(std::function<void()> make, std::function<void()> done);
+
 		// Scene Objects Management
         void setSelectedObject(scene::Object* obj);
         void addObject(std::unique_ptr<scene::Object> obj);

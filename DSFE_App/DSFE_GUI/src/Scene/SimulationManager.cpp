@@ -150,10 +150,15 @@ namespace gui {
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
 	// --------------------------------------------------
-	
+
 	// Method to tick the simulation core, advancing the simulation state by the specified time step. This is typically called once per frame or at a fixed interval.
 	void SimManager::tick(double dt) {
 		_core->tick(dt);
+		if (hasRobot()) {
+        	auto& rs = _core->robotSystem();
+        	_impl->_robotRenderer->applyTransforms(rs.model(), rs.worldTransforms());
+		}
+    	syncRobotToScene(); // if still used
 	}
 
 	// Method to render the active viewport, applying post-processing and presenting the final image to the screen. This method handles completed studies, updates robot transforms, and manages OpenGL state for rendering.
@@ -234,14 +239,11 @@ namespace gui {
 	void SimManager::resize(int32_t width, int32_t height) {
 		if (width <= 0 || height <= 0) return;
 		_internalSize = { (float)width, (float)height };
-
 		// Force per-view reallocation next frame
 		for (auto& v : _impl->_views) {
 			v.w = 0; v.h = 0;
 			v.displayW = 0; v.displayH = 0;
 		}
-
-		//LOG_INFO("Resized SimManager INTERNAL RT to %dx%d", width, height);
 	}
 
 	void SimManager::setDisplaySize(int w, int h) {
@@ -250,6 +252,11 @@ namespace gui {
 		for (auto& v : _impl->_views) {
 			v.displayW = 0; v.displayH = 0; // Force per-view reallocation next frame
 		}
+	}
+
+	void SimManager::setContentHooks(std::function<void()> make, std::function<void()> done) {
+		_makeCurrentHook = std::move(make);
+		_doneCurrentHook = std::move(done);
 	}
 
 	// --------------------------------------------------
