@@ -284,7 +284,7 @@ namespace gui {
 			return it->second;
 		}
 
-		void buildRobotPresentationFromModel(const robots::RobotModel& model, SimManager& owner) {
+		void buildRobotPresentationFromModel(const robots::RobotModel& model) {
 			clearRobotPresentation();
 			RobotPresentationBuilder builder;
 			RobotRenderBinding binding = builder.build(model);

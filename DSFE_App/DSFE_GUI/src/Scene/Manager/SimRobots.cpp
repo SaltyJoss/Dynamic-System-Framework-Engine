@@ -26,7 +26,7 @@ namespace gui {
 		size_t startIdx = _impl->_objects.size();
 
 		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook); // Hooks may be empty under Qt: In that case the guard becomes a no-op.
-		_impl->buildRobotPresentationFromModel(rs.model(), *this);
+		_impl->buildRobotPresentationFromModel(rs.model());
 		_impl->_robotRenderer->applyTransforms(rs.model(), rs.worldTransforms());
 		if (auto* simInteg = rs.getIntegrator()) { simInteg->resetAdaptiveState(); }
 
