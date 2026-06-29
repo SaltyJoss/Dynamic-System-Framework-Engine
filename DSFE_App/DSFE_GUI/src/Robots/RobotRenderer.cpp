@@ -74,11 +74,7 @@ void RobotRenderer::bind(const RobotRenderBinding& binding) {
 
 	for (const auto& [linkName, visuals] : binding.linkVisuals) {
 		LinkRenderData renderData;
-
-		for (auto* obj : visuals) {
-			renderData.visuals.push_back(obj);
-		}
-
+		for (auto* obj : visuals) { renderData.visuals.push_back(obj); }
 		linkRenderMap[linkName] = renderData;
 	}
 }
@@ -114,6 +110,12 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 				obj->material.albedo = glm::vec3(meshMat.material.x(), meshMat.material.y(), meshMat.material.z());
 				obj->material.metallic = meshMat.metallic;
 				obj->material.roughness = meshMat.roughness;
+
+				printf("Link %s visual %zu: albedo=(%.2f, %.2f, %.2f), metallic=%.2f, roughness=%.2f\n",
+					link.name.c_str(), v,
+					obj->material.albedo.r, obj->material.albedo.g, obj->material.albedo.b,
+					obj->material.metallic, obj->material.roughness
+				);
 			}
 		}
 	}
@@ -125,7 +127,14 @@ void RobotRenderer::clearRobotModel(const robots::RobotModel& robot) {
 	for (auto& link : robot.links) {
 		auto it = linkRenderMap.find(link.name);
 		if (it == linkRenderMap.end()) continue;
-		
+		for (auto* obj : it->second.visuals) {
+			if (obj) {
+				// Remove the object from the scene graph or object manager
+				// Assuming a function removeObjectFromScene exists
+				// removeObjectFromScene(obj);
+				delete obj; // Or use smart pointers to manage memory automatically
+			}
+		}
 	}
 	D_WARN("Old robot model removed");
 }

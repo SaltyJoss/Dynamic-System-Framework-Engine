@@ -284,7 +284,7 @@ namespace robots {
 		joint.limits.continuous		= false;
 		joint.limits.minAngle		= 0.0f;
 		joint.limits.maxAngle		= 0.0f;
-		joint.limits.maxqd	= 0.0f;
+		joint.limits.maxqd			= 0.0f;
 		joint.limits.maxEffort		= 0.0f;
 
 		if (!jointData.contains("limits") || !jointData["limits"].is_object()) { LOG_WARN("Joint %s missing 'limits' block", joint.name.c_str()); return; }

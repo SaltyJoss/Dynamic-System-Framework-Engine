@@ -59,7 +59,7 @@ namespace robots {
 		// Collision Geometry Parameters
 		mathlib::Vec3 size{ 0.0, 0.0, 0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
 		std::string meshFile; // for mesh collision shapes, not implemented yet
-		mathlib::Vec4 material{ 0.7f, 0.0f, 0.2f, 1.0f };
+		mathlib::Vec4 material{ 1.0, 0.0, 0.2, 1.0 };
 		float metallic = 0.5f;
 		float roughness = 0.5f;
 	};
@@ -67,7 +67,7 @@ namespace robots {
 	// Per-mesh entry with individual material properties
 	struct VisualMeshEntry {
 		std::string meshFile;
-		mathlib::Vec4 material{ 0.7, 0.0, 0.2, 1.0 };
+		mathlib::Vec4 material{ 1.0, 0.0, 0.2, 1.0 };
 		float metallic = 0.5f;
 		float roughness = 0.5f;
 		bool hasMaterial = false; // true if material was explicitly specified

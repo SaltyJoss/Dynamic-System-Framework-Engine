@@ -221,7 +221,7 @@ namespace gui {
 				shader->setInt1(0, "irradianceMap");
 				shader->setInt1(1, "prefilterMap");
 				shader->setInt1(2, "brdfLUT");
-
+				
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_CUBE_MAP, _impl->_ibl->getIrradianceMap());
 
