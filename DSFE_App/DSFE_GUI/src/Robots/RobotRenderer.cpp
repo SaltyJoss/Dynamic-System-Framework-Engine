@@ -110,12 +110,6 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 				obj->material.albedo = glm::vec3(meshMat.material.x(), meshMat.material.y(), meshMat.material.z());
 				obj->material.metallic = meshMat.metallic;
 				obj->material.roughness = meshMat.roughness;
-
-				printf("Link %s visual %zu: albedo=(%.2f, %.2f, %.2f), metallic=%.2f, roughness=%.2f\n",
-					link.name.c_str(), v,
-					obj->material.albedo.r, obj->material.albedo.g, obj->material.albedo.b,
-					obj->material.metallic, obj->material.roughness
-				);
 			}
 		}
 	}
