@@ -40,8 +40,8 @@ namespace scene {
 		_pitch += yoffset;
 
 		if (constrainPitch) {
-			if (_pitch > glm::radians(89.0f)) { _pitch = glm::radians(89.0f); }
-			if (_pitch < glm::radians(-89.0f)) { _pitch = glm::radians(-89.0f); }
+			if (_pitch > glm::radians(89.9999f)) { _pitch = glm::radians(89.9999f); }
+			if (_pitch < glm::radians(-89.9999f)) { _pitch = glm::radians(-89.9999f); }
 		}
 		updateViewMatrix();
 	}
@@ -155,8 +155,7 @@ namespace scene {
 	//}
 
 	// Rebuild the camera axes based on a given front vector and an up hint
-	void Camera::rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint)
-	{
+	void Camera::rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint) {
 		_forward = glm::normalize(front);
 
 		glm::vec3 up = glm::normalize(upHint);
@@ -171,8 +170,7 @@ namespace scene {
 	}
 
 	// Orient the camera to look at a target point with an up hint
-	void Camera::lookAt(const glm::vec3& target, const glm::vec3& upHint)
-	{
+	void Camera::lookAt(const glm::vec3& target, const glm::vec3& upHint) {
 		// Keep orbit focus consistent
 		_focus = target;
 
