@@ -86,17 +86,26 @@ namespace gui {
 
 		// World Grid & Shadow Shaders
 		std::unique_ptr<shaders::Shader> _worldGridShader;
+		std::unique_ptr<shaders::Shader> _checkedFloorShader;
 		std::unique_ptr<shaders::Shader> _shadowShader;
 		shaders::Shader* currentShader = nullptr;
 
 		// Fullscreen Quad VAO
 		GLuint _fullscreenVAO = 0;
 		GLuint _worldGridVAO = 0;
+		GLuint _checkedFloorVAO = 0;
 
 		// Shadow Mapping (Cascaded)
 		GLuint _cascadeFBO[SimManager::NUM_CASCADES]{};
 		GLuint _cascadeDepth[SimManager::NUM_CASCADES]{};
 		glm::mat4 _lightSpaceMatrixCascade[SimManager::NUM_CASCADES] = {};
+
+		// Reflection Framebuffer Context
+		GLuint reflectionFBO = 0;
+		GLuint reflectionTex = 0;
+		GLuint reflectionDepthRBO = 0;
+		int reflectionW = 0;
+		int reflectionH = 0;
 
 		// Scene Objects
 		std::unique_ptr<scene::Light> _light;
@@ -167,7 +176,7 @@ namespace gui {
 				v.post = std::make_unique<render::OpenGLFrameBuffer>();
 				v.post->createBuffers(postW, postH, 1);
 
-				// Camera aspect should match DISPLAY (what you're presenting in ImGui)
+				// Camera aspect should match DISPLAY
 				v.cam = std::make_unique<scene::Camera>(pos, fovDeg, (float)postW / (float)postH, 0.1f, 5000.0f);
 				v.cam->setFocus(target);
 				v.cam->updateViewMatrix();
@@ -239,6 +248,9 @@ namespace gui {
 			_worldGridShader = std::make_unique<shaders::Shader>();
 			_worldGridShader->load((paths::assets() / "shaders" / "world_grid.vert.glsl").string(), (paths::assets() / "shaders" / "world_grid.frag.glsl").string());
 
+			_checkedFloorShader = std::make_unique<shaders::Shader>();
+			_checkedFloorShader->load((paths::assets() / "shaders" / "checked_floor.vert.glsl").string(), (paths::assets() / "shaders" / "checked_floor.frag.glsl").string());
+
 			_shadowShader = std::make_unique<shaders::Shader>();
 			_shadowShader->load((paths::assets() / "shaders" / "shadow_depth.vert.glsl").string(), (paths::assets() / "shaders" / "shadow_depth.frag.glsl").string());
 
@@ -251,6 +263,8 @@ namespace gui {
 
 			// World Grid VAO
 			glGenVertexArrays(1, &_worldGridVAO);
+			// Checked Floor VAO
+			glGenVertexArrays(1, &_checkedFloorVAO);
 
 			// Test Mesh
 			_mesh = std::make_shared<scene::Mesh>();
@@ -454,6 +468,40 @@ namespace gui {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		void AllocateReflectionBuffer(int w, int h) {
+			if (reflectionTex && reflectionW == w && reflectionH == h) { return; } // Already allocated with the same size
+			
+			// Clean up any existing reflection buffer resources
+			if (reflectionFBO) { glDeleteFramebuffers(1, &reflectionFBO); reflectionFBO = 0; }
+			if (reflectionTex) { glDeleteTextures(1, &reflectionTex); reflectionTex = 0; }
+			if (reflectionDepthRBO) { glDeleteTextures(1, &reflectionDepthRBO); reflectionDepthRBO = 0; }
+
+			reflectionW = w;
+			reflectionH = h;
+
+			// Create Isolated FBO
+			glGenFramebuffers(1, &reflectionFBO);
+			glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+
+			// Generate surface texture for color attachment
+			glGenTextures(1, &reflectionTex);
+			glBindTexture(GL_TEXTURE_2D, reflectionTex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr); // RGBA16F for high dynamic range for reflections
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			
+			// Attach texture to FBO frame
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reflectionTex, 0);
+
+			// Create depth render buffer for 3D mesh clipping
+			glGenRenderbuffers(1, &reflectionDepthRBO);
+			glBindRenderbuffer(GL_RENDERBUFFER, reflectionDepthRBO);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, reflectionDepthRBO);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+
 		// Renders the given viewport to its framebuffer, handling dynamic resizing of the framebuffer and camera aspect ratio based on the provided display size
 		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
@@ -501,6 +549,44 @@ namespace gui {
 				v.cam->setAspect((float)displayW / (float)displayH);
 			}
 
+			AllocateReflectionBuffer(v.w, v.h);
+			glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+			glViewport(0, 0, v.w, v.h);
+			
+			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			// Track active original transformations to restore safely later
+			glm::mat4 originalViewMatrix = v.cam->getViewMatrix();
+			glm::vec3 originalPosition = v.cam->getPosition();
+
+			// Mirror Camera Position over plane Y = 0
+			glm::vec3 mirroredPosition = originalPosition;
+			mirroredPosition.y = -originalPosition.y; 
+			v.cam->setPosition(mirroredPosition);
+
+			// Mirror Camera View Matrix Orientation on Y axis
+			glm::mat4 mirroredViewMatrix = originalViewMatrix;
+			mirroredViewMatrix = glm::scale(mirroredViewMatrix, glm::vec3(1.0f, -1.0f, 1.0f));
+			v.cam->setViewMatrix(mirroredViewMatrix); 
+
+			// Render meshes from under-floor point of view
+			owner.MeshRender(v.cam.get());
+
+			// Mipmap reflection data for crisp mip texturing transitions
+			glBindTexture(GL_TEXTURE_2D, reflectionTex);
+			glGenerateMipmap(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			// Completely restore pristine camera variables for main pass
+			v.cam->setPosition(originalPosition);
+			v.cam->setViewMatrix(originalViewMatrix);
+			// ==========================================================
+
+			// Return directly back to your standard main render pass
+			v.fb->bind();
+			glViewport(0, 0, v.w, v.h);
+
 			v.fb->bind();
 			glViewport(0, 0, v.w, v.h);
 			glEnable(GL_DEPTH_TEST);
@@ -542,8 +628,9 @@ namespace gui {
 			glGetIntegerv(GL_SAMPLES, &samples);
 			LOG_INFO_ONCE("FB MSAA state: GL_SAMPLE_BUFFERS=%d GL_SAMPLES=%d", sampleBuffers, samples);
 
+			owner.CheckedFloorRender(v.cam.get(), v.w);
 			owner.MeshRender(v.cam.get());
-			if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get(), v.w); }
+			//if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get(), v.w); }
 
 			v.fb->unbind();
 
