@@ -121,41 +121,20 @@ float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float
 
     float ndotl = max(dot(N, L), 0.0);
 
-    // --- PCF radius in texels ---
-    //float baseRadius = (cascadeIndex == 0) ? 2.0 : 5.0;
-    
-    // near cascade = tighter, far cascade = wider
-    //float radiusTexels = mix(baseRadius, baseRadius * 2.5, dist);
-    //radiusTexels *= mix(1.0, 1.25, projCoords.z);
-
-    //float slopeBias    = 0.0030 * (1.0 - ndotl);
-    //float receiverBias = 0.0010 + 0.0015 * radiusTexels;   // tune this pair if needed
-    //float bias         = slopeBias + receiverBias;
-
+    // --- PCF (in texels) ---
     float bias = max(0.005 * (1.0 - ndotl), 0.0005);
-
-    // PCF
     vec2 texelSize = 1.0 / vec2(textureSize(cascadeShadowMap[cascadeIndex], 0));
     float spreadRadius = mix(1.5, 3.5, dist); 
     float currentDepth = projCoords.z - bias;
     float shadowSum = 0.0;
 
-    //float sum = 0.0;
-    //int samples = 0;
 
     for (int i=0; i < 12; i++) {
-        //vec2 offset = vec2(x, y) * texelSize * radiusTexels;
-        //float lit = texture(cascadeShadowMap[cascadeIndex], vec3(projCoords.xy + offset, projCoords.z - bias));
-        //sum += lit;
-        //samples++;
-
         vec2 offset = poissonDisk[i] * texelSize * spreadRadius;
         float depthSample = texture(cascadeShadowMap[cascadeIndex], vec3(projCoords.xy + offset, currentDepth));
         shadowSum += depthSample;
     }
 
-    //float litFactor = sum / float(samples);
-    //return 1.0 - litFactor; // 0 lit, 1 shadow
     return 1.0 - (shadowSum / 12.0);
 }
 
