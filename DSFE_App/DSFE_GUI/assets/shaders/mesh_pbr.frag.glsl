@@ -17,7 +17,7 @@ uniform vec3  albedo;      // base colour
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
-uniform float ambientStrength = 0.4; // IBL ambient multiplier
+uniform float ambientStrength = 0.3; // IBL ambient multiplier
 
 uniform bool        useTexture;
 uniform sampler2D   albedoTex;
@@ -187,6 +187,18 @@ vec3 studioReflection(vec3 R, vec3 L, vec3 lightCol) {
 }
 
 // ------------------------------------------------------------
+// ACES Narkowicz Approximation
+// ------------------------------------------------------------
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x*(a*x + b)) / (x*(c*x + d) + e), 0.0, 1.0);
+}
+
+// ------------------------------------------------------------
 // Main
 // ------------------------------------------------------------
 
@@ -251,13 +263,23 @@ void main() {
     float r = max(roughness, 0.08);
     vec3 prefiltered = textureLod(prefilterMap, R, r * maxMip).rgb;
 
+    // --- Enhanced Look-Dev Blend for Space(ish) Simulators ---
     // Blend with procedural studio reflection for metallic surfaces.
-    // When the environment map is weak (e.g. the plain white HDR I use), metals have nothing to reflect and look dark.
-    // The studio function provides a gradient + key-light highlight so metals read as shiny.
-    // Blends out automatically when a rich HDRI is loaded.
+    // If the HDR envr is too bright or completely black use a modified studio reflection tailored for cleaner space look
     vec3 studioRef = studioReflection(R, L, lightColour);
+
+    // Smoothly calculates environment luminance
     float envLum   = dot(prefiltered, vec3(0.2126, 0.7152, 0.0722));
-    float studioBlend = metallic * smoothstep(0.5, 0.0, envLum);
+
+    // Targets for both extremes
+
+    float isTooDark = smoothstep(0.15, 0.0, envLum);
+    float isTooBright = smoothstep(0.85, 0.98, envLum);
+    float studioBlend = metallic * max(isTooDark, isTooBright);
+
+    // Space Adaptive modifications
+    if (isTooDark > 0.0) { studioRef *= vec3(0.35); }
+
     prefiltered = mix(prefiltered, studioRef, studioBlend);
 
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
@@ -267,9 +289,15 @@ void main() {
     float contactShadow = smoothstep(0.0, 0.02, shadow);
     vec3 ambientDiffuse  = kD_ibl * diffuseIBL * ao * (1.0 - 0.5 * contactShadow);
     vec3 ambientSpecular = specularIBL * ao;
-    vec3 ambient = ambientDiffuse * ambientStrength + ambientSpecular;
+    // Small ambient baseline floor for stopping unlit sides of systems clipping into full black
+    vec3 spaceAmbientFloor = vec3(0.02) * baseColour * (1.0 - metallic); 
+    vec3 ambient = (ambientDiffuse * ambientStrength) + ambientSpecular + spaceAmbientFloor;
 
     vec3 colour = ambient + Lo;
-    colour = pow(colour, vec3(1.0/2.2));
+
+    // --- Tone Mapping ---
+    colour = ACESFilm(colour);
+    //colour = pow(colour, vec3(1.0/2.2)); // sRGB Gamma Correction
+    
     FragColour = vec4(colour, 1.0);
 }
