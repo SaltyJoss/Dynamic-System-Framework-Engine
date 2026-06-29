@@ -296,6 +296,7 @@ namespace gui {
 		// Rendering Pipeline Methods
         void MeshRender(scene::Camera* cam);
         void WorldGridRender(scene::Camera* cam, int rtW);
+        void CheckedFloorRender(scene::Camera* cam, int rtW);
         void InitShadowResource(int baseRes);
         void InitIBL();
         void SkyboxRender(scene::Camera* cam);
@@ -303,13 +304,6 @@ namespace gui {
         glm::mat4 LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane);
         glm::vec2 getPresetResolutionPx() const;
 		glm::vec2 getInternalResolutionSizePx() const;
-
-        void drawMainDockspace();
-        void drawViewportWindow();
-
-        // Simulation Management
-        void beginSimManager(const char* id);
-		void endSimManager();
 
         // Misc Settings
         bool _glReady = false;
@@ -364,7 +358,7 @@ namespace gui {
         const unsigned int SHADOW_H = 8192;
         int _currentShaderIndex = 2; // 2 = PBR by default (atm)
 
-		// Flags for tracking initialization and settings state
+		// Flags for tracking initialisation and settings state
         bool _settingsValid = false;
         bool _shadowsInit = false;
         bool _hdrUserOverride = false;

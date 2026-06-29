@@ -127,6 +127,63 @@ namespace gui {
 		glDepthFunc(GL_LESS);
 	}
 
+	void SimManager::CheckedFloorRender(scene::Camera* cam, int rtW) {
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE); // WRITE to depth buffer so meshes clip cleanly
+		
+		// ENABLE blending only so the fading horizon seamlessly dissolves into your clear color void
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		_impl->_checkedFloorShader->use();
+
+		// MATCH UNIFORMS: Connect variables exactly to your engine's layout structures
+		_impl->_checkedFloorShader->setMat4(cam->getViewProjection(), "gVP");
+		_impl->_checkedFloorShader->setMat4(cam->getViewMatrix(), "gView");
+		_impl->_checkedFloorShader->setVec3(cam->getPosition(), "gCameraWorldPos");
+
+		_impl->_checkedFloorShader->setVec3(glm::normalize(_impl->_light->getDirection()), "lightDirection");
+		_impl->_checkedFloorShader->setFlt1(_impl->_light->getIntensity(), "lightIntensity");
+		_impl->_checkedFloorShader->setVec3(_impl->_light->getColour(), "lightColour");
+
+		// Bind Cascaded Shadow Maps (CSM tracking maps)
+		for (int i = 0; i < NUM_CASCADES; i++) {
+			glActiveTexture(GL_TEXTURE5 + i);
+			glBindTexture(GL_TEXTURE_2D, _impl->_cascadeDepth[i]);
+			_impl->_checkedFloorShader->setInt1(5 + i, "cascadeShadowMap[" + std::to_string(i) + "]");
+			_impl->_checkedFloorShader->setMat4(_impl->_lightSpaceMatrixCascade[i], "lightSpaceMatrix[" + std::to_string(i) + "]");
+		}
+
+		const float nearPlane = cam->getNear();
+		const float farPlane  = cam->getFar();
+		const float splitDist0 = nearPlane + _cascadeSplits[0] * farPlane;
+		const float splitDist1 = nearPlane + _cascadeSplits[1] * farPlane;
+		_impl->_checkedFloorShader->setFltArray2(splitDist0, splitDist1, "cascadeSplits");
+
+		// Bind Image-Based Lighting Cubemaps
+		_impl->_checkedFloorShader->setInt1(0, "irradianceMap");
+		_impl->_checkedFloorShader->setInt1(1, "prefilterMap");
+		_impl->_checkedFloorShader->setInt1(2, "brdfLUT");
+		_impl->_checkedFloorShader->setInt1(3, "planarReflectionMap");
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _impl->_ibl->getIrradianceMap());
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _impl->_ibl->getPrefilterMap());
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, _impl->_ibl->getBRDFLUT());
+		glActiveTexture(GL_TEXTURE3);
+    	glBindTexture(GL_TEXTURE_2D, _impl->reflectionTex);
+
+		// Execute Draw Pass using bufferless VAO setup
+		glBindVertexArray(_impl->_checkedFloorVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+
+		glDisable(GL_BLEND); // Clean state reset
+	}
+
 	// Render the meshes in the scene using the currently selected shader mode, setting appropriate uniforms for each mode
 	void SimManager::MeshRender(scene::Camera* cam) {
 		glEnable(GL_DEPTH_TEST);
