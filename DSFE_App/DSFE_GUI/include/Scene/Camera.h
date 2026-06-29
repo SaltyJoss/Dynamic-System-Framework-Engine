@@ -35,6 +35,8 @@ namespace scene {
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
 
+		void setPosition(const glm::vec3& pos) { _position = pos; updateViewMatrix(); }
+		void setViewMatrix(const glm::mat4& view) { _viewMatrix = view; }
 		void setAspect(float aspect) {
 			_aspect = aspect;
 			updateProjectionMatrix();
