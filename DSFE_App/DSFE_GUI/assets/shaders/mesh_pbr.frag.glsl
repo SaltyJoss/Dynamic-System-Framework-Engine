@@ -103,7 +103,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 // ------------------------------------------------------------
 
 // 12-Sample Poisson Disc layout for beautiful organic edge softening
-const vec2 poissonDisk[12] = vec2[](
+vec2 poissonDisk[12] = vec2[](
     vec2(-0.326212, -0.405805), vec2(-0.840144, -0.07358),
     vec2(-0.695914,  0.457137), vec2(-0.203345,  0.620716),
     vec2( 0.96234,  -0.194983), vec2( 0.473434, -0.480026),
@@ -255,8 +255,8 @@ void main() {
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
     // Cook-Torrance specular BRDF
-    float denom = max(4.0 * NdotV * NdotL_raw, 0.001);
-    vec3  specular = (NDF * G * F) / denom;
+    float denom = 4.0 * NdotV * NdotL_raw + 0.001;
+    vec3 specular = (NDF * G * F) / denom;
 
     vec3 radiance = lightColour * lightIntensity;
 
@@ -313,7 +313,12 @@ void main() {
 
     // --- Tone Mapping ---
     colour = ACESFilm(colour);
-    //colour = pow(colour, vec3(1.0/2.2)); // sRGB Gamma Correction
+
+    // Note for OTHER developers:
+    // --------------------------
+    //  * If you use glEnable(GL_FRAMEBUFFER_SRGB), leave this line commented out!
+    //  * If you don't use hardware sRGB, uncomment this line to fix linear color profiles.
+    // colour = pow(colour, vec3(1.0 / 2.2));
     
     FragColour = vec4(colour, 1.0);
 }
