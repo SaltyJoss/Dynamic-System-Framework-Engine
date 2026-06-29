@@ -77,7 +77,7 @@ namespace gui {
 	// Initialise the IBL system with a default HDR environment map
 	void SimManager::InitIBL() {
 		_impl->_ibl = std::make_unique<render::IBL>();
-		_impl->_ibl->init((paths::assets() / "hdr" / "default_white.hdr").string());
+		_impl->_ibl->init((paths::assets() / "scene_hdr" / "default_white.hdr").string());
 	}
 
 	// Render the world grid overlay in the viewport
@@ -357,7 +357,7 @@ namespace gui {
 	}
 
 	// Load a new HDR environment map for IBL
-	std::string SimManager::getDefaultHDR() const { return (paths::assets() / "hdr" / "default_white.hdr").string(); }
+	std::string SimManager::getDefaultHDR() const { return (paths::assets() / "scene_hdr" / "default_white.hdr").string(); }
 
 	// Load a new HDR environment map for IBL
 	const shaders::Shader* SimManager::getCurrentShader() const { return _impl->currentShader; }

@@ -136,7 +136,7 @@ namespace window {
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "hdr").string()), "HDRI Files (*.hdr *.exr)");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "scene_hdr").string()), "HDRI Files (*.hdr *.exr)");
 				if (path.isEmpty()) { return; }
 				_sim->loadNewHDR_UI(path.toStdString());
 			});
