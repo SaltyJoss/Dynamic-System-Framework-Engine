@@ -17,7 +17,7 @@ uniform vec3  albedo;      // base colour
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
-uniform float ambientStrength = 0.5; // IBL ambient multiplier
+uniform float ambientStrength = 0.4; // IBL ambient multiplier
 
 uniform bool        useTexture;
 uniform sampler2D   albedoTex;
@@ -199,7 +199,7 @@ void main() {
     float NdotL_raw = max(dot(N, L), 0.0);
 
     // Subtle wrap for diffuse only (softens terminator without ruining specular)
-    float wrap = 0.15;
+    float wrap = 0.2;
     float NdotL_wrap = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
 
     float NdotV = max(dot(N, V), 0.0);
@@ -270,6 +270,6 @@ void main() {
     vec3 ambient = ambientDiffuse * ambientStrength + ambientSpecular;
 
     vec3 colour = ambient + Lo;
-
+    colour = pow(colour, vec3(1.0/2.2));
     FragColour = vec4(colour, 1.0);
 }
