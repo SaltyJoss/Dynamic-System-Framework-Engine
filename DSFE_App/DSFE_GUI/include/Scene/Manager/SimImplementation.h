@@ -502,6 +502,8 @@ namespace gui {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		glm::mat4 _reflectionVP = glm::mat4(1.0f);
+
 		// Renders the given viewport to its framebuffer, handling dynamic resizing of the framebuffer and camera aspect ratio based on the provided display size
 		void renderView(SimManager& owner, Viewport& v, int displayW, int displayH) {
 			displayW = std::max(1, displayW);
@@ -641,6 +643,11 @@ namespace gui {
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, 0);
+
+			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			if (status != GL_FRAMEBUFFER_COMPLETE) {
+				LOG_ERROR("Reflection FBO incomplete: 0x%X", status);
+			}
 
 			// Post-Processing
 			v.post->bind();

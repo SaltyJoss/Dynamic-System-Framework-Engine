@@ -138,7 +138,7 @@ namespace gui {
 
 		_impl->_checkedFloorShader->use();
 
-		// MATCH UNIFORMS: Connect variables exactly to your engine's layout structures
+		// MATCH UNIFORMS: Connect variables to engine's layout structures
 		_impl->_checkedFloorShader->setMat4(cam->getViewProjection(), "gVP");
 		_impl->_checkedFloorShader->setMat4(cam->getViewMatrix(), "gView");
 		_impl->_checkedFloorShader->setVec3(cam->getPosition(), "gCameraWorldPos");
@@ -351,14 +351,11 @@ namespace gui {
 
 		glm::vec3 lightDir = glm::normalize(_impl->_light->getDirection());
 
-		// Fake camera position far along direction
-		glm::vec3 lightPos = -lightDir * 50.0f;
-
-		glm::mat4 lightView = glm::lookAt(
-			lightPos,
-			glm::vec3(0.0f),
-			glm::vec3(0, 1, 0)
-		);
+		glm::vec3 cascadeCenter = glm::vec3(0.0f);
+		for (const auto& c : corners) { cascadeCenter += glm::vec3(c); }
+		cascadeCenter /= static_cast<float>(corners.size());
+		glm::vec3 lightPos = cascadeCenter - lightDir * 50.0f;
+		glm::mat4 lightView = glm::lookAt(lightPos, cascadeCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		float minX = FLT_MAX, maxX = -FLT_MAX;
 		float minY = FLT_MAX, maxY = -FLT_MAX;

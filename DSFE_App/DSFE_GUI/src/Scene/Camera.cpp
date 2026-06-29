@@ -40,8 +40,8 @@ namespace scene {
 		_pitch += yoffset;
 
 		if (constrainPitch) {
-			if (_pitch > glm::radians(89.9999f)) { _pitch = glm::radians(89.9999f); }
-			if (_pitch < glm::radians(-89.9999f)) { _pitch = glm::radians(-89.9999f); }
+			if (_pitch > glm::radians(89.999f)) { _pitch = glm::radians(89.999f); }
+			if (_pitch < glm::radians(-89.999f)) { _pitch = glm::radians(-89.999f); }
 		}
 		updateViewMatrix();
 	}
@@ -56,21 +56,21 @@ namespace scene {
 		}
 	}
 
-	std::array<glm::vec4, 8> Camera::getFrustumCornersWorldSpace(float, float) const {
+	std::array<glm::vec4, 8> Camera::getFrustumCornersWorldSpace(float near, float far) const {
 		std::array<glm::vec4, 8> corners;
 
 		float tanHalfFov = tanf(_FOV * 0.5f);
-		float nearHeight = tanHalfFov * _near;
+		float nearHeight = tanHalfFov * near;
 		float nearWidth = nearHeight * (_aspect);
-		float farHeight = tanHalfFov * _far;
+		float farHeight = tanHalfFov * far;
 		float farWidth = farHeight * (_aspect);
 
 		glm::vec3 forward = glm::normalize(_forward);
 		glm::vec3 right = glm::normalize(_right);
 		glm::vec3 up = glm::normalize(_up);
 
-		glm::vec3 nearCenter = _position + forward * _near;
-		glm::vec3 farCenter = _position + forward * _far;
+		glm::vec3 nearCenter = _position + forward * near;
+		glm::vec3 farCenter = _position + forward * far;
 
 		// Near plane
 		corners[0] = glm::vec4(nearCenter - right * nearWidth + up * nearHeight, 1.0f); // Top-Left
@@ -87,10 +87,8 @@ namespace scene {
 		return corners;
 	}
 
-	void Camera::fall()
-	{
-		if (_isGrounded)
-		{
+	void Camera::fall() {
+		if (_isGrounded)  {
 			_isGrounded = false;
 			_verticalVelocity = _upwardForce;
 		}
@@ -111,7 +109,6 @@ namespace scene {
 	}
 
 	void Camera::updateViewMatrix() {
-
 		if (_following) {
 			_position = _targetPos + (_targetRot * _followOffset);
 			const glm::vec3 up = _targetRot * glm::vec3(0.0f, 1.0f, 0.0f);
@@ -127,8 +124,6 @@ namespace scene {
 		_forward = glm::normalize(f);
 
 		const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
-		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-		_up = glm::normalize(glm::cross(_right, _forward));
 
 		rebuildAxesFromFrontUp_(f, worldUp);
 
