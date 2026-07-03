@@ -28,7 +28,7 @@ void main()
     float NdotL = max(dot(N, L), 0.0);
     vec3 diffuse = albedo * lightColour * NdotL * lightIntensity;
 
-    // 3. Specular term (Blinn–Phong, cheap)
+    // 3. Specular term (Blinn-Phong, cheap)
     vec3 H = normalize(V + L);
     float spec = pow(max(dot(N, H), 0.0), 16.0);   // shininess = 16
     vec3 specular = 0.2 * spec * lightColour;      // 0.2 = specular strength
