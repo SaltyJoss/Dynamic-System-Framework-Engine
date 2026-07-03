@@ -179,13 +179,14 @@ target_link_libraries(DSFE_GUI
         Qt6::OpenGLWidgets
 )
 
-# Defines the source and destination for assets
+# Defines the source and destination for assets and configs
 set(ASSETS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 # Add a custom command to copy the assets directory after the build
 add_custom_command(TARGET DSFE_GUI POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${ASSETS_SRC_DIR}"
-    "$<TARGET_FILE_DIR:DSFE_GUI>/assets"
-    COMMENT "Copying assets to build directory..."
+        "${ASSETS_SRC_DIR}"
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/assets"
 )
