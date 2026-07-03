@@ -138,6 +138,9 @@ namespace gui {
 
 		_impl->_checkedFloorShader->use();
 
+		// Reflection uniforms (provides reflection view projection)
+		_impl->_checkedFloorShader->setMat4(_impl->reflectionVP, "gReflectionVP");
+
 		// MATCH UNIFORMS: Connect variables to engine's layout structures
 		_impl->_checkedFloorShader->setMat4(cam->getViewProjection(), "gVP");
 		_impl->_checkedFloorShader->setMat4(cam->getViewMatrix(), "gView");
@@ -185,7 +188,7 @@ namespace gui {
 	}
 
 	// Render the meshes in the scene using the currently selected shader mode, setting appropriate uniforms for each mode
-	void SimManager::MeshRender(scene::Camera* cam) {
+	void SimManager::MeshRender(scene::Camera* cam, bool isReflection) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
@@ -213,6 +216,11 @@ namespace gui {
 		shader->use();
 		shader->setBool(false, "isFloor");
 
+		if (isReflection) {
+			glm::vec4 clipPlane(0, 1, 0, 0);
+			shader->setVec4(clipPlane, "uClipPlane");
+		}
+		
 		// Only PBR know about cascades & those uniforms
 		if (currentShaderMode == ShaderMode::PBR) {
 			for (int i = 0; i < NUM_CASCADES; i++) {
@@ -254,6 +262,8 @@ namespace gui {
 				break;
 
 				case ShaderMode::Lit:
+				_impl->_light->setIntensity(1.0f); // override light intensity for Lit mode
+
 				// (IMPORTANT) mesh_lit.frag needs: albedo, lightPosition, lightColour, lightIntensity, camPos
 				shader->setVec3(obj->material.albedo, "albedo");
 				shader->setVec3(_impl->_light->getPosition(), "lightPosition");

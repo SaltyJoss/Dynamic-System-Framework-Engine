@@ -106,6 +106,7 @@ namespace gui {
 		GLuint reflectionDepthRBO = 0;
 		int reflectionW = 0;
 		int reflectionH = 0;
+		glm::mat4 reflectionVP = glm::mat4(1.0f); // View-Projection matrix for reflection rendering
 
 		// Scene Objects
 		std::unique_ptr<scene::Light> _light;
@@ -489,6 +490,8 @@ namespace gui {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr); // RGBA16F for high dynamic range for reflections
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			
 			// Attach texture to FBO frame
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reflectionTex, 0);
@@ -558,31 +561,37 @@ namespace gui {
 			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			// Track active original transformations to restore safely later
-			glm::mat4 originalViewMatrix = v.cam->getViewMatrix();
-			glm::vec3 originalPosition = v.cam->getPosition();
+			scene::Camera reflectionCam = *v.cam;
 
-			// Mirror Camera Position over plane Y = 0
-			glm::vec3 mirroredPosition = originalPosition;
-			mirroredPosition.y = -originalPosition.y; 
-			v.cam->setPosition(mirroredPosition);
+			// mirror position
+			glm::vec3 pos = v.cam->getPosition();
+			pos.y = -pos.y;
 
-			// Mirror Camera View Matrix Orientation on Y axis
-			glm::mat4 mirroredViewMatrix = originalViewMatrix;
-			mirroredViewMatrix = glm::scale(mirroredViewMatrix, glm::vec3(1.0f, -1.0f, 1.0f));
-			v.cam->setViewMatrix(mirroredViewMatrix); 
+			// mirror forward direction
+			glm::vec3 fwd = v.cam->getForward();
+			fwd.y = -fwd.y;
+
+			// reconstruct correct target
+			glm::vec3 target = pos + fwd;
+
+			// rebuild camera
+			reflectionCam.setPosition(pos);
+			reflectionCam.lookAt(target);
+
+			// Update the reflection camera's view-projection matrix for use in shaders
+			reflectionVP = reflectionCam.getViewProjection();
 
 			// Render meshes from under-floor point of view
-			owner.MeshRender(v.cam.get());
+			glEnable(GL_CLIP_DISTANCE0);
+
+			owner.MeshRender(&reflectionCam, true); // Render with clipping plane enabled for reflection
+
+			glDisable(GL_CLIP_DISTANCE0);
 
 			// Mipmap reflection data for crisp mip texturing transitions
 			glBindTexture(GL_TEXTURE_2D, reflectionTex);
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, 0);
-
-			// Completely restore pristine camera variables for main pass
-			v.cam->setPosition(originalPosition);
-			v.cam->setViewMatrix(originalViewMatrix);
 			// ==========================================================
 
 			// Return directly back to your standard main render pass
@@ -630,24 +639,22 @@ namespace gui {
 			glGetIntegerv(GL_SAMPLES, &samples);
 			LOG_INFO_ONCE("FB MSAA state: GL_SAMPLE_BUFFERS=%d GL_SAMPLES=%d", sampleBuffers, samples);
 
-			owner.CheckedFloorRender(v.cam.get(), v.w);
 			owner.MeshRender(v.cam.get());
+			owner.CheckedFloorRender(v.cam.get(), v.w);
 			//if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get(), v.w); }
 
 			v.fb->unbind();
 
 			// SSAO pass (reads resolved depth, writes to _ssaoBlurTex)
 			renderSSAO(owner, v);
-
+			
 			// Only valid if you allocated mip levels for _texID (via glTexStorage2D)
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, 0);
 
 			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			if (status != GL_FRAMEBUFFER_COMPLETE) {
-				LOG_ERROR("Reflection FBO incomplete: 0x%X", status);
-			}
+			if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
 
 			// Post-Processing
 			v.post->bind();

@@ -89,7 +89,7 @@ namespace gui {
         void setLightColour(const glm::vec3& c);
 
 		// Skybox & IBL
-        void setSkyboxEnabled(bool b) { skyboxEnabled = b; }
+        void enableSkybox(bool b) { skyboxEnabled = b; }
         const bool isSkyboxEnabled() const { return skyboxEnabled; }
 
 		// HDR Environment Maps
@@ -294,7 +294,7 @@ namespace gui {
 		bool _hasCompletedStudy = false;
 
 		// Rendering Pipeline Methods
-        void MeshRender(scene::Camera* cam);
+        void MeshRender(scene::Camera* cam, bool isReflection=false);
         void WorldGridRender(scene::Camera* cam, int rtW);
         void CheckedFloorRender(scene::Camera* cam, int rtW);
         void InitShadowResource(int baseRes);

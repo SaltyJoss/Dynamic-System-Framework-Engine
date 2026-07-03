@@ -22,7 +22,10 @@ uniform samplerCube prefilterMap;
 uniform sampler2D   brdfLUT;
 
 // Real-time dynamic mirror buffer bound to texture slot 3
-uniform sampler2D   planarReflectionMap; 
+uniform sampler2D planarReflectionMap; 
+
+// View Projection for the Reflections
+uniform mat4 gReflectionVP;
 
 // Local Scene Buffer Inputs (Optional, can be omitted for standard depth-testing)
 uniform sampler2D sceneDepthTexture; 
@@ -91,6 +94,7 @@ void main() {
     if (fadeFactor < 0.001) { discard; }
 
     vec3 N = vec3(0.0, 1.0, 0.0);
+
     vec3 V = normalize(gCameraWorldPos - WorldPos);
     vec3 L = normalize(-lightDirection);
 
@@ -117,11 +121,22 @@ void main() {
     vec3 R = reflect(-V, N);
     vec3 staticEnvColour = textureLod(prefilterMap, R, roughness * 4.0).rgb;
 
-    vec2 screenUV = vScreenPos.xy / vScreenPos.w;
-    screenUV = screenUV * 0.5 + 0.5; // Map from [-1, 1] device space to [0, 1] texture coordinates
+    vec4 reflectionPos = gReflectionVP * vec4(WorldPos, 1.0);
+    vec2 reflectionUV = reflectionPos.xy / reflectionPos.w;
+    reflectionUV = reflectionUV * 0.5 + 0.5;
 
-    vec3 dynamicMeshColour = texture(planarReflectionMap, screenUV).rgb; // Reads dynamic high-quality RGBA16F reflection buffer
-    vec3 reflectionColour = mix(staticEnvColour, dynamicMeshColour, 0.75); // Blends real-time meshes over static background box reflections
+    vec3 dynamicMeshColour;
+    if (reflectionPos.w <= 0.0) {
+        dynamicMeshColour = staticEnvColour;
+    }
+    else if (reflectionUV.x < 0.0 || reflectionUV.x > 1.0 || reflectionUV.y < 0.0 || reflectionUV.y > 1.0) {
+        dynamicMeshColour = staticEnvColour;
+    }
+    else {
+        dynamicMeshColour = texture(planarReflectionMap, reflectionUV).rgb;
+    }
+    vec3 reflectionColour = staticEnvColour + dynamicMeshColour * 0.75;
+    reflectionColour = min(reflectionColour, vec3(1.0));
 
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
     vec3 specularIBL = reflectionColour * (F0 * brdf.x + brdf.y);
