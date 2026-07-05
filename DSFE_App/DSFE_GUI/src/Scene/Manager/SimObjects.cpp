@@ -1,6 +1,7 @@
 // DSFE_GUI SimObjects.cpp
 #include "Scene/SimulationManager.h"
 #include "Manager/SimImplementation.h"
+#include "Platform/ScopeGLContext.h"
 
 namespace gui {
 	// Helper to get the next ObjectID
@@ -10,6 +11,8 @@ namespace gui {
 
 	// Load a mesh from file and create one Object per submesh. The last loaded mesh becomes the active selection.
 	void SimManager::loadMesh(const std::string& filepath) {
+		platform::ScopeGLContext guard(_makeCurrentHook, _doneCurrentHook);
+
 		assets::MeshLoader loader;
 		auto meshes = loader.load(filepath);
 
@@ -19,6 +22,7 @@ namespace gui {
 			return;
 		}
 
+		LOG_INFO("4. Creating Objects for each submesh from %s", filepath.c_str());
 		// For now: spawn one Object per submesh
 		for (auto& m : meshes) {
 			auto obj = std::make_unique<scene::Object>(m);

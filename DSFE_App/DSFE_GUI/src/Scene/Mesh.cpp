@@ -18,8 +18,8 @@ namespace scene {
 	// Load mesh data from file using MeshLoader
 	bool Mesh::load(const std::string& path) {
 		assets::MeshLoader loader;
-		loader.load(path);
-		if (loader.load(path).empty()) {
+		auto meshes = loader.load(path);
+		if (meshes.empty()) {
 			LOG_ERROR("Mesh load failed for file: %s", path.c_str());
 			return false;
 		}
