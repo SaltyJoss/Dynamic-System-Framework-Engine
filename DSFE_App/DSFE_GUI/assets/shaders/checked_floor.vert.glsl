@@ -7,7 +7,7 @@ out vec4 vScreenPos;
 uniform mat4 gVP = mat4(1.0);
 uniform mat4 gView;
 
-uniform float gGridSize = 2500.0;
+uniform float gGridSize = 5000.0;
 uniform vec3 gCameraWorldPos;
 
 uniform vec4 uClipPlane;
