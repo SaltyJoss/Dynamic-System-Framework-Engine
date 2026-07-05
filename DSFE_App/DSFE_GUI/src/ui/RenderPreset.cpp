@@ -48,7 +48,7 @@ namespace render {
 			s.fxaa = false;
 			break;
 		case QualityPreset::Ultra:
-			s.shadowMapRes = 8192;
+			s.shadowMapRes = 4096;
 			s.shadowCascades = 8;
 			s.pcfKernel = 9; // 7 gives better softness at high res
 			s.ssao = true;
@@ -71,11 +71,10 @@ namespace render {
 			case ResolutionPreset::R_4K: s.renderScale = 1.0f; break;
 		}
 
-		s.exposure = 1.2f;
-		s.whitePoint = 1.5f;
-		s.grid = true;
-		s.axisOrientator = true;
-
+		s.exposure = 1.0f;
+		s.whitePoint = 1.25f; // Slightly warmer white point for more natural look
+		s.ambientStrength = 0.6f; // IBL ambient multiplier (0.0 = no ambient, 1.0 = full)
+		
 		return s;
 	}
 

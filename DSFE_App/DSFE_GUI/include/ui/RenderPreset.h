@@ -38,8 +38,10 @@ namespace render {
 		int msaaSamples = 2; // 1 = off, 2,4,8
 
 		// Editor Extras
-		bool grid = true;
-		bool axisOrientator = true;
+		bool grid;
+		bool floor;
+		bool skybox;
+		bool axisOrientator;
 
 		// Render-Specific
 		float renderScale = 1.0f;

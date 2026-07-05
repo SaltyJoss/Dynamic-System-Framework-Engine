@@ -22,6 +22,7 @@ namespace window {
 	private:
 		void buildMenuBar();
 		void buildGraphicsMenu(QMenu* graphicsMenu);
+		void buildSceneMenu(QMenu* sceneMenu);
 		void buildRobotMenu(QMenu* projectMenu);
 
 		render::ResolutionPreset r;

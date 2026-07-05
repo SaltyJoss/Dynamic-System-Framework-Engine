@@ -88,10 +88,6 @@ namespace gui {
         scene::Light* getLight();
         void setLightColour(const glm::vec3& c);
 
-		// Skybox & IBL
-        void enableSkybox(bool b) { skyboxEnabled = b; }
-        const bool isSkyboxEnabled() const { return skyboxEnabled; }
-
 		// HDR Environment Maps
         void loadNewHDR(const std::string& path);
         void loadNewHDR_UI(const std::string& path);
@@ -170,6 +166,20 @@ namespace gui {
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
 		void resetHDRToPreset();
         void reloadAllShaders();
+
+        // Render Settings Extra
+        bool isGridEnabled() const;
+        void enableGrid(bool enabled);
+
+        bool isFloorEnabled() const;
+        void enableFloor(bool enabled);
+
+        bool isSkyboxEnabled() const;
+        void enableSkybox(bool enabled);
+
+        bool isOrientastorEnabled() const;
+        void enableOrientator(bool enabled);
+        
 
 		// Rendering Entry Points
         void tick(double dt);
@@ -365,9 +375,11 @@ namespace gui {
 
 		// View management
         bool _isHovered = false;
-        bool skyboxEnabled = true;
         bool _firstMouse = true;
         bool _firstUpdate = true;
+
+        bool skyboxEnabled = true;
+        bool floorEnabled = true;
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };

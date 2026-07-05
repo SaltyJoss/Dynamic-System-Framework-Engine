@@ -554,45 +554,48 @@ namespace gui {
 				v.cam->setAspect((float)displayW / (float)displayH);
 			}
 
-			AllocateReflectionBuffer(v.w, v.h);
-			glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
-			glViewport(0, 0, v.w, v.h);
-			
-			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			if (owner.isFloorEnabled()) {
+				// Render reflection pass to isolated FBO
+				// This is done before the main scene render to avoid depth conflicts and ensure proper reflection rendering
+				AllocateReflectionBuffer(v.w, v.h);
+				glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+				glViewport(0, 0, v.w, v.h);
+				
+				glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			scene::Camera reflectionCam = *v.cam;
+				scene::Camera reflectionCam = *v.cam;
 
-			// mirror position
-			glm::vec3 pos = v.cam->getPosition();
-			pos.y = -pos.y;
+				// mirror position
+				glm::vec3 pos = v.cam->getPosition();
+				pos.y = -pos.y;
 
-			// mirror forward direction
-			glm::vec3 fwd = v.cam->getForward();
-			fwd.y = -fwd.y;
+				// mirror forward direction
+				glm::vec3 fwd = v.cam->getForward();
+				fwd.y = -fwd.y;
 
-			// reconstruct correct target
-			glm::vec3 target = pos + fwd;
+				// reconstruct correct target
+				glm::vec3 target = pos + fwd;
 
-			// rebuild camera
-			reflectionCam.setPosition(pos);
-			reflectionCam.lookAt(target);
+				// rebuild camera
+				reflectionCam.setPosition(pos);
+				reflectionCam.lookAt(target);
 
-			// Update the reflection camera's view-projection matrix for use in shaders
-			reflectionVP = reflectionCam.getViewProjection();
+				// Update the reflection camera's view-projection matrix for use in shaders
+				reflectionVP = reflectionCam.getViewProjection();
 
-			// Render meshes from under-floor point of view
-			glEnable(GL_CLIP_DISTANCE0);
+				// Render meshes from under-floor point of view
+				glEnable(GL_CLIP_DISTANCE0);
 
-			owner.MeshRender(&reflectionCam, true); // Render with clipping plane enabled for reflection
+				owner.MeshRender(&reflectionCam, true); // Render with clipping plane enabled for reflection
 
-			glDisable(GL_CLIP_DISTANCE0);
+				glDisable(GL_CLIP_DISTANCE0);
 
-			// Mipmap reflection data for crisp mip texturing transitions
-			glBindTexture(GL_TEXTURE_2D, reflectionTex);
-			glGenerateMipmap(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			// ==========================================================
+				// Mipmap reflection data for crisp mip texturing transitions
+				glBindTexture(GL_TEXTURE_2D, reflectionTex);
+				glGenerateMipmap(GL_TEXTURE_2D);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
 
 			// Return directly back to your standard main render pass
 			v.fb->bind();
@@ -625,7 +628,7 @@ namespace gui {
 			}
 
 			// Skybox (renders before all opaque geometry, doesn't write depth)
-			if (owner.skyboxEnabled) {
+			if (owner.isSkyboxEnabled()) {
 				glDepthMask(GL_FALSE);
 				glDepthFunc(GL_LEQUAL);
 				owner.SkyboxRender(v.cam.get());
@@ -640,8 +643,8 @@ namespace gui {
 			LOG_INFO_ONCE("FB MSAA state: GL_SAMPLE_BUFFERS=%d GL_SAMPLES=%d", sampleBuffers, samples);
 
 			owner.MeshRender(v.cam.get());
-			owner.CheckedFloorRender(v.cam.get(), v.w);
-			//if (owner._settingsCurrent.grid) { owner.WorldGridRender(v.cam.get(), v.w); }
+			if (owner.isGridEnabled()) { owner.WorldGridRender(v.cam.get(), v.w); }
+			if (owner.isFloorEnabled()) { owner.CheckedFloorRender(v.cam.get(), v.w); }
 
 			v.fb->unbind();
 

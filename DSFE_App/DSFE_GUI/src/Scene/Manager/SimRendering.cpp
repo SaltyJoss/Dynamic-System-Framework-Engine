@@ -488,5 +488,17 @@ namespace gui {
 		D_INFO_ONCE("All shaders reloaded from disk.");
 	}
 
+	bool SimManager::isGridEnabled() const { return _settingsCurrent.grid; }
+    void SimManager::enableGrid(bool enabled) { _settingsCurrent.grid = enabled; }
+
+    bool SimManager::isFloorEnabled() const { return _settingsCurrent.floor; }
+    void SimManager::enableFloor(bool enabled) { _settingsCurrent.floor = enabled; }
+
+    bool SimManager::isSkyboxEnabled() const { return _settingsCurrent.skybox; }
+    void SimManager::enableSkybox(bool enabled) { _settingsCurrent.skybox = enabled; }
+
+    bool SimManager::isOrientastorEnabled() const { return _settingsCurrent.axisOrientator; }
+    void SimManager::enableOrientator(bool enabled) { _settingsCurrent.axisOrientator = enabled; }
+
 	void SimManager::setLightColour(const glm::vec3& colour) { _impl->_light->_colour = colour; }
 }

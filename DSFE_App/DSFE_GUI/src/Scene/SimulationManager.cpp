@@ -93,6 +93,10 @@ namespace gui {
 		else { bestPreset = render::ResolutionPreset::R_720p; }
 
 		auto s = render::MakeSettings(bestPreset, render::QualityPreset::Medium);
+		s.grid = false;
+		s.floor = false;
+		s.skybox = true;
+		s.axisOrientator = true;
 		applyRenderProfile(s, bestPreset);
 	}
 

@@ -130,7 +130,7 @@ namespace window {
 				if (path.isEmpty()) { return; }
 				// Covert path name to just the file name without extension or path
 				std::string bodyName = QFileInfo(path).baseName().toStdString();
-				_sim->simCore()->loadSingleBody(bodyName);
+				//_sim->simCore()->loadSingleBody(bodyName);
 				_sim->loadMesh(path.toStdString());
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
@@ -145,15 +145,12 @@ namespace window {
 		{
 			auto* graphicsMenu = viewMenu->addMenu("Graphics Options");
 			buildGraphicsMenu(graphicsMenu);
+			auto* sceneMenu = viewMenu->addMenu("SceneOptions");
+			buildSceneMenu(sceneMenu);
+			viewMenu->addSeparator();
 			auto* resetCameraAction = viewMenu->addAction("Reset Camera");
 			connect(resetCameraAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: View -> Reset Camera");
-			});
-			auto* toggleGridAction = viewMenu->addAction("Toggle Grid");
-			toggleGridAction->setCheckable(true);
-			toggleGridAction->setChecked(true);
-			connect(toggleGridAction, &QAction::toggled, this, [](bool checked) {
-				LOG_INFO("Menu toggled: View -> Toggle Grid -> %s", checked ? "On" : "Off");
 			});
 		}
 		// Tools menu
@@ -311,6 +308,40 @@ namespace window {
 		connect(reloadShadersAction, &QAction::triggered, this, [this]() {
 			LOG_INFO("Menu clicked: Reload Shaders");
 			_sim->reloadAllShaders();
+		});
+	}
+
+	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
+		auto* toggleGridAction = sceneMenu->addAction("Toggle Grid");
+		toggleGridAction->setCheckable(true);
+		toggleGridAction->setChecked(_sim->isGridEnabled());
+		connect(toggleGridAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Grid -> %s", checked ? "On" : "Off");
+			_sim->enableGrid(checked);
+		});
+
+		auto* toggleFloorAction = sceneMenu->addAction("Toggle Floor");
+		toggleFloorAction->setCheckable(true);
+		toggleFloorAction->setChecked(_sim->isFloorEnabled());
+		connect(toggleFloorAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Floor -> %s", checked ? "On" : "Off");
+			_sim->enableFloor(checked);
+		});
+
+		auto* toggleSkyboxAction = sceneMenu->addAction("Toggle Skybox");
+		toggleSkyboxAction->setCheckable(true);
+		toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
+		connect(toggleSkyboxAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Skybox -> %s", checked ? "On" : "Off");
+			_sim->enableSkybox(checked);
+		});
+
+		auto* toggleOrientatorAction = sceneMenu->addAction("Toggle Orientator");
+		toggleOrientatorAction->setCheckable(true);
+		toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
+		connect(toggleOrientatorAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Orientator -> %s", checked ? "On" : "Off");
+			_sim->enableOrientator(checked);
 		});
 	}
 
