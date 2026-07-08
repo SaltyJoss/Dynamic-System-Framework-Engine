@@ -488,7 +488,7 @@ namespace gui {
 			glGenTextures(1, &reflectionTex);
 			glBindTexture(GL_TEXTURE_2D, reflectionTex);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr); // RGBA16F for high dynamic range for reflections
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -554,48 +554,50 @@ namespace gui {
 				v.cam->setAspect((float)displayW / (float)displayH);
 			}
 
-			if (owner.isFloorEnabled()) {
-				// Render reflection pass to isolated FBO
-				// This is done before the main scene render to avoid depth conflicts and ensure proper reflection rendering
-				AllocateReflectionBuffer(v.w, v.h);
-				glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
-				glViewport(0, 0, v.w, v.h);
+			// Render reflection pass to isolated FBO
+			// This is done before the main scene render to avoid depth conflicts and ensure proper reflection rendering
+			AllocateReflectionBuffer(v.w, v.h);
+			glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+
+			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
+
+			glViewport(0, 0, v.w, v.h);
 				
-				glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				scene::Camera reflectionCam = *v.cam;
+			scene::Camera reflectionCam = *v.cam;
 
-				// mirror position
-				glm::vec3 pos = v.cam->getPosition();
-				pos.y = -pos.y;
+			// mirror position
+			glm::vec3 pos = v.cam->getPosition();
+			pos.y = -pos.y;
 
-				// mirror forward direction
-				glm::vec3 fwd = v.cam->getForward();
-				fwd.y = -fwd.y;
+			// mirror forward direction
+			glm::vec3 fwd = v.cam->getForward();
+			fwd.y = -fwd.y;
 
-				// reconstruct correct target
-				glm::vec3 target = pos + fwd;
+			// reconstruct correct target
+			glm::vec3 target = pos + fwd;
 
-				// rebuild camera
-				reflectionCam.setPosition(pos);
-				reflectionCam.lookAt(target);
+			// rebuild camera
+			reflectionCam.setPosition(pos);
+			reflectionCam.lookAt(target);
 
-				// Update the reflection camera's view-projection matrix for use in shaders
-				reflectionVP = reflectionCam.getViewProjection();
+			// Update the reflection camera's view-projection matrix for use in shaders
+			reflectionVP = reflectionCam.getViewProjection();
 
-				// Render meshes from under-floor point of view
-				glEnable(GL_CLIP_DISTANCE0);
+			// Render meshes from under-floor point of view
+			glEnable(GL_CLIP_DISTANCE0);
 
-				owner.MeshRender(&reflectionCam, true); // Render with clipping plane enabled for reflection
+			owner.MeshRender(&reflectionCam, true); // Render with clipping plane enabled for reflection
 
-				glDisable(GL_CLIP_DISTANCE0);
+			glDisable(GL_CLIP_DISTANCE0);
 
-				// Mipmap reflection data for crisp mip texturing transitions
-				glBindTexture(GL_TEXTURE_2D, reflectionTex);
-				glGenerateMipmap(GL_TEXTURE_2D);
-				glBindTexture(GL_TEXTURE_2D, 0);
-			}
+			// Mipmap reflection data for crisp mip texturing transitions
+			glBindTexture(GL_TEXTURE_2D, reflectionTex);
+			glGenerateMipmap(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, 0);
 
 			// Return directly back to your standard main render pass
 			v.fb->bind();
@@ -655,9 +657,6 @@ namespace gui {
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, 0);
-
-			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
 
 			// Post-Processing
 			v.post->bind();
