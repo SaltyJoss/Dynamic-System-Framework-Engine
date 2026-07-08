@@ -7,6 +7,16 @@ uniform samplerCube equirectMap;
 
 const float PI = 3.14159265359;
 
+float RadicalInverse_VdC(uint bits)
+{
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
 void main()
 {
 	vec3 N = normalize(WorldDir);
@@ -16,19 +26,17 @@ void main()
 	vec3 tangent = normalize(cross(up, N));
 	vec3 bitangent = cross(N, tangent);
 
-	const uint SAMPLE_COUNT = 1024;
+	const uint SAMPLE_COUNT = 2048u;
 	vec3 irradiance = vec3(0.0);
 
 	for (uint i = 0u; i < SAMPLE_COUNT; ++i)
 	{
 		float Xi1 = float(i) / float(SAMPLE_COUNT);
-		float Xi2 = fract(sin(float(i) * 12.9898) * 43758.5453);
-
-		vec2 Xi = vec2(Xi1, Xi2);
+		vec2 Xi = vec2(Xi1, RadicalInverse_VdC(i));
 
 		// Spherical coords on hemisphere
 		float phi = 2.0 * PI * Xi.x;
-		float cosTheta = sqrt(1.0 - Xi.y);
+		float cosTheta = sqrt(Xi.y);
 		float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
 		// Sample in tangent space
@@ -38,7 +46,7 @@ void main()
 			cosTheta
 		);
 
-		// Rotate H to world space
+		// transform to world space
 		vec3 L = normalize(tangent * H.x + bitangent * H.y + N * H.z);
 		float NdotL = max(dot(N, L), 0.0);
 
@@ -53,4 +61,3 @@ void main()
 	irradiance = PI * irradiance / float(SAMPLE_COUNT);
 	FragColour = vec4(irradiance, 1.0);
 }
-

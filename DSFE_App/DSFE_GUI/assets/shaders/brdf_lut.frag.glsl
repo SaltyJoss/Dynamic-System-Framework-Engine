@@ -59,11 +59,27 @@ void main() {
 		float VdotH = max(dot(V, H), 0.0);
 		if (NdotL > 0.0)
 		{
-			float G = (2.0 * NdotH * NdotV) / VdotH;
-			float G2 = (G * VdotH) / (NdotH * NdotV);
 			float Fc = pow(1.0 - VdotH, 5.0);
-			A += (1.0 - Fc) * G2;
-			B += Fc * G2;
+
+			// GGX Smith visibility (minimal but correct form)
+			float alpha = roughness * roughness;
+			float k = (alpha * alpha) * 0.5;
+
+			float G1V = NdotV / (NdotV * (1.0 - k) + k);
+			float G1L = NdotL / (NdotL * (1.0 - k) + k);
+
+			float Vis = G1V * G1L;
+
+			// IMPORTANT: no extra BRDF re-weighting
+			A += (1.0 - Fc) * Vis;
+			B += Fc * Vis;
+
+			// OLD LOGIC:
+			// float G = (2.0 * NdotH * NdotV) / VdotH;
+			// float G2 = (G * VdotH) / (NdotH * NdotV);
+			// float Fc = pow(1.0 - VdotH, 5.0);
+			//A += (1.0 - Fc) * G2;
+			//B += Fc * G2;
 		}
 	}
 
