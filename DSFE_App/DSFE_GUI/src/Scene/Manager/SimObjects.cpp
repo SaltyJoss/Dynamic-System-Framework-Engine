@@ -22,6 +22,8 @@ namespace gui {
 			return;
 		}
 
+		scene::Object* lastCreated = nullptr;
+
 		LOG_INFO("4. Creating Objects for each submesh from %s", filepath.c_str());
 		// For now: spawn one Object per submesh
 		for (auto& m : meshes) {
@@ -40,12 +42,16 @@ namespace gui {
 			obj->state.forces = Vec3::Zero();
 			obj->state.torques = Vec3::Zero();
 
-			_impl->_selectedObject = obj.get();
+			lastCreated = obj.get();
 			_impl->_objects.push_back(std::move(obj));
 		}
-
+		
 		LOG_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
 		D_INFO("Loaded %zu submeshes from %s", meshes.size(), filepath.c_str());
+
+		if (!lastCreated) { return; }
+
+		_impl->_selectedObject = lastCreated;
 	}
 
 	// Returns the loaded objects so they can be used as targets for robot joints in the same frame (e.g. end-effector)
