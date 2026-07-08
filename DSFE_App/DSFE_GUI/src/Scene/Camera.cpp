@@ -28,7 +28,6 @@ namespace scene {
 			case static_cast<int>(gui::eKeyCode::Space):	moveUp(velocity);		break;
 			case static_cast<int>(gui::eKeyCode::LShift):	moveDown(velocity);		break;
 		}
-
 		updateViewMatrix();
 	}
 
