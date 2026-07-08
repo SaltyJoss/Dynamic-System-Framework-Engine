@@ -274,14 +274,26 @@ namespace gui {
 	void gui::SimManager::handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No keyboard movement in quad view
 
+		bool ctrl_pressed = pressedKeys.find(eKeyCode::RCtrl) != pressedKeys.end() || pressedKeys.find(eKeyCode::LCtrl) != pressedKeys.end();
+
 		float kspd = 0.2f * dt; // base speed m/s
 
-		if (pressedKeys.find(eKeyCode::W) != pressedKeys.end()) { processMovementKey((int)eKeyCode::W, kspd); }
-		if (pressedKeys.find(eKeyCode::A) != pressedKeys.end()) { processMovementKey((int)eKeyCode::A, kspd); }
-		if (pressedKeys.find(eKeyCode::S) != pressedKeys.end()) { processMovementKey((int)eKeyCode::S, kspd); }
-		if (pressedKeys.find(eKeyCode::D) != pressedKeys.end()) { processMovementKey((int)eKeyCode::D, kspd); }
-		if (pressedKeys.find(eKeyCode::Space) != pressedKeys.end()) { processMovementKey((int)eKeyCode::Space, kspd); }
-		if (pressedKeys.find(eKeyCode::LShift) != pressedKeys.end()) { processMovementKey((int)eKeyCode::LShift, kspd); }
+		if (ctrl_pressed) {
+			if (pressedKeys.find(eKeyCode::D) != pressedKeys.end()) {
+				LOG_INFO("Delete key pressed, removing selected object");
+				if (!_impl->_selectedObject) { return; }
+				removeObject(_impl->_selectedObject);
+				_impl->_selectedObject = nullptr;
+			}
+		}
+		else {
+			if (pressedKeys.find(eKeyCode::W) != pressedKeys.end()) { processMovementKey((int)eKeyCode::W, kspd); }
+			if (pressedKeys.find(eKeyCode::A) != pressedKeys.end()) { processMovementKey((int)eKeyCode::A, kspd); }
+			if (pressedKeys.find(eKeyCode::S) != pressedKeys.end()) { processMovementKey((int)eKeyCode::S, kspd); }
+			if (pressedKeys.find(eKeyCode::D) != pressedKeys.end()) { processMovementKey((int)eKeyCode::D, kspd); }
+			if (pressedKeys.find(eKeyCode::Space) != pressedKeys.end()) { processMovementKey((int)eKeyCode::Space, kspd); }
+			if (pressedKeys.find(eKeyCode::LShift) != pressedKeys.end()) { processMovementKey((int)eKeyCode::LShift, kspd); }
+		}
 	}
 
 // Handle mouse look (camera rotation) based on mouse movement. **OLD LOGIC FOR IMGUI AND GLFW**
