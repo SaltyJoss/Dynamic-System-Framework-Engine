@@ -33,6 +33,7 @@ class QCheckBox;
 class QComboBox;
 class QGroupBox;
 class QLabel;
+class QPushButton;
 class QSlider;
 
 namespace widgets {
@@ -87,6 +88,7 @@ namespace widgets {
 
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
+		void buildObjectsList();
 
 		void jointInfoPanel();
 		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
@@ -105,8 +107,11 @@ namespace widgets {
 		QGroupBox* _simPropertiesGroup = nullptr;
 		QCheckBox* _useAutoDiffCheck = nullptr;
 		QComboBox* _integratorCombo = nullptr;
+		QComboBox* _objectsList = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
+		QLabel* _currentObjectLabel = nullptr;
 		QLabel* _simTimeLabel = nullptr;
+		QPushButton* _removeObjectButton = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
 		FractionSelectorWidget* _telemetryDtSelector = nullptr;
 
@@ -172,6 +177,8 @@ namespace widgets {
 		float linkLength = 1.0f;
 		float damping = 0.1f;
 		float position = 0.0f;
+
+		scene::Object* _selectedObject = nullptr;
 
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
