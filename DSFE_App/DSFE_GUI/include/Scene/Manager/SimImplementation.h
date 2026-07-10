@@ -615,9 +615,6 @@ namespace gui {
 			// Return directly back to your standard main render pass
 			v.fb->bind();
 			glViewport(0, 0, v.w, v.h);
-
-			v.fb->bind();
-			glViewport(0, 0, v.w, v.h);
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
