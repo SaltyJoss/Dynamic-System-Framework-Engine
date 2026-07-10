@@ -487,7 +487,12 @@ namespace gui {
 			// Generate surface texture for color attachment
 			glGenTextures(1, &reflectionTex);
 			glBindTexture(GL_TEXTURE_2D, reflectionTex);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr); // RGBA16F for high dynamic range for reflections
+
+			// Calculate the number of mipmap levels based on the maximum dimension of the texture
+			const GLint mip_levels = 1 + (GLint)std::floor(std::log2(std::max(w, h)));
+
+			// Allocate immutable storage for the texture with the calculated number of mipmap levels
+			glTexStorage2D(GL_TEXTURE_2D, mip_levels, GL_RGBA16F, w, h);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -501,6 +506,12 @@ namespace gui {
 			glBindRenderbuffer(GL_RENDERBUFFER, reflectionDepthRBO);
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, reflectionDepthRBO);
+
+			// Check FBO completeness, log error if incomplete (Mainly for mesa drivers on Linux)
+			GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers(1, draw_buffers);
+			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
@@ -559,6 +570,10 @@ namespace gui {
 				// This is done before the main scene render to avoid depth conflicts and ensure proper reflection rendering
 				AllocateReflectionBuffer(v.w, v.h);
 				glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+
+				GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+				if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
+
 				glViewport(0, 0, v.w, v.h);
 				
 				glClearColor(owner._backgroundColour.r, owner._backgroundColour.g, owner._backgroundColour.b, owner._backgroundAlpha);
@@ -655,9 +670,6 @@ namespace gui {
 			glBindTexture(GL_TEXTURE_2D, v.fb->getTexture());
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, 0);
-
-			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			if (status != GL_FRAMEBUFFER_COMPLETE) { LOG_ERROR("Reflection FBO incomplete: 0x%X", status); }
 
 			// Post-Processing
 			v.post->bind();
