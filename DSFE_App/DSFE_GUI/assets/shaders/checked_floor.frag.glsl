@@ -122,20 +122,20 @@ void main() {
     vec3 staticEnvColour = textureLod(prefilterMap, R, roughness * 4.0).rgb;
 
     vec4 reflectionPos = gReflectionVP * vec4(WorldPos, 1.0);
-    vec2 reflectionUV = reflectionPos.xy / reflectionPos.w;
-    reflectionUV = reflectionUV * 0.5 + 0.5;
+    vec3 dynamicMeshColour = staticEnvColour;
 
-    vec3 dynamicMeshColour;
-    if (reflectionPos.w <= 0.0) {
-        dynamicMeshColour = staticEnvColour;
+    // Prevention of division prior to validation of w
+    if (reflectionPos.w > 0.0001) {
+        vec2 reflectionUV = reflectionPos.xy / reflectionPos.w;
+        reflectionUV = reflectionUV * 0.5 + 0.5;
+
+        if (reflectionUV.x >= 0.0 && reflectionUV.x <= 1.0 && 
+            reflectionUV.y >= 0.0 && reflectionUV.y <= 1.0) {
+                dynamicMeshColour = texture(planarReflectionMap, reflectionUV).rgb;
+            }
     }
-    else if (reflectionUV.x < 0.0 || reflectionUV.x > 1.0 || reflectionUV.y < 0.0 || reflectionUV.y > 1.0) {
-        dynamicMeshColour = staticEnvColour;
-    }
-    else {
-        dynamicMeshColour = texture(planarReflectionMap, reflectionUV).rgb;
-    }
-    vec3 reflectionColour = staticEnvColour + dynamicMeshColour * 0.75;
+
+    vec3 reflectionColour = mix(staticEnvColour, dynamicMeshColour, 0.75);
     reflectionColour = min(reflectionColour, vec3(1.0));
 
     vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;

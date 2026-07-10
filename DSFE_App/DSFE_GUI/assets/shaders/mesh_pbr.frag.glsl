@@ -94,8 +94,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 
 // Fresnel with roughness for IBL (reduces overly strong reflections at grazing angles)
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) *
-        pow(max(1.0 - cosTheta, 0.0), 5.0);
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
 
 // ------------------------------------------------------------
@@ -141,10 +140,10 @@ float shadowSingleCascade(int cascadeIndex, vec3 worldPos, vec3 N, vec3 L, float
 float computeShadowCSM(vec3 worldPos, vec3 N, vec3 L) {
     float d = length(worldPos - camPos);
 
-    // normalize distance into [0..1] over the whole shadow range
+    // normalise distance into [0..1] over the whole shadow range
     float dist01 = clamp(d / max(cascadeSplits[1], 0.0001), 0.0, 1.0);
 
-    if (d > cascadeSplits[1]) return 0.0;
+    if (d > cascadeSplits[1]) { return 0.0; }
 
     // Blend region around split 0
     float blendWidth = max(1.0, 0.15 * cascadeSplits[0]);
@@ -209,19 +208,17 @@ void main() {
     float wrap = 0.2;
     float NdotL_wrap = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
 
-    float NdotV = max(dot(N, V), 0.0);
-
-    if (NdotV <= 0.0) {
-        FragColour = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-    }
+    float NdotV = max(dot(N, V), 0.001);
 
     vec3 baseColour = albedo;
 
     // Base reflectance -> dielectrics ~0.04, metals use albedo
     vec3 F0 = mix(vec3(0.04), baseColour, metallic);
 
-    vec3 H = normalize(V + L);
+    vec3 H = V + L;
+    float H_len = length(H);
+    if (H_len > 1e-6) { H /= H_len; }
+    else { H = N; }
 
     float NDF = DistributionGGX(N, H, roughness);
     float G   = GeometrySmith(N, V, L, roughness);
