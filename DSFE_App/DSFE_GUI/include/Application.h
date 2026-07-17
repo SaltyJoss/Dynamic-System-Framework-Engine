@@ -11,7 +11,7 @@
 // forward declarations
 //namespace window { class GLWindow; }
 class QApplication;
-namespace gui { class SimManager; }
+namespace gui { class SimulationManager; }
 namespace window { class DSFE_MainWindow; }
 
 class DSFE_GUI_API Application {
@@ -32,6 +32,6 @@ private:
 	std::vector<char*> _qtArgv;
 
 	std::unique_ptr<QApplication> _qtApp;
-	std::unique_ptr<gui::SimManager> _sim;
+	std::unique_ptr<gui::SimulationManager> _sim;
 	std::unique_ptr<window::DSFE_MainWindow> _mainW;
 };

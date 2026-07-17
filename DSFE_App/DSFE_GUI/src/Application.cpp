@@ -2,7 +2,7 @@
 #include "Application.h"
 
 #include "MainWindow/DSFE_MainWindow.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
@@ -26,10 +26,6 @@ Application::Application(const std::string& appName) : _name(appName) {
 	LOG_INFO("Logs path: %s", paths::logs().string().c_str());
 	LOG_INFO("Runs path: %s", paths::runs().string().c_str());
 
-	qputenv("QSG_RHI_BACKEND", "opengl");
-#if defined(Q_OS_WIN)
-	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-#endif
 	QCoreApplication::addLibraryPath("C:/Qt/6.11.1/msvc2022_64/plugins");
 
 	_qtArgStorage.clear();
@@ -39,16 +35,9 @@ Application::Application(const std::string& appName) : _name(appName) {
 	_qtArgv.reserve(_qtArgStorage.size());
 	for (std::string& arg : _qtArgStorage) { _qtArgv.push_back(arg.data()); }
 
-	QSurfaceFormat format;
-	format.setProfile(QSurfaceFormat::CoreProfile);
-	format.setVersion(4, 5);
-	format.setDepthBufferSize(24);
-	format.setStencilBufferSize(8);
-	QSurfaceFormat::setDefaultFormat(format);
-
 	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
 	style::applyTheme(*_qtApp);
-	_sim = std::make_unique<gui::SimManager>();
+	_sim = std::make_unique<gui::SimulationManager>();
 
 	int winW = 1920, winH = 1080;
 	if (QScreen* screen = QGuiApplication::primaryScreen()) {
