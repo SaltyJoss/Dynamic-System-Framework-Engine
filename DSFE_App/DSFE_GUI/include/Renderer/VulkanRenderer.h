@@ -9,6 +9,8 @@
 #include "VulkanContext.h"
 #include "VulkanSwapchain.h"
 
+#include "Platform/Logger.h"
+
 struct VmaAllocation_T;
 typedef struct VmaAllocation_T* VmaAllocation;
 
@@ -45,8 +47,8 @@ namespace renderer {
             VulkanSwapchain* _swapchain = nullptr;
 
             // Frame resources for double/triple buffering
-            uint32_t _width = 1280;
-            uint32_t _height = 720;
+            uint32_t _width = 1920;
+            uint32_t _height = 1080;
             uint64_t _frame_idx = 0; // Current frame index for double/triple buffering
             uint64_t _next_signal_val = MAX_FRAMES_IN_FLIGHT - 1;
 
