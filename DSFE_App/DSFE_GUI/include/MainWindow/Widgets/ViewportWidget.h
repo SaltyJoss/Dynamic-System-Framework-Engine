@@ -7,6 +7,9 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QResizeEvent>
+#include <QShowEvent>
+#include <QPaintEvent>
 
 #include <unordered_set>
 
@@ -32,7 +35,7 @@ namespace widgets {
 
 		void wheelEvent(QWheelEvent* event) override;
 
-		void initialise_renderer()
+		void initialise_renderer();
 
 	private:
 		gui::SimulationManager* _sim = nullptr;
