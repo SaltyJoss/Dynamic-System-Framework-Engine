@@ -43,12 +43,18 @@ namespace widgets {
 
 	void ViewportWidget::showEvent(QShowEvent* event) {
 		QWidget::showEvent(event);
-		if (!_renderer_initialised) { initialise_renderer(); } // Need to add to SimulationManager
+		if (!_renderer_initialised && width() > 1 && height() > 1) {
+			initialise_renderer();
+		}
 	}
 
 	void ViewportWidget::resizeEvent(QResizeEvent* event) {
 		QWidget::resizeEvent(event);
-		if (_sim) { _sim->resizeRenderer(width(), height()); } // Need to add to SimulationManager
+		if (!_renderer_initialised && isVisible() && width() > 1 && height() > 1) {
+			initialise_renderer();
+			return;
+		}
+		if (_sim) { _sim->resizeRenderer(width(), height()); }
 	}
 
 	void ViewportWidget::paintEvent(QPaintEvent* event) {
