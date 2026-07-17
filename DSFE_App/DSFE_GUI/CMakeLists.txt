@@ -59,6 +59,10 @@ find_package(Qt6 REQUIRED COMPONENTS
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
     GLM_ENABLE_EXPERIMENTAL
+    VK_NO_PROTOTYPES
+    $<$<PLATFORM_ID:Windows>:VK_USE_PLATFORM_WIN32_KHR>
+    $<$<PLATFORM_ID:Windows>:NOMINMAX>
+    $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
 )
 
 add_library(stb INTERFACE)
@@ -89,13 +93,20 @@ set(SIMULATION_SRC
 set(WIDGETS_SRC
     src/ui/RenderPreset.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
+    include/MainWindow/Widgets/ViewportWidget.h
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
+    include/MainWindow/Widgets/RobotSelectorWidget.h
     src/MainWindow/Widgets/ControlPanelWidget.cpp
+    include/MainWindow/Widgets/ControlPanelWidget.h
     src/MainWindow/Widgets/DSLEditorWidget.cpp
+    include/MainWindow/Widgets/DSLEditorWidget.h
     src/MainWindow/Widgets/ConsoleOutputWidget.cpp
+    include/MainWindow/Widgets/ConsoleOutputWidget.h
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
     include/MainWindow/Widgets/FractionSelectorWidget.h
     src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
+    include/MainWindow/DSL/DSLSyntaxHighlighter.h
+
 )
 
 set(ROBOT_SRC
@@ -141,13 +152,18 @@ target_sources(DSFE_GUI PRIVATE
     ${QT_RESOURCES}
 )
 
+find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)
+
 target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
+    PRIVATE
+        "${Vulkan_INCLUDE_DIR}/Volk"
 )
-
-find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)
 
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_GUI
@@ -160,7 +176,7 @@ target_link_libraries(DSFE_GUI
         stb
         assimp
         glm::glm
-        Vulkan::Vulkan
+        Vulkan::Headers
         Vulkan::volk
         Vulkan::shaderc_combined
         Qt6::Core
