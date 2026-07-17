@@ -6,6 +6,11 @@
 #include <array>
 #include <shaderc/shaderc.hpp>
 
+#include <QWindow>
+#include <QVulkanInstance>
+
+#include "Platform/Logger.h"
+
 struct VmaAllocator_T;
 typedef struct VmaAllocator_T* VmaAllocator;
 
@@ -24,10 +29,11 @@ namespace renderer {
             VkInstance instance() const { return _instance; }
             VkSurfaceKHR surface() const { return _surface; }
             VkQueue graphics_queue() const { return _gfx_queue; }
+            uint32_t graphics_queue_family() const { return _gfx_queue_fam_idx; }
 
         private:
             bool create_instance();
-            bool create_surface(void* native_handle)
+            bool create_surface(void* native_window);
             VkPhysicalDevice find_physical_device();
             bool find_graphics_queue();
             bool create_device(VkPhysicalDevice p_dev);
