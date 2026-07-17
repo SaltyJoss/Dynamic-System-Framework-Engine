@@ -2,6 +2,8 @@
 
 #include <volk.h>
 
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <array>
 #include <shaderc/shaderc.hpp>
@@ -37,7 +39,8 @@ namespace renderer {
         private:
             // Methods for Vulkan rendering setup
             bool create_shaders();
-            VkShaderModule create_shader_module(const std::string& filename, shaderc_shader_kind kind) const;
+            static std::string load_shader_source(const std::string& filename);
+            VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
             VkPipeline create_graphics_pipeline();
             bool create_sync_resources();
             bool create_command_buffers();
