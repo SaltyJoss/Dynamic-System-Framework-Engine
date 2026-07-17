@@ -12,7 +12,7 @@
 #include <QSplitter>
 
 namespace Workspace {
-	ProjectPage::ProjectPage(gui::SimManager* sim, QWidget* parent) : QWidget(parent) {
+	ProjectPage::ProjectPage(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent) {
 		auto* layout = new QVBoxLayout(this);
 		layout->setContentsMargins(0, 0, 0, 0);
 		auto* rootSplitter = new QSplitter(Qt::Horizontal, this);

@@ -22,7 +22,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* log, QWidget* parent)
+	DSLEditorWidget::DSLEditorWidget(gui::SimulationManager* sim, ConsoleOutputWidget* log, QWidget* parent)
 		: QWidget(parent), _sim(sim), _log(log), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
 	{
 		auto* rootLayout = new QVBoxLayout(this);

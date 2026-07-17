@@ -69,13 +69,13 @@ namespace gui {
 	//				CONSTRUCTOR & DESTRUCTOR
 	// --------------------------------------------------
 
-	SimManager::SimManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
+	SimulationManager::SimulationManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _impl(std::make_unique<Impl>()), _core(CreateSimulationCore_v1(), CoreDeleter()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
 	}
 
 	// Initialises OpenGL resources, including framebuffers, shaders, and IBL. Also picks an internal resolution preset based on the display size to balance quality and performance.
-	void SimManager::initGL() {
+	void SimulationManager::initGL() {
 		if (_glReady) return;
 		_glReady = true;
 
@@ -101,7 +101,7 @@ namespace gui {
 	}
 
 	// Cleans up OpenGL resources
-	SimManager::~SimManager() {
+	SimulationManager::~SimulationManager() {
 		// Clean up OpenGL resources
 		if (_impl) {
 			glDeleteFramebuffers(NUM_CASCADES, _impl->_cascadeFBO);
@@ -121,24 +121,24 @@ namespace gui {
 	// --------------------------------------------------
 	
 	// Add a completed simulation run to the list in a thread-safe manner
-	void SimManager::pushCompletedStudies(std::vector<StudyResult> results) {
+	void SimulationManager::pushCompletedStudies(std::vector<StudyResult> results) {
 		if (!_impl) { return; }
 		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
 		_impl->_completedRuns.insert(_impl->_completedRuns.end(), results.begin(), results.end());
 		_hasCompletedStudy = true;
 	}
 	// Add a completed simulation run to the list in a thread-safe manner
-	void SimManager::pushCompletedStudy(StudyResult result) {
+	void SimulationManager::pushCompletedStudy(StudyResult result) {
 		if (!_impl) { return; }
 		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
 		_impl->_completedRuns.push_back(std::move(result));
 		_hasCompletedStudy = true;
 	}
 
-	bool SimManager::hasCompletedStudy() const { return _hasCompletedStudy; }
+	bool SimulationManager::hasCompletedStudy() const { return _hasCompletedStudy; }
 
 	// Retrieve and clear completed runs in a thread-safe manner
-	std::vector<StudyResult> SimManager::consumeCompletedStudy() {
+	std::vector<StudyResult> SimulationManager::consumeCompletedStudy() {
 		std::vector<StudyResult> copy;
 		if (!_impl) { return copy; }
 		std::lock_guard<std::mutex> lk(_impl->_completedRunsMutex);
@@ -153,7 +153,7 @@ namespace gui {
 	// --------------------------------------------------
 
 	// Method to tick the simulation core, advancing the simulation state by the specified time step. This is typically called once per frame or at a fixed interval.
-	void SimManager::tick(double dt) {
+	void SimulationManager::tick(double dt) {
 		_core->tick(dt);
 		if (hasRobot() && _core->robotPresentationDirty()) {
 			auto& rs = _core->robotSystem();
@@ -164,7 +164,7 @@ namespace gui {
 	}
 
 	// Method to render the active viewport, applying post-processing and presenting the final image to the screen. This method handles completed studies, updates robot transforms, and manages OpenGL state for rendering.
-	void SimManager::renderViewport(int w, int h) {
+	void SimulationManager::renderViewport(int w, int h) {
 		if (!_glReady || !_impl) { return; }
 		if (w <= 0 || h <= 0) { return; }
 		if (hasCompletedStudy()) {
@@ -195,7 +195,7 @@ namespace gui {
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void SimManager::syncRobotToScene() {
+	void SimulationManager::syncRobotToScene() {
 		if (!hasRobot()) { return; }
 		auto& rs = _core->robotSystem();
 		const auto& model = rs.model();
@@ -219,7 +219,7 @@ namespace gui {
 		}
 	}
 
-	void SimManager::syncBodyToScene() {
+	void SimulationManager::syncBodyToScene() {
 		if (!hasBody()) { return; }
 		auto& sys = _core->singleBodySystem();
 		const auto& body = sys.body();
@@ -238,7 +238,7 @@ namespace gui {
 		}
 	}
 
-	void SimManager::resize(int32_t width, int32_t height) {
+	void SimulationManager::resize(int32_t width, int32_t height) {
 		if (width <= 0 || height <= 0) return;
 		_internalSize = { (float)width, (float)height };
 		// Force per-view reallocation next frame
@@ -248,7 +248,7 @@ namespace gui {
 		}
 	}
 
-	void SimManager::setDisplaySize(int w, int h) {
+	void SimulationManager::setDisplaySize(int w, int h) {
 		if (w <= 0.0f || h <= 0.0f) return;
 		_displaySize = { w, h };
 		for (auto& v : _impl->_views) {
@@ -256,7 +256,7 @@ namespace gui {
 		}
 	}
 
-	void SimManager::setContentHooks(std::function<void()> make, std::function<void()> done) {
+	void SimulationManager::setContentHooks(std::function<void()> make, std::function<void()> done) {
 		_makeCurrentHook = std::move(make);
 		_doneCurrentHook = std::move(done);
 	}
@@ -264,14 +264,14 @@ namespace gui {
 	// --------------------------------------------------
 	//					INPUT HANDLING
 	// --------------------------------------------------
-	void gui::SimManager::processMovementKey(int key, float delta) {
+	void gui::SimulationManager::processMovementKey(int key, float delta) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; }// No keyboard movement in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (ctrlMode == ControlMode::Camera) { cam->processKeyboard(key, delta); }
 		else if (ctrlMode == ControlMode::Object && _impl->_mesh) { /*idea is to add multiple angles to switch between!*/ }
 	}
 
-	void gui::SimManager::handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt) {
+	void gui::SimulationManager::handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No keyboard movement in quad view
 
 		bool ctrl_pressed = pressedKeys.find(eKeyCode::RCtrl) != pressedKeys.end() || pressedKeys.find(eKeyCode::LCtrl) != pressedKeys.end();
@@ -297,7 +297,7 @@ namespace gui {
 	}
 
 // Handle mouse look (camera rotation) based on mouse movement. **OLD LOGIC FOR IMGUI AND GLFW**
-	void gui::SimManager::handleMouseLook(double xpos, double ypos, bool mouseCaptured) {
+	void gui::SimulationManager::handleMouseLook(double xpos, double ypos, bool mouseCaptured) {
 		if (_impl->viewMode == Impl::ViewMode::Quad) { return; } // No mouse look in quad view
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		if (!mouseCaptured) {
@@ -318,7 +318,7 @@ namespace gui {
 		if (ctrlMode == ControlMode::Camera) { cam->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset)); }
 		else if (ctrlMode == ControlMode::Object && _impl->_selectedObject) { return; /*_impl->_selectedObject->onMouseMove(xpos, ypos, scene::eInputButton::Right);*/ }
 	}
-	void SimManager::onMouseWheel(double delta) {
+	void SimulationManager::onMouseWheel(double delta) {
 		scene::Camera* cam = _impl->_views[static_cast<size_t>(_impl->activeView)].cam.get();
 		auto* obj = _impl->_selectedObject;
 		if (!_isHovered) return;
@@ -332,5 +332,5 @@ namespace gui {
 		}
 	}
 
-	void gui::SimManager::resetMouseDelta() { _firstMouse = true; }
+	void gui::SimulationManager::resetMouseDelta() { _firstMouse = true; }
 }

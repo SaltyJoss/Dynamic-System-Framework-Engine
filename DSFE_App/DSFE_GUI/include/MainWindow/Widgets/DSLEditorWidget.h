@@ -19,7 +19,7 @@ class QPushButton;
 class QTabWidget;
 class QTimer;
 
-namespace gui { class SimManager; }
+namespace gui { class SimulationManager; }
 namespace interpreter {
 	class Parser;
 	class IStoredProgram;
@@ -38,7 +38,7 @@ namespace widgets {
 
 	class DSLEditorWidget : public QWidget {
 	public:
-		explicit DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* _log, QWidget* parent = nullptr);
+		explicit DSLEditorWidget(gui::SimulationManager* sim, ConsoleOutputWidget* _log, QWidget* parent = nullptr);
 
 		bool loadScript(const QString& fileName);
 		bool saveScript(const QString& fileName);
@@ -48,7 +48,7 @@ namespace widgets {
 		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
 		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
 
-		gui::SimManager* _sim = nullptr;
+		gui::SimulationManager* _sim = nullptr;
 		interpreter::Parser* _parser = nullptr;
 		interpreter::IStoredProgram* _program = nullptr;
 		interpreter::RunWrapper* _wrapper = nullptr;

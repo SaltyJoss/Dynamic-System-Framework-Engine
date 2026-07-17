@@ -18,7 +18,7 @@
 #include "Platform/Paths.h"
 
 namespace window {
-	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent)
+	DSFE_MainWindow::DSFE_MainWindow(gui::SimulationManager* sim, QWidget* parent)
 		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
 	{
 		setWindowTitle("DSFE");
@@ -288,17 +288,17 @@ namespace window {
 		pbrShaderAction->setChecked(true);
 		// BASIC
 		connect(basicShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Basic;
+			_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Basic;
 			LOG_INFO("Shader Mode -> Basic");
 		});
 		// LIT
 		connect(litShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Lit;
+			_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Lit;
 			LOG_INFO("Shader Mode -> Lit");
 		});
 		// PBR
 		connect(pbrShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::PBR;
+			_sim->currentShaderMode = gui::SimulationManager::ShaderMode::PBR;
 			LOG_INFO("Shader Mode -> PBR");
 		});
 

@@ -26,7 +26,7 @@ namespace render {
 
 namespace robots { class RobotSystem; }
 namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
-namespace gui { class SimManager; }
+namespace gui { class SimulationManager; }
 
 class QVBoxLayout;
 class QCheckBox;
@@ -41,7 +41,7 @@ namespace widgets {
 
 	class ControlPanelWidget : public QWidget {
 	public:
-		explicit ControlPanelWidget(gui::SimManager* sim, QWidget* parent = nullptr);
+		explicit ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent = nullptr);
 	private:
 		struct IntegratorEntry {
 			integration::eIntegrationMethod method;
@@ -101,7 +101,7 @@ namespace widgets {
 
 		void updateSimClock();
 
-		gui::SimManager* _sim = nullptr;
+		gui::SimulationManager* _sim = nullptr;
 
 		QVBoxLayout* _contentLayout = nullptr;
 		QGroupBox* _simPropertiesGroup = nullptr;

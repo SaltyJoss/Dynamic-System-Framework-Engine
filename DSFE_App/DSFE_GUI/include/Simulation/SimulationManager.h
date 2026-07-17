@@ -69,12 +69,12 @@ namespace gui {
         }
     };
 
-	// SimManager Class (Plan on renaming later)
-    class SimManager {
+	// SimulationManager Class (Plan on renaming later)
+    class SimulationManager {
     public:
 		// Constructor & Destructor
-        SimManager();
-        ~SimManager();
+        SimulationManager();
+        ~SimulationManager();
 
 		// OpenGL Initialisation
         void initGL();

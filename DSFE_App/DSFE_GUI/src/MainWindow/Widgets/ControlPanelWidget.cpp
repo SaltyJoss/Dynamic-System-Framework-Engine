@@ -30,7 +30,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	ControlPanelWidget::ControlPanelWidget(gui::SimManager* sim, QWidget* parent)
+	ControlPanelWidget::ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent)
 		: QWidget(parent), _sim(sim)
 	{
 		auto* rootLayout = new QVBoxLayout(this);

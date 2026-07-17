@@ -9,7 +9,7 @@
 #include <QLabel>
 
 namespace widgets {
-	RobotSelectorWidget::RobotSelectorWidget(gui::SimManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
+	RobotSelectorWidget::RobotSelectorWidget(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
 		setWindowTitle("Choose Robotic Arm");
 		setMinimumWidth(300);
 		auto* layout = new QVBoxLayout(this);
