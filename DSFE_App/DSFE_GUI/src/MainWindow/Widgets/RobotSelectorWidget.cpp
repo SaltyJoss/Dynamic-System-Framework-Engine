@@ -1,6 +1,6 @@
 // DSFE_GUI RobotSelectorWidget.cpp
 #include "Widgets/RobotSelectorWidget.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 
 #include "Platform/SystemMap.h"
 

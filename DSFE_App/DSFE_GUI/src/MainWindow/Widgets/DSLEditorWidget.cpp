@@ -10,7 +10,7 @@
 #include <QFile>
 #include <QTimer>
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Platform/Paths.h"
 
 #include "Numerics/IntegrationMethods.h"

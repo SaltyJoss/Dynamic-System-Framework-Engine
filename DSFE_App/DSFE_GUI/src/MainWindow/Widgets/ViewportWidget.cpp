@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPointer>
+#include <QPaintEngine>
 
 #include <QThread>
 #include "Platform/KeyCode.h"
@@ -16,6 +17,9 @@
 namespace widgets {
 	ViewportWidget::ViewportWidget(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
 		setAttribute(Qt::WA_NativeWindow);
+		setAttribute(Qt::WA_PaintOnScreen);      // Qt won't touch the pixels
+		setAttribute(Qt::WA_NoSystemBackground);
+		setAttribute(Qt::WA_OpaquePaintEvent);
 
 		setFocusPolicy(Qt::StrongFocus);
 		setMouseTracking(true);
@@ -48,7 +52,6 @@ namespace widgets {
 	}
 
 	void ViewportWidget::paintEvent(QPaintEvent* event) {
-		QWidget::paintEvent(event);
 		if (_sim) { _sim->renderViewport(width(), height()); } // Need to add to SimulationManager
 	}
 
@@ -62,8 +65,8 @@ namespace widgets {
 			case Qt::Key_Control: _pressedKeys.insert(gui::eKeyCode::Ctrl); break;
 			case Qt::Key_Shift: _pressedKeys.insert(gui::eKeyCode::LShift); break;
 			case Qt::Key_Escape:
-				_mouseCaptured = !_mouseCaptured;
-				if (_mouseCaptured) {
+				_mouse_captured = !_mouse_captured;
+				if (_mouse_captured) {
 					setFocus();
 					setCursor(Qt::BlankCursor);
 					_screenCenter = mapToGlobal(rect().center());
@@ -96,7 +99,7 @@ namespace widgets {
 
 	void ViewportWidget::mousePressEvent(QMouseEvent* event) {
 		if (event->button() == Qt::RightButton) {
-			_mouseCaptured = true;
+			_mouse_captured = true;
 			setFocus();
 			setCursor(Qt::BlankCursor);
 			QCursor::setPos(mapToGlobal(rect().center()));
@@ -107,14 +110,14 @@ namespace widgets {
 
 	void ViewportWidget::mouseReleaseEvent(QMouseEvent* event) {
 		if (event->button() == Qt::RightButton) {
-			_mouseCaptured = false;
+			_mouse_captured = false;
 			releaseMouse();
 			unsetCursor();
 		}
 	}
 
 	void ViewportWidget::mouseMoveEvent(QMouseEvent* event) {
-		if (!_sim || !_mouseCaptured) { return; }
+		if (!_sim || !_mouse_captured) { return; }
 		QPoint current = QCursor::pos();
 		QPoint delta = current - _screenCenter;
 		_sim->handleMouseLook(delta.x(), -delta.y(), true);

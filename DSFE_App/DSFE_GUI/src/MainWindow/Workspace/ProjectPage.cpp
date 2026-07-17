@@ -1,6 +1,6 @@
 // DSFE_GUI ProjectPage.cpp
 #include "Workspace/ProjectPage.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 
 #include "Widgets/DSLEditorWidget.h"
 #include "Widgets/ViewportWidget.h"

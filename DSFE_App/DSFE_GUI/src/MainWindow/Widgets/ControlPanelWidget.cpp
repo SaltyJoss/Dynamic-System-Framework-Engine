@@ -22,7 +22,7 @@
 #include "Scene/Light.h"
 #include "Scene/Camera.h"
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Robots/RobotSystem.h"
 
 #include "Analysis/Telemetry.h"
