@@ -1,10 +1,6 @@
 // DSFE_GUI ViewportWidget.cpp
-#include <glad/glad.h>
-
 #include "Widgets/ViewportWidget.h"
-#include "Scene/SimulationManager.h"
-
-#include <QOpenGLContext>
+#include "Simulation/SimulationManager.h"
 
 #include <QVBoxLayout>
 #include <QLabel>
@@ -13,8 +9,14 @@
 #include <QThread>
 #include "Platform/KeyCode.h"
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 namespace widgets {
-	ViewportWidget::ViewportWidget(gui::SimManager* sim, QWidget* parent) : QOpenGLWidget(parent), _sim(sim) {
+	ViewportWidget::ViewportWidget(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
+		setAttribute(Qt::WA_NativeWindow);
+
 		setFocusPolicy(Qt::StrongFocus);
 		setMouseTracking(true);
 
@@ -22,55 +24,32 @@ namespace widgets {
 		_updateTimer.start(7); // ~144 FPS
 	}
 
-	ViewportWidget::~ViewportWidget() { if (_sim) _sim->setContextHooks({}, {}); }
+	ViewportWidget::~ViewportWidget() {}
 
-	void ViewportWidget::initializeGL() {
-		auto* ctx = QOpenGLContext::currentContext();
-		if (!ctx) {
-			LOG_ERROR("No current OpenGL context");
-			return;
-		}
-
-		const int gladResult = gladLoadGLLoader([](const char* name) -> void* {
-			auto* ctx = QOpenGLContext::currentContext();
-			if (!ctx) { return nullptr; }
-			return reinterpret_cast<void*>( ctx->getProcAddress(name));
-		});
-
-		if (!gladResult) {
-			LOG_ERROR("Failed to initialise GLAD");
-			return;
-		}
-
-		_frameTimer.start();
-		if (_sim) { 
-			_sim->initGL();
-			_sim->setContextHooks([this]() { makeCurrent(); }, [this]() { doneCurrent(); });
-		}
+	void ViewportWidget::initialise_renderer() {
+	#ifdef _WIN32
+		HWND hwnd = reinterpret_cast<HWND>(winId());
+		_sim->initialiseRenderer(static_cast<void*>(hwnd));
+	#elif defined(__linux__)
+		auto handle = winId();
+		_sim->initialiseRenderer(reinterpret_cast<void*>(handle));
+	#endif
+		_renderer_initialised = true;
 	}
-	void ViewportWidget::resizeGL(int w, int h) {
-		if (_sim) { _sim->setDisplaySize(w, h); }
+
+	void ViewportWidget::showEvent(QShowEvent* event) {
+		QWidget::showEvent(event);
+		if (!_renderer_initialised) { initialise_renderer(); } // Need to add to SimulationManager
 	}
-	void ViewportWidget::paintGL() {
-		LOG_INFO_ONCE("Qt default FBO = %u", defaultFramebufferObject());
-		GLint qtFBO = defaultFramebufferObject();
 
-		const qint64 now = _frameTimer.nsecsElapsed();
-		const float dt = (_lastNs == 0) ? (1.0f / 144.0f) : static_cast<float>(now - _lastNs) * 1e-9f;
-		_lastNs = now;
-		if (!_sim) {
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			return;
-		}
+	void ViewportWidget::resizeEvent(QResizeEvent* event) {
+		QWidget::resizeEvent(event);
+		if (_sim) { _sim->resizeRenderer(width(), height()); } // Need to add to SimulationManager
+	}
 
-		_sim->setPresentationFBO(static_cast<GLuint>(qtFBO));
-		_sim->tick(dt);
-		_sim->renderViewport(width(), height());
-
-		static float smoothedDt = (1.0f / 144.0f);
-		smoothedDt = glm::mix(smoothedDt, dt, 0.5f);
-		if (_mouseCaptured) { _sim->handleContinuousMovement(_pressedKeys, smoothedDt); }
+	void ViewportWidget::paintEvent(QPaintEvent* event) {
+		QWidget::paintEvent(event);
+		if (_sim) { _sim->renderViewport(width(), height()); } // Need to add to SimulationManager
 	}
 
 	void ViewportWidget::keyPressEvent(QKeyEvent* event) {
@@ -99,7 +78,7 @@ namespace widgets {
 				}
 				break;
 		}
-		QOpenGLWidget::keyPressEvent(event);
+		QWidget::keyPressEvent(event);
 	}
 
 	void ViewportWidget::keyReleaseEvent(QKeyEvent* event) {
@@ -112,7 +91,7 @@ namespace widgets {
 			case Qt::Key_Control: _pressedKeys.erase(gui::eKeyCode::Ctrl); break;
 			case Qt::Key_Shift: _pressedKeys.erase(gui::eKeyCode::LShift); break;
 		}
-		QOpenGLWidget::keyReleaseEvent(event);
+		QWidget::keyReleaseEvent(event);
 	}
 
 	void ViewportWidget::mousePressEvent(QMouseEvent* event) {
