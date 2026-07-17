@@ -21,7 +21,7 @@ namespace scene {
 			updateViewMatrix();
 		}
 
-		void update(shaders::Shader* shader);
+		void update();
 
 		const glm::mat4& getProjection() const { return _projection; }
 		float getNear() const { return _near; }

@@ -4,13 +4,11 @@
 #include <vector>
 #include "Platform/Logger.h"
 
-using GLuint = unsigned int;
-
 namespace scene {
     class Face {
     public:
-        void addVertexIndex(GLuint index) { _vertexIndices.push_back(index); }
+        void addVertexIndex(uint32_t index) { _vertexIndices.push_back(index); }
     private:
-        std::vector<GLuint> _vertexIndices;
+        std::vector<uint32_t> _vertexIndices; // Indices of vertices that make up this face
     };
 } // namespace scene

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Scene/Element.h"
-#include "Rendering/ShaderUtil.h"
 #include "Platform/Logger.h"
 
 namespace scene {
@@ -43,20 +42,7 @@ namespace scene {
         float getIntensity() const { return _intensity; }
         glm::vec3 getColour() const { return _colour; }
 
-        void update(shaders::Shader* shader) override {
-            if (_isDirectional) {
-                glm::vec3 dir = glm::normalize(_direction);
-                shader->setVec3(dir, "lightDirection");
-                shader->setFlt1(_intensity, "lightIntensity");
-                shader->setVec3(_colour, "lightColour");
-                shader->setFlt1(_size, "lightSize");
-            }
-            else {
-                shader->setVec3(_position, "lightPosition");
-                shader->setFlt1(_intensity, "lightIntensity");
-                shader->setVec3(_colour, "lightColour");
-                shader->setFlt1(_size, "lightSize");
-            }
+        void update() override {
         }
 
         bool _isDirectional = true;
