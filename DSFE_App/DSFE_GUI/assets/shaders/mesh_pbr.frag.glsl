@@ -8,7 +8,7 @@ out vec4 FragColour;
 in vec3 WorldPos;
 in vec3 Normal;
 in vec2 TexCoords;
-in vec4 Colour;
+in vec3 Colour;
 
 // ------------------------------------------------------------
 // Material parameters
