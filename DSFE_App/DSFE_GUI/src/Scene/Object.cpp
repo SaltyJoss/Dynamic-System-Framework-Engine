@@ -39,5 +39,5 @@ namespace scene {
 	}
 
 	// Update method passes material properties to the shader
-	void Object::update(shaders::Shader* shader) { if (_mesh) _mesh->update(shader); }
+	void Object::update() { if (_mesh) _mesh->update(); }
 }

@@ -1,19 +1,14 @@
 // DSFE_GUI Camera.cpp
 #include <array>
-#include <glad/glad.h>
 #include "Scene/Camera.h"
 #include "Platform/KeyCode.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	void Camera::update(shaders::Shader* shader) {
+	void Camera::update() {
 		updateViewMatrix();
 
 		glm::mat4 model{ 1.0f };
-		shader->setMat4(model, "model");
-		shader->setMat4(_viewMatrix, "view");
-		shader->setMat4(getProjection(), "projection");
-		shader->setVec3(_position, "camPos");
 	}
 
 	void Camera::processKeyboard(int key, float dt) {
