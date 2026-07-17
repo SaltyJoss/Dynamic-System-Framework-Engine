@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include "Platform/StudyRunner.h"
 
-#include "Rendering/ModelGroup.h"
+#include "Renderer/VulkanRenderer.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
 
@@ -19,14 +19,6 @@
 #include "Analysis/MetricLogger.h"
 
 #include "Platform/Logger.h"
-
-// Forward Declarations for Rendering
-namespace render {
-    class OpenGLFrameBuffer;
-	class IBL;
-    class SkyboxRenderer;
-}
-namespace shaders { class Shader; }
 
 // Forward Declarations for Scene
 namespace scene {
@@ -46,8 +38,6 @@ namespace robots { class RobotSystem; }
 namespace control { class TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
-using GLuint = unsigned int;
-
 namespace gui {
     // View IDs
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
@@ -64,34 +54,27 @@ namespace gui {
     };
 
     struct CoreDeleter{
-        void operator()(core::ISimulationCore* p) const {
-            if (p) { DestroySimulationCore(p); }
+        void operator()(core::ISimulationCore* p) const { 
+            if (p) {
+                DestroySimulationCore(p);
+            }
         }
     };
 
-	// SimulationManager Class (Plan on renaming later)
     class SimulationManager {
     public:
 		// Constructor & Destructor
         SimulationManager();
         ~SimulationManager();
 
-		// OpenGL Initialisation
-        void initGL();
-
-		void setContextHooks(std::function<void()> makeCurrentHook, std::function<void()> doneCurrentHook) {
-			_makeCurrentHook = makeCurrentHook;
-			_doneCurrentHook = doneCurrentHook;
-		}
+        void initialiseRenderer(void* nativeWindowHandle);
+        void resizeRenderer(int w, int h);
+        void renderViewport(int w, int h);
+        bool rendererReady() const { return _rendererInitialised; }
 
 		// Light
         scene::Light* getLight();
         void setLightColour(const glm::vec3& c);
-
-		// HDR Environment Maps
-        void loadNewHDR(const std::string& path);
-        void loadNewHDR_UI(const std::string& path);
-        void loadNewHDR_Preset(const std::string& path);
 
         // Background & Scene
         void setInternalSize(const glm::vec2& size) { _internalSize = size; }
@@ -149,51 +132,19 @@ namespace gui {
         std::vector<scene::Object*> loadMeshReturn(const std::string& filepath);
         void setMesh(std::shared_ptr<scene::Mesh> mesh);
         std::shared_ptr<scene::Mesh> getMesh();
-        
-		// Shader Management
-        enum class ShaderMode {
-            Basic = 0,
-            Lit = 1,
-            PBR = 2
-        };
-        ShaderMode currentShaderMode = ShaderMode::PBR;  // default
-
-		// Setter and getter for the current shader
-        const shaders::Shader* getCurrentShader() const;
 
 		// Render Settings & Profiles
         void applyRenderSettings(const render::RenderSettings& s, render::ResolutionPreset r);
         void applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r);
 		void resetHDRToPreset();
-        void reloadAllShaders();
-
-        // Render Settings Extra
-        bool isGridEnabled() const;
-        void enableGrid(bool enabled);
-
-        bool isFloorEnabled() const;
-        void enableFloor(bool enabled);
-
-        bool isSkyboxEnabled() const;
-        void enableSkybox(bool enabled);
-
-        bool isOrientastorEnabled() const;
-        void enableOrientator(bool enabled);
-        
 
 		// Rendering Entry Points
         void tick(double dt);
-        void renderViewport(int w, int h);
         void setDisplaySize(int w, int h);
         void resize(int32_t width, int32_t height);
 
-		void setPresentationFBO(GLuint fbo) { _presentationFBO = fbo; }
-
 		void syncRobotToScene();
 		void syncBodyToScene();
-
-        // Rendering Hooks
-        void setContentHooks(std::function<void()> make, std::function<void()> done);
 
 		// Scene Objects Management
         void setSelectedObject(scene::Object* obj);
@@ -296,27 +247,15 @@ namespace gui {
         void resetMouseDelta();
 
     private:
-        std::function<void()> _makeCurrentHook;
-        std::function<void()> _doneCurrentHook;
-
         std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
+
+        renderer::VulkanRenderer _renderer;
+        bool _rendererInitialised = false;
+        
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;
 
-		// Rendering Pipeline Methods
-        void MeshRender(scene::Camera* cam, bool isReflection=false);
-        void WorldGridRender(scene::Camera* cam, int rtW);
-        void CheckedFloorRender(scene::Camera* cam, int rtW);
-        void InitShadowResource(int baseRes);
-        void InitIBL();
-        void SkyboxRender(scene::Camera* cam);
-        void ShadowPass(scene::Camera* cam);
-        glm::mat4 LightSpaceMatrix(scene::Camera* cam, float nearPlane, float farPlane);
-        glm::vec2 getPresetResolutionPx() const;
-		glm::vec2 getInternalResolutionSizePx() const;
-
         // Misc Settings
-        bool _glReady = false;
         bool _bodyLoaded = false;
 
 		// Sizes & Display
@@ -324,9 +263,6 @@ namespace gui {
 		glm::vec2 _displaySize{ 1920.0f, 1080.0f };   // Actual display size
 		glm::vec3 _backgroundColour{ 1.0f, 1.0f, 1.0f }; // Background colour (default white, but can be changed by user)
 
-		// Cached display size for scaling calculations (updated on resize)
-		float _displayW = 0.0f, _displayH = 0.0f;
-		float _gridInternalScale = 1.0f;
         float _backgroundAlpha = 1.0f;
 
         // Last script text for comparison re-use
@@ -337,12 +273,7 @@ namespace gui {
         float planeY = 2.5f;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
 
-		// Rendering Pipeline Resources
-        struct Impl;
-		std::unique_ptr<Impl> _impl;
-
 		// Objects & Scene Management
-        std::vector<ModelGroup> modelGroups;
 		scene::ObjectID _nextObjectID = scene::FIRST_VALID_OBJECT_ID; // Next available ObjectID
         
 		// Name and ID mapping (for easy lookup)
@@ -355,23 +286,14 @@ namespace gui {
 		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
         bool _telemetryBegun = false;
 
-		GLuint _presentationFBO = 0; // FBO for final post-processed output to the screen
-
 		// Environment & Lighting
         render::RenderSettings _settingsCurrent{};
 		render::ResolutionPreset _resCurrent = render::ResolutionPreset::R_1080p;
         glm::vec3 _clearColour = glm::vec3(0.02f, 0.02f, 0.03f);
         std::string _activeHDRPath;
-        static constexpr int NUM_CASCADES = 2;
-        float _cascadeSplits[NUM_CASCADES] = { 0.1f, 0.3f };
-        const unsigned int SHADOW_W = 8192;
-        const unsigned int SHADOW_H = 8192;
-        int _currentShaderIndex = 2; // 2 = PBR by default (atm)
 
 		// Flags for tracking initialisation and settings state
         bool _settingsValid = false;
-        bool _shadowsInit = false;
-        bool _hdrUserOverride = false;
 
 		// View management
         bool _isHovered = false;
@@ -383,5 +305,20 @@ namespace gui {
 
         // Camera & Mouse
         glm::vec2 _lastMousePos{ 0.f, 0.f };
+
+        // Stub state — replace as the real subsystems come back
+        bool   _simRunning    = false;
+        bool   _scriptRunning = false;
+        double _simTime       = 0.0;
+        double _fixedDt       = 1.0 / 240.0;
+        double _telemetryHz   = 100.0;
+
+        scene::Object* _selectedObject = nullptr;
+        std::vector<std::unique_ptr<scene::Object>> _objects;
+
+        interpreter::IStoredProgram* _activeProgram = nullptr;
+
+        integration::eIntegrationMethod         _integrationMethod{};
+        integration::eAutoDiffIntegrationMethod _adIntegrationMethod{};
     };
 } // namespace gui
