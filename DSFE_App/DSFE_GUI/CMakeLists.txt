@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.17)
 project(DSFE_GUI LANGUAGES C CXX)
 
+message(CONFIGURE_LOG "Configuring the Vulkan renderer backend for DSFE GUI.")
+
 include(FetchContent)
 
 # Fetch GLM from GitHub
@@ -48,23 +50,16 @@ set(CMAKE_AUTORCC ON)
 add_library(DSFE_GUI SHARED)
 
 find_package(Threads REQUIRED)
-find_package(OpenGL REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
-    OpenGLWidgets
 )
 
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
     GLM_ENABLE_EXPERIMENTAL
 )
-
-# Define a library for GLAD from the existing source file
-add_library(glad STATIC ../External/GLAD/glad.c)
-target_include_directories(glad PUBLIC ../External/GLAD)
-target_link_libraries(glad PUBLIC OpenGL::GL)
 
 add_library(stb INTERFACE)
 
@@ -78,29 +73,17 @@ set(MAIN_WINDOW_SRC
     src/MainWindow/style/DSFETheme.cpp
 )
 
-set(RENDER_SRC
-    src/Rendering/CubeVertices.cpp
-    src/Rendering/IBL.cpp
-    src/Rendering/OpenGLBufferManager.cpp
-    src/Rendering/ShaderUtil.cpp
-    src/Rendering/SkyboxRenderer.cpp
-    src/Rendering/Texture.cpp
-)
-
 set(SCENE_SRC
-    src/Scene/AxisOrientator.cpp
     src/Scene/Camera.cpp
     src/Scene/Mesh.cpp
     src/Scene/Object.cpp
-    src/Scene/SimulationManager.cpp
 )
 
-set(MANAGER_SRC
-    src/Scene/Manager/SimBackend.cpp
-    src/Scene/Manager/SimCamera.cpp
-    src/Scene/Manager/SimObjects.cpp
-    src/Scene/Manager/SimRendering.cpp
-    src/Scene/Manager/SimRobots.cpp
+set(SIMULATION_SRC
+    src/Simulation/SimulationManager.cpp
+    src/Simulation/SimulationScene.cpp
+    src/Simulation/SimulationRenderer.cpp
+    src/Simulation/SimulationSystemController.cpp
 )
 
 set(WIDGETS_SRC
@@ -134,20 +117,25 @@ set(ASSETS_SRC
     src/Assets/importObj.cpp
 )
 
+set(RENDERER_SRC
+    src/Renderer/Renderer.cpp
+    src/Renderer/VulkanContext.cpp
+    src/Renderer/VulkanRenderer.cpp
+)
+
 set(QT_RESOURCES 
     resources/DSFE_GUI.qrc
 )
 
 target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
-    ${RENDER_SRC}
     ${SCENE_SRC}
-    ${MANAGER_SRC}
     ${WIDGETS_SRC}
     ${ROBOT_SRC}
     ${OBJECT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
+    ${RENDERER_SRC}
     ${QT_RESOURCES}
 )
 
@@ -155,10 +143,9 @@ target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
 )
+
+find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)
 
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_GUI
@@ -170,13 +157,13 @@ target_link_libraries(DSFE_GUI
     PRIVATE
         stb
         assimp
-        glad
         glm::glm
-        OpenGL::GL
+        Vulkan::Vulkan
+        Vulkan::volk
+        Vulkan::shaderc_combined
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
-        Qt6::OpenGLWidgets
 )
 
 # Defines the source and destination for assets and configs
