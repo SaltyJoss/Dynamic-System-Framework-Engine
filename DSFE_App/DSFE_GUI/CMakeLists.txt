@@ -118,9 +118,10 @@ set(ASSETS_SRC
 )
 
 set(RENDERER_SRC
-    src/Renderer/Renderer.cpp
     src/Renderer/VulkanContext.cpp
+    src/Renderer/VulkanLoader.cpp
     src/Renderer/VulkanRenderer.cpp
+    src/Renderer/VulkanSwapchain.cpp
 )
 
 set(QT_RESOURCES 
@@ -130,6 +131,7 @@ set(QT_RESOURCES
 target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
     ${SCENE_SRC}
+    ${SIMULATION_SRC}
     ${WIDGETS_SRC}
     ${ROBOT_SRC}
     ${OBJECT_SRC}
