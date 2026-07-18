@@ -40,6 +40,13 @@ set(ASSIMP_BUILD_C4D_IMPORTER OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_VRML_IMPORTER OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(assimp)
 
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG v3.2.1
+)
+FetchContent_MakeAvailable(vma)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_AUTOMOC ON)
@@ -60,6 +67,8 @@ target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
     GLM_ENABLE_EXPERIMENTAL
     VK_NO_PROTOTYPES
+    VMA_STATIC_VULKAN_FUNCTIONS=0
+    VMA_DYNAMIC_VULKAN_FUNCTIONS=0
     $<$<PLATFORM_ID:Windows>:VK_USE_PLATFORM_WIN32_KHR>
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
@@ -179,6 +188,7 @@ target_link_libraries(DSFE_GUI
         Vulkan::Headers
         Vulkan::volk
         Vulkan::shaderc_combined
+        GPUOpen::VulkanMemoryAllocator
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
