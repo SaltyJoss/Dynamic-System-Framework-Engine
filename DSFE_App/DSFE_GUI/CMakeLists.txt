@@ -68,7 +68,7 @@ target_compile_definitions(DSFE_GUI PRIVATE
     GLM_ENABLE_EXPERIMENTAL
     VK_NO_PROTOTYPES
     VMA_STATIC_VULKAN_FUNCTIONS=0
-    VMA_DYNAMIC_VULKAN_FUNCTIONS=0
+    VMA_DYNAMIC_VULKAN_FUNCTIONS=1
     $<$<PLATFORM_ID:Windows>:VK_USE_PLATFORM_WIN32_KHR>
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
@@ -138,6 +138,7 @@ set(ASSETS_SRC
 )
 
 set(RENDERER_SRC
+    src/Renderer/vk_mem_alloc_impl.cpp
     src/Renderer/VulkanContext.cpp
     src/Renderer/VulkanLoader.cpp
     src/Renderer/VulkanRenderer.cpp

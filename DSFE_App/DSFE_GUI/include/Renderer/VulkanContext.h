@@ -1,9 +1,6 @@
 #pragma once
 
 #include <volk.h>
-#define VMA_STATIC_VULKAN_FUNCTIONS 0
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
-#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
 #include <string>
@@ -16,13 +13,10 @@
 
 #include "Platform/Logger.h"
 
-struct VmaAllocator_T;
-typedef struct VmaAllocator_T* VmaAllocator;
-
 namespace renderer {
     // VulkanRenderer class implementing the IRenderer interface for Vulkan rendering
     class VulkanContext {
-        constexpr static uint32_t VK_VERSION{ VK_API_VERSION_1_4 };
+        constexpr static uint32_t VK_VERSION{ VK_API_VERSION_1_3 };
 
         public:
             bool init(void* windowHandle);

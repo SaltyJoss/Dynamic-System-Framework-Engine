@@ -197,6 +197,36 @@ namespace renderer {
         return true;
     }
 
+    bool VulkanContext::initialise_vma() {
+        LOG_INFO("initialise_vma: entered");
+        LOG_INFO("initialise_vma: vkGetInstanceProcAddr=%p vkGetDeviceProcAddr=%p", (void*)vkGetInstanceProcAddr, (void*)vkGetDeviceProcAddr);
+
+        // VMA needs pointers explicitly under VK_NO_PROTOTYPES; volk has them already.
+        VmaVulkanFunctions fns{};
+        
+        fns.vkGetInstanceProcAddr = vkGetInstanceProcAddr; LOG_INFO("initialise_vma: ASSIGNED fns.vkGetInstanceProcAddr=%p", (void*)fns.vkGetInstanceProcAddr);
+        fns.vkGetDeviceProcAddr   = vkGetDeviceProcAddr; LOG_INFO("initialise_vma: ASSIGNED fns.vkGetDeviceProcAddr=%p", (void*)fns.vkGetDeviceProcAddr);
+
+        LOG_INFO("VmaAllocatorCreateInfo: phys=%p device=%p instance=%p", (void*)_phys_device, (void*)_device, (void*)_instance);
+        VmaAllocatorCreateInfo info{
+            .physicalDevice = _phys_device,
+            .device = _device,
+            .pVulkanFunctions = &fns,
+            .instance = _instance,
+            .vulkanApiVersion = VK_VERSION
+        };
+
+        LOG_INFO("Before vmaCreateAllocator: phys=%p device=%p instance=%p", (void*)_phys_device, (void*)_device, (void*)_instance);
+        LOG_INFO("_allocator=%p", (void*)_allocator);
+        VkResult result = vmaCreateAllocator(&info, &_allocator);
+        LOG_INFO("After vmaCreateAllocator: phys=%p device=%p instance=%p result=%d", (void*)_phys_device, (void*)_device, (void*)_instance, result);
+        if (result != VK_SUCCESS) {
+            LOG_ERROR("vmaCreateAllocator failed: %d", result);
+            return false;
+        }
+        LOG_INFO("initialise_vma: allocator=%p", (void*)_allocator);
+        return true;
+    }
 
     // Initialise the Vulkan context by creating the Vulkan instance, surface, physical device, logical device, and VMA allocator.
     bool VulkanContext::init(void* native_window) {
@@ -206,12 +236,12 @@ namespace renderer {
         if (_phys_device == VK_NULL_HANDLE) { return false; }
         if (!find_graphics_queue()) { return false; }
         if (!create_device(_phys_device)) { return false; }
-        // TODO: if (!initialise_vma()) { return false; }
+        if (!initialise_vma()) { return false; }
         return true;
     }
     // Shutdown the Vulkan context by destroying the VMA allocator, logical device, surface, and instance.
     void VulkanContext::shutdown() {
-        //if (_allocator) { vmaDestroyAllocator(_allocator); _allocator = nullptr; }
+        if (_allocator) { vmaDestroyAllocator(_allocator); _allocator = nullptr; }
         if (_device) { vkDestroyDevice(_device, nullptr); _device = VK_NULL_HANDLE; }
         if (_surface) { vkDestroySurfaceKHR(_instance, _surface, nullptr); _surface = VK_NULL_HANDLE; }
         if (_instance) { vkDestroyInstance(_instance, nullptr); _instance = VK_NULL_HANDLE; }
