@@ -13,9 +13,6 @@
 
 #include "Platform/Logger.h"
 
-struct VmaAllocation_T;
-typedef struct VmaAllocation_T* VmaAllocation;
-
 namespace renderer {
     // Structure to hold per-frame resources for Vulkan rendering
     struct FrameResources {
@@ -44,6 +41,9 @@ namespace renderer {
             VkPipeline create_graphics_pipeline();
             bool create_sync_resources();
             bool create_command_buffers();
+
+            bool create_depth_resources();
+            void destroy_depth_resources();
 
             // Internal state
             VulkanContext* _context = nullptr;

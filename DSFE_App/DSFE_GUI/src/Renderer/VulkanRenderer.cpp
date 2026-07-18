@@ -7,7 +7,8 @@ namespace renderer {
     static void image_barrier(VkCommandBuffer cmd, VkImage image,
         VkImageLayout old_layout, VkImageLayout new_layout,
         VkPipelineStageFlags2 src_stage, VkAccessFlags2 src_access,
-        VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access
+        VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,
+        VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT
     ) {
         VkImageMemoryBarrier2 barrier {
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -17,7 +18,7 @@ namespace renderer {
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = image,
-            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+            .subresourceRange = { aspect, 0, 1, 0, 1 }
         };
         VkDependencyInfo dep_info {
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -26,6 +27,8 @@ namespace renderer {
         };
         vkCmdPipelineBarrier2(cmd, &dep_info);
     }
+
+    // Helper
 
     // Reads a shader source file whole. Returns empty on failure — the caller logs.
     std::string VulkanRenderer::load_shader_source(const std::string& filename) {
@@ -55,8 +58,7 @@ namespace renderer {
             source, kind, debug_name.c_str(), entry_point.c_str(), options);
 
         if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-            LOG_ERROR("Shader compile failed (%s:%s): %s",
-                      debug_name.c_str(), entry_point.c_str(), result.GetErrorMessage().c_str());
+            LOG_ERROR("Shader compile failed (%s:%s): %s", debug_name.c_str(), entry_point.c_str(), result.GetErrorMessage().c_str());
             return VK_NULL_HANDLE;
         }
 
@@ -105,8 +107,7 @@ namespace renderer {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
         };
         if (vkCreatePipelineLayout(dev, &layout_info, nullptr, &_pipeline_layout) != VK_SUCCESS) {
-            LOG_ERROR("vkCreatePipelineLayout failed");
-            return VK_NULL_HANDLE;
+            LOG_ERROR("vkCreatePipelineLayout failed"); return VK_NULL_HANDLE;
         }
 
         VkPipelineShaderStageCreateInfo stages[2]{
@@ -197,8 +198,7 @@ namespace renderer {
 
         VkPipeline pipeline = VK_NULL_HANDLE;
         if (vkCreateGraphicsPipelines(dev, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
-            LOG_ERROR("vkCreateGraphicsPipelines failed");
-            return VK_NULL_HANDLE;
+            LOG_ERROR("vkCreateGraphicsPipelines failed"); return VK_NULL_HANDLE;
         }
         return pipeline;
     }
@@ -255,6 +255,66 @@ namespace renderer {
         return true;
     }
 
+    // Create a depth image and its associated image view for depth testing in the graphics pipeline
+    bool VulkanRenderer::create_depth_resources() {
+        VkDevice dev = _context->device();
+        const VkExtent2D extent = _swapchain->extent();
+
+        VkImageCreateInfo image_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = DEPTH_FORMAT,
+            .extent = { extent.width, extent.height, 1 },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        VmaAllocationCreateInfo alloc_info{
+            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            .usage = VMA_MEMORY_USAGE_AUTO,
+            .priority = 1.0f
+        };
+
+        if (vmaCreateImage(_context->allocator(), &image_info, &alloc_info, &_depth_image, &_depth_image_allocation, nullptr) != VK_SUCCESS) {
+            LOG_ERROR("Depth image creation failed"); return false;
+        }
+
+        VkImageViewCreateInfo view_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = _depth_image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = DEPTH_FORMAT,
+            .subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
+        };
+
+        if (vkCreateImageView(dev, &view_info, nullptr, &_depth_image_view) != VK_SUCCESS) {
+            LOG_ERROR("Depth image view creation failed"); return false;
+        }
+
+        LOG_INFO("Depth resources created: %ux%u", extent.width, extent.height);
+        return true;
+    }
+
+    // Destroys the depth image and its associated image view, freeing the allocated memory
+    void VulkanRenderer::destroy_depth_resources() {
+        VkDevice dev = _context->device();
+        if (_depth_image_view != VK_NULL_HANDLE) {
+            vkDestroyImageView(dev, _depth_image_view, nullptr);
+            _depth_image_view = VK_NULL_HANDLE;
+        }
+        if (_depth_image != VK_NULL_HANDLE) {
+            vmaDestroyImage(_context->allocator(), _depth_image, _depth_image_allocation);
+            _depth_image = VK_NULL_HANDLE;
+            _depth_image_allocation = VK_NULL_HANDLE;
+        }
+    }
+
+    // Renders a single frame, handling synchronization, command buffer recording, and presentation. This function is called once per frame.
     void VulkanRenderer::render() {
         VkDevice dev = _context->device();
 
@@ -290,12 +350,20 @@ namespace renderer {
         };
         vkBeginCommandBuffer(f.command_buffer, &begin);
 
+        // Swapchain image barrier
         image_barrier(f.command_buffer, _swapchain->image(image_index),
                       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                       VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
-
+        // Depth image barrier
+        image_barrier(f.command_buffer, _depth_image,
+                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                      VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+                      VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+                      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                      VK_IMAGE_ASPECT_DEPTH_BIT);
+        // Colour attachment
         VkRenderingAttachmentInfo colour{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = _swapchain->image_view(image_index),
@@ -304,12 +372,23 @@ namespace renderer {
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue = {{{ 0.18f, 0.18f, 0.20f, 1.0f }}}
         };
+        // Depth attachment
+        VkRenderingAttachmentInfo depth{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = _depth_image_view,
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = {{{ 1.0f, 0 }}}
+        };
+        // Begin rendering with the specified attachments and render area
         VkRenderingInfo rendering{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
             .renderArea = {{0, 0}, _swapchain->extent()},
             .layerCount = 1,
             .colorAttachmentCount = 1,
-            .pColorAttachments = &colour
+            .pColorAttachments = &colour,
+            .pDepthAttachment = &depth
         };
         vkCmdBeginRendering(f.command_buffer, &rendering);
 
@@ -333,6 +412,8 @@ namespace renderer {
                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                       VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                       VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0);
+
+        
 
         vkEndCommandBuffer(f.command_buffer);
 
@@ -377,7 +458,8 @@ namespace renderer {
         _width = width; _height = height;
         wait_idle();
         _swapchain->recreate(_width, _height);
-        // TODO: recreate depth image here once it exists
+        destroy_depth_resources();
+        create_depth_resources();
     }
 
     void VulkanRenderer::wait_idle() {
@@ -391,6 +473,7 @@ namespace renderer {
         if (!_swapchain->create(*_context, _width, _height, SWAPCHAIN_FORMAT)) {
             LOG_ERROR("VulkanSwapchain create failed"); return false;
         }
+        if (!create_depth_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
         if (!create_shaders()) { return false; }
@@ -411,12 +494,14 @@ namespace renderer {
             if (f.command_pool) { vkDestroyCommandPool(dev, f.command_pool, nullptr); }
             f = {};
         }
+
         if (_timeline_semaphore) { vkDestroySemaphore(dev, _timeline_semaphore, nullptr); _timeline_semaphore = VK_NULL_HANDLE; }
         if (_pipeline)           { vkDestroyPipeline(dev, _pipeline, nullptr); _pipeline = VK_NULL_HANDLE; }
         if (_pipeline_layout)    { vkDestroyPipelineLayout(dev, _pipeline_layout, nullptr); _pipeline_layout = VK_NULL_HANDLE; }
         if (_vert_shader)        { vkDestroyShaderModule(dev, _vert_shader, nullptr); _vert_shader = VK_NULL_HANDLE; }
         if (_frag_shader)        { vkDestroyShaderModule(dev, _frag_shader, nullptr); _frag_shader = VK_NULL_HANDLE; }
 
+        destroy_depth_resources();
         _swapchain->destroy();
         delete _swapchain; _swapchain = nullptr;
         _context->shutdown();
