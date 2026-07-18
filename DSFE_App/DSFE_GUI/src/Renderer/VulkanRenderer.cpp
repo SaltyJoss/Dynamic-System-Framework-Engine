@@ -1,7 +1,11 @@
 #include "Renderer/VulkanRenderer.h"
+
+#include "Assets/VertexHolder.h" 
 #include "EngineLib/LogMacros.h"
 #include "Platform/Paths.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <cstring>
 namespace renderer {
     // Helper function to create an image memory barrier for Vulkan command buffers
     static void image_barrier(VkCommandBuffer cmd, VkImage image,
@@ -49,10 +53,9 @@ namespace renderer {
     VkShaderModule VulkanRenderer::compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const {
         shaderc::Compiler compiler;
         shaderc::CompileOptions options;
-        options.SetSourceLanguage(shaderc_source_language_hlsl);
+        options.SetSourceLanguage(shaderc_source_language_glsl);
         options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
         options.SetOptimizationLevel(shaderc_optimization_level_performance);
-        options.SetHlslOffsets(true);
 
         shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
             source, kind, debug_name.c_str(), entry_point.c_str(), options);
@@ -78,56 +81,80 @@ namespace renderer {
         return module;
     }
 
-    // Create the vertex and fragment shader modules from the HLSL source file, compiling them to SPIR-V using shaderc.
-    bool VulkanRenderer::create_shaders() {
-        const std::string filename = "triangle.hlsl";
-        const std::string source = load_shader_source(filename);
-        if (source.empty()) { return false; }
+    // Compiles the vertex and fragment shaders, creating shader modules for each.
+    ShaderModules VulkanRenderer::create_shaders(const std::string& vertFile, const std::string& fragFile) {
+        const std::string vsrc = load_shader_source(vertFile);
+        const std::string fsrc = load_shader_source(fragFile);
+        ShaderModules modules{ VK_NULL_HANDLE, VK_NULL_HANDLE };
 
-        _vert_shader = compile_shader(source, filename, shaderc_vertex_shader, "VSMain");
-        if (_vert_shader == VK_NULL_HANDLE) { return false; }
-
-        _frag_shader = compile_shader(source, filename, shaderc_fragment_shader, "PSMain");
-        if (_frag_shader == VK_NULL_HANDLE) {
-            // Don't leak the vertex module on a partial failure.
-            vkDestroyShaderModule(_context->device(), _vert_shader, nullptr);
-            _vert_shader = VK_NULL_HANDLE;
-            return false;
+        if (vsrc.empty() || fsrc.empty()) { return { VK_NULL_HANDLE, VK_NULL_HANDLE }; }
+        modules.vert = compile_shader(vsrc, vertFile, shaderc_vertex_shader, "main");
+        if (modules.vert == VK_NULL_HANDLE) { return { VK_NULL_HANDLE, VK_NULL_HANDLE }; }
+        modules.frag = compile_shader(fsrc, fragFile, shaderc_fragment_shader, "main");
+        if (modules.frag == VK_NULL_HANDLE) {
+            vkDestroyShaderModule(_context->device(), modules.vert, nullptr);
+            return { VK_NULL_HANDLE, VK_NULL_HANDLE };
         }
 
-        LOG_INFO("Compiled %s (VSMain, PSMain)", filename.c_str());
-        return true;
+        LOG_INFO("Compiled shaders: vert=%p frag=%p", (void*)modules.vert, (void*)modules.frag);
+        return modules;
+    }
+
+    VkPipelineLayout VulkanRenderer::create_pipeline_layout() {
+        VkPushConstantRange push_range{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 0,
+            .size = sizeof(glm::mat4)
+        };
+        VkPipelineLayoutCreateInfo layout_info{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &push_range
+        };
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        if (vkCreatePipelineLayout(_context->device(), &layout_info, nullptr, &layout) != VK_SUCCESS) {
+            LOG_ERROR("vkCreatePipelineLayout failed");
+            return VK_NULL_HANDLE;
+        }
+        return layout;
     }
 
     // Builds the graphics pipeline
-    VkPipeline VulkanRenderer::create_graphics_pipeline() {
+    VkPipeline VulkanRenderer::create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders) {
         VkDevice dev = _context->device();
-
-        VkPipelineLayoutCreateInfo layout_info{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
-        };
-        if (vkCreatePipelineLayout(dev, &layout_info, nullptr, &_pipeline_layout) != VK_SUCCESS) {
-            LOG_ERROR("vkCreatePipelineLayout failed"); return VK_NULL_HANDLE;
-        }
 
         VkPipelineShaderStageCreateInfo stages[2]{
             {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                .module = _vert_shader,
-                .pName = "VSMain"
+                .module = shaders.vert,
+                .pName = "main"
             },
             {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                .module = _frag_shader,
-                .pName = "PSMain"
+                .module = shaders.frag,
+                .pName = "main"
             }
         };
 
         // Vertices come from constant arrays indexed by SV_VertexID
+        VkVertexInputBindingDescription binding{
+            .binding = 0,
+            .stride = sizeof(assets::VertexHolder),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+        };
+        VkVertexInputAttributeDescription attrs[3]{
+            { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(assets::VertexHolder, _pos) },
+            { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(assets::VertexHolder, _normal) },
+            { .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT,    .offset = offsetof(assets::VertexHolder, _texCoord) }
+        };
         VkPipelineVertexInputStateCreateInfo vertex_input{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &binding,
+            .vertexAttributeDescriptionCount = 3,
+            .pVertexAttributeDescriptions = attrs
         };
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly{
@@ -205,7 +232,7 @@ namespace renderer {
             .pDepthStencilState = &depth_stencil,
             .pColorBlendState = &blend,
             .pDynamicState = &dynamic,
-            .layout = _pipeline_layout,
+            .layout = layout,
             .renderPass = VK_NULL_HANDLE
         };
 
@@ -413,10 +440,27 @@ namespace renderer {
             .minDepth = 0.0f, .maxDepth = 1.0f
         };
         VkRect2D scissor{ {0, 0}, extent };
-        vkCmdBindPipeline(f.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+
+        // MVP: perspective * view * model. Column-major glm, mul(M,v) in HLSL.
+        float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+        proj[1][1] *= -1.0f;   // Vulkan clip-space Y is flipped vs glm's GL convention
+        glm::mat4 view = glm::lookAt(glm::vec3(2.5f, 2.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0, 1, 0));
+        static float t = 0.0f; t += 0.01f;
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), t, glm::vec3(0.3f, 1.0f, 0.0f));
+        glm::mat4 mvp = proj * view * model;
+
+        Pipeline& pipeline = _cube_pipeline;
+
+        vkCmdBindPipeline(f.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
         vkCmdSetViewport(f.command_buffer, 0, 1, &viewport);
         vkCmdSetScissor(f.command_buffer, 0, 1, &scissor);
-        vkCmdDraw(f.command_buffer, 3, 1, 0, 0);
+        vkCmdPushConstants(f.command_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
+
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(f.command_buffer, 0, 1, &_cube.vertices.buffer, &offset);
+        vkCmdBindIndexBuffer(f.command_buffer, _cube.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(f.command_buffer, _cube.index_count, 1, 0, 0, 0);
 
         vkCmdEndRendering(f.command_buffer);
 
@@ -489,9 +533,16 @@ namespace renderer {
         if (!create_depth_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
-        if (!create_shaders()) { return false; }
-        _pipeline = create_graphics_pipeline();
-        if (_pipeline == VK_NULL_HANDLE) { return false; }
+
+        // Create the graphics pipeline for rendering (hardcoded to cube for now)
+        _cube_pipeline.shaders = create_shaders("cube.vert.glsl", "cube.frag.glsl");
+        if (_cube_pipeline.shaders.vert == VK_NULL_HANDLE || _cube_pipeline.shaders.frag == VK_NULL_HANDLE) { return false; }
+        _cube_pipeline.layout = create_pipeline_layout();
+        if (_cube_pipeline.layout == VK_NULL_HANDLE) { return false; }
+        _cube_pipeline.pipeline = create_graphics_pipeline(_cube_pipeline.layout, _cube_pipeline.shaders);
+        if (_cube_pipeline.pipeline == VK_NULL_HANDLE) { return false; }
+
+        if (!create_cube()) { return false; }
 
         LOG_INFO("Vulkan renderer initialised (%ux%u)", _width, _height);
         return true;
@@ -514,11 +565,83 @@ namespace renderer {
         if (_vert_shader)        { vkDestroyShaderModule(dev, _vert_shader, nullptr); _vert_shader = VK_NULL_HANDLE; }
         if (_frag_shader)        { vkDestroyShaderModule(dev, _frag_shader, nullptr); _frag_shader = VK_NULL_HANDLE; }
 
+        destroy_buffer(_cube.vertices);
+        destroy_buffer(_cube.indices);
+
         destroy_depth_resources();
         _swapchain->destroy();
         delete _swapchain; _swapchain = nullptr;
         _context->shutdown();
         delete _context; _context = nullptr;
+    }
+
+    // Creates a GPU buffer of the specified size, usage, and memory usage, returning a GpuBuffer struct containing the Vulkan buffer handle and its associated VMA allocation.
+    VulkanRenderer::GpuBuffer VulkanRenderer::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memory_usage) {
+        VulkanRenderer::GpuBuffer gpu_buffer{};
+        GpuBuffer out;
+
+        VkBufferCreateInfo buffer_info{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+        VmaAllocationCreateInfo alloc_info{
+            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            .usage = memory_usage
+        };
+        VkResult r = vmaCreateBuffer(_context->allocator(), &buffer_info, &alloc_info, &out.buffer, &out.allocation, nullptr);
+        if (r != VK_SUCCESS) { LOG_ERROR("Failed to create GPU buffer of size %llu (VkResult=%d)", size, r); }
+        return out;
+    }
+
+    // Destroys a GPU buffer and frees its associated memory allocation
+    void VulkanRenderer::destroy_buffer(GpuBuffer& buffer) {
+        if (buffer.buffer != VK_NULL_HANDLE) {
+            vmaDestroyBuffer(_context->allocator(), buffer.buffer, buffer.allocation);
+            buffer.buffer = VK_NULL_HANDLE;
+            buffer.allocation = VK_NULL_HANDLE;
+        }
+    }
+
+    bool VulkanRenderer::create_cube() {
+        using assets::VertexHolder;
+        const glm::vec3 P[8] = {
+            {-0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {-0.5f,0.5f,-0.5f},
+            {-0.5f,-0.5f, 0.5f}, {0.5f,-0.5f, 0.5f}, {0.5f,0.5f, 0.5f}, {-0.5f,0.5f, 0.5f}
+        };
+        auto V = [](glm::vec3 p, glm::vec3 n){ return VertexHolder(p, n, {0,0}); };
+
+        std::vector<VertexHolder> verts = {
+            V(P[0],{0,0,-1}),V(P[1],{0,0,-1}),V(P[2],{0,0,-1}),V(P[3],{0,0,-1}), // back
+            V(P[4],{0,0, 1}),V(P[5],{0,0, 1}),V(P[6],{0,0, 1}),V(P[7],{0,0, 1}), // front
+            V(P[0],{-1,0,0}),V(P[3],{-1,0,0}),V(P[7],{-1,0,0}),V(P[4],{-1,0,0}), // left
+            V(P[1],{1,0,0}), V(P[2],{1,0,0}), V(P[6],{1,0,0}), V(P[5],{1,0,0}),  // right
+            V(P[0],{0,-1,0}),V(P[1],{0,-1,0}),V(P[5],{0,-1,0}),V(P[4],{0,-1,0}), // bottom
+            V(P[3],{0,1,0}), V(P[2],{0,1,0}), V(P[6],{0,1,0}), V(P[7],{0,1,0})   // top
+        };
+        std::vector<uint32_t> indices;
+        for (uint32_t f = 0; f < 6; ++f) {
+            uint32_t b = f*4;
+            indices.insert(indices.end(), { b,b+1,b+2, b,b+2,b+3 });
+        }
+
+        const VkDeviceSize vsize = verts.size() * sizeof(VertexHolder);
+        const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
+
+        _cube.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+        _cube.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
+        _cube.index_count = static_cast<uint32_t>(indices.size());
+
+        // MAPPED_BIT means the allocation's pointer is ready in allocationInfo.
+        VmaAllocationInfo vi, ii;
+        vmaGetAllocationInfo(_context->allocator(), _cube.vertices.allocation, &vi);
+        vmaGetAllocationInfo(_context->allocator(), _cube.indices.allocation, &ii);
+        memcpy(vi.pMappedData, verts.data(), vsize);
+        memcpy(ii.pMappedData, indices.data(), isize);
+
+        LOG_INFO("Cube uploaded: %zu verts, %u indices", verts.size(), _cube.index_count);
+        return true;
     }
 
 } // namespace renderer

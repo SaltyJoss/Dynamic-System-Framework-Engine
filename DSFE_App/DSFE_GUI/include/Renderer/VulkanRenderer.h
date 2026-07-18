@@ -21,6 +21,18 @@ namespace renderer {
         VkSemaphore image_acquired_semaphore = nullptr;
     };
 
+    struct ShaderModules {
+        VkShaderModule vert = VK_NULL_HANDLE;
+        VkShaderModule frag = VK_NULL_HANDLE;
+    };
+
+    struct Pipeline {
+        ShaderModules shaders;
+
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+    };
+
     class VulkanRenderer {
         constexpr static uint32_t MAX_FRAMES_IN_FLIGHT{ 2 };
         constexpr static VkFormat SWAPCHAIN_FORMAT{  VK_FORMAT_B8G8R8A8_SRGB };
@@ -35,10 +47,11 @@ namespace renderer {
 
         private:
             // Methods for Vulkan rendering setup
-            bool create_shaders();
+            ShaderModules create_shaders(const std::string& vertFile, const std::string& fragFile);
             static std::string load_shader_source(const std::string& filename);
             VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
-            VkPipeline create_graphics_pipeline();
+            VkPipelineLayout create_pipeline_layout();
+            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders);
             bool create_sync_resources();
             bool create_command_buffers();
 
@@ -71,5 +84,28 @@ namespace renderer {
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
             std::array<FrameResources, MAX_FRAMES_IN_FLIGHT> _frame_resources; // Vector of frame resources for each frame
+
+        private:
+            // GPU buffer structure containing Vulkan buffer and VMA allocation
+            struct GpuBuffer {
+                VkBuffer buffer = VK_NULL_HANDLE;
+                VmaAllocation allocation = nullptr;
+            };
+            // GPU mesh structure containing vertex and index buffers
+            struct GpuMesh {
+                GpuBuffer vertices;
+                GpuBuffer indices;
+                uint32_t index_count = 0;
+            };
+
+            GpuBuffer create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage mem_usage);
+            void destroy_buffer(GpuBuffer& buf);
+
+
+            GpuMesh _cube{}; // temporary->replaced by a mesh registry later
+
+            bool create_cube(); // temporary->replaced by a mesh registry later
+
+            Pipeline _cube_pipeline;
     };
 } // namespace renderer
