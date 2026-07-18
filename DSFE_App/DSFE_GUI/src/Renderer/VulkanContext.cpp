@@ -198,16 +198,12 @@ namespace renderer {
     }
 
     bool VulkanContext::initialise_vma() {
-        LOG_INFO("initialise_vma: entered");
-        LOG_INFO("initialise_vma: vkGetInstanceProcAddr=%p vkGetDeviceProcAddr=%p", (void*)vkGetInstanceProcAddr, (void*)vkGetDeviceProcAddr);
-
         // VMA needs pointers explicitly under VK_NO_PROTOTYPES; volk has them already.
         VmaVulkanFunctions fns{};
         
-        fns.vkGetInstanceProcAddr = vkGetInstanceProcAddr; LOG_INFO("initialise_vma: ASSIGNED fns.vkGetInstanceProcAddr=%p", (void*)fns.vkGetInstanceProcAddr);
-        fns.vkGetDeviceProcAddr   = vkGetDeviceProcAddr; LOG_INFO("initialise_vma: ASSIGNED fns.vkGetDeviceProcAddr=%p", (void*)fns.vkGetDeviceProcAddr);
+        fns.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+        fns.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
-        LOG_INFO("VmaAllocatorCreateInfo: phys=%p device=%p instance=%p", (void*)_phys_device, (void*)_device, (void*)_instance);
         VmaAllocatorCreateInfo info{
             .physicalDevice = _phys_device,
             .device = _device,
@@ -215,11 +211,7 @@ namespace renderer {
             .instance = _instance,
             .vulkanApiVersion = VK_VERSION
         };
-
-        LOG_INFO("Before vmaCreateAllocator: phys=%p device=%p instance=%p", (void*)_phys_device, (void*)_device, (void*)_instance);
-        LOG_INFO("_allocator=%p", (void*)_allocator);
         VkResult result = vmaCreateAllocator(&info, &_allocator);
-        LOG_INFO("After vmaCreateAllocator: phys=%p device=%p instance=%p result=%d", (void*)_phys_device, (void*)_device, (void*)_instance, result);
         if (result != VK_SUCCESS) {
             LOG_ERROR("vmaCreateAllocator failed: %d", result);
             return false;
