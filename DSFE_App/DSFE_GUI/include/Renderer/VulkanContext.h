@@ -1,6 +1,7 @@
 #pragma once
 
 #include <volk.h>
+
 #include <string>
 #include <vector>
 #include <array>
@@ -30,6 +31,9 @@ namespace renderer {
             VkSurfaceKHR surface() const { return _surface; }
             VkQueue graphics_queue() const { return _gfx_queue; }
             uint32_t graphics_queue_family() const { return _gfx_queue_fam_idx; }
+
+            // Accessor for the Vulkan Memory Allocator
+            VmaAllocator allocator() const { return _allocator; }
 
         private:
             bool create_instance();
