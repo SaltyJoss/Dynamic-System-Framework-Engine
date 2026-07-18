@@ -155,6 +155,17 @@ namespace renderer {
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
         };
 
+        VkPipelineDepthStencilStateCreateInfo depth_stencil{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_TRUE,
+            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .depthBoundsTestEnable = VK_FALSE,
+            .stencilTestEnable = VK_FALSE,
+            .minDepthBounds = 0.0f,
+            .maxDepthBounds = 1.0f
+        };
+
         VkPipelineColorBlendAttachmentState blend_attachment{
             .blendEnable = VK_FALSE,
             .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -177,7 +188,8 @@ namespace renderer {
         VkPipelineRenderingCreateInfo rendering_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
             .colorAttachmentCount = 1,
-            .pColorAttachmentFormats = &colour_format
+            .pColorAttachmentFormats = &colour_format,
+            .depthAttachmentFormat = DEPTH_FORMAT
         };
 
         VkGraphicsPipelineCreateInfo info{
@@ -190,6 +202,7 @@ namespace renderer {
             .pViewportState = &viewport_state,
             .pRasterizationState = &raster,
             .pMultisampleState = &multisample,
+            .pDepthStencilState = &depth_stencil,
             .pColorBlendState = &blend,
             .pDynamicState = &dynamic,
             .layout = _pipeline_layout,
