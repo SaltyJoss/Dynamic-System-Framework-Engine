@@ -4,7 +4,6 @@
 #include "EngineLib/LogMacros.h"
 #include "Platform/Paths.h"
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <cstring>
 namespace renderer {
     // Helper function to create an image memory barrier for Vulkan command buffers
@@ -354,6 +353,22 @@ namespace renderer {
         }
     }
 
+    void VulkanRenderer::draw(VkCommandBuffer command_buffer, const renderer::Pipeline& pipeline, 
+        const renderer::VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
+        const glm::mat4& mvp
+    ) {
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+        vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+        vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+        vkCmdPushConstants(command_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
+
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.vertices.buffer, &offset);
+        vkCmdBindIndexBuffer(command_buffer, mesh.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(command_buffer, mesh.index_count, 1, 0, 0, 0);
+    }
+    
+
     // Renders a single frame, handling synchronization, command buffer recording, and presentation. This function is called once per frame.
     void VulkanRenderer::render() {
         VkDevice dev = _context->device();
@@ -450,17 +465,7 @@ namespace renderer {
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), t, glm::vec3(0.3f, 1.0f, 0.0f));
         glm::mat4 mvp = proj * view * model;
 
-        Pipeline& pipeline = _cube_pipeline;
-
-        vkCmdBindPipeline(f.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-        vkCmdSetViewport(f.command_buffer, 0, 1, &viewport);
-        vkCmdSetScissor(f.command_buffer, 0, 1, &scissor);
-        vkCmdPushConstants(f.command_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
-
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(f.command_buffer, 0, 1, &_cube.vertices.buffer, &offset);
-        vkCmdBindIndexBuffer(f.command_buffer, _cube.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(f.command_buffer, _cube.index_count, 1, 0, 0, 0);
+        draw(f.command_buffer, _cube_pipeline, _cube, viewport, scissor, mvp);     
 
         vkCmdEndRendering(f.command_buffer);
 
@@ -469,8 +474,6 @@ namespace renderer {
                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                       VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                       VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0);
-
-        
 
         vkEndCommandBuffer(f.command_buffer);
 
@@ -548,6 +551,14 @@ namespace renderer {
         return true;
     }
 
+    void VulkanRenderer::destroy_pipeline(Pipeline& pipeline) {
+        VkDevice dev = _context->device();
+        if (pipeline.pipeline) { vkDestroyPipeline(dev, pipeline.pipeline, nullptr); pipeline.pipeline = VK_NULL_HANDLE; }
+        if (pipeline.layout)   { vkDestroyPipelineLayout(dev, pipeline.layout, nullptr); pipeline.layout = VK_NULL_HANDLE; }
+        if (pipeline.shaders.vert) { vkDestroyShaderModule(dev, pipeline.shaders.vert, nullptr); pipeline.shaders.vert = VK_NULL_HANDLE; }
+        if (pipeline.shaders.frag) { vkDestroyShaderModule(dev, pipeline.shaders.frag, nullptr); pipeline.shaders.frag = VK_NULL_HANDLE; }
+    }
+
     void VulkanRenderer::shutdown() {
         if (!_context) { return; }
         wait_idle();
@@ -560,11 +571,9 @@ namespace renderer {
         }
 
         if (_timeline_semaphore) { vkDestroySemaphore(dev, _timeline_semaphore, nullptr); _timeline_semaphore = VK_NULL_HANDLE; }
-        if (_pipeline)           { vkDestroyPipeline(dev, _pipeline, nullptr); _pipeline = VK_NULL_HANDLE; }
-        if (_pipeline_layout)    { vkDestroyPipelineLayout(dev, _pipeline_layout, nullptr); _pipeline_layout = VK_NULL_HANDLE; }
-        if (_vert_shader)        { vkDestroyShaderModule(dev, _vert_shader, nullptr); _vert_shader = VK_NULL_HANDLE; }
-        if (_frag_shader)        { vkDestroyShaderModule(dev, _frag_shader, nullptr); _frag_shader = VK_NULL_HANDLE; }
 
+        // Cube pipeline and buffers
+        destroy_pipeline(_cube_pipeline);
         destroy_buffer(_cube.vertices);
         destroy_buffer(_cube.indices);
 

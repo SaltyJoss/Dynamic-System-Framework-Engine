@@ -11,6 +11,8 @@
 #include "VulkanContext.h"
 #include "VulkanSwapchain.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "Platform/Logger.h"
 
 namespace renderer {
@@ -97,15 +99,19 @@ namespace renderer {
                 GpuBuffer indices;
                 uint32_t index_count = 0;
             };
-
+            // Methods for creating and destroying GPU buffers
+            void draw(VkCommandBuffer cmdB, const Pipeline& pipeline, 
+                const VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
+                const glm::mat4& mvp
+            );
             GpuBuffer create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage mem_usage);
             void destroy_buffer(GpuBuffer& buf);
 
+            void destroy_pipeline(Pipeline& pipeline);
+
 
             GpuMesh _cube{}; // temporary->replaced by a mesh registry later
-
             bool create_cube(); // temporary->replaced by a mesh registry later
-
             Pipeline _cube_pipeline;
     };
 } // namespace renderer
