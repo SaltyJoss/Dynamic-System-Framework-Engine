@@ -467,7 +467,7 @@ namespace renderer {
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), t, glm::vec3(0.3f, 1.0f, 0.0f));
         glm::mat4 mvp = proj * view * model;
 
-        draw(f.command_buffer, _cube_pipeline, _cube, viewport, scissor, mvp);     
+        draw(f.command_buffer, _cube_pipeline, _meshes[_cube_mesh], viewport, scissor, mvp);     
 
         vkCmdEndRendering(f.command_buffer);
 
@@ -574,10 +574,10 @@ namespace renderer {
 
         if (_timeline_semaphore) { vkDestroySemaphore(dev, _timeline_semaphore, nullptr); _timeline_semaphore = VK_NULL_HANDLE; }
 
-        // Cube pipeline and buffers
+        // Destroy the graphics pipeline and its associated resources
         destroy_pipeline(_cube_pipeline);
-        destroy_buffer(_cube.vertices);
-        destroy_buffer(_cube.indices);
+        for (auto& m : _meshes) { destroy_buffer(m.vertices); destroy_buffer(m.indices); }
+        _meshes.clear();
 
         destroy_depth_resources();
         _swapchain->destroy();
@@ -615,35 +615,39 @@ namespace renderer {
         }
     }
 
+    uint32_t VulkanRenderer::upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices) {
+        VulkanRenderer::GpuMesh mesh;
+
+        const VkDeviceSize vsize = vertices.size() * sizeof(assets::VertexHolder);
+        const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
+
+        mesh.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+        mesh.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
+        mesh.index_count = static_cast<uint32_t>(indices.size());
+
+        VmaAllocationInfo vi, ii;
+        vmaGetAllocationInfo(_context->allocator(), mesh.vertices.allocation, &vi);
+        vmaGetAllocationInfo(_context->allocator(), mesh.indices.allocation, &ii);
+        memcpy(vi.pMappedData, vertices.data(), vsize);
+        memcpy(ii.pMappedData, indices.data(), isize);
+
+        const uint32_t mesh_id = static_cast<uint32_t>(_meshes.size());
+        _meshes.push_back(mesh);
+        LOG_INFO("Uploaded mesh %u: %zu verts, %u indices", mesh_id, vertices.size(), mesh.index_count);
+        return mesh_id;
+    }
+
     // Creates a cube through the mesh loader
     bool VulkanRenderer::create_cube() {
         assets::MeshLoader loader;
         auto meshes = loader.load((paths::assets() / "objects" / "Shapes" / "cube.fbx").string());
-        if (meshes.empty()) {
-            LOG_ERROR("Failed to load cube mesh");
+        if (meshes.empty() || meshes.front()->_vertices.empty()) {
+            LOG_ERROR("create_cube: no geometry loaded");
             return false;
         }
         const scene::Mesh& src = *meshes.front();
-
-        if (src._vertices.empty() || src._indices.empty()) {
-            LOG_ERROR("Cube mesh has no vertices or indices");
-            return false;
-        }
-
-        const VkDeviceSize vsize = src._vertices.size() * sizeof(assets::VertexHolder);
-        const VkDeviceSize isize = src._indices.size() * sizeof(uint32_t);
-
-        _cube.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
-        _cube.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
-        _cube.index_count = static_cast<uint32_t>(src._indices.size());
-
-        VmaAllocationInfo vi, ii;
-        vmaGetAllocationInfo(_context->allocator(), _cube.vertices.allocation, &vi);
-        vmaGetAllocationInfo(_context->allocator(), _cube.indices.allocation, &ii);
-        memcpy(vi.pMappedData, src._vertices.data(), vsize);
-        memcpy(ii.pMappedData, src._indices.data(), isize);
-
-        LOG_INFO("Loaded mesh: %zu verts, %u indices", src._vertices.size(), _cube.index_count);
+        std::vector<uint32_t> idx(src._indices.begin(), src._indices.end());
+        _cube_mesh = upload_mesh(src._vertices, idx);
         return true;
     }
 
