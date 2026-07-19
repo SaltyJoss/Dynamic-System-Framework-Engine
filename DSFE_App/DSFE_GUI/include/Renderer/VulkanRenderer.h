@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <array>
 #include <shaderc/shaderc.hpp>
 

@@ -1,10 +1,12 @@
 #include "Renderer/VulkanRenderer.h"
 
-#include "Assets/VertexHolder.h" 
+#include "Assets/VertexHolder.h"
+#include "Assets/MeshLoader.h"
+#include "Scene/Mesh.h"
+
 #include "EngineLib/LogMacros.h"
 #include "Platform/Paths.h"
 
-#include <cstring>
 namespace renderer {
     // Helper function to create an image memory barrier for Vulkan command buffers
     static void image_barrier(VkCommandBuffer cmd, VkImage image,
@@ -613,44 +615,77 @@ namespace renderer {
         }
     }
 
+    // Creates a cube through the mesh loader
     bool VulkanRenderer::create_cube() {
-        using assets::VertexHolder;
-        const glm::vec3 P[8] = {
-            {-0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {-0.5f,0.5f,-0.5f},
-            {-0.5f,-0.5f, 0.5f}, {0.5f,-0.5f, 0.5f}, {0.5f,0.5f, 0.5f}, {-0.5f,0.5f, 0.5f}
-        };
-        auto V = [](glm::vec3 p, glm::vec3 n){ return VertexHolder(p, n, {0,0}); };
+        assets::MeshLoader loader;
+        auto meshes = loader.load((paths::assets() / "objects" / "Shapes" / "cube.fbx").string());
+        if (meshes.empty()) {
+            LOG_ERROR("Failed to load cube mesh");
+            return false;
+        }
+        const scene::Mesh& src = *meshes.front();
 
-        std::vector<VertexHolder> verts = {
-            V(P[0],{0,0,-1}),V(P[1],{0,0,-1}),V(P[2],{0,0,-1}),V(P[3],{0,0,-1}), // back
-            V(P[4],{0,0, 1}),V(P[5],{0,0, 1}),V(P[6],{0,0, 1}),V(P[7],{0,0, 1}), // front
-            V(P[0],{-1,0,0}),V(P[3],{-1,0,0}),V(P[7],{-1,0,0}),V(P[4],{-1,0,0}), // left
-            V(P[1],{1,0,0}), V(P[2],{1,0,0}), V(P[6],{1,0,0}), V(P[5],{1,0,0}),  // right
-            V(P[0],{0,-1,0}),V(P[1],{0,-1,0}),V(P[5],{0,-1,0}),V(P[4],{0,-1,0}), // bottom
-            V(P[3],{0,1,0}), V(P[2],{0,1,0}), V(P[6],{0,1,0}), V(P[7],{0,1,0})   // top
-        };
-        std::vector<uint32_t> indices;
-        for (uint32_t f = 0; f < 6; ++f) {
-            uint32_t b = f*4;
-            indices.insert(indices.end(), { b,b+1,b+2, b,b+2,b+3 });
+        if (src._vertices.empty() || src._indices.empty()) {
+            LOG_ERROR("Cube mesh has no vertices or indices");
+            return false;
         }
 
-        const VkDeviceSize vsize = verts.size() * sizeof(VertexHolder);
-        const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
+        const VkDeviceSize vsize = src._vertices.size() * sizeof(assets::VertexHolder);
+        const VkDeviceSize isize = src._indices.size() * sizeof(uint32_t);
 
         _cube.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
         _cube.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
-        _cube.index_count = static_cast<uint32_t>(indices.size());
+        _cube.index_count = static_cast<uint32_t>(src._indices.size());
 
-        // MAPPED_BIT means the allocation's pointer is ready in allocationInfo.
         VmaAllocationInfo vi, ii;
         vmaGetAllocationInfo(_context->allocator(), _cube.vertices.allocation, &vi);
         vmaGetAllocationInfo(_context->allocator(), _cube.indices.allocation, &ii);
-        memcpy(vi.pMappedData, verts.data(), vsize);
-        memcpy(ii.pMappedData, indices.data(), isize);
+        memcpy(vi.pMappedData, src._vertices.data(), vsize);
+        memcpy(ii.pMappedData, src._indices.data(), isize);
 
-        LOG_INFO("Cube uploaded: %zu verts, %u indices", verts.size(), _cube.index_count);
+        LOG_INFO("Loaded mesh: %zu verts, %u indices", src._vertices.size(), _cube.index_count);
         return true;
     }
+
+    // Old cube creation code.
+    // bool VulkanRenderer::create_cube() {
+    //     using assets::VertexHolder;
+    //     const glm::vec3 P[8] = {
+    //         {-0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {-0.5f,0.5f,-0.5f},
+    //         {-0.5f,-0.5f, 0.5f}, {0.5f,-0.5f, 0.5f}, {0.5f,0.5f, 0.5f}, {-0.5f,0.5f, 0.5f}
+    //     };
+    //     auto V = [](glm::vec3 p, glm::vec3 n){ return VertexHolder(p, n, {0,0}); };
+
+    //     std::vector<VertexHolder> verts = {
+    //         V(P[0],{0,0,-1}),V(P[1],{0,0,-1}),V(P[2],{0,0,-1}),V(P[3],{0,0,-1}), // back
+    //         V(P[4],{0,0, 1}),V(P[5],{0,0, 1}),V(P[6],{0,0, 1}),V(P[7],{0,0, 1}), // front
+    //         V(P[0],{-1,0,0}),V(P[3],{-1,0,0}),V(P[7],{-1,0,0}),V(P[4],{-1,0,0}), // left
+    //         V(P[1],{1,0,0}), V(P[2],{1,0,0}), V(P[6],{1,0,0}), V(P[5],{1,0,0}),  // right
+    //         V(P[0],{0,-1,0}),V(P[1],{0,-1,0}),V(P[5],{0,-1,0}),V(P[4],{0,-1,0}), // bottom
+    //         V(P[3],{0,1,0}), V(P[2],{0,1,0}), V(P[6],{0,1,0}), V(P[7],{0,1,0})   // top
+    //     };
+    //     std::vector<uint32_t> indices;
+    //     for (uint32_t f = 0; f < 6; ++f) {
+    //         uint32_t b = f*4;
+    //         indices.insert(indices.end(), { b,b+1,b+2, b,b+2,b+3 });
+    //     }
+
+    //     const VkDeviceSize vsize = verts.size() * sizeof(VertexHolder);
+    //     const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
+
+    //     _cube.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+    //     _cube.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
+    //     _cube.index_count = static_cast<uint32_t>(indices.size());
+
+    //     // MAPPED_BIT means the allocation's pointer is ready in allocationInfo.
+    //     VmaAllocationInfo vi, ii;
+    //     vmaGetAllocationInfo(_context->allocator(), _cube.vertices.allocation, &vi);
+    //     vmaGetAllocationInfo(_context->allocator(), _cube.indices.allocation, &ii);
+    //     memcpy(vi.pMappedData, verts.data(), vsize);
+    //     memcpy(ii.pMappedData, indices.data(), isize);
+
+    //     LOG_INFO("Cube uploaded: %zu verts, %u indices", verts.size(), _cube.index_count);
+    //     return true;
+    // }
 
 } // namespace renderer
