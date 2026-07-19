@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <array>
+#include <vector>
 #include <shaderc/shaderc.hpp>
 
 #include "VulkanContext.h"
@@ -15,6 +16,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Platform/Logger.h"
+
+namespace assets { class VertexHolder; }
 
 namespace renderer {
     // Structure to hold per-frame resources for Vulkan rendering
@@ -53,8 +56,11 @@ namespace renderer {
             ShaderModules create_shaders(const std::string& vertFile, const std::string& fragFile);
             static std::string load_shader_source(const std::string& filename);
             VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
+
             VkPipelineLayout create_pipeline_layout();
             VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders);
+            void destroy_pipeline(Pipeline& pipeline);
+
             bool create_sync_resources();
             bool create_command_buffers();
 
@@ -108,10 +114,10 @@ namespace renderer {
             GpuBuffer create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage mem_usage);
             void destroy_buffer(GpuBuffer& buf);
 
-            void destroy_pipeline(Pipeline& pipeline);
+            std::vector<GpuMesh> _meshes;
+            uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
 
-
-            GpuMesh _cube{}; // temporary->replaced by a mesh registry later
+            uint32_t _cube_mesh = 0;
             bool create_cube(); // temporary->replaced by a mesh registry later
             Pipeline _cube_pipeline;
     };
