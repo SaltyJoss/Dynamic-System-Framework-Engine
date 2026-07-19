@@ -42,8 +42,8 @@ namespace gui {
     // View IDs
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
-	// Forward Declarations for Axis Orientator
-	class AxisOrientator;
+    class SimulationRenderer;
+
 	// Forward Declarations for eKeyCode
     enum class eKeyCode;
 
@@ -71,6 +71,8 @@ namespace gui {
         void resizeRenderer(int w, int h);
         void renderViewport(int w, int h);
         bool rendererReady() const { return _rendererInitialised; }
+
+        uint32_t load_mesh(const std::string& path);
 
 		// Light
         scene::Light* getLight();
@@ -251,6 +253,8 @@ namespace gui {
 
         renderer::VulkanRenderer _renderer;
         bool _rendererInitialised = false;
+        std::unique_ptr<SimulationRenderer> _sim_renderer;
+        std::vector<uint32_t> _loaded_mesh_ids;
         
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;

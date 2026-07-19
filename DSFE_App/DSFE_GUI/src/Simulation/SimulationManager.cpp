@@ -1,6 +1,7 @@
 // DSFE_GUI SimulationManager.cpp
 #include "Scene/Object.h"
 #include "Simulation/SimulationManager.h"
+#include "Simulation/SimulationRenderer.h"
 
 #include <thread>
 #include <glm/glm.hpp>
@@ -35,6 +36,7 @@ namespace gui {
 	SimulationManager::SimulationManager() : _internalSize(1920, 1080), _displaySize(1.0f, 1.0f), _backgroundColour(0.18f, 0.18f, 0.20f),
 		_backgroundAlpha(1.0f), _core(CreateSimulationCore_v1(), CoreDeleter()),
 		_studyRunner(std::make_unique<StudyRunner>(makeCoreFactory, std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() - 1 : 1)) {
+			_sim_renderer = std::make_unique<SimulationRenderer>(_renderer);
 	}
 
 	// Cleans up OpenGL resources
@@ -74,6 +76,19 @@ namespace gui {
 			}
 		}
 		_renderer.render();
+	}
+
+	uint32_t SimulationManager::load_mesh(const std::string& path) {
+		if (!_rendererInitialised) { 
+			LOG_ERROR("load_mesh called before renderer initialised");
+			return renderer::VulkanRenderer::INVALID_MESH_ID;
+		}
+		uint32_t id = _sim_renderer->load_mesh(path);
+		if (id != renderer::VulkanRenderer::INVALID_MESH_ID) {
+			_loaded_mesh_ids.push_back(id);
+			LOG_INFO("Mesh loaded and tracked [id %u], %zu total", id, _loaded_mesh_ids.size());
+		}
+		return _sim_renderer->load_mesh(path);
 	}
 
 	// --------------------------------------------------
