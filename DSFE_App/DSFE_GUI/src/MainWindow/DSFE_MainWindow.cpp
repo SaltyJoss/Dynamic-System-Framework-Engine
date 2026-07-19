@@ -126,12 +126,7 @@ namespace window {
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
-				if (path.isEmpty()) { return; }
-				// Covert path name to just the file name without extension or path
-				std::string bodyName = QFileInfo(path).baseName().toStdString();
-				//_sim->simCore()->loadSingleBody(bodyName);
-				//_sim->loadMesh(path.toStdString());
+				onLoadMesh();
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
@@ -360,6 +355,14 @@ namespace window {
 				//_sim->loadRobot(robotName.toStdString());
 			});
 		}
+	}
+
+	void DSFE_MainWindow::onLoadMesh() {
+		const QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
+		if (path.isEmpty()) { return; }
+		std::string bodyName = QFileInfo(path).baseName().toStdString();
+		//_sim->simCore()->loadSingleBody(bodyName);
+		_sim->load_mesh(path.toStdString());
 	}
 
 } // namespace window

@@ -24,6 +24,7 @@ namespace window {
 		void buildGraphicsMenu(QMenu* graphicsMenu);
 		void buildSceneMenu(QMenu* sceneMenu);
 		void buildRobotMenu(QMenu* projectMenu);
+		void onLoadMesh();
 
 		render::ResolutionPreset r;
 		render::QualityPreset q;
