@@ -93,6 +93,7 @@ set(SCENE_SRC
 )
 
 set(SIMULATION_SRC
+    src/Simulation/MeshStore.cpp
     src/Simulation/SimulationManager.cpp
     src/Simulation/SimulationScene.cpp
     src/Simulation/SimulationRenderer.cpp
