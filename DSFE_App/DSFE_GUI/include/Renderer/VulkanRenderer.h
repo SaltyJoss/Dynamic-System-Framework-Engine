@@ -12,7 +12,6 @@
 
 #include "VulkanContext.h"
 #include "VulkanSwapchain.h"
-
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Platform/Logger.h"
@@ -115,10 +114,13 @@ namespace renderer {
             void destroy_buffer(GpuBuffer& buf);
 
             std::vector<GpuMesh> _meshes;
-            uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
+            Pipeline _mesh_pipeline;
 
-            uint32_t _cube_mesh = 0;
-            bool create_cube(); // temporary->replaced by a mesh registry later
-            Pipeline _cube_pipeline;
+        public:
+
+            static constexpr uint32_t INVALID_MESH_ID = UINT32_MAX;
+
+            uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
+            const GpuMesh* get_mesh(uint32_t id) const { return id < _meshes.size() ? &_meshes[id] : nullptr; }
     };
 } // namespace renderer
