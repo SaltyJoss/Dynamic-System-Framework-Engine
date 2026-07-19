@@ -1,9 +1,6 @@
 #include "Renderer/VulkanRenderer.h"
 
 #include "Assets/VertexHolder.h"
-#include "Assets/MeshLoader.h"
-#include "Scene/Mesh.h"
-
 #include "EngineLib/LogMacros.h"
 #include "Platform/Paths.h"
 
