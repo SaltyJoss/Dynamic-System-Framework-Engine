@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include "Platform/StudyRunner.h"
 
+#include "Simulation/MeshStore.h"
 #include "Renderer/VulkanRenderer.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
@@ -254,6 +255,7 @@ namespace gui {
         renderer::VulkanRenderer _renderer;
         bool _rendererInitialised = false;
         std::unique_ptr<SimulationRenderer> _sim_renderer;
+        MeshStore _mesh_store;
         std::vector<uint32_t> _loaded_mesh_ids;
         
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies

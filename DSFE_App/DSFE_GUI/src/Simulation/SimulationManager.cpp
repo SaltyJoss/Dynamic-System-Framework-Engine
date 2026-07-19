@@ -3,6 +3,9 @@
 #include "Simulation/SimulationManager.h"
 #include "Simulation/SimulationRenderer.h"
 
+#include "Assets/MeshLoader.h"
+#include "Scene/Mesh.h"
+
 #include <thread>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -83,12 +86,26 @@ namespace gui {
 			LOG_ERROR("load_mesh called before renderer initialised");
 			return renderer::VulkanRenderer::INVALID_MESH_ID;
 		}
-		uint32_t id = _sim_renderer->load_mesh(path);
-		if (id != renderer::VulkanRenderer::INVALID_MESH_ID) {
-			_loaded_mesh_ids.push_back(id);
-			LOG_INFO("Mesh loaded and tracked [id %u], %zu total", id, _loaded_mesh_ids.size());
+		assets::MeshLoader loader;
+		auto meshes = loader.load(path);
+		if (meshes.empty() || meshes.front()->_vertices.empty()) {
+			LOG_ERROR("no geometry found in mesh file: %s", path.c_str());
+			return MeshStore::INVALID_ID;
 		}
-		return _sim_renderer->load_mesh(path);
+
+		scene::Mesh mesh = *meshes.front();
+		std::vector<uint32_t> indices(mesh._indices.begin(), mesh._indices.end());
+		const uint32_t cpu_id = _mesh_store.add(std::move(mesh));
+		const uint32_t gpu_id = _sim_renderer->upload(_mesh_store.get(cpu_id)->_vertices, indices);
+		
+		if (cpu_id != gpu_id) {
+			LOG_ERROR("CPU mesh ID (%u) does not match GPU mesh ID (%u) for mesh: %s", cpu_id, gpu_id, path.c_str());
+		}
+		
+		_loaded_mesh_ids.push_back(cpu_id);
+		LOG_INFO("Mesh loaded [id %u]: %s", cpu_id, path.c_str());
+		return cpu_id;
+
 	}
 
 	// --------------------------------------------------
