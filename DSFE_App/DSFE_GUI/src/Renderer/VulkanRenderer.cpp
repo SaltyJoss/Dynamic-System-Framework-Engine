@@ -467,8 +467,8 @@ namespace renderer {
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), t, glm::vec3(0.3f, 1.0f, 0.0f));
         glm::mat4 mvp = proj * view * model;
 
-        draw(f.command_buffer, _cube_pipeline, _meshes[_cube_mesh], viewport, scissor, mvp);     
-
+        if (const GpuMesh* m = get_mesh(0)) { draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, mvp); }
+        
         vkCmdEndRendering(f.command_buffer);
 
         image_barrier(f.command_buffer, _swapchain->image(image_index),
@@ -540,14 +540,12 @@ namespace renderer {
         if (!create_sync_resources()) { return false; }
 
         // Create the graphics pipeline for rendering (hardcoded to cube for now)
-        _cube_pipeline.shaders = create_shaders("cube.vert.glsl", "cube.frag.glsl");
-        if (_cube_pipeline.shaders.vert == VK_NULL_HANDLE || _cube_pipeline.shaders.frag == VK_NULL_HANDLE) { return false; }
-        _cube_pipeline.layout = create_pipeline_layout();
-        if (_cube_pipeline.layout == VK_NULL_HANDLE) { return false; }
-        _cube_pipeline.pipeline = create_graphics_pipeline(_cube_pipeline.layout, _cube_pipeline.shaders);
-        if (_cube_pipeline.pipeline == VK_NULL_HANDLE) { return false; }
-
-        if (!create_cube()) { return false; }
+        _mesh_pipeline.shaders = create_shaders("cube.vert.glsl", "cube.frag.glsl");
+        if (_mesh_pipeline.shaders.vert == VK_NULL_HANDLE || _mesh_pipeline.shaders.frag == VK_NULL_HANDLE) { return false; }
+        _mesh_pipeline.layout = create_pipeline_layout();
+        if (_mesh_pipeline.layout == VK_NULL_HANDLE) { return false; }
+        _mesh_pipeline.pipeline = create_graphics_pipeline(_mesh_pipeline.layout, _mesh_pipeline.shaders);
+        if (_mesh_pipeline.pipeline == VK_NULL_HANDLE) { return false; }
 
         LOG_INFO("Vulkan renderer initialised (%ux%u)", _width, _height);
         return true;
@@ -575,7 +573,7 @@ namespace renderer {
         if (_timeline_semaphore) { vkDestroySemaphore(dev, _timeline_semaphore, nullptr); _timeline_semaphore = VK_NULL_HANDLE; }
 
         // Destroy the graphics pipeline and its associated resources
-        destroy_pipeline(_cube_pipeline);
+        destroy_pipeline(_mesh_pipeline);
         for (auto& m : _meshes) { destroy_buffer(m.vertices); destroy_buffer(m.indices); }
         _meshes.clear();
 
@@ -636,60 +634,4 @@ namespace renderer {
         LOG_INFO("Uploaded mesh %u: %zu verts, %u indices", mesh_id, vertices.size(), mesh.index_count);
         return mesh_id;
     }
-
-    // Creates a cube through the mesh loader
-    bool VulkanRenderer::create_cube() {
-        assets::MeshLoader loader;
-        auto meshes = loader.load((paths::assets() / "objects" / "Shapes" / "cube.fbx").string());
-        if (meshes.empty() || meshes.front()->_vertices.empty()) {
-            LOG_ERROR("create_cube: no geometry loaded");
-            return false;
-        }
-        const scene::Mesh& src = *meshes.front();
-        std::vector<uint32_t> idx(src._indices.begin(), src._indices.end());
-        _cube_mesh = upload_mesh(src._vertices, idx);
-        return true;
-    }
-
-    // Old cube creation code.
-    // bool VulkanRenderer::create_cube() {
-    //     using assets::VertexHolder;
-    //     const glm::vec3 P[8] = {
-    //         {-0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {-0.5f,0.5f,-0.5f},
-    //         {-0.5f,-0.5f, 0.5f}, {0.5f,-0.5f, 0.5f}, {0.5f,0.5f, 0.5f}, {-0.5f,0.5f, 0.5f}
-    //     };
-    //     auto V = [](glm::vec3 p, glm::vec3 n){ return VertexHolder(p, n, {0,0}); };
-
-    //     std::vector<VertexHolder> verts = {
-    //         V(P[0],{0,0,-1}),V(P[1],{0,0,-1}),V(P[2],{0,0,-1}),V(P[3],{0,0,-1}), // back
-    //         V(P[4],{0,0, 1}),V(P[5],{0,0, 1}),V(P[6],{0,0, 1}),V(P[7],{0,0, 1}), // front
-    //         V(P[0],{-1,0,0}),V(P[3],{-1,0,0}),V(P[7],{-1,0,0}),V(P[4],{-1,0,0}), // left
-    //         V(P[1],{1,0,0}), V(P[2],{1,0,0}), V(P[6],{1,0,0}), V(P[5],{1,0,0}),  // right
-    //         V(P[0],{0,-1,0}),V(P[1],{0,-1,0}),V(P[5],{0,-1,0}),V(P[4],{0,-1,0}), // bottom
-    //         V(P[3],{0,1,0}), V(P[2],{0,1,0}), V(P[6],{0,1,0}), V(P[7],{0,1,0})   // top
-    //     };
-    //     std::vector<uint32_t> indices;
-    //     for (uint32_t f = 0; f < 6; ++f) {
-    //         uint32_t b = f*4;
-    //         indices.insert(indices.end(), { b,b+1,b+2, b,b+2,b+3 });
-    //     }
-
-    //     const VkDeviceSize vsize = verts.size() * sizeof(VertexHolder);
-    //     const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
-
-    //     _cube.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
-    //     _cube.indices  = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,  VMA_MEMORY_USAGE_AUTO);
-    //     _cube.index_count = static_cast<uint32_t>(indices.size());
-
-    //     // MAPPED_BIT means the allocation's pointer is ready in allocationInfo.
-    //     VmaAllocationInfo vi, ii;
-    //     vmaGetAllocationInfo(_context->allocator(), _cube.vertices.allocation, &vi);
-    //     vmaGetAllocationInfo(_context->allocator(), _cube.indices.allocation, &ii);
-    //     memcpy(vi.pMappedData, verts.data(), vsize);
-    //     memcpy(ii.pMappedData, indices.data(), isize);
-
-    //     LOG_INFO("Cube uploaded: %zu verts, %u indices", verts.size(), _cube.index_count);
-    //     return true;
-    // }
-
 } // namespace renderer
