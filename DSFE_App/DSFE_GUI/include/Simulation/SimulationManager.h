@@ -10,6 +10,8 @@
 #include "Platform/StudyRunner.h"
 
 #include "Simulation/MeshStore.h"
+#include "Simulation/SimulationScene.h"
+#include "Robots/RobotBinding.h"
 #include "Renderer/VulkanRenderer.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
@@ -35,7 +37,7 @@ namespace core { class ISimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
 namespace interpreter { class IStoredProgram; }
-namespace robots { class RobotSystem; }
+namespace robots { class RobotSystem; struct RobotModel; }
 namespace control { class TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
@@ -161,7 +163,7 @@ namespace gui {
 		scene::Object* getObjectByID(scene::ObjectID id);
 
 		// Robot System loading and management
-        void loadRobot(const std::string& name);
+        void load_robot(const std::string& name);
         void resetRobot();
         void clearRobot();
         const bool hasRobot() const;
@@ -256,7 +258,13 @@ namespace gui {
         bool _rendererInitialised = false;
         std::unique_ptr<SimulationRenderer> _sim_renderer;
         MeshStore _mesh_store;
+        SimulationScene _scene;
+        RobotBinding _robot_binding;
         std::vector<uint32_t> _loaded_mesh_ids;
+
+        void buildRobotVisuals(const robots::RobotModel& model);
+        void updateRobotTransforms();
+        //void buildRobotCollision(const robots::RobotModel& model);
         
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;

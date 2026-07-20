@@ -5,6 +5,9 @@
 
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
+#include "Robots/RobotModel.h"
+#include "Robots/RobotSystem.h"
+#include "Platform/ISimulationCore.h"
 
 #include <thread>
 #include <glm/glm.hpp>
@@ -31,6 +34,18 @@ namespace gui {
 		// std::function deleter is constructed from the lambda implicitly
 		return CorePtr(raw, [](core::ISimulationCore* p) { DestroySimulationCore(p); });
 	}
+
+	static const glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
+
+    static glm::mat4 toGlm(const mathlib::Mat4& m) {
+        glm::mat4 g(1.0f);
+        for (int c = 0; c < 4; ++c) {
+            for (int r = 0; r < 4; ++r) { 
+				g[c][r] = static_cast<float>(m(r, c));
+			}
+		}
+        return g;
+    }
 
 	// --------------------------------------------------
 	//				CONSTRUCTOR & DESTRUCTOR
@@ -78,7 +93,8 @@ namespace gui {
 				LOG_INFO("Study completed: %s", r.tag.c_str());
 			}
 		}
-		_renderer.render();
+		updateRobotTransforms();
+		_renderer.render(_scene);
 	}
 
 	uint32_t SimulationManager::load_mesh(const std::string& path) {
@@ -103,10 +119,108 @@ namespace gui {
 		}
 		
 		_loaded_mesh_ids.push_back(cpu_id);
-		LOG_INFO("Mesh loaded [id %u]: %s", cpu_id, path.c_str());
-		return cpu_id;
+        _scene.add_renderable(cpu_id, glm::mat4(1.0f));   // at origin for now
+        LOG_INFO("Mesh loaded [id %u]: %s", cpu_id, path.c_str());
+        return cpu_id;
 
 	}
+
+	void SimulationManager::load_robot(const std::string& name) {
+		if (!_core) {
+			LOG_ERROR("Simulation core not initialised, cannot load robot");
+			return;
+		}
+		if (!_rendererInitialised) {
+			LOG_ERROR("Renderer not initialised, cannot load robot");
+			return;
+		}
+		_core->loadRobot(name);
+		if (!_core->hasRobot()) {
+			LOG_ERROR("Failed to load robot: %s", name.c_str());
+			return;
+		}
+
+		auto model = _core->robotSystem().model();
+
+		clearRobot();
+		buildRobotVisuals(model);
+
+		_core->clearRobotPresentationDirty();
+
+		LOG_INFO("Robot loaded: %s", model.name.c_str());
+	}
+
+    void SimulationManager::buildRobotVisuals(const robots::RobotModel& model) {
+        assets::MeshLoader loader;
+        namespace fs = std::filesystem;
+
+        for (const auto& link : model.links) {
+            auto& renderables = _robot_binding.link_to_renderables[link.name];
+
+            for (const auto& entry : link.visual.meshEntries) {
+                fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
+
+                auto meshes = loader.load(full.string());
+                if (meshes.empty()) {
+                    LOG_ERROR("buildRobotVisuals: no meshes in %s", full.string().c_str());
+                    continue;
+                }
+
+                for (auto& mptr : meshes) {
+                    scene::Mesh& src = *mptr;
+                    if (src._vertices.empty()) { continue; }
+
+                    // CPU + GPU registration, ids kept aligned (same pattern as loadMesh).
+                    std::vector<uint32_t> indices(src._indices.begin(), src._indices.end());
+                    const uint32_t cpu_id = _mesh_store.add(src);
+                    const uint32_t gpu_id = _sim_renderer->upload(_mesh_store.get(cpu_id)->_vertices, indices);
+                    if (cpu_id != gpu_id) {
+                        LOG_ERROR("buildRobotVisuals: id mismatch %u vs %u", cpu_id, gpu_id);
+                    }
+
+					// Rest pose: scale only. Step F drives the real per-link world transforms
+					// via the salvaged applyTransforms maths (toGlm + q_corr alignment).
+					// glm::mat4 rest = glm::scale(glm::mat4(1.0f), glm::vec3(model.scale));
+					// if (!model.baseFrameIsEngineAligned) {
+					//  	glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+					//  	rest = glm::mat4_cast(q_corr) * rest;
+					// }
+					const uint32_t r_idx = _scene.add_renderable(cpu_id, glm::mat4(1.0f));
+                    renderables.push_back(r_idx);
+                }
+            }
+        }
+    }
+
+	void SimulationManager::updateRobotTransforms() {
+		if (!_core->hasRobot()) { return; }
+		const auto& model = _core->robotSystem().model();
+		const std::vector<mathlib::Mat4>& world = _core->robotSystem().worldTransforms();
+		
+		if (world.size() < model.links.size()) {
+			LOG_ERROR("updateRobotTransforms: world transforms size (%zu) less than link count (%zu)", world.size(), model.links.size());
+			return;
+		}
+		const bool is_aligned = model.baseFrameIsEngineAligned;
+		for (size_t i = 0; i < model.links.size(); ++i) {
+			const auto& link = model.links[i];
+			auto it = _robot_binding.link_to_renderables.find(link.name);
+			if (it == _robot_binding.link_to_renderables.end()) { continue; }
+			glm::mat4 T = toGlm(world[i]);
+			glm::vec3 pos = glm::vec3(T[3]); // translation
+			glm::quat q = glm::quat_cast(T); // rotation
+			//glm::quat q_rot = is_aligned ? q : q_corr * q; // apply correction if needed
+			glm::mat4 M = toGlm(world[i]) * glm::scale(glm::mat4(1.0f), glm::vec3(model.scale));
+			for (uint32_t r_idx : it->second) {
+				_scene.set_transform(r_idx, M);
+			}
+		}
+	}
+
+	void SimulationManager::clearRobot() {
+        _scene.clear();          // drop all renderables
+        _robot_binding.clear();
+    }
 
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
@@ -165,10 +279,6 @@ namespace gui {
     }
 
     // ---------------- Robots ----------------
-
-    void SimulationManager::loadRobot(const std::string& name) {
-        LOG_WARN("loadRobot('%s') is stubbed pending the Vulkan scene layer", name.c_str());
-    }
 
     const bool SimulationManager::hasRobot() const { return false; }
 
