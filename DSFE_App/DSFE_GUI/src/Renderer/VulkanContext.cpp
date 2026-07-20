@@ -164,11 +164,9 @@ namespace renderer {
             .queueCount = 1,
             .pQueuePriorities = &priority
         };
-
-        // These are what the renderer actually depends on — without them it
-        // compiles and then dies at vkCmdBeginRendering.
         VkPhysicalDeviceVulkan13Features f13{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+            .shaderDemoteToHelperInvocation = VK_TRUE,
             .synchronization2 = VK_TRUE,
             .dynamicRendering = VK_TRUE
         };
