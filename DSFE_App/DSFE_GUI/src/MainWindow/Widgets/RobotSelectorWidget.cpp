@@ -36,7 +36,7 @@ namespace widgets {
 		layout()->addWidget(button);
 		connect(button, &QPushButton::clicked, this, [this, robotName]() {
 			LOG_INFO("Selected robot: %s", robotName.toStdString().c_str());
-			if (_sim) { _sim->loadRobot(robotName.toStdString()); }
+			if (_sim) { _sim->load_robot(robotName.toStdString()); }
 		});
 	}
 } // namespace widgets

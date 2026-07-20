@@ -121,7 +121,7 @@ namespace window {
 			auto* robotMenu = projectMenu->addMenu("Load Robot");
 			connect(robotMenu, &QMenu::aboutToShow, this, [this, robotMenu]() {
 				robotMenu->clear();
-				//buildRobotMenu(robotMenu);
+				buildRobotMenu(robotMenu);
 			});
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
@@ -352,7 +352,7 @@ namespace window {
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
-				//_sim->loadRobot(robotName.toStdString());
+				_sim->load_robot(robotName.toStdString());
 			});
 		}
 	}
