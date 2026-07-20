@@ -39,6 +39,8 @@ namespace widgets {
 
 	private:
 		gui::SimulationManager* _sim = nullptr;
+		QElapsedTimer _frameTimer;
+		qint64 _lastNs = 0;
 		QTimer _updateTimer;
 		bool _renderer_initialised = false;
 		bool _mouse_captured = false;

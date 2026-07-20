@@ -58,7 +58,20 @@ namespace widgets {
 	}
 
 	void ViewportWidget::paintEvent(QPaintEvent* event) {
-		if (_sim) { _sim->renderViewport(width(), height()); } // Need to add to SimulationManager
+		if (!_sim) { return; }
+
+        const qint64 now = _frameTimer.nsecsElapsed();
+        const float dt = (_lastNs == 0) ? (1.0f / 144.0f) : static_cast<float>(now - _lastNs) * 1e-9f;
+        _lastNs = now;
+
+        _sim->tick(dt);
+		_sim->renderViewport(width(), height());
+
+        if (_mouse_captured) {
+            static float smoothedDt = (1.0f / 144.0f);
+            smoothedDt = glm::mix(smoothedDt, dt, 0.5f);
+            _sim->handleContinuousMovement(_pressedKeys, smoothedDt);
+        }
 	}
 
 	void ViewportWidget::keyPressEvent(QKeyEvent* event) {
