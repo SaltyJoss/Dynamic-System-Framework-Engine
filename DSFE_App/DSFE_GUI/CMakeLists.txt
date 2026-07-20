@@ -100,6 +100,11 @@ set(SIMULATION_SRC
     src/Simulation/SimulationSystemController.cpp
 )
 
+set(SYSTEMS_SRC
+    src/Systems/SingleBodySystem.cpp
+    src/Systems/MultiBodySystem.cpp
+)
+
 set(WIDGETS_SRC
     src/ui/RenderPreset.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
@@ -154,6 +159,7 @@ target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
     ${SCENE_SRC}
     ${SIMULATION_SRC}
+    ${SYSTEMS_SRC}
     ${WIDGETS_SRC}
     ${ROBOT_SRC}
     ${OBJECT_SRC}
@@ -170,7 +176,6 @@ target_include_directories(DSFE_GUI
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
     PRIVATE
         "${Vulkan_INCLUDE_DIR}/Volk"
