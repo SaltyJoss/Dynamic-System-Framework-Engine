@@ -171,29 +171,9 @@ namespace gui {
 			}
 		}
 		_systems.update_all(_scene);
-		_renderer.render(_scene);
+		_camera.setAspect(static_cast<float>(w) / static_cast<float>(h));
+		_renderer.render(_scene, _camera.getViewMatrix(), _camera.getProjection());
 	}
-
-	// --------------------------------------------------
-	//					INPUT HANDLING
-	// --------------------------------------------------
-	void SimulationManager::pushCompletedStudies(std::vector<StudyResult>) { _hasCompletedStudy = true; }
-    void SimulationManager::pushCompletedStudy(StudyResult)                { _hasCompletedStudy = true; }
-    bool SimulationManager::hasCompletedStudy() const                      { return _hasCompletedStudy; }
-
-    std::vector<StudyResult> SimulationManager::consumeCompletedStudy() {
-        std::vector<StudyResult> copy;
-        _hasCompletedStudy = false;
-        return copy;
-    }
-
-    // ---------------- Input (stubbed until scene layer returns) ----------------
-
-    void SimulationManager::processMovementKey(int, float) {}
-    void SimulationManager::handleContinuousMovement(const std::unordered_set<eKeyCode>&, float) {}
-    void SimulationManager::handleMouseLook(double, double, bool) {}
-    void SimulationManager::onMouseWheel(double) {}
-    void SimulationManager::resetMouseDelta() { _firstMouse = true; }
 
 	// ---------------- Render settings ----------------
 
@@ -225,6 +205,16 @@ namespace gui {
     bool SimulationManager::followRobotJoint(const std::string&, const glm::vec3&) { return false; }
 
     // ---------------- Simulation control ----------------
+
+	void SimulationManager::pushCompletedStudies(std::vector<StudyResult>) { _hasCompletedStudy = true; }
+    void SimulationManager::pushCompletedStudy(StudyResult)                { _hasCompletedStudy = true; }
+    bool SimulationManager::hasCompletedStudy() const                      { return _hasCompletedStudy; }
+
+    std::vector<StudyResult> SimulationManager::consumeCompletedStudy() {
+        std::vector<StudyResult> copy;
+        _hasCompletedStudy = false;
+        return copy;
+    }
 
 	// Start the simulation
 	void SimulationManager::startSimulation() {
@@ -321,4 +311,27 @@ namespace gui {
 		program->start();
 		return _core->runScriptToCompletion(program.get(), method); // this will block until the script finishes
 	}
+
+	// --------------------------------------------------
+	//					INPUT HANDLING
+	// --------------------------------------------------
+
+    void SimulationManager::processMovementKey(int, float) {}
+    void SimulationManager::handleContinuousMovement(const std::unordered_set<gui::eKeyCode>& keys, float dt) {
+        const float speed = 3.0f * dt;
+        if (keys.count(gui::eKeyCode::W))      { _camera.moveForward(speed); }
+        if (keys.count(gui::eKeyCode::S))      { _camera.moveBackward(speed); }
+        if (keys.count(gui::eKeyCode::D))      { _camera.moveRight(speed); }
+        if (keys.count(gui::eKeyCode::A))      { _camera.moveLeft(speed); }
+        if (keys.count(gui::eKeyCode::Space))  { _camera.moveUp(speed); }
+        if (keys.count(gui::eKeyCode::LShift)) { _camera.moveDown(speed); }
+    }
+    void SimulationManager::handleMouseLook(double dx, double dy, bool captured) {
+        if (!captured) { return; }
+        _camera.processMouseMovement(static_cast<float>(dx), static_cast<float>(dy));
+    }
+    void SimulationManager::onMouseWheel(double delta) {
+        _camera.onMouseWheel(delta);
+    }
+    void SimulationManager::resetMouseDelta() { _firstMouse = true; }
 }

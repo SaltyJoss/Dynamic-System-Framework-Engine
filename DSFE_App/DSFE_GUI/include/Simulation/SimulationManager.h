@@ -13,21 +13,20 @@
 #include "Simulation/SimulationScene.h"
 #include "Simulation/SimulationSystemController.h"
 
+#include "Scene/Camera.h"
+
 #include "Renderer/VulkanRenderer.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
 
 #include "Platform/KeyCode.h"
-
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
-
 #include "Platform/Logger.h"
 
 // Forward Declarations for Scene
 namespace scene {
     class Light;
-    class Camera;
     class Mesh;
     class Object;
     class SceneRenderer;
@@ -247,8 +246,8 @@ namespace gui {
 
         // Input Handling
         void processMovementKey(int key, float delta);
-        void handleContinuousMovement(const std::unordered_set<eKeyCode>& pressedKeys, float dt);
-        void handleMouseLook(double xpos, double ypos, bool mouseCaptured);
+        void handleContinuousMovement(const std::unordered_set<eKeyCode>& keys, float dt);
+        void handleMouseLook(double dx, double dy, bool captured);
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
@@ -261,13 +260,12 @@ namespace gui {
         MeshStore _mesh_store;
         SimulationScene _scene;
         std::vector<uint32_t> _loaded_mesh_ids;
-
         SimulationSystemController _systems;
-        
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
-		bool _hasCompletedStudy = false;
 
-        // Misc Settings
+        scene::Camera _camera{ glm::vec3(2.5f, 2.0f, 3.0f), 45.0f, 16.0f/9.0f, 0.1f, 100.0f };
+        
+		bool _hasCompletedStudy = false;
         bool _bodyLoaded = false;
 
 		// Sizes & Display
@@ -322,7 +320,7 @@ namespace gui {
         bool   _simRunning    = false;
         bool   _scriptRunning = false;
         double _simTime       = 0.0;
-        double _fixedDt       = 1.0 / 240.0;
+        double _fixedDt       = 1.0 / 180.0;
         double _telemetryHz   = 100.0;
 
         scene::Object* _selectedObject = nullptr;
