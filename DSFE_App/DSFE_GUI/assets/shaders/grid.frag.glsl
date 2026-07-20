@@ -23,10 +23,6 @@ void main() {
     float minor = gridLine(p, 0.1) * 0.25;   // 10cm lines, faint
     float major = gridLine(p, 1.0) * 0.5;    // 1m lines, stronger
     float axis  = 0.0;
-    // X/Z axes highlighted
-    vec2 aw = fwidth(p);
-    if (abs(v_world_pos.z) < aw.y * 1.5) { axis = 0.8; }   // X axis line
-    if (abs(v_world_pos.x) < aw.x * 1.5) { axis = 0.8; }   // Z axis line
 
     float line = max(max(minor, major), axis);
 
