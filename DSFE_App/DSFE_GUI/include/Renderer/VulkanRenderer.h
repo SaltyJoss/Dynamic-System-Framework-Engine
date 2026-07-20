@@ -47,7 +47,7 @@ namespace renderer {
         public:
             bool init(void* windowHandle);
             void shutdown();
-            void render(const gui::SimulationScene& scene);
+            void render(const gui::SimulationScene& scene, const glm::mat4& view, const glm::mat4& proj);
             void resize(uint32_t width, uint32_t height);
             void wait_idle();
 

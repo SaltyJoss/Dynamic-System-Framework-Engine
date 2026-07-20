@@ -370,7 +370,7 @@ namespace renderer {
     
 
     // Renders a single frame, handling synchronization, command buffer recording, and presentation. This function is called once per frame.
-    void VulkanRenderer::render(const gui::SimulationScene& scene) {
+    void VulkanRenderer::render(const gui::SimulationScene& scene, const glm::mat4& view, const glm::mat4& proj) {
         VkDevice dev = _context->device();
 
         // Handle a pending recreate at the START of the frame, never mid-frame.
@@ -425,7 +425,7 @@ namespace renderer {
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = {{{ 0.18f, 0.18f, 0.20f, 1.0f }}}
+            .clearValue = {{{ 0.6f, 0.6f, 0.6f, 1.0f }}}
         };
         // Depth attachment
         VkRenderingAttachmentInfo depth{
@@ -456,10 +456,6 @@ namespace renderer {
         };
         VkRect2D scissor{ {0, 0}, extent };
 
-        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-        proj[1][1] *= -1.0f;   // Vulkan clip-space Y flip
-        glm::mat4 view = glm::lookAt(glm::vec3(2.5f, 2.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0, 1, 0));
         const glm::mat4 view_proj = proj * view;
 
         for (const gui::Renderable& r : scene.renderables()) {
