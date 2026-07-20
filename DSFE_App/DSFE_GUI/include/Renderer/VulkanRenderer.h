@@ -66,7 +66,7 @@ namespace renderer {
             VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
 
             VkPipelineLayout create_pipeline_layout();
-            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders);
+            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend = false, bool depth_write = true);
             void destroy_pipeline(Pipeline& pipeline);
 
             bool create_sync_resources();
@@ -129,6 +129,9 @@ namespace renderer {
 
             std::vector<GpuMesh> _meshes;
             Pipeline _mesh_pipeline;
+            Pipeline _grid_pipeline;
+            GpuMesh  _grid_quad{};
+            bool create_grid();
 
             // Camera uniform buffer object structure for passing camera data to shaders
             struct CameraUBO {

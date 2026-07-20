@@ -121,7 +121,7 @@ namespace renderer {
     }
 
     // Builds the graphics pipeline
-    VkPipeline VulkanRenderer::create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders) {
+    VkPipeline VulkanRenderer::create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend, bool depth_write) {
         VkDevice dev = _context->device();
 
         VkPipelineShaderStageCreateInfo stages[2]{
@@ -186,7 +186,7 @@ namespace renderer {
         VkPipelineDepthStencilStateCreateInfo depth_stencil{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             .depthTestEnable = VK_TRUE,
-            .depthWriteEnable = VK_TRUE,
+            .depthWriteEnable = depth_write ? VK_TRUE : VK_FALSE,
             .depthCompareOp = VK_COMPARE_OP_LESS,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable = VK_FALSE,
@@ -195,7 +195,13 @@ namespace renderer {
         };
 
         VkPipelineColorBlendAttachmentState blend_attachment{
-            .blendEnable = VK_FALSE,
+            .blendEnable = alpha_blend ? VK_TRUE : VK_FALSE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
             .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
         };
@@ -355,6 +361,39 @@ namespace renderer {
         }
     }
 
+    bool VulkanRenderer::create_grid() {
+        using assets::VertexHolder;
+        const float S = 100.0f;
+        std::vector<VertexHolder> verts = {
+            VertexHolder({-S, 0.0f, -S}, {0,1,0}, {0,0}),
+            VertexHolder({ S, 0.0f, -S}, {0,1,0}, {1,0}),
+            VertexHolder({ S, 0.0f,  S}, {0,1,0}, {1,1}),
+            VertexHolder({-S, 0.0f,  S}, {0,1,0}, {0,1})
+        };
+        std::vector<uint32_t> indices = { 0,1,2, 0,2,3 };
+
+        const VkDeviceSize vsize = verts.size() * sizeof(VertexHolder);
+        const VkDeviceSize isize = indices.size() * sizeof(uint32_t);
+        _grid_quad.vertices = create_buffer(vsize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+        _grid_quad.indices = create_buffer(isize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+        _grid_quad.index_count = static_cast<uint32_t>(indices.size());
+
+        VmaAllocationInfo vi, ii;
+        vmaGetAllocationInfo(_context->allocator(), _grid_quad.vertices.allocation, &vi);
+        vmaGetAllocationInfo(_context->allocator(), _grid_quad.indices.allocation, &ii);
+        memcpy(vi.pMappedData, verts.data(), vsize);
+        memcpy(ii.pMappedData, indices.data(), isize);
+
+        _grid_pipeline.shaders = create_shaders("grid.vert.glsl", "grid.frag.glsl");
+        if (_grid_pipeline.shaders.vert == VK_NULL_HANDLE || _grid_pipeline.shaders.frag == VK_NULL_HANDLE) {
+            LOG_ERROR("Failed to create grid shaders"); return false;
+        }
+        _grid_pipeline.layout = create_pipeline_layout();
+        if (_grid_pipeline.layout == VK_NULL_HANDLE) { LOG_ERROR("Failed to create grid pipeline layout"); return false; }
+        _grid_pipeline.pipeline = create_graphics_pipeline(_grid_pipeline.layout, _grid_pipeline.shaders, /*alpha_blend=*/true, /*depth_write=*/false);
+        return _grid_pipeline.pipeline != VK_NULL_HANDLE;
+    }
+
     void VulkanRenderer::draw(VkCommandBuffer command_buffer, const renderer::Pipeline& pipeline, 
         const renderer::VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
         const PushConstants& pc, VkDescriptorSet camera_set
@@ -421,6 +460,7 @@ namespace renderer {
                       VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
                       VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                       VK_IMAGE_ASPECT_DEPTH_BIT);
+                      
         // Colour attachment
         VkRenderingAttachmentInfo colour{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -474,6 +514,15 @@ namespace renderer {
                 pc.material = glm::vec4(0.2f, 0.5f, 1.0f, 0.0f);
                 draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, pc, _camera_sets[ubo_slot]);
             }
+        }
+
+        // Draw the grid on the XZ plane
+        {
+            PushConstants pc{};
+            pc.mvp   = view_proj;            // world-space quad, identity model
+            pc.model = glm::mat4(1.0f);
+            draw(f.command_buffer, _grid_pipeline, _grid_quad, viewport, scissor,
+                 pc, _camera_sets[ubo_slot]);
         }
         
         vkCmdEndRendering(f.command_buffer);
@@ -639,6 +688,7 @@ namespace renderer {
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
         if (!create_descriptors()) { return false; }
+        if (!create_grid()) { return false; }
 
         // Create the graphics pipeline for rendering (hardcoded to cube for now)
         _mesh_pipeline.shaders = create_shaders("lit.vert.glsl", "lit.frag.glsl");
@@ -678,6 +728,9 @@ namespace renderer {
         destroy_pipeline(_mesh_pipeline);
         for (auto& m : _meshes) { destroy_buffer(m.vertices); destroy_buffer(m.indices); }
         _meshes.clear();
+        destroy_pipeline(_grid_pipeline);
+        destroy_buffer(_grid_quad.vertices);
+        destroy_buffer(_grid_quad.indices);
 
         destroy_depth_resources();
         _swapchain->destroy();
