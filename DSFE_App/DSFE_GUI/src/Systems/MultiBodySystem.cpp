@@ -35,7 +35,7 @@ namespace gui {
                 fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
                 auto meshes = loader.load(full.string());
                 if (meshes.empty()) {
-                    LOG_ERROR("MultiBodySystem::build: no meshes in %s", full.string().c_str());
+                    LOG_ERROR("No meshes in %s", full.string().c_str());
                     continue;
                 }
                 for (auto& mptr : meshes) {
@@ -45,7 +45,7 @@ namespace gui {
                     std::vector<uint32_t> indices(src._indices.begin(), src._indices.end());
                     const uint32_t cpu_id = _meshStore.add(src);
                     const uint32_t gpu_id = _renderer.upload(_meshStore.get(cpu_id)->_vertices, indices);
-                    if (cpu_id != gpu_id) { LOG_ERROR("MultiBodySystem::build: id mismatch %u vs %u", cpu_id, gpu_id); }
+                    if (cpu_id != gpu_id) { LOG_ERROR("ID mismatch %u vs %u", cpu_id, gpu_id); }
 
                     const uint32_t r_idx = scene.add_renderable(cpu_id, glm::mat4(1.0f));
                     renderables.push_back(r_idx);
@@ -57,7 +57,7 @@ namespace gui {
     void MultiBodySystem::update(SimulationScene& scene) {
         const std::vector<mathlib::Mat4>& world = _world_src();
         if (world.size() < _model.links.size()) {
-            LOG_ERROR("MultiBodySystem::update: world transforms size (%zu) less than link count (%zu)", world.size(), _model.links.size());
+            LOG_ERROR("World transforms size (%zu) less than link count (%zu)", world.size(), _model.links.size());
             return;
         }
         const glm::mat4 scale_M = glm::scale(glm::mat4(1.0f), glm::vec3(_model.scale));
