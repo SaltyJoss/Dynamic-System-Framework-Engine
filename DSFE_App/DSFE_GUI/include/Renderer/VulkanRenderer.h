@@ -45,6 +45,13 @@ namespace renderer {
         constexpr static VkFormat SWAPCHAIN_FORMAT{  VK_FORMAT_B8G8R8A8_SRGB };
         constexpr static VkFormat DEPTH_FORMAT{ VK_FORMAT_D32_SFLOAT };
 
+        struct PushConstants {
+            glm::mat4 mvp;
+            glm::mat4 model;          // for world-space normals + position in the fragment shader
+            glm::vec4 albedo;         // xyz colour, w unused
+            glm::vec4 material;       // x=metallic, y=roughness, z=ao, w unused
+        };
+
         public:
             bool init(void* windowHandle);
             void shutdown();
@@ -115,7 +122,7 @@ namespace renderer {
             // Methods for creating and destroying GPU buffers
             void draw(VkCommandBuffer cmdB, const Pipeline& pipeline, 
                 const VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
-                const glm::mat4& mvp
+                const PushConstants& pc, VkDescriptorSet camera_set
             );
             GpuBuffer create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage mem_usage);
             void destroy_buffer(GpuBuffer& buf);

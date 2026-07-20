@@ -101,12 +101,14 @@ namespace renderer {
 
     VkPipelineLayout VulkanRenderer::create_pipeline_layout() {
         VkPushConstantRange push_range{
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .offset = 0,
-            .size = sizeof(glm::mat4)
+            .size = sizeof(PushConstants)
         };
         VkPipelineLayoutCreateInfo layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &_camera_set_layout,
             .pushConstantRangeCount = 1,
             .pPushConstantRanges = &push_range
         };
@@ -355,12 +357,13 @@ namespace renderer {
 
     void VulkanRenderer::draw(VkCommandBuffer command_buffer, const renderer::Pipeline& pipeline, 
         const renderer::VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
-        const glm::mat4& mvp
+        const PushConstants& pc, VkDescriptorSet camera_set
     ) {
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
         vkCmdSetViewport(command_buffer, 0, 1, &viewport);
         vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-        vkCmdPushConstants(command_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &camera_set, 0, nullptr);
+        vkCmdPushConstants(command_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pc);
 
         VkDeviceSize offset = 0;
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &mesh.vertices.buffer, &offset);
@@ -458,10 +461,18 @@ namespace renderer {
 
         const glm::mat4 view_proj = proj * view;
 
+        const uint32_t ubo_slot = static_cast<uint32_t>(_frame_idx % MAX_FRAMES_IN_FLIGHT);
+        const glm::vec3 cam_pos = glm::vec3(glm::inverse(view)[3]);
+        update_camera_ubo(ubo_slot, view, proj, cam_pos);
+
         for (const gui::Renderable& r : scene.renderables()) {
             if (const GpuMesh* m = get_mesh(r.mesh_id)) {
-                const glm::mat4 mvp = view_proj * r.transform;
-                draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, mvp);
+                PushConstants pc{};
+                pc.mvp      = view_proj * r.transform;
+                pc.model    = r.transform;
+                pc.albedo   = glm::vec4(0.55f, 0.55f, 0.58f, 1.0f);
+                pc.material = glm::vec4(0.2f, 0.5f, 1.0f, 0.0f);
+                draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, pc, _camera_sets[ubo_slot]);
             }
         }
         
@@ -630,7 +641,7 @@ namespace renderer {
         if (!create_descriptors()) { return false; }
 
         // Create the graphics pipeline for rendering (hardcoded to cube for now)
-        _mesh_pipeline.shaders = create_shaders("cube.vert.glsl", "cube.frag.glsl");
+        _mesh_pipeline.shaders = create_shaders("lit.vert.glsl", "lit.frag.glsl");
         if (_mesh_pipeline.shaders.vert == VK_NULL_HANDLE || _mesh_pipeline.shaders.frag == VK_NULL_HANDLE) { return false; }
         _mesh_pipeline.layout = create_pipeline_layout();
         if (_mesh_pipeline.layout == VK_NULL_HANDLE) { return false; }
