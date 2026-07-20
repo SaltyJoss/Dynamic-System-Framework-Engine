@@ -23,7 +23,7 @@ namespace gui {
         return g;
     }
 
-    MulitBodySystem::MulitBodySystem(const robots::RobotModel& model, std::function<const std::vector<mathlib::Mat4>&()> world_src, MeshStore& mesh_store, SimulationRenderer& renderer)
+    MultiBodySystem::MultiBodySystem(const robots::RobotModel& model, std::function<const std::vector<mathlib::Mat4>&()> world_src, MeshStore& mesh_store, SimulationRenderer& renderer)
         : _model(model), _world_src(world_src), _meshStore(mesh_store), _renderer(renderer) {}
 
     void MultiBodySystem::build(SimulationScene& scene) {
