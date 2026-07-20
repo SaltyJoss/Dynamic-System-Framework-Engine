@@ -11,7 +11,8 @@
 
 #include "Simulation/MeshStore.h"
 #include "Simulation/SimulationScene.h"
-#include "Robots/RobotBinding.h"
+#include "Simulation/SimulationSystemController.h"
+
 #include "Renderer/VulkanRenderer.h"
 #include "Scene/ObjectID.h"
 #include "ui/RenderPreset.h"
@@ -46,6 +47,7 @@ namespace gui {
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
     class SimulationRenderer;
+    //class SimulationSystemController;
 
 	// Forward Declarations for eKeyCode
     enum class eKeyCode;
@@ -167,7 +169,6 @@ namespace gui {
         void resetRobot();
         void clearRobot();
         const bool hasRobot() const;
-
 		const bool hasBody() const;
 
 		// Setters for robot joint states (angle in radians)
@@ -259,12 +260,9 @@ namespace gui {
         std::unique_ptr<SimulationRenderer> _sim_renderer;
         MeshStore _mesh_store;
         SimulationScene _scene;
-        RobotBinding _robot_binding;
         std::vector<uint32_t> _loaded_mesh_ids;
 
-        void buildRobotVisuals(const robots::RobotModel& model);
-        void updateRobotTransforms();
-        //void buildRobotCollision(const robots::RobotModel& model);
+        SimulationSystemController _systems;
         
 		std::unique_ptr<StudyRunner> _studyRunner = nullptr; // Background worker for running batch studies
 		bool _hasCompletedStudy = false;

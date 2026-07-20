@@ -2,24 +2,30 @@
 #include "Scene/Object.h"
 #include "Simulation/SimulationManager.h"
 #include "Simulation/SimulationRenderer.h"
+#include "Systems/MultiBodySystem.h"
+#include "Systems/SingleBodySystem.h"
 
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
+
 #include "Robots/RobotModel.h"
 #include "Robots/RobotSystem.h"
+#include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/ISimulationCore.h"
+
+#include "Interpreter/IStoredProgram.h"
+#include "Interpreter/StoredProgram.h"
+#include "Interpreter/Parser.h"
 
 #include <thread>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <algorithm>
-
-#include "SingleBodySystems/SingleBodySystem.h"
-#include "Platform/KeyCode.h"
-
+#include <regex>
 #include <filesystem>
-#include "Platform/Paths.h"
 
+#include "Platform/KeyCode.h"
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 #include "Platform/DataManager.h"
 
@@ -86,17 +92,6 @@ namespace gui {
 		_renderer.resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
 	}
 
-	void SimulationManager::renderViewport(int w, int h) {
-		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
-		if (hasCompletedStudy()) {
-			for (const auto& r : consumeCompletedStudy()) {
-				LOG_INFO("Study completed: %s", r.tag.c_str());
-			}
-		}
-		updateRobotTransforms();
-		_renderer.render(_scene);
-	}
-
 	uint32_t SimulationManager::load_mesh(const std::string& path) {
 		if (!_rendererInitialised) { 
 			LOG_ERROR("load_mesh called before renderer initialised");
@@ -140,86 +135,18 @@ namespace gui {
 			return;
 		}
 
-		auto model = _core->robotSystem().model();
-
-		clearRobot();
-		buildRobotVisuals(model);
-
+		const auto& model = _core->robotSystem().model();
+		auto world_src = [this]() -> const std::vector<mathlib::Mat4>& { 
+			return _core->robotSystem().worldTransforms();
+		};
+		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
 		_core->clearRobotPresentationDirty();
-
 		LOG_INFO("Robot loaded: %s", model.name.c_str());
 	}
 
-    void SimulationManager::buildRobotVisuals(const robots::RobotModel& model) {
-        assets::MeshLoader loader;
-        namespace fs = std::filesystem;
-
-        for (const auto& link : model.links) {
-            auto& renderables = _robot_binding.link_to_renderables[link.name];
-
-            for (const auto& entry : link.visual.meshEntries) {
-                fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
-
-                auto meshes = loader.load(full.string());
-                if (meshes.empty()) {
-                    LOG_ERROR("buildRobotVisuals: no meshes in %s", full.string().c_str());
-                    continue;
-                }
-
-                for (auto& mptr : meshes) {
-                    scene::Mesh& src = *mptr;
-                    if (src._vertices.empty()) { continue; }
-
-                    // CPU + GPU registration, ids kept aligned (same pattern as loadMesh).
-                    std::vector<uint32_t> indices(src._indices.begin(), src._indices.end());
-                    const uint32_t cpu_id = _mesh_store.add(src);
-                    const uint32_t gpu_id = _sim_renderer->upload(_mesh_store.get(cpu_id)->_vertices, indices);
-                    if (cpu_id != gpu_id) {
-                        LOG_ERROR("buildRobotVisuals: id mismatch %u vs %u", cpu_id, gpu_id);
-                    }
-
-					// Rest pose: scale only. Step F drives the real per-link world transforms
-					// via the salvaged applyTransforms maths (toGlm + q_corr alignment).
-					// glm::mat4 rest = glm::scale(glm::mat4(1.0f), glm::vec3(model.scale));
-					// if (!model.baseFrameIsEngineAligned) {
-					//  	glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-					//  	rest = glm::mat4_cast(q_corr) * rest;
-					// }
-					const uint32_t r_idx = _scene.add_renderable(cpu_id, glm::mat4(1.0f));
-                    renderables.push_back(r_idx);
-                }
-            }
-        }
-    }
-
-	void SimulationManager::updateRobotTransforms() {
-		if (!_core->hasRobot()) { return; }
-		const auto& model = _core->robotSystem().model();
-		const std::vector<mathlib::Mat4>& world = _core->robotSystem().worldTransforms();
-		
-		if (world.size() < model.links.size()) {
-			LOG_ERROR("updateRobotTransforms: world transforms size (%zu) less than link count (%zu)", world.size(), model.links.size());
-			return;
-		}
-		const bool is_aligned = model.baseFrameIsEngineAligned;
-		for (size_t i = 0; i < model.links.size(); ++i) {
-			const auto& link = model.links[i];
-			auto it = _robot_binding.link_to_renderables.find(link.name);
-			if (it == _robot_binding.link_to_renderables.end()) { continue; }
-			glm::mat4 T = toGlm(world[i]);
-			glm::vec3 pos = glm::vec3(T[3]); // translation
-			glm::quat q = glm::quat_cast(T); // rotation
-			//glm::quat q_rot = is_aligned ? q : q_corr * q; // apply correction if needed
-			glm::mat4 M = toGlm(world[i]) * glm::scale(glm::mat4(1.0f), glm::vec3(model.scale));
-			for (uint32_t r_idx : it->second) {
-				_scene.set_transform(r_idx, M);
-			}
-		}
-	}
-
 	void SimulationManager::clearRobot() {
+		_systems.clear_all(_scene); // clear all systems
         _scene.clear();          // drop all renderables
-        _robot_binding.clear();
     }
 
 	// --------------------------------------------------
@@ -234,6 +161,17 @@ namespace gui {
 	void SimulationManager::setDisplaySize(int w, int h) {
 		if (w <= 0.0f || h <= 0.0f) return;
 		_displaySize = { w, h };
+	}
+
+	void SimulationManager::renderViewport(int w, int h) {
+		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
+		if (hasCompletedStudy()) {
+			for (const auto& r : consumeCompletedStudy()) {
+				LOG_INFO("Study completed: %s", r.tag.c_str());
+			}
+		}
+		_systems.update_all(_scene);
+		_renderer.render(_scene);
 	}
 
 	// --------------------------------------------------
@@ -288,31 +226,99 @@ namespace gui {
 
     // ---------------- Simulation control ----------------
 
-    void SimulationManager::stopSimulation()      { _simRunning = false; }
-    bool SimulationManager::isSimRunning() const  { return _simRunning; }
-    double SimulationManager::simTime() const     { return _simTime; }
-    void SimulationManager::setFixedDt(double dt) { if (dt > 0.0) { _fixedDt = dt; } }
-    void SimulationManager::setTelemetryHz(double hz) { if (hz > 0.0) { _telemetryHz = hz; } }
+	// Start the simulation
+	void SimulationManager::startSimulation() {
+		if (!hasRobot()) {
+			LOG_WARN("Cannot start simulation: no robot loaded");
+			return;
+		}
+		if (hasRobot()) {
+			auto& rs = _core->robotSystem();
+			load_robot(rs.robotName());
+			return;
+		}
+		_core->startSimulation();
+	}
 
-    // ---------------- Scripting ----------------
+	// Stop the simulation
+	void SimulationManager::stopSimulation() { _core->stopSimulation(); }
 
-    void SimulationManager::setScriptRunning(bool running) { _scriptRunning = running; }
-    bool SimulationManager::isScriptRunning() const        { return _scriptRunning; }
-    void SimulationManager::setLastScriptText(const std::string& text) { _lastScriptText = text; }
+	// Check if the simulation is currently running
+	bool SimulationManager::isSimRunning() const { return _core->isSimRunning(); }
 
-    void SimulationManager::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
-    interpreter::IStoredProgram* SimulationManager::activeProgram()          { return _activeProgram; }
+	// Setter for current simulation time (in seconds)
+	void SimulationManager::setSimTime(double time) { _core->setSimTime(time); }
+	double SimulationManager::simTime() const { return _core->simTime(); }
 
-    // ---------------- Core / telemetry ----------------
+	// Setter and gettter for fixed timstep (in seconds)
+	void SimulationManager::setFixedDt(double dt) { _core->setFixedDt(dt); }
+	double SimulationManager::fixedDt() const { return _core->fixedDt(); }
 
-    core::ISimulationCore* SimulationManager::simCore()          { return _core.get(); }
-    diagnostics::TelemetryRecorder& SimulationManager::telemetry() { return _telemetry; }
+	// Setter and getter for telemetry frequency (in Hz)
+	void SimulationManager::setTelemetryHz(double hz) { _core->setTelemetryHz(hz); }
+	double SimulationManager::telemetryHz() const { return _core->telemetryHz(); }
 
-    // ---------------- Integration ----------------
+	// Set whether a script is currently running (used to disable UI elements, etc.)
+	void SimulationManager::setScriptRunning(bool running) { _core->setScriptRunning(running); }
+	bool SimulationManager::isScriptRunning() const { return _core->isScriptRunning(); }
 
-    void SimulationManager::setIntegrationMethod(integration::eIntegrationMethod m) { _integrationMethod = m; }
-    const integration::eIntegrationMethod SimulationManager::integrationMethod() const { return _integrationMethod; }
+	// Setters and getters for last script text
+	void SimulationManager::setLastScriptText(const std::string& text) { _core->setLastScriptText(text); }
+	std::string& SimulationManager::lastScriptText() const { return _core->lastScriptText(); }
 
-    void SimulationManager::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod m) { _adIntegrationMethod = m; }
-    const integration::eAutoDiffIntegrationMethod SimulationManager::autoDiffIntegrationMethod() const { return _adIntegrationMethod; }
+	// Accessors for the Simulation Core's telemetry data
+	diagnostics::TelemetryRecorder& SimulationManager::telemetry() { return _core->telemetry(); }
+	const diagnostics::TelemetryRecorder& SimulationManager::telemetry() const { return _core->telemetry(); }
+
+	// Accesors for the active program (if any)
+	void SimulationManager::setActiveProgram(interpreter::IStoredProgram* program) { _core->setActiveProgram(program); }
+	interpreter::IStoredProgram* SimulationManager::activeProgram() { return _core->activeProgram(); }
+	const interpreter::IStoredProgram* SimulationManager::activeProgram() const { return _core->activeProgram(); }
+
+	// Access the simulation core interface (non-const and const versions)
+	core::ISimulationCore* SimulationManager::simCore() { return _core.get(); }
+	const core::ISimulationCore* SimulationManager::simCore() const { return _core.get(); }
+
+	// Set the integrator method for the current simulation run
+	void SimulationManager::setIntegrationMethod(integration::eIntegrationMethod method) {
+		_core->setIntegrationMethod(method);
+	}
+	const integration::eIntegrationMethod SimulationManager::integrationMethod() const {
+		return _core->integrationMethod();
+	}
+	void SimulationManager::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+		_core->setADIntegrationMethod(method);
+	}
+	const integration::eAutoDiffIntegrationMethod SimulationManager::autoDiffIntegrationMethod() const {
+		return _core->autoDiffIntegrationMethod();
+	}
+
+	// This seems to be the better solution?
+	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
+		std::regex re(R"((?i)set\s*\(\s*integrator\s*,\s*([a-z0-9_]+)\s*\))"); // case-insensitive regex to match my DSL command -> set(integrator, method)
+		std::string replacement = "set(integrator, " + methodName + ")";
+		return std::regex_replace(script, re, replacement);
+	}
+
+	// Run a script to completion synchronously with a specific integrator
+	bool SimulationManager::runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method) {
+		if (!hasRobot()) { return false; }
+
+		// Map method enum to string name
+		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
+		const std::string methodName = names[static_cast<int>(method)];
+
+		// Replace the integrator method in the script text
+		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
+
+		// Create program and parser (bound to headless core)
+		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
+		//if (scene::Object* o = getObject()) program->setDefaultObject(o);
+		auto parser = std::make_unique<interpreter::Parser>(program.get());
+
+		// Parse the modified script and start the program
+		parser->parse(modifiedScript);
+		program->start();
+		return _core->runScriptToCompletion(program.get(), method); // this will block until the script finishes
+	}
 }
