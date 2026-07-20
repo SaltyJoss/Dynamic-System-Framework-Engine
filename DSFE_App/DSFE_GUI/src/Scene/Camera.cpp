@@ -88,12 +88,12 @@ namespace scene {
 		}
 	}
 
-	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; }
-	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; }
-	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; }
-	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; }
-	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
-	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
+	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
+	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
 
 	void Camera::startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset) {
 		_following = true;
@@ -119,9 +119,10 @@ namespace scene {
 
 		const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 
-		rebuildAxesFromFrontUp_(f, worldUp);
+		_right = glm::normalize(glm::cross(_forward, worldUp));
+        _up    = glm::normalize(glm::cross(_right, _forward));
 
-		_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+        _viewMatrix = glm::lookAt(_position, _position + _forward, worldUp);
 	}
 
 	// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---

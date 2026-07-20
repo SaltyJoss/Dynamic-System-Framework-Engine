@@ -117,10 +117,11 @@ namespace scene {
 		};
 
 		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
-		void updateProjectionMatrix() {
-			if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
-			_projection = glm::perspective(_FOV, _aspect, _near, _far);
-		}
+        void updateProjectionMatrix() {
+            if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
+            _projection = glm::perspective(_FOV, _aspect, _near, _far);
+            _projection[1][1] *= -1.0f;   // Vulkan clip-space Y flip
+        }
 
 		bool _following = false;
 		glm::vec3 _targetPos;
