@@ -19,7 +19,7 @@ namespace gui {
     class MeshStore;
     class SimulationRenderer;
 
-    class MultiBodySystem : ISimulationSystem {
+    class MultiBodySystem : public ISimulationSystem {
         public:
             MultiBodySystem(const robots::RobotModel& model, 
                 std::function<const std::vector<mathlib::Mat4>&()> world_src,
