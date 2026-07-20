@@ -13,6 +13,7 @@
 #include "VulkanContext.h"
 #include "VulkanSwapchain.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
 
 #include "Platform/Logger.h"
 
@@ -67,6 +68,11 @@ namespace renderer {
             bool create_depth_resources();
             void destroy_depth_resources();
 
+            // Methods for creating and destroying descriptor sets for camera uniform buffer
+            bool create_descriptors();
+            void destroy_descriptors();
+            void update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos);
+
             // Internal state
             VulkanContext* _context = nullptr;
             VulkanSwapchain* _swapchain = nullptr;
@@ -116,6 +122,21 @@ namespace renderer {
 
             std::vector<GpuMesh> _meshes;
             Pipeline _mesh_pipeline;
+
+            // Camera uniform buffer object structure for passing camera data to shaders
+            struct CameraUBO {
+                glm::mat4 view;
+                glm::mat4 proj;
+                glm::vec4 cam_pos;   // xyz used; vec4 for std140 alignment
+            };
+            
+            // Descriptor set layout and pool for camera uniform buffer
+            VkDescriptorSetLayout _camera_set_layout = VK_NULL_HANDLE;
+            VkDescriptorPool      _descriptor_pool    = VK_NULL_HANDLE;
+
+            // One UBO + descriptor set per frame-in-flight (can't touch a UBO the GPU is reading)
+            std::array<GpuBuffer, MAX_FRAMES_IN_FLIGHT>      _camera_ubos;
+            std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> _camera_sets{};
 
         public:
 

@@ -524,6 +524,99 @@ namespace renderer {
         if (_context && _context->device()) { vkDeviceWaitIdle(_context->device()); }
     }
 
+    /*
+    Descriptors
+    */
+
+    bool VulkanRenderer::create_descriptors() {
+        VkDevice dev = _context->device();
+        VkDescriptorSetLayoutBinding camera_binding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        };
+        VkDescriptorSetLayoutCreateInfo layout_info{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = 1,
+            .pBindings = &camera_binding
+        };
+        if (vkCreateDescriptorSetLayout(dev, &layout_info, nullptr, &_camera_set_layout) != VK_SUCCESS) {
+            LOG_ERROR("vkCreateDescriptorSetLayout failed"); return false;
+        }
+
+        VkDescriptorPoolSize pool_size{
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = MAX_FRAMES_IN_FLIGHT
+        };
+        VkDescriptorPoolCreateInfo pool_info{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets = MAX_FRAMES_IN_FLIGHT,
+            .poolSizeCount = 1,
+            .pPoolSizes = &pool_size
+        };
+        if (vkCreateDescriptorPool(dev, &pool_info, nullptr, &_descriptor_pool) != VK_SUCCESS) {
+            LOG_ERROR("vkCreateDescriptorPool failed"); return false;
+        }
+
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            _camera_ubos[i] = create_buffer(sizeof(CameraUBO),
+                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                            VMA_MEMORY_USAGE_AUTO);
+
+            VkDescriptorSetAllocateInfo alloc_info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .descriptorPool = _descriptor_pool,
+                .descriptorSetCount = 1,
+                .pSetLayouts = &_camera_set_layout
+            };
+            if (vkAllocateDescriptorSets(dev, &alloc_info, &_camera_sets[i]) != VK_SUCCESS) {
+                LOG_ERROR("vkAllocateDescriptorSets failed"); return false;
+            }
+
+            // Write: bind this UBO to binding 0 of this set.
+            VkDescriptorBufferInfo buffer_info{
+                .buffer = _camera_ubos[i].buffer,
+                .offset = 0,
+                .range = sizeof(CameraUBO)
+            };
+            VkWriteDescriptorSet write{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = _camera_sets[i],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .pBufferInfo = &buffer_info
+            };
+            vkUpdateDescriptorSets(dev, 1, &write, 0, nullptr);
+        }
+
+        LOG_INFO("Descriptors created (%u camera UBOs)", MAX_FRAMES_IN_FLIGHT);
+        return true;
+    }
+
+    void VulkanRenderer::update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos) {
+        CameraUBO data{ view, proj, glm::vec4(cam_pos, 1.0f) };
+        VmaAllocationInfo info;
+        vmaGetAllocationInfo(_context->allocator(), _camera_ubos[frame_slot].allocation, &info);
+        memcpy(info.pMappedData, &data, sizeof(CameraUBO));
+    }
+
+    void VulkanRenderer::destroy_descriptors() {
+        VkDevice dev = _context->device();
+        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            destroy_buffer(_camera_ubos[i]);
+            _camera_sets[i] = VK_NULL_HANDLE;
+        }
+        if (_descriptor_pool) { vkDestroyDescriptorPool(dev, _descriptor_pool, nullptr); _descriptor_pool = VK_NULL_HANDLE; }
+        if (_camera_set_layout) { vkDestroyDescriptorSetLayout(dev, _camera_set_layout, nullptr); _camera_set_layout = VK_NULL_HANDLE; }
+    }
+
+    /*
+    Initialisation and Destruction
+    */
+
     bool VulkanRenderer::init(void* windowHandle) {
         _context = new VulkanContext();
         if (!_context->init(windowHandle)) { LOG_ERROR("VulkanContext init failed"); return false; }
@@ -534,6 +627,7 @@ namespace renderer {
         if (!create_depth_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
+        if (!create_descriptors()) { return false; }
 
         // Create the graphics pipeline for rendering (hardcoded to cube for now)
         _mesh_pipeline.shaders = create_shaders("cube.vert.glsl", "cube.frag.glsl");
@@ -560,6 +654,7 @@ namespace renderer {
         wait_idle();
         VkDevice dev = _context->device();
 
+        destroy_descriptors();
         for (auto& f : _frame_resources) {
             if (f.image_acquired_semaphore) { vkDestroySemaphore(dev, f.image_acquired_semaphore, nullptr); }
             if (f.command_pool) { vkDestroyCommandPool(dev, f.command_pool, nullptr); }
@@ -608,6 +703,10 @@ namespace renderer {
             buffer.allocation = VK_NULL_HANDLE;
         }
     }
+
+    /*
+    Mesh Uploading
+    */
 
     uint32_t VulkanRenderer::upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices) {
         VulkanRenderer::GpuMesh mesh;
