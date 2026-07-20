@@ -1,6 +1,7 @@
 #include "Renderer/VulkanRenderer.h"
 
 #include "Assets/VertexHolder.h"
+#include "Simulation/SimulationScene.h"
 #include "EngineLib/LogMacros.h"
 #include "Platform/Paths.h"
 
@@ -369,7 +370,7 @@ namespace renderer {
     
 
     // Renders a single frame, handling synchronization, command buffer recording, and presentation. This function is called once per frame.
-    void VulkanRenderer::render() {
+    void VulkanRenderer::render(const gui::SimulationScene& scene) {
         VkDevice dev = _context->device();
 
         // Handle a pending recreate at the START of the frame, never mid-frame.
@@ -455,16 +456,18 @@ namespace renderer {
         };
         VkRect2D scissor{ {0, 0}, extent };
 
-        // MVP: perspective * view * model. Column-major glm, mul(M,v) in HLSL.
-        float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-        proj[1][1] *= -1.0f;   // Vulkan clip-space Y is flipped vs glm's GL convention
+        proj[1][1] *= -1.0f;   // Vulkan clip-space Y flip
         glm::mat4 view = glm::lookAt(glm::vec3(2.5f, 2.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-        static float t = 0.0f; t += 0.01f;
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), t, glm::vec3(0.3f, 1.0f, 0.0f));
-        glm::mat4 mvp = proj * view * model;
+        const glm::mat4 view_proj = proj * view;
 
-        if (const GpuMesh* m = get_mesh(0)) { draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, mvp); }
+        for (const gui::Renderable& r : scene.renderables()) {
+            if (const GpuMesh* m = get_mesh(r.mesh_id)) {
+                const glm::mat4 mvp = view_proj * r.transform;
+                draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, mvp);
+            }
+        }
         
         vkCmdEndRendering(f.command_buffer);
 

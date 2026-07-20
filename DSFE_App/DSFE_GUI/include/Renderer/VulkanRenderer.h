@@ -17,6 +17,7 @@
 #include "Platform/Logger.h"
 
 namespace assets { class VertexHolder; }
+namespace gui { class SimulationScene; struct Renderable; }
 
 namespace renderer {
     // Structure to hold per-frame resources for Vulkan rendering
@@ -46,7 +47,7 @@ namespace renderer {
         public:
             bool init(void* windowHandle);
             void shutdown();
-            void render();
+            void render(const gui::SimulationScene& scene);
             void resize(uint32_t width, uint32_t height);
             void wait_idle();
 
