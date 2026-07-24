@@ -1127,7 +1127,8 @@ namespace renderer {
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
-        if (vmaCreateImage(_context->allocator(), &colour_info, nullptr, &_refl_image, &_refl_alloc, nullptr) != VK_SUCCESS) {
+        VmaAllocationCreateInfo alloc_info{ .usage = VMA_MEMORY_USAGE_AUTO };
+        if (vmaCreateImage(_context->allocator(), &colour_info, &alloc_info, &_refl_image, &_refl_alloc, nullptr) != VK_SUCCESS) {
             LOG_ERROR("Failed to create reflection colour image"); return false;
         }
         // Create an image view for the reflection colour image
@@ -1152,10 +1153,10 @@ namespace renderer {
             .arrayLayers = 1,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
-        if (vmaCreateImage(_context->allocator(), &depth_info, nullptr, &_refl_depth_image, &_refl_depth_alloc, nullptr) != VK_SUCCESS) {
+        if (vmaCreateImage(_context->allocator(), &depth_info, &alloc_info, &_refl_depth_image, &_refl_depth_alloc, nullptr) != VK_SUCCESS) {
             LOG_ERROR("Failed to create reflection depth image"); return false;
         }
         // Create an image view for the reflection depth image
@@ -1280,10 +1281,10 @@ namespace renderer {
         }
         if (!create_depth_resources()) { return false; }
         if (!create_msaa_resources()) { return false; }
-        if (!create_reflection_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
         if (!create_shadow_resources()) { return false; }
+        if (!create_reflection_resources()) { return false; }
         if (!create_descriptors()) { return false; }
         if (!create_shadow_pipeline()) { return false; }
         if (!create_grid()) { return false; }
