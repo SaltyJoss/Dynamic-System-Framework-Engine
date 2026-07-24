@@ -36,8 +36,8 @@ const vec2 poissonDisk[12] = vec2[](
 // Hardcoded key light — moves into a light UBO with the shadow pass (Step C)
 const vec3  LIGHT_DIR       = normalize(vec3(-0.4, -1.0, -0.3));
 const vec3  LIGHT_COL       = vec3(1.0);
-const float LIGHT_INTENSITY = 3.0;
-const float AMBIENT         = 0.03;
+const float LIGHT_INTENSITY = 2.2;
+const float AMBIENT         = 0.12;
 
 float computeShadow(vec3 world_pos, vec3 N, vec3 L) {
     vec4 lsp = cam.light_space * vec4(world_pos, 1.0);
@@ -51,9 +51,10 @@ float computeShadow(vec3 world_pos, vec3 N, vec3 L) {
 
     float lit = 0.0;
     for (int i = 0; i < 12; ++i) {
+        lit += texture(shadow_map, vec3(proj_coords.xy + poissonDisk[i] * texel * 6.0, depth));
         lit += texture(shadow_map, vec3(proj_coords.xy + poissonDisk[i] * texel * 2.5, depth));
     }
-    return 1.0 - (lit / 12.0);
+    return 1.0 - (lit / 24.0);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -113,7 +114,7 @@ void main() {
     vec3  baseColour = pc.albedo.rgb;
 
     float NdotL_raw = max(dot(N, L), 0.0);
-    float wrap = 0.2;
+    float wrap = 0.35;
     float NdotL_wrap = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
     float NdotV = max(dot(N, V), 0.001);
 
@@ -129,7 +130,8 @@ void main() {
 
     vec3 radiance = LIGHT_COL * LIGHT_INTENSITY;
     vec3 Lo = (kD * baseColour / PI * NdotL_wrap + specular * NdotL_raw) * radiance;
-    Lo *= (1.0 - computeShadow(v_world_pos, N, L));
+    float shadow = computeShadow(v_world_pos, N, L);
+    Lo *= (1.0 - shadow * 0.75);
 
     // Ambient: flat floor for dielectrics + studio env reflection for metals
     vec3 R = reflect(-V, N);
