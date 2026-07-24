@@ -13,7 +13,8 @@ namespace renderer {
         VkDebugUtilsMessageSeverityFlagBitsEXT severity,
         VkDebugUtilsMessageTypeFlagsEXT,
         const VkDebugUtilsMessengerCallbackDataEXT* data,
-        void*) {
+        void*
+    ) {
         if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
             LOG_ERROR("[vulkan] %s", data->pMessage);
         } else if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
@@ -115,7 +116,7 @@ namespace renderer {
             return false;
         }
         VkXcbSurfaceCreateInfoKHR surface_info {
-            .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
             .connection = static_cast<xcb_connection_t*>(win.connection),
             .window = static_cast<xcb_window_t>(reinterpret_cast<uintptr_t>(win.handle))
         };
