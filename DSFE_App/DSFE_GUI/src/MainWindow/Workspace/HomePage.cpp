@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QListWidget>
 #include <QFileInfo>
+#include <QMenu>
 
 namespace Workspace {
     // HomePage constructor sets up the UI elements and connects signals to slots for handling user interactions.
@@ -61,6 +62,24 @@ namespace Workspace {
         connect(_recentsList, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
             const QString path = item->data(Qt::UserRole).toString();
             if (!path.isEmpty() && onOpenRecent) { onOpenRecent(path); }
+        });
+
+        _recentsList->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(_recentsList, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
+            QListWidgetItem* item = _recentsList->itemAt(pos);
+            if (!item) { return; }
+            const QString path = item->data(Qt::UserRole).toString();
+            if (path.isEmpty()) { return; }
+
+            QMenu menu(this);
+            QAction* open   = menu.addAction("Open");
+            QAction* remove = menu.addAction("Remove from list");
+            QAction* chosen = menu.exec(_recentsList->mapToGlobal(pos));
+            if (chosen == open && onOpenRecent) { onOpenRecent(path); }
+            else if (chosen == remove) {
+                gui::RecentWorkspaces::remove(path);
+                refreshRecents();
+            }
         });
 
         refreshRecents();
