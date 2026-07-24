@@ -110,7 +110,7 @@ namespace renderer {
             VmaAllocation _depth_image_allocation = VK_NULL_HANDLE; // Vulkan depth image allocation
 
             // Shadow mapping variables
-            static constexpr uint32_t SHADOW_MAP_SIZE = 2048;
+            static constexpr uint32_t SHADOW_MAP_SIZE = 4096;
             static constexpr VkFormat SHADOW_FORMAT = VK_FORMAT_D32_SFLOAT;
 
             VkImage _shadow_image = VK_NULL_HANDLE; // Vulkan shadow map image handle
@@ -166,7 +166,6 @@ namespace renderer {
             std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> _camera_sets{};
 
         public:
-
             static constexpr uint32_t INVALID_MESH_ID = UINT32_MAX;
 
             uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
