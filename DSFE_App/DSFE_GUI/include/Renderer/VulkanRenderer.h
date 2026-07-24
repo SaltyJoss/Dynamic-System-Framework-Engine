@@ -37,7 +37,6 @@ namespace renderer {
 
     struct Pipeline {
         ShaderModules shaders;
-
         VkPipeline pipeline = VK_NULL_HANDLE;
         VkPipelineLayout layout = VK_NULL_HANDLE;
     };
@@ -77,10 +76,15 @@ namespace renderer {
             bool create_depth_resources();
             void destroy_depth_resources();
 
-            // Methods for creating and destroying descriptor sets for camera uniform buffer
+            bool create_shadow_resources();
+            void destroy_shadow_resources();
+            glm::mat4 light_space_matrix() const;
+
             bool create_descriptors();
             void destroy_descriptors();
             void update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos);
+
+            bool create_shadow_pipeline();
 
             // Internal state
             VulkanContext* _context = nullptr;
@@ -92,11 +96,6 @@ namespace renderer {
             uint64_t _frame_idx = 0; // Current frame index for double/triple buffering
             uint64_t _next_signal_val = MAX_FRAMES_IN_FLIGHT - 1;
 
-            // Depth buffer variables
-            VkImage _depth_image = VK_NULL_HANDLE; // Vulkan depth image handle
-            VkImageView _depth_image_view = VK_NULL_HANDLE; // Vulkan depth image view handle
-            VmaAllocation _depth_image_allocation = VK_NULL_HANDLE; // Vulkan depth image allocation
-
             // Shader variables (For GLSL to SPIR-V compilation, however later I will be using HLSL for shader compilation)
             VkShaderModule _vert_shader = VK_NULL_HANDLE;
 	        VkShaderModule _frag_shader = VK_NULL_HANDLE;
@@ -104,6 +103,21 @@ namespace renderer {
             // Graphics Pipeline variables
             VkPipeline _pipeline = VK_NULL_HANDLE; // Vulkan graphics pipeline handle
             VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE; // Vulkan pipeline layout handle
+
+            // Depth buffer variables
+            VkImage _depth_image = VK_NULL_HANDLE; // Vulkan depth image handle
+            VkImageView _depth_image_view = VK_NULL_HANDLE; // Vulkan depth image view handle
+            VmaAllocation _depth_image_allocation = VK_NULL_HANDLE; // Vulkan depth image allocation
+
+            // Shadow mapping variables
+            static constexpr uint32_t SHADOW_MAP_SIZE = 2048;
+            static constexpr VkFormat SHADOW_FORMAT = VK_FORMAT_D32_SFLOAT;
+
+            VkImage _shadow_image = VK_NULL_HANDLE; // Vulkan shadow map image handle
+            VmaAllocation _shadow_alloc = VK_NULL_HANDLE; // Vulkan shadow map image allocation
+            VkImageView _shadow_view = VK_NULL_HANDLE; // Vulkan shadow map image view
+            VkSampler _shadow_sampler = VK_NULL_HANDLE; // Vulkan shadow map sampler
+            Pipeline _shadow_pipeline; // Vulkan graphics pipeline for shadow mapping
 
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
@@ -139,6 +153,7 @@ namespace renderer {
             struct CameraUBO {
                 glm::mat4 view;
                 glm::mat4 proj;
+                glm::mat4 light_space; // for shadow mapping
                 glm::vec4 cam_pos;   // xyz used; vec4 for std140 alignment
             };
             
