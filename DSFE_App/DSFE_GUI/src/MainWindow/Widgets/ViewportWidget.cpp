@@ -1,10 +1,6 @@
 // DSFE_GUI ViewportWidget.cpp
-#include <glad/glad.h>
-
 #include "Widgets/ViewportWidget.h"
-#include "Scene/SimulationManager.h"
-
-#include <QOpenGLContext>
+#include "Simulation/SimulationManager.h"
 
 #include <QVBoxLayout>
 #include <QLabel>
@@ -13,8 +9,19 @@
 #include <QThread>
 #include "Platform/KeyCode.h"
 
+#ifdef _WIN32
+    #include <windows.h>
+#elif defined(__linux__)
+    #include <QGuiApplication>
+#endif
+
 namespace widgets {
-	ViewportWidget::ViewportWidget(gui::SimManager* sim, QWidget* parent) : QOpenGLWidget(parent), _sim(sim) {
+	ViewportWidget::ViewportWidget(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
+		setAttribute(Qt::WA_NativeWindow);
+		setAttribute(Qt::WA_PaintOnScreen);      // Qt won't touch the pixels
+		setAttribute(Qt::WA_NoSystemBackground);
+		setAttribute(Qt::WA_OpaquePaintEvent);
+
 		setFocusPolicy(Qt::StrongFocus);
 		setMouseTracking(true);
 
@@ -22,55 +29,58 @@ namespace widgets {
 		_updateTimer.start(7); // ~144 FPS
 	}
 
-	ViewportWidget::~ViewportWidget() { if (_sim) _sim->setContextHooks({}, {}); }
+	ViewportWidget::~ViewportWidget() {}
 
-	void ViewportWidget::initializeGL() {
-		auto* ctx = QOpenGLContext::currentContext();
-		if (!ctx) {
-			LOG_ERROR("No current OpenGL context");
+	void ViewportWidget::initialise_renderer() {
+		renderer::NativeWindow n_win;
+	#ifdef _WIN32
+		n_win.handle = reinterpret_cast<void*>(winId());
+	#elif defined(__linux__)
+		// winId() is xcb_window_t; connection comes from Qt's X11 native interface
+		n_win.handle = reinterpret_cast<void*>(static_cast<uintptr_t>(winId()));
+		if (auto* x11 = qApp->nativeInterface<QNativeInterface::QX11Application>()) {
+			n_win.connection = x11->connection();
+		}
+		else {
+			LOG_ERROR("Failed to get X11 connection from Qt native interface; run with QT_QPA_PLATFORM=xcb");
 			return;
 		}
+	#endif
+		_sim->initialiseRenderer(n_win);
+		_renderer_initialised = true;
+	}
 
-		const int gladResult = gladLoadGLLoader([](const char* name) -> void* {
-			auto* ctx = QOpenGLContext::currentContext();
-			if (!ctx) { return nullptr; }
-			return reinterpret_cast<void*>( ctx->getProcAddress(name));
-		});
-
-		if (!gladResult) {
-			LOG_ERROR("Failed to initialise GLAD");
-			return;
-		}
-
-		_frameTimer.start();
-		if (_sim) { 
-			_sim->initGL();
-			_sim->setContextHooks([this]() { makeCurrent(); }, [this]() { doneCurrent(); });
+	void ViewportWidget::showEvent(QShowEvent* event) {
+		QWidget::showEvent(event);
+		if (!_renderer_initialised && width() > 1 && height() > 1) {
+			initialise_renderer();
 		}
 	}
-	void ViewportWidget::resizeGL(int w, int h) {
-		if (_sim) { _sim->setDisplaySize(w, h); }
-	}
-	void ViewportWidget::paintGL() {
-		LOG_INFO_ONCE("Qt default FBO = %u", defaultFramebufferObject());
-		GLint qtFBO = defaultFramebufferObject();
 
-		const qint64 now = _frameTimer.nsecsElapsed();
-		const float dt = (_lastNs == 0) ? (1.0f / 144.0f) : static_cast<float>(now - _lastNs) * 1e-9f;
-		_lastNs = now;
-		if (!_sim) {
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	void ViewportWidget::resizeEvent(QResizeEvent* event) {
+		QWidget::resizeEvent(event);
+		if (!_renderer_initialised && isVisible() && width() > 1 && height() > 1) {
+			initialise_renderer();
 			return;
 		}
+		if (_sim) { _sim->resizeRenderer(width(), height()); }
+	}
 
-		_sim->setPresentationFBO(static_cast<GLuint>(qtFBO));
-		_sim->tick(dt);
+	void ViewportWidget::paintEvent(QPaintEvent* event) {
+		if (!_sim) { return; }
+
+        const qint64 now = _frameTimer.nsecsElapsed();
+        const float dt = (_lastNs == 0) ? (1.0f / 144.0f) : static_cast<float>(now - _lastNs) * 1e-9f;
+        _lastNs = now;
+
+        _sim->tick(dt);
 		_sim->renderViewport(width(), height());
 
-		static float smoothedDt = (1.0f / 144.0f);
-		smoothedDt = glm::mix(smoothedDt, dt, 0.5f);
-		if (_mouseCaptured) { _sim->handleContinuousMovement(_pressedKeys, smoothedDt); }
+        if (_mouse_captured) {
+            static float smoothedDt = (1.0f / 144.0f);
+            smoothedDt = glm::mix(smoothedDt, dt, 0.5f);
+            _sim->handleContinuousMovement(_pressedKeys, smoothedDt);
+        }
 	}
 
 	void ViewportWidget::keyPressEvent(QKeyEvent* event) {
@@ -83,8 +93,8 @@ namespace widgets {
 			case Qt::Key_Control: _pressedKeys.insert(gui::eKeyCode::Ctrl); break;
 			case Qt::Key_Shift: _pressedKeys.insert(gui::eKeyCode::LShift); break;
 			case Qt::Key_Escape:
-				_mouseCaptured = !_mouseCaptured;
-				if (_mouseCaptured) {
+				_mouse_captured = !_mouse_captured;
+				if (_mouse_captured) {
 					setFocus();
 					setCursor(Qt::BlankCursor);
 					_screenCenter = mapToGlobal(rect().center());
@@ -99,7 +109,7 @@ namespace widgets {
 				}
 				break;
 		}
-		QOpenGLWidget::keyPressEvent(event);
+		QWidget::keyPressEvent(event);
 	}
 
 	void ViewportWidget::keyReleaseEvent(QKeyEvent* event) {
@@ -112,12 +122,12 @@ namespace widgets {
 			case Qt::Key_Control: _pressedKeys.erase(gui::eKeyCode::Ctrl); break;
 			case Qt::Key_Shift: _pressedKeys.erase(gui::eKeyCode::LShift); break;
 		}
-		QOpenGLWidget::keyReleaseEvent(event);
+		QWidget::keyReleaseEvent(event);
 	}
 
 	void ViewportWidget::mousePressEvent(QMouseEvent* event) {
 		if (event->button() == Qt::RightButton) {
-			_mouseCaptured = true;
+			_mouse_captured = true;
 			setFocus();
 			setCursor(Qt::BlankCursor);
 			QCursor::setPos(mapToGlobal(rect().center()));
@@ -128,14 +138,14 @@ namespace widgets {
 
 	void ViewportWidget::mouseReleaseEvent(QMouseEvent* event) {
 		if (event->button() == Qt::RightButton) {
-			_mouseCaptured = false;
+			_mouse_captured = false;
 			releaseMouse();
 			unsetCursor();
 		}
 	}
 
 	void ViewportWidget::mouseMoveEvent(QMouseEvent* event) {
-		if (!_sim || !_mouseCaptured) { return; }
+		if (!_sim || !_mouse_captured) { return; }
 		QPoint current = QCursor::pos();
 		QPoint delta = current - _screenCenter;
 		_sim->handleMouseLook(delta.x(), -delta.y(), true);

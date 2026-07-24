@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-namespace gui { class SimManager; }
+namespace gui { class SimulationManager; }
 namespace widgets {
 	class ConsoleOutputWidget;
 	class DSLEditorWidget;
@@ -12,7 +12,7 @@ namespace widgets {
 namespace Workspace {
 	class ProjectPage : public QWidget {
 	public:
-		explicit ProjectPage(gui::SimManager* sim, QWidget* parent = nullptr);
+		explicit ProjectPage(gui::SimulationManager* sim, QWidget* parent = nullptr);
 		widgets::DSLEditorWidget* editor() const;
 
 	private:

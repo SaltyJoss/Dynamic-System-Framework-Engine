@@ -22,7 +22,7 @@
 #include "Scene/Light.h"
 #include "Scene/Camera.h"
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Robots/RobotSystem.h"
 
 #include "Analysis/Telemetry.h"
@@ -30,7 +30,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	ControlPanelWidget::ControlPanelWidget(gui::SimManager* sim, QWidget* parent)
+	ControlPanelWidget::ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent)
 		: QWidget(parent), _sim(sim)
 	{
 		auto* rootLayout = new QVBoxLayout(this);

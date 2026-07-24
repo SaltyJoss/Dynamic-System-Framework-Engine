@@ -1,6 +1,6 @@
 //DSFE_GUI DSFE_MainWindow.cpp
 #include "MainWindow/DSFE_MainWindow.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Scene/SimulationCore.h"
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
@@ -18,7 +18,7 @@
 #include "Platform/Paths.h"
 
 namespace window {
-	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent)
+	DSFE_MainWindow::DSFE_MainWindow(gui::SimulationManager* sim, QWidget* parent)
 		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
 	{
 		setWindowTitle("DSFE");
@@ -126,19 +126,14 @@ namespace window {
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
-				if (path.isEmpty()) { return; }
-				// Covert path name to just the file name without extension or path
-				std::string bodyName = QFileInfo(path).baseName().toStdString();
-				//_sim->simCore()->loadSingleBody(bodyName);
-				_sim->loadMesh(path.toStdString());
+				onLoadMesh();
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
 				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "scene_hdr").string()), "HDRI Files (*.hdr *.exr)");
 				if (path.isEmpty()) { return; }
-				_sim->loadNewHDR_UI(path.toStdString());
+				//_sim->loadNewHDR_UI(path.toStdString());
 			});
 		}
 		// View menu
@@ -272,76 +267,76 @@ namespace window {
 			LOG_INFO("Resolution -> 4K");
 		});
 
-		// Shader submenu
-		auto* shaderMenu = graphicsMenu->addMenu("Shaders");
-		auto* basicShaderAction = shaderMenu->addAction("Basic");
-		auto* litShaderAction = shaderMenu->addAction("Lit");
-		auto* pbrShaderAction = shaderMenu->addAction("PBR");
-		basicShaderAction->setCheckable(true);
-		litShaderAction->setCheckable(true);
-		pbrShaderAction->setCheckable(true);
-		auto* shaderGroup = new QActionGroup(this);
-		shaderGroup->setExclusive(true);
-		shaderGroup->addAction(basicShaderAction);
-		shaderGroup->addAction(litShaderAction);
-		shaderGroup->addAction(pbrShaderAction);
-		pbrShaderAction->setChecked(true);
-		// BASIC
-		connect(basicShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Basic;
-			LOG_INFO("Shader Mode -> Basic");
-		});
-		// LIT
-		connect(litShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Lit;
-			LOG_INFO("Shader Mode -> Lit");
-		});
-		// PBR
-		connect(pbrShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::PBR;
-			LOG_INFO("Shader Mode -> PBR");
-		});
+		// // Shader submenu
+		// auto* shaderMenu = graphicsMenu->addMenu("Shaders");
+		// auto* basicShaderAction = shaderMenu->addAction("Basic");
+		// auto* litShaderAction = shaderMenu->addAction("Lit");
+		// auto* pbrShaderAction = shaderMenu->addAction("PBR");
+		// basicShaderAction->setCheckable(true);
+		// litShaderAction->setCheckable(true);
+		// pbrShaderAction->setCheckable(true);
+		// auto* shaderGroup = new QActionGroup(this);
+		// shaderGroup->setExclusive(true);
+		// shaderGroup->addAction(basicShaderAction);
+		// shaderGroup->addAction(litShaderAction);
+		// shaderGroup->addAction(pbrShaderAction);
+		// pbrShaderAction->setChecked(true);
+		// // BASIC
+		// connect(basicShaderAction, &QAction::triggered, this, [this]() {
+		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Basic;
+		// 	LOG_INFO("Shader Mode -> Basic");
+		// });
+		// // LIT
+		// connect(litShaderAction, &QAction::triggered, this, [this]() {
+		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Lit;
+		// 	LOG_INFO("Shader Mode -> Lit");
+		// });
+		// // PBR
+		// connect(pbrShaderAction, &QAction::triggered, this, [this]() {
+		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::PBR;
+		// 	LOG_INFO("Shader Mode -> PBR");
+		// });
 
-		shaderMenu->addSeparator();
+		// shaderMenu->addSeparator();
 
-		auto* reloadShadersAction = shaderMenu->addAction("Reload Shaders");
-		connect(reloadShadersAction, &QAction::triggered, this, [this]() {
-			LOG_INFO("Menu clicked: Reload Shaders");
-			_sim->reloadAllShaders();
-		});
+		// auto* reloadShadersAction = shaderMenu->addAction("Reload Shaders");
+		// connect(reloadShadersAction, &QAction::triggered, this, [this]() {
+		// 	LOG_INFO("Menu clicked: Reload Shaders");
+		// 	_sim->reloadAllShaders();
+		// });
 	}
 
 	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
 		auto* toggleGridAction = sceneMenu->addAction("Toggle Grid");
 		toggleGridAction->setCheckable(true);
-		toggleGridAction->setChecked(_sim->isGridEnabled());
+		//toggleGridAction->setChecked(_sim->isGridEnabled());
 		connect(toggleGridAction, &QAction::toggled, this, [this](bool checked) {
 			LOG_INFO("Menu toggled: Scene -> Toggle Grid -> %s", checked ? "On" : "Off");
-			_sim->enableGrid(checked);
+			//_sim->enableGrid(checked);
 		});
 
 		auto* toggleFloorAction = sceneMenu->addAction("Toggle Floor");
 		toggleFloorAction->setCheckable(true);
-		toggleFloorAction->setChecked(_sim->isFloorEnabled());
+		//toggleFloorAction->setChecked(_sim->isFloorEnabled());
 		connect(toggleFloorAction, &QAction::toggled, this, [this](bool checked) {
 			LOG_INFO("Menu toggled: Scene -> Toggle Floor -> %s", checked ? "On" : "Off");
-			_sim->enableFloor(checked);
+			//_sim->enableFloor(checked);
 		});
 
 		auto* toggleSkyboxAction = sceneMenu->addAction("Toggle Skybox");
 		toggleSkyboxAction->setCheckable(true);
-		toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
+		//toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
 		connect(toggleSkyboxAction, &QAction::toggled, this, [this](bool checked) {
 			LOG_INFO("Menu toggled: Scene -> Toggle Skybox -> %s", checked ? "On" : "Off");
-			_sim->enableSkybox(checked);
+			//_sim->enableSkybox(checked);
 		});
 
 		auto* toggleOrientatorAction = sceneMenu->addAction("Toggle Orientator");
 		toggleOrientatorAction->setCheckable(true);
-		toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
+		//toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
 		connect(toggleOrientatorAction, &QAction::toggled, this, [this](bool checked) {
 			LOG_INFO("Menu toggled: Scene -> Toggle Orientator -> %s", checked ? "On" : "Off");
-			_sim->enableOrientator(checked);
+			//_sim->enableOrientator(checked);
 		});
 	}
 
@@ -357,9 +352,17 @@ namespace window {
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
-				_sim->loadRobot(robotName.toStdString());
+				_sim->load_robot(robotName.toStdString());
 			});
 		}
+	}
+
+	void DSFE_MainWindow::onLoadMesh() {
+		const QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
+		if (path.isEmpty()) { return; }
+		std::string bodyName = QFileInfo(path).baseName().toStdString();
+		//_sim->simCore()->loadSingleBody(bodyName);
+		_sim->load_mesh(path.toStdString());
 	}
 
 } // namespace window

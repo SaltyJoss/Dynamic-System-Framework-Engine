@@ -10,7 +10,7 @@
 #include <QFile>
 #include <QTimer>
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Platform/Paths.h"
 
 #include "Numerics/IntegrationMethods.h"
@@ -22,7 +22,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* log, QWidget* parent)
+	DSLEditorWidget::DSLEditorWidget(gui::SimulationManager* sim, ConsoleOutputWidget* log, QWidget* parent)
 		: QWidget(parent), _sim(sim), _log(log), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
 	{
 		auto* rootLayout = new QVBoxLayout(this);

@@ -1,6 +1,6 @@
 // DSFE_GUI ProjectPage.cpp
 #include "Workspace/ProjectPage.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 
 #include "Widgets/DSLEditorWidget.h"
 #include "Widgets/ViewportWidget.h"
@@ -12,7 +12,7 @@
 #include <QSplitter>
 
 namespace Workspace {
-	ProjectPage::ProjectPage(gui::SimManager* sim, QWidget* parent) : QWidget(parent) {
+	ProjectPage::ProjectPage(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent) {
 		auto* layout = new QVBoxLayout(this);
 		layout->setContentsMargins(0, 0, 0, 0);
 		auto* rootSplitter = new QSplitter(Qt::Horizontal, this);

@@ -1,19 +1,14 @@
 // DSFE_GUI Camera.cpp
 #include <array>
-#include <glad/glad.h>
 #include "Scene/Camera.h"
 #include "Platform/KeyCode.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	void Camera::update(shaders::Shader* shader) {
+	void Camera::update() {
 		updateViewMatrix();
 
 		glm::mat4 model{ 1.0f };
-		shader->setMat4(model, "model");
-		shader->setMat4(_viewMatrix, "view");
-		shader->setMat4(getProjection(), "projection");
-		shader->setVec3(_position, "camPos");
 	}
 
 	void Camera::processKeyboard(int key, float dt) {
@@ -93,12 +88,12 @@ namespace scene {
 		}
 	}
 
-	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; }
-	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; }
-	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; }
-	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; }
-	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
-	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
+	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
+	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
 
 	void Camera::startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset) {
 		_following = true;
@@ -116,6 +111,12 @@ namespace scene {
 			return;
 		}
 
+		constexpr float FLOOR_Y = 0.0f;
+		constexpr float MIN_EYE_OFFSET = 0.05f; // Min dist from floor camera eyes can be
+		if (_position.y < FLOOR_Y + MIN_EYE_OFFSET) {
+			_position.y = FLOOR_Y + MIN_EYE_OFFSET;
+		}
+
 		glm::vec3 f;
 		f.x = cosf(_yaw) * cosf(_pitch);
 		f.y = sinf(_pitch);
@@ -124,9 +125,10 @@ namespace scene {
 
 		const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 
-		rebuildAxesFromFrontUp_(f, worldUp);
+		_right = glm::normalize(glm::cross(_forward, worldUp));
+        _up    = glm::normalize(glm::cross(_right, _forward));
 
-		_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+        _viewMatrix = glm::lookAt(_position, _position + _forward, worldUp);
 	}
 
 	// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---

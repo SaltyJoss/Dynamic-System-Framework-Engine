@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.17)
 project(DSFE_GUI LANGUAGES C CXX)
 
+message(CONFIGURE_LOG "Configuring the Vulkan renderer backend for DSFE GUI.")
+
 include(FetchContent)
 
 # Fetch GLM from GitHub
@@ -38,6 +40,13 @@ set(ASSIMP_BUILD_C4D_IMPORTER OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_VRML_IMPORTER OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(assimp)
 
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG v3.2.1
+)
+FetchContent_MakeAvailable(vma)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_AUTOMOC ON)
@@ -48,23 +57,25 @@ set(CMAKE_AUTORCC ON)
 add_library(DSFE_GUI SHARED)
 
 find_package(Threads REQUIRED)
-find_package(OpenGL REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Widgets
-    OpenGLWidgets
 )
 
 target_compile_definitions(DSFE_GUI PRIVATE
     DSFE_GUI_EXPORTS
     GLM_ENABLE_EXPERIMENTAL
+    GLM_FORCE_DEPTH_ZERO_TO_ONE
+    VK_NO_PROTOTYPES
+    VMA_STATIC_VULKAN_FUNCTIONS=0
+    VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+    $<$<PLATFORM_ID:Windows>:VK_USE_PLATFORM_WIN32_KHR>
+    $<$<PLATFORM_ID:Windows>:NOMINMAX>
+    $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
+    $<$<PLATFORM_ID:Linux>:VK_USE_PLATFORM_XCB_KHR>
+    $<$<PLATFORM_ID:Linux>:VK_USE_PLATFORM_WAYLAND_KHR>
 )
-
-# Define a library for GLAD from the existing source file
-add_library(glad STATIC ../External/GLAD/glad.c)
-target_include_directories(glad PUBLIC ../External/GLAD)
-target_link_libraries(glad PUBLIC OpenGL::GL)
 
 add_library(stb INTERFACE)
 
@@ -78,41 +89,41 @@ set(MAIN_WINDOW_SRC
     src/MainWindow/style/DSFETheme.cpp
 )
 
-set(RENDER_SRC
-    src/Rendering/CubeVertices.cpp
-    src/Rendering/IBL.cpp
-    src/Rendering/OpenGLBufferManager.cpp
-    src/Rendering/ShaderUtil.cpp
-    src/Rendering/SkyboxRenderer.cpp
-    src/Rendering/Texture.cpp
-)
-
 set(SCENE_SRC
-    src/Scene/AxisOrientator.cpp
     src/Scene/Camera.cpp
     src/Scene/Mesh.cpp
     src/Scene/Object.cpp
-    src/Scene/SimulationManager.cpp
 )
 
-set(MANAGER_SRC
-    src/Scene/Manager/SimBackend.cpp
-    src/Scene/Manager/SimCamera.cpp
-    src/Scene/Manager/SimObjects.cpp
-    src/Scene/Manager/SimRendering.cpp
-    src/Scene/Manager/SimRobots.cpp
+set(SIMULATION_SRC
+    src/Simulation/MeshStore.cpp
+    src/Simulation/SimulationManager.cpp
+    src/Simulation/SimulationScene.cpp
+    src/Simulation/SimulationRenderer.cpp
+    src/Simulation/SimulationSystemController.cpp
+)
+
+set(SYSTEMS_SRC
+    src/Systems/SingleBodySystem.cpp
+    src/Systems/MultiBodySystem.cpp
 )
 
 set(WIDGETS_SRC
     src/ui/RenderPreset.cpp
     src/MainWindow/Widgets/ViewportWidget.cpp
+    include/MainWindow/Widgets/ViewportWidget.h
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
+    include/MainWindow/Widgets/RobotSelectorWidget.h
     src/MainWindow/Widgets/ControlPanelWidget.cpp
+    include/MainWindow/Widgets/ControlPanelWidget.h
     src/MainWindow/Widgets/DSLEditorWidget.cpp
+    include/MainWindow/Widgets/DSLEditorWidget.h
     src/MainWindow/Widgets/ConsoleOutputWidget.cpp
+    include/MainWindow/Widgets/ConsoleOutputWidget.h
     src/MainWindow/Widgets/FractionSelectorWidget.cpp
     include/MainWindow/Widgets/FractionSelectorWidget.h
     src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
+    include/MainWindow/DSL/DSLSyntaxHighlighter.h
 )
 
 set(ROBOT_SRC
@@ -134,31 +145,60 @@ set(ASSETS_SRC
     src/Assets/importObj.cpp
 )
 
+set(RENDERER_SRC
+    src/Renderer/vk_mem_alloc_impl.cpp
+    src/Renderer/VulkanContext.cpp
+    src/Renderer/VulkanLoader.cpp
+    src/Renderer/VulkanRenderer.cpp
+    src/Renderer/VulkanSwapchain.cpp
+)
+
 set(QT_RESOURCES 
     resources/DSFE_GUI.qrc
 )
 
 target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
-    ${RENDER_SRC}
     ${SCENE_SRC}
-    ${MANAGER_SRC}
+    ${SIMULATION_SRC}
+    ${SYSTEMS_SRC}
     ${WIDGETS_SRC}
     ${ROBOT_SRC}
     ${OBJECT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}
+    ${RENDERER_SRC}
     ${QT_RESOURCES}
 )
+
+find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)
 
 target_include_directories(DSFE_GUI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
 )
+
+# Platform-specific configurations
+if(WIN32)
+    target_include_directories(DSFE_GUI PRIVATE "${Vulkan_INCLUDE_DIR}/Volk")
+elseif(UNIX AND NOT APPLE)
+    find_path(VOLK_INCLUDE_DIR volk.h PATH_SUFFIXES Volk volk)
+    if(NOT VOLK_INCLUDE_DIR)
+        message(FATAL_ERROR "Volk include directory not found")
+    endif()
+    target_include_directories(DSFE_GUI PRIVATE ${VOLK_INCLUDE_DIR})
+endif()
+
+# Link against XCB on Linux for Vulkan surface creation
+if(UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(XCB REQUIRED xcb)
+    target_include_directories(DSFE_GUI PRIVATE ${XCB_INCLUDE_DIRS})
+    target_link_libraries(DSFE_GUI PRIVATE ${XCB_LIBRARIES})
+endif()
 
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_GUI
@@ -170,13 +210,14 @@ target_link_libraries(DSFE_GUI
     PRIVATE
         stb
         assimp
-        glad
         glm::glm
-        OpenGL::GL
+        Vulkan::Headers
+        Vulkan::volk
+        Vulkan::shaderc_combined
+        GPUOpen::VulkanMemoryAllocator
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
-        Qt6::OpenGLWidgets
 )
 
 # Defines the source and destination for assets and configs
