@@ -173,8 +173,6 @@ namespace widgets {
 		float damping = 0.1f;
 		float position = 0.0f;
 
-		scene::Object* _selectedObject = nullptr;
-
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();
 		std::chrono::high_resolution_clock::time_point diagLastUpdateTime = std::chrono::high_resolution_clock::now();

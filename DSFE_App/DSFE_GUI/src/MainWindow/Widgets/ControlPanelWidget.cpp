@@ -107,7 +107,7 @@ namespace widgets {
 
 		buildIntegratorCombos();
 
-		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, &rs](bool checked) {
+		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this](bool checked) {
 			_useAutoDiff = checked;
 			_sim->enableAutoDiff(checked);
 			buildIntegratorCombos();
