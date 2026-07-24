@@ -56,8 +56,8 @@ void main() {
     vec2 p = v_world_pos.xz;
 
     vec3 col = FLOOR;
-    col = mix(col, MINOR, gridLine(p, 0.1) * 0.1);
-    col = mix(col, MAJOR, gridLine(p, 1.0) * 0.8);
+    col = mix(col, MINOR, gridLine(p, 0.1) * 0.15);
+    col = mix(col, MAJOR, gridLine(p, 1.0) * 0.95);
 
     vec3 L = -normalize(vec3(-0.4, -1.0, -0.3));
     float sh = computeShadow(v_world_pos, vec3(0.0, 1.0, 0.0), L);
