@@ -240,6 +240,9 @@ namespace gui {
         void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
 		const integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const;
 
+        void enableAutoDiff(bool enable);
+        bool autoDiffEnabled() const;
+
 		// Access to the underlying StudyRunner for running batch studies from the GUI
 		StudyRunner* studyRunner() { return _studyRunner.get(); }
 

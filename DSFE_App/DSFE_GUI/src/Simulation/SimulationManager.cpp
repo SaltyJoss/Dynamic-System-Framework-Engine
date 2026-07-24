@@ -199,7 +199,7 @@ namespace gui {
 
     // ---------------- Robots ----------------
 
-    const bool SimulationManager::hasRobot() const { return false; }
+    const bool SimulationManager::hasRobot() const { return _core && _core->hasRobot(); }
 
     robots::RobotSystem& SimulationManager::robotSystem() { return _core->robotSystem(); }
 
@@ -219,17 +219,9 @@ namespace gui {
 
 	// Start the simulation
 	void SimulationManager::startSimulation() {
-		if (!hasRobot()) {
-			LOG_WARN("Cannot start simulation: no robot loaded");
-			return;
-		}
-		if (hasRobot()) {
-			auto& rs = _core->robotSystem();
-			load_robot(rs.robotName());
-			return;
-		}
-		_core->startSimulation();
-	}
+        if (!hasRobot()) { LOG_WARN("Cannot start simulation: no robot loaded"); return; }
+        _core->startSimulation();
+    }
 
 	// Stop the simulation
 	void SimulationManager::stopSimulation() { _core->stopSimulation(); }
@@ -282,6 +274,14 @@ namespace gui {
 	}
 	const integration::eAutoDiffIntegrationMethod SimulationManager::autoDiffIntegrationMethod() const {
 		return _core->autoDiffIntegrationMethod();
+	}
+
+	void SimulationManager::enableAutoDiff(bool enable) {
+		_core->enableAutoDiff(enable);
+	}
+
+	bool SimulationManager::autoDiffEnabled() const {
+		return _core->autoDiffEnabled();
 	}
 
 	// This seems to be the better solution?
@@ -354,13 +354,20 @@ namespace gui {
         _meshStore.clear();
         _currentRobotName.clear();
 
-        // TODO: Core state -> stop/reset via the existing Core API?
-		// I will have a think about the best way to approach this.
+        _core->setScriptRunning(false);
+        _core->stopSimulation();
+        _core->setSimTime(0.0);
 
         LOG_INFO("Workspace closed");
     }
 	// Apply a workspace, populating the simulation manager with the saved state. This is typically called after closeWorkspace() to load a new workspace.
     void SimulationManager::applyWorkspace(const gui::WorkspaceData& w) {
+        enableAutoDiff(w.autoDiff);
+        setIntegrationMethod(static_cast<integration::eIntegrationMethod>(w.integrationMethod));
+        setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(w.adIntegrationMethod));
+        setFixedDt(w.simDt);
+        setTelemetryHz(1.0 / w.telemetryDt);
+
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
@@ -372,6 +379,11 @@ namespace gui {
 	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and robot name
     void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
         w.robotName = QString::fromStdString(_currentRobotName);
+        w.integrationMethod = static_cast<int>(integrationMethod());
+        w.adIntegrationMethod = static_cast<int>(autoDiffIntegrationMethod());
+        w.autoDiff = autoDiffEnabled();
+        w.simDt = fixedDt();
+        w.telemetryDt = 1.0 / telemetryHz();
         w.cameraPos = _camera.getPosition();
         w.cameraYaw = _camera.getYaw();
         w.cameraPitch = _camera.getPitch();
