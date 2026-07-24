@@ -111,6 +111,12 @@ namespace scene {
 			return;
 		}
 
+		constexpr float FLOOR_Y = 0.0f;
+		constexpr float MIN_EYE_OFFSET = 0.05f; // Min dist from floor camera eyes can be
+		if (_position.y < FLOOR_Y + MIN_EYE_OFFSET) {
+			_position.y = FLOOR_Y + MIN_EYE_OFFSET;
+		}
+
 		glm::vec3 f;
 		f.x = cosf(_yaw) * cosf(_pitch);
 		f.y = sinf(_pitch);
