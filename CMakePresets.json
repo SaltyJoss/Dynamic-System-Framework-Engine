@@ -89,6 +89,9 @@
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
+            },
+            "environment": {
+                "QT_QPA_PLATFORM": "xcb"
             }
         }
     ],

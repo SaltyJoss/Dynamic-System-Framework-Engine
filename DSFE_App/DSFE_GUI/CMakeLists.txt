@@ -121,7 +121,6 @@ set(WIDGETS_SRC
     include/MainWindow/Widgets/FractionSelectorWidget.h
     src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
     include/MainWindow/DSL/DSLSyntaxHighlighter.h
-
 )
 
 set(ROBOT_SRC
@@ -177,9 +176,26 @@ target_include_directories(DSFE_GUI
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow
         ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow/style
-    PRIVATE
-        "${Vulkan_INCLUDE_DIR}/Volk"
 )
+
+# Platform-specific configurations
+if(WIN32)
+    target_include_directories(DSFE_GUI PRIVATE "${Vulkan_INCLUDE_DIR}/Volk")
+elseif(UNIX AND NOT APPLE)
+    find_path(VOLK_INCLUDE_DIR volk.h PATH_SUFFIXES Volk volk)
+    if(NOT VOLK_INCLUDE_DIR)
+        message(FATAL_ERROR "Volk include directory not found")
+    endif()
+    target_include_directories(DSFE_GUI PRIVATE "${Vulkan_INCLUDE_DIR}/Volk")
+endif()
+
+# Link against XCB on Linux for Vulkan surface creation
+if(UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(XCB REQUIRED xcb)
+    target_include_directories(DSFE_GUI PRIVATE ${XCB_INCLUDE_DIRS})
+    target_link_libraries(DSFE_GUI PRIVATE ${XCB_LIBRARIES})
+endif()
 
 # Link DSFE_Core against its dependencies
 target_link_libraries(DSFE_GUI
