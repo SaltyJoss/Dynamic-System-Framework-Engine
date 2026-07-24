@@ -42,10 +42,12 @@ namespace renderer {
     };
 
     class VulkanRenderer {
+        // Constants for Vulkan rendering
         constexpr static uint32_t MAX_FRAMES_IN_FLIGHT{ 2 };
         constexpr static VkFormat SWAPCHAIN_FORMAT{  VK_FORMAT_B8G8R8A8_SRGB };
         constexpr static VkFormat DEPTH_FORMAT{ VK_FORMAT_D32_SFLOAT };
 
+        // Push constants structure for passing data to shaders
         struct PushConstants {
             glm::mat4 mvp;
             glm::mat4 model;          // for world-space normals + position in the fragment shader
@@ -61,37 +63,6 @@ namespace renderer {
             void wait_idle();
 
         private:
-            // Methods for Vulkan rendering setup
-            ShaderModules create_shaders(const std::string& vertFile, const std::string& fragFile);
-            static std::string load_shader_source(const std::string& filename);
-            VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
-
-            VkPipelineLayout create_pipeline_layout();
-            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend = false, bool depth_write = true);
-            void destroy_pipeline(Pipeline& pipeline);
-
-            bool create_sync_resources();
-            bool create_command_buffers();
-
-            bool create_depth_resources();
-            void destroy_depth_resources();
-
-            bool create_shadow_resources();
-            void destroy_shadow_resources();
-            glm::mat4 light_space_matrix() const;
-
-            bool create_descriptors();
-            void destroy_descriptors();
-            void update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos);
-
-            bool create_shadow_pipeline();
-
-            bool create_msaa_resources();
-            void destroy_msaa_resources();
-
-            bool create_reflection_resource();
-            void destroy_reflection_resource();
-
             // Internal state
             VulkanContext* _context = nullptr;
             VulkanSwapchain* _swapchain = nullptr;
@@ -105,31 +76,49 @@ namespace renderer {
             // Shader variables (For GLSL to SPIR-V compilation, however later I will be using HLSL for shader compilation)
             VkShaderModule _vert_shader = VK_NULL_HANDLE;
 	        VkShaderModule _frag_shader = VK_NULL_HANDLE;
+            ShaderModules create_shaders(const std::string& vertFile, const std::string& fragFile);
+            static std::string load_shader_source(const std::string& filename);
+            VkShaderModule compile_shader(const std::string& source, const std::string& debug_name, shaderc_shader_kind kind, const std::string& entry_point) const;
 
             // Graphics Pipeline variables
             VkPipeline _pipeline = VK_NULL_HANDLE; // Vulkan graphics pipeline handle
             VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE; // Vulkan pipeline layout handle
+            VkPipelineLayout create_pipeline_layout();
+            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend = false, bool depth_write = true);
+            void destroy_pipeline(Pipeline& pipeline);
 
             // Depth buffer variables
             VkImage _depth_image = VK_NULL_HANDLE; // Vulkan depth image handle
             VkImageView _depth_image_view = VK_NULL_HANDLE; // Vulkan depth image view handle
             VmaAllocation _depth_image_allocation = VK_NULL_HANDLE; // Vulkan depth image allocation
+            bool create_depth_resources();
+            void destroy_depth_resources();
 
             // Shadow mapping variables
             static constexpr uint32_t SHADOW_MAP_SIZE = 4096;
             static constexpr VkFormat SHADOW_FORMAT = VK_FORMAT_D32_SFLOAT;
-            // Shadow map resources
             VkImage _shadow_image = VK_NULL_HANDLE; // Vulkan shadow map image handle
             VmaAllocation _shadow_alloc = VK_NULL_HANDLE; // Vulkan shadow map image allocation
             VkImageView _shadow_view = VK_NULL_HANDLE; // Vulkan shadow map image view
             VkSampler _shadow_sampler = VK_NULL_HANDLE; // Vulkan shadow map sampler
             Pipeline _shadow_pipeline; // Vulkan graphics pipeline for shadow mapping
+            bool create_shadow_resources();
+            void destroy_shadow_resources();
+            glm::mat4 light_space_matrix() const;
+            bool create_shadow_pipeline();
 
             // MSAA variables
             static constexpr VkSampleCountFlagBits MSAA_SAMPLES = VK_SAMPLE_COUNT_4_BIT;
             VkImage _msaa_image = VK_NULL_HANDLE; // Vulkan MSAA image handle
             VmaAllocation _msaa_alloc = VK_NULL_HANDLE; // Vulkan MSAA image allocation
             VkImageView _msaa_view = VK_NULL_HANDLE; // Vulkan MSAA image view
+            bool create_msaa_resources();
+            void destroy_msaa_resources();
+
+            // Descriptor set methods
+            bool create_descriptors();
+            void destroy_descriptors();
+            void update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos);
 
             // Planar floor reflection variables
             static constexpr uint32_t REFLECTION_DIVISOR = 2; // Half swapchain resolution for reflection rendering
@@ -141,10 +130,15 @@ namespace renderer {
             VkImageView _refl_depth_view = VK_NULL_HANDLE; // Vulkan reflection depth image view
             VkSampler _refl_sampler = VK_NULL_HANDLE; // Vulkan reflection image sampler
             VkExtent2D _refl_extent{};
+            void rewrite_reflection_descriptor();
+            bool create_reflection_resource();
+            void destroy_reflection_resource();
 
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
             std::array<FrameResources, MAX_FRAMES_IN_FLIGHT> _frame_resources; // Vector of frame resources for each frame
+            bool create_sync_resources();
+            bool create_command_buffers();
 
         private:
             // GPU buffer structure containing Vulkan buffer and VMA allocation
