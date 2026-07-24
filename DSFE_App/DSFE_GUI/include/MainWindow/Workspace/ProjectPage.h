@@ -7,6 +7,7 @@ namespace gui { class SimulationManager; }
 namespace widgets {
 	class ConsoleOutputWidget;
 	class DSLEditorWidget;
+	class ControlPanelWidget;
 }
 
 namespace Workspace {
@@ -18,5 +19,6 @@ namespace Workspace {
 	private:
 		widgets::ConsoleOutputWidget* _log = nullptr;
 		widgets::DSLEditorWidget* _editor = nullptr;
+		widgets::ControlPanelWidget* _controlPanel = nullptr;
 	};
 } // namespace Workspace

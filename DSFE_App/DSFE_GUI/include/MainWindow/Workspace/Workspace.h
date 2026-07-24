@@ -5,6 +5,8 @@
 #include <QJsonObject>
 #include <glm/glm.hpp>
 
+#include "Platform/Logger.h"
+
 namespace gui {
     // Everything a saved workspace contains. Version field for forward migration.
     struct WorkspaceData {

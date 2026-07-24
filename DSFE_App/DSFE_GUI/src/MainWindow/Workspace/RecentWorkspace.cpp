@@ -1,5 +1,5 @@
 // DSFE_GUI Workspace.cpp
-#include "Workspace/RecentWorkspaces.h"
+#include "Workspace/RecentWorkspace.h"
 
 #include <QSettings>
 #include <QFileInfo>

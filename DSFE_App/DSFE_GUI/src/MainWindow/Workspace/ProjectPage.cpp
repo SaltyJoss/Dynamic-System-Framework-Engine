@@ -20,10 +20,11 @@ namespace Workspace {
 		auto* rightSplitter = new QSplitter(Qt::Vertical);
 		_log = new widgets::ConsoleOutputWidget(this);
 		_editor = new widgets::DSLEditorWidget(sim, _log, this);
+		_controlPanel = new widgets::ControlPanelWidget(sim, this);
 		rootSplitter->addWidget(_editor);
 		centreSplitter->addWidget(new widgets::ViewportWidget(sim, this));
 		centreSplitter->addWidget(_log);
-		rightSplitter->addWidget(new widgets::ControlPanelWidget(sim, this));
+        rightSplitter->addWidget(_controlPanel);
 		rootSplitter->addWidget(centreSplitter);
 		rootSplitter->addWidget(rightSplitter);
 		layout->addWidget(rootSplitter);
