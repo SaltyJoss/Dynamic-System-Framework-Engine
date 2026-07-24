@@ -86,6 +86,7 @@ target_include_directories(stb INTERFACE
 set(MAIN_WINDOW_SRC
     src/MainWindow/DSFE_MainWindow.cpp
     src/MainWindow/Workspace/ProjectPage.cpp
+    src/MainWindow/Workspace/Workspace.cpp
     src/MainWindow/style/DSFETheme.cpp
 )
 
