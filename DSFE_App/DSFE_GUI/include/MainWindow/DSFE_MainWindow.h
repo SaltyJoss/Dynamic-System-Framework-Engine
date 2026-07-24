@@ -6,8 +6,10 @@
 #include <QMainWindow>
 #include <QMenu>
 
+class QStackedWidget;
 namespace gui { class SimulationManager; struct WorkspaceData; }
 namespace widgets { class DSLEditorWidget; class ControlPanelWidget; }
+namespace Workspace { class ProjectPage; class HomePage; }
 
 namespace render {
 	enum class ResolutionPreset;
@@ -36,6 +38,8 @@ namespace window {
         void applyFullWorkspace(const gui::WorkspaceData& w);
         void rebuildRecentsMenu();
         void updateTitle();
+		void showHomePage();
+        void showProjectPage();
 
 		render::ResolutionPreset r;
 		render::QualityPreset q;
@@ -45,5 +49,8 @@ namespace window {
         widgets::ControlPanelWidget* _controlPanel = nullptr;
         QMenu* _recentsMenu = nullptr;
         QString _currentWorkspacePath;
+		QStackedWidget* _stack = nullptr;
+        Workspace::HomePage* _homePage = nullptr;
+        Workspace::ProjectPage* _projectPage = nullptr;
 	};
 }
