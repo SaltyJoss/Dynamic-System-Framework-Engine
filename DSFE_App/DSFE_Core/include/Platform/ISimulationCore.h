@@ -52,6 +52,7 @@ namespace core {
         virtual integration::eIntegrationMethod integrationMethod() const = 0;
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
 		virtual void enableAutoDiff(bool enable) = 0;
+        virtual bool autoDiffEnabled() const = 0;
         // Subsystems
         virtual robots::RobotSystem& robotSystem() = 0;
         virtual single_body_system::SingleBodySystem& singleBodySystem() = 0;
