@@ -14,7 +14,8 @@ namespace gui {
             uint32_t add(scene::Mesh mesh);
             const scene::Mesh* get(uint32_t id) const;
             uint32_t count() const { return static_cast<uint32_t>(_meshes.size()); }
-
+            void clear() { _meshes.clear(); }
+            
         private:
             std::vector<scene::Mesh> _meshes; // Internal storage for meshes
     };
