@@ -15,6 +15,7 @@ namespace Workspace {
 	public:
 		explicit ProjectPage(gui::SimulationManager* sim, QWidget* parent = nullptr);
 		widgets::DSLEditorWidget* editor() const;
+		widgets::ControlPanelWidget* controlPanel() const;
 
 	private:
 		widgets::ConsoleOutputWidget* _log = nullptr;
