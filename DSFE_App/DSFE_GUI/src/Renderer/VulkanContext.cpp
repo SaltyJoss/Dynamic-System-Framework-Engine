@@ -187,6 +187,9 @@ namespace renderer {
             .pNext = &f13,
             .timelineSemaphore = VK_TRUE
         };
+        VkPhysicalDeviceFeatures device_features{
+            .sampleRateShading = VK_TRUE
+        };
 
         const char* device_extensions[]{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -196,7 +199,8 @@ namespace renderer {
             .queueCreateInfoCount = 1,
             .pQueueCreateInfos = &queue_info,
             .enabledExtensionCount = 1,
-            .ppEnabledExtensionNames = device_extensions
+            .ppEnabledExtensionNames = device_extensions,
+            .pEnabledFeatures = &device_features
         };
 
         VkResult result = vkCreateDevice(phys, &info, nullptr, &_device);
