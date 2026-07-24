@@ -24,7 +24,7 @@ const vec2 poissonDisk[12] = vec2[](
 );
 
 const vec3 BG    = vec3(0.02, 0.02, 0.025);  // MUST match the clear colour
-const vec3 FLOOR = vec3(0.11, 0.11, 0.12);
+const vec3 FLOOR = vec3(0.32, 0.32, 0.33);
 const vec3 MINOR = vec3(0.16, 0.16, 0.17);
 const vec3 MAJOR = vec3(0.21, 0.21, 0.23);
 
@@ -40,9 +40,10 @@ float computeShadow(vec3 world_pos, vec3 N, vec3 L) {
 
     float lit = 0.0;
     for (int i = 0; i < 12; ++i) {
+        lit += texture(shadow_map, vec3(proj_coords.xy + poissonDisk[i] * texel * 6.0, depth));
         lit += texture(shadow_map, vec3(proj_coords.xy + poissonDisk[i] * texel * 2.5, depth));
     }
-    return 1.0 - (lit / 12.0);
+    return 1.0 - (lit / 24.0);
 }
 
 float gridLine(vec2 p, float cell) {
@@ -55,17 +56,12 @@ void main() {
     vec2 p = v_world_pos.xz;
 
     vec3 col = FLOOR;
-    col = mix(col, MINOR, gridLine(p, 0.1) * 0.6);
+    col = mix(col, MINOR, gridLine(p, 0.1) * 0.1);
     col = mix(col, MAJOR, gridLine(p, 1.0) * 0.8);
-
-    // Coloured axes through the origin (Isaac-style)
-    vec2 aw = fwidth(p); // High multiplier to make the axes more visible -> 
-    if (abs(v_world_pos.z) < aw.y) { col = mix(col, vec3(0.55, 0.15, 0.15), 0.75); }  // X axis
-    if (abs(v_world_pos.x) < aw.x) { col = mix(col, vec3(0.15, 0.45, 0.20), 0.75); }  // Z axis
 
     vec3 L = -normalize(vec3(-0.4, -1.0, -0.3));
     float sh = computeShadow(v_world_pos, vec3(0.0, 1.0, 0.0), L);
-    col *= (1.0 - sh * 0.55); // Soft shadows for the grid plane, don't darken the axes too much
+    col *= (1.0 - sh * 0.45); // Soft shadows for the grid plane, don't darken the axes too much
 
     // Fade the plane into the background = fake horizon
     float d = length(v_world_pos - cam.cam_pos.xyz);
