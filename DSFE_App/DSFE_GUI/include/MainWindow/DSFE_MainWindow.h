@@ -6,8 +6,8 @@
 #include <QMainWindow>
 #include <QMenu>
 
-namespace gui { class SimulationManager; }
-namespace widgets { class DSLEditorWidget; }
+namespace gui { class SimulationManager; struct WorkspaceData; }
+namespace widgets { class DSLEditorWidget; class ControlPanelWidget; }
 
 namespace render {
 	enum class ResolutionPreset;
@@ -26,10 +26,24 @@ namespace window {
 		void buildRobotMenu(QMenu* projectMenu);
 		void onLoadMesh();
 
+		// --- Workspaces ---
+		void newWorkspace();
+        void openWorkspaceDialog();
+        void openWorkspacePath(const QString& path);
+        bool saveWorkspace();       // to current path, or Save As if none
+        bool saveWorkspaceAs();
+        void gatherFullWorkspace(gui::WorkspaceData& w);
+        void applyFullWorkspace(const gui::WorkspaceData& w);
+        void rebuildRecentsMenu();
+        void updateTitle();
+
 		render::ResolutionPreset r;
 		render::QualityPreset q;
 
 		gui::SimulationManager* _sim;
-		widgets::DSLEditorWidget* _dslEditor = nullptr;
+        widgets::DSLEditorWidget* _dslEditor = nullptr;
+        widgets::ControlPanelWidget* _controlPanel = nullptr;
+        QMenu* _recentsMenu = nullptr;
+        QString _currentWorkspacePath;
 	};
 }

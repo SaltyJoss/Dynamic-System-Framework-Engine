@@ -47,6 +47,7 @@ namespace widgets {
 		QString scriptText() const;
         void setScriptText(const QString& text);
         QString currentScriptPath() const { return _currentScriptPath; }
+        void stopScript();
 
 	private:
 		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
@@ -61,7 +62,6 @@ namespace widgets {
 		DSLSyntaxHighlighter* _highlighter = nullptr;
 
 		void runScript();
-		void stopScript();
 
 		void buildEditorTab();
 		void buildHelpTab();

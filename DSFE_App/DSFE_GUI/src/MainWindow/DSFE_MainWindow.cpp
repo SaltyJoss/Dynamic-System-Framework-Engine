@@ -2,8 +2,12 @@
 #include "MainWindow/DSFE_MainWindow.h"
 #include "Simulation/SimulationManager.h"
 #include "Scene/SimulationCore.h"
+
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
+#include "Widgets/ControlPanelWidget.h"
+#include "Workspace/Workspace.h"
+#include "Workspace/RecentWorkspace.h"
 
 #include "ui/RenderPreset.h"
 
@@ -14,6 +18,8 @@
 #include <QApplication>
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QStandardPaths>
 
 #include "Platform/Paths.h"
 
@@ -41,23 +47,17 @@ namespace window {
 		// File menu
 		{
 			auto* newMenu = fileMenu->addMenu("New");
-			connect(newMenu, &QMenu::aboutToShow, this, [this, newMenu]() {
-				LOG_INFO("Menu clicked: File -> New");
-				auto* newProjectAction = newMenu->addAction("Project");
-				connect(newProjectAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> New -> New Project");
-				});
-				newMenu->addSeparator();
-				auto* newScriptAction = newMenu->addAction("Script");
-				connect(newScriptAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> New -> New Script");
-				});
+			auto* newProjectAction = newMenu->addAction("Project");
+			connect(newProjectAction, &QAction::triggered, this, [this]() { newWorkspace(); });
+			newMenu->addSeparator();
+			auto* newScriptAction = newMenu->addAction("Script");
+			connect(newScriptAction, &QAction::triggered, this, [this]() {
+				if (_dslEditor) { _dslEditor->setScriptText(QString()); }
 			});
+
 			auto* openMenu = fileMenu->addMenu("Open");
 			auto* openProjectAction = openMenu->addAction("Project");
-			connect(openProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: File -> Open -> Project");
-			});
+			connect(openProjectAction, &QAction::triggered, this, [this]() { openWorkspaceDialog(); });
 			openMenu->addSeparator();
 			auto* openScriptAction = openMenu->addAction("Script");
 			connect(openScriptAction, &QAction::triggered, this, [this]() {
@@ -66,35 +66,30 @@ namespace window {
 				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 				_dslEditor->loadScript(fileName);
 			});
+
+			_recentsMenu = fileMenu->addMenu("Recent Projects");
+			rebuildRecentsMenu();
+
 			fileMenu->addSeparator();
 			auto* saveMenu = fileMenu->addMenu("Save");
 			auto* saveProjectAction = saveMenu->addAction("Project");
-			connect(saveProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: File -> Save -> Project");
-			});
+			connect(saveProjectAction, &QAction::triggered, this, [this]() { saveWorkspace(); });
 			auto* saveScriptAction = saveMenu->addAction("Script");
 			connect(saveScriptAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: File -> Save -> Script");
-				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
+				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 				if (fileName.isEmpty()) { return; }
 				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 				_dslEditor->saveScript(fileName);
 			});
 			auto* saveAsMenu = fileMenu->addMenu("Save As");
-			connect(saveAsMenu, &QMenu::aboutToShow, this, [this, saveAsMenu]() {
-				LOG_INFO("Menu clicked: File -> Save As");
-				auto* saveProjectAsAction = saveAsMenu->addAction("Project");
-				connect(saveProjectAsAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> Save As -> Project");
-				});
-				auto* saveScriptAsAction = saveAsMenu->addAction("Script");
-				connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
-					LOG_INFO("Menu clicked: File -> Save As -> Script");
-					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
-					if (fileName.isEmpty()) { return; }
-					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
-					_dslEditor->saveScript(fileName);
-				});
+			auto* saveProjectAsAction = saveAsMenu->addAction("Project");
+			connect(saveProjectAsAction, &QAction::triggered, this, [this]() { saveWorkspaceAs(); });
+			auto* saveScriptAsAction = saveAsMenu->addAction("Script");
+			connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
+				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
+				if (fileName.isEmpty()) { return; }
+				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
+				_dslEditor->saveScript(fileName);
 			});
 			fileMenu->addSeparator();
 			auto* exitAction = fileMenu->addAction("Exit");
@@ -106,17 +101,11 @@ namespace window {
 		// Project menu
 		{
 			auto* newProjectAction = projectMenu->addAction("New Project");
-			connect(newProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> New Project");
-			});
+			connect(newProjectAction, &QAction::triggered, this, [this]() { newWorkspace(); });
 			auto* loadProjectAction = projectMenu->addAction("Load Project");
-			connect(loadProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> Load Project");
-			});
+			connect(loadProjectAction, &QAction::triggered, this, [this]() { openWorkspaceDialog(); });
 			auto* saveProjectAction = projectMenu->addAction("Save Project");
-			connect(saveProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> Save Project");
-			});
+			connect(saveProjectAction, &QAction::triggered, this, [this]() { saveWorkspace(); });
 			projectMenu->addSeparator();
 			auto* robotMenu = projectMenu->addMenu("Load Robot");
 			connect(robotMenu, &QMenu::aboutToShow, this, [this, robotMenu]() {
@@ -363,6 +352,95 @@ namespace window {
 		std::string bodyName = QFileInfo(path).baseName().toStdString();
 		//_sim->simCore()->loadSingleBody(bodyName);
 		_sim->load_mesh(path.toStdString());
+	}
+
+	// ---- Workspaces ----
+
+	static QString workspacesDir() { return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/DSFE"; }
+
+	void DSFE_MainWindow::newWorkspace() {
+		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
+		_sim->closeWorkspace();
+		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
+		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		_currentWorkspacePath.clear();
+		updateTitle();
+	}
+
+	void DSFE_MainWindow::openWorkspaceDialog() {
+		const QString path = QFileDialog::getOpenFileName(this, "Open Project",
+			workspacesDir(), "DSFE Projects (*.dsfe)");
+		if (path.isEmpty()) { return; }
+		openWorkspacePath(path);
+	}
+
+	void DSFE_MainWindow::openWorkspacePath(const QString& path) {
+		gui::WorkspaceData w;
+		if (!gui::WorkspaceData::loadFromFile(path, w)) {
+			gui::RecentWorkspaces::remove(path);
+			rebuildRecentsMenu();
+			return;
+		}
+		applyFullWorkspace(w);
+		_currentWorkspacePath = path;
+		gui::RecentWorkspaces::add(path);
+		rebuildRecentsMenu();
+		updateTitle();
+	}
+
+	bool DSFE_MainWindow::saveWorkspace() {
+		if (_currentWorkspacePath.isEmpty()) { return saveWorkspaceAs(); }
+		gui::WorkspaceData w;
+		gatherFullWorkspace(w);
+		if (!w.saveToFile(_currentWorkspacePath)) { return false; }
+		gui::RecentWorkspaces::add(_currentWorkspacePath);
+		rebuildRecentsMenu();
+		return true;
+	}
+
+	bool DSFE_MainWindow::saveWorkspaceAs() {
+		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", workspacesDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
+		if (path.isEmpty()) { return false; }
+		_currentWorkspacePath = path;
+		updateTitle();
+		return saveWorkspace();
+	}
+
+	void DSFE_MainWindow::gatherFullWorkspace(gui::WorkspaceData& w) {
+		_sim->gatherWorkspace(w);                       // robot, camera, sim properties
+		if (_dslEditor) {
+			w.scriptText = _dslEditor->scriptText();
+			w.scriptPath = _dslEditor->currentScriptPath();
+		}
+		w.name = QFileInfo(_currentWorkspacePath).baseName();
+	}
+
+	void DSFE_MainWindow::applyFullWorkspace(const gui::WorkspaceData& w) {
+		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
+		_sim->closeWorkspace();
+		_sim->applyWorkspace(w);                        // sim properties, camera, robot
+		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
+		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+	}
+
+	void DSFE_MainWindow::rebuildRecentsMenu() {
+		if (!_recentsMenu) { return; }
+		_recentsMenu->clear();
+		const QStringList recents = gui::RecentWorkspaces::list();
+		if (recents.isEmpty()) { _recentsMenu->addAction("(none)")->setEnabled(false); return; }
+		for (const QString& path : recents) {
+			QAction* a = _recentsMenu->addAction(QFileInfo(path).baseName());
+			a->setToolTip(path);
+			connect(a, &QAction::triggered, this, [this, path]() { openWorkspacePath(path); });
+		}
+		_recentsMenu->addSeparator();
+		QAction* clear = _recentsMenu->addAction("Clear List");
+		connect(clear, &QAction::triggered, this, [this]() { gui::RecentWorkspaces::clear(); rebuildRecentsMenu(); });
+	}
+
+	void DSFE_MainWindow::updateTitle() {
+		const QString name = _currentWorkspacePath.isEmpty() ? QStringLiteral("Untitled") : QFileInfo(_currentWorkspacePath).baseName();
+		setWindowTitle("DSFE — " + name);
 	}
 
 } // namespace window
