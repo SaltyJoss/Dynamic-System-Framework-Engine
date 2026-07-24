@@ -72,6 +72,8 @@ target_compile_definitions(DSFE_GUI PRIVATE
     $<$<PLATFORM_ID:Windows>:VK_USE_PLATFORM_WIN32_KHR>
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
+    $<$<PLATFORM_ID:Linux>:VK_USE_PLATFORM_XCB_KHR>
+    $<$<PLATFORM_ID:Linux>:VK_USE_PLATFORM_WAYLAND_KHR>
 )
 
 add_library(stb INTERFACE)
@@ -186,7 +188,7 @@ elseif(UNIX AND NOT APPLE)
     if(NOT VOLK_INCLUDE_DIR)
         message(FATAL_ERROR "Volk include directory not found")
     endif()
-    target_include_directories(DSFE_GUI PRIVATE "${Vulkan_INCLUDE_DIR}/Volk")
+    target_include_directories(DSFE_GUI PRIVATE ${VOLK_INCLUDE_DIR})
 endif()
 
 # Link against XCB on Linux for Vulkan surface creation
