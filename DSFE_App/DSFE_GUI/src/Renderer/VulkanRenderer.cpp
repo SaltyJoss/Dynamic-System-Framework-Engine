@@ -677,9 +677,9 @@ namespace renderer {
     Initialisation and Destruction
     */
 
-    bool VulkanRenderer::init(void* windowHandle) {
+    bool VulkanRenderer::init(const NativeWindow& win) {
         _context = new VulkanContext();
-        if (!_context->init(windowHandle)) { LOG_ERROR("VulkanContext init failed"); return false; }
+        if (!_context->init(win)) { LOG_ERROR("VulkanContext init failed"); return false; }
         _swapchain = new VulkanSwapchain();
         if (!_swapchain->create(*_context, _width, _height, SWAPCHAIN_FORMAT)) {
             LOG_ERROR("VulkanSwapchain create failed"); return false;

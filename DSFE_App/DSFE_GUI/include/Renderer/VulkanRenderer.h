@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Renderer/NativeWindow.h"
+
 #include <volk.h>
 
 #include <fstream>
@@ -53,7 +55,7 @@ namespace renderer {
         };
 
         public:
-            bool init(void* windowHandle);
+            bool init(const NativeWindow& win);
             void shutdown();
             void render(const gui::SimulationScene& scene, const glm::mat4& view, const glm::mat4& proj);
             void resize(uint32_t width, uint32_t height);
