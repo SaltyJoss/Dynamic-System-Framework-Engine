@@ -173,6 +173,17 @@ namespace widgets {
 
 	void DSLEditorWidget::runButtonHandler() { _sim->isScriptRunning() ? stopScript() : runScript(); }
 
+	QString DSLEditorWidget::scriptText() const {
+        return _scriptEditor ? _scriptEditor->toPlainText() : QString();
+    }
+
+    void DSLEditorWidget::setScriptText(const QString& text) {
+        if (_scriptEditor) { _scriptEditor->setPlainText(text); }
+        _scriptText = text.toStdString();
+        _currentScriptPath.clear();          // embedded text, no file identity
+        _loadedFromFile = false;
+    }
+
 	void DSLEditorWidget::stopScript() {
 		if (!_sim->isScriptRunning()) { return; }
 		if (_sim->activeProgram()) {

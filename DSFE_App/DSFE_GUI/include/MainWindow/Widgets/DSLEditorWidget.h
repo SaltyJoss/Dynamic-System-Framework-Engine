@@ -44,6 +44,10 @@ namespace widgets {
 		bool saveScript(const QString& fileName);
 		void runButtonHandler();
 
+		QString scriptText() const;
+        void setScriptText(const QString& text);
+        QString currentScriptPath() const { return _currentScriptPath; }
+
 	private:
 		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
 		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
