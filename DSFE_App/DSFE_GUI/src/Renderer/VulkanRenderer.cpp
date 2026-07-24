@@ -1375,4 +1375,15 @@ namespace renderer {
         LOG_INFO("Uploaded mesh %u: %zu verts, %u indices", mesh_id, vertices.size(), mesh.index_count);
         return mesh_id;
     }
+
+    // Destroys all uploaded meshes, freeing their associated GPU buffers and clearing the mesh registry.
+    void VulkanRenderer::destroy_all_meshes() {
+        wait_idle();
+        for (auto& m : _meshes) {
+            destroy_buffer(m.vertices);
+            destroy_buffer(m.indices);
+        }
+        _meshes.clear();
+        LOG_INFO("GPU mesh registry cleared");
+    }
 } // namespace renderer

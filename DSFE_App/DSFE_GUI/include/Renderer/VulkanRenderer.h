@@ -193,6 +193,7 @@ namespace renderer {
             static constexpr uint32_t INVALID_MESH_ID = UINT32_MAX;
 
             uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
+            void destroy_all_meshes();
             const GpuMesh* get_mesh(uint32_t id) const { return id < _meshes.size() ? &_meshes[id] : nullptr; }
     };
 } // namespace renderer
