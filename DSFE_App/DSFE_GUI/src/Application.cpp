@@ -39,6 +39,8 @@ Application::Application(const std::string& appName) : _name(appName) {
     // Force XCB until the Wayland surface path exists.
     qputenv("QT_QPA_PLATFORM", "xcb");
 #endif
+	QCoreApplication::setOrganizationName("DSFE");
+    QCoreApplication::setApplicationName("DSFE");
 	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
 	style::applyTheme(*_qtApp);
 	_sim = std::make_unique<gui::SimulationManager>();
