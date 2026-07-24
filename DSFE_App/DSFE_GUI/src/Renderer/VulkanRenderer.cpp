@@ -510,8 +510,8 @@ namespace renderer {
                 PushConstants pc{};
                 pc.mvp      = view_proj * r.transform;
                 pc.model    = r.transform;
-                pc.albedo   = glm::vec4(0.55f, 0.55f, 0.58f, 1.0f);
-                pc.material = glm::vec4(0.2f, 0.5f, 1.0f, 0.0f);
+                pc.albedo   = r.albedo;
+                pc.material = r.material;
                 draw(f.command_buffer, _mesh_pipeline, *m, viewport, scissor, pc, _camera_sets[ubo_slot]);
             }
         }
