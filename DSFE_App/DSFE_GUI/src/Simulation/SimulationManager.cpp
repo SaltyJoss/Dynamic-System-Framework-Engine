@@ -348,15 +348,16 @@ namespace gui {
 		// 1. Systems first (they hold renderable indices)
 		// 2. Scene
 		// 3. Both mesh registries together (so ids realign from zero)
-        _systems.clearAll(_scene);
+        _systems.clear_all(_scene);
         _scene.clear();
         _renderer.destroy_all_meshes();
-        _meshStore.clear();
+        _mesh_store.clear();
         _currentRobotName.clear();
 
         _core->setScriptRunning(false);
         _core->stopSimulation();
         _core->setSimTime(0.0);
+		_core->trajectoryManager().clearAll();
 
         LOG_INFO("Workspace closed");
     }
@@ -372,7 +373,7 @@ namespace gui {
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
         if (!w.robotName.isEmpty()) {
-            loadRobot(w.robotName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
+            load_robot(w.robotName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
         }
         LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
     }
