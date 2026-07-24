@@ -10,6 +10,7 @@ layout(set = 0, binding = 0) uniform Camera {
 } cam;
 
 layout(set = 0, binding = 1) uniform sampler2DShadow shadow_map;
+layout(set = 0, binding = 2) uniform sampler2D refl_tex;
 
 layout(location = 0) out vec4 o_colour;
 
@@ -58,6 +59,15 @@ void main() {
     vec3 col = FLOOR;
     col = mix(col, MINOR, gridLine(p, 0.1) * 0.15);
     col = mix(col, MAJOR, gridLine(p, 1.0) * 0.95);
+
+    vec2 refl_uv = gl_FragCoord.xy / (vec2(textureSize(refl_tex, 0)) * 2.0);
+    vec4 refl = texture(refl_tex, refl_uv);
+
+    // Fresnel: stronger at grazing angles, faint looking straight down.
+    vec3 V = normalize(cam.cam_pos.xyz - v_world_pos);
+    float fresnel = pow(1.0 - max(V.y, 0.0), 3.0);
+    float refl_strength = (0.10 + 0.45 * fresnel) * refl.a;   // alpha masks "something was reflected"
+    col = mix(col, refl.rgb, refl_strength);
 
     vec3 L = -normalize(vec3(-0.4, -1.0, -0.3));
     float sh = computeShadow(v_world_pos, vec3(0.0, 1.0, 0.0), L);
