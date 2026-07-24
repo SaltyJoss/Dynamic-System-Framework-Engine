@@ -14,9 +14,6 @@
 #include "Platform/Logger.h"
 
 namespace scene {
-	class Mesh;
-	class Object;
-	class Light;
 	class Camera;
 }
 namespace render {
@@ -42,6 +39,8 @@ namespace widgets {
 	class ControlPanelWidget : public QWidget {
 	public:
 		explicit ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent = nullptr);
+		void refreshFromSim();
+
 	private:
 		struct IntegratorEntry {
 			integration::eIntegrationMethod method;
@@ -88,7 +87,6 @@ namespace widgets {
 
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
-		void buildObjectsList();
 
 		void jointInfoPanel();
 		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
@@ -107,11 +105,8 @@ namespace widgets {
 		QGroupBox* _simPropertiesGroup = nullptr;
 		QCheckBox* _useAutoDiffCheck = nullptr;
 		QComboBox* _integratorCombo = nullptr;
-		QComboBox* _objectsList = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
-		QLabel* _currentObjectLabel = nullptr;
 		QLabel* _simTimeLabel = nullptr;
-		QPushButton* _removeObjectButton = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
 		FractionSelectorWidget* _telemetryDtSelector = nullptr;
 

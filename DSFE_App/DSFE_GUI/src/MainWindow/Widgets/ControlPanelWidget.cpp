@@ -17,9 +17,6 @@
 
 #include "Widgets/FractionSelectorWidget.h"
 
-#include "Scene/Mesh.h"
-#include "Scene/Object.h"
-#include "Scene/Light.h"
 #include "Scene/Camera.h"
 
 #include "Simulation/SimulationManager.h"
@@ -59,22 +56,17 @@ namespace widgets {
 
 	// SimSetupPanel for 
 	void ControlPanelWidget::simPropertiesPanel() {
-		auto& rs = _sim->robotSystem();
-
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
 
 		_useAutoDiffCheck = new QCheckBox();
+		_useAutoDiff = _sim->autoDiffEnabled();
+		_useAutoDiffCheck->setChecked(_useAutoDiff);
 		_integratorCombo = new QComboBox();
 		_integratorCombo->setMaximumWidth(175);
 
 		_simDtSelector = new FractionSelectorWidget(false);
 		_telemetryDtSelector = new FractionSelectorWidget(true);
-
-		_objectsList = new QComboBox();
-		_objectsList->setMaximumWidth(175);
-		
-		_removeObjectButton = new QPushButton("Remove Selected Object");
 
 		_simTimeLabel = new QLabel();
 		_simTimeLabel->setWordWrap(true);
@@ -83,8 +75,6 @@ namespace widgets {
 
 		form->addRow("Auto Diff", _useAutoDiffCheck);
 		form->addRow("Integrator", _integratorCombo);
-		form->addRow("Objects", _objectsList);
-		form->addRow("", _removeObjectButton);
 		layout->addLayout(form);
 
 		layout->addSpacing(8);
@@ -96,6 +86,8 @@ namespace widgets {
 
 		auto* telemetryDtLabel = new QLabel("Telemetry dt");
 		telemetryDtLabel->setAlignment(Qt::AlignCenter);
+		_simDtSelector->setDt(_sim->fixedDt());
+		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
 
 		dtHeaderRow->addWidget(simDtLabel);
 		dtHeaderRow->addWidget(telemetryDtLabel);
@@ -117,7 +109,7 @@ namespace widgets {
 
 		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, &rs](bool checked) {
 			_useAutoDiff = checked;
-			rs.enableAutoDiff(checked);
+			_sim->enableAutoDiff(checked);
 			buildIntegratorCombos();
 		});
 
@@ -134,23 +126,6 @@ namespace widgets {
 
 		connect(_simDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setFixedDt(dt); });
 		connect(_telemetryDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setTelemetryHz(1.0 / dt); });
-
-		buildObjectsList();
-
-		connect(_objectsList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
-			if (!_sim) { return; }
-			auto& objects = _sim->getObjects();
-			if (index < 0 || index >= static_cast<int>(objects.size())) { return; }
-			_sim->setSelectedObject(objects[index].get());
-		});
-
-		connect(_removeObjectButton, &QPushButton::clicked, this, [this]() {
-			_selectedObject = _sim->getObject();
-			if (!_selectedObject) { return; }
-			_sim->removeObject(_selectedObject);
-			_selectedObject = nullptr;
-			buildObjectsList();
-		});
 	}
 
 	void ControlPanelWidget::buildIntegratorCombos() {
@@ -174,28 +149,6 @@ namespace widgets {
 			int index = _integratorCombo->findData(static_cast<int>(currentMethod));
 			if (index != -1) {
 				_integratorCombo->setCurrentIndex(index);
-			}
-		}
-	}
-
-	void ControlPanelWidget::buildObjectsList() {
-		_objectsList->blockSignals(true);
-		_objectsList->clear();
-
-		auto& objects = _sim->getObjects();
-		for (auto& obj : objects) { _objectsList->addItem(QString::fromStdString(obj->name)); }
-
-		_objectsList->blockSignals(false);
-
-		// restore selection safely
-		scene::Object* selected = _sim->getObject();
-		if (!selected) { return; }
-
-		for (int i = 0; i < _objectsList->count(); i++) {
-			auto& obj = objects[i];
-			if (obj.get() == selected) {
-				_objectsList->setCurrentIndex(i);
-				break;
 			}
 		}
 	}
@@ -445,5 +398,17 @@ namespace widgets {
 		else {
 			_simTimeLabel->setText(QString("<b>Elapsed Time:</b> %1 s").arg(_sim->simTime(), 0, 'f', 3));
 		}
+	}
+
+	void ControlPanelWidget::refreshFromSim() {
+		if (!_sim) { return; }
+		_useAutoDiff = _sim->autoDiffEnabled();
+		{
+			QSignalBlocker b(_useAutoDiffCheck);
+			_useAutoDiffCheck->setChecked(_useAutoDiff);
+		}
+		buildIntegratorCombos(); // already reads back from _sim
+		_simDtSelector->setDt(_sim->fixedDt());
+		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
 	}
 } // namespace widgets
