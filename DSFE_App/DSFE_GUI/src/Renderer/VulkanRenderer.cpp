@@ -31,8 +31,6 @@ namespace renderer {
         vkCmdPipelineBarrier2(cmd, &dep_info);
     }
 
-    // Helper
-
     // Reads a shader source file whole. Returns empty on failure — the caller logs.
     std::string VulkanRenderer::load_shader_source(const std::string& filename) {
         const std::string path = (paths::assets() / "shaders" / filename).string();
@@ -521,6 +519,58 @@ namespace renderer {
         };
         vkBeginCommandBuffer(f.command_buffer, &begin);
 
+        // Shadow Pass
+        image_barrier(
+            f.command_buffer, _shadow_image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
+        VkRenderingAttachmentInfo shadow_depth{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = _shadow_view,
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = {{{ 1.0f, 0 }}}
+        };
+        VkRenderingInfo shadow_rendering{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .renderArea = {{0, 0}, {SHADOW_MAP_SIZE, SHADOW_MAP_SIZE}},
+            .layerCount = 1,
+            .colorAttachmentCount = 0,
+            .pDepthAttachment = &shadow_depth  
+        };
+        
+        vkCmdBeginRendering(f.command_buffer, &shadow_rendering);
+        {
+            VkViewport svp{ 0, 0, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE, 0.0f, 1.0f };
+            VkRect2D ssc{ {0, 0}, {SHADOW_MAP_SIZE, SHADOW_MAP_SIZE} };
+            const glm::mat4 lsm = light_space_matrix();
+            const uint32_t ubo_slot_s = static_cast<uint32_t>(_frame_idx % MAX_FRAMES_IN_FLIGHT);
+            for (const gui::Renderable& r : scene.renderables()) {
+                if (const GpuMesh* m = get_mesh(r.mesh_id)) {
+                    PushConstants pc{};
+                    pc.mvp   = lsm * r.transform;
+                    //pc.model = r.transform;
+                    draw(f.command_buffer, _shadow_pipeline, *m, svp, ssc, pc, _camera_sets[ubo_slot_s]);
+                }
+            }
+        }
+        vkCmdEndRendering(f.command_buffer);
+        // Transition the shadow map to a read-only layout for sampling in the main pass
+        image_barrier(
+            f.command_buffer, _shadow_image,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+            VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
+
         // Swapchain image barrier
         image_barrier(f.command_buffer, _swapchain->image(image_index),
                       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -597,60 +647,7 @@ namespace renderer {
             pc.model = glm::mat4(1.0f);
             draw(f.command_buffer, _grid_pipeline, _grid_quad, viewport, scissor, pc, _camera_sets[ubo_slot]);
         }
-        
         vkCmdEndRendering(f.command_buffer);
-
-        // Shadow Pass
-        image_barrier(
-            f.command_buffer, _shadow_image,
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            VK_IMAGE_ASPECT_DEPTH_BIT
-        );
-        VkRenderingAttachmentInfo shadow_depth{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = _shadow_view,
-            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = {{{ 1.0f, 0 }}}
-        };
-        VkRenderingInfo shadow_rendering{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-            .renderArea = {{0, 0}, {SHADOW_MAP_SIZE, SHADOW_MAP_SIZE}},
-            .layerCount = 1,
-            .colorAttachmentCount = 0,
-            .pDepthAttachment = &shadow_depth  
-        };
-        vkCmdBeginRendering(f.command_buffer, &shadow_rendering);
-        {
-            VkViewport svp{ 0, 0, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE, 0.0f, 1.0f };
-            VkRect2D ssc{ {0, 0}, {SHADOW_MAP_SIZE, SHADOW_MAP_SIZE} };
-            const glm::mat4 lsm = light_space_matrix();
-            const uint32_t ubo_slot_s = static_cast<uint32_t>(_frame_idx % MAX_FRAMES_IN_FLIGHT);
-            for (const gui::Renderable& r : scene.renderables()) {
-                if (const GpuMesh* m = get_mesh(r.mesh_id)) {
-                    PushConstants pc{};
-                    pc.mvp   = lsm * r.transform;
-                    //pc.model = r.transform;
-                    draw(f.command_buffer, _shadow_pipeline, *m, svp, ssc, pc, _camera_sets[ubo_slot_s]);
-                }
-            }
-        }
-        vkCmdEndRendering(f.command_buffer);
-        // Transition the shadow map to a read-only layout for sampling in the main pass
-        image_barrier(
-            f.command_buffer, _shadow_image,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
-            VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-            VK_IMAGE_ASPECT_DEPTH_BIT
-        );
-          
         
         // Swapchain image barrier for presentation
         image_barrier(
