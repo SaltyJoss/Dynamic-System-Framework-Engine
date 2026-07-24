@@ -72,6 +72,7 @@ namespace core {
 		integration::eIntegrationMethod integrationMethod() const override;
 		integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const override;
 		void enableAutoDiff(bool enable) override;
+		bool autoDiffEnabled() const override;
 
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 

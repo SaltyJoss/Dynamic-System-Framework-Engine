@@ -96,6 +96,10 @@ namespace core {
 		if (!_robot) { return; }
 		_robot->enableAutoDiff(enable);
 	}
+	bool SimulationCore::autoDiffEnabled() const {
+		if (!_robot) { return false; }
+		return _robot->autoDiffEnabled();
+	}
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
