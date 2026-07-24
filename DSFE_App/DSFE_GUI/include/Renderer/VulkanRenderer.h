@@ -89,6 +89,9 @@ namespace renderer {
             bool create_msaa_resources();
             void destroy_msaa_resources();
 
+            bool create_reflection_resource();
+            void destroy_reflection_resource();
+
             // Internal state
             VulkanContext* _context = nullptr;
             VulkanSwapchain* _swapchain = nullptr;
@@ -127,6 +130,17 @@ namespace renderer {
             VkImage _msaa_image = VK_NULL_HANDLE; // Vulkan MSAA image handle
             VmaAllocation _msaa_alloc = VK_NULL_HANDLE; // Vulkan MSAA image allocation
             VkImageView _msaa_view = VK_NULL_HANDLE; // Vulkan MSAA image view
+
+            // Planar floor reflection variables
+            static constexpr uint32_t REFLECTION_DIVISOR = 2; // Half swapchain resolution for reflection rendering
+            VkImage _refl_image = VK_NULL_HANDLE; // Vulkan reflection image handle
+            VmaAllocation _refl_alloc = VK_NULL_HANDLE; // Vulkan reflection image allocation
+            VkImageView _refl_view = VK_NULL_HANDLE; // Vulkan reflection image view
+            VkImage _refl_depth_image = VK_NULL_HANDLE; // Vulkan reflection depth image handle
+            VmaAllocation _refl_depth_alloc = VK_NULL_HANDLE; // Vulkan reflection depth image
+            VkImageView _refl_depth_view = VK_NULL_HANDLE; // Vulkan reflection depth image view
+            VkSampler _refl_sampler = VK_NULL_HANDLE; // Vulkan reflection image sampler
+            VkExtent2D _refl_extent{};
 
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
