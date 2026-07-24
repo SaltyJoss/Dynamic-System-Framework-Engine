@@ -2,8 +2,6 @@
 #pragma once
 
 #include "EngineCore.h"
-
-
 #include <core/Types.h>
 
 #include "Interpreter/Command.h"

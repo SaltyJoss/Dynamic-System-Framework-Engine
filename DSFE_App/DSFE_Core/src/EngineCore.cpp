@@ -13,22 +13,8 @@
 extern "C" {
 	// Factory function to create a SimulationCore instance
     DSFE_API core::ISimulationCore* CreateSimulationCore_v1() {
-        try { 
-            auto* core = new core::SimulationCore();
-
-            // Headless object container
-            /*auto* objects = new std::vector<std::unique_ptr<scene::Object>>();*/
-            // Robot system must be constructible WITHOUT OpenGL
-            auto* robot = new robots::RobotSystem();
-			// Trajectory manager must also be constructible without OpenGL
-            auto* traj = new control::TrajectoryManager();
-
-            core->setRobotSystem(robot);
-            core->setTrajectoryManager(traj);
-
-            return core;
-        }
-        catch (...) { return nullptr; /*Avoids throwing exceptions across C ABI boundary by return null on failure*/ }
+        try { return new core::SimulationCore(); }
+        catch (...) { return nullptr; }
     }
 	// Destroys a SimulationCore instance
     DSFE_API void DestroySimulationCore(core::ISimulationCore* p) {

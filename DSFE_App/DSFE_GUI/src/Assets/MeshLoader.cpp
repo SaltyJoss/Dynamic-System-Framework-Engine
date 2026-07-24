@@ -17,11 +17,16 @@ namespace assets {
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_FindInvalidData |
-			aiProcess_GenNormals |
+			aiProcess_GenSmoothNormals |
 			aiProcess_ImproveCacheLocality |
 			aiProcess_OptimizeMeshes |
+			aiProcess_SplitLargeMeshes |
+			aiProcess_SortByPType |
 			aiProcess_ValidateDataStructure;
 		Assimp::Importer importer;
+		// Set the maximum smoothing angle for generating smooth normals to 45 degrees
+		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 45.0f);
+
 		const aiScene* scene = importer.ReadFile(filepath.c_str(), importFlags);
 
 		// Check if the import was successful and if the scene contains a root node

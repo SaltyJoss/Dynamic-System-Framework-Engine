@@ -3,8 +3,6 @@
 // -----
 // Initially templated off a tutorial:
 // GitHub: jayanam/jgl_demos/JGL_MeshLoader
-
-#include "Rendering/RenderBase.h"
 #include "Assets/VertexHolder.h"
 #include "Scene/Element.h"
 
@@ -33,8 +31,6 @@ namespace scene {
 
 		// GPU buffer management
 		void init();
-		void createBuffers();
-		void deleteBuffers();
 		void bind();
 		void unbind();
 		void render();
@@ -45,7 +41,7 @@ namespace scene {
 
 		// Getters & Setters for Mesh Name
 		std::string getName() const { return _name; }
-		std::string setName(const std::string& name) { return _name = name.c_str() + id; }
+		std::string setName(const std::string& name) { return _name = name + "_" + std::to_string(id); }
 
 		// Material Properties
 		float getMetallic() const { return _metallic; }
@@ -56,11 +52,7 @@ namespace scene {
 		void setAlbedo(const glm::vec3& a) { _albedo = a; }
 
 		// Shader Update
-		const void update(shaders::Shader* shader) const {
-			shader->setVec3(_albedo, "albedo");
-			shader->setFlt1(_metallic, "metallic");
-			shader->setFlt1(_roughness, "roughness");
-			shader->setFlt1(1.0f, "ao");
+		const void update() const {
 		}
 
 		// Utility to append another mesh's geometry to this one, applying the other mesh's local transform to its vertices in the process
@@ -90,12 +82,6 @@ namespace scene {
 			}
 		}
 
-		// Rebuilds the GPU buffers from the current CPU vertex/index data
-		void rebuildGPU() {
-			deleteBuffers();
-			createBuffers();
-		}
-
 		glm::mat4 applyLocalTransform() {
 			for (auto& v : _vertices) {
 				glm::vec4 p = localTransform * glm::vec4(v._pos, 1.0f);
@@ -111,10 +97,9 @@ namespace scene {
 		bool hasLocalTransform() const { return localTransform != glm::mat4(1.0f); }
 
 	private:
-		std::unique_ptr<render::VertexIndexBuffer> _rndrBffrMngr;
 
 		int id = 0;
-		std::string _name = "obj_" + id;
+		std::string _name = std::string("obj_") + std::to_string(id);
 
 		// Default material properties
 		glm::vec3 _albedo = glm::vec3(0.4, 0.4, 0.4);

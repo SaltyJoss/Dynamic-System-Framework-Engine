@@ -1,6 +1,6 @@
+// DSFE_Core ParallelGroupCmd.cpp
 #include "pch.h"
-// File:   ParallelGroupCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/ParallelGroupCmd.h"
 #include "Robots/RobotSystem.h"
 
@@ -43,7 +43,7 @@ namespace commands {
 			D_WARN("parallel timed out after %.3fs", _elapsed);
 
 			// “soft finish”
-			if (cntx.Robot()) cntx.Robot()->stopAll();
+			cntx.Robot().stopAll();
 
 			// treats timeout as Executed - ill keep for now, may explore different timeout policies later
 			_result = { CmdState::Executed, {}, "parallel: timeout (soft-finish)" };

@@ -2,11 +2,10 @@
 #pragma once
 
 #include "EngineCore.h"
-
-#include "Interpreter/Command.h"
-
 #include <memory>
 #include <vector>
+
+#include "Interpreter/Command.h"
 
 namespace commands {
 	class DSFE_API ParallelGroupCmd final : public Command {

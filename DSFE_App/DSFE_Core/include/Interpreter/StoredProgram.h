@@ -1,6 +1,5 @@
+// DSFE_Core StoredProgram.h
 #pragma once
-// File:    StoredProgram.h
-// GitHub:  SaltyJoss
 #include "EngineCore.h"
 #include "IStoredProgram.h"
 #include "ICommand.h"

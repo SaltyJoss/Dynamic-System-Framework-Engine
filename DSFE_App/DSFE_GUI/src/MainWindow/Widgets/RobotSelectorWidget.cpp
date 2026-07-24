@@ -1,6 +1,6 @@
 // DSFE_GUI RobotSelectorWidget.cpp
 #include "Widgets/RobotSelectorWidget.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 
 #include "Platform/SystemMap.h"
 
@@ -9,7 +9,7 @@
 #include <QLabel>
 
 namespace widgets {
-	RobotSelectorWidget::RobotSelectorWidget(gui::SimManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
+	RobotSelectorWidget::RobotSelectorWidget(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent), _sim(sim) {
 		setWindowTitle("Choose Robotic Arm");
 		setMinimumWidth(300);
 		auto* layout = new QVBoxLayout(this);
@@ -36,7 +36,7 @@ namespace widgets {
 		layout()->addWidget(button);
 		connect(button, &QPushButton::clicked, this, [this, robotName]() {
 			LOG_INFO("Selected robot: %s", robotName.toStdString().c_str());
-			if (_sim) { _sim->loadRobot(robotName.toStdString()); }
+			if (_sim) { _sim->load_robot(robotName.toStdString()); }
 		});
 	}
 } // namespace widgets

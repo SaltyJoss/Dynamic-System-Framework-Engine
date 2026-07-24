@@ -9,6 +9,7 @@
 
 #ifdef DSFE_ENABLE_GUI
     #include <Application.h>
+    #define ENABLE_UNIT_TESTS 1
 #endif
 
 // Helper function to split a comma-separated string into a vector of strings, trimming whitespace

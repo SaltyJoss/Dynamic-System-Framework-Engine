@@ -21,7 +21,7 @@ namespace scene {
 			updateViewMatrix();
 		}
 
-		void update(shaders::Shader* shader);
+		void update();
 
 		const glm::mat4& getProjection() const { return _projection; }
 		float getNear() const { return _near; }
@@ -34,7 +34,11 @@ namespace scene {
 		glm::vec3 getForward() const { return _forward; }
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _viewMatrix; }
+		float getYaw() const { return _yaw; }
+        float getPitch() const { return _pitch; }
 
+		void setPosition(const glm::vec3& pos) { _position = pos; updateViewMatrix(); }
+		void setViewMatrix(const glm::mat4& view) { _viewMatrix = view; }
 		void setAspect(float aspect) {
 			_aspect = aspect;
 			updateProjectionMatrix();
@@ -115,10 +119,11 @@ namespace scene {
 		};
 
 		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
-		void updateProjectionMatrix() {
-			if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
-			_projection = glm::perspective(_FOV, _aspect, _near, _far);
-		}
+        void updateProjectionMatrix() {
+            if (!std::isfinite(_FOV) || _FOV <= 0.001f) { _FOV = glm::radians(70.0f); }
+            _projection = glm::perspective(_FOV, _aspect, _near, _far);
+            _projection[1][1] *= -1.0f;   // Vulkan clip-space Y flip
+        }
 
 		bool _following = false;
 		glm::vec3 _targetPos;

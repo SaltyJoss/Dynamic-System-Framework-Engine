@@ -2,13 +2,12 @@
 #pragma once
 
 #include "EngineCore.h"
-
-#include "Interpreter/SimFwd.h"
-#include "Interpreter/Command.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Interpreter/SimFwd.h"
+#include "Interpreter/Command.h"
 
 namespace commands {
 	class DSFE_API SelectCmd final : public Command {

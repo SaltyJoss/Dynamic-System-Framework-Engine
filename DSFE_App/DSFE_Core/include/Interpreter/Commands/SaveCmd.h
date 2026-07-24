@@ -2,13 +2,12 @@
 #pragma once
 
 #include "EngineCore.h"
-
-#include "Interpreter/SimFwd.h"
-#include "Interpreter/Command.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "Interpreter/SimFwd.h"
+#include "Interpreter/Command.h"
 
 namespace commands {
 	// Types of saves that can be performed by the SaveCmd

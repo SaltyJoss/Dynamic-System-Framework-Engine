@@ -1,6 +1,6 @@
+// DSFE_Core RotateJointToCmd.cpp
 #include "pch.h"
-// File:   RotateJointToCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/RotateJointToCmd.h"
 #include "Robots/RobotSystem.h"
 #include "Interpreter/Utils.h"
@@ -25,7 +25,7 @@ namespace commands {
 
 	// Core update loop for rotateJointTo command
 	program_data::CmdResult RotateJointToCmd::update(CommandContext& cntx, double dt) {
-		auto* robot = cntx.Robot();
+		auto& rs = cntx.Robot();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
 		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms
         if (dt < 0.0) dt = 0.0;
@@ -54,7 +54,7 @@ namespace commands {
 
             // Compute an informed timeout
             double theta0 = 0.0f;
-            if (!robot->tryGetJointAngleRad(_link, theta0)) {
+            if (!rs.tryGetJointAngleRad(_link, theta0)) {
                 markFailed("rotateJointTo: joint not found (angle).");
                 D_FAIL("rotateJointTo: joint not found (angle) for '%s'", _link.c_str());
                 return { CmdState::Failed, {}, "rotateJointTo: joint not found (angle)." };
@@ -99,8 +99,8 @@ namespace commands {
         double theta = 0.0f;
         double omega = 0.0f;
 
-        const bool gotTheta = robot->tryGetJointAngleRad(_link, theta);
-        const bool gotOmega = robot->tryGetJointOmegaRad(_link, omega);
+        const bool gotTheta = rs.tryGetJointAngleRad(_link, theta);
+        const bool gotOmega = rs.tryGetJointOmegaRad(_link, omega);
 
         if (!gotTheta) {
             markFailed("rotateJointTo: joint not found (angle).");
@@ -120,7 +120,7 @@ namespace commands {
             _noProgressT += dt;
         }
 
-        const bool posOK = robot->isJointAtTargetRad(_link, (double)tolPosRad);
+        const bool posOK = rs.isJointAtTargetRad(_link, (double)tolPosRad);
         const bool omegaOK = absOm <= tolOmegaRad;
 
         if (posOK && omegaOK) {

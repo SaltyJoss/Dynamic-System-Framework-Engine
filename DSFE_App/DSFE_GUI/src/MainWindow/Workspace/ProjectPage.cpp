@@ -1,6 +1,6 @@
 // DSFE_GUI ProjectPage.cpp
 #include "Workspace/ProjectPage.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 
 #include "Widgets/DSLEditorWidget.h"
 #include "Widgets/ViewportWidget.h"
@@ -12,7 +12,7 @@
 #include <QSplitter>
 
 namespace Workspace {
-	ProjectPage::ProjectPage(gui::SimManager* sim, QWidget* parent) : QWidget(parent) {
+	ProjectPage::ProjectPage(gui::SimulationManager* sim, QWidget* parent) : QWidget(parent) {
 		auto* layout = new QVBoxLayout(this);
 		layout->setContentsMargins(0, 0, 0, 0);
 		auto* rootSplitter = new QSplitter(Qt::Horizontal, this);
@@ -20,10 +20,11 @@ namespace Workspace {
 		auto* rightSplitter = new QSplitter(Qt::Vertical);
 		_log = new widgets::ConsoleOutputWidget(this);
 		_editor = new widgets::DSLEditorWidget(sim, _log, this);
+		_controlPanel = new widgets::ControlPanelWidget(sim, this);
 		rootSplitter->addWidget(_editor);
 		centreSplitter->addWidget(new widgets::ViewportWidget(sim, this));
 		centreSplitter->addWidget(_log);
-		rightSplitter->addWidget(new widgets::ControlPanelWidget(sim, this));
+        rightSplitter->addWidget(_controlPanel);
 		rootSplitter->addWidget(centreSplitter);
 		rootSplitter->addWidget(rightSplitter);
 		layout->addWidget(rootSplitter);
@@ -33,5 +34,7 @@ namespace Workspace {
 	}
 
 	widgets::DSLEditorWidget* ProjectPage::editor() const { return _editor; }
+
+	widgets::ControlPanelWidget* ProjectPage::controlPanel() const { return _controlPanel; }
 
 } // namespace Workspace

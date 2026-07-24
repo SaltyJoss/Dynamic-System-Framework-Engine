@@ -1,6 +1,6 @@
+// DSFE_Core RotateToCmd.cpp
 #include "pch.h"
-// File:   RotateByCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/RotateByCmd.h"
 #include "Interpreter/Utils.h"
 

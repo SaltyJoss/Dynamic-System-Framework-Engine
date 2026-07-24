@@ -96,6 +96,10 @@ namespace core {
 		if (!_robot) { return; }
 		_robot->enableAutoDiff(enable);
 	}
+	bool SimulationCore::autoDiffEnabled() const {
+		if (!_robot) { return false; }
+		return _robot->autoDiffEnabled();
+	}
 
 	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
@@ -421,13 +425,10 @@ namespace core {
 	// --- Setters and Getters for Systems and State ---
 
 	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem* SimulationCore::robotSystem() { return _robot; }
-	const robots::RobotSystem* SimulationCore::robotSystem() const { return _robot; }
-
+	robots::RobotSystem& SimulationCore::robotSystem() { return *_robot; }
 	// Setter and checker for Robot System
 	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
 	bool SimulationCore::hasRobot() const { return _robot && _robot->hasRobot(); }
-
 	// Loads a robot into the robot system by name
 	void SimulationCore::loadRobot(const std::string& name) {
 		loadRobotInternal(name);
@@ -440,13 +441,10 @@ namespace core {
 	}
 
 	// Accessor for the single body system (non-const and const versions)
-	single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() { return _singleBody; }
-	const single_body_system::SingleBodySystem* SimulationCore::singleBodySystem() const { return _singleBody; }
-
+	single_body_system::SingleBodySystem& SimulationCore::singleBodySystem() { return *_singleBody; }
 	// Setter and checker for Single Body System
 	void SimulationCore::setSingleBodySystem(single_body_system::SingleBodySystem* singleBody) { _singleBody = singleBody; }
 	bool SimulationCore::hasSingleBody() const { return _singleBody && _singleBody->hasBody(); }
-
 	// Loads a single body into the single body system by name
 	void SimulationCore::loadSingleBody(const std::string& name) {
 		loadSingleBodyInternal(name);
@@ -460,19 +458,15 @@ namespace core {
 
 	// Setter for the trajectory manager
 	void SimulationCore::setTrajectoryManager(control::TrajectoryManager* traj) { _traj = traj; }
-
 	// Accessor for the trajectory manager (non-const and const versions)
-	control::TrajectoryManager* SimulationCore::trajectoryManager() { return _traj; }
-	const control::TrajectoryManager* SimulationCore::trajectoryManager() const { return _traj; }
+	control::TrajectoryManager& SimulationCore::trajectoryManager() { return *_traj; }
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
 	void SimulationCore::setTrajRefBuffer(robots::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
-
+	
 	// Accessor for the telemetry recorder (non-const and const versions)
 	diagnostics::TelemetryRecorder& SimulationCore::telemetry() { return _telemetry; }
-	const diagnostics::TelemetryRecorder& SimulationCore::telemetry() const { return _telemetry; }
-
 	// Get the current number of telemetry samples recorded
 	size_t SimulationCore::telemetrySampleCount() const { return _telemetry.ring.size(); }
 

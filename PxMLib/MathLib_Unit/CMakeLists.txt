@@ -1,4 +1,0 @@
-# CMakeLists.txt for MathLib_Unit_Tests executable
-add_subdirectory(IntegratorTests)
-add_subdirectory(DualNumberTests)
-add_subdirectory(AutomaticDifferentiationTests)

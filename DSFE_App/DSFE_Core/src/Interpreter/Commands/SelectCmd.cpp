@@ -1,6 +1,6 @@
+// DSFE_Core SelectCmd.cpp
 #include "pch.h"
-// File:   SelectCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/SelectCmd.h"
 
 #include "EngineLib/LogMacros.h"

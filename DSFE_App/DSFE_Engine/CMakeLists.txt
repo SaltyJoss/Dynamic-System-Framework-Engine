@@ -35,7 +35,6 @@ add_custom_command(TARGET DSFE_Engine POST_BUILD
 
 # Defines the source and destination for assets and configs
 set(ASSETS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
-set(CONFIG_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/config)
 
 # Add a custom command to copy the assets directory after the build
 add_custom_command(TARGET DSFE_Engine POST_BUILD
@@ -43,12 +42,4 @@ add_custom_command(TARGET DSFE_Engine POST_BUILD
     "${ASSETS_SRC_DIR}"
     "$<TARGET_FILE_DIR:DSFE_Engine>/assets"
     COMMENT "Copying assets to build directory..."
-)
-
-# Add a custom command to copy the config directory after the build
-add_custom_command(TARGET DSFE_Engine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CONFIG_SRC_DIR}"
-    "$<TARGET_FILE_DIR:DSFE_Engine>/config"
-    COMMENT "Copying config to build directory..."
 )

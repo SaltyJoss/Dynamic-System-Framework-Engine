@@ -1,6 +1,5 @@
+// DSFE_GUI RenderPreset.h
 #pragma once
-// File:    RenderPreset.h
-// GitHub:  SaltyJoss
 
 namespace render {
 	enum class ResolutionPreset { R_720p, R_1080p, R_1440p, R_4K };
@@ -39,8 +38,10 @@ namespace render {
 		int msaaSamples = 2; // 1 = off, 2,4,8
 
 		// Editor Extras
-		bool grid = true;
-		bool axisOrientator = true;
+		bool grid;
+		bool floor;
+		bool skybox;
+		bool axisOrientator;
 
 		// Render-Specific
 		float renderScale = 1.0f;

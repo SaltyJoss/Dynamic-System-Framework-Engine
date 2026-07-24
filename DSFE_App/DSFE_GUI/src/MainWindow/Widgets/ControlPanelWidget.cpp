@@ -13,15 +13,13 @@
 #include <QTimer>
 #include <QGridLayout>
 #include <QFormLayout>
+#include <QPushButton>
 
 #include "Widgets/FractionSelectorWidget.h"
 
-#include "Scene/Mesh.h"
-#include "Scene/Object.h"
-#include "Scene/Light.h"
 #include "Scene/Camera.h"
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Robots/RobotSystem.h"
 
 #include "Analysis/Telemetry.h"
@@ -29,7 +27,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	ControlPanelWidget::ControlPanelWidget(gui::SimManager* sim, QWidget* parent)
+	ControlPanelWidget::ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent)
 		: QWidget(parent), _sim(sim)
 	{
 		auto* rootLayout = new QVBoxLayout(this);
@@ -58,12 +56,12 @@ namespace widgets {
 
 	// SimSetupPanel for 
 	void ControlPanelWidget::simPropertiesPanel() {
-		auto* robot = _sim->robotSystem();
-
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
 
 		_useAutoDiffCheck = new QCheckBox();
+		_useAutoDiff = _sim->autoDiffEnabled();
+		_useAutoDiffCheck->setChecked(_useAutoDiff);
 		_integratorCombo = new QComboBox();
 		_integratorCombo->setMaximumWidth(175);
 
@@ -77,7 +75,6 @@ namespace widgets {
 
 		form->addRow("Auto Diff", _useAutoDiffCheck);
 		form->addRow("Integrator", _integratorCombo);
-
 		layout->addLayout(form);
 
 		layout->addSpacing(8);
@@ -89,6 +86,8 @@ namespace widgets {
 
 		auto* telemetryDtLabel = new QLabel("Telemetry dt");
 		telemetryDtLabel->setAlignment(Qt::AlignCenter);
+		_simDtSelector->setDt(_sim->fixedDt());
+		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
 
 		dtHeaderRow->addWidget(simDtLabel);
 		dtHeaderRow->addWidget(telemetryDtLabel);
@@ -103,13 +102,14 @@ namespace widgets {
 		layout->addSpacing(8);
 
 		layout->addWidget(_simTimeLabel);
+
 		_contentLayout->addWidget(_simPropertiesGroup);
 
 		buildIntegratorCombos();
 
-		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this, robot](bool checked) {
+		connect(_useAutoDiffCheck, &QCheckBox::toggled, this, [this](bool checked) {
 			_useAutoDiff = checked;
-			robot->enableAutoDiff(checked);
+			_sim->enableAutoDiff(checked);
 			buildIntegratorCombos();
 		});
 
@@ -177,13 +177,9 @@ namespace widgets {
 			_jointInfoGroup->setVisible(false);
 			return;
 		}
-		robots::RobotSystem* robot = _sim->robotSystem();
-		if (!robot) {
-			_jointInfoGroup->setVisible(false);
-			return;
-		}
-		auto& joints = robot->joints();
-		auto& links = robot->links();
+		auto& rs = _sim->robotSystem();
+		auto& joints = rs.joints();
+		auto& links = rs.links();
 
 		_jointInfoGroup->setVisible(!joints.empty() && !links.empty());
 		if (joints.empty() || links.empty()) { _jointInfoGroup->setVisible(false); return; }
@@ -362,11 +358,9 @@ namespace widgets {
 	void ControlPanelWidget::selectJointAndFollow(int jointIdx) {
 		if (!_sim || !_sim->hasRobot()) { return; }
 
-		robots::RobotSystem* robot = _sim->robotSystem();
-		if (!robot) { return; }
-
-		auto& joints = robot->joints();
-		auto& links = robot->links();
+		auto& rs = _sim->robotSystem();
+		auto& joints = rs.joints();
+		auto& links = rs.links();
 		if (joints.empty()) { return; }
 
 		jointIdx = std::clamp(jointIdx, 0, (int)joints.size() - 1);
@@ -404,5 +398,17 @@ namespace widgets {
 		else {
 			_simTimeLabel->setText(QString("<b>Elapsed Time:</b> %1 s").arg(_sim->simTime(), 0, 'f', 3));
 		}
+	}
+
+	void ControlPanelWidget::refreshFromSim() {
+		if (!_sim) { return; }
+		_useAutoDiff = _sim->autoDiffEnabled();
+		{
+			QSignalBlocker b(_useAutoDiffCheck);
+			_useAutoDiffCheck->setChecked(_useAutoDiff);
+		}
+		buildIntegratorCombos(); // already reads back from _sim
+		_simDtSelector->setDt(_sim->fixedDt());
+		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
 	}
 } // namespace widgets

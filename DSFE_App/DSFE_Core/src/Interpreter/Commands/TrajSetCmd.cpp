@@ -61,15 +61,10 @@ namespace commands {
 			return { CmdState::Failed, {}, "trajSet failed" };
 		}
 
-		auto* robot = cntx.Robot();
-		if (!robot) {
-			markFailed("trajSet: no robot loaded.");
-			return { CmdState::Failed, {}, "trajSet failed" };
-		}
-
+		auto& robot = cntx.Robot();
 		// Validate joint exists and get current angle as q0.
 		double q0 = 0.0f;
-		if (!robot->tryGetJointAngleRad(_link, q0)) {
+		if (!robot.tryGetJointAngleRad(_link, q0)) {
 			SIM_FAIL("trajSet: joint not found '%s'", _link.c_str());
 			markFailed("trajSet: joint not found.");
 			return { CmdState::Failed, {}, "trajSet failed" };
@@ -80,7 +75,7 @@ namespace commands {
 
 		// Get hardware max omega
 		double wMax_hw = 0.0;
-		if (!robot->tryGetJointOmegaMaxRad(_link, wMax_hw)) {
+		if (!robot.tryGetJointOmegaMaxRad(_link, wMax_hw)) {
 			D_WARN("trajSet: failed to get joint max omega for link='%s'", _link.c_str());
 			wMax_hw = std::numeric_limits<double>::infinity();
 		}
@@ -99,12 +94,12 @@ namespace commands {
 			const double amax = degToRad(_params[2]);
 
 			auto traj = std::make_unique<control::TrapezoidTrajectory<double>>(t0, q0, q1, vmax, amax);
-			auto trajMgr = core->trajectoryManager();
-			trajMgr->set(_link, std::move(traj));
+			auto& trajMgr = core->trajectoryManager();
+			trajMgr.set(_link, std::move(traj));
 	
 			double wMax_est = std::abs(vmax);
 			wMax_est = std::min(wMax_est, (double)wMax_hw);
-			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
+			if (!robot.trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(TRAP): failed to set joint omega ref max for link='%s'", _link.c_str());
 			}
 
@@ -149,12 +144,12 @@ namespace commands {
 			double phi = (_params.size() == 5) ? degToRad(_params[4]) : 0.0; // radians
 
 			auto traj = std::make_unique<control::SinusoidalTrajectory<double>>(t0, t0 + dur, centre, amp, fHz, phi);
-			auto trajMgr = core->trajectoryManager();
-			trajMgr->set(_link, std::move(traj));
+			auto& trajMgr = core->trajectoryManager();
+			trajMgr.set(_link, std::move(traj));
 
 			double wMax_est = TWO_PI_d * fHz * amp;
 			wMax_est = std::min(wMax_est, wMax_hw);
-			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
+			if (!robot.trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(SINE): failed to set joint omega ref max for link='%s'", _link.c_str());
 			}
 
@@ -213,14 +208,14 @@ namespace commands {
 			wMax_est = std::min(wMax_est, wMax_hw);
 
 			// Set joint omega ref max
-			if (!robot->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
+			if (!robot.trySetJointOmegaRefMaxRad(_link, wMax_est)) {
 				D_WARN("trajSet(MSINE): failed to set joint omega ref max for link='%s'", _link.c_str());
 
 			}
 
 			auto traj = std::make_unique<control::MultisineTrajectory<double>>(t0, t0 + dur, centre, std::move(comps));
-			auto trajMgr = core->trajectoryManager();
-			trajMgr->set(_link, std::move(traj));
+			auto& trajMgr = core->trajectoryManager();
+			trajMgr.set(_link, std::move(traj));
 
 			SIM_SUCCESS("trajSet: MSINE link='%s' dur=%.6fs centre=%.6f nComps=%zu", _link.c_str(), centre, dur, nComps);
 

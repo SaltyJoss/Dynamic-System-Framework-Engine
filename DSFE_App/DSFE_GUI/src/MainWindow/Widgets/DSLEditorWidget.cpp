@@ -10,7 +10,7 @@
 #include <QFile>
 #include <QTimer>
 
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Platform/Paths.h"
 
 #include "Numerics/IntegrationMethods.h"
@@ -22,7 +22,7 @@
 #include "EngineLib/LogMacros.h"
 
 namespace widgets {
-	DSLEditorWidget::DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* log, QWidget* parent)
+	DSLEditorWidget::DSLEditorWidget(gui::SimulationManager* sim, ConsoleOutputWidget* log, QWidget* parent)
 		: QWidget(parent), _sim(sim), _log(log), _scriptWorkingDir((paths::assets() / "DSLScripts").string())
 	{
 		auto* rootLayout = new QVBoxLayout(this);
@@ -151,41 +151,38 @@ namespace widgets {
 		delete _parser; _parser = nullptr;
 		delete _program; _program = nullptr;
 
-		LOG_INFO("Core = %p", _sim->simCoreInterface());
-
-		_program = new interpreter::StoredProgram(_sim->simCoreInterface());
+		_program = new interpreter::StoredProgram(_sim->simCore());
 		_parser = new interpreter::Parser(_program);
 		_wrapper = new interpreter::RunWrapper(_parser, _program);
 
-		LOG_INFO("Program = %p", _program);
-
 		LOG_INFO("ScriptEditor content size = %d", _scriptEditor->toPlainText().size());
 		_scriptText = _scriptEditor->toPlainText().toStdString();
-		LOG_INFO("Script size = %zu", _scriptText.size());
 
 		if (_log) { _log->clearSimLog(); }
 		_sim->setActiveProgram(_program);
 		_sim->setScriptRunning(true);
+		_sim->setLastScriptText(_scriptText);
 		LOG_INFO("DSL script started."); D_INFO("DSL script started.");
 
-		LOG_INFO("Program = %p", _program);
-		LOG_INFO("Parser = %p", _parser);
-		LOG_INFO("Wrapper = %p", _wrapper);
-
-		_sim->setLastScriptText(_scriptText);
-
 		std::string code = _scriptText;
-		LOG_INFO("Original script size = %zu", code.size());
 		if (!code.empty() && code.back() == '\0') { code.pop_back(); }
-
-		LOG_INFO("Running script:\n%s", code.c_str());
-
 		_wrapper->runProgram(_scriptText);
 
 		updateButtonState(true);
 	}
 
 	void DSLEditorWidget::runButtonHandler() { _sim->isScriptRunning() ? stopScript() : runScript(); }
+
+	QString DSLEditorWidget::scriptText() const {
+        return _scriptEditor ? _scriptEditor->toPlainText() : QString();
+    }
+
+    void DSLEditorWidget::setScriptText(const QString& text) {
+        if (_scriptEditor) { _scriptEditor->setPlainText(text); }
+        _scriptText = text.toStdString();
+        _currentScriptPath.clear();          // embedded text, no file identity
+        _loadedFromFile = false;
+    }
 
 	void DSLEditorWidget::stopScript() {
 		if (!_sim->isScriptRunning()) { return; }

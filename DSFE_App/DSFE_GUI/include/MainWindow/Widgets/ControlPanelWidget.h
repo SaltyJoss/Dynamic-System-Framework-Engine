@@ -14,9 +14,6 @@
 #include "Platform/Logger.h"
 
 namespace scene {
-	class Mesh;
-	class Object;
-	class Light;
 	class Camera;
 }
 namespace render {
@@ -26,13 +23,14 @@ namespace render {
 
 namespace robots { class RobotSystem; }
 namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
-namespace gui { class SimManager; }
+namespace gui { class SimulationManager; }
 
 class QVBoxLayout;
 class QCheckBox;
 class QComboBox;
 class QGroupBox;
 class QLabel;
+class QPushButton;
 class QSlider;
 
 namespace widgets {
@@ -40,7 +38,9 @@ namespace widgets {
 
 	class ControlPanelWidget : public QWidget {
 	public:
-		explicit ControlPanelWidget(gui::SimManager* sim, QWidget* parent = nullptr);
+		explicit ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent = nullptr);
+		void refreshFromSim();
+
 	private:
 		struct IntegratorEntry {
 			integration::eIntegrationMethod method;
@@ -99,7 +99,7 @@ namespace widgets {
 
 		void updateSimClock();
 
-		gui::SimManager* _sim = nullptr;
+		gui::SimulationManager* _sim = nullptr;
 
 		QVBoxLayout* _contentLayout = nullptr;
 		QGroupBox* _simPropertiesGroup = nullptr;

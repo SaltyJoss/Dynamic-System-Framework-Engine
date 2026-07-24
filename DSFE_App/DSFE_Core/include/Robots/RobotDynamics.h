@@ -2,7 +2,7 @@
 #pragma once
 
 #include "EngineCore.h"
-#include <core/MathLib.h>
+#include <MathLib>
 
 #include "Robots/DynamicsTypes.h"
 #include "Robots/RobotMetrics.h"

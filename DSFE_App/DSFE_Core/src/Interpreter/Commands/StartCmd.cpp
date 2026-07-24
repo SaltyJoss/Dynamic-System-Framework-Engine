@@ -1,6 +1,6 @@
+// DSFE_Core StartCmd.cpp
 #include "pch.h"
-// File:   StopCmd.cpp
-// GitHub: SaltyJoss
+
 #include "Interpreter/Commands/StartCmd.h"
 
 #include "EngineLib/LogMacros.h"

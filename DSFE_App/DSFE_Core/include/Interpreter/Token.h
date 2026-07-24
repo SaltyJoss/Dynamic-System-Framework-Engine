@@ -1,6 +1,6 @@
+// DSFE_Core Token.h
 #pragma once
-// File:    Token.h
-// GitHub:  SaltyJoss
+
 #include "EngineCore.h"
 #include <string>
 

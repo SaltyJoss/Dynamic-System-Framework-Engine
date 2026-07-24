@@ -126,6 +126,7 @@ extern DSFE_API Debug gLog;
 // --------------------------------------------
 // Once variants for global logging macros
 // --------------------------------------------
+//  * These macros can only be used once in the global scope of a function, as they use a static variable to track if the log has already been made.
 #define LOG_INFO_ONCE(fmt, ...) \
     do { \
         static bool _logged = false; \
@@ -160,6 +161,44 @@ extern DSFE_API Debug gLog;
             LOG_ERROR(fmt, ##__VA_ARGS__); \
             _errored = true; \
         } \
+    } while(0)
+// --------------------------------------------
+// Once per loop iteration variants for global logging macros 
+// --------------------------------------------
+#define LOG_INFO_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_INFO(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_EXPORT_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_EXPORT(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_WARN_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_WARN(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
+    } while(0)
+// -----
+#define LOG_ERROR_PER_LOOP(fmt, ...) \
+    do { \
+        static int _loopCounter = 0; \
+        if (_loopCounter == 0) { \
+            LOG_ERROR(fmt, ##__VA_ARGS__); \
+        } \
+        _loopCounter = (_loopCounter + 1) % 2; \
     } while(0)
 // --------------------------------------------
 

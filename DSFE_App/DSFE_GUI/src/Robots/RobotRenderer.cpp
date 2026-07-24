@@ -74,11 +74,7 @@ void RobotRenderer::bind(const RobotRenderBinding& binding) {
 
 	for (const auto& [linkName, visuals] : binding.linkVisuals) {
 		LinkRenderData renderData;
-
-		for (auto* obj : visuals) {
-			renderData.visuals.push_back(obj);
-		}
-
+		for (auto* obj : visuals) { renderData.visuals.push_back(obj); }
 		linkRenderMap[linkName] = renderData;
 	}
 }
@@ -125,7 +121,14 @@ void RobotRenderer::clearRobotModel(const robots::RobotModel& robot) {
 	for (auto& link : robot.links) {
 		auto it = linkRenderMap.find(link.name);
 		if (it == linkRenderMap.end()) continue;
-		
+		for (auto* obj : it->second.visuals) {
+			if (obj) {
+				// Remove the object from the scene graph or object manager
+				// Assuming a function removeObjectFromScene exists
+				// removeObjectFromScene(obj);
+				delete obj; // Or use smart pointers to manage memory automatically
+			}
+		}
 	}
 	D_WARN("Old robot model removed");
 }

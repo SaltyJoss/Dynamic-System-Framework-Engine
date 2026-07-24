@@ -1,6 +1,4 @@
-#include "pch.h"
-// File:   importObj.cpp
-// GitHub: SaltyJoss
+// DSFE_GUI importObj.cpp
 #include "Assets/importObj.h"
 #include "Assets/VertexHolder.h"
 #include "Platform/str_utils.h"

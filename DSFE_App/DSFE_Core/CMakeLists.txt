@@ -97,12 +97,6 @@ if(WIN32)
     target_sources(DSFE_Core PRIVATE "dllmain.cpp")
 endif()
 
-# Set include directories for building DSFE_Core
-target_include_directories(DSFE_Core PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
 # Use precompiled headers
 target_precompile_headers(DSFE_Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.h")
 
@@ -120,10 +114,14 @@ target_link_libraries(DSFE_Core
 
 if (TARGET hdf5::hdf5-shared)
     target_link_libraries(DSFE_Core PRIVATE hdf5::hdf5-shared)
-
 elseif (TARGET HDF5::HDF5)
     target_link_libraries(DSFE_Core PRIVATE HDF5::HDF5)
-
 else()
     target_link_libraries(DSFE_Core PRIVATE ${HDF5_LIBRARIES})
 endif()
+
+# Set include directories for building DSFE_Core
+target_include_directories(DSFE_Core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)

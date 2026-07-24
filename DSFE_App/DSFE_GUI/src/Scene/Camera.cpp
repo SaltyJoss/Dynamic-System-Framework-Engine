@@ -1,23 +1,14 @@
-#include "pch.h"
-// File:   Camera.cpp
-// GitHub: SaltyJoss
-#ifdef __gl_h_
-#undef __gl_h_
-#endif
-#include <glad/glad.h>
+// DSFE_GUI Camera.cpp
+#include <array>
 #include "Scene/Camera.h"
 #include "Platform/KeyCode.h"
 #include "EngineLib/LogMacros.h"
 
 namespace scene {
-	void Camera::update(shaders::Shader* shader) {
+	void Camera::update() {
 		updateViewMatrix();
 
 		glm::mat4 model{ 1.0f };
-		shader->setMat4(model, "model");
-		shader->setMat4(_viewMatrix, "view");
-		shader->setMat4(getProjection(), "projection");
-		shader->setVec3(_position, "camPos");
 	}
 
 	void Camera::processKeyboard(int key, float dt) {
@@ -32,7 +23,6 @@ namespace scene {
 			case static_cast<int>(gui::eKeyCode::Space):	moveUp(velocity);		break;
 			case static_cast<int>(gui::eKeyCode::LShift):	moveDown(velocity);		break;
 		}
-
 		updateViewMatrix();
 	}
 
@@ -44,8 +34,8 @@ namespace scene {
 		_pitch += yoffset;
 
 		if (constrainPitch) {
-			if (_pitch > glm::radians(89.0f)) { _pitch = glm::radians(89.0f); }
-			if (_pitch < glm::radians(-89.0f)) { _pitch = glm::radians(-89.0f); }
+			if (_pitch > glm::radians(89.999f)) { _pitch = glm::radians(89.999f); }
+			if (_pitch < glm::radians(-89.999f)) { _pitch = glm::radians(-89.999f); }
 		}
 		updateViewMatrix();
 	}
@@ -60,21 +50,21 @@ namespace scene {
 		}
 	}
 
-	std::array<glm::vec4, 8> Camera::getFrustumCornersWorldSpace(float, float) const {
+	std::array<glm::vec4, 8> Camera::getFrustumCornersWorldSpace(float near, float far) const {
 		std::array<glm::vec4, 8> corners;
 
 		float tanHalfFov = tanf(_FOV * 0.5f);
-		float nearHeight = tanHalfFov * _near;
+		float nearHeight = tanHalfFov * near;
 		float nearWidth = nearHeight * (_aspect);
-		float farHeight = tanHalfFov * _far;
+		float farHeight = tanHalfFov * far;
 		float farWidth = farHeight * (_aspect);
 
 		glm::vec3 forward = glm::normalize(_forward);
 		glm::vec3 right = glm::normalize(_right);
 		glm::vec3 up = glm::normalize(_up);
 
-		glm::vec3 nearCenter = _position + forward * _near;
-		glm::vec3 farCenter = _position + forward * _far;
+		glm::vec3 nearCenter = _position + forward * near;
+		glm::vec3 farCenter = _position + forward * far;
 
 		// Near plane
 		corners[0] = glm::vec4(nearCenter - right * nearWidth + up * nearHeight, 1.0f); // Top-Left
@@ -91,21 +81,19 @@ namespace scene {
 		return corners;
 	}
 
-	void Camera::fall()
-	{
-		if (_isGrounded)
-		{
+	void Camera::fall() {
+		if (_isGrounded)  {
 			_isGrounded = false;
 			_verticalVelocity = _upwardForce;
 		}
 	}
 
-	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; }
-	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; }
-	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; }
-	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; }
-	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
-	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; }
+	void Camera::moveForward(float velocity) { _position += glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveBackward(float velocity) { _position -= glm::normalize(_forward) * velocity; updateViewMatrix(); }
+	void Camera::moveLeft(float velocity) { _position -= glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveRight(float velocity) { _position += glm::normalize(_right) * velocity; updateViewMatrix(); }
+	void Camera::moveUp(float velocity) { _position += glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
+	void Camera::moveDown(float velocity) { _position -= glm::vec3(0.0f, 1.0f, 0.0f) * velocity; updateViewMatrix(); }
 
 	void Camera::startFollow(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& offset) {
 		_following = true;
@@ -115,13 +103,18 @@ namespace scene {
 	}
 
 	void Camera::updateViewMatrix() {
-
 		if (_following) {
 			_position = _targetPos + (_targetRot * _followOffset);
 			const glm::vec3 up = _targetRot * glm::vec3(0.0f, 1.0f, 0.0f);
 
 			_viewMatrix = glm::lookAt(_position, _targetPos, up);
 			return;
+		}
+
+		constexpr float FLOOR_Y = 0.0f;
+		constexpr float MIN_EYE_OFFSET = 0.05f; // Min dist from floor camera eyes can be
+		if (_position.y < FLOOR_Y + MIN_EYE_OFFSET) {
+			_position.y = FLOOR_Y + MIN_EYE_OFFSET;
 		}
 
 		glm::vec3 f;
@@ -131,12 +124,11 @@ namespace scene {
 		_forward = glm::normalize(f);
 
 		const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
-		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-		_up = glm::normalize(glm::cross(_right, _forward));
 
-		rebuildAxesFromFrontUp_(f, worldUp);
+		_right = glm::normalize(glm::cross(_forward, worldUp));
+        _up    = glm::normalize(glm::cross(_right, _forward));
 
-		_viewMatrix = glm::lookAt(_position, _position + _forward, _up);
+        _viewMatrix = glm::lookAt(_position, _position + _forward, worldUp);
 	}
 
 	// --- CAMERA MOVEMENT METHOD FOR FIXED POSITION CAMERA ---
@@ -159,8 +151,7 @@ namespace scene {
 	//}
 
 	// Rebuild the camera axes based on a given front vector and an up hint
-	void Camera::rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint)
-	{
+	void Camera::rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint) {
 		_forward = glm::normalize(front);
 
 		glm::vec3 up = glm::normalize(upHint);
@@ -175,8 +166,7 @@ namespace scene {
 	}
 
 	// Orient the camera to look at a target point with an up hint
-	void Camera::lookAt(const glm::vec3& target, const glm::vec3& upHint)
-	{
+	void Camera::lookAt(const glm::vec3& target, const glm::vec3& upHint) {
 		// Keep orbit focus consistent
 		_focus = target;
 

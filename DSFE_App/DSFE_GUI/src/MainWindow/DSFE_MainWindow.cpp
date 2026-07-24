@@ -1,9 +1,14 @@
 //DSFE_GUI DSFE_MainWindow.cpp
 #include "MainWindow/DSFE_MainWindow.h"
-#include "Scene/SimulationManager.h"
+#include "Simulation/SimulationManager.h"
 #include "Scene/SimulationCore.h"
+
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
+#include "Widgets/ControlPanelWidget.h"
+#include "Workspace/Workspace.h"
+#include "Workspace/RecentWorkspace.h"
+#include "Workspace/HomePage.h"
 
 #include "ui/RenderPreset.h"
 
@@ -14,11 +19,14 @@
 #include <QApplication>
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QStackedWidget>
 
 #include "Platform/Paths.h"
 
 namespace window {
-	DSFE_MainWindow::DSFE_MainWindow(gui::SimManager* sim, QWidget* parent)
+	DSFE_MainWindow::DSFE_MainWindow(gui::SimulationManager* sim, QWidget* parent)
 		: QMainWindow(parent), _sim(sim), _dslEditor(nullptr)
 	{
 		setWindowTitle("DSFE");
@@ -26,9 +34,22 @@ namespace window {
 
 		buildMenuBar();
 
-		auto* page = new Workspace::ProjectPage(sim, this);
-		_dslEditor = page->editor();
-		setCentralWidget(page);
+		_stack = new QStackedWidget(this);
+		_homePage = new Workspace::HomePage(_stack);
+		_projectPage = new Workspace::ProjectPage(sim, _stack);
+		_dslEditor = _projectPage->editor();
+		_controlPanel = _projectPage->controlPanel();
+		_stack->addWidget(_homePage);       // index 0
+		_stack->addWidget(_projectPage);    // index 1
+		setCentralWidget(_stack);
+
+		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
+		_homePage->onNewProject = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onOpenProject = [this]() { openWorkspaceDialog(); };
+		_homePage->onOpenRecent = [this](const QString& p) { openWorkspacePath(p); };
+
+		showHomePage();
+		updateTitle();
 	}
 
 	void DSFE_MainWindow::buildMenuBar() {
@@ -41,23 +62,17 @@ namespace window {
 		// File menu
 		{
 			auto* newMenu = fileMenu->addMenu("New");
-			connect(newMenu, &QMenu::aboutToShow, this, [this, newMenu]() {
-				LOG_INFO("Menu clicked: File -> New");
-				auto* newProjectAction = newMenu->addAction("Project");
-				connect(newProjectAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> New -> New Project");
-				});
-				newMenu->addSeparator();
-				auto* newScriptAction = newMenu->addAction("Script");
-				connect(newScriptAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> New -> New Script");
-				});
+			auto* newProjectAction = newMenu->addAction("Project");
+			connect(newProjectAction, &QAction::triggered, this, [this]() { newWorkspace(); });
+			newMenu->addSeparator();
+			auto* newScriptAction = newMenu->addAction("Script");
+			connect(newScriptAction, &QAction::triggered, this, [this]() {
+				if (_dslEditor) { _dslEditor->setScriptText(QString()); }
 			});
+
 			auto* openMenu = fileMenu->addMenu("Open");
 			auto* openProjectAction = openMenu->addAction("Project");
-			connect(openProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: File -> Open -> Project");
-			});
+			connect(openProjectAction, &QAction::triggered, this, [this]() { openWorkspaceDialog(); });
 			openMenu->addSeparator();
 			auto* openScriptAction = openMenu->addAction("Script");
 			connect(openScriptAction, &QAction::triggered, this, [this]() {
@@ -66,35 +81,36 @@ namespace window {
 				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 				_dslEditor->loadScript(fileName);
 			});
+
+			_recentsMenu = fileMenu->addMenu("Recent Projects");
+			rebuildRecentsMenu();
+
 			fileMenu->addSeparator();
 			auto* saveMenu = fileMenu->addMenu("Save");
 			auto* saveProjectAction = saveMenu->addAction("Project");
-			connect(saveProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: File -> Save -> Project");
-			});
+			connect(saveProjectAction, &QAction::triggered, this, [this]() { saveWorkspace(); });
 			auto* saveScriptAction = saveMenu->addAction("Script");
 			connect(saveScriptAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: File -> Save -> Script");
-				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)"); // ARGS are 
+				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
 				if (fileName.isEmpty()) { return; }
 				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
 				_dslEditor->saveScript(fileName);
 			});
 			auto* saveAsMenu = fileMenu->addMenu("Save As");
-			connect(saveAsMenu, &QMenu::aboutToShow, this, [this, saveAsMenu]() {
-				LOG_INFO("Menu clicked: File -> Save As");
-				auto* saveProjectAsAction = saveAsMenu->addAction("Project");
-				connect(saveProjectAsAction, &QAction::triggered, this, []() {
-					LOG_INFO("Menu clicked: File -> Save As -> Project");
-				});
-				auto* saveScriptAsAction = saveAsMenu->addAction("Script");
-				connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
-					LOG_INFO("Menu clicked: File -> Save As -> Script");
-					QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
-					if (fileName.isEmpty()) { return; }
-					if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
-					_dslEditor->saveScript(fileName);
-				});
+			auto* saveProjectAsAction = saveAsMenu->addAction("Project");
+			connect(saveProjectAsAction, &QAction::triggered, this, [this]() { saveWorkspaceAs(); });
+			auto* saveScriptAsAction = saveAsMenu->addAction("Script");
+			connect(saveScriptAsAction, &QAction::triggered, this, [this]() {
+				QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Script As", QString::fromStdString((paths::assets() / "DSLScripts").string()), "DSL Script Files (*.dsl);;Text Files (*.txt)");
+				if (fileName.isEmpty()) { return; }
+				if (!_dslEditor) { LOG_ERROR("DSL Editor not found!"); return; }
+				_dslEditor->saveScript(fileName);
+			});
+			fileMenu->addSeparator();
+			auto* closeProjectAction = fileMenu->addAction("Close Project");
+			connect(closeProjectAction, &QAction::triggered, this, [this]() {
+				newWorkspace();      // stop script, tear down, clear editor/panel/path
+				showHomePage();
 			});
 			fileMenu->addSeparator();
 			auto* exitAction = fileMenu->addAction("Exit");
@@ -106,17 +122,11 @@ namespace window {
 		// Project menu
 		{
 			auto* newProjectAction = projectMenu->addAction("New Project");
-			connect(newProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> New Project");
-			});
+			connect(newProjectAction, &QAction::triggered, this, [this]() { showProjectPage(); newWorkspace(); });
 			auto* loadProjectAction = projectMenu->addAction("Load Project");
-			connect(loadProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> Load Project");
-			});
+			connect(loadProjectAction, &QAction::triggered, this, [this]() { openWorkspaceDialog(); });
 			auto* saveProjectAction = projectMenu->addAction("Save Project");
-			connect(saveProjectAction, &QAction::triggered, this, []() {
-				LOG_INFO("Menu clicked: Project -> Save Project");
-			});
+			connect(saveProjectAction, &QAction::triggered, this, [this]() { saveWorkspace(); });
 			projectMenu->addSeparator();
 			auto* robotMenu = projectMenu->addMenu("Load Robot");
 			connect(robotMenu, &QMenu::aboutToShow, this, [this, robotMenu]() {
@@ -126,34 +136,24 @@ namespace window {
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
-				if (path.isEmpty()) { return; }
-				// Covert path name to just the file name without extension or path
-				std::string bodyName = QFileInfo(path).baseName().toStdString();
-				_sim->simCore()->loadSingleBody(bodyName);
-				_sim->loadMesh(path.toStdString());
+				onLoadMesh();
 			});
 			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
 			connect(loadHDRAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load HDRI");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "hdr").string()), "HDRI Files (*.hdr *.exr)");
+				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "scene_hdr").string()), "HDRI Files (*.hdr *.exr)");
 				if (path.isEmpty()) { return; }
-				_sim->loadNewHDR_UI(path.toStdString());
+				//_sim->loadNewHDR_UI(path.toStdString());
 			});
 		}
 		// View menu
 		{
-			auto* graphicsMenu = viewMenu->addMenu("Graphics Options");
-			buildGraphicsMenu(graphicsMenu);
+			auto* sceneMenu = viewMenu->addMenu("SceneOptions");
+			buildSceneMenu(sceneMenu);
+			viewMenu->addSeparator();
 			auto* resetCameraAction = viewMenu->addAction("Reset Camera");
 			connect(resetCameraAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: View -> Reset Camera");
-			});
-			auto* toggleGridAction = viewMenu->addAction("Toggle Grid");
-			toggleGridAction->setCheckable(true);
-			toggleGridAction->setChecked(true);
-			connect(toggleGridAction, &QAction::toggled, this, [](bool checked) {
-				LOG_INFO("Menu toggled: View -> Toggle Grid -> %s", checked ? "On" : "Off");
 			});
 		}
 		// Tools menu
@@ -182,135 +182,37 @@ namespace window {
 		}
 	}
 
-	void DSFE_MainWindow::buildGraphicsMenu(QMenu* graphicsMenu) {
-		// Quality submenu
-		auto* qualityMenu = graphicsMenu->addMenu("Quality");
-		auto* lowQualityAction = qualityMenu->addAction("Low");
-		auto* mediumQualityAction = qualityMenu->addAction("Medium");
-		auto* highQualityAction = qualityMenu->addAction("High");
-		auto* ultraQualityAction = qualityMenu->addAction("Ultra");
-		lowQualityAction->setCheckable(true);
-		mediumQualityAction->setCheckable(true);
-		highQualityAction->setCheckable(true);
-		ultraQualityAction->setCheckable(true);
-		auto* qualityGroup = new QActionGroup(this);
-		qualityGroup->setExclusive(true);
-		qualityGroup->addAction(lowQualityAction);
-		qualityGroup->addAction(mediumQualityAction);
-		qualityGroup->addAction(highQualityAction);
-		qualityGroup->addAction(ultraQualityAction);
-		mediumQualityAction->setChecked(true);
-		// LOW
-		connect(lowQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Low;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Low");
-		});
-		// MEDIUM
-		connect(mediumQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Medium;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Medium");
-		});
-		// HIGH
-		connect(highQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::High;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> High");
-		});
-		// ULTRA
-		connect(ultraQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Ultra;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Ultra");
+	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
+		auto* toggleGridAction = sceneMenu->addAction("Toggle Grid");
+		toggleGridAction->setCheckable(true);
+		//toggleGridAction->setChecked(_sim->isGridEnabled());
+		connect(toggleGridAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Grid -> %s", checked ? "On" : "Off");
+			//_sim->enableGrid(checked);
 		});
 
-		// Resolution submenu
-		auto* resolutionMenu = graphicsMenu->addMenu("Resolution");
-		auto* r720Action = resolutionMenu->addAction("720p");
-		auto* r1080Action = resolutionMenu->addAction("1080p");
-		auto* r1440Action = resolutionMenu->addAction("1440p");
-		auto* r4kAction = resolutionMenu->addAction("4K");
-		r720Action->setCheckable(true);
-		r1080Action->setCheckable(true);
-		r1440Action->setCheckable(true);
-		r4kAction->setCheckable(true);
-		auto* resolutionGroup = new QActionGroup(this);
-		resolutionGroup->setExclusive(true);
-		resolutionGroup->addAction(r720Action);
-		resolutionGroup->addAction(r1080Action);
-		resolutionGroup->addAction(r1440Action);
-		resolutionGroup->addAction(r4kAction);
-		r1080Action->setChecked(true);
-		// 720p
-		connect(r720Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_720p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 720p");
-		});
-		// 1080p
-		connect(r1080Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_1080p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 1080p");
-		});
-		// 1440p
-		connect(r1440Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_1440p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 1440p");
-		});
-		// 4K
-		connect(r4kAction, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_4K;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 4K");
+		auto* toggleFloorAction = sceneMenu->addAction("Toggle Floor");
+		toggleFloorAction->setCheckable(true);
+		//toggleFloorAction->setChecked(_sim->isFloorEnabled());
+		connect(toggleFloorAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Floor -> %s", checked ? "On" : "Off");
+			//_sim->enableFloor(checked);
 		});
 
-		// Shader submenu
-		auto* shaderMenu = graphicsMenu->addMenu("Shaders");
-		auto* basicShaderAction = shaderMenu->addAction("Basic");
-		auto* litShaderAction = shaderMenu->addAction("Lit");
-		auto* pbrShaderAction = shaderMenu->addAction("PBR");
-		basicShaderAction->setCheckable(true);
-		litShaderAction->setCheckable(true);
-		pbrShaderAction->setCheckable(true);
-		auto* shaderGroup = new QActionGroup(this);
-		shaderGroup->setExclusive(true);
-		shaderGroup->addAction(basicShaderAction);
-		shaderGroup->addAction(litShaderAction);
-		shaderGroup->addAction(pbrShaderAction);
-		pbrShaderAction->setChecked(true);
-		// BASIC
-		connect(basicShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Basic;
-			LOG_INFO("Shader Mode -> Basic");
-		});
-		// LIT
-		connect(litShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::Lit;
-			LOG_INFO("Shader Mode -> Lit");
-		});
-		// PBR
-		connect(pbrShaderAction, &QAction::triggered, this, [this]() {
-			_sim->currentShaderMode = gui::SimManager::ShaderMode::PBR;
-			LOG_INFO("Shader Mode -> PBR");
+		auto* toggleSkyboxAction = sceneMenu->addAction("Toggle Skybox");
+		toggleSkyboxAction->setCheckable(true);
+		//toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
+		connect(toggleSkyboxAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Skybox -> %s", checked ? "On" : "Off");
+			//_sim->enableSkybox(checked);
 		});
 
-		shaderMenu->addSeparator();
-
-		auto* reloadShadersAction = shaderMenu->addAction("Reload Shaders");
-		connect(reloadShadersAction, &QAction::triggered, this, [this]() {
-			LOG_INFO("Menu clicked: Reload Shaders");
-			_sim->reloadAllShaders();
+		auto* toggleOrientatorAction = sceneMenu->addAction("Toggle Orientator");
+		toggleOrientatorAction->setCheckable(true);
+		//toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
+		connect(toggleOrientatorAction, &QAction::toggled, this, [this](bool checked) {
+			LOG_INFO("Menu toggled: Scene -> Toggle Orientator -> %s", checked ? "On" : "Off");
+			//_sim->enableOrientator(checked);
 		});
 	}
 
@@ -326,9 +228,116 @@ namespace window {
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
-				_sim->simCore()->loadRobot(robotName.toStdString());
+				showProjectPage(); // renderer init if we're still on the home page
+				_sim->load_robot(robotName.toStdString());
 			});
 		}
 	}
+
+	void DSFE_MainWindow::onLoadMesh() {
+		const QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
+		if (path.isEmpty()) { return; }
+		std::string bodyName = QFileInfo(path).baseName().toStdString();
+		//_sim->simCore()->loadSingleBody(bodyName);
+		_sim->load_mesh(path.toStdString());
+	}
+
+	// ---- Workspaces ----
+
+	static QString workspacesDir() { return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/DSFE"; }
+
+	void DSFE_MainWindow::newWorkspace() {
+		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
+		_sim->closeWorkspace();
+		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
+		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		_currentWorkspacePath.clear();
+		updateTitle();
+	}
+
+	void DSFE_MainWindow::openWorkspaceDialog() {
+		const QString path = QFileDialog::getOpenFileName(this, "Open Project",
+			workspacesDir(), "DSFE Projects (*.dsfe)");
+		if (path.isEmpty()) { return; }
+		openWorkspacePath(path);
+	}
+
+	void DSFE_MainWindow::openWorkspacePath(const QString& path) {
+		gui::WorkspaceData w;
+		if (!gui::WorkspaceData::loadFromFile(path, w)) {
+			gui::RecentWorkspaces::remove(path);
+			rebuildRecentsMenu();
+			return;
+		}
+		showProjectPage(); // IMPORTANT: renderer must be initialised before applyWorkspace loads the robot
+		applyFullWorkspace(w);
+		_currentWorkspacePath = path;
+		gui::RecentWorkspaces::add(path);
+		rebuildRecentsMenu();
+		updateTitle();
+	}
+
+	bool DSFE_MainWindow::saveWorkspace() {
+		if (_currentWorkspacePath.isEmpty()) { return saveWorkspaceAs(); }
+		gui::WorkspaceData w;
+		gatherFullWorkspace(w);
+		if (!w.saveToFile(_currentWorkspacePath)) { return false; }
+		gui::RecentWorkspaces::add(_currentWorkspacePath);
+		rebuildRecentsMenu();
+		return true;
+	}
+
+	bool DSFE_MainWindow::saveWorkspaceAs() {
+		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", workspacesDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
+		if (path.isEmpty()) { return false; }
+		_currentWorkspacePath = path;
+		updateTitle();
+		return saveWorkspace();
+	}
+
+	void DSFE_MainWindow::gatherFullWorkspace(gui::WorkspaceData& w) {
+		_sim->gatherWorkspace(w);                       // robot, camera, sim properties
+		if (_dslEditor) {
+			w.scriptText = _dslEditor->scriptText();
+			w.scriptPath = _dslEditor->currentScriptPath();
+		}
+		w.name = QFileInfo(_currentWorkspacePath).baseName();
+	}
+
+	void DSFE_MainWindow::applyFullWorkspace(const gui::WorkspaceData& w) {
+		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
+		_sim->closeWorkspace();
+		_sim->applyWorkspace(w);                        // sim properties, camera, robot
+		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
+		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+	}
+
+	void DSFE_MainWindow::rebuildRecentsMenu() {
+		if (!_recentsMenu) { return; }
+		_recentsMenu->clear();
+		const QStringList recents = gui::RecentWorkspaces::list();
+		if (recents.isEmpty()) { _recentsMenu->addAction("(none)")->setEnabled(false); return; }
+		for (const QString& path : recents) {
+			QAction* a = _recentsMenu->addAction(QFileInfo(path).baseName());
+			a->setToolTip(path);
+			connect(a, &QAction::triggered, this, [this, path]() { openWorkspacePath(path); });
+		}
+		_recentsMenu->addSeparator();
+		QAction* clear = _recentsMenu->addAction("Clear List");
+		connect(clear, &QAction::triggered, this, [this]() { gui::RecentWorkspaces::clear(); rebuildRecentsMenu(); });
+	}
+
+	void DSFE_MainWindow::updateTitle() {
+		const QString name = _currentWorkspacePath.isEmpty() ? QStringLiteral("Untitled") : QFileInfo(_currentWorkspacePath).baseName();
+		setWindowTitle("DSFE — " + name);
+	}
+
+	// showHomePage switches to the home page, which will refresh the recent projects list
+	void DSFE_MainWindow::showHomePage() {
+		if (_homePage) { _homePage->refreshRecents(); }
+		if (_stack && _homePage) { _stack->setCurrentWidget(_homePage); }
+	}
+	// showProjectPage switches to the project page, which will initialise the renderer if we're still on the home page
+	void DSFE_MainWindow::showProjectPage() { if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); } }
 
 } // namespace window

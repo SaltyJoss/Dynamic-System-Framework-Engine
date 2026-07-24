@@ -1,7 +1,7 @@
 // DSFE_CORE Logger.h
 #pragma once
-#include "EngineCore.h"
 
+#include "EngineCore.h"
 #include <filesystem>
 #include <stdarg.h>
 #include <chrono>
@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <ostream>
 #include <ctime>
 
