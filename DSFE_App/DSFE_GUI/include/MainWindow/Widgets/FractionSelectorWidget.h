@@ -9,6 +9,7 @@ namespace widgets {
 	public:
 		explicit FractionSelectorWidget(bool telemetryMode = false, QWidget* parent = nullptr);
 		double dt() const;
+		void setDt(double dt);
 	
 	signals:
 		void valueChanged(double denom);

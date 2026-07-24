@@ -1,6 +1,9 @@
 // DSFE_GUI FractionSelectorWidget.cpp
 #include "Widgets/FractionSelectorWidget.h"
 
+#include <cmath>
+#include <algorithm>
+
 #include <QPainter>
 #include <QMouseEvent>
 #include <QWheelEvent>
@@ -51,5 +54,12 @@ namespace widgets {
 		_k = std::clamp(_k + delta, _minK, max);
 		update();
 		emit valueChanged(1.0 / static_cast<double>(10 * _k));
+	}
+
+	void FractionSelectorWidget::setDt(double dt) {
+		if (dt <= 0.0) { return; }
+		const int max = _telemetryMode ? 100 : 5000;
+		_k = std::clamp(static_cast<int>(std::round(1.0 / (10.0 * dt))), _minK, max);
+		update();
 	}
 }
