@@ -35,6 +35,10 @@ Application::Application(const std::string& appName) : _name(appName) {
 	_qtArgv.reserve(_qtArgStorage.size());
 	for (std::string& arg : _qtArgStorage) { _qtArgv.push_back(arg.data()); }
 
+#if defined(__linux__)
+    // Force XCB until the Wayland surface path exists.
+    qputenv("QT_QPA_PLATFORM", "xcb");
+#endif
 	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
 	style::applyTheme(*_qtApp);
 	_sim = std::make_unique<gui::SimulationManager>();
