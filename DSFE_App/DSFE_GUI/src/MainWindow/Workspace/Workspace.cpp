@@ -18,7 +18,8 @@ namespace gui {
         o["content"] = content;
 
         QJsonObject sim;
-        sim["integrator"] = integrator;
+        sim["integration_method"] = integrationMethod;
+        sim["ad_integration_method"] = adIntegrationMethod;
         sim["sim_dt"] = simDt;
         sim["telemetry_dt"] = telemetryDt;
         sim["auto_diff"] = autoDiff;
@@ -44,7 +45,8 @@ namespace gui {
         w.scriptPath = content["script_path"].toString();
 
         const QJsonObject sim = o["simulation"].toObject();
-        w.integrator = sim["integrator"].toString("RK4");
+        w.integrationMethod = sim["integration_method"].toInt(0);
+        w.adIntegrationMethod = sim["ad_integration_method"].toInt(0);
         w.simDt = sim["sim_dt"].toDouble(1.0 / 180.0);
         w.telemetryDt = sim["telemetry_dt"].toDouble(1.0 / 180.0);
         w.autoDiff = sim["auto_diff"].toBool(false);
@@ -80,8 +82,7 @@ namespace gui {
         QJsonParseError err{};
         const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &err);
         if (err.error != QJsonParseError::NoError || !doc.isObject()) {
-            LOG_ERROR("Workspace parse failed (%s): %s",
-                      err.errorString().toUtf8().constData(), path.toUtf8().constData());
+            LOG_ERROR("Workspace parse failed (%s): %s", err.errorString().toUtf8().constData(), path.toUtf8().constData());
             return false;
         }
         out = fromJson(doc.object());

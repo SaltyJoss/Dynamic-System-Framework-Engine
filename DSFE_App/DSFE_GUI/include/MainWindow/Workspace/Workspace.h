@@ -16,8 +16,9 @@ namespace gui {
         QString scriptPath;     // original script file if one was opened (informational)
 
         // Simulation properties
-        QString integrator = "RK4";
-        double simDt = 1.0 / 180.0;
+        int integrationMethod = 0;      // integration::eIntegrationMethod as int
+        int adIntegrationMethod = 0;    // integration::eAutoDiffIntegrationMethod as int
+        double  simDt = 1.0 / 180.0;
         double telemetryDt = 1.0 / 180.0;
         bool autoDiff = false;
 
