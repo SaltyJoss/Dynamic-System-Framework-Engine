@@ -48,6 +48,14 @@ namespace gui {
                     if (cpu_id != gpu_id) { LOG_ERROR("ID mismatch %u vs %u", cpu_id, gpu_id); }
 
                     const uint32_t r_idx = scene.add_renderable(cpu_id, glm::mat4(1.0f));
+                    if (entry.hasMaterial) {
+                        scene.set_material(r_idx, glm::vec3(
+                            static_cast<float>(entry.material.x()), 
+                            static_cast<float>(entry.material.y()), 
+                            static_cast<float>(entry.material.z())), 
+                            entry.metallic, entry.roughness, 1.0f
+                        );
+                    }
                     renderables.push_back(r_idx);
                 }
             }
