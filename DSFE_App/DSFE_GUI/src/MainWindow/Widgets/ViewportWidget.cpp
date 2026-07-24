@@ -12,6 +12,9 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#elif defined(__linux__)
+    #include <QGuiApplication>
+    #include <QtGui/qpa/qplatformnativeinterface.h>
 #endif
 
 namespace widgets {
@@ -31,13 +34,21 @@ namespace widgets {
 	ViewportWidget::~ViewportWidget() {}
 
 	void ViewportWidget::initialise_renderer() {
+		renderer::NativeWindow n_win;
 	#ifdef _WIN32
-		HWND hwnd = reinterpret_cast<HWND>(winId());
-		_sim->initialiseRenderer(static_cast<void*>(hwnd));
+		n_win.handle = reinterpret_cast<void*>(winId());
 	#elif defined(__linux__)
-		auto handle = winId();
-		_sim->initialiseRenderer(reinterpret_cast<void*>(handle));
+		// winId() is xcb_window_t; connection comes from Qt's X11 native interface
+		n_win.handle = reinterpret_cast<void*>(static_cast<uintptr_t>(winId()));
+		if (auto* x11 = qApp->nativeInterface<QNativeInterface::QX11Application>()) {
+			n_win.connection = x11->connection();
+		}
+		else {
+			LOG_ERROR("Failed to get X11 connection from Qt native interface; run with QT_QPA_PLATFORM=xcb");
+			return;
+		}
 	#endif
+		_sim->initialiseRenderer(n_win);
 		_renderer_initialised = true;
 	}
 
