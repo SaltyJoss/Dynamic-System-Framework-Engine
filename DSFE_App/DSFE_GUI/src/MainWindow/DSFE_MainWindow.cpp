@@ -8,6 +8,7 @@
 #include "Widgets/ControlPanelWidget.h"
 #include "Workspace/Workspace.h"
 #include "Workspace/RecentWorkspace.h"
+#include "Workspace/HomePage.h"
 
 #include "ui/RenderPreset.h"
 
@@ -20,6 +21,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <QStackedWidget>
 
 #include "Platform/Paths.h"
 
@@ -32,9 +34,22 @@ namespace window {
 
 		buildMenuBar();
 
-		auto* page = new Workspace::ProjectPage(sim, this);
-		_dslEditor = page->editor();
-		setCentralWidget(page);
+		_stack = new QStackedWidget(this);
+		_homePage = new Workspace::HomePage(_stack);
+		_projectPage = new Workspace::ProjectPage(sim, _stack);
+		_dslEditor = _projectPage->editor();
+		_controlPanel = _projectPage->controlPanel();
+		_stack->addWidget(_homePage);       // index 0
+		_stack->addWidget(_projectPage);    // index 1
+		setCentralWidget(_stack);
+
+		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
+		_homePage->onNewProject = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onOpenProject = [this]() { openWorkspaceDialog(); };
+		_homePage->onOpenRecent = [this](const QString& p) { openWorkspacePath(p); };
+
+		showHomePage();
+		updateTitle();
 	}
 
 	void DSFE_MainWindow::buildMenuBar() {
@@ -92,6 +107,12 @@ namespace window {
 				_dslEditor->saveScript(fileName);
 			});
 			fileMenu->addSeparator();
+			auto* closeProjectAction = fileMenu->addAction("Close Project");
+			connect(closeProjectAction, &QAction::triggered, this, [this]() {
+				newWorkspace();      // stop script, tear down, clear editor/panel/path
+				showHomePage();
+			});
+			fileMenu->addSeparator();
 			auto* exitAction = fileMenu->addAction("Exit");
 			connect(exitAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: File -> Exit");
@@ -101,7 +122,7 @@ namespace window {
 		// Project menu
 		{
 			auto* newProjectAction = projectMenu->addAction("New Project");
-			connect(newProjectAction, &QAction::triggered, this, [this]() { newWorkspace(); });
+			connect(newProjectAction, &QAction::triggered, this, [this]() { showProjectPage(); newWorkspace(); });
 			auto* loadProjectAction = projectMenu->addAction("Load Project");
 			connect(loadProjectAction, &QAction::triggered, this, [this]() { openWorkspaceDialog(); });
 			auto* saveProjectAction = projectMenu->addAction("Save Project");
@@ -127,8 +148,6 @@ namespace window {
 		}
 		// View menu
 		{
-			auto* graphicsMenu = viewMenu->addMenu("Graphics Options");
-			buildGraphicsMenu(graphicsMenu);
 			auto* sceneMenu = viewMenu->addMenu("SceneOptions");
 			buildSceneMenu(sceneMenu);
 			viewMenu->addSeparator();
@@ -161,138 +180,6 @@ namespace window {
 				LOG_INFO("Menu clicked: Help -> Documentation");
 			});
 		}
-	}
-
-	void DSFE_MainWindow::buildGraphicsMenu(QMenu* graphicsMenu) {
-		// Quality submenu
-		auto* qualityMenu = graphicsMenu->addMenu("Quality");
-		auto* lowQualityAction = qualityMenu->addAction("Low");
-		auto* mediumQualityAction = qualityMenu->addAction("Medium");
-		auto* highQualityAction = qualityMenu->addAction("High");
-		auto* ultraQualityAction = qualityMenu->addAction("Ultra");
-		lowQualityAction->setCheckable(true);
-		mediumQualityAction->setCheckable(true);
-		highQualityAction->setCheckable(true);
-		ultraQualityAction->setCheckable(true);
-		auto* qualityGroup = new QActionGroup(this);
-		qualityGroup->setExclusive(true);
-		qualityGroup->addAction(lowQualityAction);
-		qualityGroup->addAction(mediumQualityAction);
-		qualityGroup->addAction(highQualityAction);
-		qualityGroup->addAction(ultraQualityAction);
-		mediumQualityAction->setChecked(true);
-		// LOW
-		connect(lowQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Low;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Low");
-		});
-		// MEDIUM
-		connect(mediumQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Medium;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Medium");
-		});
-		// HIGH
-		connect(highQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::High;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> High");
-		});
-		// ULTRA
-		connect(ultraQualityAction, &QAction::triggered, this, [this]() {
-			q = render::QualityPreset::Ultra;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Graphics Quality -> Ultra");
-		});
-
-		// Resolution submenu
-		auto* resolutionMenu = graphicsMenu->addMenu("Resolution");
-		auto* r720Action = resolutionMenu->addAction("720p");
-		auto* r1080Action = resolutionMenu->addAction("1080p");
-		auto* r1440Action = resolutionMenu->addAction("1440p");
-		auto* r4kAction = resolutionMenu->addAction("4K");
-		r720Action->setCheckable(true);
-		r1080Action->setCheckable(true);
-		r1440Action->setCheckable(true);
-		r4kAction->setCheckable(true);
-		auto* resolutionGroup = new QActionGroup(this);
-		resolutionGroup->setExclusive(true);
-		resolutionGroup->addAction(r720Action);
-		resolutionGroup->addAction(r1080Action);
-		resolutionGroup->addAction(r1440Action);
-		resolutionGroup->addAction(r4kAction);
-		r1080Action->setChecked(true);
-		// 720p
-		connect(r720Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_720p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 720p");
-		});
-		// 1080p
-		connect(r1080Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_1080p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 1080p");
-		});
-		// 1440p
-		connect(r1440Action, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_1440p;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 1440p");
-		});
-		// 4K
-		connect(r4kAction, &QAction::triggered, this, [this]() {
-			r = render::ResolutionPreset::R_4K;
-			auto s = render::MakeSettings(r, q);
-			_sim->applyRenderProfile(s, r);
-			LOG_INFO("Resolution -> 4K");
-		});
-
-		// // Shader submenu
-		// auto* shaderMenu = graphicsMenu->addMenu("Shaders");
-		// auto* basicShaderAction = shaderMenu->addAction("Basic");
-		// auto* litShaderAction = shaderMenu->addAction("Lit");
-		// auto* pbrShaderAction = shaderMenu->addAction("PBR");
-		// basicShaderAction->setCheckable(true);
-		// litShaderAction->setCheckable(true);
-		// pbrShaderAction->setCheckable(true);
-		// auto* shaderGroup = new QActionGroup(this);
-		// shaderGroup->setExclusive(true);
-		// shaderGroup->addAction(basicShaderAction);
-		// shaderGroup->addAction(litShaderAction);
-		// shaderGroup->addAction(pbrShaderAction);
-		// pbrShaderAction->setChecked(true);
-		// // BASIC
-		// connect(basicShaderAction, &QAction::triggered, this, [this]() {
-		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Basic;
-		// 	LOG_INFO("Shader Mode -> Basic");
-		// });
-		// // LIT
-		// connect(litShaderAction, &QAction::triggered, this, [this]() {
-		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::Lit;
-		// 	LOG_INFO("Shader Mode -> Lit");
-		// });
-		// // PBR
-		// connect(pbrShaderAction, &QAction::triggered, this, [this]() {
-		// 	_sim->currentShaderMode = gui::SimulationManager::ShaderMode::PBR;
-		// 	LOG_INFO("Shader Mode -> PBR");
-		// });
-
-		// shaderMenu->addSeparator();
-
-		// auto* reloadShadersAction = shaderMenu->addAction("Reload Shaders");
-		// connect(reloadShadersAction, &QAction::triggered, this, [this]() {
-		// 	LOG_INFO("Menu clicked: Reload Shaders");
-		// 	_sim->reloadAllShaders();
-		// });
 	}
 
 	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
@@ -341,6 +228,7 @@ namespace window {
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
+				showProjectPage(); // renderer init if we're still on the home page
 				_sim->load_robot(robotName.toStdString());
 			});
 		}
@@ -381,6 +269,7 @@ namespace window {
 			rebuildRecentsMenu();
 			return;
 		}
+		showProjectPage(); // IMPORTANT: renderer must be initialised before applyWorkspace loads the robot
 		applyFullWorkspace(w);
 		_currentWorkspacePath = path;
 		gui::RecentWorkspaces::add(path);
@@ -442,5 +331,13 @@ namespace window {
 		const QString name = _currentWorkspacePath.isEmpty() ? QStringLiteral("Untitled") : QFileInfo(_currentWorkspacePath).baseName();
 		setWindowTitle("DSFE — " + name);
 	}
+
+	// showHomePage switches to the home page, which will refresh the recent projects list
+	void DSFE_MainWindow::showHomePage() {
+		if (_homePage) { _homePage->refreshRecents(); }
+		if (_stack && _homePage) { _stack->setCurrentWidget(_homePage); }
+	}
+	// showProjectPage switches to the project page, which will initialise the renderer if we're still on the home page
+	void DSFE_MainWindow::showProjectPage() { if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); } }
 
 } // namespace window
