@@ -390,7 +390,7 @@ namespace renderer {
         }
         _grid_pipeline.layout = create_pipeline_layout();
         if (_grid_pipeline.layout == VK_NULL_HANDLE) { LOG_ERROR("Failed to create grid pipeline layout"); return false; }
-        _grid_pipeline.pipeline = create_graphics_pipeline(_grid_pipeline.layout, _grid_pipeline.shaders, /*alpha_blend=*/true, /*depth_write=*/false);
+        _grid_pipeline.pipeline = create_graphics_pipeline(_grid_pipeline.layout, _grid_pipeline.shaders, /*alpha_blend=*/false, /*depth_write=*/true);
         return _grid_pipeline.pipeline != VK_NULL_HANDLE;
     }
 
@@ -468,7 +468,7 @@ namespace renderer {
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = {{{ 0.6f, 0.6f, 0.6f, 1.0f }}}
+            .clearValue = {{{ 0.02f, 0.02f, 0.025f, 1.0f }}}
         };
         // Depth attachment
         VkRenderingAttachmentInfo depth{
@@ -521,8 +521,7 @@ namespace renderer {
             PushConstants pc{};
             pc.mvp   = view_proj;            // world-space quad, identity model
             pc.model = glm::mat4(1.0f);
-            draw(f.command_buffer, _grid_pipeline, _grid_quad, viewport, scissor,
-                 pc, _camera_sets[ubo_slot]);
+            draw(f.command_buffer, _grid_pipeline, _grid_quad, viewport, scissor, pc, _camera_sets[ubo_slot]);
         }
         
         vkCmdEndRendering(f.command_buffer);
