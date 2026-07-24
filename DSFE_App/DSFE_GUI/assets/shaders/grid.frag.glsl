@@ -65,8 +65,8 @@ void main() {
 
     // Fresnel: stronger at grazing angles, faint looking straight down.
     vec3 V = normalize(cam.cam_pos.xyz - v_world_pos);
-    float fresnel = pow(1.0 - max(V.y, 0.0), 3.0);
-    float refl_strength = (0.10 + 0.45 * fresnel) * refl.a;   // alpha masks "something was reflected"
+    float fresnel = pow(1.0 - max(V.y, 0.0), 4.0);
+    float refl_strength = (0.02 + 0.15 * fresnel) * refl.a;   // alpha masks "something was reflected"
     col = mix(col, refl.rgb, refl_strength);
 
     vec3 L = -normalize(vec3(-0.4, -1.0, -0.3));
