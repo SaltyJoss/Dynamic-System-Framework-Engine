@@ -178,7 +178,9 @@ namespace renderer {
 
         VkPipelineMultisampleStateCreateInfo multisample{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
+            .rasterizationSamples = MSAA_SAMPLES,
+            .sampleShadingEnable = VK_TRUE,
+            .minSampleShading = 0.25f
         };
 
         VkPipelineDepthStencilStateCreateInfo depth_stencil{
@@ -312,7 +314,7 @@ namespace renderer {
             .extent = { extent.width, extent.height, 1 },
             .mipLevels = 1,
             .arrayLayers = 1,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .samples = MSAA_SAMPLES,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -571,27 +573,43 @@ namespace renderer {
             VK_IMAGE_ASPECT_DEPTH_BIT
         );
 
+        // MSAA image barrier
+        image_barrier(
+            f.command_buffer, _msaa_image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+        );
+
         // Swapchain image barrier
-        image_barrier(f.command_buffer, _swapchain->image(image_index),
-                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                      VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-                      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        image_barrier(
+            f.command_buffer, _swapchain->image(image_index),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+        );
         // Depth image barrier
-        image_barrier(f.command_buffer, _depth_image,
-                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                      VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-                      VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-                      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                      VK_IMAGE_ASPECT_DEPTH_BIT);
+        image_barrier(
+            f.command_buffer, _depth_image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
                       
         // Colour attachment
         VkRenderingAttachmentInfo colour{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = _swapchain->image_view(image_index),
+            .imageView = _msaa_view,
             .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT,
+            .resolveImageView = _swapchain->image_view(image_index),
+            .resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .clearValue = {{{ 0.02f, 0.02f, 0.025f, 1.0f }}}
         };
         // Depth attachment
@@ -658,7 +676,8 @@ namespace renderer {
             VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0
         );
 
-        vkEndCommandBuffer(f.command_buffer);
+        VkResult end_res = vkEndCommandBuffer(f.command_buffer);
+        if (end_res != VK_SUCCESS) { LOG_ERROR("vkEndCommandBuffer failed: %d", end_res); return; }
 
         VkSemaphoreSubmitInfo wait_sem{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
@@ -688,25 +707,14 @@ namespace renderer {
             .commandBufferInfoCount = 1,   .pCommandBufferInfos = &cmd_info,
             .signalSemaphoreInfoCount = 2, .pSignalSemaphoreInfos = signal_sems
         };
-        if (vkQueueSubmit2(_context->graphics_queue(), 1, &submit, VK_NULL_HANDLE) != VK_SUCCESS) {
-            LOG_ERROR("vkQueueSubmit2 failed"); return;
+        VkResult sub_res = vkQueueSubmit2(_context->graphics_queue(), 1, &submit, VK_NULL_HANDLE);
+        if (sub_res != VK_SUCCESS) {
+            LOG_ERROR("vkQueueSubmit2 failed: %d", sub_res);
+            return;
         }
 
         _swapchain->present(_context->graphics_queue(), image_index);
         ++_frame_idx;
-    }
-
-    void VulkanRenderer::resize(uint32_t width, uint32_t height) {
-        if (width == 0 || height == 0) { return; }
-        _width = width; _height = height;
-        wait_idle();
-        _swapchain->recreate(_width, _height);
-        destroy_depth_resources();
-        create_depth_resources();
-    }
-
-    void VulkanRenderer::wait_idle() {
-        if (_context && _context->device()) { vkDeviceWaitIdle(_context->device()); }
     }
 
     /*
@@ -759,9 +767,7 @@ namespace renderer {
         }
 
         for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-            _camera_ubos[i] = create_buffer(sizeof(CameraUBO),
-                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                            VMA_MEMORY_USAGE_AUTO);
+            _camera_ubos[i] = create_buffer(sizeof(CameraUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
 
             VkDescriptorSetAllocateInfo alloc_info{
                 .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -954,6 +960,45 @@ namespace renderer {
         return true;
     }
 
+    bool VulkanRenderer::create_msaa_resources() {
+        VkDevice dev = _context->device();
+        const VkExtent2D extent = _swapchain->extent();
+        VkImageCreateInfo image_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = _swapchain->format(),
+            .extent = { extent.width, extent.height, 1 },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = MSAA_SAMPLES,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+        VmaAllocationCreateInfo alloc_info{ .usage = VMA_MEMORY_USAGE_AUTO };
+        if (vmaCreateImage(_context->allocator(), &image_info, &alloc_info, &_msaa_image, &_msaa_alloc, nullptr) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create MSAA image"); return false;
+        }
+        VkImageViewCreateInfo view_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = _msaa_image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = _swapchain->format(),
+            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+        };
+        if (vkCreateImageView(dev, &view_info, nullptr, &_msaa_view) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create MSAA image view"); return false;
+        }
+        LOG_INFO("MSAA resources created (%ux samples, %ux%u)", (uint32_t)MSAA_SAMPLES, extent.width, extent.height);
+        return true;
+    }
+
+    void VulkanRenderer::destroy_msaa_resources() {
+        VkDevice dev = _context->device();
+        if (_msaa_view) { vkDestroyImageView(dev, _msaa_view, nullptr); _msaa_view = VK_NULL_HANDLE; }
+        if (_msaa_image) { vmaDestroyImage(_context->allocator(), _msaa_image, _msaa_alloc); _msaa_image = VK_NULL_HANDLE; _msaa_alloc = VK_NULL_HANDLE; }
+    }
+
     // Creates a GPU buffer of the specified size, usage, and memory usage, returning a GpuBuffer struct containing the Vulkan buffer handle and its associated VMA allocation.
     VulkanRenderer::GpuBuffer VulkanRenderer::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memory_usage) {
         VulkanRenderer::GpuBuffer gpu_buffer{};
@@ -984,6 +1029,26 @@ namespace renderer {
     }
 
     /*
+     * Resizing andf waiting for idle
+     */
+
+    void VulkanRenderer::resize(uint32_t width, uint32_t height) {
+        if (width == 0 || height == 0) { return; }
+        _width = width; _height = height;
+        wait_idle();
+        destroy_msaa_resources();
+        destroy_depth_resources();
+        _swapchain->recreate(_width, _height);
+        create_depth_resources();
+        create_msaa_resources();
+    }
+
+    void VulkanRenderer::wait_idle() {
+        if (_context && _context->device()) { vkDeviceWaitIdle(_context->device()); }
+    }
+
+
+    /*
     Initialisation and Destruction
     */
 
@@ -995,6 +1060,7 @@ namespace renderer {
             LOG_ERROR("VulkanSwapchain create failed"); return false;
         }
         if (!create_depth_resources()) { return false; }
+        if (!create_msaa_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
         if (!create_shadow_resources()) { return false; }
@@ -1046,6 +1112,7 @@ namespace renderer {
         destroy_buffer(_grid_quad.vertices);
         destroy_buffer(_grid_quad.indices);
 
+        destroy_msaa_resources();
         destroy_depth_resources();
         _swapchain->destroy();
         delete _swapchain; _swapchain = nullptr;

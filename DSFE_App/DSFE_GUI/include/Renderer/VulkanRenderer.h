@@ -86,6 +86,9 @@ namespace renderer {
 
             bool create_shadow_pipeline();
 
+            bool create_msaa_resources();
+            void destroy_msaa_resources();
+
             // Internal state
             VulkanContext* _context = nullptr;
             VulkanSwapchain* _swapchain = nullptr;
@@ -112,12 +115,18 @@ namespace renderer {
             // Shadow mapping variables
             static constexpr uint32_t SHADOW_MAP_SIZE = 4096;
             static constexpr VkFormat SHADOW_FORMAT = VK_FORMAT_D32_SFLOAT;
-
+            // Shadow map resources
             VkImage _shadow_image = VK_NULL_HANDLE; // Vulkan shadow map image handle
             VmaAllocation _shadow_alloc = VK_NULL_HANDLE; // Vulkan shadow map image allocation
             VkImageView _shadow_view = VK_NULL_HANDLE; // Vulkan shadow map image view
             VkSampler _shadow_sampler = VK_NULL_HANDLE; // Vulkan shadow map sampler
             Pipeline _shadow_pipeline; // Vulkan graphics pipeline for shadow mapping
+
+            // MSAA variables
+            static constexpr VkSampleCountFlagBits MSAA_SAMPLES = VK_SAMPLE_COUNT_4_BIT;
+            VkImage _msaa_image = VK_NULL_HANDLE; // Vulkan MSAA image handle
+            VmaAllocation _msaa_alloc = VK_NULL_HANDLE; // Vulkan MSAA image allocation
+            VkImageView _msaa_view = VK_NULL_HANDLE; // Vulkan MSAA image view
 
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
