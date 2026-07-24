@@ -121,8 +121,8 @@ namespace renderer {
     // Builds the graphics pipeline
     VkPipeline VulkanRenderer::create_graphics_pipeline(
         VkPipelineLayout layout, ShaderModules shaders,
-        bool alpha_blend = false, bool depth_write = true,
-        VkSampleCountFlagBits samples = MSAA_SAMPLES
+        bool alpha_blend, bool depth_write,
+        VkSampleCountFlagBits samples
     ) {
         VkDevice dev = _context->device();
         // Shader stages: vertex and fragment
