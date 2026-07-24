@@ -10,7 +10,11 @@ layout(set = 0, binding = 0) uniform Camera {
 
 layout(location = 0) out vec4 o_colour;
 
-// Antialiased grid line intensity for a given cell size
+const vec3 BG    = vec3(0.02, 0.02, 0.025);  // MUST match the clear colour
+const vec3 FLOOR = vec3(0.11, 0.11, 0.12);
+const vec3 MINOR = vec3(0.16, 0.16, 0.17);
+const vec3 MAJOR = vec3(0.21, 0.21, 0.23);
+
 float gridLine(vec2 p, float cell) {
     vec2 q = p / cell;
     vec2 g = abs(fract(q - 0.5) - 0.5) / fwidth(q);
@@ -20,18 +24,18 @@ float gridLine(vec2 p, float cell) {
 void main() {
     vec2 p = v_world_pos.xz;
 
-    float minor = gridLine(p, 0.1) * 0.25;   // 10cm lines, faint
-    float major = gridLine(p, 1.0) * 0.5;    // 1m lines, stronger
-    float axis  = 0.0;
+    vec3 col = FLOOR;
+    col = mix(col, MINOR, gridLine(p, 0.1) * 0.6);
+    col = mix(col, MAJOR, gridLine(p, 1.0) * 0.8);
 
-    float line = max(max(minor, major), axis);
+    // Coloured axes through the origin (Isaac-style)
+    vec2 aw = fwidth(p); // High multiplier to make the axes more visible -> 
+    if (abs(v_world_pos.z) < aw.y) { col = mix(col, vec3(0.55, 0.15, 0.15), 0.75); }  // X axis
+    if (abs(v_world_pos.x) < aw.x) { col = mix(col, vec3(0.15, 0.45, 0.20), 0.75); }  // Z axis
 
-    // Distance fade from the camera
+    // Fade the plane into the background = fake horizon
     float d = length(v_world_pos - cam.cam_pos.xyz);
-    float fade = 1.0 - smoothstep(20.0, 80.0, d);
+    col = mix(col, BG, smoothstep(30.0, 90.0, d));
 
-    vec3 col = mix(vec3(0.35), vec3(0.7), axis);   // axes slightly brighter
-    float alpha = line * fade;
-    if (alpha < 0.01) { discard; }
-    o_colour = vec4(col, alpha);
+    o_colour = vec4(col, 1.0);
 }
