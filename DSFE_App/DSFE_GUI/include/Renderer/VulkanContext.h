@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Renderer/NativeWindow.h"
+
 #include <volk.h>
 #include <vk_mem_alloc.h>
 
@@ -19,7 +21,7 @@ namespace renderer {
         constexpr static uint32_t VK_VERSION{ VK_API_VERSION_1_3 };
 
         public:
-            bool init(void* windowHandle);
+            bool init(const NativeWindow& win);
             void shutdown();
 
             // Accessors for Vulkan handles
@@ -35,7 +37,7 @@ namespace renderer {
 
         private:
             bool create_instance();
-            bool create_surface(void* native_window);
+            bool create_surface(const NativeWindow& win);
             VkPhysicalDevice find_physical_device();
             bool find_graphics_queue();
             bool create_device(VkPhysicalDevice p_dev);

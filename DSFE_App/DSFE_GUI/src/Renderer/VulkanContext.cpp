@@ -91,9 +91,9 @@ namespace renderer {
     }
 
     // Create a Vulkan surface for rendering using the provided native window handle (SDL window in this case).
-    bool VulkanContext::create_surface(void* native_window) {
+    bool VulkanContext::create_surface(const NativeWindow& win) {
     #ifdef _WIN32
-        if (!native_window) {
+        if (!win.handle) {
             LOG_ERROR("Native window handle is null; cannot create Vulkan surface.");
             return false;
         }
@@ -101,7 +101,7 @@ namespace renderer {
         VkWin32SurfaceCreateInfoKHR surface_info {
             .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
             .hinstance = GetModuleHandle(nullptr),
-            .hwnd = static_cast<HWND>(native_window)
+            .hwnd = static_cast<HWND>(win.handle)
         };
 
         VkResult result = vkCreateWin32SurfaceKHR(_instance, &surface_info, nullptr, &_surface);
@@ -110,9 +110,20 @@ namespace renderer {
             return false;
         }
     #elif defined(__linux__)
-        LOG_ERROR("Linux surface creation not implemented yet.");
-        // TODO: Implement Linux surface creation using XCB or Wayland
-        return false;
+        if (!win.connection) {
+            LOG_ERROR("XCB connection handle is null; cannot create Vulkan surface (is Qt on xcb?).");
+            return false;
+        }
+        VkXcbSurfaceCreateInfoKHR surface_info {
+            .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            .connection = static_cast<xcb_connection_t*>(win.connection),
+            .window = static_cast<xcb_window_t>(reinterpret_cast<uintptr_t>(win.handle))
+        };
+        VkResult result = vkCreateXcbSurfaceKHR(_instance, &surface_info, nullptr, &_surface);
+        if (result != VK_SUCCESS) {
+            LOG_ERROR("Failed to create Vulkan XCB surface: %d", result);
+            return false;
+        }
     #endif
 
         return true;
@@ -219,9 +230,9 @@ namespace renderer {
     }
 
     // Initialise the Vulkan context by creating the Vulkan instance, surface, physical device, logical device, and VMA allocator.
-    bool VulkanContext::init(void* native_window) {
+    bool VulkanContext::init(const NativeWindow& win) {
         if (!create_instance()) { return false; }
-        if (!create_surface(native_window)) { return false; }
+        if (!create_surface(win)) { return false; }
         _phys_device = find_physical_device();
         if (_phys_device == VK_NULL_HANDLE) { return false; }
         if (!find_graphics_queue()) { return false; }
