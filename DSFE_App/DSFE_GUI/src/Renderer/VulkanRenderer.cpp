@@ -119,9 +119,13 @@ namespace renderer {
     }
 
     // Builds the graphics pipeline
-    VkPipeline VulkanRenderer::create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend, bool depth_write) {
+    VkPipeline VulkanRenderer::create_graphics_pipeline(
+        VkPipelineLayout layout, ShaderModules shaders,
+        bool alpha_blend = false, bool depth_write = true,
+        VkSampleCountFlagBits samples = MSAA_SAMPLES
+    ) {
         VkDevice dev = _context->device();
-
+        // Shader stages: vertex and fragment
         VkPipelineShaderStageCreateInfo stages[2]{
             {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -155,19 +159,18 @@ namespace renderer {
             .vertexAttributeDescriptionCount = 3,
             .pVertexAttributeDescriptions = attrs
         };
-
+        // Input assembly: triangle list, no primitive restart
         VkPipelineInputAssemblyStateCreateInfo input_assembly{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-
         // Viewport/scissor dynamic so the pipeline survives a resize
         VkPipelineViewportStateCreateInfo viewport_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             .viewportCount = 1,
             .scissorCount = 1
         };
-
+        // Rasterization state: fill polygons, no culling, counter-clockwise front face
         VkPipelineRasterizationStateCreateInfo raster{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             .polygonMode = VK_POLYGON_MODE_FILL,
@@ -175,14 +178,14 @@ namespace renderer {
             .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .lineWidth = 1.0f
         };
-
+        // Multisample state: enable MSAA if requested, with a minimum sample shading of 0.25
         VkPipelineMultisampleStateCreateInfo multisample{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            .rasterizationSamples = MSAA_SAMPLES,
-            .sampleShadingEnable = VK_TRUE,
+            .rasterizationSamples = samples,
+            .sampleShadingEnable = (samples > VK_SAMPLE_COUNT_1_BIT) ? VK_TRUE : VK_FALSE,
             .minSampleShading = 0.25f
         };
-
+        // Depth/stencil state: enable depth testing, optionally enable depth writes, no stencil
         VkPipelineDepthStencilStateCreateInfo depth_stencil{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             .depthTestEnable = VK_TRUE,
@@ -193,7 +196,7 @@ namespace renderer {
             .minDepthBounds = 0.0f,
             .maxDepthBounds = 1.0f
         };
-
+        // Color blending state: enable alpha blending if requested, otherwise overwrite
         VkPipelineColorBlendAttachmentState blend_attachment{
             .blendEnable = alpha_blend ? VK_TRUE : VK_FALSE,
             .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
@@ -210,14 +213,14 @@ namespace renderer {
             .attachmentCount = 1,
             .pAttachments = &blend_attachment
         };
-
+        // Dynamic state: viewport and scissor are dynamic so the pipeline survives a resize
         VkDynamicState dynamic_states[]{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
         VkPipelineDynamicStateCreateInfo dynamic{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
             .dynamicStateCount = 2,
             .pDynamicStates = dynamic_states
         };
-
+        // Pipeline rendering info: specify the color and depth formats for the pipeline
         const VkFormat colour_format = _swapchain->format();
         VkPipelineRenderingCreateInfo rendering_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
@@ -225,7 +228,7 @@ namespace renderer {
             .pColorAttachmentFormats = &colour_format,
             .depthAttachmentFormat = DEPTH_FORMAT
         };
-
+        // Create the graphics pipeline with all the specified states and shader stages
         VkGraphicsPipelineCreateInfo info{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .pNext = &rendering_info,
@@ -427,6 +430,7 @@ namespace renderer {
         }
     }
 
+    //  creates the light space matrix for shadow mapping
     glm::mat4 VulkanRenderer::light_space_matrix() const {
         const glm::vec3 light_dir = glm::normalize(glm::vec3(-0.4f, -1.0f, -1.3f));
         const glm::vec3 light_pos = -light_dir * 20.0f;
@@ -435,7 +439,14 @@ namespace renderer {
         light_proj[1][1] *= -1.0f; // Vulkan clip space has inverted Y
         return light_proj * light_view;
     }
+    // Returns a matrix that mirrors geometry across the Y-axis, useful for reflection rendering.
+    glm::mat4 VulkanRenderer::mirror_y_matrix() {
+        glm::mat4 m(1.0f);
+        m[1][1] = -1.0f;
+        return m;
+    }
 
+    // Creates a simple grid mesh for rendering a ground plane or reference grid in the scene.
     bool VulkanRenderer::create_grid() {
         using assets::VertexHolder;
         const float S = 100.0f;
@@ -469,6 +480,7 @@ namespace renderer {
         return _grid_pipeline.pipeline != VK_NULL_HANDLE;
     }
 
+    // Draws a mesh using the specified pipeline, command buffer, viewport, scissor rectangle, push constants, and camera descriptor set.
     void VulkanRenderer::draw(VkCommandBuffer command_buffer, const renderer::Pipeline& pipeline, 
         const renderer::VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
         const PushConstants& pc, VkDescriptorSet camera_set
@@ -545,7 +557,6 @@ namespace renderer {
             .colorAttachmentCount = 0,
             .pDepthAttachment = &shadow_depth  
         };
-        
         vkCmdBeginRendering(f.command_buffer, &shadow_rendering);
         {
             VkViewport svp{ 0, 0, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE, 0.0f, 1.0f };
@@ -572,6 +583,77 @@ namespace renderer {
             VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT
         );
+
+        // Reflection Pass
+        image_barrier(
+            f.command_buffer, _refl_image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+        );
+        image_barrier(
+            f.command_buffer, _refl_depth_image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
+        VkRenderingAttachmentInfo refl_colour{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = _refl_view,
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = {{{ 0.0f, 0.0f, 0.0f, 0.0f }}}   // alpha 0 = "nothing reflected here" mask
+        };
+        VkRenderingAttachmentInfo refl_depth{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = _refl_depth_view,
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .clearValue = {{{ 1.0f, 0 }}}
+        };
+        VkRenderingInfo refl_rendering{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .renderArea = {{0, 0}, _refl_extent},
+            .layerCount = 1,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &refl_colour,
+            .pDepthAttachment = &refl_depth
+        };
+        vkCmdBeginRendering(f.command_buffer, &refl_rendering);
+        {
+            VkViewport rvp{ 0, 0, (float)_refl_extent.width, (float)_refl_extent.height, 0.0f, 1.0f };
+            VkRect2D rsc{ {0, 0}, _refl_extent };
+            const glm::mat4 refl_view_proj = proj * view * mirror_y_matrix();
+            const uint32_t ubo_slot_r = static_cast<uint32_t>(_frame_idx % MAX_FRAMES_IN_FLIGHT);
+            for (const gui::Renderable& r : scene.renderables()) {
+                if (const GpuMesh* m = get_mesh(r.mesh_id)) {
+                    PushConstants pc{};
+                    pc.mvp      = refl_view_proj * r.transform;
+                    pc.model    = mirror_y_matrix() * r.transform;   // mirrored world pos/normals for lighting
+                    pc.albedo   = r.albedo;
+                    pc.material = r.material;
+                    draw(f.command_buffer, _refl_mesh_pipeline, *m, rvp, rsc, pc, _camera_sets[ubo_slot_r]);
+                }
+            }
+            // No grid draw — the floor doesn't reflect itself.
+        }
+        vkCmdEndRendering(f.command_buffer);
+        // Transition the reflection colour image to a read-only layout for sampling in the main pass
+        image_barrier(
+            f.command_buffer, _refl_image,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT
+        );
+
+        // MSAA colour target barrier
 
         // MSAA image barrier
         image_barrier(
@@ -720,18 +802,24 @@ namespace renderer {
     /*
     Descriptors
     */
-
+    // Creates descriptor set layouts, descriptor pools, and allocates descriptor sets for camera uniform buffers and shadow/reflection textures.
     bool VulkanRenderer::create_descriptors() {
         VkDevice dev = _context->device();
-        VkDescriptorSetLayoutBinding bindings[2]{
+        VkDescriptorSetLayoutBinding bindings[3]{
             {
-                .binding = 0,
+                .binding = 0, // Camera UBO
                 .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                 .descriptorCount = 1,
                 .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
             },
             {
-                .binding = 1,
+                .binding = 1, // Shadow map
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+            },
+            {
+                .binding = 2, // Reflection colour
                 .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 .descriptorCount = 1,
                 .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
@@ -739,7 +827,7 @@ namespace renderer {
         };
         VkDescriptorSetLayoutCreateInfo layout_info{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = 2,
+            .bindingCount = 3,
             .pBindings = bindings
         };
         if (vkCreateDescriptorSetLayout(dev, &layout_info, nullptr, &_camera_set_layout) != VK_SUCCESS) {
@@ -753,7 +841,7 @@ namespace renderer {
             },
             {
                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .descriptorCount = MAX_FRAMES_IN_FLIGHT
+                .descriptorCount = MAX_FRAMES_IN_FLIGHT * 2 // shadow + reflection
             }
         };
         VkDescriptorPoolCreateInfo pool_info{
@@ -791,8 +879,14 @@ namespace renderer {
                 .imageView = _shadow_view,
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL
             };
+            // Write:
+            VkDescriptorImageInfo refl_info{
+                .sampler = _refl_sampler,
+                .imageView = _refl_view,
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
             // Write: bind the UBO and shadow map to the descriptor set
-            VkWriteDescriptorSet writes[2]{
+            VkWriteDescriptorSet writes[3]{
                 {
                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                     .dstSet = _camera_sets[i],
@@ -810,14 +904,23 @@ namespace renderer {
                     .descriptorCount = 1,
                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .pImageInfo = &shadow_info
+                },
+                {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = _camera_sets[i],
+                    .dstBinding = 2,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .pImageInfo = &refl_info
                 }
             };
-            vkUpdateDescriptorSets(dev, 2, writes, 0, nullptr);
+            vkUpdateDescriptorSets(dev, 3, writes, 0, nullptr);
         }
         LOG_INFO("Descriptors created (%u camera UBOs)", MAX_FRAMES_IN_FLIGHT);
         return true;
     }
-
+    // Updates the camera uniform buffer object (UBO) for the specified frame slot with the provided view and projection matrices, as well as the camera position.
     void VulkanRenderer::update_camera_ubo(uint32_t frame_slot, const glm::mat4& view, const glm::mat4& proj, const glm::vec3& cam_pos) {
         CameraUBO data{ view, proj, light_space_matrix(), glm::vec4(cam_pos, 1.0f) };
         VmaAllocationInfo info;
@@ -825,6 +928,7 @@ namespace renderer {
         memcpy(info.pMappedData, &data, sizeof(CameraUBO));
     }
 
+    // Destroys the descriptor sets, descriptor pool, and descriptor set layout.
     void VulkanRenderer::destroy_descriptors() {
         VkDevice dev = _context->device();
         for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -835,6 +939,7 @@ namespace renderer {
         if (_camera_set_layout) { vkDestroyDescriptorSetLayout(dev, _camera_set_layout, nullptr); _camera_set_layout = VK_NULL_HANDLE; }
     }
 
+    // Create the shadow map graphics pipeline
     bool VulkanRenderer::create_shadow_pipeline() {
         _shadow_pipeline.shaders = create_shaders("shadow.vert.glsl", "shadow.frag.glsl");
         if (_shadow_pipeline.shaders.vert == VK_NULL_HANDLE || _shadow_pipeline.shaders.frag == VK_NULL_HANDLE) {
@@ -960,6 +1065,7 @@ namespace renderer {
         return true;
     }
 
+    // Creates the resources needed for MSAA rendering, including an image and image view.
     bool VulkanRenderer::create_msaa_resources() {
         VkDevice dev = _context->device();
         const VkExtent2D extent = _swapchain->extent();
@@ -992,11 +1098,123 @@ namespace renderer {
         LOG_INFO("MSAA resources created (%ux samples, %ux%u)", (uint32_t)MSAA_SAMPLES, extent.width, extent.height);
         return true;
     }
-
+    // Destroys the MSAA resources.
     void VulkanRenderer::destroy_msaa_resources() {
         VkDevice dev = _context->device();
         if (_msaa_view) { vkDestroyImageView(dev, _msaa_view, nullptr); _msaa_view = VK_NULL_HANDLE; }
         if (_msaa_image) { vmaDestroyImage(_context->allocator(), _msaa_image, _msaa_alloc); _msaa_image = VK_NULL_HANDLE; _msaa_alloc = VK_NULL_HANDLE; }
+    }
+
+    // Creates the resources needed for reflection rendering.
+    bool VulkanRenderer::create_reflection_resources() {
+        VkDevice dev = _context->device();
+        const VkExtent2D sc = _swapchain->extent();
+        _refl_extent = {
+            std::max(1u, sc.width / REFLECTION_DIVISOR),
+            std::max(1u, sc.height / REFLECTION_DIVISOR)
+        };
+
+        // Colour image for reflection rendering
+        VkImageCreateInfo colour_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = _swapchain->format(),
+            .extent = { _refl_extent.width, _refl_extent.height, 1 },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+        if (vmaCreateImage(_context->allocator(), &colour_info, nullptr, &_refl_image, &_refl_alloc, nullptr) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create reflection colour image"); return false;
+        }
+        // Create an image view for the reflection colour image
+        VkImageViewCreateInfo colour_view_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = _refl_image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = _swapchain->format(),
+            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+        };
+        if (vkCreateImageView(dev, &colour_view_info, nullptr, &_refl_view) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create reflection colour image view"); return false;
+        }
+
+        // Depth image for reflection rendering
+        VkImageCreateInfo depth_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = DEPTH_FORMAT,
+            .extent = { _refl_extent.width, _refl_extent.height, 1 },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+        if (vmaCreateImage(_context->allocator(), &depth_info, nullptr, &_refl_depth_image, &_refl_depth_alloc, nullptr) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create reflection depth image"); return false;
+        }
+        // Create an image view for the reflection depth image
+        VkImageViewCreateInfo depth_view{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = _refl_depth_image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = DEPTH_FORMAT,
+            .subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
+        };
+        if (vkCreateImageView(dev, &depth_view, nullptr, &_refl_depth_view) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create reflection depth image view"); return false;
+        }
+
+        // Plain linear sampler
+        VkSamplerCreateInfo sampler_info{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        };
+        if (vkCreateSampler(dev, &sampler_info, nullptr, &_refl_sampler) != VK_SUCCESS) {
+            LOG_ERROR("Failed to create reflection sampler"); return false;
+        }
+        LOG_INFO("Reflection resources created (%ux%u)", _refl_extent.width, _refl_extent.height);
+        return true;
+    }
+    // Destroys the reflection resources, including the sampler, colour image and view, and depth image and view.
+    void VulkanRenderer::destroy_reflection_resources() {
+        VkDevice dev = _context->device();
+        if (_refl_sampler) { vkDestroySampler(dev, _refl_sampler, nullptr); _refl_sampler = VK_NULL_HANDLE; }
+        if (_refl_view) { vkDestroyImageView(dev, _refl_view, nullptr); _refl_view = VK_NULL_HANDLE; }
+        if (_refl_image) { vmaDestroyImage(_context->allocator(), _refl_image, _refl_alloc); _refl_image = VK_NULL_HANDLE; _refl_alloc = VK_NULL_HANDLE; }
+        if (_refl_depth_view) { vkDestroyImageView(dev, _refl_depth_view, nullptr); _refl_depth_view = VK_NULL_HANDLE; }
+        if (_refl_depth_image) { vmaDestroyImage(_context->allocator(), _refl_depth_image, _refl_depth_alloc); _refl_depth_image = VK_NULL_HANDLE; _refl_depth_alloc = VK_NULL_HANDLE; }
+    }
+
+    // Rewrites the reflection descriptor set for each frame in flight, updating the binding for the reflection colour image and sampler.
+    void VulkanRenderer::rewrite_reflection_descriptor() {
+        VkDescriptorImageInfo refl_info{
+            .sampler = _refl_sampler,
+            .imageView = _refl_view,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        };
+        for (uint32_t i=0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            VkWriteDescriptorSet write{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = _camera_sets[i],
+                .dstBinding = 2,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .pImageInfo = &refl_info
+            };
+            vkUpdateDescriptorSets(_context->device(), 1, &write, 0, nullptr);
+        }
     }
 
     // Creates a GPU buffer of the specified size, usage, and memory usage, returning a GpuBuffer struct containing the Vulkan buffer handle and its associated VMA allocation.
@@ -1018,7 +1236,6 @@ namespace renderer {
         if (r != VK_SUCCESS) { LOG_ERROR("Failed to create GPU buffer of size %llu (VkResult=%d)", size, r); }
         return out;
     }
-
     // Destroys a GPU buffer and frees its associated memory allocation
     void VulkanRenderer::destroy_buffer(GpuBuffer& buffer) {
         if (buffer.buffer != VK_NULL_HANDLE) {
@@ -1031,22 +1248,24 @@ namespace renderer {
     /*
      * Resizing andf waiting for idle
      */
-
+    // Resizes the Vulkan renderer to the specified width and height, recreating the swapchain and associated resources as needed.
     void VulkanRenderer::resize(uint32_t width, uint32_t height) {
         if (width == 0 || height == 0) { return; }
         _width = width; _height = height;
         wait_idle();
+        destroy_reflection_resources();
         destroy_msaa_resources();
         destroy_depth_resources();
         _swapchain->recreate(_width, _height);
         create_depth_resources();
         create_msaa_resources();
+        create_reflection_resources();
+        rewrite_reflection_descriptor(); // otherwise sets point at the old view
     }
-
+    // Waits for the Vulkan device to become idle, ensuring that all pending operations are completed before proceeding.
     void VulkanRenderer::wait_idle() {
         if (_context && _context->device()) { vkDeviceWaitIdle(_context->device()); }
     }
-
 
     /*
     Initialisation and Destruction
@@ -1061,6 +1280,7 @@ namespace renderer {
         }
         if (!create_depth_resources()) { return false; }
         if (!create_msaa_resources()) { return false; }
+        if (!create_reflection_resources()) { return false; }
         if (!create_command_buffers()) { return false; }
         if (!create_sync_resources()) { return false; }
         if (!create_shadow_resources()) { return false; }
@@ -1075,6 +1295,13 @@ namespace renderer {
         if (_mesh_pipeline.layout == VK_NULL_HANDLE) { return false; }
         _mesh_pipeline.pipeline = create_graphics_pipeline(_mesh_pipeline.layout, _mesh_pipeline.shaders);
         if (_mesh_pipeline.pipeline == VK_NULL_HANDLE) { return false; }
+
+        _refl_mesh_pipeline.shaders = create_shaders("lit.vert.glsl", "lit.frag.glsl");
+        if (_refl_mesh_pipeline.shaders.vert == VK_NULL_HANDLE || _refl_mesh_pipeline.shaders.frag == VK_NULL_HANDLE) { return false; }
+        _refl_mesh_pipeline.layout = create_pipeline_layout();
+        if (_refl_mesh_pipeline.layout == VK_NULL_HANDLE) { return false; }
+        _refl_mesh_pipeline.pipeline = create_graphics_pipeline(_refl_mesh_pipeline.layout, _refl_mesh_pipeline.shaders, false, true, VK_SAMPLE_COUNT_1_BIT);
+        if (_refl_mesh_pipeline.pipeline == VK_NULL_HANDLE) { return false; }
 
         LOG_INFO("Vulkan renderer initialised (%ux%u)", _width, _height);
         return true;
@@ -1093,6 +1320,7 @@ namespace renderer {
         wait_idle();
         VkDevice dev = _context->device();
 
+        destroy_pipeline(_refl_mesh_pipeline);
         destroy_pipeline(_shadow_pipeline);
         destroy_shadow_resources();
         destroy_descriptors();
@@ -1112,6 +1340,7 @@ namespace renderer {
         destroy_buffer(_grid_quad.vertices);
         destroy_buffer(_grid_quad.indices);
 
+        destroy_reflection_resources();
         destroy_msaa_resources();
         destroy_depth_resources();
         _swapchain->destroy();

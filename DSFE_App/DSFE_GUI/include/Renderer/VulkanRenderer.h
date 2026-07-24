@@ -84,7 +84,11 @@ namespace renderer {
             VkPipeline _pipeline = VK_NULL_HANDLE; // Vulkan graphics pipeline handle
             VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE; // Vulkan pipeline layout handle
             VkPipelineLayout create_pipeline_layout();
-            VkPipeline create_graphics_pipeline(VkPipelineLayout layout, ShaderModules shaders, bool alpha_blend = false, bool depth_write = true);
+            VkPipeline create_graphics_pipeline(
+                VkPipelineLayout layout, ShaderModules shaders,
+                bool alpha_blend = false, bool depth_write = true,
+                VkSampleCountFlagBits samples = MSAA_SAMPLES
+            );
             void destroy_pipeline(Pipeline& pipeline);
 
             // Depth buffer variables
@@ -132,9 +136,10 @@ namespace renderer {
             VkImageView _refl_depth_view = VK_NULL_HANDLE; // Vulkan reflection depth image view
             VkSampler _refl_sampler = VK_NULL_HANDLE; // Vulkan reflection image sampler
             VkExtent2D _refl_extent{};
+            Pipeline _refl_mesh_pipeline;
+            bool create_reflection_resources();
+            void destroy_reflection_resources();
             void rewrite_reflection_descriptor();
-            bool create_reflection_resource();
-            void destroy_reflection_resource();
 
             // Synchronisation variables
             VkSemaphore _timeline_semaphore = VK_NULL_HANDLE; // Vulkan timeline semaphore for synchronisation
