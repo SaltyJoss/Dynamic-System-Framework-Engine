@@ -104,8 +104,10 @@ namespace renderer {
             Pipeline _shadow_pipeline; // Vulkan graphics pipeline for shadow mapping
             bool create_shadow_resources();
             void destroy_shadow_resources();
-            glm::mat4 light_space_matrix() const;
             bool create_shadow_pipeline();
+            // Methods for calculating light space matrix and mirror transformation
+            glm::mat4 light_space_matrix() const;
+            static glm::mat4 mirror_y_matrix();
 
             // MSAA variables
             static constexpr VkSampleCountFlagBits MSAA_SAMPLES = VK_SAMPLE_COUNT_4_BIT;
