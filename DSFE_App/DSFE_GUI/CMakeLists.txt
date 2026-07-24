@@ -90,8 +90,11 @@ set(MAIN_WINDOW_SRC
 
 set(WORKSPACE_SRC
     src/MainWindow/Workspace/ProjectPage.cpp
+    include/MainWindow/Workspace/ProjectPage.h
     src/MainWindow/Workspace/Workspace.cpp
+    include/MainWindow/Workspace/Workspace.h
     src/MainWindow/Workspace/RecentWorkspace.cpp
+    include/MainWindow/Workspace/RecentWorkspace.h
 )
 
 set(SCENE_SRC
