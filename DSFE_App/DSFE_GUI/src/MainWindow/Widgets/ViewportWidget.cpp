@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPointer>
-#include <QPaintEngine>
 
 #include <QThread>
 #include "Platform/KeyCode.h"
@@ -14,7 +13,6 @@
     #include <windows.h>
 #elif defined(__linux__)
     #include <QGuiApplication>
-    #include <QtGui/qpa/qplatformnativeinterface.h>
 #endif
 
 namespace widgets {

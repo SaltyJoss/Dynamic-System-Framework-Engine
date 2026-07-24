@@ -10,6 +10,7 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QPaintEvent>
+#include <QPaintEngine>
 
 #include <unordered_set>
 
@@ -25,6 +26,7 @@ namespace widgets {
 		void showEvent(QShowEvent* event) override;
 		void resizeEvent(QResizeEvent* event) override;
 		void paintEvent(QPaintEvent* event) override;
+		QPaintEngine* paintEngine() const override { return nullptr; }
 
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
