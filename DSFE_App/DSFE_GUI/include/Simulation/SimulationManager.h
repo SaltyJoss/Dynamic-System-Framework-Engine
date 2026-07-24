@@ -1,6 +1,8 @@
 // DSFE_GUI SimulationManager.h
 #pragma once
 
+#include "Renderer/NativeWindow.h"
+
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
@@ -71,7 +73,7 @@ namespace gui {
         SimulationManager();
         ~SimulationManager();
 
-        void initialiseRenderer(void* nativeWindowHandle);
+        void initialiseRenderer(const renderer::NativeWindow& win);
         void resizeRenderer(int w, int h);
         void renderViewport(int w, int h);
         bool rendererReady() const { return _rendererInitialised; }

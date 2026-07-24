@@ -77,9 +77,9 @@ namespace gui {
 	--------------------------------------------------
 	*/
 
-	void SimulationManager::initialiseRenderer(void* nativeWindowHandle) {
+	void SimulationManager::initialiseRenderer(const renderer::NativeWindow& win) {
 		if (_rendererInitialised) { return; }
-		if (!_renderer.init(nativeWindowHandle)) {
+		if (!_renderer.init(win)) {
 			LOG_ERROR("Vulkan renderer initialisation failed");
 			return;
 		}
