@@ -24,6 +24,9 @@
 #include "Platform/KeyCode.h"
 #include "Analysis/Telemetry.h"
 #include "Analysis/MetricLogger.h"
+
+#include "Workspace/Workspace.h"
+
 #include "Platform/Logger.h"
 
 // Forward Declarations for Scene
@@ -253,6 +256,13 @@ namespace gui {
         void onMouseWheel(double delta);
         void resetMouseDelta();
 
+        // Workspace Management
+        void closeWorkspace(); // Tear down the current workspace: systems, scene, all CPU+GPU meshes.
+        void applyWorkspace(const gui::WorkspaceData& w); // Populate a fresh state from saved data (call after closeWorkspace).
+        void gatherWorkspace(gui::WorkspaceData& w) const; // Fill the manager-owned parts of a workspace (robot, camera).
+
+        const std::string& currentRobotName() const { return _currentRobotName; }
+
     private:
         std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
 
@@ -324,6 +334,7 @@ namespace gui {
         double _simTime       = 0.0;
         double _fixedDt       = 1.0 / 180.0;
         double _telemetryHz   = 100.0;
+        std::string _currentRobotName;
 
         scene::Object* _selectedObject = nullptr;
         std::vector<std::unique_ptr<scene::Object>> _objects;

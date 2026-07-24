@@ -141,6 +141,7 @@ namespace gui {
 		};
 		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
 		_core->clearRobotPresentationDirty();
+		_currentRobotName = model.name;
 		LOG_INFO("Robot loaded: %s", model.name.c_str());
 	}
 
@@ -334,4 +335,45 @@ namespace gui {
         _camera.onMouseWheel(delta);
     }
     void SimulationManager::resetMouseDelta() { _firstMouse = true; }
+
+
+	/*
+	 * --------------------------------------------------
+	 *				  WORKSPACE MANAGEMENT
+	 * --------------------------------------------------
+	 */
+	// Close the current workspace, clearing all systems, scene objects, and meshes. This is typically called before loading a new workspace or robot.
+    void SimulationManager::closeWorkspace() {
+        // Order matters: 
+		// 1. Systems first (they hold renderable indices)
+		// 2. Scene
+		// 3. Both mesh registries together (so ids realign from zero)
+        _systems.clearAll(_scene);
+        _scene.clear();
+        _renderer.destroy_all_meshes();
+        _meshStore.clear();
+        _currentRobotName.clear();
+
+        // TODO: Core state -> stop/reset via the existing Core API?
+		// I will have a think about the best way to approach this.
+
+        LOG_INFO("Workspace closed");
+    }
+	// Apply a workspace, populating the simulation manager with the saved state. This is typically called after closeWorkspace() to load a new workspace.
+    void SimulationManager::applyWorkspace(const gui::WorkspaceData& w) {
+        _camera.setPosition(w.cameraPos);
+        _camera.setYaw(w.cameraYaw);
+        _camera.setPitch(w.cameraPitch);
+        if (!w.robotName.isEmpty()) {
+            loadRobot(w.robotName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
+        }
+        LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
+    }
+	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and robot name
+    void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
+        w.robotName = QString::fromStdString(_currentRobotName);
+        w.cameraPos = _camera.getPosition();
+        w.cameraYaw = _camera.getYaw();
+        w.cameraPitch = _camera.getPitch();
+    }
 }
