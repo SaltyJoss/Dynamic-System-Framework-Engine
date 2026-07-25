@@ -138,13 +138,6 @@ namespace window {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
 				onLoadMesh();
 			});
-			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
-			connect(loadHDRAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: Project -> Load HDRI");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "scene_hdr").string()), "HDRI Files (*.hdr *.exr)");
-				if (path.isEmpty()) { return; }
-				//_sim->loadNewHDR_UI(path.toStdString());
-			});
 		}
 		// View menu
 		{
@@ -183,30 +176,6 @@ namespace window {
 	}
 
 	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
-		auto* toggleGridAction = sceneMenu->addAction("Toggle Grid");
-		toggleGridAction->setCheckable(true);
-		//toggleGridAction->setChecked(_sim->isGridEnabled());
-		connect(toggleGridAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Grid -> %s", checked ? "On" : "Off");
-			//_sim->enableGrid(checked);
-		});
-
-		auto* toggleFloorAction = sceneMenu->addAction("Toggle Floor");
-		toggleFloorAction->setCheckable(true);
-		//toggleFloorAction->setChecked(_sim->isFloorEnabled());
-		connect(toggleFloorAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Floor -> %s", checked ? "On" : "Off");
-			//_sim->enableFloor(checked);
-		});
-
-		auto* toggleSkyboxAction = sceneMenu->addAction("Toggle Skybox");
-		toggleSkyboxAction->setCheckable(true);
-		//toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
-		connect(toggleSkyboxAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Skybox -> %s", checked ? "On" : "Off");
-			//_sim->enableSkybox(checked);
-		});
-
 		auto* toggleOrientatorAction = sceneMenu->addAction("Toggle Orientator");
 		toggleOrientatorAction->setCheckable(true);
 		//toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
