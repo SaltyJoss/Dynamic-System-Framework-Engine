@@ -19,6 +19,6 @@ namespace Workspace {
         void refreshRecents(); // Repopulate the recents list
 
     private:
-        QListWidget* _recentsList = nullptr;
+        QListWidget* _recents_list = nullptr;
     };
 } // namespace Workspace

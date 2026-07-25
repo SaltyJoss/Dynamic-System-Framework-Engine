@@ -140,3 +140,22 @@ QCheckBox {
 QLabel {
 	background-color: transparent;
 }
+
+QListWidget {
+	background-color: rgb(26,26,26);
+	border: 1px solid rgb(70,70,70);
+	border-radius: 4px;
+}
+
+QListWidget::item {
+	padding: 8px;
+	border-radius: 3px;
+}
+
+QListWidget::item:hover {
+	background-color: rgb(50,50,50);
+}
+
+QListWidget::item:selected {
+	background-color: rgb(86,156,214);
+}

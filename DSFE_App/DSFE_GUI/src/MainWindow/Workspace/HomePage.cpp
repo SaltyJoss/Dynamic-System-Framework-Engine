@@ -9,77 +9,92 @@
 #include <QListWidget>
 #include <QFileInfo>
 #include <QMenu>
+#include <QFrame>
 
 namespace Workspace {
     // HomePage constructor sets up the UI elements and connects signals to slots for handling user interactions.
     HomePage::HomePage(QWidget* parent) : QWidget(parent) {
-        auto* outer = new QVBoxLayout(this);
-        outer->addStretch(2);
+        auto* root = new QHBoxLayout(this);
+        root->setContentsMargins(0, 0, 0, 0);
+        root->setSpacing(0);
 
-        auto* title = new QLabel("DSFE", this);
-        QFont tf = title->font(); tf.setPointSize(36); tf.setBold(true);
-        title->setFont(tf);
-        title->setAlignment(Qt::AlignCenter);
-        outer->addWidget(title);
+        // Left Column - Recents List, fills height 
+        auto* left = new QWidget(this);
+        auto* left_col = new QVBoxLayout(left);
+        left_col->setContentsMargins(32,48,32,48);
 
-        auto* subtitle = new QLabel("Dynamic System Framework Engine", this);
-        subtitle->setAlignment(Qt::AlignCenter);
-        outer->addWidget(subtitle);
+        auto* recents_head = new QLabel("Recent Projects", left);
+        QFont rh = recents_head->font();
+        rh.setPointSize(14); rh.setBold(true);
+        recents_head->setFont(rh);
+        left_col->addWidget(recents_head);
+        left_col->addSpacing(16);
 
-        outer->addSpacing(24);
+        _recents_list = new QListWidget(left);
+        _recents_list->setFrameShape(QFrame::NoFrame);
+        left_col->addWidget(_recents_list, 1);
 
-        auto* buttonRow = new QHBoxLayout();
-        buttonRow->addStretch(1);
-        auto* newBtn = new QPushButton("New Project", this);
-        auto* openBtn = new QPushButton("Open Project…", this);
-        newBtn->setMinimumSize(160, 40);
-        openBtn->setMinimumSize(160, 40);
-        buttonRow->addWidget(newBtn);
-        buttonRow->addSpacing(12);
-        buttonRow->addWidget(openBtn);
-        buttonRow->addStretch(1);
-        outer->addLayout(buttonRow);
+        // Right Column: Branding and primary actions (may add templates later)
+        auto* right = new QWidget(this);
+        auto* right_col = new QVBoxLayout(right);
+        right_col->setContentsMargins(48,48,48,48);
+        right_col->addStretch(2);
 
-        outer->addSpacing(24);
+        auto* title = new QLabel("DSFE", right);
+        QFont t = title->font();
+        t.setPointSize(48); t.setBold(true);
+        title->setFont(t);
+        right_col->addWidget(title);
 
-        auto* recentsLabel = new QLabel("Recent Projects", this);
-        recentsLabel->setAlignment(Qt::AlignCenter);
-        outer->addWidget(recentsLabel);
+        auto* subtitle = new QLabel("Dynamic System Framework Engine", right);
+        QFont st = subtitle->font();
+        st.setPointSize(14);
+        subtitle->setFont(st);
+        subtitle->setStyleSheet("color: rgb(140,140,140);");
+        right_col->addWidget(subtitle);
 
-        _recentsList = new QListWidget(this);
-        _recentsList->setMaximumWidth(560);
-        _recentsList->setMaximumHeight(220);
-        auto* listRow = new QHBoxLayout();
-        listRow->addStretch(1);
-        listRow->addWidget(_recentsList);
-        listRow->addStretch(1);
-        outer->addLayout(listRow);
+        right_col->addSpacing(32);
 
-        outer->addStretch(3);
+        auto* new_btn = new QPushButton("New Project", right);
+        auto* open_btn = new QPushButton("Open Project", right);
+        for (auto* btn : {new_btn, open_btn}) {
+            btn->setMinimumHeight(48);
+            btn->setMaximumWidth(280);
+            btn->setCursor(Qt::PointingHandCursor);
+        }
+        right_col->addWidget(new_btn);
+        right_col->addSpacing(16);
+        right_col->addWidget(open_btn);
 
-        connect(newBtn, &QPushButton::clicked, this, [this]() { if (onNewProject) { onNewProject(); } });
-        connect(openBtn, &QPushButton::clicked, this, [this]() { if (onOpenProject) { onOpenProject(); } });
-        connect(_recentsList, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
+        right_col->addStretch(3);
+
+        auto* version = new QLabel("v1.0.0-beta", right);
+        version->setStyleSheet("color: rgb(90,90,90);");
+        right_col->addWidget(version, 0, Qt::AlignRight);
+
+        // Assemble root layout
+        root->addWidget(left, 1);  // Left column:  25%
+        root->addWidget(right, 3); // Right column: 75%
+
+        connect(new_btn, &QPushButton::clicked, this, [this]() { if (onNewProject) { onNewProject(); } });
+        connect(open_btn, &QPushButton::clicked, this, [this]() { if (onOpenProject) { onOpenProject(); } });
+        connect(_recents_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
             const QString path = item->data(Qt::UserRole).toString();
             if (!path.isEmpty() && onOpenRecent) { onOpenRecent(path); }
         });
 
-        _recentsList->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(_recentsList, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
-            QListWidgetItem* item = _recentsList->itemAt(pos);
+        _recents_list->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(_recents_list, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
+            QListWidgetItem* item = _recents_list->itemAt(pos);
             if (!item) { return; }
             const QString path = item->data(Qt::UserRole).toString();
             if (path.isEmpty()) { return; }
-
             QMenu menu(this);
             QAction* open   = menu.addAction("Open");
             QAction* remove = menu.addAction("Remove from list");
-            QAction* chosen = menu.exec(_recentsList->mapToGlobal(pos));
+            QAction* chosen = menu.exec(_recents_list->mapToGlobal(pos));
             if (chosen == open && onOpenRecent) { onOpenRecent(path); }
-            else if (chosen == remove) {
-                gui::RecentWorkspaces::remove(path);
-                refreshRecents();
-            }
+            else if (chosen == remove) { gui::RecentWorkspaces::remove(path); refreshRecents(); }
         });
 
         refreshRecents();
@@ -87,16 +102,19 @@ namespace Workspace {
 
     // refreshRecents repopulates the recent projects list in the UI based on the stored recent workspaces.
     void HomePage::refreshRecents() {
-        _recentsList->clear();
-        for (const QString& path : gui::RecentWorkspaces::list()) {
-            auto* item = new QListWidgetItem(QFileInfo(path).baseName() + "    -    " + path);
+        _recents_list->clear();
+        const QStringList recents = gui::RecentWorkspaces::list();
+        for (const QString& path : recents) {
+            auto* item = new QListWidgetItem();
             item->setData(Qt::UserRole, path);
-            _recentsList->addItem(item);
+            item->setText(QFileInfo(path).baseName() + "\n" + path);
+            item->setData(Qt::ToolTipRole, path);
+            _recents_list->addItem(item);
         }
-        if (_recentsList->count() == 0) {
-            auto* item = new QListWidgetItem("(no recent projects)");
+        if (recents.empty()) {
+            auto* item = new QListWidgetItem("No recent projects.\nCreate or open one to get started.");
             item->setFlags(Qt::NoItemFlags);
-            _recentsList->addItem(item);
+            _recents_list->addItem(item);
         }
     }
 } // namespace Workspace
