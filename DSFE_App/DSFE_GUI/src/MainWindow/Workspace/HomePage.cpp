@@ -33,12 +33,11 @@ namespace {
                 _thumb = new QLabel(this);
                 _thumb->setObjectName("card_thumb");
                 _thumb->setAlignment(Qt::AlignCenter);
-                _thumb->setFixedHeight(120);
+                _thumb->setFixedHeight(150);
                 QPixmap pm(image_path);
                 if (!pm.isNull()) {
-                    _thumb->setPixmap(pm.scaledToHeight(120, Qt::SmoothTransformation));
+                    _thumb->setPixmap(pm.scaled(300, 150, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
                 } else {
-                    _thumb->setStyleSheet("background-color: #444;"); // Placeholder background if image fails to load
                     _thumb->setText("no preview");
                 }
                 _thumb->setScaledContents(false);
@@ -186,7 +185,6 @@ namespace Workspace {
             ++idx;
         }
         grid->setColumnStretch(3, 1); // Add stretch to the last column to push cards to the left
-
         col->addLayout(grid);
         col->addStretch(1);
         into->addWidget(area, 1);
