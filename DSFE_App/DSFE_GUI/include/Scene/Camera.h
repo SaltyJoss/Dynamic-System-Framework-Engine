@@ -35,7 +35,8 @@ namespace scene {
 		glm::quat getDirection() const { return glm::quat(glm::vec3(-_pitch, -_yaw, 0.0f)); }
 		glm::mat4 getViewMatrix() const { return _view_matrix; }
 		float getYaw() const { return _yaw; }
-        float getPitch() const { return _pitch; }float getFOVRadians() const { return _fov; }
+        float getPitch() const { return _pitch; }
+		float getFOVRadians() const { return _fov; }
 		float getFOVDegrees() const { return glm::degrees(_fov); }
 		float getOrbitDistance() const { return _dist; }
 		std::array<glm::vec4, 8> getFrustumCornersWorldSpace(float near, float far) const;
@@ -102,7 +103,7 @@ namespace scene {
 
 		void rebuildAxesFromFrontUp_(const glm::vec3& front, const glm::vec3& upHint);
         void updateProjectionMatrix() {
-            if (!std::isfinite(_fov) || _fov < 1.0f) { _fov = glm::radians(70.0f); }
+            if (!std::isfinite(_fov) || _fov < 0.001f) { _fov = glm::radians(50.0f); }
             _proj = glm::perspective(_fov, _aspect, _near, _far);
             _proj[1][1] *= -1.0f;   // Vulkan clip-space Y flip
         }
