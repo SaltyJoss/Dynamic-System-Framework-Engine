@@ -243,6 +243,7 @@ QListWidget::item:selected {
 	font-family: Consolas, monospace;
 }
 #footer_text {
+	background: transparent;
 	font-family: Consolas, monospace;
 	font-size: 11px;
 	color: rgb(190,190,196);

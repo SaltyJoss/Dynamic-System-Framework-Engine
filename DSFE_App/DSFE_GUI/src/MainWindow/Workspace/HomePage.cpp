@@ -221,11 +221,13 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
         col->setContentsMargins(24, 12, 40, 24);
         col->setSpacing(12);
 
-        auto* header = new QLabel("System", panel);
+        auto* header = new QLabel("System Information:", panel);
         header->setObjectName("section_header");
+        header->setStyleSheet("font-size: 15px; font-weight: 600; ");
         col->addWidget(header);
 
         _diag_content = new QWidget(panel);
+        _diag_content->setAttribute(Qt::WA_TranslucentBackground);
         auto* placeholder_col = new QVBoxLayout(_diag_content);
         placeholder_col->setContentsMargins(0, 0, 0, 0);
         auto* loading = new QLabel("Loading system information...", _diag_content);
@@ -259,14 +261,15 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
         // Helper: coloured key chip + value, neofetch-style
         auto addField = [&](const QString& key, const QString& value, const QString& keyColour) {
             auto* cell = new QWidget(_diag_content);
+            cell->setStyleSheet("background: transparent;");
             auto* h = new QHBoxLayout(cell);
             h->setContentsMargins(0, 0, 0, 0);
             h->setSpacing(6);
-            auto* dot = new QLabel("●", cell);
-            dot->setStyleSheet(QString("color: %1; font-size: 10px;").arg(keyColour));
+            auto* dot = new QLabel("  ●", cell);
+            dot->setStyleSheet(QString("color: %1; font-size: 10px; background: transparent;").arg(keyColour));
             auto* k = new QLabel(key, cell);
-            k->setStyleSheet(QString("color: %1; font-weight: 600;").arg(keyColour));
-            k->setFixedWidth(64);    // align all values into a column
+            k->setStyleSheet(QString("color: %1; font-weight: 600; background: transparent;").arg(keyColour));
+            k->setFixedWidth(64);
             auto* v = new QLabel(value, cell);
             v->setObjectName("footer_text");
             h->addWidget(dot);
@@ -276,14 +279,14 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
             row->addWidget(cell);
         };
         // neofetch-ish palette (because I like it)
-        addField("OS", si.os, "rgb(236,64,122)");     // pink
         addField("CPU", si.processor, "rgb(102,187,106)");   // green
         addField("RAM", si.ram, "rgb(255,167,38)");          // amber
         addField("GPU", si.gpus.join("  |  "), "rgb(86,156,214)");  // blue accent
+        addField("OS", si.os, "rgb(236,64,122)");     // pink
         if (!si.vulkanVersion.isEmpty()) { addField("VK", si.vulkanVersion, "rgb(120,144,156)"); }  // slate
         // Live solver status - green if a Vulkan device was found.
         const bool ready = !si.gpus.isEmpty() && si.gpus.first() != "No hardware GPU";
-        addField("SOLVER", ready ? "Ready" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
+        addField("SOLVER", ready ? "Ready" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255, 8, 0)");
     }
 
     // refreshRecents repopulates the recent projects list in the UI based on the stored recent workspaces.
