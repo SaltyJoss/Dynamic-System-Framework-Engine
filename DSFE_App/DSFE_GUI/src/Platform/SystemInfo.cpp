@@ -68,9 +68,9 @@ namespace gui {
     static QString storageSize() {
         QStorageInfo s(QCoreApplication::applicationDirPath());
         if (!s.isValid() || !s.isReady()) { return QString("Unknown"); }
-        qint64 freeGB = storage.bytesAvailable() / (1024 * 1024 * 1024);
-        qint64 totalGB = storage.bytesTotal() / (1024 * 1024 * 1024);
-        return QString("%1 / %2").arg(free / (1024 * 1024 * 1024)).arg(total / (1024 * 1024 * 1024));
+        qint64 free_GB = s.bytesAvailable() / (1024 * 1024 * 1024);
+        qint64 total_GB = s.bytesTotal() / (1024 * 1024 * 1024);
+        return QString("%1 / %2").arg(free_GB / (1024 * 1024 * 1024)).arg(total_GB / (1024 * 1024 * 1024));
     }
 
     static void queryGpus(SystemInfo& si) {
