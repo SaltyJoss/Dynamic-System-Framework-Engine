@@ -5,6 +5,7 @@
 #include <functional>
 
 class QListWidget;
+class QVBoxLayout;
 
 namespace Workspace {
     class HomePage : public QWidget {
@@ -19,6 +20,10 @@ namespace Workspace {
         void refreshRecents(); // Repopulate the recents list
 
     private:
+        void buildHeader(QVBoxLayout* into);
+        void buildTemplateArea(QVBoxLayout* into);
+        void buildDiagnosticsFooter(QVBoxLayout* into);
+
         QListWidget* _recents_list = nullptr;
     };
 } // namespace Workspace
