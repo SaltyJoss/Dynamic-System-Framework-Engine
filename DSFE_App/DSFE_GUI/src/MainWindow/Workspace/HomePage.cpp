@@ -15,6 +15,8 @@
 #include <QMouseEvent>
 #include <functional>
 
+#include "Platform/SystemInfo.h"
+
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
@@ -193,21 +195,74 @@ namespace Workspace {
     void HomePage::buildDiagnosticsFooter(QVBoxLayout* into) {
         auto* footer = new QWidget(this);
         footer->setObjectName("home_footer");
+        footer->setFixedHeight(52);
         auto* row = new QHBoxLayout(footer);
         row->setContentsMargins(40, 12, 40, 12);
+        row->setSpacing(0);
 
-        // Placeholder for diagnostics information, will wire up after checking build
-        auto* diag = new QLabel("System diagnostics loading...", footer);
-        diag->setObjectName("footer_text");
-        row->addWidget(diag);
+        _footer_content = new QWidget(footer);
+        auto* content_row = new QHBoxLayout(_footer_content);
+        content_row->setContentsMargins(0, 0, 0, 0);
+        content_row->setSpacing(18);
+        auto* loading = new QLabel("Loading system diagnostics...", _footer_content);
+        loading->setObjectName("footer_text");
+        content_row->addWidget(loading);
+        row->addWidget(_footer_content);
+
         row->addStretch(1);
 
         auto* version = new QLabel("DSFE v1.0.0-beta", footer);
         version->setObjectName("footer_version");
         row->addWidget(version);
-        row->addSpacing(20);
 
         into->addWidget(footer);
+
+        populateDiagnostics();
+    }
+
+    void HomePage::populateDiagnostics() {
+        if (!_footer_content) { return; }
+        QLayout* old = _footer_content->layout();
+        if (old) { 
+            QLayoutItem* item;
+            while ((item = old->takeAt(0)) != nullptr) {
+                if (item->widget()) { item->widget()->deleteLater(); }
+                delete item;
+            } 
+            delete old; 
+        }
+        const gui::SystemInfo si = gui::SystemInfo::query();
+        auto* row = new QHBoxLayout(_footer_content);
+        row->setContentsMargins(0, 0, 0, 0);
+        row->setSpacing(16);
+
+        // Helper: coloured key chip + value, neofetch-style
+        auto addField = [&](const QString& key, const QString& value, const QString& keyColour) {
+            auto* cell = new QWidget(_footer_content);
+            auto* h = new QHBoxLayout(cell);
+            h->setContentsMargins(0, 0, 0, 0);
+            h->setSpacing(6);
+            auto* dot = new QLabel("●", cell);
+            dot->setStyleSheet(QString("color: %1; font-size: 10px;").arg(keyColour));
+            auto* k = new QLabel(key, cell);
+            k->setStyleSheet(QString("color: %1; font-weight: 600;").arg(keyColour));
+            auto* v = new QLabel(value, cell);
+            v->setObjectName("footer_text");
+            h->addWidget(dot);
+            h->addWidget(k);
+            h->addWidget(v);
+            row->addWidget(cell);
+        };
+        // neofetch-ish palette (because I like it)
+        addField("OS", si.os, "rgb(236,64,122)");            // pink
+        addField("CPU", si.processor, "rgb(102,187,106)");   // green
+        addField("RAM", si.ram, "rgb(255,167,38)");          // amber
+        addField("GPU", si.gpus.join("  |  "), "rgb(86,156,214)");  // blue accent
+        addField("DISK", si.storage, "rgb(171,130,255)");    // purple
+        if (!si.vulkanVersion.isEmpty()) { addField("VK", si.vulkanVersion, "rgb(120,144,156)"); }  // slate
+        // Live solver status - green if a Vulkan device was found.
+        const bool ready = !si.gpus.isEmpty() && si.gpus.first() != "No hardware GPU";
+        addField("SOLVER", ready ? "Ready" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
     }
 
     // refreshRecents repopulates the recent projects list in the UI based on the stored recent workspaces.

@@ -25,7 +25,9 @@ namespace Workspace {
         void buildHeader(QVBoxLayout* into);
         void buildTemplateArea(QVBoxLayout* into);
         void buildDiagnosticsFooter(QVBoxLayout* into);
+        void populateDiagnostics();
 
+        QWidget* _footer_content = nullptr;
         QListWidget* _recents_list = nullptr;
     };
 } // namespace Workspace
