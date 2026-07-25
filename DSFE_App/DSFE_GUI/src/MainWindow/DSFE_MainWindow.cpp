@@ -336,8 +336,12 @@ namespace window {
 	void DSFE_MainWindow::showHomePage() {
 		if (_homePage) { _homePage->refreshRecents(); }
 		if (_stack && _homePage) { _stack->setCurrentWidget(_homePage); }
+		menuBar()->setVisible(false);
 	}
 	// showProjectPage switches to the project page, which will initialise the renderer if we're still on the home page
-	void DSFE_MainWindow::showProjectPage() { if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); } }
+	void DSFE_MainWindow::showProjectPage() { 
+		if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); }
+		menuBar()->setVisible(true);
+	}
 
 } // namespace window
