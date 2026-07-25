@@ -63,7 +63,7 @@ namespace widgets {
 			initialise_renderer();
 			return;
 		}
-		if (_sim) { _sim->resizeRenderer(width(), height()); }
+		if (_sim && _renderer_initialised) { _sim->resizeRenderer(width(), height()); }
 	}
 
 	void ViewportWidget::paintEvent(QPaintEvent* event) {
