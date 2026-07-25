@@ -241,8 +241,8 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
     }
 
     void HomePage::populateDiagnostics() {
-        if (!_footer_content) { return; }
-        QLayout* old = _footer_content->layout();
+        if (!_diag_content) { return; }
+        QLayout* old = _diag_content->layout();
         if (old) { 
             QLayoutItem* item;
             while ((item = old->takeAt(0)) != nullptr) {
@@ -252,13 +252,13 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
             delete old; 
         }
         const gui::SystemInfo si = gui::SystemInfo::query();
-        auto* row = new QHBoxLayout(_footer_content);
+        auto* row = new QVBoxLayout(_diag_content);
         row->setContentsMargins(0, 0, 0, 0);
         row->setSpacing(16);
 
         // Helper: coloured key chip + value, neofetch-style
         auto addField = [&](const QString& key, const QString& value, const QString& keyColour) {
-            auto* cell = new QWidget(_footer_content);
+            auto* cell = new QWidget(_diag_content);
             auto* h = new QHBoxLayout(cell);
             h->setContentsMargins(0, 0, 0, 0);
             h->setSpacing(6);
@@ -266,11 +266,13 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
             dot->setStyleSheet(QString("color: %1; font-size: 10px;").arg(keyColour));
             auto* k = new QLabel(key, cell);
             k->setStyleSheet(QString("color: %1; font-weight: 600;").arg(keyColour));
+            k->setFixedWidth(64);    // align all values into a column
             auto* v = new QLabel(value, cell);
             v->setObjectName("footer_text");
             h->addWidget(dot);
             h->addWidget(k);
             h->addWidget(v);
+            h->addStretch(1);
             row->addWidget(cell);
         };
         // neofetch-ish palette (because I like it)
@@ -281,7 +283,7 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
         if (!si.vulkanVersion.isEmpty()) { addField("VK", si.vulkanVersion, "rgb(120,144,156)"); }  // slate
         // Live solver status - green if a Vulkan device was found.
         const bool ready = !si.gpus.isEmpty() && si.gpus.first() != "No hardware GPU";
-        addField("SOLVER", ready ? "Ready\n" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
+        addField("SOLVER", ready ? "Ready" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
     }
 
     // refreshRecents repopulates the recent projects list in the UI based on the stored recent workspaces.
