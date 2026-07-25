@@ -8,6 +8,7 @@
 
 class QListWidget;
 class QVBoxLayout;
+class QHBoxLayout;
 
 namespace Workspace {
     class HomePage : public QWidget {
@@ -23,10 +24,11 @@ namespace Workspace {
 
     private:
         void buildHeader(QVBoxLayout* into);
-        void buildTemplateArea(QVBoxLayout* into);
-        void buildDiagnosticsFooter(QVBoxLayout* into);
+        void buildTemplatesArea(QHBoxLayout* into);
+        void buildDiagnosticsPanel(QHBoxLayout* into);
         void populateDiagnostics();
 
+        QWidget* _diag_content = nullptr;
         QWidget* _footer_content = nullptr;
         QListWidget* _recents_list = nullptr;
     };

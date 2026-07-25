@@ -63,7 +63,7 @@ namespace {
 namespace Workspace {
     // HomePage constructor sets up the UI elements and connects signals to slots for handling user interactions.
     HomePage::HomePage(QWidget* parent) : QWidget(parent) {
-        auto* root = new QHBoxLayout(this);
+        auto* root = new QVBoxLayout(this);
         root->setContentsMargins(0, 0, 0, 0);
         root->setSpacing(0);
 
@@ -83,17 +83,39 @@ namespace Workspace {
         _recents_list->setFrameShape(QFrame::NoFrame);
         rail_col->addWidget(_recents_list, 1);
 
-        // Right Column: Branding and primary actions (may add templates later)
+        // Right Column: Branding and primary actions
         auto* right_col = new QVBoxLayout();
         right_col->setContentsMargins(0, 0, 0, 0);
         right_col->setSpacing(0);
 
         buildHeader(right_col);
-        buildTemplateArea(right_col);
-        buildDiagnosticsFooter(right_col);
 
-        root->addWidget(rail);
-        root->addLayout(right_col, 1);
+        auto* main_row = new QHBoxLayout();
+        main_row->setContentsMargins(0, 0, 0, 0);
+        main_row->setSpacing(0);
+        buildTemplatesArea(main_row);
+        buildDiagnosticsPanel(main_row);
+        right_col->addLayout(main_row, 1);
+
+        // Combine the left and right columns into the main layout
+        auto* split_row = new QHBoxLayout();
+        split_row->setContentsMargins(0, 0, 0, 0);
+        split_row->setSpacing(0);
+        split_row->addWidget(rail);
+        split_row->addLayout(right_col, 1);
+        root->addLayout(split_row, 1);
+
+        // Slim version footer spanning the bottom of the content column.
+        auto* footer = new QWidget(this);
+        footer->setObjectName("home_footer");
+        footer->setFixedHeight(30);
+        auto* footer_row = new QHBoxLayout(footer);
+        footer_row->setContentsMargins(40, 0, 40, 0);
+        footer_row->addStretch(1);
+        auto* version = new QLabel("DSFE v1.0.0-beta", footer);
+        version->setObjectName("footer_text");
+        footer_row->addWidget(version);
+        root->addWidget(footer);
 
         connect(_recents_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
             const QString path = item->data(Qt::UserRole).toString();
@@ -155,10 +177,10 @@ namespace Workspace {
         into->addWidget(head);
     }
 
-    void HomePage::buildTemplateArea(QVBoxLayout* into) {
+    void HomePage::buildTemplatesArea(QHBoxLayout* into) {
         auto* area = new QWidget(this);
         auto* col = new QVBoxLayout(area);
-        col->setContentsMargins(40, 12, 40, 24);
+        col->setContentsMargins(40, 12, 24, 24);
         col->setSpacing(16);
         // Header for the template area
         auto* head = new QLabel("Templates", area);
@@ -189,33 +211,31 @@ namespace Workspace {
         grid->setColumnStretch(3, 1); // Add stretch to the last column to push cards to the left
         col->addLayout(grid);
         col->addStretch(1);
-        into->addWidget(area, 1);
+        into->addWidget(area, 3);   // templates take ~75% of the main row
     }
 
-    void HomePage::buildDiagnosticsFooter(QVBoxLayout* into) {
-        auto* footer = new QWidget(this);
-        footer->setObjectName("home_footer");
-        footer->setFixedHeight(52);
-        auto* row = new QHBoxLayout(footer);
-        row->setContentsMargins(40, 12, 40, 12);
-        row->setSpacing(0);
+void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
+        auto* panel = new QWidget(this);
+        panel->setObjectName("diag_panel");
+        auto* col = new QVBoxLayout(panel);
+        col->setContentsMargins(24, 12, 40, 24);
+        col->setSpacing(12);
 
-        _footer_content = new QWidget(footer);
-        auto* content_row = new QHBoxLayout(_footer_content);
-        content_row->setContentsMargins(0, 0, 0, 0);
-        content_row->setSpacing(18);
-        auto* loading = new QLabel("Loading system diagnostics...", _footer_content);
+        auto* header = new QLabel("System", panel);
+        header->setObjectName("section_header");
+        col->addWidget(header);
+
+        _diag_content = new QWidget(panel);
+        auto* placeholder_col = new QVBoxLayout(_diag_content);
+        placeholder_col->setContentsMargins(0, 0, 0, 0);
+        auto* loading = new QLabel("Loading system information...", _diag_content);
         loading->setObjectName("footer_text");
-        content_row->addWidget(loading);
-        row->addWidget(_footer_content);
+        placeholder_col->addWidget(loading);
+        col->addWidget(_diag_content);
 
-        row->addStretch(1);
+        col->addStretch(1);
 
-        auto* version = new QLabel("DSFE v1.0.0-beta", footer);
-        version->setObjectName("footer_version");
-        row->addWidget(version);
-
-        into->addWidget(footer);
+        into->addWidget(panel, 1);   // diagnostics take ~25% of the main row
 
         populateDiagnostics();
     }
@@ -254,15 +274,14 @@ namespace Workspace {
             row->addWidget(cell);
         };
         // neofetch-ish palette (because I like it)
-        addField("OS", si.os, "rgb(236,64,122)");            // pink
+        addField("OS", si.os, "rgb(236,64,122)");     // pink
         addField("CPU", si.processor, "rgb(102,187,106)");   // green
         addField("RAM", si.ram, "rgb(255,167,38)");          // amber
         addField("GPU", si.gpus.join("  |  "), "rgb(86,156,214)");  // blue accent
-        addField("DISK", si.storage, "rgb(171,130,255)");    // purple
         if (!si.vulkanVersion.isEmpty()) { addField("VK", si.vulkanVersion, "rgb(120,144,156)"); }  // slate
         // Live solver status - green if a Vulkan device was found.
         const bool ready = !si.gpus.isEmpty() && si.gpus.first() != "No hardware GPU";
-        addField("SOLVER", ready ? "Ready" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
+        addField("SOLVER", ready ? "Ready\n" : "CPU only", ready ? "rgb(102,187,106)" : "rgb(255,167,38)");
     }
 
     // refreshRecents repopulates the recent projects list in the UI based on the stored recent workspaces.
