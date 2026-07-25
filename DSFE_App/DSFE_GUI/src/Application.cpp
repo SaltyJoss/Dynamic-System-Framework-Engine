@@ -10,7 +10,10 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QDir>
 #include <QSurfaceFormat>
+#include <QFontDatabase>
+
 #include "MainWindow/style/DSFETheme.h"
 
 namespace fs = std::filesystem;
@@ -42,6 +45,20 @@ Application::Application(const std::string& appName) : _name(appName) {
 	QCoreApplication::setOrganizationName("DSFE");
     QCoreApplication::setApplicationName("DSFE");
 	_qtApp = std::make_unique<QApplication>(_qtArgc, _qtArgv.data());
+	// Bundled UI font for consistent appearance across platforms
+	{
+		const QString font_dir = QString::fromStdString((paths::assets() / "fonts").string());
+		for (const QString& fontFile : QDir(font_dir).entryList(QStringList() << "*.ttf" << "*.otf", QDir::Files)) {
+			const QString fontPath = font_dir + "/" + fontFile;
+			int id = QFontDatabase::addApplicationFont(fontPath);
+			if (id == -1) {
+				LOG_ERROR("Failed to load font: %s", fontPath.toStdString().c_str());
+			} else {
+				QString family = QFontDatabase::applicationFontFamilies(id).at(0);
+				LOG_INFO("Loaded font: %s from %s", family.toStdString().c_str(), fontPath.toStdString().c_str());
+			}
+		}
+	}
 	style::applyTheme(*_qtApp);
 	_sim = std::make_unique<gui::SimulationManager>();
 
