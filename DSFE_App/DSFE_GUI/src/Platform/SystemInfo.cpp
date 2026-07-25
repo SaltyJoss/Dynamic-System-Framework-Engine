@@ -25,10 +25,13 @@ namespace gui {
         char brand[0x40] = { 0 };
         __cpuid(cpuInfo, 0x80000000);
         const unsigned max_ext = static_cast<unsigned>(cpuInfo[0]);
-        if (max_ext >= 0x80000002) {
+        if (max_ext >= 0x80000004) {
             __cpuid(reinterpret_cast<int*>(cpuInfo), 0x80000002);
+            memcpy(brand, cpuInfo, sizeof(cpuInfo));
             __cpuid(reinterpret_cast<int*>(cpuInfo), 0x80000003);
+            memcpy(brand + 16, cpuInfo, sizeof(cpuInfo));
             __cpuid(reinterpret_cast<int*>(cpuInfo), 0x80000004);
+            memcpy(brand + 32, cpuInfo, sizeof(cpuInfo));
             return QString::fromLatin1(brand).trimmed();
         }
         return QString("Unknown CPU");
