@@ -11,6 +11,53 @@
 #include <QFileInfo>
 #include <QMenu>
 #include <QFrame>
+#include <QPixmap>
+#include <QMouseEvent>
+#include <functional>
+
+#include "Platform/Paths.h"
+#include "EngineLib/LogMacros.h"
+
+namespace {
+    // Click template card: Thumbnail on top, label beneath. For now, just a placeholder with a colored background and a label.
+    class TemplateCard : public QWidget {
+        public:
+            TemplateCard(const QString& name, const QString& image_path, QWidget* parent = nullptr) 
+                : QWidget(parent) 
+            {
+                setObjectName("template_card");
+                setCursor(Qt::PointingHandCursor);
+                auto* col = new QVBoxLayout(this);
+                col->setContentsMargins(0, 0, 0, 0);
+                col->setSpacing(0);
+                _thumb = new QLabel(this);
+                _thumb->setObjectName("card_thumb");
+                _thumb->setAlignment(Qt::AlignCenter);
+                _thumb->setFixedHeight(120);
+                QPixmap pm(image_path);
+                if (!pm.isNull()) {
+                    _thumb->setPixmap(pm.scaledToHeight(120, Qt::SmoothTransformation));
+                } else {
+                    _thumb->setStyleSheet("background-color: #444;"); // Placeholder background if image fails to load
+                    _thumb->setText("no preview");
+                }
+                _thumb->setScaledContents(false);
+                col->addWidget(_thumb);
+                auto* caption = new QLabel(name, this);
+                caption->setObjectName("card_caption");
+                caption->setAlignment(Qt::AlignCenter);
+                caption->setFixedHeight(38);
+                col->addWidget(caption);
+            }  
+
+            std::function<void()> onClick; // Callback for when the card is clicked
+        protected:
+            void mousePressEvent(QMouseEvent* event) override { if (onClick) { onClick(); } }
+
+        private:
+            QLabel* _thumb = nullptr;
+    };
+}
 
 namespace Workspace {
     // HomePage constructor sets up the UI elements and connects signals to slots for handling user interactions.
@@ -120,21 +167,26 @@ namespace Workspace {
         auto* grid = new QGridLayout();
         grid->setSpacing(12);
 
-        const char* placeholders[] = {
-            "Empty Project", "Pendulum Simulation", "Spring-Mass System", "Double Pendulum",
-            "Fluid Dynamics", "Electromagnetic Simulation", "VISPA Robotics Arm", "Two-Body Dynamics"
-        }; // These are just cools ideas I have, may never add them, fluid and electromagnetics are probably too much for me right now, but I am dying to computational explore them
-        int idx = 0;
-        for (const char* name : placeholders) {
-            auto* card = new QPushButton(name, area);
-            card->setObjectName("template_card");
-            card->setMinimumSize(180, 110);
-            card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            card->setCursor(Qt::PointingHandCursor);
-            card->setEnabled(false); // Disable for now, will enable when I wire up templates
-            grid->addWidget(card, idx / 3, idx % 3);
+        struct TplDef { const char* name; const char* image; };
+        const TplDef templates[] = {
+            { "Empty Project",       "empty.png" },
+            { "Pendulum Simulation", "pendulum.png" },
+            { "Spring-Mass System",  "spring_mass.png" },
+            { "Double Pendulum",     "double_pendulum.png" },
+            { "VISPA Robotics Arm",  "vispa.png" },
+            { "Two-Body Dynamics",   "two_body.png" },
+        };
+        const QString imgDir = QString::fromStdString((paths::assets() / "templates" / "thumbnails").string());
+        int idx=0;
+        for (const TplDef& tpl : templates) {
+            auto* card = new TemplateCard(tpl.name, imgDir + "/" + tpl.image, area);
+            card->setFixedWidth(300);
+            card->onClick = [this, tpl]() { LOG_INFO("Template clicked: %s", tpl.name); };
+            grid->addWidget(card, idx/3, idx%3);
             ++idx;
         }
+        grid->setColumnStretch(3, 1); // Add stretch to the last column to push cards to the left
+
         col->addLayout(grid);
         col->addStretch(1);
         into->addWidget(area, 1);

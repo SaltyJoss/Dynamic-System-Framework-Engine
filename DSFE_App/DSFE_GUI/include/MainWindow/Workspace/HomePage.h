@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <functional>
 
+#include "Platform/Logger.h"
+
 class QListWidget;
 class QVBoxLayout;
 
