@@ -86,6 +86,10 @@ namespace window {
 			rebuildRecentsMenu();
 
 			fileMenu->addSeparator();
+			auto* setFolderAction = fileMenu->addAction("Set Workspace Folder…");
+			connect(setFolderAction, &QAction::triggered, this, [this]() { setWorkspaceDir(); });
+
+			fileMenu->addSeparator();
 			auto* saveMenu = fileMenu->addMenu("Save");
 			auto* saveProjectAction = saveMenu->addAction("Project");
 			connect(saveProjectAction, &QAction::triggered, this, [this]() { saveWorkspace(); });
@@ -225,8 +229,7 @@ namespace window {
 	}
 
 	void DSFE_MainWindow::openWorkspaceDialog() {
-		const QString path = QFileDialog::getOpenFileName(this, "Open Project",
-			workspacesDir(), "DSFE Projects (*.dsfe)");
+		const QString path = QFileDialog::getOpenFileName(this, "Open Project", gui::RecentWorkspaces::workspaceDir(), "DSFE Projects (*.dsfe)");
 		if (path.isEmpty()) { return; }
 		openWorkspacePath(path);
 	}
@@ -257,15 +260,22 @@ namespace window {
 	}
 
 	bool DSFE_MainWindow::saveWorkspaceAs() {
-		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", workspacesDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
+		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", gui::RecentWorkspaces::workspaceDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
 		if (path.isEmpty()) { return false; }
 		_currentWorkspacePath = path;
 		updateTitle();
 		return saveWorkspace();
 	}
 
+	void DSFE_MainWindow::setWorkspaceDir() {
+		const QString dir = QFileDialog::getExistingDirectory(this, "Set Workspace Directory", gui::RecentWorkspaces::workspaceDir());
+		if (dir.isEmpty()) { return; }
+		gui::RecentWorkspaces::setWorkspaceDir(dir);
+		LOG_INFO("Workspace directory set to: %s", dir.toUtf8().constData());
+	}
+
 	void DSFE_MainWindow::gatherFullWorkspace(gui::WorkspaceData& w) {
-		_sim->gatherWorkspace(w);                       // robot, camera, sim properties
+		_sim->gatherWorkspace(w);
 		if (_dslEditor) {
 			w.scriptText = _dslEditor->scriptText();
 			w.scriptPath = _dslEditor->currentScriptPath();
@@ -276,7 +286,7 @@ namespace window {
 	void DSFE_MainWindow::applyFullWorkspace(const gui::WorkspaceData& w) {
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
-		_sim->applyWorkspace(w);                        // sim properties, camera, robot
+		_sim->applyWorkspace(w);
 		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
 		if (_controlPanel) { _controlPanel->refreshFromSim(); }
 	}

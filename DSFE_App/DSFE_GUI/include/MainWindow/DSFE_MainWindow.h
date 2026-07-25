@@ -33,6 +33,7 @@ namespace window {
         void openWorkspacePath(const QString& path);
         bool saveWorkspace();       // to current path, or Save As if none
         bool saveWorkspaceAs();
+		void setWorkspaceDir();
         void gatherFullWorkspace(gui::WorkspaceData& w);
         void applyFullWorkspace(const gui::WorkspaceData& w);
         void rebuildRecentsMenu();
