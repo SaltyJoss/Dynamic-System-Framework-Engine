@@ -84,6 +84,7 @@ namespace core {
         virtual void setManipulating(bool on) = 0;
 		virtual bool isManipulating() const = 0;
 		virtual bool setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) = 0;
+        virtual void clearExternalForces() = 0;
 		virtual const std::vector<mathlib::Mat4>& linkWorldTransforms() const = 0;
         virtual std::vector<std::string> linkNames() const = 0;
     };

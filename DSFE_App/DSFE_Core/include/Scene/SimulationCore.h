@@ -144,6 +144,7 @@ namespace core {
 		void setManipulating(bool on) override;
 		bool isManipulating() const override { return _manipulating.load(); }
 		bool setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) override;
+		void clearExternalForces() override;
 		const std::vector<mathlib::Mat4>& linkWorldTransforms() const override;
 		std::vector<std::string> linkNames() const override;
 
