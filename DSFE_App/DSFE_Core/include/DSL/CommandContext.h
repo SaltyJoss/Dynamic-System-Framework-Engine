@@ -38,8 +38,7 @@ namespace commands {
 		// --- INITIALISATION METHODS ---
 		utils::OpResult startSim();
 		utils::OpResult setFixedDt(double dt);
-		utils::OpResult loadSingleBody(const std::string& bodyName);
-		utils::OpResult loadMultibody(const std::string& bodyName);
+		utils::OpResult loadRigidBody(const std::string& bodyName);
 
 		// --- GLOBAL STATE METHODS ---
 
@@ -61,7 +60,7 @@ namespace commands {
 
 		// --- HELPER METHODS ---
 		core::ISimulationCore* Core() const;
-		systems::RobotSystem& RigidBody() const;
+		systems::RigidBodySystem& RigidBody() const;
 
 
 		// --- ROTATION COMMAND METHODS ---

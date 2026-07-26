@@ -7,22 +7,22 @@
 #include "DSL/RegisterCommand.h"
 
 // Motion commands
-#include "Interpreter/Commands/SpinCmd.h"
-#include "Interpreter/Commands/RotateToCmd.h"
-#include "Interpreter/Commands/RotateByCmd.h"
-#include "Interpreter/Commands/RotateJointToCmd.h"
-#include "Interpreter/Commands/RotateJointByCmd.h"
-#include "Interpreter/Commands/TrajSetCmd.h"
-#include "Interpreter/Commands/TrajClearCmd.h"
-#include "Interpreter/Commands/SetOmegaCmd.h"
+#include "DSL/Commands/SpinCmd.h"
+#include "DSL/Commands/RotateToCmd.h"
+#include "DSL/Commands/RotateByCmd.h"
+#include "DSL/Commands/RotateJointToCmd.h"
+#include "DSL/Commands/RotateJointByCmd.h"
+#include "DSL/Commands/TrajSetCmd.h"
+#include "DSL/Commands/TrajClearCmd.h"
+#include "DSL/Commands/SetOmegaCmd.h"
 
 // Primary function commands
-#include "Interpreter/Commands/StartCmd.h"
-#include "Interpreter/Commands/StopCmd.h"
-#include "Interpreter/Commands/WaitCmd.h"
-#include "Interpreter/Commands/SelectCmd.h"
-#include "Interpreter/Commands/LoadCmd.h"
-#include "Interpreter/Commands/SetCmd.h"
+#include "DSL/Commands/StartCmd.h"
+#include "DSL/Commands/StopCmd.h"
+#include "DSL/Commands/WaitCmd.h"
+#include "DSL/Commands/SelectCmd.h"
+#include "DSL/Commands/LoadCmd.h"
+#include "DSL/Commands/SetCmd.h"
 
 namespace commands {
 	// Register all commands with the factory

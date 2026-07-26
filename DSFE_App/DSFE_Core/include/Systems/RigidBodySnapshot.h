@@ -53,7 +53,7 @@ namespace systems {
 	using RigidBodySnapshot = RigidBodySnapshot_T<double>;
 
 	template<typename ToScalar, typename FromScalar>
-	inline RigidBdoySnapshot_T<ToScalar> castSnapshot(
+	inline RigidBodySnapshot_T<ToScalar> castSnapshot(
 		const RigidBodySnapshot_T<FromScalar>& src
 	) {
 		RigidBodySnapshot_T<ToScalar> dst;

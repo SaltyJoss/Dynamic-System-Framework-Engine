@@ -23,9 +23,9 @@ namespace dsl {
 
 	private:
 		IStoredProgram* _program = nullptr;
-		program_data::ProgramData _programData;
+		ProgramData _programData;
 		Command _currentCmd;
-
+ 
 		std::vector<Token> _tokens;
 		std::vector<std::string> lines;
 		size_t pos = 0;

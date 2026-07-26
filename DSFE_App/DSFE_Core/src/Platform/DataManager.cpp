@@ -697,7 +697,7 @@ namespace data {
 	void DataManager::captureJointBuffer(
 		Stream s,
 		std::string_view topic,
-		const robots::JointLogBuffer& buf
+		const systems::JointLogBuffer& buf
 	) {
 		HDF5StreamWriter* writer = nullptr;
 

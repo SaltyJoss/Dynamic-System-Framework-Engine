@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-namespace robots {
+namespace systems {
 	// Struct for logging joint data each step (for later analysis)
     struct JointLogBuffer {
 		// Sim Metadata

@@ -7,8 +7,8 @@
 #include "EngineCore.h"
 #include "Systems/RigidBodyModel.h"
 
-#include "Physics/SpatialModel.h"
-#include "System/RigidBodySimSnapshot.h"
+#include "Systems/SpatialModel.h"
+#include "Systems/RigidBodySnapshot.h"
 #include "Physics/DynamicsTypes.h"
 
 #include <kinematics/Forward_Kinematics.h>
@@ -43,7 +43,7 @@ namespace systems {
 	struct RigidBodyStepResult_T {
 		integration::StepOut_T<Scalar> stepOut;
 		RigidBodySnapshot_T<Scalar> snap;
-		DynamicsResult<Scalar> dynamics;
+		physics::DynamicsResult<Scalar> dynamics;
 		mathlib::VecX_T<Scalar> tau_rnea;
 	};
 
@@ -75,9 +75,9 @@ namespace systems {
 
 		std::string findRootLink() const;
 
-        bool hasLinkName(const std::string& linkName) const { return _linkIndex.find(linkName) != _linkIndex.end(); }
-        const std::string& rigidbodyName() const { return _body.name; }
-        bool hasRigidBody() const { return _hasRigidBody; }
+        bool hasLinkName(const std::string& linkName) const { return _link_idx.find(linkName) != _link_idx.end(); }
+        const std::string& rigidBodyName() const { return _body.name; }
+        bool hasRigidBody() const { return _hasBody; }
 
 		void setGravity(double g);
 		const double getGravity() const { return _gravity; }
@@ -93,7 +93,7 @@ namespace systems {
 		}
 
 		// Get pointer to this Systemsystem
-		const Systemsystem& getRigidBody() const { return *this; }
+		const RigidBodySystem& getRigidBody() const { return *this; }
 
 		// ---- Joint State Methods ---
 
@@ -145,10 +145,10 @@ namespace systems {
 
         // --- RIGIDBODY LINK AND ROOT POSE METHODS ---
 
-        bool setLinkRotation(const std::string& childLinkName, double angleDeg);
-		mathlib::Mat4 setRoot(const mathlib::Vec3& pos, const mathlib::Quat& rot);
-        void setRootPose(const mathlib::Vec3& pos, const mathlib::Quat& rot);
-		void setRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
+        bool setRigidBodyLinkRotation(const std::string& childLinkName, double angleDeg);
+		mathlib::Mat4 setRigidBodyRoot(const mathlib::Vec3& pos, const mathlib::Quat& rot);
+        void setRigidBodyRootPose(const mathlib::Vec3& pos, const mathlib::Quat& rot);
+		void setRigidBodyRootHome(const mathlib::Vec3& pos, const mathlib::Quat& rot);
 
 		bool setDefaultPoseDeg();
 		void setCurrentJointIndex(int index) { _currentJointIndex = index; }
@@ -197,17 +197,17 @@ namespace systems {
 		void buildSpatialModel();
 
 		template<typename Scalar, typename IntegratorT>
-		SystemstepResult_T<Scalar> step_impl(
+		RigidBodyStepResult_T<Scalar> step_impl(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar dt, Scalar t, IntegratorT& integrator,
-			DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
+			physics::DynamicsScratch<Scalar>& dynamicScratch, physics::DynamicsResult<Scalar>& dynamicResult
 		);
 
 		template<typename T>
-		void postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<T>& scratch, const RigidBodyStepResult_T<T>& result);
+		void postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& scratch, const RigidBodyStepResult_T<T>& result);
 
-		std::unique_ptr<RigidBodyKinematics> _kinematics;
-		std::unique_ptr<RigidBodyDynamics> _dynamics;
+		std::unique_ptr<physics::RigidBodyKinematics> _kinematics;
+		std::unique_ptr<physics::RigidBodyDynamics> _dynamics;
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
@@ -245,7 +245,7 @@ namespace systems {
 		void unpackRefState(const mathlib::VecX& xr);
 
 		// Enforce joint limits after integration
-		void enforceJointLimits(Joint& j);
+		void enforceJointLimits(RigidBodyJoint& j);
 
 		// Simulation time
 		double _simTime = 0.0;
@@ -257,11 +257,11 @@ namespace systems {
 		SpatialModel<double> _spatialModel;
 		RigidBodyConstModel _constModel;
 
-		DynamicsScratch<double> _dynScratch;
-		DynamicsResult<double> _dynResult;
+		physics::DynamicsScratch<double> _dynScratch;
+		physics::DynamicsResult<double> _dynResult;
 
-		DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
-		DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
+		physics::DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
+		physics::DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
 
 		// World to rigidbody base transform (meters)
 		std::vector<Mat4> _worldTransforms;
@@ -325,4 +325,4 @@ namespace systems {
 
 	};
 } // namespace rigidbody
-#include "SystemsystemStep.inl"
+#include "Systems/RigidBodySystemStep.inl"

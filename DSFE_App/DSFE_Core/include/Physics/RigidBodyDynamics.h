@@ -13,7 +13,7 @@
 #include "Physics/SpatialDynamics.h"
 #include "Systems/SpatialModel.h"
 #include "Physics/RigidBodyKinematics.h"
-#include "Systems/RigidBodySimSnapshot.h"
+#include "Systems/RigidBodySnapshot.h"
 
 #include "Systems/TrajectoryManager.h"
 
@@ -42,7 +42,7 @@ namespace physics {
 
 		// Computes the inertia tensor of a body link
 		template<typename Scalar>
-		mathlib::Mat3_T<Scalar> computeLinkInertiaTensor(const Link& link) const;
+		mathlib::Mat3_T<Scalar> computeLinkInertiaTensor(const systems::RigidBodyLink& link) const;
 
 		// Computes the contribution of a single joint and its child link to the effective inertia I_eff of the joint
 		template<typename Scalar>
@@ -155,10 +155,10 @@ namespace physics {
 		// References and pointers
 		std::unique_ptr<RigidBodyKinematics> _kinematics = nullptr;
 
-		static bool isControlledJoint(eJointType t) {
+		static bool isControlledJoint(systems::eJointType t) {
 			return
-				t == eJointType::REVOLUTE ||
-				t == eJointType::PRISMATIC;
+				t == systems::eJointType::REVOLUTE ||
+				t == systems::eJointType::PRISMATIC;
 		}
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
@@ -169,4 +169,4 @@ namespace physics {
 	};
 } // namespace physics
 
-#include "Systems/RigidBodyDynamics.inl"
+#include "Physics/RigidBodyDynamics.inl"

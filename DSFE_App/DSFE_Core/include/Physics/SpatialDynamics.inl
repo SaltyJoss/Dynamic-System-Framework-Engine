@@ -7,7 +7,7 @@
 namespace physics {
 	template<typename Scalar>
 	void SpatialDynamics::computeSpatialKinematicsAndBias(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& q,
 		const mathlib::VecX_T<Scalar>& qd,
 		std::vector<mathlib::SpatialMat_T<Scalar>>& Xup_out,
@@ -20,18 +20,18 @@ namespace physics {
 		c_out.resize(n);
 
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 
 			// Joint Transform XJ
 			mathlib::SpatialMat_T<Scalar> XJ = mathlib::SpatialMat_T<Scalar>::Identity();
 
-			if (j.type == eJointType::REVOLUTE) {
+			if (j.type == systems::eJointType::REVOLUTE) {
 				mathlib::Vec3_T<Scalar> axis = mathlib::safeNormalised(j.S.angular());
 				mathlib::Mat3_T<Scalar> R = mathlib::AngleAxis(q[i], axis);
 				mathlib::Vec3_T<Scalar> r = mathlib::Vec3_T<Scalar>::Zero();
 				XJ = mathlib::spatialTransform(R, r);
 			}
-			else if (j.type == eJointType::PRISMATIC) {
+			else if (j.type == systems::eJointType::PRISMATIC) {
 				mathlib::Vec3_T<Scalar> axis = mathlib::safeNormalised(j.S.linear());
 				mathlib::Vec3_T<Scalar> r = q[i] * axis;
 				mathlib::Mat3_T<Scalar> R = mathlib::Mat3_T<Scalar>::Identity();
@@ -54,7 +54,7 @@ namespace physics {
 
 	template<typename Scalar>
 	void SpatialDynamics::computeAccelerations_RNEA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& qdd,
 		const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
 		const std::vector<mathlib::SpatialVec_T<Scalar>>& c,
@@ -70,7 +70,7 @@ namespace physics {
 			g.template segment<3>(3);
 
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 			mathlib::SpatialVec_T<Scalar> aJ = j.S * qdd[i]; // Joint Acceleration
 
 			// Root Link
@@ -85,7 +85,7 @@ namespace physics {
 
 	template<typename Scalar>
 	void SpatialDynamics::computeBackwardForces_RNEA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
 		const std::vector<mathlib::SpatialVec_T<Scalar>>& v,
 		const std::vector<mathlib::SpatialVec_T<Scalar>>& a,
@@ -98,7 +98,7 @@ namespace physics {
 
 		// Forward Force Computation
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 			mathlib::SpatialVec_T<Scalar> I_v = j.inertia * v[i];
 			mathlib::SpatialVec_T<Scalar> coriolis = crossForce(v[i], I_v);
 			f[i].v = j.inertia * a[i].v + coriolis.v;
@@ -106,7 +106,7 @@ namespace physics {
 
 		// Backward Recursion Computation
 		for (int i = (int)n - 1; i >= 0; --i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 			tau_out[i] = j.S.dot(f[i]);
 			mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
 			if (j.parent >= 0) { f[j.parent] += XupT * f[i]; }
@@ -115,7 +115,7 @@ namespace physics {
 
 	template<typename Scalar>
 	mathlib::VecX_T<Scalar> SpatialDynamics::RNEA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& q,
 		const mathlib::VecX_T<Scalar>& qd,
 		const mathlib::VecX_T<Scalar>& qdd,
@@ -142,7 +142,7 @@ namespace physics {
 
 	template<typename Scalar>
 	mathlib::MatX_T<Scalar> SpatialDynamics::CRBA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const std::vector<mathlib::SpatialMat_T<Scalar>>& Xup,
 		DynamicsScratch<Scalar>& scratch
 	) {
@@ -155,8 +155,8 @@ namespace physics {
 
 		// Upward pass: propagate spatial inertia from child links to parent joints
 		for (int i = (int)n - 1; i >= 0; --i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
-			if (j.type == eJointType::FIXED) { continue; }
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
+			if (j.type == systems::eJointType::FIXED) { continue; }
 			int p = j.parent;
 			if (p >= 0) {
 				mathlib::MatX_T<Scalar> XupT = Xup[i].transpose();
@@ -166,8 +166,8 @@ namespace physics {
 
 		// Downward pass: compute mass matrix contributions for each joint
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
-			if (j.type == eJointType::FIXED) { continue; }
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
+			if (j.type == systems::eJointType::FIXED) { continue; }
 			mathlib::SpatialVec_T<Scalar> F = Ic[i] * j.S;
 			scratch.dense.M(i, i) = j.S.dot(F);
 
@@ -186,7 +186,7 @@ namespace physics {
 
 	template<typename Scalar>
 	void SpatialDynamics::computeArticulatedBodies_ABA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const std::vector<SpatialMat_T<Scalar>>& Xup,
 		const std::vector<SpatialVec_T<Scalar>>& v,
 		const std::vector<SpatialVec_T<Scalar>>& c,
@@ -210,9 +210,9 @@ namespace physics {
 
 		// Upward pass: compute articulated body inertias and bias forces
 		for (int i = (int)n - 1; i >= 0; --i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 
-			if (j.type == eJointType::FIXED) {
+			if (j.type == systems::eJointType::FIXED) {
 				Ia_out[i] = IA_out[i];
 				if (j.parent >= 0) {
 					mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
@@ -244,7 +244,7 @@ namespace physics {
 
 	template<typename Scalar>
 	void SpatialDynamics::computeAccelerations_ABA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const std::vector<SpatialMat_T<Scalar>>& Xup,
 		const std::vector<SpatialVec_T<Scalar>>& c,
 		const mathlib::VecX_T<Scalar>& u_out,
@@ -259,12 +259,12 @@ namespace physics {
 		qdd_out.resize(n);
 
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& j = model.joints[i];
+			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 
 			if (j.parent < 0) { a_out[i] = Xup[i] * a0 + c[i]; }
 			else { a_out[i] = Xup[i] * a_out[j.parent] + c[i]; }
 
-			if (j.type == eJointType::FIXED) {
+			if (j.type == systems::eJointType::FIXED) {
 				qdd_out[i] = Scalar(0);
 				continue;
 			}
@@ -276,7 +276,7 @@ namespace physics {
 
 	template<typename Scalar>
 	mathlib::VecX_T<Scalar> SpatialDynamics::ABA(
-		const SpatialModel<Scalar>& model,
+		const systems::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& q,
 		const mathlib::VecX_T<Scalar>& qd,
 		const mathlib::VecX_T<Scalar>& tau,

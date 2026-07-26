@@ -33,7 +33,7 @@ namespace commands {
 		utils::AxisMask _axes{};
 		double _remainingTime = 0.0;
 		bool _started = false;
-		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
+		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
 		void markFailed(const std::string& message) override;

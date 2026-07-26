@@ -20,7 +20,7 @@ namespace commands {
 
 		std::string_view getName() const { return "rotateBy"; }
 		void setContext(CommandContext& cntx) override { _cntx = &cntx; }
-		program_data::CmdResult getResult() const { return _result; }
+		CmdResult getResult() const { return _result; }
 		void setResult(const CmdResult& result) { _result = result; }
 		CmdResult currentResult() const override { return getResult(); }
 

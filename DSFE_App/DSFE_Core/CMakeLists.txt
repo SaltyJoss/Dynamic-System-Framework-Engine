@@ -40,7 +40,7 @@ set(SYSTEMS_SRC
     src/Systems/SystemLoader.cpp
     src/Systems/RigidBodySystem.cpp
     src/Systems/TrajectoryManager.cpp
-    src/Systems/RigidBodySimSnapshot.cpp
+    src/Systems/RigidBodySnapshot.cpp
 )
 
 set(PHYSICS_SRC
@@ -57,30 +57,30 @@ set(PLATFORM_SRC
 )
 
 set(DSL_SRC
-    src/Interpreter/Command.cpp
-    src/Interpreter/CommandContext.cpp
-    src/Interpreter/CommandFactory.cpp
-    src/Interpreter/Parser.cpp
-    src/Interpreter/RegisterCommand.cpp
-    src/Interpreter/StoredProgram.cpp
-    src/Interpreter/Utils.cpp
-    src/Interpreter/RunWrapper.cpp
+    src/DSL/Command.cpp
+    src/DSL/CommandContext.cpp
+    src/DSL/CommandFactory.cpp
+    src/DSL/Parser.cpp
+    src/DSL/RegisterCommand.cpp
+    src/DSL/StoredProgram.cpp
+    src/DSL/Utils.cpp
+    src/DSL/RunWrapper.cpp
 
-    src/Interpreter/Commands/LoadCmd.cpp
-    src/Interpreter/Commands/ParallelGroupCmd.cpp
-    src/Interpreter/Commands/RotateByCmd.cpp
-    src/Interpreter/Commands/RotateJointByCmd.cpp
-    src/Interpreter/Commands/RotateJointToCmd.cpp
-    src/Interpreter/Commands/RotateToCmd.cpp
-    src/Interpreter/Commands/SelectCmd.cpp
-    src/Interpreter/Commands/SetCmd.cpp
-    src/Interpreter/Commands/SetOmegaCmd.cpp
-    src/Interpreter/Commands/SpinCmd.cpp
-    src/Interpreter/Commands/StartCmd.cpp
-    src/Interpreter/Commands/StopCmd.cpp
-    src/Interpreter/Commands/TrajClearCmd.cpp
-    src/Interpreter/Commands/TrajSetCmd.cpp
-    src/Interpreter/Commands/WaitCmd.cpp
+    src/DSL/Commands/LoadCmd.cpp
+    src/DSL/Commands/ParallelGroupCmd.cpp
+    src/DSL/Commands/RotateByCmd.cpp
+    src/DSL/Commands/RotateJointByCmd.cpp
+    src/DSL/Commands/RotateJointToCmd.cpp
+    src/DSL/Commands/RotateToCmd.cpp
+    src/DSL/Commands/SelectCmd.cpp
+    src/DSL/Commands/SetCmd.cpp
+    src/DSL/Commands/SetOmegaCmd.cpp
+    src/DSL/Commands/SpinCmd.cpp
+    src/DSL/Commands/StartCmd.cpp
+    src/DSL/Commands/StopCmd.cpp
+    src/DSL/Commands/TrajClearCmd.cpp
+    src/DSL/Commands/TrajSetCmd.cpp
+    src/DSL/Commands/WaitCmd.cpp
 )
 
 set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)

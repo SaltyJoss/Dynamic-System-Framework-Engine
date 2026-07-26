@@ -20,13 +20,14 @@
 
 using namespace mathlib;
 using namespace constants;
+using namespace physics;
 
 namespace systems {
 	// Constructor
 	RigidBodySystem::RigidBodySystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
 		_AD_integrator(std::make_unique<integration::DifferentiableIntegrator>()), _curIntMethod_AD(integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler),
-		_kinematics(std::make_unique<RigidBodyKinematics>()), _dynamics(std::make_unique<RigidBodyDynamics>()),
+		_kinematics(std::make_unique<physics::RigidBodyKinematics>()), _dynamics(std::make_unique<physics::RigidBodyDynamics>()),
 		_torqueMode(eTorqueMode::CONTROLLED) {
 		if (!_integrator ) { LOG_WARN("RigidBodySystem got null IntegrationService*"); }
 	}

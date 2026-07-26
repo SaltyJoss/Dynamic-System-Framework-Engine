@@ -29,7 +29,7 @@ namespace commands {
 		void execute() override;
 
 		CommandContext* _cntx = nullptr;
-		program_data::CmdResult _result = { CmdState::NotStarted, {}, "" };
+		CmdResult _result = { CmdState::NotStarted, {}, "" };
 
 	protected:
 		void markFailed(const std::string& message) override;

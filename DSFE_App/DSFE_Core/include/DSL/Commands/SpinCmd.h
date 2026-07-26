@@ -7,8 +7,8 @@
 #include "EngineCore.h"
 #include <core/Types.h>
 
-#include "Interpreter/Command.h"
-#include "Interpreter/CommandContext.h"
+#include "DSL/Command.h"
+#include "DSL/CommandContext.h"
 
 namespace commands {
 

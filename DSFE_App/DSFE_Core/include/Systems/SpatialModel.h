@@ -33,4 +33,4 @@ namespace systems {
 		SpatialModel<ScalarT> cast() const;
 	};
 } // namespace systems
-#include "SpatialModelCast.inl"
+#include "Systems/SpatialModelCast.inl"

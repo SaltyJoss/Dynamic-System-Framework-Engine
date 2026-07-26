@@ -4,11 +4,11 @@
  */
 #include "pch.h"
 
-#include "Systems/RigidBodyKinematics.h"
+#include "Physics/RigidBodyKinematics.h"
 
 using namespace mathlib;
 using namespace constants;
 
-namespace systems {
+namespace physics {
 	RigidBodyKinematics::RigidBodyKinematics() {}
 } // namespace systems

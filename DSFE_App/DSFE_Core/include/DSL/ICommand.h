@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 
+using namespace dsl;
+
 namespace commands {
 	// Forward declaration of ICommand for use in IStoredProgram
 	class CommandContext;
@@ -23,10 +25,10 @@ namespace commands {
 		virtual void setContext(CommandContext& cntx) = 0;
 
 		// Update command
-		virtual program_data::CmdResult update(CommandContext& cntx, double dt) = 0;
+		virtual CmdResult update(CommandContext& cntx, double dt) = 0;
 
 		// Get current result
-		virtual program_data::CmdResult currentResult() const = 0;
+		virtual CmdResult currentResult() const = 0;
 
 		// Execute command
 		virtual void execute() = 0;

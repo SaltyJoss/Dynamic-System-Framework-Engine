@@ -39,10 +39,10 @@ namespace physics {
 
 			// Compute joint motion transform based on joint axis and angle
 			Pose_T<Scalar> T_motion = mathlib::Pose_T<Scalar>::Identity();
-			if (joint.type == eJointType::REVOLUTE) {
+			if (joint.type == systems::eJointType::REVOLUTE) {
 				T_motion = jointMotionTransform<Scalar>(joint.axis.template cast<Scalar>(), q); // rotation about joint axis
 			}
-			else if (joint.type == eJointType::PRISMATIC) {
+			else if (joint.type == systems::eJointType::PRISMATIC) {
 				T_motion.template block<3, 1>(0, 3) = mathlib::safeNormalised(joint.axis) * q; // translation along joint axis
 			}
 
@@ -68,7 +68,7 @@ namespace physics {
 		std::vector<mathlib::Pose_T<Scalar>> jointWorldPoses(body.joints.size());
 
 		for (size_t i = 0; i < body.joints.size(); ++i) {
-			const RigidBodyJoint& joints = body.joints[i];
+			const systems::RigidBodyJoint& joints = body.joints[i];
 			int childIdx = body.linkIndex(joints.child);
 
 			if (childIdx < 0 || childIdx >= T_world.size()) {

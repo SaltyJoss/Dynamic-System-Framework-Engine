@@ -202,7 +202,7 @@ namespace dsl {
 				}
 
 				// inner commands
-				std::vector<program_data::Command> innerCmds;
+				std::vector<dsl::Command> innerCmds;
 				int braceDepth = 1;
 
 				// consume subsequent lines until matching '}'
@@ -224,7 +224,7 @@ namespace dsl {
 					if (t == "}") { braceDepth--; if (braceDepth == 0) break; continue; }
 
 					// parse inner command line
-					program_data::Command cmd;
+					dsl::Command cmd;
 					cmd.rawLine = std::string(innerLine);
 					cmd.lineNumber = _program->getCurrentLineNumber();
 
@@ -264,7 +264,7 @@ namespace dsl {
 					return;
 				}
 
-				program_data::Command par;
+				dsl::Command par;
 				par.cmdName = "parallel";
 				par.rawLine = std::string(line);
 				par.lineNumber = _program->getCurrentLineNumber();

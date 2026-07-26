@@ -14,7 +14,7 @@ namespace commands {
 		// Set the command context
 		void setContext(CommandContext& cntx) override { _cntx = &cntx; }
 		
-		program_data::CmdResult update(CommandContext& cntx, double dt) override;
+		dsl::CmdResult update(CommandContext& cntx, double dt) override;
 
 		void execute() override;
 

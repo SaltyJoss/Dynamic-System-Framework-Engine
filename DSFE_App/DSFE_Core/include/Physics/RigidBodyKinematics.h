@@ -4,7 +4,7 @@
 #include "EngineCore.h"
 #include <MathLib>
 #include <kinematics/Forward_Kinematics.h>
-#include "Systems/RigidBodySimSnapshot.h"
+#include "Systems/RigidBodySnapshot.h"
 
 #include "EngineLib/LogMacros.h"
 

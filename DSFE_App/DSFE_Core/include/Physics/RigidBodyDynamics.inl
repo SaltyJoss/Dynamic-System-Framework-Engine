@@ -7,7 +7,7 @@
 namespace physics {
 	// Computes the inertia tensor of a rigidbody link
 	template<typename Scalar>
-	mathlib::Mat3_T<Scalar> RigidBodyDynamics::computeLinkInertiaTensor(const Link& link) const {
+	mathlib::Mat3_T<Scalar> RigidBodyDynamics::computeLinkInertiaTensor(const systems::RigidBodyLink& link) const {
 		const systems::Inertia& I = link.inertial.inertia;
 
 		// Construct the inertia tensor matrix
@@ -63,7 +63,7 @@ namespace physics {
 	// Computes the full mass matrix M(q) based on the current state and body configuration
 	template<typename Scalar>
 	void RigidBodyDynamics::computeMassMatrix(
-		const RigidBodyConstModel& body,
+		const systems::RigidBodyConstModel& body,
 		const std::vector<mathlib::Pose_T<Scalar>>& T_world,
 		const std::vector<mathlib::Pose_T<Scalar>>& jointWorldPoses,
 		mathlib::MatX_T<Scalar>& M_out
@@ -74,7 +74,7 @@ namespace physics {
 
 		// Compute its contribution to the mass matrix for each link
 		for (size_t k = 0; k < body.links.size(); ++k) {
-			const RigidBodyLink& link = body.links[k];
+			const systems::RigidBodyLink& link = body.links[k];
 			const Scalar m = link.inertial.mass;
 
 			if (m <= Scalar(0)) { continue; }
@@ -88,8 +88,8 @@ namespace physics {
 
 			// Compute Jacobian columns for each joint and accumulate mass matrix contributions
 			for (size_t i = 0; i < n; ++i) {
-				const RigidBodyJoint& j_i = body.joints[i];
-				if (j_i.type == eJointType::FIXED) { continue; }
+				const systems::RigidBodyJoint& j_i = body.joints[i];
+				if (j_i.type == systems::eJointType::FIXED) { continue; }
 				if (!body.jointAffectsLink(i, k)) { continue; } // skip if joint i does not affect link k
 
 				const mathlib::Pose_T<Scalar>& T_joint_i = jointWorldPoses[i]; // pose of joint i in world frame
@@ -104,8 +104,8 @@ namespace physics {
 
 				// Computes the contribution to the mass matrix from this link for joints i and j
 				for (size_t j = 0; j < n; ++j) {
-					const RigidBodyJoint& j_j = body.joints[j];
-					if (j_j.type == eJointType::FIXED) { continue; }
+					const systems::RigidBodyJoint& j_j = body.joints[j];
+					if (j_j.type == systems::eJointType::FIXED) { continue; }
 
 					if (!body.jointAffectsLink(j, k)) { continue; } // skip if joint j does not affect link k
 
@@ -127,7 +127,7 @@ namespace physics {
 	// Computes the Coriolis and centrifugal bias vector h(q, qd) based on the current state and body configuration
 	template<typename Scalar>
 	mathlib::VecX_T<Scalar> RigidBodyDynamics::computeCoriolisVector(
-		const RigidBodyConstModel& body,
+		const systems::RigidBodyConstModel& body,
 		const mathlib::VecX_T<Scalar>& q,
 		const mathlib::VecX_T<Scalar>& qd,
 		const std::vector<mathlib::Pose_T<Scalar>>& T_world,
@@ -186,7 +186,7 @@ namespace physics {
 	// Computes the gravity torque for a joint based on the current state and body configuration
 	template<typename Scalar>
 	mathlib::VecX_T<Scalar> RigidBodyDynamics::computeGravityTorque(
-		const RigidBodyConstModel& body,
+		const systems::RigidBodyConstModel& body,
 		const std::vector<mathlib::Pose_T<Scalar>>& T_world,
 		const std::vector<mathlib::Pose_T<Scalar>>& jointWorldPoses
 	) const {
@@ -196,8 +196,8 @@ namespace physics {
 
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
-			const RigidBodyJoint& j = body.joints[i];
-			if (j.type == eJointType::FIXED) { continue; }
+			const systems::RigidBodyJoint& j = body.joints[i];
+			if (j.type == systems::eJointType::FIXED) { continue; }
 
 			Scalar tau_g_i = Scalar(0); // [Nm], gravity torque contribution for joint i
 
@@ -209,7 +209,7 @@ namespace physics {
 
 			// For each link, compute the gravitational force and its torque contribution about joint i
 			for (size_t k = 0; k < body.links.size(); ++k) {
-				const RigidBodyLink& link = body.links[k];
+				const systems::RigidBodyLink& link = body.links[k];
 				const Scalar m = (Scalar)link.inertial.mass;
 				if (m <= Scalar(0)) { continue; }
 
@@ -236,7 +236,7 @@ namespace physics {
 	// Computes the analytical Jacobian matrix J(q) for the body based on the current state and body configuration
 	template<typename Scalar>
 	void RigidBodyDynamics::analyticalJacobian(
-		const RigidBodyConstModel& body,
+		const systems::RigidBodyConstModel& body,
 		const mathlib::VecX_T<Scalar>& x,
 		mathlib::MatX_T<Scalar>& J_out,
 		DenseDynamicsScratch<Scalar>& scratch
@@ -257,8 +257,8 @@ namespace physics {
 		mathlib::MatX_T<Scalar> dTau_dv = mathlib::MatX::Zero(n, n);
 
 		for (size_t i = 0; i < n; ++i) {
-			const RigidBodyJoint& joint = body.joints[i];
-			if (joint.type == eJointType::FIXED) { continue; }
+			const systems::RigidBodyJoint& joint = body.joints[i];
+			if (joint.type == systems::eJointType::FIXED) { continue; }
 
 			const Scalar wn = static_cast<Scalar>(joint.wn_target);	 // [rad/s], natural frequency
 			const Scalar z = static_cast<Scalar>(joint.zeta_target);  // damping ratio
@@ -294,7 +294,7 @@ namespace physics {
 	mathlib::VecX_T<Scalar> RigidBodyDynamics::derivative_dense(
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RigidBodySimSnapshot_T<Scalar>& snap,
+		const systems::RigidBodySnapshot_T<Scalar>& snap,
 		DynamicsScratch<Scalar>& scratch,
 		DynamicsResult<Scalar>& out
 	) {
@@ -316,14 +316,14 @@ namespace physics {
 		if (!scratch.dense.M.allFinite()) { throw std::runtime_error("Mass matrix contains non-finite values"); }
 
 		scratch.g.setZero();
-		if (snap.torqueMode != eTorqueMode::NONE) { scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
+		if (snap.torqueMode != systems::eTorqueMode::NONE) { scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
-			const RigidBodyJoint& joint = snap.model->joints[i];
+			const systems::RigidBodyJoint& joint = snap.model->joints[i];
 
 			// Fixed joints
-			if (joint.type == eJointType::FIXED) {
+			if (joint.type == systems::eJointType::FIXED) {
 				out.metrics.q[i] = q[i];
 				out.metrics.qd[i] = qd[i];
 				out.metrics.qdd[i] = 0.0;
@@ -396,7 +396,7 @@ namespace physics {
 		const systems::SpatialModel<Scalar>& model,
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RigidBodySimSnapshot_T<Scalar>& snap,
+		const systems::RigidBodySnapshot_T<Scalar>& snap,
 		DynamicsScratch<Scalar>& scratch,
 		DynamicsResult<Scalar>& out
 	) {
@@ -433,7 +433,7 @@ namespace physics {
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& joint = model.joints[i];
+			const systems::SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) {
 				scratch.dense.tau[i] = Scalar(0);
 				continue;
@@ -487,7 +487,7 @@ namespace physics {
 	void RigidBodyDynamics::jacobian_spatial(
 		const systems::SpatialModel<Scalar>& model,
 		const mathlib::VecX_T<Scalar>& x,
-		const RigidBodySimSnapshot_T<Scalar>& snap,
+		const systems::RigidBodySnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		mathlib::MatX_T<Scalar>& F_out,
@@ -514,7 +514,7 @@ namespace physics {
 		mathlib::MatX_T<Scalar> dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);
 
 		for (size_t i = 0; i < n; ++i) {
-			const SpatialJoint<Scalar>& joint = model.joints[i];
+			const systems::SpatialJoint<Scalar>& joint = model.joints[i];
 			if (!isControlledJoint(joint.type)) { continue; }
 			dTau_dq(i, i) = -kp[i];
 			const Scalar b = static_cast<Scalar>(snap.model->joints[i].dynamics.damping); // viscous damping coefficient
@@ -549,7 +549,7 @@ namespace physics {
 	mathlib::VecX_T<Scalar> RigidBodyDynamics::derivative_with_gains(
 		Scalar t,
 		const mathlib::VecX_T<Scalar>& x,
-		const RigidBodySimSnapshot_T<Scalar>& snap,
+		const systems::RigidBodySnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		DynamicsScratch<Scalar>& scratch,
@@ -568,14 +568,14 @@ namespace physics {
 		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
 
 		scratch.g.setZero();
-		if (snap.torqueMode != eTorqueMode::NONE) {
+		if (snap.torqueMode != systems::eTorqueMode::NONE) {
 			scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
-			const RigidBodyJoint& joint = snap.model->joints[i];
-			if (joint.type == eJointType::FIXED) continue;
+			const systems::RigidBodyJoint& joint = snap.model->joints[i];
+			if (joint.type == systems::eJointType::FIXED) continue;
 
 			const Scalar eps = static_cast < Scalar>(1e-6);
 			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
@@ -603,7 +603,7 @@ namespace physics {
 	template<typename Scalar>
 	void RigidBodyDynamics::jacobian_with_gains(
 		const mathlib::VecX_T<Scalar>& x,
-		const RigidBodySimSnapshot_T<Scalar>& snap,
+		const systems::RigidBodySnapshot_T<Scalar>& snap,
 		const mathlib::VecX_T<Scalar>& kp,
 		const mathlib::VecX_T<Scalar>& kd,
 		mathlib::MatX_T<Scalar>& F_out,
@@ -626,8 +626,8 @@ namespace physics {
 		mathlib::MatX_T<Scalar> dTau_dv = mathlib::MatX_T<Scalar>::Zero(n, n);
 
 		for (size_t i = 0; i < n; ++i) {
-			const RigidBodyJoint& joint = snap.model->joints[i];
-			if (joint.type == eJointType::FIXED) continue;
+			const systems::RigidBodyJoint& joint = snap.model->joints[i];
+			if (joint.type == systems::eJointType::FIXED) continue;
 
 			dTau_dq(i, i) = -kp[i];
 

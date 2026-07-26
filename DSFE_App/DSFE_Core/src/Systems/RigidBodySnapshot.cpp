@@ -4,7 +4,7 @@
  */
 #include "pch.h"
 
-#include "Systems/RigidBodySimSnapshot.h"
+#include "Systems/RigidBodySnapshot.h"
 
 namespace systems {
 	// Method to check if a joint affects a link

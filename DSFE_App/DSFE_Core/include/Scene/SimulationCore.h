@@ -26,7 +26,7 @@
 namespace control	  { class TrajectoryManager; }
 namespace systems	  { class RigidBodySystem; }
 namespace single_body_system { class SingleBodySystem; }
-namespace interpreter { class IStoredProgram; }
+namespace dsl { class IStoredProgram; }
 
 namespace core {
 	// configurable defaults (not part of class to allow tuning without recompilation)
@@ -80,7 +80,7 @@ namespace core {
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access
-		systems::RigidBodySystem& rigidBoySystem() override;
+		systems::RigidBodySystem& rigidBodySystem() override;
 		single_body_system::SingleBodySystem& singleBodySystem() override;
 		control::TrajectoryManager& trajectoryManager() override;
 		
@@ -95,7 +95,7 @@ namespace core {
 		void loadRigidBodyInternal(const std::string& name); // Internal method that assumes ownership
 
 		// Run a script to completion synchronously with a specific integrator
-		bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) override;
+		bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) override;
 
 		// Telemetry
 		diagnostics::TelemetryRecorder& telemetry() override;
@@ -135,8 +135,8 @@ namespace core {
 		std::string& lastScriptText() override { return _lastScriptText; }
 
 		// Accesors for the active script program
-		void setActiveProgram(interpreter::IStoredProgram* p) override;
-		interpreter::IStoredProgram* activeProgram() const override;
+		void setActiveProgram(dsl::IStoredProgram* p) override;
+		dsl::IStoredProgram* activeProgram() const override;
 
 		bool rigidBodyPresentationDirty() const override { return _rigidBodyPresentationDirty; }
 		void clearRigidBodyPresentationDirty() override { _rigidBodyPresentationDirty = false; }
@@ -144,7 +144,7 @@ namespace core {
 	private:
 		// Export thread management
 		void exportThreadMain();
-		void scriptParallelisation(interpreter::IStoredProgram* program);
+		void scriptParallelisation(dsl::IStoredProgram* program);
 
 		std::thread _expThread;
 		std::mutex _expMutex;
@@ -184,7 +184,7 @@ namespace core {
 		std::string _runTag;
 
 		// Active Script Program
-		interpreter::IStoredProgram* _activeProgram = nullptr;
+		dsl::IStoredProgram* _activeProgram = nullptr;
 		bool _rigidBodyPresentationDirty = false;
 		bool _singleBodyPresentationDirty = false;
 

@@ -19,7 +19,7 @@ namespace commands {
 
 	// constructor
 	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (id == "rigidbody") { _target.type = LoadTargetType::rigidBody ; }
+		if (id == "rigidbody") { _target.type = LoadTargetType::RigidBody ; }
 		else {
 			std::string errMsg = "Invalid load(<target>,...) identifier -> " + id;
 			markFailed(errMsg);
@@ -60,7 +60,7 @@ namespace commands {
 			D_FAIL(errMsg.c_str());
 			return nullptr;
 		}
-		id = std::tolower(id);
-		return std::make_unique<LoadCmd>(id, tokens);
+		std::string id_lower = toLower(id);
+		return std::make_unique<LoadCmd>(id_lower, tokens);
 	}
 } // namespace commands

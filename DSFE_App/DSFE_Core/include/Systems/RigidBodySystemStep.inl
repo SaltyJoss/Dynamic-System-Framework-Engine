@@ -6,7 +6,7 @@
 
 namespace systems {
 	template<typename T>
-	T RigidBodySystem::clampJointAngle_T(const Joint& joint, T angleRad) {
+	T RigidBodySystem::clampJointAngle_T(const RigidBodyJoint& joint, T angleRad) {
 		if (joint.limits.continuous) { return mathlib::wrapRad<T>(angleRad); }
 		else { return std::clamp(angleRad, T(joint.limits.minAngle), T(joint.limits.maxAngle)); }
 	}
@@ -14,7 +14,7 @@ namespace systems {
 	// Method to take a snapshot of the current rigidbody state
 	template<typename T>
 	RigidBodySnapshot_T<T> RigidBodySystem::takeSnapshot(T simTime) const {
-		SystemsimSnapshot_T<T> snap;
+		RigidBodySnapshot_T<T> snap;
 		snap.model = &_constModel;
 		const size_t n = (size_t)_body.joints.size();
 
@@ -53,9 +53,9 @@ namespace systems {
 	RigidBodyStepResult_T<Scalar> RigidBodySystem::step_impl(
 		const mathlib::VecX_T<Scalar>& x,
 		Scalar dt, Scalar t, IntegratorT& integrator,
-		DynamicsScratch<Scalar>& dynamicScratch, DynamicsResult<Scalar>& dynamicResult
+		physics::DynamicsScratch<Scalar>& dynamicScratch, physics::DynamicsResult<Scalar>& dynamicResult
 	) {
-		SystemstepResult_T<Scalar> result;
+		RigidBodyStepResult_T<Scalar> result;
 		result.snap = takeSnapshot<Scalar>(t);
 		auto& snap = result.snap;
 		const size_t n = snap.model->joints.size();
@@ -74,7 +74,7 @@ namespace systems {
 		auto& dynScratch = dynamicScratch;
 		auto& dynResult = dynamicResult;
 
-		SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
+		physics::SpatialDynamics::computeSpatialKinematicsAndBias<Scalar>(
 			spatialModel,
 			q, qd,
 			dynScratch.spatial.Xup,
@@ -82,7 +82,7 @@ namespace systems {
 		);
 
 		// CRBA only for controller inertia scaling
-		mathlib::MatX_T<Scalar> M_start = SpatialDynamics::CRBA<Scalar>(
+		mathlib::MatX_T<Scalar> M_start = physics::SpatialDynamics::CRBA<Scalar>(
 			spatialModel,
 			dynScratch.spatial.Xup,
 			dynScratch
@@ -103,7 +103,7 @@ namespace systems {
 		}
 
 		// Compute RNEA torques for feedforward control
-		mathlib::VecX_T<Scalar> tau_rnea = SpatialDynamics::RNEA<Scalar>(
+		mathlib::VecX_T<Scalar> tau_rnea = physics::SpatialDynamics::RNEA<Scalar>(
 			spatialModel,
 			q, qd, qdd,
 			dynScratch
@@ -153,7 +153,7 @@ namespace systems {
 	}
 
 	template<typename T>
-	void RigidBodySystem::postStepUpdate(const mathlib::VecX& x, const DynamicsScratch<T>& dynScratch, const SystemstepResult_T<T>& result) {
+	void RigidBodySystem::postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& dynScratch, const RigidBodyStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
 
 		Eigen::Map<const mathlib::VecX> q_next(x.data(), n);
@@ -186,10 +186,10 @@ namespace systems {
 		double g = _dynamics->getGravity();
 
 		for (size_t k = 0; k < _body.links.size(); ++k) {
-			const Link& link = _body.links[k];
+			const RigidBodyLink& link = _body.links[k];
 			const double m = link.inertial.mass;
 			if (m <= 0.0) { continue; }
-			Vec3 com_world = (T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + T_world[k].block<3, 1>(0, 3);
+			mathlib::Vec3 com_world = (T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + T_world[k].block<3, 1>(0, 3);
 			sys_PE += m * g * com_world.z();
 		}
 
@@ -203,7 +203,7 @@ namespace systems {
 		if (buf) {
 			auto dynResult = result.dynamics;
 			for (size_t i = 0; i < n; ++i) {
-				const Joint& j = _body.joints[i];
+				const RigidBodyJoint& j = _body.joints[i];
 
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
 				const double err = q_ref_real[i] - q_real[i];

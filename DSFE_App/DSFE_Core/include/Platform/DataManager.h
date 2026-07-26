@@ -17,7 +17,7 @@
 
 typedef int64_t hid_t; // Placeholder for HDF5 type, compiled file will include the actual HDF5 headers
 
-namespace robots { struct JointLogBuffer; }
+namespace systems { struct JointLogBuffer; }
 
 namespace data {
     // Variant type to hold different data types
@@ -107,7 +107,7 @@ namespace data {
         void captureJointBuffer(
             Stream s,
             std::string_view topic,
-            const robots::JointLogBuffer& buf
+            const systems::JointLogBuffer& buf
         );
 
 		bool enabled() const { return _enabled; }
