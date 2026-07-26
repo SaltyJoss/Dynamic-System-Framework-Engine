@@ -326,7 +326,9 @@ namespace systems {
 		const size_t n = _body.joints.size();
 		mathlib::VecX x = packState();
 
+		assembleExtForces(_dynScratch);
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
+		clearExtForces();
 
 		unpackState(result.stepOut.x_next);
 		_dynamics->setDt(result.stepOut.dt_taken);
@@ -542,15 +544,37 @@ namespace systems {
 		return _body.links.empty() ? "" : _body.links.front().name; // fallback
 	}
 
+	// Method to get the world origin of a specific rigidBody link by name
+	bool RigidBodySystem::linkWorldOrigin(const std::string& linkName, mathlib::Vec3& outOrigin) const {
+		auto it = _linkIndex.find(linkName);
+		if (it == _linkIndex.end()) { return false; }
+		out = _worldTransforms[it->second].block<3,1>(0,3);
+		return true;
+	}
 	// Method to apply an external force to a specific rigidBody link at a given world point
 	bool RigidBodySystem::setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) {
 		if (!_hasBody) { return false; }
 		auto it = _link_idx.find(linkName);
 		if (it == _link_idx.end()) { return false; }
-		_pendingExtForces.emplace_back(it->second, worldPoint, worldForce);
+		const int linkIdx = it->second;
+
+		// Find the joint whose child is this link — that's the body ABA indexes.
+		int jointIdx = -1;
+		for (size_t j = 0; j < _robot.joints.size(); ++j) {
+			auto cit = _linkIndex.find(_robot.joints[j].child);
+			if (cit != _linkIndex.end() && cit->second == linkIdx) { jointIdx = (int)j; break; }
+		}
+		if (jointIdx < 0) { return false; }   // root/base link: no governing joint (see note)
+
+		_pendingExtForces.emplace_back(jointIdx, linkIdx, worldPoint, worldForce);
 		return true;
 	}
-
+	// Overload to apply an external force to a specific rigidBody link at its world origin
+	bool RigidBodySystem::setLinkExternalForce(const std::string& linkName, const mathlib::Vec3& worldForce) {
+		mathlib::Vec3 o;
+		if (!linkWorldOrigin(linkName, o)) { return false; }
+		return setLinkExternalForce(linkName, o, worldForce);
+	}
 	// Method to clear all pending external forces applied to rigidBody links
 	void RigidBodySystem::clearExtForces() { _pendingExtForces.clear(); }
 

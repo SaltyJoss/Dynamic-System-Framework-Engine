@@ -297,9 +297,11 @@ namespace physics {
 			scratch.spatial.c
 		);
 
+		const bool hasExt = (scratch.spatial.f_ext.size() == n);
 		for (size_t i = 0; i < n; ++i) {
 			scratch.spatial.IA[i] = model.joints[i].inertia; // Articulated Body Inertia
 			scratch.spatial.pA[i] = crossForce(scratch.spatial.v[i], (scratch.spatial.IA[i] * scratch.spatial.v[i]));
+			if (hasExt) { scratch.spatial.pA[i] += scratch.spatial.f_ext[i]; }
 		}
 
 		// Compute articulated body inertias and bias forces
