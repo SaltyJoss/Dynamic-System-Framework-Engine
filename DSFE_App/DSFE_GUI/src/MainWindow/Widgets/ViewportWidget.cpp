@@ -46,7 +46,7 @@ namespace widgets {
 			return;
 		}
 	#endif
-		_sim->initialiseRenderer(n_win);
+		_sim->initialiseRenderer(n_win, static_cast<uint32_t>(width()), static_cast<uint32_t>(height()));
 		_renderer_initialised = true;
 	}
 
@@ -63,7 +63,7 @@ namespace widgets {
 			initialise_renderer();
 			return;
 		}
-		if (_sim && _renderer_initialised) { _sim->resizeRenderer(width(), height()); }
+		if (_sim && _renderer_initialised) { _sim->resizeRenderer(static_cast<uint32_t>(width()), static_cast<uint32_t>(height())); }
 	}
 
 	void ViewportWidget::paintEvent(QPaintEvent* event) {
