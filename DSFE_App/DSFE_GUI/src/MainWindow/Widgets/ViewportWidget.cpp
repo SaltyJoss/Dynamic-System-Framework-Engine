@@ -137,7 +137,11 @@ namespace widgets {
 		else if (event->button() == Qt::LeftButton && !_mouse_captured && _sim) {
 			// Pick the link whose world origin is nearest the cursor ray.
 			_dragLink = pickLink(event->position().x(), event->position().y());
-			if (!_dragLink.empty()) { _dragging = true; _sim->setManipulating(true); }
+			if (!_dragLink.empty()) { 
+				_dragging = true;
+				_sim->setManipulating(true);
+				_sim->setLinkHighlight(_dragLink, true);
+			}
 		}
 	}
 
@@ -149,8 +153,9 @@ namespace widgets {
 		}
 		else if (event->button() == Qt::LeftButton && _dragging) {
 			_dragging = false;
+			if (_sim && !_dragLink.empty()) { _sim->setLinkHighlight(_dragLink, false); }
 			_dragLink.clear();
-			if (_sim) { _sim->setManipulating(false); }
+			if (_sim) { _sim->clearExternalForces(); }
 		}
 	}
 
@@ -165,9 +170,12 @@ namespace widgets {
 		}
 		if (_dragging && !_dragLink.empty()) {
 			// Unproject the cursor onto a view-parallel plane through the grab point, then push the link toward it with a spring.
-			const glm::vec3 target = cursorToDragPlane(event->position().x(), event->position().y());
-			const glm::vec3 grab   = linkOrigin(_dragLink);
-			const glm::vec3 force  = 800.0f * (target - grab);   // spring; tune stiffness
+			glm::vec3 target = cursorToDragPlane(event->position().x(), event->position().y());
+			if (target.y < 0.0f) { target.y = 0.0f; }   // never drag a link below the floor plane
+			const glm::vec3 grab = linkOrigin(_dragLink);
+			glm::vec3 force  = 400.0f * (target - grab);   // spring; tune stiffness
+			const float fmax = 3000.0f;
+			if (glm::length(force) > fmax) { force = glm::normalize(force) * fmax; }
 			_sim->setLinkExternalForce(_dragLink, grab, force);
 		}
 	}
@@ -194,7 +202,7 @@ namespace widgets {
 		scene::Camera& cam = _sim->camera();
 		const glm::mat4 invVP = glm::inverse(cam.getProjection() * cam.getViewMatrix());
 		// NDC (Vulkan Y-down: flip y). Near/far points -> ray.
-		const float ndcX =  2.0f * (sx / (float)width())  - 1.0f;
+		const float ndcX =  2.0f * (sx / (float)width()) - 1.0f;
 		const float ndcY =  2.0f * (sy / (float)height()) - 1.0f; // no extra flip: screen y-down matches
 		glm::vec4 pNear = invVP * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
 		glm::vec4 pFar  = invVP * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
@@ -219,7 +227,7 @@ namespace widgets {
 	glm::vec3 ViewportWidget::cursorToDragPlane(float sx, float sy) const {
 		scene::Camera& cam = _sim->camera();
 		const glm::mat4 invVP = glm::inverse(cam.getProjection() * cam.getViewMatrix());
-		const float ndcX = 2.0f * (sx / (float)width())  - 1.0f;
+		const float ndcX = 2.0f * (sx / (float)width()) - 1.0f;
 		const float ndcY = 2.0f * (sy / (float)height()) - 1.0f;
 		glm::vec4 pNear = invVP * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
 		glm::vec4 pFar  = invVP * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
