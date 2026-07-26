@@ -83,6 +83,7 @@ namespace robots {
 		std::vector<mathlib::SpatialVec_T<Scalar>> a;  // spatial acceleration
 		std::vector<mathlib::SpatialVec_T<Scalar>> pA; // articulated bias force
 		std::vector<mathlib::SpatialVec_T<Scalar>> U;  // articulated body force
+		std::vector<mathlib::SpatialVec_T<Scalar>> f_ext;  // spatial force
 
 		mathlib::VecX_T<Scalar> u; // joint force contribution
 		mathlib::VecX_T<Scalar> d; // joint inertia contribution
@@ -110,6 +111,8 @@ namespace robots {
 			a.resize(nJoints);
 			pA.resize(nJoints);
 			U.resize(nJoints);
+			f_ext.resize(nJoints);
+
 			u.resize(nJoints);
 			d.resize(nJoints);
 
@@ -131,6 +134,8 @@ namespace robots {
 			a.clear();
 			pA.clear();
 			U.clear();
+			f_ext.clear();
+
 			u.resize(0);
 			d.resize(0);
 
