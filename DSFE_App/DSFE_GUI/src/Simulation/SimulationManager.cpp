@@ -397,6 +397,35 @@ namespace gui {
     bool SimulationManager::setLinkExternalForce(const std::string& link, const glm::vec3& p, const glm::vec3& f) {
         return _core->setLinkExternalForce(link, mathlib::Vec3(p.x, p.y, p.z), mathlib::Vec3(f.x, f.y, f.z));
     }
+	void SimulationManager::clearExternalForces() { _core->clearExternalForces(); }
     const std::vector<mathlib::Mat4>& SimulationManager::linkWorldTransforms() const { return _core->linkWorldTransforms();  }
     std::vector<std::string> SimulationManager::linkNames() const { return _core->linkNames(); }
+
+	// Set a highlight color for a specific link in the rigidBody system. This is typically used to visually indicate selection or focus on a particular link in the GUI.
+	void SimulationManager::setLinkHighlight(const std::string& link, bool on) {
+		const auto names = _core->linkNames();
+		int idx = -1;
+		for (size_t i = 0; i < names.size(); ++i) { if (names[i] == link) { idx = (int)i; break; } }
+		if (idx < 0) { return; }
+		if (on) {
+			// Cache original, then tint faint blue.
+			if (const auto* r = _scene.renderable((uint32_t)idx)) {
+				_highlightIdx = idx;
+				_highlightAlbedo0 = glm::vec3(r->albedo);
+				_highlightMat0 = r->material;
+			}
+			_scene.set_material(
+				(uint32_t)idx, glm::vec3(0.6f, 1.0f, 0.3f),
+			    _highlightMat0.x, _highlightMat0.y, _highlightMat0.z
+			);
+		}
+		else if (_highlightIdx == idx) {
+			// Restore.
+			_scene.set_material(
+				(uint32_t)idx,
+				_highlightAlbedo0, _highlightMat0.x, _highlightMat0.y, _highlightMat0.z
+			);
+			_highlightIdx = -1;
+		}
+	}
 }

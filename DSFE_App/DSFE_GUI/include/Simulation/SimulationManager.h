@@ -269,9 +269,12 @@ namespace gui {
         void setManipulating(bool on);
         bool isManipulating() const;
         bool setLinkExternalForce(const std::string& link, const glm::vec3& worldPoint, const glm::vec3& worldForce);
+        void clearExternalForces();
         const std::vector<mathlib::Mat4>& linkWorldTransforms() const;
         std::vector<std::string> linkNames() const;
         scene::Camera& camera() { return _camera; }
+
+        void setLinkHighlight(const std::string& link, bool on);
 
     private:
         std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
@@ -304,6 +307,11 @@ namespace gui {
         static constexpr float planeHeight = -2.5f;
         float planeY = 2.5f;
         glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
+
+        // Highlighting
+		int _highlightIdx = -1;
+		glm::vec3 _highlightAlbedo0{1.0f};
+		glm::vec4 _highlightMat0{0.0f};
 
 		// Objects & Scene Management
 		scene::ObjectID _nextObjectID = scene::FIRST_VALID_OBJECT_ID; // Next available ObjectID
