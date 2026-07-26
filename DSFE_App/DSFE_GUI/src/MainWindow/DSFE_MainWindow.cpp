@@ -22,6 +22,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QStackedWidget>
+#include <QMessageBox>
 
 #include "Platform/Paths.h"
 
@@ -38,6 +39,9 @@ namespace window {
 		_homePage = new Workspace::HomePage(_stack);
 		_projectPage = new Workspace::ProjectPage(sim, _stack);
 		_dslEditor = _projectPage->editor();
+		if (_dslEditor) {
+			_dslEditor->onContentChanged = [this]() { mark_dirty(); };
+		}
 		_controlPanel = _projectPage->controlPanel();
 		_stack->addWidget(_homePage);       // index 0
 		_stack->addWidget(_projectPage);    // index 1
@@ -221,11 +225,13 @@ namespace window {
 	static QString workspacesDir() { return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/DSFE"; }
 
 	void DSFE_MainWindow::newWorkspace() {
+		if (!confirmDiscard()) { return; }
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
 		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
 		if (_controlPanel) { _controlPanel->refreshFromSim(); }
 		_currentWorkspacePath.clear();
+		mark_clean();
 		updateTitle();
 	}
 
@@ -236,6 +242,7 @@ namespace window {
 	}
 
 	void DSFE_MainWindow::openWorkspacePath(const QString& path) {
+		if (!confirmDiscard()) { return; }
 		gui::WorkspaceData w;
 		if (!gui::WorkspaceData::loadFromFile(path, w)) {
 			gui::RecentWorkspaces::remove(path);
@@ -257,6 +264,7 @@ namespace window {
 		if (!w.saveToFile(_currentWorkspacePath)) { return false; }
 		gui::RecentWorkspaces::add(_currentWorkspacePath);
 		rebuildRecentsMenu();
+		mark_clean();
 		return true;
 	}
 
@@ -290,6 +298,7 @@ namespace window {
 		_sim->applyWorkspace(w);
 		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
 		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		mark_clean();
 	}
 
 	void DSFE_MainWindow::rebuildRecentsMenu() {
@@ -309,7 +318,7 @@ namespace window {
 
 	void DSFE_MainWindow::updateTitle() {
 		const QString name = _currentWorkspacePath.isEmpty() ? QStringLiteral("Untitled") : QFileInfo(_currentWorkspacePath).baseName();
-		setWindowTitle("DSFE — " + name);
+		setWindowTitle("DSFE: " + name);
 	}
 
 	// showHomePage switches to the home page, which will refresh the recent projects list
@@ -326,6 +335,7 @@ namespace window {
 
 	// openTemplate loads a workspace template from a file, applies it, and clears the current workspace path
 	void DSFE_MainWindow::openTemplate(const QString& template_path) {
+		if (!confirmDiscard()) { return; }
 		gui::WorkspaceData w;
 		if (!gui::WorkspaceData::loadFromFile(template_path, w)) {
 			LOG_ERROR("Failed to load template: %s", template_path.toUtf8().constData());
@@ -334,7 +344,53 @@ namespace window {
 		showProjectPage(); // IMPORTANT: renderer must be initialised before applyWorkspace loads the robot
 		applyFullWorkspace(w);
 		_currentWorkspacePath.clear();
+		mark_dirty();
 		updateTitle();
+	}
+
+	bool DSFE_MainWindow::confirmDiscard() {
+		const bool running = _sim && _sim->isSimRunning();
+		if (!_dirty && !running) { return true; }
+		QString msg;
+		if (_dirty && running) {
+			msg = "The current project has unsaved changes and the simulation is running.";
+		} else if (running) {
+			msg = "The simulation is currently running.";
+		} else {
+			msg = "The current project has unsaved changes.";
+		}
+
+		QMessageBox box(this);
+		box.setWindowTitle("DSFE");
+		box.setIcon(QMessageBox::Warning);
+		box.setText(msg);
+		box.setInformativeText("Do you want to save before continuing?");
+		box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		box.setDefaultButton(QMessageBox::Save);
+
+		const int choice = box.exec();
+		if (choice == QMessageBox::Cancel) { return false; }
+		if (choice == QMessageBox::Save) {
+			if (running && _dslEditor && _sim->isScriptRunning()) {
+				_dslEditor->stopScript();
+			}
+			if (!saveWorkspace()) {
+				LOG_ERROR("Failed to save workspace.");
+				return false;
+			}
+		}
+		if (running && _dslEditor && _sim->isScriptRunning()) {
+			_dslEditor->stopScript();
+		}
+		return true;
+	}
+
+	void DSFE_MainWindow::closeEvent(QCloseEvent* event) {
+		if (confirmDiscard()) {
+			event->accept();
+		} else {
+			event->ignore(); // user hit Cancel
+		}
 	}
 
 } // namespace window

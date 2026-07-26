@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 #include <QMenu>
+#include <QCloseEvent>
 
 class QStackedWidget;
 namespace gui { class SimulationManager; struct WorkspaceData; }
@@ -21,11 +22,18 @@ namespace window {
 	public:
 		explicit DSFE_MainWindow(gui::SimulationManager* sim, QWidget* parent = nullptr);
 
+	protected:
+		void closeEvent(QCloseEvent* event) override;
+
 	private:
 		void buildMenuBar();
 		void buildSceneMenu(QMenu* sceneMenu);
 		void buildRobotMenu(QMenu* projectMenu);
 		void onLoadMesh();
+
+		bool _dirty = false;
+		void mark_dirty() { _dirty = true; updateTitle(); }
+		void mark_clean() { _dirty = false; updateTitle(); }
 
 		// --- Workspaces ---
 		void newWorkspace();
@@ -42,6 +50,7 @@ namespace window {
         void showProjectPage();
 
 		void openTemplate(const QString& template_path);
+		bool confirmDiscard();
 
 		render::ResolutionPreset r;
 		render::QualityPreset q;
