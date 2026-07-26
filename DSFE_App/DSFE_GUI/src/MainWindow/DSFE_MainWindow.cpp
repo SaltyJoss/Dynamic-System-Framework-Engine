@@ -44,9 +44,10 @@ namespace window {
 		setCentralWidget(_stack);
 
 		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
-		_homePage->onNewProject = [this]() { showProjectPage(); newWorkspace(); };
-		_homePage->onOpenProject = [this]() { openWorkspaceDialog(); };
-		_homePage->onOpenRecent = [this](const QString& p) { openWorkspacePath(p); };
+		_homePage->onNewProject   = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onOpenProject  = [this]() { openWorkspaceDialog(); };
+		_homePage->onOpenRecent   = [this](const QString& p) { openWorkspacePath(p); };
+		_homePage->onOpenTemplate = [this](const QString& p) { openTemplate(p); };
 
 		showHomePage();
 		updateTitle();
