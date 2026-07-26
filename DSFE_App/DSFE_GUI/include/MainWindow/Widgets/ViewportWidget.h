@@ -1,6 +1,7 @@
 // DSFE_GUI ViewportWidget.h
 #pragma once
 
+#include <string>
 #include <QWidget>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -11,6 +12,7 @@
 #include <QShowEvent>
 #include <QPaintEvent>
 #include <QPaintEngine>
+#include <glm/glm.hpp>
 
 #include <unordered_set>
 
@@ -40,12 +42,18 @@ namespace widgets {
 		void initialise_renderer();
 
 	private:
+		std::string pickLink(float sx, float sy) const;
+		glm::vec3 cursorToDragPlane(float sx, float sy) const;
+		glm::vec3 linkOrigin(const std::string& name) const;
+
 		gui::SimulationManager* _sim = nullptr;
 		QElapsedTimer _frameTimer;
 		qint64 _lastNs = 0;
 		QTimer _updateTimer;
 		bool _renderer_initialised = false;
 		bool _mouse_captured = false;
+		bool _dragging = false;
+		std::string _dragLink;
 		QPoint _screenCenter;
 		std::unordered_set<gui::eKeyCode> _pressedKeys;
 	};
