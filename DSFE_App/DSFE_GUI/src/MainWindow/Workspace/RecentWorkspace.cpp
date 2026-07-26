@@ -3,6 +3,8 @@
 
 #include <QSettings>
 #include <QFileInfo>
+#include <QStandardPaths>
+#include <QDir>
 
 namespace gui {
     static constexpr const char* KEY = "workspaces/recent";
@@ -42,6 +44,20 @@ namespace gui {
     void RecentWorkspaces::clear() {
         QSettings settings;
         settings.remove(KEY);
+    }
+
+    // Returns the directory where workspaces are stored. Defaults to the user's home directory.
+    QString RecentWorkspaces::workspaceDir() {
+        QSettings settings;
+        const QString fallback = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/DSFE";
+        return settings.value("workspaces/dir", fallback).toString();
+    }
+
+    // Sets the directory where workspaces are stored.
+    void RecentWorkspaces::setWorkspaceDir(const QString& dir) {
+        QSettings settings;
+        settings.setValue("workspaces/dir", dir);
+        QDir().mkpath(dir); // Ensure the directory exists.
     }
 
 } // namespace gui

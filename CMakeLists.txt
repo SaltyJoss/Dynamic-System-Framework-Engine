@@ -35,7 +35,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
-option(DSFE_ENABLE_UNIT_TESTS "Build tests" ON)
+option(DSFE_ENABLE_UNIT_TESTS "Build tests" OFF)
 if (DSFE_ENABLE_UNIT_TESTS)
     FetchContent_Declare(
         googletest

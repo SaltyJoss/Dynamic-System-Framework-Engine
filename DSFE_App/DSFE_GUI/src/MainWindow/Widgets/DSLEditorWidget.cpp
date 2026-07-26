@@ -9,6 +9,7 @@
 #include <QTabWidget>
 #include <QFile>
 #include <QTimer>
+#include <QSignalBlocker>
 
 #include "Simulation/SimulationManager.h"
 #include "Platform/Paths.h"
@@ -114,6 +115,7 @@ namespace widgets {
 		auto* layout = new QVBoxLayout(_editorTab);
 		_scriptEditor = new QTextEdit(_editorTab);
 		_highlighter = new DSLSyntaxHighlighter(_scriptEditor->document());
+		connect(_scriptEditor, &QTextEdit::textChanged, this, [this]() { if (onContentChanged) { onContentChanged(); } });
 		layout->addWidget(_scriptEditor);
 		_tabs->addTab(_editorTab, "Script Editor");
 	}
@@ -178,7 +180,10 @@ namespace widgets {
     }
 
     void DSLEditorWidget::setScriptText(const QString& text) {
-        if (_scriptEditor) { _scriptEditor->setPlainText(text); }
+        if (_scriptEditor) {
+			QSignalBlocker block(_scriptEditor); // Block signals to prevent triggering onContentChanged
+			_scriptEditor->setPlainText(text);
+		}
         _scriptText = text.toStdString();
         _currentScriptPath.clear();          // embedded text, no file identity
         _loadedFromFile = false;

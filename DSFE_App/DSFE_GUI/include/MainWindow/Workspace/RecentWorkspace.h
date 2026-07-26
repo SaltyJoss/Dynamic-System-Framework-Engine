@@ -14,6 +14,9 @@ namespace gui {
         static void add(const QString& path);// inserts/promotes to front
         static void remove(const QString& path);
         static void clear();
+
+        static QString workspaceDir();
+        static void setWorkspaceDir(const QString& dir);
     };
 
 } // namespace gui

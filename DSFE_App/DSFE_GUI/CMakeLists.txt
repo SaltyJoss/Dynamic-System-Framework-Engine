@@ -99,6 +99,10 @@ set(WORKSPACE_SRC
     include/MainWindow/Workspace/HomePage.h
 )
 
+set(PLATFORM_INFO_SRC
+    src/Platform/SystemInfo.cpp
+)
+
 set(SCENE_SRC
     src/Scene/Camera.cpp
     src/Scene/Mesh.cpp
@@ -170,6 +174,7 @@ set(QT_RESOURCES
 target_sources(DSFE_GUI PRIVATE
     ${MAIN_WINDOW_SRC}
     ${WORKSPACE_SRC}
+    ${PLATFORM_INFO_SRC}
     ${SCENE_SRC}
     ${SIMULATION_SRC}
     ${SYSTEMS_SRC}

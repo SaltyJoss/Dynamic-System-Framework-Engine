@@ -1272,7 +1272,9 @@ namespace renderer {
     Initialisation and Destruction
     */
 
-    bool VulkanRenderer::init(const NativeWindow& win) {
+    bool VulkanRenderer::init(const NativeWindow& win, uint32_t width, uint32_t height) {
+        _width = width;
+        _height = height;
         _context = new VulkanContext();
         if (!_context->init(win)) { LOG_ERROR("VulkanContext init failed"); return false; }
         _swapchain = new VulkanSwapchain();

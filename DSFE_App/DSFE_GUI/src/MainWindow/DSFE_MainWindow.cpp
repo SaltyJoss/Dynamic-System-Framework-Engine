@@ -22,6 +22,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QStackedWidget>
+#include <QMessageBox>
 
 #include "Platform/Paths.h"
 
@@ -38,15 +39,19 @@ namespace window {
 		_homePage = new Workspace::HomePage(_stack);
 		_projectPage = new Workspace::ProjectPage(sim, _stack);
 		_dslEditor = _projectPage->editor();
+		if (_dslEditor) {
+			_dslEditor->onContentChanged = [this]() { mark_dirty(); };
+		}
 		_controlPanel = _projectPage->controlPanel();
 		_stack->addWidget(_homePage);       // index 0
 		_stack->addWidget(_projectPage);    // index 1
 		setCentralWidget(_stack);
 
 		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
-		_homePage->onNewProject = [this]() { showProjectPage(); newWorkspace(); };
-		_homePage->onOpenProject = [this]() { openWorkspaceDialog(); };
-		_homePage->onOpenRecent = [this](const QString& p) { openWorkspacePath(p); };
+		_homePage->onNewProject   = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onOpenProject  = [this]() { openWorkspaceDialog(); };
+		_homePage->onOpenRecent   = [this](const QString& p) { openWorkspacePath(p); };
+		_homePage->onOpenTemplate = [this](const QString& p) { openTemplate(p); };
 
 		showHomePage();
 		updateTitle();
@@ -84,6 +89,10 @@ namespace window {
 
 			_recentsMenu = fileMenu->addMenu("Recent Projects");
 			rebuildRecentsMenu();
+
+			fileMenu->addSeparator();
+			auto* setFolderAction = fileMenu->addAction("Set Workspace Folder…");
+			connect(setFolderAction, &QAction::triggered, this, [this]() { setWorkspaceDir(); });
 
 			fileMenu->addSeparator();
 			auto* saveMenu = fileMenu->addMenu("Save");
@@ -138,13 +147,6 @@ namespace window {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
 				onLoadMesh();
 			});
-			auto* loadHDRAction = projectMenu->addAction("Load HDRI");
-			connect(loadHDRAction, &QAction::triggered, this, [this]() {
-				LOG_INFO("Menu clicked: Project -> Load HDRI");
-				QString path = QFileDialog::getOpenFileName(nullptr, "Select HDRI File", QString::fromStdString((paths::assets() / "scene_hdr").string()), "HDRI Files (*.hdr *.exr)");
-				if (path.isEmpty()) { return; }
-				//_sim->loadNewHDR_UI(path.toStdString());
-			});
 		}
 		// View menu
 		{
@@ -183,30 +185,6 @@ namespace window {
 	}
 
 	void DSFE_MainWindow::buildSceneMenu(QMenu* sceneMenu) {
-		auto* toggleGridAction = sceneMenu->addAction("Toggle Grid");
-		toggleGridAction->setCheckable(true);
-		//toggleGridAction->setChecked(_sim->isGridEnabled());
-		connect(toggleGridAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Grid -> %s", checked ? "On" : "Off");
-			//_sim->enableGrid(checked);
-		});
-
-		auto* toggleFloorAction = sceneMenu->addAction("Toggle Floor");
-		toggleFloorAction->setCheckable(true);
-		//toggleFloorAction->setChecked(_sim->isFloorEnabled());
-		connect(toggleFloorAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Floor -> %s", checked ? "On" : "Off");
-			//_sim->enableFloor(checked);
-		});
-
-		auto* toggleSkyboxAction = sceneMenu->addAction("Toggle Skybox");
-		toggleSkyboxAction->setCheckable(true);
-		//toggleSkyboxAction->setChecked(_sim->isSkyboxEnabled());
-		connect(toggleSkyboxAction, &QAction::toggled, this, [this](bool checked) {
-			LOG_INFO("Menu toggled: Scene -> Toggle Skybox -> %s", checked ? "On" : "Off");
-			//_sim->enableSkybox(checked);
-		});
-
 		auto* toggleOrientatorAction = sceneMenu->addAction("Toggle Orientator");
 		toggleOrientatorAction->setCheckable(true);
 		//toggleOrientatorAction->setChecked(_sim->isOrientastorEnabled());
@@ -247,22 +225,24 @@ namespace window {
 	static QString workspacesDir() { return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/DSFE"; }
 
 	void DSFE_MainWindow::newWorkspace() {
+		if (!confirmDiscard()) { return; }
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
 		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
 		if (_controlPanel) { _controlPanel->refreshFromSim(); }
 		_currentWorkspacePath.clear();
+		mark_clean();
 		updateTitle();
 	}
 
 	void DSFE_MainWindow::openWorkspaceDialog() {
-		const QString path = QFileDialog::getOpenFileName(this, "Open Project",
-			workspacesDir(), "DSFE Projects (*.dsfe)");
+		const QString path = QFileDialog::getOpenFileName(this, "Open Project", gui::RecentWorkspaces::workspaceDir(), "DSFE Projects (*.dsfe)");
 		if (path.isEmpty()) { return; }
 		openWorkspacePath(path);
 	}
 
 	void DSFE_MainWindow::openWorkspacePath(const QString& path) {
+		if (!confirmDiscard()) { return; }
 		gui::WorkspaceData w;
 		if (!gui::WorkspaceData::loadFromFile(path, w)) {
 			gui::RecentWorkspaces::remove(path);
@@ -284,19 +264,27 @@ namespace window {
 		if (!w.saveToFile(_currentWorkspacePath)) { return false; }
 		gui::RecentWorkspaces::add(_currentWorkspacePath);
 		rebuildRecentsMenu();
+		mark_clean();
 		return true;
 	}
 
 	bool DSFE_MainWindow::saveWorkspaceAs() {
-		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", workspacesDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
+		const QString path = QFileDialog::getSaveFileName(this, "Save Project As", gui::RecentWorkspaces::workspaceDir() + "/untitled.dsfe", "DSFE Projects (*.dsfe)");
 		if (path.isEmpty()) { return false; }
 		_currentWorkspacePath = path;
 		updateTitle();
 		return saveWorkspace();
 	}
 
+	void DSFE_MainWindow::setWorkspaceDir() {
+		const QString dir = QFileDialog::getExistingDirectory(this, "Set Workspace Directory", gui::RecentWorkspaces::workspaceDir());
+		if (dir.isEmpty()) { return; }
+		gui::RecentWorkspaces::setWorkspaceDir(dir);
+		LOG_INFO("Workspace directory set to: %s", dir.toUtf8().constData());
+	}
+
 	void DSFE_MainWindow::gatherFullWorkspace(gui::WorkspaceData& w) {
-		_sim->gatherWorkspace(w);                       // robot, camera, sim properties
+		_sim->gatherWorkspace(w);
 		if (_dslEditor) {
 			w.scriptText = _dslEditor->scriptText();
 			w.scriptPath = _dslEditor->currentScriptPath();
@@ -307,9 +295,10 @@ namespace window {
 	void DSFE_MainWindow::applyFullWorkspace(const gui::WorkspaceData& w) {
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
-		_sim->applyWorkspace(w);                        // sim properties, camera, robot
+		_sim->applyWorkspace(w);
 		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
 		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		mark_clean();
 	}
 
 	void DSFE_MainWindow::rebuildRecentsMenu() {
@@ -329,15 +318,79 @@ namespace window {
 
 	void DSFE_MainWindow::updateTitle() {
 		const QString name = _currentWorkspacePath.isEmpty() ? QStringLiteral("Untitled") : QFileInfo(_currentWorkspacePath).baseName();
-		setWindowTitle("DSFE — " + name);
+		setWindowTitle("DSFE: " + name);
 	}
 
 	// showHomePage switches to the home page, which will refresh the recent projects list
 	void DSFE_MainWindow::showHomePage() {
 		if (_homePage) { _homePage->refreshRecents(); }
 		if (_stack && _homePage) { _stack->setCurrentWidget(_homePage); }
+		menuBar()->setVisible(false);
 	}
 	// showProjectPage switches to the project page, which will initialise the renderer if we're still on the home page
-	void DSFE_MainWindow::showProjectPage() { if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); } }
+	void DSFE_MainWindow::showProjectPage() { 
+		if (_stack && _projectPage) { _stack->setCurrentWidget(_projectPage); }
+		menuBar()->setVisible(true);
+	}
+
+	// openTemplate loads a workspace template from a file, applies it, and clears the current workspace path
+	void DSFE_MainWindow::openTemplate(const QString& template_path) {
+		if (!confirmDiscard()) { return; }
+		gui::WorkspaceData w;
+		if (!gui::WorkspaceData::loadFromFile(template_path, w)) {
+			LOG_ERROR("Failed to load template: %s", template_path.toUtf8().constData());
+			return;
+		}
+		showProjectPage(); // IMPORTANT: renderer must be initialised before applyWorkspace loads the robot
+		applyFullWorkspace(w);
+		_currentWorkspacePath.clear();
+		mark_dirty();
+		updateTitle();
+	}
+
+	bool DSFE_MainWindow::confirmDiscard() {
+		const bool running = _sim && _sim->isSimRunning();
+		if (!_dirty && !running) { return true; }
+		QString msg;
+		if (_dirty && running) {
+			msg = "The current project has unsaved changes and the simulation is running.";
+		} else if (running) {
+			msg = "The simulation is currently running.";
+		} else {
+			msg = "The current project has unsaved changes.";
+		}
+
+		QMessageBox box(this);
+		box.setWindowTitle("DSFE");
+		box.setIcon(QMessageBox::Warning);
+		box.setText(msg);
+		box.setInformativeText("Do you want to save before continuing?");
+		box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		box.setDefaultButton(QMessageBox::Save);
+
+		const int choice = box.exec();
+		if (choice == QMessageBox::Cancel) { return false; }
+		if (choice == QMessageBox::Save) {
+			if (running && _dslEditor && _sim->isScriptRunning()) {
+				_dslEditor->stopScript();
+			}
+			if (!saveWorkspace()) {
+				LOG_ERROR("Failed to save workspace.");
+				return false;
+			}
+		}
+		if (running && _dslEditor && _sim->isScriptRunning()) {
+			_dslEditor->stopScript();
+		}
+		return true;
+	}
+
+	void DSFE_MainWindow::closeEvent(QCloseEvent* event) {
+		if (confirmDiscard()) {
+			event->accept();
+		} else {
+			event->ignore(); // user hit Cancel
+		}
+	}
 
 } // namespace window
