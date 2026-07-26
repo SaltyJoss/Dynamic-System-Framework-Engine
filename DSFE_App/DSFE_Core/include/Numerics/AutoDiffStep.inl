@@ -12,10 +12,7 @@ namespace integration {
 			}
 		}
 
-		LOG_INFO_ONCE("Using AutoDiff integration method: %s", IntegratorName(m).c_str());
-
 		Real dt_r = mathlib::real(dt);
-
 		_state->backend = eIntegrationBackend::AutoDiff;
 		_state->autoDiff = true;
 		_state->last_dt_taken = (_state->last_dt_taken != dt && !_state->adaptive) ? dt_r : _state->last_dt_taken; // Unless RK45-or other adaptive methods-it is static.
