@@ -41,6 +41,8 @@ namespace window {
 		void showHomePage();
         void showProjectPage();
 
+		void openTemplate(const QString& template_path);
+
 		render::ResolutionPreset r;
 		render::QualityPreset q;
 

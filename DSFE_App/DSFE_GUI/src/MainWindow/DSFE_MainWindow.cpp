@@ -323,4 +323,17 @@ namespace window {
 		menuBar()->setVisible(true);
 	}
 
+	// openTemplate loads a workspace template from a file, applies it, and clears the current workspace path
+	void DSFE_MainWindow::openTemplate(const QString& template_path) {
+		gui::WorkspaceData w;
+		if (!gui::WorkspaceData::loadFromFile(template_path, w)) {
+			LOG_ERROR("Failed to load template: %s", template_path.toUtf8().constData());
+			return;
+		}
+		showProjectPage(); // IMPORTANT: renderer must be initialised before applyWorkspace loads the robot
+		applyFullWorkspace(w);
+		_currentWorkspacePath.clear();
+		updateTitle();
+	}
+
 } // namespace window
