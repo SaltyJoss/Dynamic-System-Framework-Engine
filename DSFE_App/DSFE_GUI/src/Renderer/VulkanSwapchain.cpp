@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace renderer {
-
+    // Creates a Vulkan swapchain with the specified width, height, and format. Returns true if successful.
     bool VulkanSwapchain::create(VulkanContext& context, uint32_t width, uint32_t height, VkFormat format) {
         _context = &context;
 
@@ -24,12 +24,18 @@ namespace renderer {
 
         // currentExtent == 0xFFFFFFFF means the surface defers to us; otherwise it dictates.
         VkExtent2D extent{};
-        if (caps.currentExtent.width != UINT32_MAX) {
+        const bool caller_size_valid = (width > 1 && height > 1);
+        if (caller_size_valid) {
+            extent.width  = std::clamp(width,  caps.minImageExtent.width,  caps.maxImageExtent.width);
+            extent.height = std::clamp(height, caps.minImageExtent.height, caps.maxImageExtent.height);
+        }
+        else if (caps.currentExtent.width != UINT32_MAX) {
             extent = caps.currentExtent;
         } else {
             extent.width  = std::clamp(width,  caps.minImageExtent.width,  caps.maxImageExtent.width);
             extent.height = std::clamp(height, caps.minImageExtent.height, caps.maxImageExtent.height);
         }
+
         if (extent.width == 0 || extent.height == 0) {
             LOG_WARN("Swapchain extent is zero (window minimised?) — deferring creation");
             _require_swapchain_recreate = true;
@@ -134,8 +140,7 @@ namespace renderer {
         }
 
         _require_swapchain_recreate = false;
-        LOG_INFO("Swapchain created: %ux%u, %u images, format %d",
-                 _swapchain_width, _swapchain_height, actual_count, _swapchain_format);
+        LOG_INFO("Swapchain created: %ux%u, %u images, format %d", _swapchain_width, _swapchain_height, actual_count, _swapchain_format);
         return true;
     }
 
