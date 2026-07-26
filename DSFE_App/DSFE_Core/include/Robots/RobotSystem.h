@@ -154,12 +154,12 @@ namespace robots {
 
         integration::eIntegrationMethod getIntegrationMethod() const { return _curIntMethod; }
 		std::string getIntegratorName() const { return _integrator->IntegratorName(_curIntMethod); }
-		void setStandardIntegrator(integration::eIntegrationMethod m) { _curIntMethod = m; }
+		void setStandardIntegrator(integration::eIntegrationMethod m);
 
 		integration::eAutoDiffIntegrationMethod AD_IntegrationMethod() const { return _curIntMethod_AD; }
 		std::string AD_integratorName() const { return _AD_integrator->IntegratorName(_curIntMethod_AD); }
-		void setADIntegrator(integration::eAutoDiffIntegrationMethod m) { _curIntMethod_AD = m; }
-
+		void setADIntegrator(integration::eAutoDiffIntegrationMethod m);
+		
 		integration::IntegrationService* getIntegrator();
 		const integration::IntegrationService* getIntegrator() const;
 
