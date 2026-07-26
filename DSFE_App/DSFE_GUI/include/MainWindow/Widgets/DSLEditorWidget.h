@@ -6,6 +6,7 @@
 #include <future>
 #include <mutex>
 #include <vector>
+#include <functional>
 #include <string>
 #include "Platform/StudyRunner.h"
 
@@ -48,6 +49,8 @@ namespace widgets {
         void setScriptText(const QString& text);
         QString currentScriptPath() const { return _currentScriptPath; }
         void stopScript();
+
+		std::function<void()> onContentChanged;
 
 	private:
 		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
