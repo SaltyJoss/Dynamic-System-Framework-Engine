@@ -1,13 +1,17 @@
-// DSFE_Core StoredProgram.cpp
+/*
+ * File: DSL/StoredProgram.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/StoredProgram.h"
+#include "DSL/StoredProgram.h"
+
 #include "Platform/ISimulationCore.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodySystem.h"
 
 #include "EngineLib/LogMacros.h"
 
-namespace interpreter {
+namespace dsl {
 	StoredProgram::StoredProgram(core::ISimulationCore* core)
 		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
 	}
@@ -74,14 +78,14 @@ namespace interpreter {
 	// Stop simulation
 	void StoredProgram::stopSim() {
 		if (_core->isSimRunning()) { _core->stopSimulation(); }
-		if (_core->hasRobot()) { _cntx.motion().Robot().stopAll(); }
+		if (_core->hasRigidBody()) { _cntx.motion().RigidBody().stopAll(); }
 	}
 
 	// Pause program execution
 	void StoredProgram::pause() {
 		if (!_core) { return; }
 		_state = ProgramState::Paused;
-		if (_core->hasRobot()) { _cntx.motion().Robot().stopAll(); }
+		if (_core->hasRigidBody()) { _cntx.motion().RigidBody().stopAll(); }
 	}
 
 	// Wait for simulation to run for dt seconds
@@ -148,8 +152,8 @@ namespace interpreter {
 	void StoredProgram::setIntegratorMethod(IntegratorMethod method) {
 		_integratorMethod = method;
 		if (_core) {
-			if (_core->hasRobot()) {
-				auto& rs = _core->robotSystem();
+			if (_core->hasRigidBody()) {
+				auto& rs = _core->rigidBodySystem();
 				if (method == IntegratorMethod::AD_ImplicitEuler || method == IntegratorMethod::AD_ImplicitMidpoint || method == IntegratorMethod::AD_GLRK2 || method == IntegratorMethod::AD_GLRK3) {
 					_core->setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(method));
 				}
@@ -180,8 +184,8 @@ namespace interpreter {
 	void StoredProgram::setGravity(double gravity) { 
 		_gravity = gravity;
 		if (_core) {
-			if (_core->hasRobot()) {
-				auto& rs = _core->robotSystem();
+			if (_core->hasRigidBody()) {
+				auto& rs = _core->rigidBodySystem();
 				rs.setGravity(gravity);
 			}
 		}
@@ -189,11 +193,11 @@ namespace interpreter {
 	// Get Gravity
 	double StoredProgram::getGravity() const {
 		if (_core) {
-			if (_core->hasRobot()) {
-				const auto& rs = _core->robotSystem();
+			if (_core->hasRigidBody()) {
+				const auto& rs = _core->rigidBodySystem();
 				return rs.getGravity();
 			}
 		}
 		return _gravity;
 	}
-} // namespace interpreter
+} // namespace dsl

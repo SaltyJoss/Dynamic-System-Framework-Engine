@@ -1,9 +1,12 @@
-// DSFE_Core CommandContext.cpp
+/*
+ * File: DSL/CommandContext.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/CommandContext.h"
+#include "DSL/CommandContext.h"
 #include "Scene/SimulationCore.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodySystem.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -44,12 +47,12 @@ namespace commands {
 		return OpResult::Success(true);
 	}
 
-	// Loads a robot by name and updates the context with the new robot system
+	// Loads a rigidBody by name and updates the context with the new rigidBody system
 	OpResult CommandContext::loadMultibody(const std::string& bodyName) {
 		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
-		if (bodyName.empty()) return OpResult::Failure("Robot name is empty.");
-		_core->loadRobot(bodyName); // only load robot for now, as multibody is not finished
-		auto& rs = _core->robotSystem();
+		if (bodyName.empty()) return OpResult::Failure("RigidBody name is empty.");
+		_core->loadRigidBody(bodyName); // only load rigidBody for now, as multibody is not finished
+		auto& rs = _core->rigidBodySystem();
 		return OpResult::Success(true);
 	}
 
@@ -62,7 +65,7 @@ namespace commands {
 
 	utils::OpResult CommandContext::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
 		double omegaRadPerSec = degToRad(omegaDegPerSec);
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		rs.trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
@@ -70,7 +73,7 @@ namespace commands {
 	utils::OpResult CommandContext::stopJointOmega(const std::string& childLink) { return setJointOmega(childLink, 0.0); }
 
 	core::ISimulationCore* CommandContext::Core() const { return _core; }
-	robots::RobotSystem& CommandContext::Robot() const { return _core->robotSystem(); }
+	systems::RigidBodySystem& CommandContext::RigidBody() const { return _core->rigidBodySystem(); }
 
 	Vec3 CommandContext::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
@@ -86,7 +89,7 @@ namespace commands {
 	}
 
 	double CommandContext::getJointAngleRad(const std::string& link) const {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		double a = 0.0f;
 		if (rs.tryGetJointAngleRad(link, a)) { return (double)a; }
 		else { LOG_WARN("Failed to get joint angle for link '%s'", link.c_str()); }
@@ -96,7 +99,7 @@ namespace commands {
 	// --- JOINT ANGLE METHODS ---
 
 	utils::OpResult CommandContext::setJointTargetRad(const std::string& link, double thetaTargetRad) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		if (!rs.trySetJointTargetRad(link, thetaTargetRad)) { 
 			return OpResult::Failure("Failed to set joint target -> Joint not found or target rejected."); 
 		}
@@ -104,7 +107,7 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContext::setJointTargetDeltaRad(const std::string& link, double deltaRad) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		double refRad = 0.0f;
 		if (!rs.tryGetJointTargetRad(link, refRad)) { 
 			return OpResult::Failure("Failed to get joint angle -> Joint not found."); 
@@ -114,7 +117,7 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContext::setJointMaxOmegaRad(const std::string& link, double maxqd) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		if (maxqd <= 0.0) { return OpResult::Failure("Max omega must be positive."); }
 		if (!rs.trySetJointOmegaMaxRad(link, maxqd)) { 
 			return OpResult::Failure("Failed to set joint max omega -> Joint not found or invalid value."); 
@@ -124,7 +127,7 @@ namespace commands {
 
 	// Sets the reference angular velocity for a joint (rad/s)
 	utils::OpResult CommandContext::setJointOmegaRefRad(const std::string& link, double qd_ref) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		if (!rs.trySetJointOmegaRefRad(link, qd_ref)) { 
 			return OpResult::Failure("Failed to set joint omega ref -> Joint not found or invalid value."); 
 		}
@@ -133,7 +136,7 @@ namespace commands {
 
 	// Sets the reference angular acceleration for a joint (rad/s^2)
 	utils::OpResult CommandContext::setJointAlphaRefRad(const std::string& link, double qdd_ref) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		if (!rs.trySetJointAlphaRefRad(link, qdd_ref)) { 
 			return OpResult::Failure("Failed to set joint alpha ref -> Joint not found or invalid value."); 
 		}
@@ -143,7 +146,7 @@ namespace commands {
 	utils::OpResult CommandContext::updateJointRotateTo(double /*dt*/) {
 		if (!_jnt.active) { return OpResult::Success(true); }
 
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		const bool done = rs.isJointAtTargetRad(_jnt.link, _jnt.epsAngle);
 		if (done) { _jnt.active = false; return OpResult::Success(true); }
 
@@ -153,7 +156,7 @@ namespace commands {
 	}
 
 	utils::OpResult CommandContext::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
 
 		const double current = getJointAngleRad(link);
@@ -174,8 +177,7 @@ namespace commands {
 		_jnt.wrapShortest = true;
 		_jnt.epsAngle = degToRad(0.5); // 0.5 degrees tolerance
 
-		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s",
-			link.c_str(), current, target, maxOmega);
+		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s", link.c_str(), current, target, maxOmega);
 
 		return OpResult::Success(false);
 	}
@@ -357,9 +359,9 @@ namespace commands {
 
 	// --- READ-ONLY ACCESSORS ---
 
-	// Checks if the current context has a valid robot and if the specified link index is within bounds
+	// Checks if the current context has a valid rigidBody and if the specified link index is within bounds
 	bool CommandContext::hasLink(std::size_t linkIndex) const {
-		auto& rs = _core->robotSystem();
+		auto& rs = _core->rigidBodySystem();
 		return linkIndex < rs.links().size();
 	}
 

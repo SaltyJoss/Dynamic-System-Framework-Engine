@@ -1,8 +1,11 @@
-// DSFE_Core ParallelGroupCmd.cpp
+/*
+ * File: DSL/ParallelGroupCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/ParallelGroupCmd.h"
-#include "Robots/RobotSystem.h"
+#include "DSL/Commands/ParallelGroupCmd.h"
+#include "Systems/RigidBodySystem.h"
 
 #include <EngineLib/LogMacros.h>
 
@@ -43,7 +46,7 @@ namespace commands {
 			D_WARN("parallel timed out after %.3fs", _elapsed);
 
 			// “soft finish”
-			cntx.Robot().stopAll();
+			cntx.RigidBody().stopAll();
 
 			// treats timeout as Executed - ill keep for now, may explore different timeout policies later
 			_result = { CmdState::Executed, {}, "parallel: timeout (soft-finish)" };

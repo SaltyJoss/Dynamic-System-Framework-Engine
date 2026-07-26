@@ -1,4 +1,7 @@
-// DSFE_Core PhysicsState.h
+/*
+ * File: Physics/PhysicsState.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 #pragma warning(disable : 4251)
 

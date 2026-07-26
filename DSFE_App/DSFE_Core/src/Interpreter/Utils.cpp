@@ -1,8 +1,9 @@
-// DSFE_Core Utils.cpp
+/*
+ * File: DSL/Utils.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
-
-#include "Interpreter/Utils.h"
-
+#include "DSL/Utils.h"
 #include "EngineLib/LogMacros.h"
 
 using namespace mathlib;
@@ -198,19 +199,7 @@ namespace utils {
 		}
 		return mask;
 	}
-
-	//// Helper function to try parsing an ObjectID from a string (e.g. "obj123" or "123")
-	//bool utils::tryParseObjID(const std::string& s, scene::ObjectID& out) {
-	//	std::string_view v = s;
-	//	if (v.rfind("obj", 0) == 0) v.remove_prefix(3);
-
-	//	unsigned id = 0;
-	//	auto res = std::from_chars(v.data(), v.data() + v.size(), id);
-	//	if (res.ec != std::errc{} || res.ptr != v.data() + v.size()) return false;
-	//	out = (scene::ObjectID)id;
-	//	return true;
-	//}
-
+	
 	// Helper functions to convert between degrees and radians
 	double degToRad(double degrees) { return degrees * ( PI_d / 180.0); }
 	mathlib::Vec3 degToRad(mathlib::Vec3& degrees) {

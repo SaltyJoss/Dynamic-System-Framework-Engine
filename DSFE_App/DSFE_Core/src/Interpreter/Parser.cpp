@@ -1,20 +1,21 @@
-// DSFE_Core Parser.cpp
+/*
+ * File: DSL/Parser.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Parser.h"
+#include "DSL/Parser.h"
+#include "DSL/RegisterCommand.h"
+#include "DSL/CommandFactory.h"
+#include "DSL/Commands/ParallelGroupCmd.h"
+#include "DSL/Utils.h"
 
-#include "Interpreter/RegisterCommand.h"
-#include "Interpreter/CommandFactory.h"
-
-#include "Interpreter/Commands/ParallelGroupCmd.h"
-
-#include "Interpreter/Utils.h"
 #include "EngineLib/LogMacros.h"
 
 using namespace std;
 using namespace utils;
 
-namespace interpreter {
+namespace dsl {
 	// --- Handlers ---
 
 	// Determine if a command requires an identifier
@@ -419,5 +420,5 @@ namespace interpreter {
 		buildProgram();
 	}
 
-} // namespace interpreter
+} // namespace dsl
 

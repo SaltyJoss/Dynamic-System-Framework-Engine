@@ -1,4 +1,7 @@
-// DSFE_Core LogMacros.h
+/*
+ * File: EngineLib/LogMacros.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 // ============================================
 // Macros for logging information, warnings, and errors with automatic file and function context.

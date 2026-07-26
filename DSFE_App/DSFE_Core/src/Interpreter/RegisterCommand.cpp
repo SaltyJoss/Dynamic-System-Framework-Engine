@@ -1,7 +1,10 @@
-// DSFE_Core RegisterCommand.cpp
+/*
+ * File: DSL/RegisterCommand.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/RegisterCommand.h"
+#include "DSL/RegisterCommand.h"
 
 // Motion commands
 #include "Interpreter/Commands/SpinCmd.h"

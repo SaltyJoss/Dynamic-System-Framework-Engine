@@ -1,8 +1,11 @@
-// DSFE_Core StudyRunner.cpp
+/*
+ * File: Platform/StudyRunner.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
 #include "Platform/StudyRunner.h"
-#include "Interpreter/Parser.h"
+#include "DSL/Parser.h"
 #include <thread>
 #include <chrono>
 #include <iostream>
@@ -65,8 +68,8 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 				simCore->setFixedDt(cfg.dt);
 				simCore->setIntegrationMethod(cfg.method);
 
-				auto program = std::make_unique<interpreter::StoredProgram>(simCore.get());
-				interpreter::Parser parser(program.get());
+				auto program = std::make_unique<dsl::StoredProgram>(simCore.get());
+				dsl::Parser parser(program.get());
 				parser.parse(scriptText);
 				program->start();
 
@@ -136,8 +139,8 @@ std::vector<StudyResult> StudyRunner::runStudies(const std::vector<config>& conf
 					simCore->setIntegrationMethod(cfg.method);
 
 					// Create a program and parser for this run, bound to the SimulationCore we just created
-				auto program = std::make_unique<interpreter::StoredProgram>(simCore.get());
-				interpreter::Parser parser(program.get());
+				auto program = std::make_unique<dsl::StoredProgram>(simCore.get());
+				dsl::Parser parser(program.get());
 				// Parse the script text to build the program for this run
 				parser.parse(script);
 				// start it

@@ -1,7 +1,10 @@
-// DSFE_Core WaitCmd.cpp
+/*
+ * File: DSL/WaitCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/WaitCmd.h"
+#include "DSL/Commands/WaitCmd.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -17,7 +20,7 @@ namespace commands {
 	}
 
 	// Update the command
-	program_data::CmdResult WaitCmd::update(CommandContext& cntx, double dt) {
+	CmdResult WaitCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) { markFailed("wait() not started."); return CmdResult{ CmdState::Failed, {}, "wait() not started." }; }
 		_remainingTime -= dt;
 		if (_remainingTime <= 0.0) { markCompleted(); return CmdResult{ CmdState::Executed, {}, "" }; }

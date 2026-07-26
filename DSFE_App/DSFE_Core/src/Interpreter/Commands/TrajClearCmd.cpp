@@ -1,14 +1,16 @@
-// DSFE_Core TrajClearCmd.cpp
+/*
+ * File: DSL/TrajClearCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/TrajClearCmd.h"
-
-#include "Robots/TrajectoryManager.h"
-#include "Robots/RobotSystem.h"
+#include "DSL/Commands/TrajClearCmd.h"
+#include "Systems/TrajectoryManager.h"
+#include "Systems/RigidBodySystem.h"
 #include "Scene/SimulationCore.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
-#include "Interpreter/Utils.h"
 
 namespace commands {
 	// --- Markers ---
@@ -35,8 +37,8 @@ namespace commands {
 		trajMgr.clearAll(); // clear all trajectories
 
         // Zero qd/qdd refs for all joints so nothing lingers
-        auto& rs = cntx.Robot();
-        rs.tryZeroJointRefDerivatives(); // make sure this exists as a NO-ARG method (see step 4)
+        auto& body = cntx.RigidBody();
+        body.tryZeroJointRefDerivatives(); // make sure this exists as a NO-ARG method (see step 4)
 
         SIM_SUCCESS("trajClear(): cleared all trajectories and zeroed ref derivatives");
         _done = true;

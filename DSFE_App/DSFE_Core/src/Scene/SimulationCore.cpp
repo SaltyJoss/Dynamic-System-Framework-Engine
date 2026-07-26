@@ -1,14 +1,17 @@
-// DSFE_Core SimulationCore.cpp
+/*
+ * File: Scene/SimulationCore.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 #include "Scene/SimulationCore.h"
 
-#include "Robots/RobotSystem.h"
-#include "Robots/RobotModel.h"
-#include "Robots/TrajectoryManager.h"
+#include "Systems/RigidBodySystem.h"
+#include "Systems/RigidBodyModel.h"
+#include "Systems/TrajectoryManager.h"
 #include "SingleBodySystem/Body.h"
 
-#include "Interpreter/StoredProgram.h"
-#include "Interpreter/Parser.h"
+#include "DSL/StoredProgram.h"
+#include "DSL/Parser.h"
 
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
@@ -16,11 +19,11 @@
 namespace core {
 	// Owned constructed subsystems (default)
 	SimulationCore::SimulationCore()
-		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _robotOwned(std::make_unique<robots::RobotSystem>()),
+		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _rigidBodyOwned(std::make_unique<systems::RigidBodySystem>()),
 		_singleBodyOwned(std::make_unique<single_body_system::SingleBodySystem>())
 	{
 		_traj = _trajOwned.get();
-		_robot = _robotOwned.get();
+		_rigidBody = _rigidBodyOwned.get();
 		_singleBody = _singleBodyOwned.get();
 
 		startExportThread();
@@ -32,19 +35,19 @@ namespace core {
 	}
 
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
-	SimulationCore::SimulationCore(robots::RobotSystem& robot, control::TrajectoryManager& traj)
-		: _robot(&robot), _traj(&traj), _singleBody(nullptr) {
+	SimulationCore::SimulationCore(systems::RigidBodySystem& rigidBody, control::TrajectoryManager& traj)
+		: _rigidBody(&rigidBody), _traj(&traj), _singleBody(nullptr) {
 		startExportThread();
 	}
 
 	// Simulation System
 	void SimulationCore::setupSimulationIntegrator() {
-		if (!_robot && !_singleBody) { return; }
+		if (!_rigidBody && !_singleBody) { return; }
 		integration::IntegrationService* intgr;
 		integration::DifferentiableIntegrator* adIntgr;
-		if (_robot) {
-			intgr = _robot->getIntegrator();
-			adIntgr = _robot->getADIntegrator();
+		if (_rigidBody) {
+			intgr = _rigidBody->getIntegrator();
+			adIntgr = _rigidBody->getADIntegrator();
 		}
 		if (_singleBody) {
 			intgr = _singleBody->getIntegrator();
@@ -56,24 +59,24 @@ namespace core {
 		adIntgr->runtimeState()->last_dt_taken = _dt;
 		adIntgr->runtimeState()->last_dt_sug = _dt;
 	}
-	// Set the integration method for the simulation (also updates the robot's integrator if it exists)
+	// Set the integration method for the simulation (also updates the rigidBody's integrator if it exists)
 	void SimulationCore::setIntegrationMethod(integration::eIntegrationMethod method) {
-		if (!_robot && !_singleBody) { return; }
+		if (!_rigidBody && !_singleBody) { return; }
 		if (_singleBody) { _singleBody->setStandardIntegrator(method); }
-		if (_robot) { _robot->setStandardIntegrator(method); }
+		if (_rigidBody) { _rigidBody->setStandardIntegrator(method); }
 	}
-	// Set the auto-diff integration method for the simulation (also updates the robot's AD integrator if it exists)
+	// Set the auto-diff integration method for the simulation (also updates the rigidBody's AD integrator if it exists)
 	void SimulationCore::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
-		if (!_robot && !_singleBody) { return; }
+		if (!_rigidBody && !_singleBody) { return; }
 		if (_singleBody) { _singleBody->setADIntegrator(method); }
-		if (_robot) { _robot->setADIntegrator(method); }
+		if (_rigidBody) { _rigidBody->setADIntegrator(method); }
 	}
-	// Get the name of the current integration method (returns "no_robot" if no robot is loaded)
+	// Get the name of the current integration method (returns "no_rigidBody" if no rigidBody is loaded)
 	std::string SimulationCore::integrationMethodName() const {
 		std::string intName;
-		if (_robot) {
-			const auto state = _robot->runtimeIntegratorState();
-			intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
+		if (_rigidBody) {
+			const auto state = _rigidBody->runtimeIntegratorState();
+			intName = (_rigidBody->autoDiffEnabled()) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
 			return intName;
 		}
 		else if(_singleBody) {
@@ -88,26 +91,26 @@ namespace core {
 	} 
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
-		if (_robot) { return _robot->getIntegrationMethod(); }
+		if (_rigidBody) { return _rigidBody->getIntegrationMethod(); }
 		if (_singleBody) { return _singleBody->getIntegrationMethod(); }
 		return integration::eIntegrationMethod::RK4;
 	}
 	// Get the current auto-diff integration method
 	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
-		if (_robot) { return _robot->AD_IntegrationMethod(); }
+		if (_rigidBody) { return _rigidBody->AD_IntegrationMethod(); }
 		if (_singleBody) { return _singleBody->AD_IntegrationMethod(); }
 		return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; // default return value
 	}
 	void SimulationCore::enableAutoDiff(bool enable) {
-		if (!_robot) { return; }
-		_robot->enableAutoDiff(enable);
+		if (!_rigidBody) { return; }
+		_rigidBody->enableAutoDiff(enable);
 	}
 	bool SimulationCore::autoDiffEnabled() const {
-		if (!_robot) { return false; }
-		return _robot->autoDiffEnabled();
+		if (!_rigidBody) { return false; }
+		return _rigidBody->autoDiffEnabled();
 	}
 
-	// Fixed timestep loop for physics and robot updates, called from the main render loop with the frame delta time
+	// Fixed timestep loop for physics and rigidBody updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
 		double simTime = _simTime.load();
 
@@ -140,23 +143,23 @@ namespace core {
 				_scriptRunning.store(false);
 			}
 
-			const auto state = _robot->runtimeIntegratorState();
+			const auto state = _rigidBody->runtimeIntegratorState();
 
-			// Update physics and robot system if sim is running
+			// Update physics and rigidBody system if sim is running
 			if (_simRunning.load()) {
 				simTime += _dt;
 
-				// Update robot trajectory inputs and step the robot forward in time
-				if (hasRobot()) {
-					_robot->updateTrajectoryInputs(*_traj, simTime);
-					_robot->step(_dt, simTime);
+				// Update rigidBody trajectory inputs and step the rigidBody forward in time
+				if (hasRigidBody()) {
+					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
+					_rigidBody->step(_dt, simTime);
 					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_rigidBody, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 				if (hasSingleBody()) { _singleBody->step(_dt, simTime); }
 			}
@@ -182,15 +185,15 @@ namespace core {
 		_accum = 0.0;
 
 		// Reset simulation system
-		if (_robot) {
-			_robot->resetRobot();
+		if (_rigidBody) {
+			_rigidBody->resetRigidBody();
 			_trajRefBuffer.clear();
 
 			// Determine expected number of entries based on run mode and cap it to prevent OOM
 			double expectedMinutes = (_runMode == eRunMode::Synchronous) ? DEFAULT_SYNC_MINUTES : DEFAULT_INTERACTIVE_MINUTES;
 
 			// Convert minutes to steps
-			size_t joints = _robot->jointCount();
+			size_t joints = _rigidBody->jointCount();
 			double expectedSeconds = expectedMinutes * 60.0;
 			size_t steps = static_cast<size_t>(expectedSeconds / _dt);
 
@@ -199,13 +202,13 @@ namespace core {
 			size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
 
 			// Internal double buf for high-rate joint log
-			_robot->useInternalLogBuffer(true);
-			_robot->reserveInternalLogBuffers(total);
+			_rigidBody->useInternalLogBuffer(true);
+			_rigidBody->reserveInternalLogBuffers(total);
 
 			// Keeps external traj ref buffer for lower-rate traj ref (going to refactor this later)
 			_trajRefBuffer.clear();
 			_trajRefBuffer.reserve(std::max<size_t>(1024, total / (26 / 5))); // 26 to 5 entries, so reserving 1/(26/5) of total steps as a heuristic for ref buffer size
-			_robot->setRefBuffer(&_trajRefBuffer);
+			_rigidBody->setRefBuffer(&_trajRefBuffer);
 		}
 		if (_singleBody) {
 			_singleBody->resetBody();
@@ -233,7 +236,7 @@ namespace core {
 		if (!_simRunning.load()) { return; }
 		D_RUNTIME("stopping simulation");
 
-		auto buf = _robot->claimExportLogBuffer(); // Claim the export log buffer from the robot
+		auto buf = _rigidBody->claimExportLogBuffer(); // Claim the export log buffer from the rigidBody
 		if (buf) { enqueueExportBuffer(std::move(buf)); }
 		flushExports();
 
@@ -247,13 +250,13 @@ namespace core {
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportLogsToHDF5(const robots::JointLogBuffer& exportBuf) {
+	void SimulationCore::exportLogsToHDF5(const systems::JointLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now();
 
-		const auto state = _robot->runtimeIntegratorState();
-		const std::string intName = (state && state->autoDiff) ? _robot->AD_integratorName() : _robot->getIntegratorName();
-		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
-		const std::string header = robotName + "_sim_" + intName;
+		const auto state = _rigidBody->runtimeIntegratorState();
+		const std::string intName = (state && state->autoDiff) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
+		const std::string rigidBodyName = _rigidBody->hasRigidBody() ? _rigidBody->rigidBodyName() : "no_rigidBody";
+		const std::string header = rigidBodyName + "_sim_" + intName;
 
 		// Check if there are any log entries to export
 		const size_t N = exportBuf.size();
@@ -274,8 +277,8 @@ namespace core {
 
 	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry
 	void SimulationCore::exportRefsToHDF5() {
-		const std::string robotName = _robot->hasRobot() ? _robot->robotName() : "no_robot";
-		const std::string header = robotName + "_traj_ref";
+		const std::string rigidBodyName = _rigidBody->hasRigidBody() ? _rigidBody->rigidBodyName() : "no_rigidBody";
+		const std::string header = rigidBodyName + "_traj_ref";
 
 		// Check if there are any log entries
 		const size_t N = _trajRefBuffer.size();
@@ -314,23 +317,23 @@ namespace core {
 	// --------------------------------------------------
 
 	// Run a script synchronously to completion, blocking the main thread. Returns true if completed successfully
-	bool SimulationCore::runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) {
+	bool SimulationCore::runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) {
 		// Map method enum to string name, purely for logging purposes
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
 		const std::string methodName = names[static_cast<int>(method)];
 
-		LOG_INFO("SimulationCore::runScriptToCompletion -> START method=%s dt=%.6f hasRobot=%d", methodName.c_str(), _dt, (int)hasRobot());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> START method=%s dt=%.6f hasRigidBody=%d", methodName.c_str(), _dt, (int)hasRigidBody());
 
-		// Reset robot state
-		_robot->resetRobot();
+		// Reset rigidBody state
+		_rigidBody->resetRigidBody();
 		_traj->clearAll();
 
 		// Clear reference buffer (external for now)
 		_trajRefBuffer.clear();
 		// Inject reference buffer only
-		_robot->setRefBuffer(&_trajRefBuffer);
-		// Set integrator on both physics and robot systems
-		_robot->setStandardIntegrator(method);
+		_rigidBody->setRefBuffer(&_trajRefBuffer);
+		// Set integrator on both physics and rigidBody systems
+		_rigidBody->setStandardIntegrator(method);
 
 		scriptParallelisation(program);
 
@@ -339,7 +342,7 @@ namespace core {
 		return (_telemetry.ring.size() >= 2);
 	}
 
-	void SimulationCore::scriptParallelisation(interpreter::IStoredProgram* program) {
+	void SimulationCore::scriptParallelisation(dsl::IStoredProgram* program) {
 		// Reset simulation state
 		_simTime.store(0.0, std::memory_order_relaxed);
 		_simRunning.store(false);
@@ -374,13 +377,13 @@ namespace core {
 			// Step the program (DSL command execution)
 			program->step(dt);
 
-			// Step physics and robot if sim is running
+			// Step physics and rigidBody if sim is running
 			if (_simRunning.load()) {
 				simTime += dt;
-				if (hasRobot()) {
+				if (hasRigidBody()) {
 					// Update Trajectory Inputs
-					_robot->updateTrajectoryInputs(*_traj, simTime);
-					_robot->step(dt, simTime);
+					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
+					_rigidBody->step(dt, simTime);
 					// Telemetry beginRun
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
@@ -388,7 +391,7 @@ namespace core {
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
 					// Telemetry update
-					_telemetry.update(simTime, *_robot, _traj, diagnostics::eTelemetryLevel::FULL);
+					_telemetry.update(simTime, *_rigidBody, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
@@ -428,20 +431,20 @@ namespace core {
 
 	// --- Setters and Getters for Systems and State ---
 
-	// Accessor for the robot system (non-const and const versions)
-	robots::RobotSystem& SimulationCore::robotSystem() { return *_robot; }
-	// Setter and checker for Robot System
-	void SimulationCore::setRobotSystem(robots::RobotSystem* robot) { _robot = robot; }
-	bool SimulationCore::hasRobot() const { return _robot && _robot->hasRobot(); }
-	// Loads a robot into the robot system by name
-	void SimulationCore::loadRobot(const std::string& name) {
-		loadRobotInternal(name);
-		_robotPresentationDirty = true;
+	// Accessor for the rigidBody system (non-const and const versions)
+	systems::RigidBodySystem& SimulationCore::rigidBodySystem() { return *_rigidBody; }
+	// Setter and checker for RigidBody System
+	void SimulationCore::setRigidBodySystem(systems::RigidBodySystem* rigidBody) { _rigidBody = rigidBody; }
+	bool SimulationCore::hasRigidBody() const { return _rigidBody && _rigidBody->hasRigidBody(); }
+	// Loads a rigidBody into the rigidBody system by name
+	void SimulationCore::loadRigidBody(const std::string& name) {
+		loadRigidBodyInternal(name);
+		_rigidBodyPresentationDirty = true;
 	}
-	// Internal method to load a robot, assumes ownership of the robot system
-	void SimulationCore::loadRobotInternal(const std::string& name) {
-		if (!_robot) { LOG_ERROR("Cannot load robot: RobotSystem not set"); return; }
-		_robot->loadRobot(name);
+	// Internal method to load a rigidBody, assumes ownership of the rigidBody system
+	void SimulationCore::loadRigidBodyInternal(const std::string& name) {
+		if (!_rigidBody) { LOG_ERROR("Cannot load rigidBody: RigidBodySystem not set"); return; }
+		_rigidBody->loadRigidBody(name);
 	}
 
 	// Accessor for the single body system (non-const and const versions)
@@ -466,8 +469,8 @@ namespace core {
 	control::TrajectoryManager& SimulationCore::trajectoryManager() { return *_traj; }
 
 	// Setters for the metric buffers
-	void SimulationCore::setJointLogBuffer(robots::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
-	void SimulationCore::setTrajRefBuffer(robots::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
+	void SimulationCore::setJointLogBuffer(systems::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
+	void SimulationCore::setTrajRefBuffer(systems::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
 	
 	// Accessor for the telemetry recorder (non-const and const versions)
 	diagnostics::TelemetryRecorder& SimulationCore::telemetry() { return _telemetry; }
@@ -475,8 +478,8 @@ namespace core {
 	size_t SimulationCore::telemetrySampleCount() const { return _telemetry.ring.size(); }
 
 	// Setter and getter for the active script program
-	void SimulationCore::setActiveProgram(interpreter::IStoredProgram* p) { _activeProgram = p; }
-	interpreter::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
+	void SimulationCore::setActiveProgram(dsl::IStoredProgram* p) { _activeProgram = p; }
+	dsl::IStoredProgram* SimulationCore::activeProgram() const { return _activeProgram; }
 
 	// Thread-based methods
 
@@ -500,7 +503,7 @@ namespace core {
 	// Main loop for the export thread, waits for export buffers to be enqueued and processes them
 	void SimulationCore::exportThreadMain() {
 		while (true) {
-			std::unique_ptr<robots::JointLogBuffer> buf;
+			std::unique_ptr<systems::JointLogBuffer> buf;
 			{
 				std::unique_lock<std::mutex> lock(_expMutex);
 				_expCondVar.wait(lock, [this]() {
@@ -523,7 +526,7 @@ namespace core {
 		}
 	}
 
-	void SimulationCore::enqueueExportBuffer(std::unique_ptr<robots::JointLogBuffer> buf) {
+	void SimulationCore::enqueueExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf) {
 		{
 			std::lock_guard<std::mutex> lock(_expMutex);
 			++_exportsInFlight;

@@ -1,8 +1,11 @@
-// DSFE_Core SpinCmd.cpp
+/*
+ * File: DSL/SpinCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/SpinCmd.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/SpinCmd.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -22,7 +25,7 @@ namespace commands {
 	}
 
 	// Update the command
-	program_data::CmdResult SpinCmd::update(CommandContext& cntx, double dt) {
+	CmdResult SpinCmd::update(CommandContext& cntx, double dt) {
 		if (!_started) {
 			markFailed("spin() not started.");
 			return CmdResult{ CmdState::Failed, {}, "spin() not started." };

@@ -1,14 +1,17 @@
+/*
+ * File: DSL/RunWrapper.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
-// File:   RunWrapper.cpp
-// GitHub: SaltyJoss
-#include "Interpreter/RunWrapper.h"
+
+#include "DSL/RunWrapper.h"
 
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
 extern DSFE_API Debug gLog;
 
-namespace interpreter {
+namespace dsl {
 	// Constructor
 	RunWrapper::RunWrapper(Parser* parser, IStoredProgram* program) : _parser(parser), _program(program) {
 		if (_parser == nullptr) {

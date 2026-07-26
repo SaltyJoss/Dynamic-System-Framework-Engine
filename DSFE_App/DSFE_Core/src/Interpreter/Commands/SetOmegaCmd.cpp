@@ -1,10 +1,13 @@
-// DSFE_Core SetOmegaCmd.cpp
+/*
+ * File: DSL/SetOmegaCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/SetOmegaCmd.h"
-#include "Robots/RobotSystem.h"
+#include "DSL/Commands/SetOmegaCmd.h"
+#include "Systems/RigidBodySystem.h"
+#include "DSL/Utils.h"
 
-#include "Interpreter/Utils.h"
 #include "EngineLib/LogMacros.h"
 
 using namespace utils;
@@ -26,16 +29,16 @@ namespace commands {
 	}
 
 	// Updates setOmega command
-	program_data::CmdResult SetOmegaCmd::update(CommandContext& cntx, double dt) {
-		auto& rs = cntx.Robot();
-		if (!rs.hasLinkName(_link)) {
-			markFailed("setOmega: link '" + _link + "' not found in robot.");
-			return { CmdState::Failed, {}, "setOmega failed: link '" + _link + "' not found in robot." };
+	CmdResult SetOmegaCmd::update(CommandContext& cntx, double dt) {
+		auto& body = cntx.RigidBody();
+		if (!body.hasLinkName(_link)) {
+			markFailed("setOmega: link '" + _link + "' not found in body.");
+			return { CmdState::Failed, {}, "setOmega failed: link '" + _link + "' not found in body." };
 		}
 
 		double omegaRad = degToRad(_omega);
 
-		if (!rs.injectJointOmegaRad(_link, omegaRad)) {
+		if (!body.injectJointOmegaRad(_link, omegaRad)) {
 			markFailed("setOmega: failed to set joint omega for link='" + _link + "'.");
 			return { CmdState::Failed, {}, "setOmega failed to set joint omega for link='" + _link + "'." };
 		}

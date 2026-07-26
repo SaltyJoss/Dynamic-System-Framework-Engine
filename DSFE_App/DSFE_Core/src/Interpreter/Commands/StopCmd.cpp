@@ -1,7 +1,10 @@
-// DSFE_Core StopCmd.cpp
+/*
+ * File: DSL/StopCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/StopCmd.h"
+#include "DSL/Commands/StopCmd.h"
 
 #include "EngineLib/LogMacros.h"
 

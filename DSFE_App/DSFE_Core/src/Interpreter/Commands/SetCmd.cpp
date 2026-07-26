@@ -1,9 +1,12 @@
-// DSFE_Core SetCmd.cpp
+/*
+ * File: DSL/SetCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/SetCmd.h"
-#include "Interpreter/IStoredProgram.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/SetCmd.h"
+#include "DSL/IStoredProgram.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -18,16 +21,23 @@ namespace commands {
 
 	// Helper function to parse the integration method
 	static IntegratorMethod parseMethod(const std::string& s) {
+		// Explicit variants
 		if (s == "euler")			  return IntegratorMethod::Euler;
 		if (s == "midpoint")		  return IntegratorMethod::Midpoint;
 		if (s == "heun")			  return IntegratorMethod::Heun;
 		if (s == "ralston")			  return IntegratorMethod::Ralston;
 		if (s == "rk4")				  return IntegratorMethod::RK4;
 		if (s == "rk45")			  return IntegratorMethod::RK45;
+		// Implicit variants
 		if (s == "implicit_euler")	  return IntegratorMethod::ImplicitEuler;
 		if (s == "implicit_midpoint") return IntegratorMethod::ImplicitMidpoint;
 		if (s == "glrk2")			  return IntegratorMethod::GLRK2;
 		if (s == "glrk3")			  return IntegratorMethod::GLRK3;
+		// Automatic Differentiation (AD) variants
+		if (s == "ad_implicit_euler") 	 return IntegratorMethod::AD_ImplicitEuler;	
+		if (s == "ad_implicit_midpoint") return IntegratorMethod::AD_ImplicitMidpoint;
+		if (s == "ad_glrk2")			 return IntegratorMethod::AD_GLRK2;
+		if (s == "ad_glrk3")			 return IntegratorMethod::AD_GLRK3;
 		D_WARN("Integration Method not recognised -> %s ~ Defaulted to \"Fourth-Order Runge Kutta\"", s.c_str());
 		return IntegratorMethod::RK4;
 	}
@@ -40,7 +50,7 @@ namespace commands {
 		if (startsWith(toLower(id), "integrator")) { std::string s = toLower(token); return SetTarget{ SetTargetType::IntegratorMethod, parseMethod(s) }; }
 		if (startsWith(toLower(id), "dt")) { std::string s = token; return SetTarget{ SetTargetType::FixedDt, {}, {}, utils::parseDouble(s) }; }
 		if (startsWith(toLower(id), "gravity")) { std::string s = token; return SetTarget{ SetTargetType::Gravity, {}, {}, {}, utils::parseDouble(s)}; }
-		if (startsWith(toLower(id), "omega")) { 
+		if (startsWith(toLower(id), "velocity") || startsWith(toLower(id), "omega")) { 
 			std::string s = toLower(token); 
 
 			AxisMask m = utils::parseAxisMask(s);
@@ -58,7 +68,8 @@ namespace commands {
 
 	// Constructor
 	SetCmd::SetCmd(const std::string& id, const std::string& tokens)
-		: _id(id), _tokens(tokens) {
+		: _id(toLower(id)), _tokens(tokens) 
+	{
 		_result = { CmdState::NotStarted, {}, "" };
 	}
 
@@ -100,7 +111,6 @@ namespace commands {
 			markCompleted();
 			return;
 		}
-
 		markFailed("Unknown set target: " + _id);
 	}
 

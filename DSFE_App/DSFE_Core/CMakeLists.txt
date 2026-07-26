@@ -36,13 +36,16 @@ set(SINGLE_BODY_SYS_SRC
     src/SingleBodySystem/Body.cpp
 )
 
-set(MULTI_BODY_SYS_SRC
-    src/Robots/RobotDynamics.cpp
-    src/Robots/RobotKinematics.cpp
-    src/Robots/RobotLoader.cpp
-    src/Robots/RobotSystem.cpp
-    src/Robots/TrajectoryManager.cpp
-    src/Robots/RobotSimSnapshot.cpp
+set(SYSTEMS_SRC
+    src/Systems/SystemLoader.cpp
+    src/Systems/RigidBodySystem.cpp
+    src/Systems/TrajectoryManager.cpp
+    src/Systems/RigidBodySimSnapshot.cpp
+)
+
+set(PHYSICS_SRC
+    src/Physics/RigidBodyDynamics.cpp
+    src/Physics/RigidBodyKinematics.cpp
 )
 
 set(PLATFORM_SRC
@@ -86,7 +89,8 @@ set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)
 target_sources(DSFE_Core PRIVATE
     ${DEP_CORE_SRC}
     ${SINGLE_BODY_SYS_SRC}
-    ${MULTI_BODY_SYS_SRC}
+    ${SYSTEMS_SRC}
+    ${PHYSICS_SRC}
     ${PLATFORM_SRC}
     ${DSL_SRC}
     ${SIM_CORE_SRC}

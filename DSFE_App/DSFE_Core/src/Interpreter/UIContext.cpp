@@ -1,10 +1,13 @@
-// DSFE_Core UIContext.cpp
+/*
+ * File: DSL/UIContext.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/UIContext.h"
+#include "DSL/UIContext.h"
 
 #include "Scene/SimulationCore.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodySystem.h"
 
 #include "Platform/DataManager.h"
 #include "EngineLib/LogMacros.h"
@@ -16,7 +19,7 @@ using namespace utils;
 namespace commands {
 	// Constructor
 	UIContext::UIContext(core::ISimulationCore* core)
-		: _core(core), _robot(core ? core->robotSystem() : nullptr), 
+		: _core(core), _rigidBody(core ? core->rigidBodySystem() : nullptr), 
 		_angularUnits(AngularUnits::DegPerSec) {
 	}
 
@@ -123,14 +126,14 @@ namespace commands {
 
 	// --- ROBOT LOAD AND CLEAR METHODS ---
 
-	// Loads a robot by name and updates the context with the new robot system
-	OpResult UIContext::loadRobot(const std::string& robotName) {
+	// Loads a rigidBody by name and updates the context with the new rigidBody system
+	OpResult UIContext::loadRigidBody(const std::string& rigidBodyName) {
 		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
-		if (robotName.empty()) return OpResult::Failure("Robot name is empty.");
+		if (rigidBodyName.empty()) return OpResult::Failure("RigidBody name is empty.");
 
-		_core->loadRobot(robotName);
-		_robot = _core->robotSystem();
-		if (!_robot) return OpResult::Failure("Robot system is null after load.");
+		_core->loadRigidBody(rigidBodyName);
+		_rigidBody = _core->rigidBodySystem();
+		if (!_rigidBody) return OpResult::Failure("RigidBody system is null after load.");
 		return OpResult::Success(true);
 	}
 

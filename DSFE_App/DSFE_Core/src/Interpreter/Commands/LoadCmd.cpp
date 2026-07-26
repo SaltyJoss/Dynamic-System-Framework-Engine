@@ -1,8 +1,11 @@
-// DSFE_Core LoadCmd.cpp
+/*
+ * File: DSL/LoadCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/LoadCmd.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/LoadCmd.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -16,22 +19,14 @@ namespace commands {
 
 	// constructor
 	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (id == "robot") { _target.type = LoadTargetType::MultiBody; }
+		if (id == "rigidbody") { _target.type = LoadTargetType::rigidBody ; }
 		else {
 			std::string errMsg = "Invalid load(<target>,...) identifier -> " + id;
 			markFailed(errMsg);
 			D_FAIL(errMsg.c_str());
 			return;
 		}
-
-		if (tokens.empty()) {
-			std::string errMsg = "load() command requires a path argument.";
-			markFailed(errMsg); 
-			D_FAIL(errMsg.c_str());
-			return;
-		}
-
-		if (!tokens.empty()) { _path = tokens[0]; _target.path = tokens[0]; }
+		_path = tokens[0]; _target.path = tokens[0];
 	}
 
 	// Execute the command
@@ -44,8 +39,7 @@ namespace commands {
 		}
 
 		switch (_target.type) {
-		case LoadTargetType::SingleBody: _cntx->loadSingleBody(_target.path); break;
-		case LoadTargetType::MultiBody:	 _cntx->loadMultibody(_target.path); break;
+		case LoadTargetType::RigidBody:	 _cntx->loadRigidBody(_target.path); break;
 		default:
 			{
 				std::string errMsg = "Invalid load target type.";
@@ -61,7 +55,12 @@ namespace commands {
 
 	// Factory function to create a LoadCmd from arguments
 	std::unique_ptr<ICommand> CreateLoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (tokens.empty()) return nullptr;
+		if (tokens.empty()) { 
+			std::string errMsg = "load() command requires a path argument.";
+			D_FAIL(errMsg.c_str());
+			return nullptr;
+		}
+		id = std::tolower(id);
 		return std::make_unique<LoadCmd>(id, tokens);
 	}
 } // namespace commands

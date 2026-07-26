@@ -1,4 +1,7 @@
-// DSFE_Core DataManager.cpp
+/*
+ * File: Platform/DataManager.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
 #include "Platform/DataManager.h"

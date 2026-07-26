@@ -1,8 +1,11 @@
-// DSFE_Core RotateToCmd.cpp
+/*
+ * File: DSL/RotateByCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/RotateByCmd.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/RotateByCmd.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 

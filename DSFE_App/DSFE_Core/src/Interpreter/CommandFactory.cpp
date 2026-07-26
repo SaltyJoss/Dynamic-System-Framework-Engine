@@ -1,7 +1,10 @@
-// DSFE_Core CommandFactory.cpp
+/*
+ * File: DSL/CommandFactory.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/CommandFactory.h"
+#include "DSL/CommandFactory.h"
 
 namespace commands {
 	CommandFactory& CommandFactory::Instance() {

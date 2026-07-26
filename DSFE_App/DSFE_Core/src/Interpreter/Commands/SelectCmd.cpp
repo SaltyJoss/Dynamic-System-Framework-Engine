@@ -1,7 +1,10 @@
-// DSFE_Core SelectCmd.cpp
+/*
+ * File: DSL/SelectCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/SelectCmd.h"
+#include "DSL/Commands/SelectCmd.h"
 
 #include "EngineLib/LogMacros.h"
 

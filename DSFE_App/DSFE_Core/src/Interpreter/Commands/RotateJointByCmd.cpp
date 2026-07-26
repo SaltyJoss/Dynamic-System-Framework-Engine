@@ -1,9 +1,12 @@
-// DSFE_Core RotateJointByCmd.cpp
+/*
+ * File: DSL/RotateJointByCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/RotateJointByCmd.h"
-#include "Robots/RobotSystem.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/RotateJointByCmd.h"
+#include "Systems/RigidBodySystem.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -23,8 +26,8 @@ namespace commands {
 	}
 
 	// Core update loop for rotateJointBy command
-	program_data::CmdResult RotateJointByCmd::update(CommandContext& cntx, double dt) {
-		auto& rs = cntx.Robot();
+	CmdResult RotateJointByCmd::update(CommandContext& cntx, double dt) {
+		auto& body = cntx.RigidBody();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
 		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms
 		if (dt < 0.0) dt = 0.0;
@@ -50,7 +53,7 @@ namespace commands {
 
 			// Get starting angle
 			double theta0 = 0.0f;
-			if (!rs.tryGetJointAngleRad(_link, theta0)) {
+			if (!body.tryGetJointAngleRad(_link, theta0)) {
 				markFailed("rotateJointBy: joint not found (angle)."); 
 				D_FAIL("rotateJointBy: joint not found (angle) for '%s'", _link.c_str());
 				return CmdResult{ CmdState::Failed, {}, "rotateJointBy: joint not found (angle)." };
@@ -93,8 +96,8 @@ namespace commands {
 		double theta = 0.0f;
 		double omega = 0.0f;
 
-		const bool gotTheta = rs.tryGetJointAngleRad(_link, theta);
-		const bool gotOmega = rs.tryGetJointOmegaRad(_link, omega);
+		const bool gotTheta = body.tryGetJointAngleRad(_link, theta);
+		const bool gotOmega = body.tryGetJointOmegaRad(_link, omega);
 
 		if (!gotTheta) {
 			markFailed("rotateJointBy: joint not found (angle).");
@@ -115,7 +118,7 @@ namespace commands {
 			_noProgressT += dt; 
 		}
 
-		const bool posOK = rs.isJointAtTargetRad(_link, tolPosRad); // consider at target if within position tolerance
+		const bool posOK = body.isJointAtTargetRad(_link, tolPosRad); // consider at target if within position tolerance
 		const bool omegaOK = (absOm <= tolOmegaRad); // consider stopped if omega is small enough
 
 		if (posOK && omegaOK) {

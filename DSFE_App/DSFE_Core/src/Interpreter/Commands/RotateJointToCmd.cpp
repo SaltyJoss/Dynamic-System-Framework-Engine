@@ -1,9 +1,12 @@
-// DSFE_Core RotateJointToCmd.cpp
+/*
+ * File: DSL/RotateJointToCmd.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 
-#include "Interpreter/Commands/RotateJointToCmd.h"
-#include "Robots/RobotSystem.h"
-#include "Interpreter/Utils.h"
+#include "DSL/Commands/RotateJointToCmd.h"
+#include "Systems/RigidBodySystem.h"
+#include "DSL/Utils.h"
 
 #include "EngineLib/LogMacros.h"
 
@@ -24,8 +27,8 @@ namespace commands {
 	}
 
 	// Core update loop for rotateJointTo command
-	program_data::CmdResult RotateJointToCmd::update(CommandContext& cntx, double dt) {
-		auto& rs = cntx.Robot();
+	CmdResult RotateJointToCmd::update(CommandContext& cntx, double dt) {
+		auto& body = cntx.RigidBody();
 		// Defensive dt - my research shows I need to avoid giant dt spikes causing weird timing/logic.
 		double maxDt = 1.0 / 60.0; // 1/60s, 60Hz, or 16.67ms
         if (dt < 0.0) dt = 0.0;
@@ -54,7 +57,7 @@ namespace commands {
 
             // Compute an informed timeout
             double theta0 = 0.0f;
-            if (!rs.tryGetJointAngleRad(_link, theta0)) {
+            if (!body.tryGetJointAngleRad(_link, theta0)) {
                 markFailed("rotateJointTo: joint not found (angle).");
                 D_FAIL("rotateJointTo: joint not found (angle) for '%s'", _link.c_str());
                 return { CmdState::Failed, {}, "rotateJointTo: joint not found (angle)." };
@@ -99,8 +102,8 @@ namespace commands {
         double theta = 0.0f;
         double omega = 0.0f;
 
-        const bool gotTheta = rs.tryGetJointAngleRad(_link, theta);
-        const bool gotOmega = rs.tryGetJointOmegaRad(_link, omega);
+        const bool gotTheta = body.tryGetJointAngleRad(_link, theta);
+        const bool gotOmega = body.tryGetJointOmegaRad(_link, omega);
 
         if (!gotTheta) {
             markFailed("rotateJointTo: joint not found (angle).");
@@ -120,7 +123,7 @@ namespace commands {
             _noProgressT += dt;
         }
 
-        const bool posOK = rs.isJointAtTargetRad(_link, (double)tolPosRad);
+        const bool posOK = body.isJointAtTargetRad(_link, (double)tolPosRad);
         const bool omegaOK = absOm <= tolOmegaRad;
 
         if (posOK && omegaOK) {
