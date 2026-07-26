@@ -559,6 +559,6 @@ namespace core {
 			_accum = 0.0;
 		}
 		_manipulating.store(on);
-		if (!on) { _rigidBody->clearExternalForces(); }   // drop any residual drag force
+		if (!on) { _rigidBody->clearExtForces(); }   // drop any residual drag force
 	}
 }
