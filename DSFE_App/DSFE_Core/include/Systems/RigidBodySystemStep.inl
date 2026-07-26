@@ -226,6 +226,30 @@ namespace systems {
 		}
 	}
 
+	template<typename Scalar>
+	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& dynScratch) {
+		const size_t n = _body.joints.size();
+		scratch.spatial.f_ext.assign(n, mathlib::SpatialVec_T<Scalar>()); // reset external forces
+		if (_pendingExtForces.empty()) { return; }
+		for (const auto& [jointIdx, linkIdx, worldPoint, worldForce] : _pendingExtForces) {
+			// Link world pose from last kinematics update
+			const Mat4& T = _worldTransforms[linkIdx];
+			const Mat3 R = T.block<3, 3>(0, 0);
+			const Vec3 o = T.block<3, 1>(0, 3);
+			// Transform world force to link frame
+			const Vec3 F_link = R.transpose() * worldForce.template cast<double>();
+			const Vec3 r_world = worldPoint.template cast<double>() - o;
+			const Vec3 moment_world = r_world.cross(worldForce.template cast<double>());
+			const Vec3 M_link = R.transpose() * moment_world;
+			// Compute spatial force in link frame
+			mathlib::SpatialVec_T<Scalar> fs(
+				M_link.template cast<Scalar>(), // angular slot (moment)
+				F_link.template cast<Scalar>()  // linear slot  (force)
+			);
+			scratch.spatial.f_ext[jointIdx] += fs; // accumulate external force for this joint
+		}
+	}
+
 	template<size_t NVar>
 	void RigidBodySystem::step_AD(double dt, double simTime) {
 		if (!hasRigidBody()) { return; }

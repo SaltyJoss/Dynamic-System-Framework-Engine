@@ -96,7 +96,10 @@ namespace systems {
 		const RigidBodySystem& getRigidBody() const { return *this; }
 
 		// --- External Force Application Methods ---
+
+		bool linkWorldOrigin(const std::string& linkName, mathlib::Vec3& out) const;
 		bool setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce);
+		bool setLinkExternalForce(const std::string& linkName, const mathlib::Vec3& worldForce);
 		void clearExtForces();
 
 		// ---- Joint State Methods ---
@@ -210,6 +213,9 @@ namespace systems {
 		template<typename T>
 		void postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& scratch, const RigidBodyStepResult_T<T>& result);
 
+		template<typename Scalar>
+		void assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const;
+
 		std::unique_ptr<physics::RigidBodyKinematics> _kinematics;
 		std::unique_ptr<physics::RigidBodyDynamics> _dynamics;
 
@@ -261,7 +267,7 @@ namespace systems {
 		SpatialModel<double> _spatialModel;
 		RigidBodyConstModel _constModel;
 		
-		std::vector<std::tuple<int, mathlib::Vec3, mathlib::Vec3>> _pendingExtForces;
+		std::vector<std::tuple<int, int, mathlib::Vec3, mathlib::Vec3>> _pendingExtForces;
 
 		physics::DynamicsScratch<double> _dynScratch;
 		physics::DynamicsResult<double> _dynResult;
