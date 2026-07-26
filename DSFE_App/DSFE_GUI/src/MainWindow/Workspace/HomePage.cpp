@@ -190,21 +190,28 @@ namespace Workspace {
         auto* grid = new QGridLayout();
         grid->setSpacing(12);
 
-        struct TplDef { const char* name; const char* image; };
+        struct TplDef { const char* name; const char* image; const char* file; };
         const TplDef templates[] = {
-            { "Empty Project",       "empty.png" },
-            { "Pendulum Simulation", "pendulum.png" },
-            { "Spring-Mass System",  "spring_mass.png" },
-            { "Double Pendulum",     "double_pendulum.png" },
-            { "VISPA Robotics Arm",  "vispa.png" },
-            { "Two-Body Dynamics",   "two_body.png" },
+            { "Empty Project",       "empty.png",            "" },
+            { "Single Pendulum",     "single_pendulum.png",  "pendulum.dsfe" },
+            { "Double Pendulum",     "double_pendulum.png",  "double_pendulum.dsfe" },
+            { "Spring-Mass System",  "spring_mass.png",      "spring_mass.dsfe" },
+            { "VISPA Robotics Arm",  "vispa.png",            "vispa.dsfe" },
+            { "Two-Body Dynamics",   "two_body.png",         "two_body.dsfe" }
+            // Add more templates here as needed (im thinking 6-10 is good?)
         };
-        const QString imgDir = QString::fromStdString((paths::assets() / "templates" / "thumbnails").string());
+        const QString tpl_dir = QString::fromStdString((paths::assets() / "templates").string());
+        const QString img_dir = tpl_dir + "/thumbnails";
         int idx=0;
         for (const TplDef& tpl : templates) {
-            auto* card = new TemplateCard(tpl.name, imgDir + "/" + tpl.image, area);
+            auto* card = new TemplateCard(tpl.name, img_dir + "/" + tpl.image, area);
             card->setFixedWidth(300);
-            card->onClick = [this, tpl]() { LOG_INFO("Template clicked: %s", tpl.name); };
+            if (QString(tpl.name) == "Empty Project") {
+                card->onClick = [this]() { if (onOpenTemplate) { onOpenTemplate(""); } };
+            } else {
+                const QString path = tpl_dir + "/" + tpl.file;
+                card->onClick = [this, path]() { if (onOpenTemplate) { onOpenTemplate(path); } };
+            }
             grid->addWidget(card, idx/3, idx%3);
             ++idx;
         }

@@ -19,6 +19,7 @@ namespace Workspace {
         std::function<void()> onNewProject;
         std::function<void()> onOpenProject;
         std::function<void(const QString&)> onOpenRecent;
+        std::function<void(const QString&)> onOpenTemplate;
 
         void refreshRecents(); // Repopulate the recents list
 
