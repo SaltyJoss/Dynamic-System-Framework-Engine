@@ -76,7 +76,7 @@ namespace Workspace {
         rail_col->addSpacing(12);
 
         auto* recents_head = new QLabel("Recent Projects", rail);
-        recents_head->setObjectName("rail_header");
+        recents_head->setObjectName("section_header");
         rail_col->addWidget(recents_head);
         
         _recents_list = new QListWidget(rail);
