@@ -95,6 +95,10 @@ namespace systems {
 		// Get pointer to this Systemsystem
 		const RigidBodySystem& getRigidBody() const { return *this; }
 
+		// --- External Force Application Methods ---
+		bool setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce);
+		void clearExtForces();
+
 		// ---- Joint State Methods ---
 
         void computeRigidBodyKinematics(std::vector<mathlib::Mat4>& world);
@@ -256,6 +260,8 @@ namespace systems {
 
 		SpatialModel<double> _spatialModel;
 		RigidBodyConstModel _constModel;
+		
+		std::vector<std::tuple<int, mathlib::Vec3, mathlib::Vec3>> _pendingExtForces;
 
 		physics::DynamicsScratch<double> _dynScratch;
 		physics::DynamicsResult<double> _dynResult;

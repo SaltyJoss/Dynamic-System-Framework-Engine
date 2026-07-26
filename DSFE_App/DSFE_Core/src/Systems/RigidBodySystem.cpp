@@ -542,6 +542,18 @@ namespace systems {
 		return _body.links.empty() ? "" : _body.links.front().name; // fallback
 	}
 
+	// Method to apply an external force to a specific rigidBody link at a given world point
+	bool RigidBodySystem::setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) {
+		if (!_hasBody) { return false; }
+		auto it = _link_idx.find(linkName);
+		if (it == _link_idx.end()) { return false; }
+		_pendingExtForces.emplace_back(it->second, worldPoint, worldForce);
+		return true;
+	}
+
+	// Method to clear all pending external forces applied to rigidBody links
+	void RigidBodySystem::clearExtForces() { _pendingExtForces.clear(); }
+
 	// Method to update the pose of each rigidBody link based on current joint angles using forward kinematics
 	void RigidBodySystem::computeRigidBodyKinematics(std::vector<Mat4>& world) {
 		if (!_hasBody) {
