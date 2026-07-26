@@ -391,4 +391,12 @@ namespace gui {
         w.cameraYaw = _camera.getYaw();
         w.cameraPitch = _camera.getPitch();
     }
+
+	void SimulationManager::setManipulating(bool on) { _core->setManipulating(on); }
+    bool SimulationManager::isManipulating() const { return _core->isManipulating(); }
+    bool SimulationManager::setLinkExternalForce(const std::string& link, const glm::vec3& p, const glm::vec3& f) {
+        return _core->setLinkExternalForce(link, mathlib::Vec3(p.x, p.y, p.z), mathlib::Vec3(f.x, f.y, f.z));
+    }
+    const std::vector<mathlib::Mat4>& SimulationManager::linkWorldTransforms() const { return _core->linkWorldTransforms();  }
+    std::vector<std::string> SimulationManager::linkNames() const { return _core->linkNames(); }
 }

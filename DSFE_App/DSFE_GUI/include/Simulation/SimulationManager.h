@@ -266,6 +266,13 @@ namespace gui {
 
         const std::string& currentRigidBodyName() const { return _currentRigidBodyName; }
 
+        void setManipulating(bool on);
+        bool isManipulating() const;
+        bool setLinkExternalForce(const std::string& link, const glm::vec3& worldPoint, const glm::vec3& worldForce);
+        const std::vector<mathlib::Mat4>& linkWorldTransforms() const;
+        std::vector<std::string> linkNames() const;
+        scene::Camera& camera() { return _camera; }
+
     private:
         std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
 
