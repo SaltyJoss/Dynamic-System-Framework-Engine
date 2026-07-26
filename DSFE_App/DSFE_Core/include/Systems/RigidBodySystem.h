@@ -270,6 +270,9 @@ namespace systems {
 		RigidBodyConstModel _constModel;
 		
 		std::vector<std::tuple<int, int, mathlib::Vec3, mathlib::Vec3>> _pendingExtForces;
+		std::vector<double> _prevLinkY;   // last-step link heights for floor damping
+
+		double linkWorldMinY(size_t linkIdx, const Mat4& T) const;
 
 		physics::DynamicsScratch<double> _dynScratch;
 		physics::DynamicsResult<double> _dynResult;

@@ -95,6 +95,12 @@ namespace systems {
 		Visual visual{};
 		std::vector<CollisionShape> collisions;
 		Inertial inertial{};
+
+		// Axis-aligned bounding box (AABB) for the link, in world coordinates
+		// Placeholders, kind of, if using GUI these are filled at loadtime
+		mathlib::Vec3 aabbMin{ 0,0,0 };
+		mathlib::Vec3 aabbMax{ 0,0,0 };
+		bool hasBounds = false;
 	};
 
 	// --- RigidBody Model Joints ---

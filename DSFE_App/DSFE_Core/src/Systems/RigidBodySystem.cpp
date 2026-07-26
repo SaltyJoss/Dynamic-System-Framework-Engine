@@ -318,6 +318,20 @@ namespace systems {
 		if (j.q > hi) { j.q = hi; if (j.qd > 0.0f) { j.qd = 0.0f; }}
 	}
 
+	double RigidBodySystem::linkWorldMinY(size_t linkIdx, const Mat4& T) const {
+		const RigidBodyLink& L = _body.links[linkIdx];
+		if (!L.hasBounds) { return T(1,3); }   // no geometry -> fall back to origin
+		double minY = 1e30;
+		for (int c = 0; c < 8; ++c) {
+			const double x = (c & 1) ? L.aabbMax.x() : L.aabbMin.x();
+			const double y = (c & 2) ? L.aabbMax.y() : L.aabbMin.y();
+			const double z = (c & 4) ? L.aabbMax.z() : L.aabbMin.z();
+			const double wy = T(1,0)*x + T(1,1)*y + T(1,2)*z + T(1,3);
+			if (wy < minY) { minY = wy; }
+		}
+		return minY;
+	}
+
 	// Method to advance the rigidBody state by dt using the selected integrator
 	void RigidBodySystem::step(double dt, double simTime) {
 		if (!_hasBody) { return; }
@@ -330,7 +344,28 @@ namespace systems {
 		_simTime = simTime;
 		const size_t n = _body.joints.size();
 		mathlib::VecX x = packState();
-
+		// Apply floor contact forces if enabled (Bit crude but yeah)
+		{
+			constexpr double k_floor = 400000.0;
+			constexpr double c_floor = 2000.0;
+			const size_t nl = _body.links.size();
+			if (_prevLinkY.size() != nl) { _prevLinkY.assign(nl, 0.0); }
+			for (size_t i = 0; i < nl; ++i) {
+				const Mat4& T = _worldTransforms[i];
+				const double lowY = linkWorldMinY(i, T); 
+				const double vy = (lowY - _prevLinkY[i]) / (_dynamics->dt() > 0 ? _dynamics->dt() : (1.0/180.0));
+				_prevLinkY[i] = lowY;
+				if (lowY < 0.0) {
+					double Fy = -k_floor * lowY - c_floor * vy;
+					if (Fy < 0.0) { Fy = 0.0; }                 // floor only pushes, never pulls
+					setLinkExtForce(
+						_body.links[i].name,
+					    Vec3(T(0,3), lowY, T(2,3)),
+					    Vec3(0.0, Fy, 0.0)
+					);
+				}
+			}
+		}
 		assembleExtForces(_dynScratch);
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 		clearExtForces();
