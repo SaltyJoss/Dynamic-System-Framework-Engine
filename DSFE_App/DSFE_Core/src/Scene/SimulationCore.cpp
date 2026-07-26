@@ -72,13 +72,19 @@ namespace core {
 	std::string SimulationCore::integrationMethodName() const {
 		std::string intName;
 		if (_robot) {
-			if (_robot->autoDiffEnabled()) { intName = _robot->getIntegratorName(); }
-			else { intName = _robot->AD_integratorName(); }
+			const auto state = _robot->runtimeIntegratorState();
+			intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
+			return intName;
 		}
-		else if(_singleBody) { intName = _singleBody->getIntegratorName(); }
-		else { intName = "no_system"; }
-		LOG_INFO("Integration Method: %s", intName.c_str());
-		return intName;
+		else if(_singleBody) {
+			const auto state = _singleBody->runtimeIntegratorState();
+			intName = (_singleBody->autoDiffEnabled()) ? _singleBody->AD_integratorName() : _singleBody->getIntegratorName();
+			return intName;
+		}
+		else { 
+			intName = "no_system";
+			return intName; 
+		}	
 	} 
 	// Get the current integration method
 	integration::eIntegrationMethod SimulationCore::integrationMethod() const {
@@ -90,7 +96,7 @@ namespace core {
 	integration::eAutoDiffIntegrationMethod SimulationCore::autoDiffIntegrationMethod() const {
 		if (_robot) { return _robot->AD_IntegrationMethod(); }
 		if (_singleBody) { return _singleBody->AD_IntegrationMethod(); }
-		return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler;
+		return integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler; // default return value
 	}
 	void SimulationCore::enableAutoDiff(bool enable) {
 		if (!_robot) { return; }
@@ -175,8 +181,6 @@ namespace core {
 		_simTime.store(0.0, std::memory_order_relaxed);
 		_accum = 0.0;
 
-		std::string intName;
-
 		// Reset simulation system
 		if (_robot) {
 			_robot->resetRobot();
@@ -202,21 +206,21 @@ namespace core {
 			_trajRefBuffer.clear();
 			_trajRefBuffer.reserve(std::max<size_t>(1024, total / (26 / 5))); // 26 to 5 entries, so reserving 1/(26/5) of total steps as a heuristic for ref buffer size
 			_robot->setRefBuffer(&_trajRefBuffer);
-
-			const auto state = _robot->runtimeIntegratorState();
-			intName = (_robot->autoDiffEnabled()) ? _robot->AD_integratorName() : _robot->getIntegratorName();
 		}
 		if (_singleBody) {
 			_singleBody->resetBody();
-			const auto state = _singleBody->runtimeIntegratorState();
-			intName = (_singleBody->autoDiffEnabled()) ? _singleBody->AD_integratorName() : _singleBody->getIntegratorName();
 		}
-	
+
+		std::string int_name;
+		int_name = integrationMethodName();
+
+		LOG_INFO("Integrator: %s (AD=%d), dt=%.6f s, simTime=%.3f s", int_name.c_str(), (int)autoDiffEnabled(), _dt, _simTime.load());
+
 		_data.setParentFolder(paths::runs().string());
 
 		// Ensure reference sim system have their integrators configured for the new run
 		setupSimulationIntegrator();
-		_data.setIntegratorName(intName);
+		_data.setIntegratorName(integrationMethodName());
 		_data.setRunTag(_runTag);
 
 		_simRunning.store(true);
