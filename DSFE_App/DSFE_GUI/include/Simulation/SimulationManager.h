@@ -239,6 +239,8 @@ namespace gui {
         void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
 		const integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const;
 
+        std::string integrationMethodName() const;
+
         void enableAutoDiff(bool enable);
         bool autoDiffEnabled() const;
 

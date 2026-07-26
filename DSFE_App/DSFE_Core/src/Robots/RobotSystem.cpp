@@ -507,9 +507,15 @@ namespace robots {
 
 	integration::IntegrationService* RobotSystem::getIntegrator() { return _integrator.get(); }
 	const integration::IntegrationService* RobotSystem::getIntegrator() const { return _integrator.get(); }
+	void RobotSystem::setStandardIntegrator(integration::eIntegrationMethod m) {
+		_curIntMethod = m; _integrator->setIntegrationMethod(m);
+	}
 
 	integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() { return _AD_integrator.get(); }
 	const integration::DifferentiableIntegrator* RobotSystem::getADIntegrator() const { return _AD_integrator.get(); }
+	void RobotSystem::setADIntegrator(integration::eAutoDiffIntegrationMethod m) {
+		_curIntMethod_AD = m; _AD_integrator->setIntegrationMethod(m);
+	}
 
 	std::shared_ptr<integration::IntegratorState> RobotSystem::runtimeIntegratorState() {
 		return _useAutoDiff ? _AD_integrator->runtimeState() : _integrator->runtimeState();

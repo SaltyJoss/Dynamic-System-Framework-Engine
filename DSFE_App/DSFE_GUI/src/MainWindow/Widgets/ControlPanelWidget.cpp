@@ -137,9 +137,7 @@ namespace widgets {
 			}
 			auto currentMethod = _sim->autoDiffIntegrationMethod();
 			int index = _integratorCombo->findData(static_cast<int>(currentMethod));
-			if (index != -1) {
-				_integratorCombo->setCurrentIndex(index);
-			}
+			if (index != -1) { _integratorCombo->setCurrentIndex(index); }
 		}
 		else {
 			for (const auto& entry : integrators) {
@@ -147,9 +145,7 @@ namespace widgets {
 			}
 			auto currentMethod = _sim->integrationMethod();
 			int index = _integratorCombo->findData(static_cast<int>(currentMethod));
-			if (index != -1) {
-				_integratorCombo->setCurrentIndex(index);
-			}
+			if (index != -1) { _integratorCombo->setCurrentIndex(index); }
 		}
 	}
 

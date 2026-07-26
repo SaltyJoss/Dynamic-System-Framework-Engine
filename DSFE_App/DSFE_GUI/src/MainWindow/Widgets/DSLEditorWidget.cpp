@@ -157,7 +157,6 @@ namespace widgets {
 		_parser = new interpreter::Parser(_program);
 		_wrapper = new interpreter::RunWrapper(_parser, _program);
 
-		LOG_INFO("ScriptEditor content size = %d", _scriptEditor->toPlainText().size());
 		_scriptText = _scriptEditor->toPlainText().toStdString();
 
 		if (_log) { _log->clearSimLog(); }

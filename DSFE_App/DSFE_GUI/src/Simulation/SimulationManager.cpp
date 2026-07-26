@@ -259,16 +259,24 @@ namespace gui {
 
 	// Set the integrator method for the current simulation run
 	void SimulationManager::setIntegrationMethod(integration::eIntegrationMethod method) {
+		LOG_INFO("DEBUG -> Setting integration method to: %d", static_cast<int>(method));
 		_core->setIntegrationMethod(method);
 	}
 	const integration::eIntegrationMethod SimulationManager::integrationMethod() const {
+		LOG_INFO("DEBUG -> Current integration method: %d", static_cast<int>(_core->integrationMethod()));
 		return _core->integrationMethod();
 	}
 	void SimulationManager::setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) {
+		LOG_INFO("DEBUG -> Setting AutoDiff integration method to: %d", static_cast<int>(method));
 		_core->setADIntegrationMethod(method);
 	}
 	const integration::eAutoDiffIntegrationMethod SimulationManager::autoDiffIntegrationMethod() const {
+		LOG_INFO("DEBUG -> Current AutoDiff integration method: %d", static_cast<int>(_core->autoDiffIntegrationMethod()));
 		return _core->autoDiffIntegrationMethod();
+	}
+
+	std::string SimulationManager::integrationMethodName() const {
+		return _core->integrationMethodName();
 	}
 
 	void SimulationManager::enableAutoDiff(bool enable) {
@@ -330,7 +338,6 @@ namespace gui {
         _camera.onMouseWheel(delta);
     }
     void SimulationManager::resetMouseDelta() { _firstMouse = true; }
-
 
 	/*
 	 * --------------------------------------------------
