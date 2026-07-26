@@ -18,6 +18,7 @@ namespace gui {
             uint32_t add_renderable(uint32_t mesh_id, const glm::mat4& transform);
             void set_material(uint32_t idx, const glm::vec3& albedo, float metallic, float roughness, float ao=1.0f);
             void set_transform(uint32_t idx, const glm::mat4& transform);
+            const Renderable* renderable(uint32_t idx) const { return idx < _renderables.size() ? &_renderables[idx] : nullptr; }
             const std::vector<Renderable>& renderables() const { return _renderables; }
             void clear() { _renderables.clear(); }
 
