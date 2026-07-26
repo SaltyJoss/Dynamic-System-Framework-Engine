@@ -457,6 +457,8 @@ namespace core {
 	const std::vector<mathlib::Mat4>& SimulationCore::linkWorldTransforms() const { return _rigidBody->worldTransforms(); }
 	// Accessor for the names of the rigidBody links (const version)
 	std::vector<std::string> SimulationCore::linkNames() const { return _rigidBody->linkNames(); }
+	// Clears all external forces applied to the rigidBody system
+	void SimulationCore::clearExternalForces() { _rigidBody->clearExtForces(); }
 
 	// Accessor for the single body system (non-const and const versions)
 	single_body_system::SingleBodySystem& SimulationCore::singleBodySystem() { return *_singleBody; }
