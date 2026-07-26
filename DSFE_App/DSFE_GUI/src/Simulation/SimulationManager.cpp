@@ -13,9 +13,9 @@
 #include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/ISimulationCore.h"
 
-#include "Interpreter/IStoredProgram.h"
-#include "Interpreter/StoredProgram.h"
-#include "Interpreter/Parser.h"
+#include "DSL/IStoredProgram.h"
+#include "DSL/StoredProgram.h"
+#include "DSL/Parser.h"
 
 #include <thread>
 #include <glm/glm.hpp>
@@ -249,9 +249,9 @@ namespace gui {
 	const diagnostics::TelemetryRecorder& SimulationManager::telemetry() const { return _core->telemetry(); }
 
 	// Accesors for the active program (if any)
-	void SimulationManager::setActiveProgram(interpreter::IStoredProgram* program) { _core->setActiveProgram(program); }
-	interpreter::IStoredProgram* SimulationManager::activeProgram() { return _core->activeProgram(); }
-	const interpreter::IStoredProgram* SimulationManager::activeProgram() const { return _core->activeProgram(); }
+	void SimulationManager::setActiveProgram(dsl::IStoredProgram* program) { _core->setActiveProgram(program); }
+	dsl::IStoredProgram* SimulationManager::activeProgram() { return _core->activeProgram(); }
+	const dsl::IStoredProgram* SimulationManager::activeProgram() const { return _core->activeProgram(); }
 
 	// Access the simulation core interface (non-const and const versions)
 	core::ISimulationCore* SimulationManager::simCore() { return _core.get(); }
@@ -306,9 +306,9 @@ namespace gui {
 		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
 
 		// Create program and parser (bound to headless core)
-		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
+		auto program = std::make_unique<dsl::StoredProgram>(_core.get());
 		//if (scene::Object* o = getObject()) program->setDefaultObject(o);
-		auto parser = std::make_unique<interpreter::Parser>(program.get());
+		auto parser = std::make_unique<dsl::Parser>(program.get());
 
 		// Parse the modified script and start the program
 		parser->parse(modifiedScript);

@@ -194,6 +194,7 @@ namespace window {
 		});
 	}
 
+	// Build the robot menu dynamically based on the available robotic systems, using the general RigidBody System interface
 	void DSFE_MainWindow::buildRobotMenu(QMenu* projectMenu) {
 		const auto& robotMap = platform::getRobotSystemMap();
 		std::unordered_map<platform::eRoboticSystemFamilies, QMenu*> familyMenus;
@@ -207,7 +208,7 @@ namespace window {
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
 				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
 				showProjectPage(); // renderer init if we're still on the home page
-				_sim->load_robot(robotName.toStdString());
+				_sim->load_rigidBody(robotName.toStdString());
 			});
 		}
 	}

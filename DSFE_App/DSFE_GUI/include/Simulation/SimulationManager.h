@@ -40,7 +40,7 @@ namespace scene {
 // Forward Declarations for Simulation Core
 namespace core { class ISimulationCore; }
 
-// Forward Declarations for Physics, Robots, Control, and Integration
+// Forward Declarations for Physics, RigidBodys, Control, and Integration
 namespace dsl { class IStoredProgram; }
 namespace systems { class RigidBodySystem; struct RigidBodyModel; }
 namespace control { class TrajectoryManager; }
@@ -131,11 +131,11 @@ namespace gui {
         void setViewFollowTarget(ViewID view, scene::Object* obj, const glm::vec3& offset = glm::vec3(0.0f, 0.25f, 1.0f));
         void clearViewFollowTarget(ViewID view);
 
-        // Follow a robot joint by name (binds the view to that joint's child link object)
-        bool setViewFollowRobotJoint(ViewID view, const std::string& jointName, const glm::vec3& offset);
+        // Follow a rigidBody joint by name (binds the view to that joint's child link object)
+        bool setViewFollowRigidBodyJoint(ViewID view, const std::string& jointName, const glm::vec3& offset);
 
         // Convenience: follow in the Follow view
-        bool followRobotJoint(const std::string& jointName, const glm::vec3& offset = glm::vec3(0.0f, 0.2f, 0.6f));
+        bool followRigidBodyJoint(const std::string& jointName, const glm::vec3& offset = glm::vec3(0.0f, 0.2f, 0.6f));
 
 		// Mesh loading & Management
         void loadMesh(const std::string& filepath);
@@ -152,7 +152,7 @@ namespace gui {
         void tick(double dt);
         void setDisplaySize(uint32_t w, uint32_t h);
 
-		void syncRobotToScene();
+		void syncRigidBodyToScene();
 		void syncBodyToScene();
 
 		// Scene Objects Management
@@ -166,21 +166,21 @@ namespace gui {
         scene::Object* getObject();
 		scene::Object* getObjectByID(scene::ObjectID id);
 
-		// Robot System loading and management
-        void load_robot(const std::string& name);
-        void resetRobot();
-        void clearRobot();
-        const bool hasRobot() const;
+		// RigidBody System loading and management
+        void load_rigidBody(const std::string& name);
+        void resetRigidBody();
+        void clearRigidBody();
+        const bool hasRigidBody() const;
 		const bool hasBody() const;
 
-		// Setters for robot joint states (angle in radians)
-        void setRobotLinkRotation(const std::string& linkName, double angle);
-        void setRobotRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
-        void setRobotRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
+		// Setters for rigidBody joint states (angle in radians)
+        void setRigidBodyLinkRotation(const std::string& linkName, double angle);
+        void setRigidBodyRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
+        void setRigidBodyRootHome(const mathlib::Vec3& pos, mathlib::Quat& rot);
 
-		// Accesors for the robot system (non-const and const versions)
-        robots::RobotSystem& robotSystem();
-        const robots::RobotSystem& robotSystem() const;
+		// Accesors for the rigidBody system (non-const and const versions)
+        systems::RigidBodySystem& rigidBodySystem();
+        const systems::RigidBodySystem& rigidBodySystem() const;
 
 		single_body_system::SingleBodySystem& singleBodySystem();
 		const single_body_system::SingleBodySystem& singleBodySystem() const;
@@ -217,9 +217,9 @@ namespace gui {
 		std::string& lastScriptText() const;
 
 		// Accessors for the last script text
-        void setActiveProgram(interpreter::IStoredProgram* program);
-		interpreter::IStoredProgram* activeProgram();
-        const interpreter::IStoredProgram* activeProgram() const;
+        void setActiveProgram(dsl::IStoredProgram* program);
+		dsl::IStoredProgram* activeProgram();
+        const dsl::IStoredProgram* activeProgram() const;
         
         // Run a script to completion synchronously with a specific integrator
         bool runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method);
@@ -262,9 +262,9 @@ namespace gui {
         // Workspace Management
         void closeWorkspace(); // Tear down the current workspace: systems, scene, all CPU+GPU meshes.
         void applyWorkspace(const gui::WorkspaceData& w); // Populate a fresh state from saved data (call after closeWorkspace).
-        void gatherWorkspace(gui::WorkspaceData& w) const; // Fill the manager-owned parts of a workspace (robot, camera).
+        void gatherWorkspace(gui::WorkspaceData& w) const; // Fill the manager-owned parts of a workspace (rigidBody, camera).
 
-        const std::string& currentRobotName() const { return _currentRobotName; }
+        const std::string& currentRigidBodyName() const { return _currentRigidBodyName; }
 
     private:
         std::unique_ptr<core::ISimulationCore, CoreDeleter> _core = nullptr;
@@ -307,8 +307,8 @@ namespace gui {
 
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
-		robots::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
-		robots::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
+		systems::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
+		systems::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
         bool _telemetryBegun = false;
 
 		// Environment & Lighting
@@ -337,12 +337,12 @@ namespace gui {
         double _simTime       = 0.0;
         double _fixedDt       = 1.0 / 180.0;
         double _telemetryHz   = 100.0;
-        std::string _currentRobotName;
+        std::string _currentRigidBodyName;
 
         scene::Object* _selectedObject = nullptr;
         std::vector<std::unique_ptr<scene::Object>> _objects;
 
-        interpreter::IStoredProgram* _activeProgram = nullptr;
+        dsl::IStoredProgram* _activeProgram = nullptr;
 
         integration::eIntegrationMethod         _integrationMethod{};
         integration::eAutoDiffIntegrationMethod _adIntegrationMethod{};

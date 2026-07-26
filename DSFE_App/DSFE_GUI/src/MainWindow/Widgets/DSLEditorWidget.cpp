@@ -153,9 +153,9 @@ namespace widgets {
 		delete _parser; _parser = nullptr;
 		delete _program; _program = nullptr;
 
-		_program = new interpreter::StoredProgram(_sim->simCore());
-		_parser = new interpreter::Parser(_program);
-		_wrapper = new interpreter::RunWrapper(_parser, _program);
+		_program = new dsl::StoredProgram(_sim->simCore());
+		_parser = new dsl::Parser(_program);
+		_wrapper = new dsl::RunWrapper(_parser, _program);
 
 		_scriptText = _scriptEditor->toPlainText().toStdString();
 

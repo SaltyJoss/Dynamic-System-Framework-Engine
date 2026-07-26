@@ -12,8 +12,7 @@ namespace gui {
     struct WorkspaceData {
         int version = 1;
         QString name;
-
-        QString rigidBodyName;      // empty = no rigid body loaded
+        QString rigidBodyName;  // empty = no rigid body loaded
         QString scriptText;     // DSL script embedded — file is self-contained
         QString scriptPath;     // original script file if one was opened (informational)
 

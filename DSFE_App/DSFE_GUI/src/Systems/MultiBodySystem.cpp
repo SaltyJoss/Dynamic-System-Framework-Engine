@@ -1,5 +1,5 @@
 // DSFE_GUI Systems/MultiBodySystem.cpp
-#include "Systems/MutliBodySystem.h"
+#include "Systems/MultiBodySystem.h"
 #include "Simulation/SimulationScene.h"
 #include "Simulation/MeshStore.h"
 #include "Simulation/SimulationRenderer.h"
@@ -32,7 +32,7 @@ namespace gui {
         for (const auto& link : _model.links) {
             auto& renderables = _binding.link_to_renderables[link.name];
             for (const auto& entry : link.visual.meshEntries) {
-                fs::path full = paths::assets() / "objects" / "RigidBodyic_Arm_Models" / entry.meshFile;
+                fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
                 auto meshes = loader.load(full.string());
                 if (meshes.empty()) {
                     LOG_ERROR("No meshes in %s", full.string().c_str());

@@ -19,9 +19,9 @@ namespace gui {
     class MeshStore;
     class SimulationRenderer;
 
-    class RigidBodySystem : public ISimulationSystem {
+    class MultiBodySystem : public ISimulationSystem {
         public:
-            RigidBodySystem(const robots::RigidBodyModel& model, 
+            MultiBodySystem(const systems::RigidBodyModel& model, 
                 std::function<const std::vector<mathlib::Mat4>&()> world_src,
                 MeshStore& mesh_store, SimulationRenderer& renderer);
             
@@ -30,11 +30,11 @@ namespace gui {
             void clear(SimulationScene& scene) override;
 
         private:
-            const robots::RigidBodyModel& _model;
+            const systems::RigidBodyModel& _model;
             std::function<const std::vector<mathlib::Mat4>&()> _world_src;
             MeshStore& _meshStore;
             SimulationRenderer& _renderer;
-            RobotBinding _binding;
+            RigidBodyBinding _binding;
     };
 } // namespace gui
 

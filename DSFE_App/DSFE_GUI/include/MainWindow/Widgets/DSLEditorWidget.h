@@ -57,9 +57,9 @@ namespace widgets {
 		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
 
 		gui::SimulationManager* _sim = nullptr;
-		DSL::Parser* _parser = nullptr;
-		DSL::IStoredProgram* _program = nullptr;
-		DSL::RunWrapper* _wrapper = nullptr;
+		dsl::Parser* _parser = nullptr;
+		dsl::IStoredProgram* _program = nullptr;
+		dsl::RunWrapper* _wrapper = nullptr;
 
 		ConsoleOutputWidget* _log = nullptr;
 		DSLSyntaxHighlighter* _highlighter = nullptr;

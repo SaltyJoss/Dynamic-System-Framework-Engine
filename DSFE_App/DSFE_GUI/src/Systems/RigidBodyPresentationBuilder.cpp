@@ -1,7 +1,7 @@
 // DSFE_GUI RobotPresentationBuilder.cpp
-#include "Robots/RobotPresentationBuilder.h"
+#include "Systems/RigidBodyPresentationBuilder.h"
 
-#include "Robots/RobotModel.h"
+#include "Systems/RigidBodyModel.h"
 
 #include "Assets/MeshLoader.h"
 #include "Scene/Object.h"
@@ -14,7 +14,7 @@ using namespace systems;
 namespace fs = std::filesystem;
 
 // Build a RobotRenderBinding from a RobotModel by loading the visual meshes for each link
-RobotRenderBinding RobotPresentationBuilder::build(const systems::RigidBodyModel& model) {
+RigidBodyRenderBinding RigidBodyPresentationBuilder::build(const systems::RigidBodyModel& model) {
 	RigidBodyRenderBinding binding;
 	assets::MeshLoader loader;
 	for (const auto& link : model.links) {

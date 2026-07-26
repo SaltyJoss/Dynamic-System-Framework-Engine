@@ -398,7 +398,7 @@ namespace systems {
 		resetDampingRatioToTarget();
 
 		// Construct path to rigidBody JSON file
-		const std::filesystem::path jsonPath = paths::assets() / "objects" / "RigidBodyic_Arm_Models" / name / (name + ".json");
+		const std::filesystem::path jsonPath = paths::assets() / "objects" / "Robotic_Arm_Models" / name / (name + ".json");
 		if (!std::filesystem::exists(jsonPath)) {
 			LOG_ERROR("RigidBody JSON file not found -> %s", jsonPath.string().c_str());
 			D_ERROR("RigidBody JSON file not found -> %s", jsonPath.string().c_str());
