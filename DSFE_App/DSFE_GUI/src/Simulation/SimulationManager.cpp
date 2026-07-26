@@ -8,8 +8,8 @@
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
 
-#include "Robots/RobotModel.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodyModel.h"
+#include "Systems/RigidBodySystem.h"
 #include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/ISimulationCore.h"
 
@@ -122,36 +122,36 @@ namespace gui {
 
 	// ---------------- Systems ----------------
 
-    const bool SimulationManager::hasRobot() const { return _core && _core->hasRobot(); }
-    robots::RobotSystem& SimulationManager::robotSystem() { return _core->robotSystem(); }
-    bool SimulationManager::followRobotJoint(const std::string&, const glm::vec3&) { return false; }
+    const bool SimulationManager::hasRigidBody() const { return _core && _core->hasRigidBody(); }
+    systems::RigidBodySystem& SimulationManager::rigidBodySystem() { return _core->rigidBodySystem(); }
+    bool SimulationManager::followRigidBodyJoint(const std::string&, const glm::vec3&) { return false; }
 
-	void SimulationManager::load_robot(const std::string& name) {
+	void SimulationManager::load_rigidBody(const std::string& name) {
 		if (!_core) {
-			LOG_ERROR("Simulation core not initialised, cannot load robot");
+			LOG_ERROR("Simulation core not initialised, cannot load rigidBody");
 			return;
 		}
 		if (!_rendererInitialised) {
-			LOG_ERROR("Renderer not initialised, cannot load robot");
+			LOG_ERROR("Renderer not initialised, cannot load rigidBody");
 			return;
 		}
-		_core->loadRobot(name);
-		if (!_core->hasRobot()) {
-			LOG_ERROR("Failed to load robot: %s", name.c_str());
+		_core->loadRigidBody(name);
+		if (!_core->hasRigidBody()) {
+			LOG_ERROR("Failed to load rigidBody: %s", name.c_str());
 			return;
 		}
 
-		const auto& model = _core->robotSystem().model();
+		const auto& model = _core->rigidBodySystem().model();
 		auto world_src = [this]() -> const std::vector<mathlib::Mat4>& { 
-			return _core->robotSystem().worldTransforms();
+			return _core->rigidBodySystem().worldTransforms();
 		};
 		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
-		_core->clearRobotPresentationDirty();
-		_currentRobotName = model.name;
-		LOG_INFO("Robot loaded: %s", model.name.c_str());
+		_core->clearRigidBodyPresentationDirty();
+		_currentRigidBodyName = model.name;
+		LOG_INFO("RigidBody loaded: %s", model.name.c_str());
 	}
 
-	void SimulationManager::clearRobot() { _systems.clear_all(_scene); _scene.clear(); }
+	void SimulationManager::clearRigidBody() { _systems.clear_all(_scene); _scene.clear(); }
 
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
@@ -214,7 +214,7 @@ namespace gui {
 
 	// Start the simulation
 	void SimulationManager::startSimulation() {
-        if (!hasRobot()) { LOG_WARN("Cannot start simulation: no robot loaded"); return; }
+        if (!hasRigidBody()) { LOG_WARN("Cannot start simulation: no rigidBody loaded"); return; }
         _core->startSimulation();
     }
 
@@ -296,7 +296,7 @@ namespace gui {
 
 	// Run a script to completion synchronously with a specific integrator
 	bool SimulationManager::runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method) {
-		if (!hasRobot()) { return false; }
+		if (!hasRigidBody()) { return false; }
 
 		// Map method enum to string name
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
@@ -344,7 +344,7 @@ namespace gui {
 	 *				  WORKSPACE MANAGEMENT
 	 * --------------------------------------------------
 	 */
-	// Close the current workspace, clearing all systems, scene objects, and meshes. This is typically called before loading a new workspace or robot.
+	// Close the current workspace, clearing all systems, scene objects, and meshes. This is typically called before loading a new workspace or rigidBody.
     void SimulationManager::closeWorkspace() {
         // Order matters: 
 		// 1. Systems first (they hold renderable indices)
@@ -354,7 +354,7 @@ namespace gui {
         _scene.clear();
         _renderer.destroy_all_meshes();
         _mesh_store.clear();
-        _currentRobotName.clear();
+        _currentRigidBodyName.clear();
 
         _core->setScriptRunning(false);
         _core->stopSimulation();
@@ -374,14 +374,14 @@ namespace gui {
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
-        if (!w.robotName.isEmpty()) {
-            load_robot(w.robotName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
+        if (!w.rigidBodyName.isEmpty()) {
+            load_rigidBody(w.rigidBodyName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
         }
         LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
     }
-	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and robot name
+	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and rigidBody name
     void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
-        w.robotName = QString::fromStdString(_currentRobotName);
+        w.rigidBodyName = QString::fromStdString(_currentRigidBodyName);
         w.integrationMethod = static_cast<int>(integrationMethod());
         w.adIntegrationMethod = static_cast<int>(autoDiffIntegrationMethod());
         w.autoDiff = autoDiffEnabled();

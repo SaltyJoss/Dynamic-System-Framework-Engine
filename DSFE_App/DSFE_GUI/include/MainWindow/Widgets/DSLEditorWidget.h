@@ -12,7 +12,7 @@
 
 #include <core/Types.h>
 #include <unordered_set>
-#include "Interpreter/RunWrapper.h"
+#include "DSL/RunWrapper.h"
 
 class QTextEdit;
 class QLabel;
@@ -21,7 +21,7 @@ class QTabWidget;
 class QTimer;
 
 namespace gui { class SimulationManager; }
-namespace interpreter {
+namespace DSL {
 	class Parser;
 	class IStoredProgram;
 }
@@ -57,9 +57,9 @@ namespace widgets {
 		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
 
 		gui::SimulationManager* _sim = nullptr;
-		interpreter::Parser* _parser = nullptr;
-		interpreter::IStoredProgram* _program = nullptr;
-		interpreter::RunWrapper* _wrapper = nullptr;
+		DSL::Parser* _parser = nullptr;
+		DSL::IStoredProgram* _program = nullptr;
+		DSL::RunWrapper* _wrapper = nullptr;
 
 		ConsoleOutputWidget* _log = nullptr;
 		DSLSyntaxHighlighter* _highlighter = nullptr;

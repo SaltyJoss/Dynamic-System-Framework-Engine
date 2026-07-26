@@ -15,7 +15,7 @@
 #include "Platform/Paths.h"
 
 #include "Numerics/IntegrationMethods.h"
-#include "Interpreter/StoredProgram.h"
+#include "DSL/StoredProgram.h"
 
 #include "Widgets/ConsoleOutputWidget.h"
 #include "DSL/DSLSyntaxHighlighter.h"

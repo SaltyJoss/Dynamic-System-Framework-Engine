@@ -21,7 +21,7 @@ namespace render {
 	enum class QualityPreset;
 }
 
-namespace robots { class RobotSystem; }
+namespace systems { class RigidBodySystem; }
 namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
 namespace gui { class SimulationManager; }
 
@@ -154,7 +154,7 @@ namespace widgets {
 		bool _jointSelected = false;
 		bool diagRunning = false;
 		bool _robotRequested = false;
-		bool _hasRobot = false;
+		bool _hasBody = false;
 		bool _openStats = true;
 		bool _useAutoDiff = false;
 		// Simulation and diagnostics timing

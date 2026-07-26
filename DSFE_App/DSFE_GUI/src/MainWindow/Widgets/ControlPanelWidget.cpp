@@ -20,7 +20,7 @@
 #include "Scene/Camera.h"
 
 #include "Simulation/SimulationManager.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodySystem.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/Paths.h"
@@ -151,7 +151,7 @@ namespace widgets {
 
 	void ControlPanelWidget::jointInfoPanel() {
 		if (!_jointInfoGroup) {
-			_jointInfoGroup = new QGroupBox("Robot Joint Information");
+			_jointInfoGroup = new QGroupBox("RigidBody Joint Information");
 			auto* layout = new QVBoxLayout(_jointInfoGroup);
 			_jointInfoGroup->setLayout(layout);
 			layout->addWidget(new QLabel("Joint"));
@@ -169,13 +169,13 @@ namespace widgets {
 			_contentLayout->addWidget(_jointInfoGroup);
 		}
 
-		if (!_sim || !_sim->hasRobot()) {
+		if (!_sim || !_sim->hasRigidBody()) {
 			_jointInfoGroup->setVisible(false);
 			return;
 		}
-		auto& rs = _sim->robotSystem();
-		auto& joints = rs.joints();
-		auto& links = rs.links();
+		auto& body = _sim->rigidBodySystem();
+		auto& joints = body.joints();
+		auto& links = body.links();
 
 		_jointInfoGroup->setVisible(!joints.empty() && !links.empty());
 		if (joints.empty() || links.empty()) { _jointInfoGroup->setVisible(false); return; }
@@ -352,11 +352,11 @@ namespace widgets {
 	}
 
 	void ControlPanelWidget::selectJointAndFollow(int jointIdx) {
-		if (!_sim || !_sim->hasRobot()) { return; }
+		if (!_sim || !_sim->hasRigidBody()) { return; }
 
-		auto& rs = _sim->robotSystem();
-		auto& joints = rs.joints();
-		auto& links = rs.links();
+		auto& body = _sim->rigidBodySystem();
+		auto& joints = body.joints();
+		auto& links = body.links();
 		if (joints.empty()) { return; }
 
 		jointIdx = std::clamp(jointIdx, 0, (int)joints.size() - 1);
@@ -368,7 +368,7 @@ namespace widgets {
 		_selection.index = jointIdx;
 		_selection.source = SelectionSource::CONTROL_PANEL;
 
-		_sim->followRobotJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
+		_sim->followRigidBodyJoint(_currentJointName, glm::vec3(0.0f, 0.2f, 0.6f));
 	}
 
 	void ControlPanelWidget::updateSimClock() {

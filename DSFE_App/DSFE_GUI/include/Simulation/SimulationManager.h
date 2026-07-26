@@ -41,8 +41,8 @@ namespace scene {
 namespace core { class ISimulationCore; }
 
 // Forward Declarations for Physics, Robots, Control, and Integration
-namespace interpreter { class IStoredProgram; }
-namespace robots { class RobotSystem; struct RobotModel; }
+namespace dsl { class IStoredProgram; }
+namespace systems { class RigidBodySystem; struct RigidBodyModel; }
 namespace control { class TrajectoryManager; }
 namespace integration { enum class eIntegrationMethod; }
 
@@ -51,8 +51,7 @@ namespace gui {
     enum class ViewID { Manual = 0, Top, Right, Front, Follow, COUNT };
 
     class SimulationRenderer;
-    //class SimulationSystemController;
-
+    
 	// Forward Declarations for eKeyCode
     enum class eKeyCode;
 

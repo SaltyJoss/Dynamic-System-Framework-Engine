@@ -1,7 +1,7 @@
-// DSFE_GUI RobotRenderer.cpp
-#include "Robots/RobotRenderer.h"
-#include "Robots/RobotPresentationBuilder.h"
-#include "Robots/RobotModel.h"
+// DSFE_GUI RigidBodyRenderer.cpp
+#include "Systems/RigidBodyRenderer.h"
+#include "Systems/RigidBodyPresentationBuilder.h"
+#include "Systems/RigidBodyModel.h"
 
 #include <glm/glm.hpp>
 
@@ -58,20 +58,16 @@ static mathlib::Quat rpyRadToQuat(const mathlib::Vec3& rpyRad) {
 	const double roll = rpyRad.x();
 	const double pitch = rpyRad.y();
 	const double yaw = rpyRad.z();
-
 	const Quat qx(Eigen::AngleAxisd(roll, Vec3(1.0, 0.0, 0.0)));
 	const Quat qy(Eigen::AngleAxisd(pitch, Vec3(0.0, 1.0, 0.0)));
 	const Quat qz(Eigen::AngleAxisd(yaw, Vec3(0.0, 0.0, 1.0)));
-
 	return (qz * qy * qx).normalized();
 }
 
-void RobotRenderer::bind(const RobotRenderBinding& binding) {
+void RigidBodyRenderer::bind(const RigidBodyRenderBinding& binding) {
 	linkRenderMap.clear();
-
 	LOG_INFO("Link render map cleared");
 	LOG_INFO("binding entries = %zu", binding.linkVisuals.size());
-
 	for (const auto& [linkName, visuals] : binding.linkVisuals) {
 		LinkRenderData renderData;
 		for (auto* obj : visuals) { renderData.visuals.push_back(obj); }
@@ -79,34 +75,30 @@ void RobotRenderer::bind(const RobotRenderBinding& binding) {
 	}
 }
 
-// Method to apply the computed world transforms to the corresponding Object instances for each robot link
-void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world) {
-	const bool isAligned = robot.baseFrameIsEngineAligned;
-	const size_t n = robot.links.size();
-	if (world.size() < robot.links.size()) {
-		LOG_ERROR("Transform mismatch: links=%zu world=%zu", robot.links.size(), world.size());
+// Method to apply the computed world transforms to the corresponding Object instances for each body link
+void RigidBodyRenderer::applyTransforms(const systems::RigidBodyModel& body, const std::vector<mathlib::Mat4>& world) {
+	const bool isAligned = body.baseFrameIsEngineAligned;
+	const size_t n = body.links.size();
+	if (world.size() < body.links.size()) {
+		LOG_ERROR("Transform mismatch: links=%zu world=%zu", body.links.size(), world.size());
 		return;
 	}
 	for (size_t i = 0; i < n; ++i) {
-		const auto& link = robot.links[i];
+		const auto& link = body.links[i];
 		auto it = linkRenderMap.find(link.name);
 		if (it == linkRenderMap.end()) { continue; }
 		glm::mat4 T = toGlm(world[i]);
 		glm::vec3 pos = glm::vec3(T[3]); // Extract translation from the 4x4 matrix
 		glm::quat q = glm::quat_cast(T); // Extract rotation as a quaternion
-
 		glm::quat q_rot = isAligned ? (q * q_corr) : q;
 
 		for (size_t v = 0; v < it->second.visuals.size(); ++v) {
 			auto* obj = it->second.visuals[v];
 			if (!obj) { continue; }
-
 			obj->transform.position = pos;
 			obj->transform.rotQ = q_rot;
-
 			if (v < link.visual.meshEntries.size()) {
 				const auto& meshMat = link.visual.meshEntries[v];
-
 				obj->material.albedo = glm::vec3(meshMat.material.x(), meshMat.material.y(), meshMat.material.z());
 				obj->material.metallic = meshMat.metallic;
 				obj->material.roughness = meshMat.roughness;
@@ -115,20 +107,13 @@ void RobotRenderer::applyTransforms(const robots::RobotModel& robot, const std::
 	}
 }
 
-// Method to clear the current robot from the scene
-void RobotRenderer::clearRobotModel(const robots::RobotModel& robot) {
-	// Remove robot objects from _objects
-	for (auto& link : robot.links) {
+// Method to clear the current body from the scene
+void RigidBodyRenderer::clearRigidBodyModel(const systems::RigidBodyModel& body) {
+	// Remove body objects from _objects
+	for (auto& link : body.links) {
 		auto it = linkRenderMap.find(link.name);
 		if (it == linkRenderMap.end()) continue;
-		for (auto* obj : it->second.visuals) {
-			if (obj) {
-				// Remove the object from the scene graph or object manager
-				// Assuming a function removeObjectFromScene exists
-				// removeObjectFromScene(obj);
-				delete obj; // Or use smart pointers to manage memory automatically
-			}
-		}
+		for (auto* obj : it->second.visuals) { if (obj) { delete obj; } /* Smart pointers to memory manange */ }
 	}
-	D_WARN("Old robot model removed");
+	D_WARN("Old body model removed");
 }

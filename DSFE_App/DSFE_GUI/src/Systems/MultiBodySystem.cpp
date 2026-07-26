@@ -1,12 +1,12 @@
 // DSFE_GUI Systems/MultiBodySystem.cpp
-#include "Systems/MultiBodySystem.h"
+#include "Systems/MutliBodySystem.h"
 #include "Simulation/SimulationScene.h"
 #include "Simulation/MeshStore.h"
 #include "Simulation/SimulationRenderer.h"
 
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
-#include "Robots/RobotModel.h"
+#include "Systems/RigidBodyModel.h"
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
@@ -23,7 +23,7 @@ namespace gui {
         return g;
     }
 
-    MultiBodySystem::MultiBodySystem(const robots::RobotModel& model, std::function<const std::vector<mathlib::Mat4>&()> world_src, MeshStore& mesh_store, SimulationRenderer& renderer)
+    MultiBodySystem::MultiBodySystem(const systems::RigidBodyModel& model, std::function<const std::vector<mathlib::Mat4>&()> world_src, MeshStore& mesh_store, SimulationRenderer& renderer)
         : _model(model), _world_src(world_src), _meshStore(mesh_store), _renderer(renderer) {}
 
     void MultiBodySystem::build(SimulationScene& scene) {
@@ -32,7 +32,7 @@ namespace gui {
         for (const auto& link : _model.links) {
             auto& renderables = _binding.link_to_renderables[link.name];
             for (const auto& entry : link.visual.meshEntries) {
-                fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
+                fs::path full = paths::assets() / "objects" / "RigidBodyic_Arm_Models" / entry.meshFile;
                 auto meshes = loader.load(full.string());
                 if (meshes.empty()) {
                     LOG_ERROR("No meshes in %s", full.string().c_str());
@@ -79,7 +79,7 @@ namespace gui {
     }
 
     void MultiBodySystem::clear(SimulationScene& scene) {
-        // Reset all renderables associated with the robot links to identity transforms and clear the binding map
+        // Reset all renderables associated with the body links to identity transforms and clear the binding map
         for (const auto& [link_name, renderables] : _binding.link_to_renderables) {
             for (uint32_t r_idx : renderables) { scene.set_transform(r_idx, glm::mat4(1.0f)); }
         }

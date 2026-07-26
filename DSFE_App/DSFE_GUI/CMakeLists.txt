@@ -118,6 +118,8 @@ set(SIMULATION_SRC
 )
 
 set(SYSTEMS_SRC
+    src/Systems/RigidBodyPresentationBuilder.cpp
+    src/Systems/RigidBodyRenderer.cpp
     src/Systems/SingleBodySystem.cpp
     src/Systems/MultiBodySystem.cpp
 )
@@ -138,11 +140,6 @@ set(WIDGETS_SRC
     include/MainWindow/Widgets/FractionSelectorWidget.h
     src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
     include/MainWindow/DSL/DSLSyntaxHighlighter.h
-)
-
-set(ROBOT_SRC
-    src/Robots/RobotPresentationBuilder.cpp
-    src/Robots/RobotRenderer.cpp
 )
 
 set(OBJECT_SRC
@@ -179,7 +176,6 @@ target_sources(DSFE_GUI PRIVATE
     ${SIMULATION_SRC}
     ${SYSTEMS_SRC}
     ${WIDGETS_SRC}
-    ${ROBOT_SRC}
     ${OBJECT_SRC}
     ${PLATFORM_SRC}
     ${ASSETS_SRC}

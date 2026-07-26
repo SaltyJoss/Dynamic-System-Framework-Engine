@@ -6,7 +6,7 @@
 #include <cstdint>
 
 namespace gui {
-    struct RobotBinding {
+    struct RigidBodyBinding {
         std::unordered_map<std::string, std::vector<uint32_t>> link_to_renderables;
         void clear() { link_to_renderables.clear(); }
     };

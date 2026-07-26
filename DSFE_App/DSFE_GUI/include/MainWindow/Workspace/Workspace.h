@@ -13,14 +13,14 @@ namespace gui {
         int version = 1;
         QString name;
 
-        QString robotName;      // empty = no robot
+        QString rigidBodyName;      // empty = no rigid body loaded
         QString scriptText;     // DSL script embedded — file is self-contained
         QString scriptPath;     // original script file if one was opened (informational)
 
         // Simulation properties
         int integrationMethod = 0;      // integration::eIntegrationMethod as int
         int adIntegrationMethod = 0;    // integration::eAutoDiffIntegrationMethod as int
-        double  simDt = 1.0 / 180.0;
+        double simDt = 1.0 / 180.0;
         double telemetryDt = 1.0 / 180.0;
         bool autoDiff = false;
 

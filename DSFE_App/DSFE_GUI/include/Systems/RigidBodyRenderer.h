@@ -1,4 +1,4 @@
-// DSFE_GUI RobotRenderer.h
+// DSFE_GUI RigidBodyRenderer.h
 #pragma once
 
 #include <unordered_map>
@@ -9,24 +9,20 @@
 #include <core/Types.h>
 
 namespace scene { class Object; }
-namespace robots { struct RobotModel; }
+namespace systems { struct RigidBodyModel; }
 
 struct LinkRenderData {
 	std::vector<scene::Object*> visuals; // Visual objects associated with this link
 	std::vector<scene::Object*> collisions; // Collision objects associated with this link (not implemented yet)
 };
 
-struct RobotRenderBinding;
+struct RigidBodyRenderBinding;
 
-class RobotRenderer {
+class RigidBodyRenderer {
 public:
-	//using spawnFn = std::function<std::vector<scene::Object*>(const std::string&)>; // function type for loading meshes
-
-	/*void instantiateRobotLinks(const robots::RobotModel& robot);*/
-	void bind(const RobotRenderBinding& binding);
-	void applyTransforms(const robots::RobotModel& robot, const std::vector<mathlib::Mat4>& world);
-
-	void clearRobotModel(const robots::RobotModel& robot);
+	void bind(const RigidBodyRenderBinding& binding);
+	void applyTransforms(const systems::RigidBodyModel& robot, const std::vector<mathlib::Mat4>& world);
+	void clearRigidBodyModel(const systems::RigidBodyModel& robot);
 
 private:
 	struct linkRenderData {
