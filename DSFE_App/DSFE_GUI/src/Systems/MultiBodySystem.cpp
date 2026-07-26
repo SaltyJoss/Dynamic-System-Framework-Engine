@@ -31,17 +31,20 @@ namespace gui {
         namespace fs = std::filesystem;
         for (const auto& link : _model.links) {
             auto& renderables = _binding.link_to_renderables[link.name];
+            glm::vec3 lo(1e30f), hi(-1e30f);
+            bool anyVerts = false;
             for (const auto& entry : link.visual.meshEntries) {
                 fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
                 auto meshes = loader.load(full.string());
-                if (meshes.empty()) {
-                    LOG_ERROR("No meshes in %s", full.string().c_str());
-                    continue;
-                }
+                if (meshes.empty()) { LOG_ERROR("No meshes in %s", full.string().c_str()); continue; }
                 for (auto& mptr : meshes) {
                     scene::Mesh& src = *mptr;
                     if (src._vertices.empty()) { continue; }
-
+                    for (const auto& v : src._vertices) {
+                        lo = glm::min(lo, glm::vec3(v._pos.x, v._pos.y, v._pos.z));
+                        hi = glm::max(hi, glm::vec3(v._pos.x, v._pos.y, v._pos.z));
+                        anyVerts = true;
+                    }
                     std::vector<uint32_t> indices(src._indices.begin(), src._indices.end());
                     const uint32_t cpu_id = _meshStore.add(src);
                     const uint32_t gpu_id = _renderer.upload(_meshStore.get(cpu_id)->_vertices, indices);
@@ -58,6 +61,12 @@ namespace gui {
                     }
                     renderables.push_back(r_idx);
                 }
+            }
+            if (anyVerts) {
+                auto& L = const_cast<systems::RigidBodyLink&>(link);
+                L.aabbMin = mathlib::Vec3(lo.x, lo.y, lo.z);
+                L.aabbMax = mathlib::Vec3(hi.x, hi.y, hi.z);
+                L.hasBounds = true;
             }
         }
     }
