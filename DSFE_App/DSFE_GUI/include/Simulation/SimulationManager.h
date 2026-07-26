@@ -76,9 +76,9 @@ namespace gui {
         SimulationManager();
         ~SimulationManager();
 
-        void initialiseRenderer(const renderer::NativeWindow& win);
-        void resizeRenderer(int w, int h);
-        void renderViewport(int w, int h);
+        void initialiseRenderer(const renderer::NativeWindow& win, uint32_t w, uint32_t h);
+        void resizeRenderer(uint32_t w, uint32_t h);
+        void renderViewport(uint32_t w, uint32_t h);
         bool rendererReady() const { return _rendererInitialised; }
 
         uint32_t load_mesh(const std::string& path);
@@ -151,8 +151,7 @@ namespace gui {
 
 		// Rendering Entry Points
         void tick(double dt);
-        void setDisplaySize(int w, int h);
-        void resize(int32_t width, int32_t height);
+        void setDisplaySize(uint32_t w, uint32_t h);
 
 		void syncRobotToScene();
 		void syncBodyToScene();

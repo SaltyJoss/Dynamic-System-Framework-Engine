@@ -77,16 +77,16 @@ namespace gui {
 	--------------------------------------------------
 	*/
 
-	void SimulationManager::initialiseRenderer(const renderer::NativeWindow& win) {
+	void SimulationManager::initialiseRenderer(const renderer::NativeWindow& win, uint32_t w, uint32_t h) {
 		if (_rendererInitialised) { return; }
-		if (!_renderer.init(win)) {
+		if (!_renderer.init(win, w, h)) {
 			LOG_ERROR("Vulkan renderer initialisation failed");
 			return;
 		}
 		_rendererInitialised = true;
 	}
 
-	void SimulationManager::resizeRenderer(int w, int h) {
+	void SimulationManager::resizeRenderer(uint32_t w, uint32_t h) {
 		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
 		_internalSize = { static_cast<float>(w), static_cast<float>(h) };
 		_renderer.resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
@@ -120,6 +120,12 @@ namespace gui {
 
 	}
 
+	// ---------------- Systems ----------------
+
+    const bool SimulationManager::hasRobot() const { return _core && _core->hasRobot(); }
+    robots::RobotSystem& SimulationManager::robotSystem() { return _core->robotSystem(); }
+    bool SimulationManager::followRobotJoint(const std::string&, const glm::vec3&) { return false; }
+
 	void SimulationManager::load_robot(const std::string& name) {
 		if (!_core) {
 			LOG_ERROR("Simulation core not initialised, cannot load robot");
@@ -145,10 +151,7 @@ namespace gui {
 		LOG_INFO("Robot loaded: %s", model.name.c_str());
 	}
 
-	void SimulationManager::clearRobot() {
-		_systems.clear_all(_scene); // clear all systems
-        _scene.clear();          // drop all renderables
-    }
+	void SimulationManager::clearRobot() { _systems.clear_all(_scene); _scene.clear(); }
 
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
@@ -159,12 +162,12 @@ namespace gui {
 		_core->tick(dt);
 	}
 
-	void SimulationManager::setDisplaySize(int w, int h) {
+	void SimulationManager::setDisplaySize(uint32_t w, uint32_t h) {
 		if (w <= 0.0f || h <= 0.0f) return;
 		_displaySize = { w, h };
 	}
 
-	void SimulationManager::renderViewport(int w, int h) {
+	void SimulationManager::renderViewport(uint32_t w, uint32_t h) {
 		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
 		if (hasCompletedStudy()) {
 			for (const auto& r : consumeCompletedStudy()) {
@@ -196,14 +199,6 @@ namespace gui {
         if (_selectedObject == obj) { _selectedObject = nullptr; }
         std::erase_if(_objects, [obj](const std::unique_ptr<scene::Object>& p) { return p.get() == obj; });
     }
-
-    // ---------------- Robots ----------------
-
-    const bool SimulationManager::hasRobot() const { return _core && _core->hasRobot(); }
-
-    robots::RobotSystem& SimulationManager::robotSystem() { return _core->robotSystem(); }
-
-    bool SimulationManager::followRobotJoint(const std::string&, const glm::vec3&) { return false; }
 
     // ---------------- Simulation control ----------------
 
