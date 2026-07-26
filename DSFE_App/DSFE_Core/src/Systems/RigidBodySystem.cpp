@@ -35,6 +35,11 @@ namespace systems {
 	RigidBodySystem::~RigidBodySystem() = default;
 
 	const systems::RigidBodyModel& RigidBodySystem::model() const { return _body; }
+	std::vector<std::string> RigidBodySystem::linkNames() const {
+		std::vector<std::string> names;
+		for (const auto& link : _body.links) { names.push_back(link.name); }
+		return names;
+	}
 
 	// Helper function to convert std::vector<double> to Eigen::VectorXd
 	static VecX toVecX(const std::vector<double>& a) {
@@ -546,9 +551,9 @@ namespace systems {
 
 	// Method to get the world origin of a specific rigidBody link by name
 	bool RigidBodySystem::linkWorldOrigin(const std::string& linkName, mathlib::Vec3& outOrigin) const {
-		auto it = _linkIndex.find(linkName);
-		if (it == _linkIndex.end()) { return false; }
-		out = _worldTransforms[it->second].block<3,1>(0,3);
+		auto it = _link_idx.find(linkName);
+		if (it == _link_idx.end()) { return false; }
+		outOrigin = _worldTransforms[it->second].block<3,1>(0,3);
 		return true;
 	}
 	// Method to apply an external force to a specific rigidBody link at a given world point
@@ -560,9 +565,9 @@ namespace systems {
 
 		// Find the joint whose child is this link — that's the body ABA indexes.
 		int jointIdx = -1;
-		for (size_t j = 0; j < _robot.joints.size(); ++j) {
-			auto cit = _linkIndex.find(_robot.joints[j].child);
-			if (cit != _linkIndex.end() && cit->second == linkIdx) { jointIdx = (int)j; break; }
+		for (size_t j = 0; j < _body.joints.size(); ++j) {
+			auto cit = _link_idx.find(_body.joints[j].child);
+			if (cit != _link_idx.end() && cit->second == linkIdx) { jointIdx = (int)j; break; }
 		}
 		if (jointIdx < 0) { return false; }   // root/base link: no governing joint (see note)
 
@@ -570,10 +575,10 @@ namespace systems {
 		return true;
 	}
 	// Overload to apply an external force to a specific rigidBody link at its world origin
-	bool RigidBodySystem::setLinkExternalForce(const std::string& linkName, const mathlib::Vec3& worldForce) {
+	bool RigidBodySystem::setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldForce) {
 		mathlib::Vec3 o;
 		if (!linkWorldOrigin(linkName, o)) { return false; }
-		return setLinkExternalForce(linkName, o, worldForce);
+		return setLinkExtForce(linkName, o, worldForce);
 	}
 	// Method to clear all pending external forces applied to rigidBody links
 	void RigidBodySystem::clearExtForces() { _pendingExtForces.clear(); }

@@ -227,7 +227,7 @@ namespace systems {
 	}
 
 	template<typename Scalar>
-	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& dynScratch) {
+	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const {
 		const size_t n = _body.joints.size();
 		scratch.spatial.f_ext.assign(n, mathlib::SpatialVec_T<Scalar>()); // reset external forces
 		if (_pendingExtForces.empty()) { return; }

@@ -70,6 +70,8 @@ namespace systems {
         const std::vector<RigidBodyJoint>& joints() const { return _body.joints; }
 		std::vector<RigidBodyJoint>& joints() { return _body.joints; }
 
+		std::vector<std::string> linkNames() const;
+
         std::size_t linkCount() const { return _body.links.size(); }
 		std::size_t jointCount() const { return _body.joints.size(); }
 
@@ -99,7 +101,7 @@ namespace systems {
 
 		bool linkWorldOrigin(const std::string& linkName, mathlib::Vec3& out) const;
 		bool setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce);
-		bool setLinkExternalForce(const std::string& linkName, const mathlib::Vec3& worldForce);
+		bool setLinkExtForce(const std::string& linkName, const mathlib::Vec3& worldForce);
 		void clearExtForces();
 
 		// ---- Joint State Methods ---
