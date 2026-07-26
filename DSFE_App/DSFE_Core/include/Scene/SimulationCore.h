@@ -141,6 +141,12 @@ namespace core {
 		bool rigidBodyPresentationDirty() const override { return _rigidBodyPresentationDirty; }
 		void clearRigidBodyPresentationDirty() override { _rigidBodyPresentationDirty = false; }
 
+		void setManipulating(bool on) override;
+		bool isManipulating() const override { return _manipulating.load(); }
+		bool setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) override;
+		const std::vector<mathlib::Mat4>& linkWorldTransforms() const override;
+		std::vector<std::string> linkNames() const override;
+
 	private:
 		// Export thread management
 		void exportThreadMain();
@@ -175,6 +181,7 @@ namespace core {
 		std::atomic<bool> _simRunning{ false };		// Whether the simulation loop is currently running
 		std::atomic<bool> _scriptRunning{ false };	// Whether a script is currently running
 		std::atomic<int> _exportsInFlight = 0;
+		std::atomic<bool> _manipulating{ false }; 
 
 		// Run mode
 		eRunMode _runMode = eRunMode::Interactive;

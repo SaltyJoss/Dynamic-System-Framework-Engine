@@ -148,7 +148,6 @@ namespace core {
 			// Update physics and rigidBody system if sim is running
 			if (_simRunning.load()) {
 				simTime += _dt;
-
 				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
 					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
@@ -163,6 +162,10 @@ namespace core {
 				}
 				if (hasSingleBody()) { _singleBody->step(_dt, simTime); }
 			}
+			else if (_manipulating.load() && hasRigidBody()) {
+				_rigidBody->step(_dt, simTime);
+			}
+
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
 
@@ -446,6 +449,14 @@ namespace core {
 		if (!_rigidBody) { LOG_ERROR("Cannot load rigidBody: RigidBodySystem not set"); return; }
 		_rigidBody->loadRigidBody(name);
 	}
+	// Sets an external force on a specific link of the rigidBody system at a given world point
+	bool SimulationCore::setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) {
+		return _rigidBody->setLinkExtForce(link, worldPoint, worldForce);
+	}
+	// Accessor for the world transforms of the rigidBody links (const version)
+	const std::vector<mathlib::Mat4>& SimulationCore::linkWorldTransforms() const { return _rigidBody->worldTransforms(); }
+	// Accessor for the names of the rigidBody links (const version)
+	std::vector<std::string> SimulationCore::linkNames() const { return _rigidBody->linkNames(); }
 
 	// Accessor for the single body system (non-const and const versions)
 	single_body_system::SingleBodySystem& SimulationCore::singleBodySystem() { return *_singleBody; }
@@ -539,5 +550,15 @@ namespace core {
 		while (_exportsInFlight.load(std::memory_order_acquire) > 0) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
+	}
+
+	void SimulationCore::setManipulating(bool on) {
+		if (on == _manipulating.load()) { return; }
+		if (on) {
+			setupSimulationIntegrator();
+			_accum = 0.0;
+		}
+		_manipulating.store(on);
+		if (!on) { _rigidBody->clearExternalForces(); }   // drop any residual drag force
 	}
 }
