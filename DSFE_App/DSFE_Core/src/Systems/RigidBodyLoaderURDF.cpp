@@ -101,7 +101,7 @@ namespace systems {
     // Parse a URDF joint element into a RigidBodyJoint structure
     static void urdf_parseJoint(XMLElement* jEl, RigidBodyJoint& joint) {
         joint.name = jEl->Attribute("name") ? jEl->Attribute("name") : "";
-        const std::string typeStr = urdf_jointType(jEl->Attribute("type") ? jEl->Attribute("type") : "");
+        const std::string typeStr = jEl->Attribute("type") ? jEl->Attribute("type") : "revolute";
         const bool continuous = (typeStr == "continuous");
         joint.type = urdf_jointType(typeStr);
         // Parse parent and child links
@@ -135,11 +135,11 @@ namespace systems {
         }
         // Limits
         if (XMLElement* l = jEl->FirstChildElement("limit")) {
-            l->QueryDoubleAttribute("lower", &joint.limits.minAngle);
-            l->QueryDoubleAttribute("upper", &joint.limits.maxAngle);
+            l->QueryDoubleAttribute("effort",   &joint.limits.maxEffort);
+            l->QueryDoubleAttribute("lower",    &joint.limits.minAngle);
+            l->QueryDoubleAttribute("upper",    &joint.limits.maxAngle);
+            l->QueryDoubleAttribute("velocity", &joint.limits.maxqd);
             if (!continuous) {
-                L->QueryDoubleAttribute("lower", &joint.limits.minAngle);
-                L->QueryDoubleAttribute("upper", &joint.limits.maxAngle);
                 if (joint.limits.minAngle > joint.limits.maxAngle) {
                     std::swap(joint.limits.minAngle, joint.limits.maxAngle);
                 }
@@ -168,7 +168,7 @@ namespace systems {
         // Robot Element (may update for more generalised applications, though I know URDF's are usually robot-based configurations)
         XMLElement* robot = doc.FirstChildElement("robot");
         if (!robot) { LOG_ERROR("No <robot> element found in URDF file: %s", fp.c_str()); return rb; }
-        rb.Name = robot->Attribute("name") ? robot->Attribute("name") : "unnamed_body";
+        rb.name = robot->Attribute("name") ? robot->Attribute("name") : "unnamed_body";
         rb.scale = 1.0f; // URDF does not specify a scale, so we default to 1.0
         rb.kinematicsModel = eKinematicsModel::URDF;
 
@@ -182,13 +182,13 @@ namespace systems {
         }
 
         // Links
-        const std::filesystem::path urdfDir = std::filesystem::path(filepath).parent_path();
+        const std::filesystem::path urdfDir = std::filesystem::path(fp).parent_path();
         const std::filesystem::path assetRoot = paths::assets();
         // Attempts to compute the relative path from the URDF directory to the assets root, and appends "meshes" to it for mesh file resolution
         std::string meshDirRel;
         {
             std::error_code ec;
-            auto rel = std::filesystem::relative(urdfDir, assetsRoot, ec);
+            auto rel = std::filesystem::relative(urdfDir, paths::assets(), ec);
             meshDirRel = ec ? urdfDir.string() : rel.string();
             std::replace(meshDirRel.begin(), meshDirRel.end(), '\\', '/'); // Ensures forward slashes for consistency across platforms
             meshDirRel += "/meshes"; // Append "meshes" to the relative path for mesh files
@@ -196,7 +196,7 @@ namespace systems {
         // Parse links and joints from the URDF
         for (XMLElement* lEl = robot->FirstChildElement("link"); lEl; lEl = lEl->NextSiblingElement("link")) {
             RigidBodyLink link;
-            urdf_parseLink(lEl, link);
+            urdf_parseLink(lEl, link, meshDirRel);
             rb.links.push_back(link);
             LOG_INFO("Link: %s | Mass: %.3f", link.name.c_str(), link.inertial.mass);
         }
@@ -205,7 +205,11 @@ namespace systems {
             RigidBodyJoint joint;
             urdf_parseJoint(jEl, joint);
             rb.joints.push_back(joint);
-            LOG_INFO("Joint: %s | %s -> %s | type=%d", joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), static_cast<int>(joint.type));
+            LOG_INFO("Joint: %s | %s -> %s | type=%d | axis=(%.3f, %.3f, %.3f) | maxEffort=%.3f | limits=(%.3f, %.3f) | maxVelocity=%.3f",
+                joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), static_cast<int>(joint.type),
+                joint.axis.x(), joint.axis.y(), joint.axis.z(),
+                joint.limits.maxEffort, joint.limits.minAngle, joint.limits.maxAngle, joint.limits.maxqd
+            );
         }
         LOG_INFO("RigidBody (URDF) loaded: %d links, %d joints", static_cast<int>(rb.links.size()), static_cast<int>(rb.joints.size()));
         return rb;

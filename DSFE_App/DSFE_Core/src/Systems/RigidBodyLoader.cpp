@@ -18,6 +18,7 @@ namespace systems {
             ext = fp.substr(dot + 1);
             for (char& c : ext) { c = static_cast<char>(std::tolower((unsigned char)c)); }
         }
+        LOG_INFO("Loading rigidBody model from file: %s (ext: %s)", fp.c_str(), ext.c_str());
         if (ext == "urdf" || ext == "xml") { return loadFromURDF(fp); }
         if (ext == "json") { return loadFromJSON(fp); }
         LOG_ERROR("Unsupported file extension '%s' for rigidBody model: %s", ext.c_str(), fp.c_str());
