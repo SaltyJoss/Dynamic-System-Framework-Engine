@@ -133,7 +133,7 @@ namespace physics {
 		// Compute spatial velocities and transforms
 		computeSpatialKinematicsAndBias(model, q, qd, Xup, v, c);
 		// Compute spatial accelerations
-		computeAccelerations_RNEA(model, qdd, Xup, c, scratch.g, a);
+		computeAccelerations_RNEA(model, qdd, Xup, c, scratch.spatial.g, a);
 		// Compute inverse dynamics (joint torques)
 		computeBackwardForces_RNEA(model, Xup, v, a, tau);
 
@@ -287,8 +287,12 @@ namespace physics {
 
 		mathlib::SpatialVec_T<Scalar> a0; // base acceleration (gravity)
 		a0.v <<
-			scratch.g.template segment<3>(0),
-			scratch.g.template segment<3>(3);
+			scratch.spatial.g.template segment<3>(0),
+			scratch.spatial.g.template segment<3>(3);
+
+		LOG_INFO_ONCE("a0 = [%.3f %.3f %.3f | %.3f %.3f %.3f], g.size=%d",
+			(double)a0.v(0),(double)a0.v(1),(double)a0.v(2),
+			(double)a0.v(3),(double)a0.v(4),(double)a0.v(5),(int)scratch.spatial.g.size());
 
 		computeSpatialKinematicsAndBias(
 			model, q, qd,

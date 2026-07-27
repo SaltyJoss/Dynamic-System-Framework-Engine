@@ -144,7 +144,7 @@ namespace physics {
 		);
 
 		// Set the gravity strength for the body system
-		void setGravity(double g) { _gravity = mathlib::Vec3(0,0,-g); }
+		void setGravity(double g) { _gravity = mathlib::Vec3(0,0,g); }
 		void setGravityVec(const mathlib::Vec3& g) { _gravity = g; }
 		const mathlib::Vec3& getGravityVec() const { return _gravity; }
 		double getGravity() const { return _gravity.norm(); }

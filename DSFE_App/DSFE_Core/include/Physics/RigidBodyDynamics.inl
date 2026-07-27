@@ -313,8 +313,7 @@ namespace physics {
 
 		if (!scratch.dense.M.allFinite()) { throw std::runtime_error("Mass matrix contains non-finite values"); }
 
-		scratch.g.setZero();
-		if (snap.torqueMode != systems::eTorqueMode::NONE) { scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
+		if (snap.torqueMode != systems::eTorqueMode::NONE) { scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
@@ -345,7 +344,7 @@ namespace physics {
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i]; // [Nm], control torque for joint i
-			tau_i += scratch.g[i]; // Gravity compensation
+			tau_i += scratch.dense.tau_g[i]; // Gravity compensation
 			tau_i += scratch.dense.h[i]; // add Coriolis and centrifugal bias
 			// Scalar tau_f = dynamics::computeKarnoppFriction(qd[i], tau_i, b, c); // add friction compensation
 			// tau_i += tau_f;
@@ -363,7 +362,7 @@ namespace physics {
 		}
 
 		// Solve Forward Dynamics: M(q) qdd = tau - h(q, qd) - g(q)
-		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
+		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.dense.tau_g; // [Nm], right-hand side of the dynamics equation M*qdd = tau - h - g
 
 		// Solve for Accelerations
 		Eigen::LDLT<mathlib::MatX_T<Scalar>> solver(scratch.dense.M);
@@ -565,9 +564,8 @@ namespace physics {
 		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M);
 		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
 
-		scratch.g.setZero();
 		if (snap.torqueMode != systems::eTorqueMode::NONE) {
-			scratch.g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
+			scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 		}
 
 		scratch.dense.tau.setZero();
@@ -575,20 +573,20 @@ namespace physics {
 			const systems::RigidBodyJoint& joint = snap.model->joints[i];
 			if (joint.type == systems::eJointType::FIXED) continue;
 
-			const Scalar eps = static_cast < Scalar>(1e-6);
+			const Scalar eps = static_cast<Scalar>(1e-6);
 			const Scalar b = static_cast<Scalar>(joint.dynamics.damping); // viscous damping coefficient
 			const Scalar c = static_cast<Scalar>(joint.dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-2);
 
 			Scalar tau_i = kp[i] * (snap.q_ref[i] - q[i]) + kd[i] * (snap.qd_ref[i] - qd[i]) + mathlib::LSE_smoothMax(scratch.dense.M(i, i), eps) * snap.qdd_ref[i];
-			tau_i += scratch.g[i] + scratch.dense.h[i];
+			tau_i += scratch.dense.tau_g[i] + scratch.dense.h[i]; // is this meant to be 
 			tau_i -= b * qd[i];
 			tau_i -= c * mathlib::tanh(qd[i] / eps_f);
 
 			scratch.dense.tau[i] = tau_i;
 		}
 
-		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.g;
+		scratch.dense.rhs.noalias() = scratch.dense.tau - scratch.dense.h - scratch.dense.tau_g;
 		out.qdd = scratch.dense.M.ldlt().solve(scratch.dense.rhs);
 		out.metrics.qdd = out.qdd;
 
