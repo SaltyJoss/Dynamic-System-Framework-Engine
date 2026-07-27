@@ -39,7 +39,7 @@ namespace systems {
 		snap.root_pose = _root_pose.template cast<T>();
 		snap.baseIsFree = _baseIsFree;
 		snap.lastBaseForwardForce = T(_lastBaseForwardForce);
-		snap.gravity = T(_gravity);
+		snap.gravity = T(_gravity.z());
 
 		snap.torqueMode = _body.torqueMode;
 
@@ -257,6 +257,28 @@ namespace systems {
 		_simTime = simTime;
 		const size_t n = _body.joints.size();
 		mathlib::VecX_T<Dual> x = packState_AD();
+		// Apply floor contact forces if enabled (Bit crude but yeah)
+		{
+			constexpr double k_floor = 400000.0;
+			constexpr double c_floor = 2000.0;
+			const size_t nl = _body.links.size();
+			if (_prevLinkY.size() != nl) { _prevLinkY.assign(nl, 0.0); }
+			for (size_t i = 0; i < nl; ++i) {
+				const Mat4& T = _worldTransforms[i];
+				const double lowY = linkWorldMinY(i, T); 
+				const double vy = (lowY - _prevLinkY[i]) / (_dynamics->dt() > 0 ? _dynamics->dt() : (1.0/180.0));
+				_prevLinkY[i] = lowY;
+				if (lowY < 0.0) {
+					double Fy = -k_floor * lowY - c_floor * vy;
+					if (Fy < 0.0) { Fy = 0.0; }                 // floor only pushes, never pulls
+					setLinkExtForce(
+						_body.links[i].name,
+					    Vec3(T(0,3), lowY, T(2,3)),
+					    Vec3(0.0, Fy, 0.0)
+					);
+				}
+			}
+		}
 
 		assert((size_t)x.size() <= NVar && "State size exceeds the number of dual variables."); // Checks state vector size is within the dual variable limit
 		for (size_t i = 0; i < (size_t)x.size(); ++i) { x[i].dual[i] = 1.0; }

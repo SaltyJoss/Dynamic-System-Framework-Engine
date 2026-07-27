@@ -533,7 +533,7 @@ namespace systems {
 		_dynResult.resize(_body.joints.size());
 		_dynResult_AD.resize(_body.joints.size());
 
-		_dynScratch.g.setConstant(_gravity);
+		_dynScratch.g.setConstant(_gravity.z());
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
@@ -1023,8 +1023,13 @@ namespace systems {
 
 	// Method to set the gravity strength for the rigidBody system
 	void RigidBodySystem::setGravity(double g) {
-		_gravity = g;
+		_gravity = mathlib::Vec3(0.0, 0.0, -g);
 		_dynamics->setGravity(g);
+	}
+	//
+	void RigidBodySystem::setGravityVec(const mathlib::Vec3& g) {
+		_gravity = g;
+		_dynamics->setGravityVec(g);
 	}
 
 	// Set the torque mode for the rigidBody system

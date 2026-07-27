@@ -82,7 +82,9 @@ namespace systems {
         bool hasRigidBody() const { return _hasBody; }
 
 		void setGravity(double g);
-		const double getGravity() const { return _gravity; }
+		void setGravityVec(const mathlib::Vec3& g);
+		const mathlib::Vec3& getGravityVec() const { return _gravity; }
+		double getGravity() const { return _gravity.norm(); }
 
 		void setNaturalFrequency(double wn) { _wn = wn; }
 		double getNaturalFrequency() const { return _wn; }
@@ -309,7 +311,7 @@ namespace systems {
 		mutable std::vector<uint8_t> _clampOmega;
 
 		// Gravity acceleration (m/s^2)
-		double _gravity = 0.0;
+		mathlib::Vec3 _gravity{ 0.0, 0.0, 0.0 };
 
 		// FLoating base state
 		bool _baseIsFree = false;
