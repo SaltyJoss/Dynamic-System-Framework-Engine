@@ -156,6 +156,7 @@ namespace gui {
 		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
 		_core->clearRigidBodyPresentationDirty();
 		_currentRigidBodyName = model.name;
+		_currentRigidBodyPath = name;
 		LOG_INFO("RigidBody loaded: %s", model.name.c_str());
 	}
 
@@ -358,6 +359,7 @@ namespace gui {
         _renderer.destroy_all_meshes();
         _mesh_store.clear();
         _currentRigidBodyName.clear();
+		_currentRigidBodyPath.clear();
 
         _core->setScriptRunning(false);
         _core->stopSimulation();
@@ -378,14 +380,15 @@ namespace gui {
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
-        if (!w.rigidBodyName.isEmpty()) {
-            load_rigidBody(w.rigidBodyName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
+        if (!w.rigidBodyPath.isEmpty()) {
+            load_rigidBody(w.rigidBodyPath.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
         }
         LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
     }
 	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and rigidBody name
     void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
         w.rigidBodyName = QString::fromStdString(_currentRigidBodyName);
+		w.rigidBodyPath = QString::fromStdString(_currentRigidBodyPath);
         w.integrationMethod = static_cast<int>(integrationMethod());
         w.adIntegrationMethod = static_cast<int>(autoDiffIntegrationMethod());
         w.autoDiff = autoDiffEnabled();

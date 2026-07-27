@@ -271,6 +271,7 @@ namespace gui {
         void gatherWorkspace(gui::WorkspaceData& w) const; // Fill the manager-owned parts of a workspace (rigidBody, camera).
 
         const std::string& currentRigidBodyName() const { return _currentRigidBodyName; }
+        const std::string& currentRigidBodyPath() const { return _currentRigidBodyPath; }
 
         void setManipulating(bool on);
         bool isManipulating() const;
@@ -359,6 +360,7 @@ namespace gui {
         double _fixedDt       = 1.0 / 180.0;
         double _telemetryHz   = 100.0;
         std::string _currentRigidBodyName;
+        std::string _currentRigidBodyPath;
 
         scene::Object* _selectedObject = nullptr;
         std::vector<std::unique_ptr<scene::Object>> _objects;
