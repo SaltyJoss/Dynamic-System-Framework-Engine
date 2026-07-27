@@ -173,8 +173,8 @@ namespace widgets {
 			glm::vec3 target = cursorToDragPlane(event->position().x(), event->position().y());
 			if (target.y < 0.0f) { target.y = 0.0f; }   // never drag a link below the floor plane
 			const glm::vec3 grab = linkOrigin(_dragLink);
-			glm::vec3 force  = 400.0f * (target - grab);   // spring; tune stiffness
-			const float fmax = 3000.0f;
+			glm::vec3 force  = 450.0f * (target - grab);   // spring; tune stiffness
+			const float fmax = 3000.0f; // cap the force to avoid instability
 			if (glm::length(force) > fmax) { force = glm::normalize(force) * fmax; }
 			_sim->setLinkExternalForce(_dragLink, grab, force);
 		}

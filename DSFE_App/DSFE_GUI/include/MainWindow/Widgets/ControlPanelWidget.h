@@ -87,6 +87,7 @@ namespace widgets {
 
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
+		void buildTimestepSelectors(QVBoxLayout* layout);
 
 		void worldPropertiesPanel();
 
@@ -109,8 +110,14 @@ namespace widgets {
 		QComboBox* _integratorCombo = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
 		QLabel* _simTimeLabel = nullptr;
+
+		QLabel* _simDtLabel = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
-		FractionSelectorWidget* _telemetryDtSelector = nullptr;
+		QLabel* _simDtValue = nullptr;
+		
+		QLabel* _telDtLabel = nullptr;
+		FractionSelectorWidget* _telDtSelector = nullptr;
+		QLabel* _telDtValue = nullptr;
 
 		QGroupBox* _worldPropertiesGroup = nullptr;
 

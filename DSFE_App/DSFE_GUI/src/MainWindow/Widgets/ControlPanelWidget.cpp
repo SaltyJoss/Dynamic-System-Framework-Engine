@@ -68,7 +68,9 @@ namespace widgets {
 		_integratorCombo->setMaximumWidth(175);
 
 		_simDtSelector = new FractionSelectorWidget(false);
-		_telemetryDtSelector = new FractionSelectorWidget(true);
+		_telDtSelector = new FractionSelectorWidget(true);
+		_simDtLabel = new QLabel();
+		_telDtLabel = new QLabel();
 
 		_simTimeLabel = new QLabel();
 		_simTimeLabel->setWordWrap(true);
@@ -79,32 +81,13 @@ namespace widgets {
 		form->addRow("Integrator", _integratorCombo);
 		layout->addLayout(form);
 
-		layout->addSpacing(8);
+		layout->addSpacing(8);   
 
-		auto* dtHeaderRow = new QHBoxLayout();
+		buildTimestepSelectors(layout);
 
-		auto* simDtLabel = new QLabel("Simulation dt");
-		simDtLabel->setAlignment(Qt::AlignCenter);
-
-		auto* telemetryDtLabel = new QLabel("Telemetry dt");
-		telemetryDtLabel->setAlignment(Qt::AlignCenter);
-		_simDtSelector->setDt(_sim->fixedDt());
-		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
-
-		dtHeaderRow->addWidget(simDtLabel);
-		dtHeaderRow->addWidget(telemetryDtLabel);
-
-		layout->addLayout(dtHeaderRow);
-
-		auto* dtValueRow = new QHBoxLayout();
-
-		dtValueRow->addWidget(_simDtSelector);
-		dtValueRow->addWidget(_telemetryDtSelector);
-		layout->addLayout(dtValueRow);
 		layout->addSpacing(8);
 
 		layout->addWidget(_simTimeLabel);
-
 		_contentLayout->addWidget(_simPropertiesGroup);
 
 		buildIntegratorCombos();
@@ -126,8 +109,14 @@ namespace widgets {
 			}
 		});
 
-		connect(_simDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setFixedDt(dt); });
-		connect(_telemetryDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { _sim->setTelemetryHz(1.0 / dt); });
+		connect(_simDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { 
+			_sim->setFixedDt(dt);
+			_simDtValue = _simDtSelector->setDtVarDecValue(dt);
+		});
+		connect(_telDtSelector, &FractionSelectorWidget::valueChanged, this, [this](double dt) { 
+			_sim->setTelemetryHz(1.0 / dt);
+			_telDtValue = _telDtSelector->setDtVarDecValue(1.0/dt);
+		});
 	}
 
 	void ControlPanelWidget::buildIntegratorCombos() {
@@ -151,16 +140,58 @@ namespace widgets {
 		}
 	}
 
+	void ControlPanelWidget::buildTimestepSelectors(QVBoxLayout* layout) {
+		_simDtLabel = _simDtSelector->setDtVarName("sim");
+		_telDtLabel = _telDtSelector->setDtVarName("tel");
+		
+		double simDt = _sim->fixedDt();
+		_simDtSelector->setDt(simDt);
+		_simDtSelector->setFixedWidth(50);
+		_simDtValue = _simDtSelector->setDtVarDecValue(simDt);
+
+		double telDt = 1.0 / _sim->telemetryHz();
+		_telDtSelector->setDt(telDt);
+		_telDtSelector->setFixedWidth(50);
+		_telDtValue = _telDtSelector->setDtVarDecValue(telDt);
+
+		auto* dtGrid = new QGridLayout();
+        dtGrid->setHorizontalSpacing(2);   // label hugs fraction
+        dtGrid->setVerticalSpacing(8);
+
+		dtGrid->setColumnStretch(0, 0);
+        dtGrid->setColumnStretch(1, 0);
+        dtGrid->setColumnStretch(2, 1);
+
+        dtGrid->addWidget(_simDtLabel,    0, 0, Qt::AlignRight | Qt::AlignVCenter);
+        dtGrid->addWidget(_simDtSelector, 0, 1, Qt::AlignLeft);
+		dtGrid->addWidget(_simDtValue,    0, 2, Qt::AlignLeft  | Qt::AlignVCenter);
+        dtGrid->addWidget(_telDtLabel, 	  1, 0, Qt::AlignRight | Qt::AlignVCenter);
+        dtGrid->addWidget(_telDtSelector, 1, 1, Qt::AlignLeft);
+		dtGrid->addWidget(_telDtValue,	  1, 2, Qt::AlignLeft  | Qt::AlignVCenter);
+
+		dtGrid->setColumnStretch(0, 0);
+        dtGrid->setColumnStretch(1, 0);
+        dtGrid->setColumnStretch(2, 1);
+
+		layout->addLayout(dtGrid);
+	}
+
 	void ControlPanelWidget::worldPropertiesPanel() {
 		_worldPropertiesGroup = new QGroupBox("World Properties");
 		auto* layout = new QVBoxLayout(_worldPropertiesGroup);
 		_worldPropertiesGroup->setLayout(layout);
 
+		auto* gravityLabel = new QLabel(this);
+		gravityLabel->setTextFormat(Qt::RichText);
+		gravityLabel->setText("<b><u>Gravity</u></b>");
+		gravityLabel->setAlignment(Qt::AlignLeft);
 		auto* grav = new GravityVectorWidget(_worldPropertiesGroup);
 		grav->setValue(_sim->gravity());
 		grav->onChanged = [this](const glm::vec3& g) { _sim->setGravity(g); };
 
+		layout->addWidget(gravityLabel);
 		layout->addWidget(grav);
+		
 		layout->addSpacing(8);
 
 		_contentLayout->addWidget(_worldPropertiesGroup);
@@ -421,7 +452,11 @@ namespace widgets {
 			_useAutoDiffCheck->setChecked(_useAutoDiff);
 		}
 		buildIntegratorCombos(); // already reads back from _sim
-		_simDtSelector->setDt(_sim->fixedDt());
-		_telemetryDtSelector->setDt(1.0 / _sim->telemetryHz());
+		double simDt = _sim->fixedDt();
+		double telDt = 1.0 / _sim->telemetryHz();
+		_simDtSelector->setDt(simDt);
+		_simDtValue = _simDtSelector->setDtVarDecValue(simDt);
+		_telDtSelector->setDt(telDt);
+		_telDtValue = _telDtSelector->setDtVarDecValue(telDt);
 	}
 } // namespace widgets
