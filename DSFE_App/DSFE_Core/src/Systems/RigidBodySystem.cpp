@@ -533,7 +533,11 @@ namespace systems {
 		_dynResult.resize(_body.joints.size());
 		_dynResult_AD.resize(_body.joints.size());
 
-		_dynScratch.g.setConstant(_gravity.z());
+		_dynScratch.spatial.g = mathlib::VecX::Zero(6);
+		_dynScratch.spatial.g.segment<3>(3) = _gravity;
+
+		_dynScratch_AD.spatial.g = mathlib::VecX_T<DualNumber_T<double, 14>>::Zero(6);
+		_dynScratch_AD.spatial.g.segment<3>(3) = _gravity.template cast<DualNumber_T<double, 14>>();
 
 		// Reset adaptive integrator so it doesn't carry a stale step size
 		_integrator->resetAdaptiveState();
@@ -1023,7 +1027,7 @@ namespace systems {
 
 	// Method to set the gravity strength for the rigidBody system
 	void RigidBodySystem::setGravity(double g) {
-		_gravity = mathlib::Vec3(0.0, 0.0, -g);
+		_gravity = mathlib::Vec3(0.0, 0.0, g);
 		_dynamics->setGravity(g);
 	}
 	//

@@ -39,7 +39,7 @@ namespace systems {
 		snap.root_pose = _root_pose.template cast<T>();
 		snap.baseIsFree = _baseIsFree;
 		snap.lastBaseForwardForce = T(_lastBaseForwardForce);
-		snap.gravity = T(_gravity.z());
+		snap.gravity = _gravity.template cast<T>();
 
 		snap.torqueMode = _body.torqueMode;
 
@@ -183,14 +183,14 @@ namespace systems {
 
 		// Compute system potential energy at configuration q (relative to gravity)
 		double sys_PE = 0.0;
-		double g = _dynamics->getGravity();
+		auto g = _dynamics->getGravityVec();
 
 		for (size_t k = 0; k < _body.links.size(); ++k) {
 			const RigidBodyLink& link = _body.links[k];
 			const double m = link.inertial.mass;
 			if (m <= 0.0) { continue; }
 			mathlib::Vec3 com_world = (T_world[k].block<3, 3>(0, 0) * link.inertial.com_xyz) + T_world[k].block<3, 1>(0, 3);
-			sys_PE += m * g * com_world.z();
+			sys_PE += -m * g.dot(com_world);
 		}
 
 		const double sys_E = sys_KE + sys_PE; // total mechanical energy of the system
@@ -216,7 +216,7 @@ namespace systems {
 				e.theta = q_real[i]; e.omega = qd_real[i]; e.alpha = mathlib::real(dynResult.metrics.qdd[i]);
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
-				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = 0.0;
+				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = mathlib::real(dynResult.metrics.tau_g[i]);
 				e.tau_sat = mathlib::real(dynResult.metrics.tau_sat[i]);
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = mathlib::real(_clampTheta[i]); e.clamp_omega = mathlib::real(_clampOmega[i]);
