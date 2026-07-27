@@ -49,6 +49,7 @@ set(DEP_CORE_SRC
 )
 
 set(LOADING_SRC
+    src/Systems/RigidBodyLoader.cpp
     src/Systems/RigidBodyLoaderJSON.cpp
     src/Systems/RigidBodyLoaderURDF.cpp
 )
