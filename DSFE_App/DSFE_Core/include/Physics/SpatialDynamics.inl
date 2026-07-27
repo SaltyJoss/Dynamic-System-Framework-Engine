@@ -290,10 +290,6 @@ namespace physics {
 			scratch.spatial.g.template segment<3>(0),
 			scratch.spatial.g.template segment<3>(3);
 
-		LOG_INFO_ONCE("a0 = [%.3f %.3f %.3f | %.3f %.3f %.3f], g.size=%d",
-			(double)a0.v(0),(double)a0.v(1),(double)a0.v(2),
-			(double)a0.v(3),(double)a0.v(4),(double)a0.v(5),(int)scratch.spatial.g.size());
-
 		computeSpatialKinematicsAndBias(
 			model, q, qd,
 			scratch.spatial.Xup,
