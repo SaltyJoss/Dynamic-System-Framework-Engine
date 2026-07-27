@@ -1,4 +1,7 @@
-// DSFE_GUI Systems/MultiBodySystem.cpp
+/*
+ * File: Systems/MultiBodySystem.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "Systems/MultiBodySystem.h"
 #include "Simulation/SimulationScene.h"
 #include "Simulation/MeshStore.h"
@@ -34,7 +37,7 @@ namespace gui {
             glm::vec3 lo(1e30f), hi(-1e30f);
             bool anyVerts = false;
             for (const auto& entry : link.visual.meshEntries) {
-                fs::path full = paths::assets() / "objects" / "Robotic_Arm_Models" / entry.meshFile;
+                fs::path full = paths::assets() / entry.meshFile;
                 auto meshes = loader.load(full.string());
                 if (meshes.empty()) { LOG_ERROR("No meshes in %s", full.string().c_str()); continue; }
                 for (auto& mptr : meshes) {

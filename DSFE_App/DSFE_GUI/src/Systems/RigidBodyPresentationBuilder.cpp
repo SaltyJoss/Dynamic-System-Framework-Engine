@@ -1,4 +1,7 @@
-// DSFE_GUI RobotPresentationBuilder.cpp
+/*
+ * File: Systems/RigidBodyPresentationBuilder.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "Systems/RigidBodyPresentationBuilder.h"
 
 #include "Systems/RigidBodyModel.h"
@@ -20,7 +23,7 @@ RigidBodyRenderBinding RigidBodyPresentationBuilder::build(const systems::RigidB
 	for (const auto& link : model.links) {
 		auto& visuals = binding.linkVisuals[link.name];
 		for (const auto& mesh : link.visual.meshEntries) {
-			fs::path fullPath = paths::assets() / "objects" / "Robotic_Arm_Models" / mesh.meshFile;
+			fs::path fullPath = paths::assets() / mesh.meshFile;
 			auto meshes = loader.load(fullPath.string());
 			for (auto& m : meshes) {
 				auto obj = std::make_unique<scene::Object>(m);
