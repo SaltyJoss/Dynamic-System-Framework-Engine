@@ -140,6 +140,8 @@ set(WIDGETS_SRC
     include/MainWindow/Widgets/FractionSelectorWidget.h
     src/MainWindow/DSL/DSLSyntaxHighlighter.cpp
     include/MainWindow/DSL/DSLSyntaxHighlighter.h
+    src/MainWindow/Widgets/GravityVectorWidget.cpp
+    include/MainWindow/Widgets/GravityVectorWidget.h
 )
 
 set(OBJECT_SRC
