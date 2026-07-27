@@ -1,4 +1,8 @@
-// DSFE_GUI SimulationManager.h
+/*
+ * Project: DSFE_GUI
+ * File: Simulation/SimulationManager.h
+ * Created by: Joss Salton, 27-07-2026
+ */
 #pragma once
 
 #include "Renderer/NativeWindow.h"
@@ -237,11 +241,13 @@ namespace gui {
 		const integration::eIntegrationMethod integrationMethod() const;
         void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method);
 		const integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const;
-
         std::string integrationMethodName() const;
-
         void enableAutoDiff(bool enable);
         bool autoDiffEnabled() const;
+
+        // Accessors for Physics and Dynamics state
+        void setGravity(const glm::vec3& g);
+        glm::vec3 gravity() const;
 
 		// Access to the underlying StudyRunner for running batch studies from the GUI
 		StudyRunner* studyRunner() { return _studyRunner.get(); }

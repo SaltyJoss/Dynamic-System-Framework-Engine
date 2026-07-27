@@ -43,6 +43,14 @@ namespace gui {
 
 	static const glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
 
+	static glm::vec3 toGlm(const mathlib::Vec3& v) {
+		return glm::vec3(
+			static_cast<float>(v.x()),
+			static_cast<float>(v.y()),
+			static_cast<float>(v.z())
+		);
+	}
+
     static glm::mat4 toGlm(const mathlib::Mat4& m) {
         glm::mat4 g(1.0f);
         for (int c = 0; c < 4; ++c) {
@@ -274,18 +282,13 @@ namespace gui {
 		LOG_INFO("DEBUG -> Current AutoDiff integration method: %d", static_cast<int>(_core->autoDiffIntegrationMethod()));
 		return _core->autoDiffIntegrationMethod();
 	}
+	std::string SimulationManager::integrationMethodName() const { return _core->integrationMethodName(); }
+	void SimulationManager::enableAutoDiff(bool enable) { _core->enableAutoDiff(enable); }
+	bool SimulationManager::autoDiffEnabled() const { return _core->autoDiffEnabled(); }
 
-	std::string SimulationManager::integrationMethodName() const {
-		return _core->integrationMethodName();
-	}
-
-	void SimulationManager::enableAutoDiff(bool enable) {
-		_core->enableAutoDiff(enable);
-	}
-
-	bool SimulationManager::autoDiffEnabled() const {
-		return _core->autoDiffEnabled();
-	}
+	// Accessors for Physics and Dynamics state
+	void SimulationManager::setGravity(const glm::vec3& g) { _core->setGravity(mathlib::Vec3(g.x, g.y, g.z)); }
+	glm::vec3 SimulationManager::gravity() const { mathlib::Vec3 g = _core->gravity(); return toGlm(g); }
 
 	// This seems to be the better solution?
 	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
