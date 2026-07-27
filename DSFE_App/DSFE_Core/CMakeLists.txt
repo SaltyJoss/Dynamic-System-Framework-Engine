@@ -32,15 +32,16 @@ set(DEP_CORE_SRC
     src/Numerics/IntegrationService.cpp
 )
 
-set(SINGLE_BODY_SYS_SRC
-    src/SingleBodySystem/Body.cpp
+set(LOADING_SRC
+    src/Systems/RigidBodyLoaderJSON.cpp
+    src/Systems/RigidBodyLoaderURDF.cpp
 )
 
 set(SYSTEMS_SRC
-    src/Systems/SystemLoader.cpp
     src/Systems/RigidBodySystem.cpp
     src/Systems/TrajectoryManager.cpp
     src/Systems/RigidBodySnapshot.cpp
+    src/SingleBodySystem/Body.cpp
 )
 
 set(PHYSICS_SRC
@@ -88,8 +89,8 @@ set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)
 # Add sources for DSFE_Core, including ImGui files
 target_sources(DSFE_Core PRIVATE
     ${DEP_CORE_SRC}
-    ${SINGLE_BODY_SYS_SRC}
     ${SYSTEMS_SRC}
+    ${LOADING_SRC}
     ${PHYSICS_SRC}
     ${PLATFORM_SRC}
     ${DSL_SRC}
