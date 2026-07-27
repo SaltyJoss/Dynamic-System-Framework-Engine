@@ -373,6 +373,7 @@ namespace gui {
         setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(w.adIntegrationMethod));
         setFixedDt(w.simDt);
         setTelemetryHz(1.0 / w.telemetryDt);
+		setGravity(w.gravity);
 
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
@@ -390,6 +391,7 @@ namespace gui {
         w.autoDiff = autoDiffEnabled();
         w.simDt = fixedDt();
         w.telemetryDt = 1.0 / telemetryHz();
+		w.gravity = gravity();
         w.cameraPos = _camera.getPosition();
         w.cameraYaw = _camera.getYaw();
         w.cameraPitch = _camera.getPitch();

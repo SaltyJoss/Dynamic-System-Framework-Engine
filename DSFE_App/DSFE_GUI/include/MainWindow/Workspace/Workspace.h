@@ -20,8 +20,9 @@ namespace gui {
         int integrationMethod = 0;      // integration::eIntegrationMethod as int
         int adIntegrationMethod = 0;    // integration::eAutoDiffIntegrationMethod as int
         double simDt = 1.0 / 180.0;
-        double telemetryDt = 1.0 / 180.0;
+        double telemetryDt = 1.0 / 120.0;
         bool autoDiff = false;
+        glm::vec3 gravity{ 0.0f, 0.0f, 0.0f };
 
         // Camera
         glm::vec3 cameraPos{ 0.0f, 1.5f, 4.0f };
