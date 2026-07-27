@@ -67,6 +67,24 @@ namespace systems {
                     }
                 }
             }
+            if (XMLElement* m = v->FirstChildElement("dsfe_material")) {
+                double r=0.7,g=0,b=0.2,a=1;
+                if (const char* rgba = m->Attribute("rgba")) {
+                    std::istringstream iss(rgba); iss >> r >> g >> b >> a;
+                }
+                float metallic = 0.1f, roughness = 0.65f;
+                m->QueryFloatAttribute("metallic", &metallic);
+                m->QueryFloatAttribute("roughness", &roughness);
+                for (auto& entry : link.visual.meshEntries) {
+                    LOG_INFO("Link %s has <dsfe_material> with rgba: %f %f %f %f, metallic: %f, roughness: %f", link.name.c_str(), r, g, b, a, metallic, roughness);
+                    entry.material = Vec4(r, g, b, a);
+                    entry.metallic = metallic;
+                    entry.roughness = roughness;
+                    entry.hasMaterial = true;
+                }
+            } else {
+			    LOG_WARN("Link %s has NO <dsfe_material>", link.name.c_str());
+			}
         }
         // Inertial
         if (XMLElement* i = lEl->FirstChildElement("inertial")) {
