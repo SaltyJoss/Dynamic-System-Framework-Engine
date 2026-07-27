@@ -18,6 +18,7 @@ namespace physics {
 		mathlib::VecX_T<Scalar> rhs; // right-hand side vector for dynamics equations (Coriolis, gravity, control torques)
 		mathlib::VecX_T<Scalar> h;   // Coriolis and centrifugal bias vector
 		mathlib::VecX_T<Scalar> tau; // control torque vector
+		mathlib::VecX_T<Scalar> tau_g; // gravity torque vector
 		mathlib::VecX_T<Scalar> I_eff_controller; // effective inertia vector for controller design (e.g., for inverse dynamics control)
 
 		std::vector<mathlib::Pose_T<Scalar>> T_world;
@@ -39,6 +40,7 @@ namespace physics {
 			rhs.resize(nJoints);
 			h.resize(nJoints);
 			tau.resize(nJoints);
+			tau_g.resize(nJoints);
 			I_eff_controller.resize(nJoints);
 			T_world.resize(nLinks);
 			jointWorldPoses.resize(nJoints);
@@ -55,6 +57,7 @@ namespace physics {
 			rhs.setZero();
 			h.setZero();
 			tau.setZero();
+			tau_g.setZero();
 			I_eff_controller.setZero();
 			for (auto& T : T_world) T.setIdentity();
 			for (auto& T : jointWorldPoses) T.setIdentity();
@@ -66,6 +69,7 @@ namespace physics {
 			rhs.resize(0);
 			h.resize(0);
 			tau.resize(0);
+			tau_g.resize(0);
 			I_eff_controller.resize(0);
 			T_world.clear();
 			jointWorldPoses.clear();
@@ -88,6 +92,7 @@ namespace physics {
 		std::vector<mathlib::SpatialVec_T<Scalar>> U;  // articulated body force
 		std::vector<mathlib::SpatialVec_T<Scalar>> f_ext;  // spatial force
 
+		mathlib::VecX_T<Scalar> g; // gravity vector in spatial coordinates (6D)
 		mathlib::VecX_T<Scalar> u; // joint force contribution
 		mathlib::VecX_T<Scalar> d; // joint inertia contribution
 
@@ -116,6 +121,7 @@ namespace physics {
 			U.resize(nJoints);
 			f_ext.resize(nJoints);
 
+			g.resize(6); // gravity vector is always 6D
 			u.resize(nJoints);
 			d.resize(nJoints);
 
@@ -139,6 +145,7 @@ namespace physics {
 			U.clear();
 			f_ext.clear();
 
+			g.resize(0);
 			u.resize(0);
 			d.resize(0);
 
@@ -181,7 +188,7 @@ namespace physics {
 		void resize(size_t nJoints, size_t nLinks) {
 			dense.resize(nJoints, nLinks);
 			spatial.resize(nJoints);
-			g.resize(nJoints);
+			g.resize(6);
 		}
 
 		// Clears all scratch buffers
