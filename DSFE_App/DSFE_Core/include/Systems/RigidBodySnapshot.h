@@ -37,13 +37,13 @@ namespace systems {
 		mathlib::VecX_T<Scalar> q_ref;   // reference joint angles
 		mathlib::VecX_T<Scalar> qd_ref;  // reference joint velocities
 		mathlib::VecX_T<Scalar> qdd_ref; // reference joint accelerations
+		mathlib::VecX_T<Scalar> gravity;
 
 		mathlib::Mat4_T<Scalar> root_pose = mathlib::Mat4_T<Scalar>::Identity();
 
 		bool baseIsFree = false;
 
 		Scalar lastBaseForwardForce = Scalar(0);
-		Scalar gravity = Scalar(0);
 
 		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
 
@@ -66,16 +66,13 @@ namespace systems {
 		dst.q_ref = src.q_ref.template cast<ToScalar>();
 		dst.qd_ref = src.qd_ref.template cast<ToScalar>();
 		dst.qdd_ref = src.qdd_ref.template cast<ToScalar>();
+		dst.gravity = src.gravity.template cast<ToScalar>();
 
 		dst.root_pose = src.root_pose.template cast<ToScalar>();
 
 		dst.baseIsFree = src.baseIsFree;
-
 		dst.lastBaseForwardForce = ToScalar(src.lastBaseForwardForce);
-		dst.gravity = ToScalar(src.gravity);
-
 		dst.torqueMode = src.torqueMode;
-
 		dst.dt = ToScalar(src.dt);
 		dst.simTime = ToScalar(src.simTime);
 
