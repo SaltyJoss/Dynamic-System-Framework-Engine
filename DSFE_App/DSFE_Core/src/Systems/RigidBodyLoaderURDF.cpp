@@ -8,7 +8,190 @@
 #include <MathLib>
 
 #include "EngineLib/LogMacros.h"
+#include <tinyxml2.h>
+
+#include <String>
+#include <algorithm>
+#include <sstream>
+
+using namespace tinyxml2;
+using namespace constants;
 
 namespace systems {
-    // --- URDF Loader ---
-}
+    // rpy(radians) -> quaternion, q = qz*qy*qx, where qx = roll, qy = pitch, qz = yaw
+    static Quat urdf_rpyToQuat(const mathlib::Vec3& rpy) {
+		const Quat qx(Eigen::AngleAxisd(rpy.x(),  Vec3(1.0, 0.0, 0.0)));
+		const Quat qy(Eigen::AngleAxisd(rpy.y(), Vec3(0.0, 1.0, 0.0)));
+		const Quat qz(Eigen::AngleAxisd(rpy.z(),   Vec3(0.0, 0.0, 1.0)));
+		return (qz * qy * qx).normalized();
+	}
+    // Parse a space-separated triple of doubles from a string, e.g. "1.0 2.0 3.0"
+    static Vec3 parseTriple(const char* s, mathlib::Vec3 fallback = Vec3::Zero()) {
+        if (!s) { return fallback; }
+        std::istringstream iss(s);
+        double x = fallback.x(), y = fallback.y(), z = fallback.z();
+        iss >> x >> y >> z;
+        return mathlib::Vec3(x, y, z);
+    }
+    // Translate a URDF mesh path to a platform-specific path, e.g. "package://my_robot/meshes/part.stl" -> "rigidbody_models/airbus_vispa/my_robot/meshes/part.stl"
+    static std::string translateMeshPath(const std::string& raw) {
+        std::string path = raw;
+        // Remove "package://" prefix if present
+        const std::string pkg = "package://";
+        if (path.rfind(pkg, 0) == 0) { path = path.substr(pkg.size()); }
+        // Replace forward slashes with platform-specific separators
+        std::replace(path.begin(), path.end(), '\\', '/');
+        return "rigidbody_models/airbus_vispa/" + path;
+    }
+    // Link Parsing
+    static void urdf_parseLink(XMLElement* lEl, RigidBodyLink& link) {
+        link.name = lEl->Attribute("name") ? lEl->Attribute("name") : "";
+        // Visual
+        if (XMLElement* v = lEl->FirstChildElement("visual")) {
+            // Origin
+            if (XMLElement* o = v->FirstChildElement("origin")) {
+                link.visual.origin_xyz = parseTriple(o->Attribute("xyz"), link.visual.origin_xyz);
+                link.visual.origin_rpy = parseTriple(o->Attribute("rpy"), link.visual.origin_rpy);   
+            }
+            // Geometry & Mesh
+            if (XMLElement* g = v->FirstChildElement("geometry")) {
+                if (XMLElement* m = g->FirstChildElement("mesh")) {
+                    if (const char* fn = m->Attribute("filename")) { 
+                        VisualMeshEntry entry;
+                        entry.meshFile = translateMeshPath(fn);
+                        link.visual.meshEntries.push_back(entry);
+                    }
+                }
+            }
+        }
+        // Inertial
+        if (XMLElement* i = lEl->FirstChildElement("inertial")) {
+            // Mass
+            if (XMLElement* m = i->FirstChildElement("mass")) {
+                if (m->Attribute("value")) { link.inertial.mass = std::stod(m->Attribute("value")); }
+            }
+            // Origin
+            if (XMLElement* o = i->FirstChildElement("origin")) {
+                link.inertial.com_xyz = parseTriple(o->Attribute("xyz"), link.inertial.com_xyz);
+            }
+            // Inertia
+            if (XMLElement* I = i->FirstChildElement("inertia")) {
+                I->QueryDoubleAttribute("ixx", &link.inertial.inertia.ixx);
+                I->QueryDoubleAttribute("ixy", &link.inertial.inertia.ixy);
+                I->QueryDoubleAttribute("ixz", &link.inertial.inertia.ixz);
+                I->QueryDoubleAttribute("iyy", &link.inertial.inertia.iyy);
+                I->QueryDoubleAttribute("iyz", &link.inertial.inertia.iyz);
+                I->QueryDoubleAttribute("izz", &link.inertial.inertia.izz);
+            }
+        }
+    }
+    // Joint Parsing
+    static eJointType urdf_jointType(const std::string& t) {
+        if (t == "revolute")   { return eJointType::REVOLUTE; }
+        if (t == "continuous") { return eJointType::REVOLUTE; }
+        if (t == "prismatic")  { return eJointType::PRISMATIC; }
+        if (t == "fixed")      { return eJointType::FIXED; }
+        if (t == "floating")   { return eJointType::FREE; }
+        return eJointType::REVOLUTE; // default to revolute if unknown
+    }
+    // Parse a URDF joint element into a RigidBodyJoint structure
+    static void urdf_parseJoint(XMLElement* jEl, RigidBodyJoint& joint) {
+        joint.name = jEl->Attribute("name") ? jEl->Attribute("name") : "";
+        const std::string typeStr = urdf_jointType(jEl->Attribute("type") ? jEl->Attribute("type") : "");
+        const bool continuous = (typeStr == "continuous");
+        joint.type = urdf_jointType(typeStr);
+        // Parse parent and child links
+        if (XMLElement* p = jEl->FirstChildElement("parent")) {
+            joint.parent = p->Attribute("link") ? p->Attribute("link") : "";
+        }
+        if (XMLElement* c = jEl->FirstChildElement("child")) {
+            joint.child = c->Attribute("link") ? c->Attribute("link") : "";
+        }
+        // Origin
+        if (XMLElement* o = jEl->FirstChildElement("origin")) {
+            joint.origin_xyz = parseTriple(o->Attribute("xyz"), joint.origin_xyz);
+            joint.origin_rpy = parseTriple(o->Attribute("rpy"), joint.origin_rpy);
+        }
+        joint.origin_q = urdf_rpyToQuat(joint.origin_rpy);
+        // Fixed joint special case: set axis to zero and limits to zero
+        if (joint.type == eJointType::FIXED) {
+            joint.axis = Vec3::Zero();
+            joint.limits.continuous = false;
+            joint.limits.minAngle = 0.0;
+            joint.limits.maxAngle = 0.0;
+            return;
+        }
+        // Axis
+        if (XMLElement* a = jEl->FirstChildElement("axis")) {
+            joint.axis = parseTriple(a->Attribute("xyz"), Vec3(0, 0, 1));
+            if (joint.axis.norm() < 1e-6) { joint.axis = Vec3(0, 0, 1); } // default axis if zero
+            else { joint.axis.normalize(); }
+        } else {
+            joint.axis = Vec3(0, 0, 1); // default axis if not specified
+        }
+        // Limits
+        if (XMLElement* l = jEl->FirstChildElement("limit")) {
+            l->QueryDoubleAttribute("lower", &joint.limits.minAngle);
+            l->QueryDoubleAttribute("upper", &joint.limits.maxAngle);
+            if (!continuous) {
+                L->QueryDoubleAttribute("lower", &joint.limits.minAngle);
+                L->QueryDoubleAttribute("upper", &joint.limits.maxAngle);
+                if (joint.limits.minAngle > joint.limits.maxAngle) {
+                    std::swap(joint.limits.minAngle, joint.limits.maxAngle);
+                }
+            }
+        } 
+        if (continuous) { joint.limits.minAngle = -PI_d; joint.limits.maxAngle = PI_d; }
+
+        // Unlike my URDF-style JSON, URDF does not specify any control gains
+        // CHANGE AS NEEDED BUT DO NOT REMOVE (I will likely update my model to have a more robust way of dealing with these soon)
+        joint.dynamics.damping = 0.2;
+        joint.dynamics.friction = 0.05;
+        joint.wn_target = 2.5;
+        joint.zeta_target = 1.0;
+    }
+
+    // Public API for loading a URDF file into a RigidBodyModel
+    RigidBodyModel RigidBodyLoader::loadFromURDF(const std::string& fp) {
+        RigidBodyModel rb;
+        LOG_INFO("Loading rigidbody model from URDF file: %s", fp.c_str());
+        XMLDocument doc;
+        if (doc.LoadFile(fp.c_str()) != XML_SUCCESS) {
+            LOG_ERROR("Failed to load URDF file: %s (%s)", fp.c_str(), doc.ErrorStr());
+            return rb;
+        }
+
+        // Robot Element (may update for more generalised applications, though I know URDF's are usually robot-based configurations)
+        XMLElement* robot = doc.FirstChildElement("robot");
+        if (!robot) { LOG_ERROR("No <robot> element found in URDF file: %s", fp.c_str()); return rb; }
+        rb.Name = robot->Attribute("name") ? robot->Attribute("name") : "unnamed_body";
+        rb.scale = 1.0f; // URDF does not specify a scale, so we default to 1.0
+        rb.kinematicsModel = eKinematicsModel::URDF;
+
+        // URDF has NO baseframe, most of the models I use need a Z-up -> engine -90deg X rotation.
+        // We will default to this idea, BUT I will NEED to make this more configurable in the future for actual usability.
+        rb.baseFrameIsEngineAligned = false;
+        {
+            mathlib::Quat q = urdf_rpyToQuat(mathlib::Vec3(-PI_d / 2.0, 0.0, 0.0)); // Default base frame rotation to align URDF Z-up to engine Y-up
+            rb.baseFrame = mathlib::Mat4::Identity(); // Initialise base frame to identity
+            rb.baseFrame.block<3, 3>(0, 0) = q.toRotationMatrix(); // Set the rotation part of the base frame to the quaternion's rotation matrix
+        }
+
+        // Links
+        for (XMLElement* lEl = robot->FirstChildElement("link"); lEl; lEl = lEl->NextSiblingElement("link")) {
+            RigidBodyLink link;
+            urdf_parseLink(lEl, link);
+            rb.links.push_back(link);
+            LOG_INFO("Link: %s | Mass: %.3f", link.name.c_str(), link.inertial.mass);
+        }
+        // Joints
+        for (XMLElement* jEl = robot->FirstChildElement("joint"); jEl; jEl = jEl->NextSiblingElement("joint")) {
+            RigidBodyJoint joint;
+            urdf_parseJoint(jEl, joint);
+            rb.joints.push_back(joint);
+            LOG_INFO("Joint: %s | %s -> %s | type=%d", joint.name.c_str(), joint.parent.c_str(), joint.child.c_str(), static_cast<int>(joint.type));
+        }
+        LOG_INFO("RigidBody (URDF) loaded: %d links, %d joints", static_cast<int>(rb.links.size()), static_cast<int>(rb.joints.size()));
+        return rb;
+    }
+} // namespace systems
