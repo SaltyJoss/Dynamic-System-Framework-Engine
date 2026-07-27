@@ -459,7 +459,7 @@ namespace physics {
 			const Scalar Q_max = static_cast<Scalar>(snap.model->joints[i].limits.maxEffort);
 			LOG_INFO_ONCE("Max effort for joint %zu: %g Nm", i, mathlib::real(Q_max));
 
-			tau_i = Q_max * mathlib::tanh(tau_i / Q_max); // saturate control torque to max effort using smooth tanh saturation
+			if (Q_max > Scalar(1e-9)) { tau_i = Q_max * mathlib::tanh(tau_i / Q_max); } // saturate control torque to max effort using smooth tanh saturation
 
 			scratch.dense.tau[i] = tau_i;
 
