@@ -36,5 +36,4 @@ namespace gui {
         bool saveToFile(const QString& path) const;
         static bool loadFromFile(const QString& path, WorkspaceData& out);
     };
-
 } // namespace gui
