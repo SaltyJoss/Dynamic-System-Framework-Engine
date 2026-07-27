@@ -11,5 +11,6 @@ namespace systems {
 	class DSFE_API RigidBodyLoader {
 	public:
 		static RigidBodyModel loadFromJSON(const std::string& filepath);
+		static RigidBodyModel loadFromURDF(const std::string& filepath);
 	};
 } // namespace systems
