@@ -21,14 +21,9 @@ namespace systems {
 
 	// tf2::Quaternion::setRPY(roll,pitch,yaw) corresponds to q = qz * qy * qx.
 	static Quat rpyRadToQuat(const Vec3& rpyRad) {
-		const double roll  = rpyRad.x();
-		const double pitch = rpyRad.y();
-		const double yaw   = rpyRad.z();
-
-		const Quat qx(Eigen::AngleAxisd(roll,  Vec3(1.0, 0.0, 0.0)));
-		const Quat qy(Eigen::AngleAxisd(pitch, Vec3(0.0, 1.0, 0.0)));
-		const Quat qz(Eigen::AngleAxisd(yaw,   Vec3(0.0, 0.0, 1.0)));
-
+		const Quat qx(Eigen::AngleAxisd(rpyRad.x(),  Vec3(1.0, 0.0, 0.0)));
+		const Quat qy(Eigen::AngleAxisd(rpyRad.y(), Vec3(0.0, 1.0, 0.0)));
+		const Quat qz(Eigen::AngleAxisd(rpyRad.z(),   Vec3(0.0, 0.0, 1.0)));
 		return (qz * qy * qx).normalized();
 	}
 
