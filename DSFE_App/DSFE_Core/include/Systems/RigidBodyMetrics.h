@@ -19,6 +19,7 @@ namespace systems {
 		// Dynamics
 		mathlib::VecX_T<Scalar> I_eff;
 		mathlib::VecX_T<Scalar> tau;
+		mathlib::VecX_T<Scalar> tau_g;
 
 		// Constraints / realism
 		mathlib::VecX_T<Scalar> tau_barrier;
@@ -36,7 +37,7 @@ namespace systems {
 		void resize(size_t n) {
 			q.resize(n); qd.resize(n); qdd.resize(n);
 			err.resize(n); errd.resize(n);
-			I_eff.resize(n); tau.resize(n);
+			I_eff.resize(n); tau.resize(n); tau_g.resize(n);
 			tau_barrier.resize(n); tau_sat.resize(n);
 			KE.resize(n); PE.resize(n); E_total.resize(n); W_actuator.resize(n);
 			sat_flag.resize(n, 0);
