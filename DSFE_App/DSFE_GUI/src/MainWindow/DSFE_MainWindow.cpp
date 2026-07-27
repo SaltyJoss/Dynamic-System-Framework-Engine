@@ -206,9 +206,11 @@ namespace window {
 			QString robotName = QString::fromStdString(platform::RoboticSystems().toString(sys));
 			QAction* robotAction = familyMenus[family]->addAction(robotName);
 			connect(robotAction, &QAction::triggered, this, [this, robotName]() {
-				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", robotName.toStdString().c_str());
-				showProjectPage(); // renderer init if we're still on the home page
-				_sim->load_rigidBody(robotName.toStdString());
+				std::string n = robotName.toStdString();
+				std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
+				const std::string path = "rigidbody_models/" + n + "/" + n + ".urdf";
+				LOG_INFO("Menu clicked: Project -> Load Robot -> %s", path.c_str());
+				showProjectPage(); _sim->load_rigidBody(path);
 			});
 		}
 	}
