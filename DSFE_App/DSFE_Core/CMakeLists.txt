@@ -2,7 +2,23 @@
 cmake_minimum_required(VERSION 3.17)
 project(DSFE_Core LANGUAGES C CXX)
 
+include(FetchContent)
+
+set(tinyxml2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(TINYXML2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    tinyxml2
+    GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
+    GIT_TAGE 11.0.0
+    SOURCE_SUBDIR  nonexistent-dir-to-skip-their-cmake
+)
+FetchContent_MakeAvailable(tinyxml2)
+
 add_library(DSFE_Core SHARED)
+
+# Compile tinyxml2.cpp straight into DSFE_Core — no subproject, no .pc, no tests
+target_sources(DSFE_Core PRIVATE ${tinyxml2_SOURCE_DIR}/tinyxml2.cpp)
+target_include_directories(DSFE_Core PRIVATE ${tinyxml2_SOURCE_DIR})
 
 find_package(Threads REQUIRED)
 find_package(HDF5 REQUIRED)
