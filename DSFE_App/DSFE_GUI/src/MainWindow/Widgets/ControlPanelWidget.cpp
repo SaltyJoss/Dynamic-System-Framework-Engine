@@ -181,16 +181,16 @@ namespace widgets {
 		auto* layout = new QVBoxLayout(_worldPropertiesGroup);
 		_worldPropertiesGroup->setLayout(layout);
 
-		auto* gravityLabel = new QLabel(this);
-		gravityLabel->setTextFormat(Qt::RichText);
-		gravityLabel->setText("<b><u>Gravity</u></b>");
-		gravityLabel->setAlignment(Qt::AlignLeft);
-		auto* grav = new GravityVectorWidget(_worldPropertiesGroup);
-		grav->setValue(_sim->gravity());
-		grav->onChanged = [this](const glm::vec3& g) { _sim->setGravity(g); };
+		_gravityLabel = new QLabel(this);
+		_gravityLabel->setTextFormat(Qt::RichText);
+		_gravityLabel->setText("<b><u>Gravity</u></b>");
+		_gravityLabel->setAlignment(Qt::AlignLeft);
+		_grav = new GravityVectorWidget(_worldPropertiesGroup);
+		_grav->setValue(_sim->gravity());
+		_grav->onChanged = [this](const glm::vec3& g) { _sim->setGravity(g); };
 
-		layout->addWidget(gravityLabel);
-		layout->addWidget(grav);
+		layout->addWidget(_gravityLabel);
+		layout->addWidget(_grav);
 		
 		layout->addSpacing(8);
 
@@ -458,5 +458,7 @@ namespace widgets {
 		_simDtValue = _simDtSelector->setDtVarDecValue(simDt);
 		_telDtSelector->setDt(telDt);
 		_telDtValue = _telDtSelector->setDtVarDecValue(telDt);
+		_grav->setValue(_sim->gravity());
+		
 	}
 } // namespace widgets

@@ -23,6 +23,7 @@ namespace gui {
         sim["sim_dt"] = simDt;
         sim["telemetry_dt"] = telemetryDt;
         sim["auto_diff"] = autoDiff;
+        sim["gravity"] = QJsonArray{ gravity.x, gravity.y, gravity.z };
         o["simulation"] = sim;
 
         QJsonObject cam;

@@ -35,6 +35,7 @@ class QSlider;
 
 namespace widgets {
 	class FractionSelectorWidget;
+	class GravityVectorWidget;
 
 	class ControlPanelWidget : public QWidget {
 	public:
@@ -120,6 +121,9 @@ namespace widgets {
 		QLabel* _telDtValue = nullptr;
 
 		QGroupBox* _worldPropertiesGroup = nullptr;
+
+		QLabel* _gravityLabel = nullptr;
+		GravityVectorWidget* _grav = nullptr;
 
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;
