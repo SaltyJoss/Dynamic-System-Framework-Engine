@@ -30,7 +30,7 @@ namespace widgets {
         auto* row = new QHBoxLayout();
         auto add_labelled = [&](const char* axis, QDoubleSpinBox* b) {
             auto* col = new QVBoxLayout();
-            auto* l = new QLabel(QString("<b>%1</b>").arg(axis));
+            auto* l = new QLabel(QString("<b><i>%1</i></b>").arg(axis));
             l->setAlignment(Qt::AlignCenter);
             col->addWidget(l); col->addWidget(b);
             row->addLayout(col);
@@ -51,7 +51,7 @@ namespace widgets {
         _tex->setText(
             QString(
                 "<span style='font-size:13pt'>"
-                "<b><i>g</i></b> = [ %1, %2, %3 ]<sup>T</sup> "
+                "<b><i>g</i></b>\u2009=\u2009[ %1, %2, %3 ]<sup>T</sup> "
                 "<span style='color:#888'>m/s<sup>2</sup></span></span>"
             )
             .arg(_x->value(), 0, 'f', 3)
@@ -73,4 +73,6 @@ namespace widgets {
     void GravityVectorWidget::emitChanged() {
         if (onChanged) { onChanged(value()); }
     }
+
+    
 } // namespace widgets
