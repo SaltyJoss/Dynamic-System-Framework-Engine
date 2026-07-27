@@ -19,14 +19,25 @@ namespace commands {
 
 	// constructor
 	LoadCmd::LoadCmd(const std::string& id, const std::vector<std::string>& tokens) {
-		if (id == "rigidbody") { _target.type = LoadTargetType::RigidBody ; }
+		if (id == "rigidbody" || id == "robot") {
+			_target.type = LoadTargetType::RigidBody;
+			std::string name = toLower(tokens[0]);
+			if (tokens.size() == 1) {
+				LOG_WARN("load() command called with single token, assuming .urdf in rigidbody_models/%s", name.c_str());
+				_path = "rigidbody_models/" + name + "/" + name + ".urdf";
+				_target.path = _path;
+				return;
+			}
+			_path = "rigidbody_models/" + name + "/" + toLower(tokens[1]);
+			_target.path = _path;
+			return;
+		}
 		else {
 			std::string errMsg = "Invalid load(<target>,...) identifier -> " + id;
 			markFailed(errMsg);
 			D_FAIL(errMsg.c_str());
 			return;
 		}
-		_path = tokens[0]; _target.path = tokens[0];
 	}
 
 	// Execute the command
