@@ -7,12 +7,14 @@
 #include "Systems/RigidBodyLoader.h"
 #include <MathLib>
 
+#include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 #include <tinyxml2.h>
 
 #include <String>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
 
 using namespace tinyxml2;
 using namespace constants;
@@ -34,17 +36,19 @@ namespace systems {
         return mathlib::Vec3(x, y, z);
     }
     // Translate a URDF mesh path to a platform-specific path, e.g. "package://my_robot/meshes/part.stl" -> "rigidbody_models/airbus_vispa/my_robot/meshes/part.stl"
-    static std::string translateMeshPath(const std::string& raw) {
-        std::string path = raw;
+    static std::string translateMeshPath(const std::string& raw, const std::string& meshdir) {
+        std::string p = raw;
         // Remove "package://" prefix if present
         const std::string pkg = "package://";
-        if (path.rfind(pkg, 0) == 0) { path = path.substr(pkg.size()); }
+        if (p.rfind(pkg, 0) == 0) { p = p.substr(pkg.size()); }
         // Replace forward slashes with platform-specific separators
-        std::replace(path.begin(), path.end(), '\\', '/');
-        return "rigidbody_models/airbus_vispa/" + path;
+        std::replace(p.begin(), p.end(), '\\', '/');
+        const auto slash = p.find_last_of('/');
+        const std::string fn = (slash == std::string::npos) ? p : p.substr(slash + 1);
+        return meshdir + "/" + fn;
     }
     // Link Parsing
-    static void urdf_parseLink(XMLElement* lEl, RigidBodyLink& link) {
+    static void urdf_parseLink(XMLElement* lEl, RigidBodyLink& link, const std::string& meshdir) {
         link.name = lEl->Attribute("name") ? lEl->Attribute("name") : "";
         // Visual
         if (XMLElement* v = lEl->FirstChildElement("visual")) {
@@ -58,7 +62,7 @@ namespace systems {
                 if (XMLElement* m = g->FirstChildElement("mesh")) {
                     if (const char* fn = m->Attribute("filename")) { 
                         VisualMeshEntry entry;
-                        entry.meshFile = translateMeshPath(fn);
+                        entry.meshFile = translateMeshPath(fn, meshdir);
                         link.visual.meshEntries.push_back(entry);
                     }
                 }
@@ -178,6 +182,18 @@ namespace systems {
         }
 
         // Links
+        const std::filesystem::path urdfDir = std::filesystem::path(filepath).parent_path();
+        const std::filesystem::path assetRoot = paths::assets();
+        // Attempts to compute the relative path from the URDF directory to the assets root, and appends "meshes" to it for mesh file resolution
+        std::string meshDirRel;
+        {
+            std::error_code ec;
+            auto rel = std::filesystem::relative(urdfDir, assetsRoot, ec);
+            meshDirRel = ec ? urdfDir.string() : rel.string();
+            std::replace(meshDirRel.begin(), meshDirRel.end(), '\\', '/'); // Ensures forward slashes for consistency across platforms
+            meshDirRel += "/meshes"; // Append "meshes" to the relative path for mesh files
+        }
+        // Parse links and joints from the URDF
         for (XMLElement* lEl = robot->FirstChildElement("link"); lEl; lEl = lEl->NextSiblingElement("link")) {
             RigidBodyLink link;
             urdf_parseLink(lEl, link);
