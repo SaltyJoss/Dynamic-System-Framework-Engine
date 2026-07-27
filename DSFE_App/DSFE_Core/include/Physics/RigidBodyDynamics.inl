@@ -192,7 +192,6 @@ namespace physics {
 	) const {
 		const size_t n = body.joints.size();
 		mathlib::VecX_T<Scalar> tau_G = mathlib::VecX_T<Scalar>::Zero(n);
-		Scalar g{ _gravity }; // [m/s^2], gravity acceleration magnitude
 
 		// For each joint, sum the gravity contributions from all links
 		for (size_t i = 0; i < n; ++i) {
@@ -220,8 +219,7 @@ namespace physics {
 				const mathlib::Vec3_T<Scalar> com_world = R_k * link.inertial.com_xyz + T_world[k].template block<3, 1>(0, 3);
 
 				// Gravitational force on the link
-				mathlib::Vec3_T<Scalar> g_world;
-				g_world = mathlib::Vec3_T<Scalar>(0.0, 0.0, -g); // [m/s^2], gravity vector in world frame
+				mathlib::Vec3_T<Scalar> g_world = _gravity.template cast<Scalar>(); // [m/s^2], gravity vector in world frame
 				const mathlib::Vec3_T<Scalar> F_g = m * g_world; // [N], gravitational force on the link in world frame
 				const mathlib::Vec3_T<Scalar> r = com_world - p_i; // [m]
 

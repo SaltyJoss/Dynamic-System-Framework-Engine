@@ -144,8 +144,11 @@ namespace physics {
 		);
 
 		// Set the gravity strength for the body system
-		void setGravity(double gravity) { _gravity = gravity; }
-		const double getGravity() const { return _gravity; }
+		void setGravity(double g) { _gravity = mathlib::Vec3(0,0,-g); }
+		void setGravityVec(const mathlib::Vec3& g) { _gravity = g; }
+		const mathlib::Vec3& getGravityVec() const { return _gravity; }
+		double getGravity() const { return _gravity.norm(); }
+		
 
 		// Set the timestep for dynamics updates (used for energy calculations and integration)
 		void setDt(double dt) { _dt = dt; }
@@ -163,7 +166,7 @@ namespace physics {
 
 		double _dt = 1.0 / 180.0; // default timestep for dynamics updates
 
-		double _gravity{ 0.0 };
+		mathlib::Vec3 _gravity{ 0.0, 0.0, 0.0 };
 		bool _baseIsFree = false;
 		double _lastBaseForwardForce{ 0.0 };
 	};
