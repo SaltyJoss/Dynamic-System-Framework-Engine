@@ -88,6 +88,8 @@ namespace widgets {
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
 
+		void worldPropertiesPanel();
+
 		void jointInfoPanel();
 		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
 		void buildTelemetryWidgets(QVBoxLayout* layout);
@@ -109,6 +111,8 @@ namespace widgets {
 		QLabel* _simTimeLabel = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
 		FractionSelectorWidget* _telemetryDtSelector = nullptr;
+
+		QGroupBox* _worldPropertiesGroup = nullptr;
 
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;

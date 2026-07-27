@@ -16,6 +16,7 @@
 #include <QPushButton>
 
 #include "Widgets/FractionSelectorWidget.h"
+#include "Widgets/GravityVectorWidget.h"
 
 #include "Scene/Camera.h"
 
@@ -41,6 +42,7 @@ namespace widgets {
 		rootLayout->addWidget(scrollArea);
 
 		simPropertiesPanel();
+		worldPropertiesPanel();
 		jointInfoPanel();
 
 		auto* timer = new QTimer(this);
@@ -147,6 +149,21 @@ namespace widgets {
 			int index = _integratorCombo->findData(static_cast<int>(currentMethod));
 			if (index != -1) { _integratorCombo->setCurrentIndex(index); }
 		}
+	}
+
+	void ControlPanelWidget::worldPropertiesPanel() {
+		_worldPropertiesGroup = new QGroupBox("World Properties");
+		auto* layout = new QVBoxLayout(_worldPropertiesGroup);
+		_worldPropertiesGroup->setLayout(layout);
+
+		auto* grav = new GravityVectorWidget(_worldPropertiesGroup);
+		grav->setValue(_sim->gravity());
+		grav->onChanged = [this](const glm::vec3& g) { _sim->setGravity(g); };
+
+		layout->addWidget(grav);
+		layout->addSpacing(8);
+
+		_contentLayout->addWidget(_worldPropertiesGroup);
 	}
 
 	void ControlPanelWidget::jointInfoPanel() {
