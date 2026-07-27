@@ -77,6 +77,11 @@ namespace core {
 		void enableAutoDiff(bool enable) override;
 		bool autoDiffEnabled() const override;
 
+		// Physics and dynamics
+		void setGravity(const mathlib::Vec3& g) override;
+		mathlib::Vec3 gravity() const override;
+
+		// Simulation run tag (used for logging and data management)
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
 		// Subsystems access

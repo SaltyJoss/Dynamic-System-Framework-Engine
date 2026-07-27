@@ -110,6 +110,10 @@ namespace core {
 		return _rigidBody->autoDiffEnabled();
 	}
 
+	// SimulationCore
+	void SimulationCore::setGravity(const mathlib::Vec3& g) { _rigidBody->setGravityVec(g); }
+	mathlib::Vec3 SimulationCore::gravity() const { return _rigidBody->getGravityVec(); }
+
 	// Fixed timestep loop for physics and rigidBody updates, called from the main render loop with the frame delta time
 	void SimulationCore::stepFixed(double frame_dt) {
 		double simTime = _simTime.load();

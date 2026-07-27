@@ -53,6 +53,9 @@ namespace core {
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
 		virtual void enableAutoDiff(bool enable) = 0;
         virtual bool autoDiffEnabled() const = 0;
+        // Physics and dynamics
+        virtual void setGravity(const mathlib::Vec3& g) = 0;
+        virtual mathlib::Vec3 gravity() const = 0;
         // Subsystems
         virtual systems::RigidBodySystem& rigidBodySystem() = 0;
         virtual single_body_system::SingleBodySystem& singleBodySystem() = 0;
