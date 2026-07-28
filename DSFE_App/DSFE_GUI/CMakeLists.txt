@@ -142,6 +142,8 @@ set(WIDGETS_SRC
     include/MainWindow/DSL/DSLSyntaxHighlighter.h
     src/MainWindow/Widgets/GravityVectorWidget.cpp
     include/MainWindow/Widgets/GravityVectorWidget.h
+    src/MainWindow/style/RecentItemDelegate.cpp
+    include/MainWindow/style/RecentItemDelegate.h
 )
 
 set(OBJECT_SRC
