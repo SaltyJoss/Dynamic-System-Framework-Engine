@@ -130,6 +130,7 @@ namespace renderer {
         return true;
     }
 
+    // AFTER
     VkPhysicalDevice VulkanContext::find_physical_device() {
         uint32_t device_count = 0;
         vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
@@ -141,13 +142,52 @@ namespace renderer {
         std::vector<VkPhysicalDevice> devices(device_count);
         vkEnumeratePhysicalDevices(_instance, &device_count, devices.data());
 
+        // Returns true if this device has a queue family supporting BOTH graphics and present to our surface.
+        auto has_graphics_present = [this](VkPhysicalDevice dev) -> bool {
+            uint32_t count = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, nullptr);
+            std::vector<VkQueueFamilyProperties> families(count);
+            vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, families.data());
+            for (uint32_t i = 0; i < count; ++i) {
+                if (!(families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) { continue; }
+                VkBool32 present = VK_FALSE;
+                vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, _surface, &present);
+                if (present) { return true; }
+            }
+            return false;
+        };
+
+        VkPhysicalDevice best = VK_NULL_HANDLE;
+        int bestScore = -1;
+
         for (VkPhysicalDevice device : devices) {
             VkPhysicalDeviceProperties props{};
             vkGetPhysicalDeviceProperties(device, &props);
-            LOG_INFO("Found Vulkan device: %s", props.deviceName);
+
+            // Ineligible if it can't present to our surface — skip regardless of type.
+            if (!has_graphics_present(device)) {
+                LOG_INFO("Found Vulkan device: %s (no graphics+present queue — skipping)", props.deviceName);
+                continue;
+            }
+
+            int score = 0;
+            if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)        { score += 1000; }
+            else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) { score += 100; }
+            score += static_cast<int>(props.limits.maxImageDimension2D / 1000);   // tiebreak on capability
+
+            LOG_INFO("Found Vulkan device: %s (type %d, score %d)", props.deviceName, props.deviceType, score);
+            if (score > bestScore) { bestScore = score; best = device; }
         }
 
-        return devices.front();
+        if (best == VK_NULL_HANDLE) {
+            LOG_ERROR("No Vulkan device with a graphics+present queue for this surface.");
+            return VK_NULL_HANDLE;
+        }
+
+        VkPhysicalDeviceProperties p{};
+        vkGetPhysicalDeviceProperties(best, &p);
+        LOG_INFO("Selected Vulkan device: %s", p.deviceName);
+        return best;
     }
 
     // Find a graphics queue family that supports both graphics and present operations for the given physical device and surface.
