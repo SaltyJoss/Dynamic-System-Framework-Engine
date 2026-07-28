@@ -11,7 +11,7 @@
 #include "EngineLib/LogMacros.h"
 #include <tinyxml2.h>
 
-#include <String>
+#include <string>
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
