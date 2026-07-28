@@ -103,6 +103,10 @@ namespace widgets {
 
 		void updateSimClock();
 
+		QLabel* _jointChainLabel = nullptr;
+		QLabel* _jointIndexLabel = nullptr;
+		void refreshJointChainLabel(int idx);
+
 		gui::SimulationManager* _sim = nullptr;
 
 		QVBoxLayout* _contentLayout = nullptr;

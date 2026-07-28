@@ -202,60 +202,114 @@ namespace widgets {
 			_jointInfoGroup = new QGroupBox("RigidBody Joint Information");
 			auto* layout = new QVBoxLayout(_jointInfoGroup);
 			_jointInfoGroup->setLayout(layout);
-			layout->addWidget(new QLabel("Joint"));
+
+			// --- Joint chain context: parent  ->  [joint]  ->  child ---
+			_jointChainLabel = new QLabel();
+			_jointChainLabel->setTextFormat(Qt::RichText);
+			_jointChainLabel->setAlignment(Qt::AlignCenter);
+			_jointChainLabel->setWordWrap(true);
+			_jointChainLabel->setStyleSheet("color: rgb(200,205,215);");
+			layout->addWidget(_jointChainLabel);
+
+			// --- Index readout: "joint  3 / 6" ---
+			_jointIndexLabel = new QLabel();
+			_jointIndexLabel->setTextFormat(Qt::RichText);
+			_jointIndexLabel->setAlignment(Qt::AlignCenter);
+			layout->addWidget(_jointIndexLabel);
+
+			layout->addSpacing(4);
 
 			_jointIdxSlider = new QSlider(Qt::Horizontal, _jointInfoGroup);
 			_jointIdxSlider->setMinimum(1);
 			_jointIdxSlider->setValue(1);
+			_jointIdxSlider->setTickPosition(QSlider::TicksBelow);
+			_jointIdxSlider->setTickInterval(1);
+			_jointIdxSlider->setSingleStep(1);
+			_jointIdxSlider->setPageStep(1);
 
-			connect(_jointIdxSlider, &QSlider::valueChanged, this, [this](int value) { selectJointAndFollow(value - 1); });
-
+			connect(_jointIdxSlider, &QSlider::valueChanged, this, [this](int value) {
+				selectJointAndFollow(value - 1); refreshJointChainLabel(value - 1);
+			});
 			layout->addWidget(_jointIdxSlider);
-
+			layout->addSpacing(6);
 			buildTelemetryWidgets(layout);
-
 			_contentLayout->addWidget(_jointInfoGroup);
 		}
-
-		if (!_sim || !_sim->hasRigidBody()) {
-			_jointInfoGroup->setVisible(false);
-			return;
-		}
+		if (!_sim || !_sim->hasRigidBody()) { _jointInfoGroup->setVisible(false); return; }
 		auto& body = _sim->rigidBodySystem();
 		auto& joints = body.joints();
 		auto& links = body.links();
-
-		_jointInfoGroup->setVisible(!joints.empty() && !links.empty());
 		if (joints.empty() || links.empty()) { _jointInfoGroup->setVisible(false); return; }
+
 		_jointInfoGroup->setVisible(true);
 		_jointIdxSlider->setMaximum(static_cast<int>(joints.size()));
 
 		static int currentJointIndex = 0;
 		currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
+		refreshJointChainLabel(_jointIdxSlider->value() - 1);
+	}
+
+	// Renders "parent  ->  [ Joint_n ]  ->  child" and the "n / total" index readout for the given joint.
+	void ControlPanelWidget::refreshJointChainLabel(int idx) {
+		if (!_sim || !_sim->hasRigidBody()) { return; }
+		auto& body = _sim->rigidBodySystem();
+		auto& joints = body.joints();
+		if (joints.empty()) { return; }
+		idx = std::clamp(idx, 0, (int)joints.size() - 1);
+		const auto& j = joints[idx];
+		const QString parent = QString::fromStdString(j.parent);
+		const QString child  = QString::fromStdString(j.child);
+		const QString name   = QString::fromStdString(j.name);
+		// parent link (dim) -> joint (bright, italic-ish) -> child link (dim)
+		_jointChainLabel->setText(QString(
+			"<span style='color:#8a8f9a'>%1</span>"
+			"  <span style='color:#5a6070'>\u27F6</span>  "
+			"<span style='color:#d8dbe2; font-weight:600'>[ %2 ]</span>"
+			"  <span style='color:#5a6070'>\u27F6</span>  "
+			"<span style='color:#8a8f9a'>%3</span>")
+			.arg(parent, name, child)
+		);
+		// "joint  n / total" with the count in a dim weight
+		_jointIndexLabel->setText(QString(
+			"<span style='color:#8a8f9a; font-size:9pt'>joint</span> "
+			"<span style='color:#e0e3ea; font-family:Consolas; font-weight:600'>%1</span>"
+			"<span style='color:#5a6070'> / </span>"
+			"<span style='color:#8a8f9a; font-family:Consolas'>%2</span>")
+			.arg(idx + 1).arg(joints.size())
+		);
 	}
 
 	void ControlPanelWidget::updateTelemetryInfo(const diagnostics::JointTelemetry& j) {
 		auto& t = _telemetryLabels;
-		const float e = static_cast<float>(j.q_ref - j.q);
+		const double e = j.q_ref - j.q;
 
-		t.q->setText(QString("%1 rad").arg(j.q));
-		t.qd->setText(QString("%1 rad/s").arg(j.qd));
-		t.tau->setText(QString("%1 Nm").arg(j.torqueNm));
-
-		t.qRef->setText(QString("%1 rad").arg(j.q_ref));
-		t.qdRef->setText(QString("%1 rad/s").arg(j.qd_ref));
-		t.qddRef->setText(QString("%1 rad/s²").arg(j.qdd_ref));
-		t.err->setText(QString("%1 rad").arg(e));
-
-		t.qTraj->setText(QString("%1 rad").arg(j.traj_q));
-		t.qdTraj->setText(QString("%1 rad/s").arg(j.traj_qd));
-		t.qddTraj->setText(QString("%1 rad/s²").arg(j.traj_qdd));
-
-		t.qClamped->setText(j.clampTheta ? "On" : "Off");
-		t.qdClamped->setText(j.clampOmega ? "On" : "Off");
-
-		t.damping->setText(QString("%1 kg·m²/s").arg(j.damping));
-		t.friction->setText(QString("%1 N·m").arg(j.friction));
+		// fixed-width numeric formatting so columns don't jitter as values change
+		auto num = [](double v, const char* unit) {
+			return QString("%1 <span style='color:#888'>%2</span>").arg(v, 0, 'f', 4).arg(unit);
+		};
+		// State Telemetry
+		t.q->setText(num(j.q, "rad"));
+		t.qd->setText(num(j.qd, "rad/s"));
+		t.tau->setText(num(j.torqueNm, "N\u00B7m"));
+		// Reference Telemetry
+		t.qRef->setText(num(j.q_ref, "rad"));
+		t.qdRef->setText(num(j.qd_ref, "rad/s"));
+		t.qddRef->setText(num(j.qdd_ref, "rad/s\u00B2"));
+		t.err->setText(num(e, "rad"));
+		// Trajectory Telemetry
+		t.qTraj->setText(num(j.traj_q, "rad"));
+		t.qdTraj->setText(num(j.traj_qd, "rad/s"));
+		t.qddTraj->setText(num(j.traj_qdd, "rad/s\u00B2"));
+		// Clamping Telemetry
+		t.qClamped->setText(j.clampTheta
+			? "<span style='color:#569cd6'>active</span>"
+			: "<span style='color:#666'>\u2014</span>");
+		t.qdClamped->setText(j.clampOmega
+			? "<span style='color:#569cd6'>active</span>"
+			: "<span style='color:#666'>\u2014</span>");
+		// Constants Telemetry
+		t.damping->setText(num(j.damping, "kg\u00B7m\u00B2/s"));
+		t.friction->setText(num(j.friction, "N\u00B7m"));
 	}
 
 	void ControlPanelWidget::buildTelemetryWidgets(QVBoxLayout* layout) {
@@ -263,120 +317,105 @@ namespace widgets {
 			QFont font = label->font();
 			font.setBold(true);
 			font.setPointSize(font.pointSize() + 1);
+			font.setLetterSpacing(QFont::PercentageSpacing, 115);  // tracked-out caps read as section headers
 			label->setFont(font);
-			label->setStyleSheet("color: rgb(220,220,220);");
+			label->setStyleSheet("color: rgb(200,205,215);");
 		};
 
+		// A math-symbol row label: rich-text italic variable, e.g. "θ" or "θ_ref".
+		auto symLabel = [](const QString& html) {
+			auto* l = new QLabel(html);
+			l->setTextFormat(Qt::RichText);
+			l->setObjectName("telem_symbol");
+			return l;
+		};
+
+		// A value label: monospace, right-aligned so digits column up.
+		auto valueLabel = [](QLabel* l) {
+			l->setTextFormat(Qt::RichText);
+			l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+			QFont f("Consolas");            // or "JetBrains Mono"/"Cascadia Mono" if bundled
+			f.setStyleHint(QFont::Monospace);
+			f.setPointSize(l->font().pointSize());
+			l->setFont(f);
+			l->setStyleSheet("color: rgb(225,228,235);");
+			return l;
+		};
 		auto& t = _telemetryLabels;
 
-		t.stateHeader = new QLabel("STATE");
-		t.referenceHeader = new QLabel("REFERENCE");
+		t.stateHeader      = new QLabel("STATE");
+		t.referenceHeader  = new QLabel("REFERENCE");
 		t.trajectoryHeader = new QLabel("TRAJECTORY");
-		t.clampedHeader = new QLabel("LIMITS");
-		t.constantsHeader = new QLabel("PHYSICAL");
+		t.clampedHeader    = new QLabel("LIMITS");
+		t.constantsHeader  = new QLabel("PHYSICAL");
+		for (QLabel* h : { t.stateHeader, t.referenceHeader, t.trajectoryHeader, t.clampedHeader, t.constantsHeader })
+			headerFont(h);
 
-		headerFont(t.stateHeader);
-		headerFont(t.referenceHeader);
-		headerFont(t.trajectoryHeader);
-		headerFont(t.clampedHeader);
-		headerFont(t.constantsHeader);
+		t.q = new QLabel(); t.qd = new QLabel(); t.tau = new QLabel();
+		t.qRef = new QLabel(); t.qdRef = new QLabel(); t.qddRef = new QLabel(); t.err = new QLabel();
+		t.qTraj = new QLabel(); t.qdTraj = new QLabel(); t.qddTraj = new QLabel();
+		t.qClamped = new QLabel(); t.qdClamped = new QLabel();
+		t.damping = new QLabel(); t.friction = new QLabel();
+		for (QLabel* v : { t.q, t.qd, t.tau, t.qRef, t.qdRef, t.qddRef, t.err,
+		                   t.qTraj, t.qdTraj, t.qddTraj, t.qClamped, t.qdClamped, t.damping, t.friction })
+			valueLabel(v);
 
-		t.q = new QLabel();
-		t.qd = new QLabel();
-		t.tau = new QLabel();
+			auto makeGrid = [](std::initializer_list<std::pair<QLabel*, QLabel*>> rows) {
+				auto* g = new QGridLayout();
+				int r = 0;
+				for (auto& [sym, val] : rows) {
+					g->addWidget(sym, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
+					g->addWidget(val, r, 1);
+					++r;
+				}
+			g->setHorizontalSpacing(14);
+			g->setVerticalSpacing(3);
+			g->setColumnStretch(0, 0);
+			g->setColumnStretch(1, 1);
+			return g;
+		};
 
-		t.qRef = new QLabel();
-		t.qdRef = new QLabel();
-		t.qddRef = new QLabel();
-		t.err = new QLabel();
+		// θ (theta), ω (omega), τ (tau); subscripts for ref/traj; Δ for error.
+		auto* stateGrid = makeGrid({
+			{ symLabel("<i>\u03B8</i>"),   t.q   },   // θ  position
+			{ symLabel("<i>\u03C9</i>"),   t.qd  },   // ω  velocity
+			{ symLabel("<i>\u03C4</i>"),   t.tau },   // τ  torque
+		});
 
-		t.qTraj = new QLabel();
-		t.qdTraj = new QLabel();
-		t.qddTraj = new QLabel();
+		auto* refGrid = makeGrid({
+			{ symLabel("<i>\u03B8</i><sub>ref</sub>"),  t.qRef   },
+			{ symLabel("<i>\u03C9</i><sub>ref</sub>"),  t.qdRef  },
+			{ symLabel("<i>\u03B1</i><sub>ref</sub>"),  t.qddRef },   // α  target accel
+			{ symLabel("\u0394<i>\u03B8</i>"),          t.err    },   // Δθ error
+		});
 
-		t.qClamped = new QLabel();
-		t.qdClamped = new QLabel();
+		auto* trajGrid = makeGrid({
+			{ symLabel("<i>\u03B8</i><sub>traj</sub>"), t.qTraj   },
+			{ symLabel("<i>\u03C9</i><sub>traj</sub>"), t.qdTraj  },
+			{ symLabel("<i>\u03B1</i><sub>traj</sub>"), t.qddTraj },
+		});
 
-		t.damping = new QLabel();
-		t.friction = new QLabel();
+		auto* limitGrid = makeGrid({
+			{ symLabel("<i>\u03B8</i> clamp"), t.qClamped  },
+			{ symLabel("<i>\u03C9</i> clamp"), t.qdClamped },
+		});
 
-		auto* stateGrid = new QGridLayout();
-		stateGrid->addWidget(new QLabel("Position"), 0, 0);
-		stateGrid->addWidget(t.q, 0, 1);
-		stateGrid->addWidget(new QLabel("Velocity"), 1, 0);
-		stateGrid->addWidget(t.qd, 1, 1);
-		stateGrid->addWidget(new QLabel("Torque"), 2, 0);
-		stateGrid->addWidget(t.tau, 2, 1);
+		auto* physicalGrid = makeGrid({
+			{ symLabel("<i>b</i> <span style='color:#888'>damping</span>"),   t.damping  },
+			{ symLabel("<i>c</i> <span style='color:#888'>friction</span>"),  t.friction },
+		});
 
-		stateGrid->setHorizontalSpacing(12);
-		stateGrid->setColumnStretch(0, 0);
-		stateGrid->setColumnStretch(1, 1);
+		auto addSection = [layout](QLabel* header, QGridLayout* grid, int gap) {
+			layout->addSpacing(gap);
+			layout->addWidget(header);
+			layout->addLayout(grid);
+		};
 
-		auto* refGrid = new QGridLayout();
-		refGrid->addWidget(new QLabel("Target Pos"), 0, 0);
-		refGrid->addWidget(t.qRef, 0, 1);
-		refGrid->addWidget(new QLabel("Target Vel"), 1, 0);
-		refGrid->addWidget(t.qdRef, 1, 1);
-		refGrid->addWidget(new QLabel("Target Acc"), 2, 0);
-		refGrid->addWidget(t.qddRef, 2, 1);
-		refGrid->addWidget(new QLabel("Error"), 3, 0);
-		refGrid->addWidget(t.err, 3, 1);
-
-		refGrid->setHorizontalSpacing(12);
-		refGrid->setColumnStretch(0, 0);
-		refGrid->setColumnStretch(1, 1);
-
-		auto* trajGrid = new QGridLayout();
-		trajGrid->addWidget(new QLabel("Position"), 0, 0);
-		trajGrid->addWidget(t.qTraj, 0, 1);
-		trajGrid->addWidget(new QLabel("Velocity"), 1, 0);
-		trajGrid->addWidget(t.qdTraj, 1, 1);
-		trajGrid->addWidget(new QLabel("Acceleration"), 2, 0);
-		trajGrid->addWidget(t.qddTraj, 2, 1);
-
-		trajGrid->setHorizontalSpacing(12);
-		trajGrid->setColumnStretch(0, 0);
-		trajGrid->setColumnStretch(1, 1);
-
-		auto* limitGrid = new QGridLayout();
-		limitGrid->addWidget(new QLabel("Position Clamp"), 0, 0);
-		limitGrid->addWidget(t.qClamped, 0, 1);
-		limitGrid->addWidget(new QLabel("Velocity Clamp"), 1, 0);
-		limitGrid->addWidget(t.qdClamped, 1, 1);
-
-		limitGrid->setHorizontalSpacing(12);
-		limitGrid->setColumnStretch(0, 0);
-		limitGrid->setColumnStretch(1, 1);
-
-		auto* physicalGrid = new QGridLayout();
-		physicalGrid->addWidget(new QLabel("Damping"), 0, 0);
-		physicalGrid->addWidget(t.damping, 0, 1);
-		physicalGrid->addWidget(new QLabel("Friction"), 1, 0);
-		physicalGrid->addWidget(t.friction, 1, 1);
-
-		physicalGrid->setHorizontalSpacing(12);
-		physicalGrid->setColumnStretch(0, 0);
-		physicalGrid->setColumnStretch(1, 1);
-
-		layout->addSpacing(5);
-		layout->addWidget(t.stateHeader);
-		layout->addLayout(stateGrid);
-
-		layout->addSpacing(8);
-		layout->addWidget(t.referenceHeader);
-		layout->addLayout(refGrid);
-
-		layout->addSpacing(8);
-		layout->addWidget(t.trajectoryHeader);
-		layout->addLayout(trajGrid);
-
-		layout->addSpacing(8);
-		layout->addWidget(t.clampedHeader);
-		layout->addLayout(limitGrid);
-
-		layout->addSpacing(8);
-		layout->addWidget(t.constantsHeader);
-		layout->addLayout(physicalGrid);
+		addSection(t.stateHeader,      stateGrid,    5);
+		addSection(t.referenceHeader,  refGrid,      10);
+		addSection(t.trajectoryHeader, trajGrid,     10);
+		addSection(t.clampedHeader,    limitGrid,    10);
+		addSection(t.constantsHeader,  physicalGrid, 10);
 	}
 
 	void ControlPanelWidget::updateTelemetryDisplay() {

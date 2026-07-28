@@ -1,22 +1,28 @@
 {
     "camera": {
-        "pitch": -0.06199825182557106,
+        "pitch": -0.4689960479736328,
         "pos": [
-            3.1640207767486572,
-            1.1873780488967896,
-            2.983812093734741
+            1.2224150896072388,
+            0.6096836924552917,
+            -0.11915026605129242
         ],
-        "yaw": -8.675688743591309
+        "yaw": -9.512792587280273
     },
     "content": {
-        "rigid_body": "VISPA",
+        "rigid_body": "vispa",
+        "rigid_body_path": "rigidbody_models/vispa/vispa.urdf",
         "script_path": "",
-        "script_text": "# --------------------------------------------\n# TEMPLATE PROJECT: Airbus VISPA Ready-State Observer Positoion\n# --------------------------------------------\n#\n# MISSION PROFILE\n# ---------------\n#   1. System Initialization & Calibration Check (0.0s - 5.0s) - Before start\n#   2. Nominal Deployment to Ready-State Observer Position (5.0s - 35.0s)\n#\n# JOINT LIMITS\n# ------------\n#   j1-j6:  +/- ~180 deg (+/-3.14149 rad)\n#   v_max:  5.38 deg/s (0.0940 rad/s) hardware limit\n#   v_operating: < 1.5 deg/s\n#   Q_max:  50 Nm per joint\n#   Damping / Friction: 0.2 / 0.05 (all joints)\n#\n# LINK MASSES (kg)\n# ----------------\n#   link00  0.627   base adapter (gold coloured)\n#   link01  2.328   shoulder yaw\n#   link02  3.995   upper arm (0.8m, heaviest link)\n#   link03  2.328   elbow\n#   link04  3.157   forearm (0.65m)\n#   link05  2.695   wrist roll\n#   link06  0.924   end-effector flange\n#\n# Create By: Joss Salton\n# GitHub:    SaltyJoss\n#\n# --------------------------------------------\n\nload(robot, VISPA)\n\nwait(4.0)\ntrajClear()\nwait(1.0)\n\n# Begins sim run and logging.\nstart()\n\n# Nominal Deployment\nparallel(30.0) {\n    trajSet(link01, TRAP, -30.0, 1.5, 5.0)\n    trajSet(link02, TRAP,  45.0, 2.0, 5.0)\n    trajSet(link03, TRAP, -90.0, 2.0, 5.0)\n    trajSet(link04, TRAP,   0.0, 1.0, 3.0)\n    trajSet(link05, TRAP,  45.0, 1.5, 4.0)\n    trajSet(link06, TRAP,   0.0, 1.0, 3.0)\n}\n\nwait(30.0)\n\n# --------------------------------------------\n# END: ~30 seconds\n# --------------------------------------------"
+        "script_text": "# --------------------------------------------\n# TEMPLATE PROJECT: Airbus VISPA Ready-State Observer Positoion\n# --------------------------------------------\n#\n# MISSION PROFILE\n# ---------------\n#   1. System Initialization & Calibration Check (0.0s - 5.0s) - Before start\n#   2. Nominal Deployment to Ready-State Observer Position (5.0s - 35.0s)\n#\n# JOINT LIMITS\n# ------------\n#   j1-j6:  +/- ~180 deg (+/-3.14149 rad)\n#   v_max:  5.38 deg/s (0.0940 rad/s) hardware limit\n#   v_operating: < 1.5 deg/s\n#   Q_max:  50 Nm per joint\n#   Damping / Friction: 0.2 / 0.05 (all joints)\n#\n# LINK MASSES (kg)\n# ----------------\n#   link00  0.627   base adapter (gold coloured)\n#   link01  2.328   shoulder yaw\n#   link02  3.995   upper arm (0.8m, heaviest link)\n#   link03  2.328   elbow\n#   link04  3.157   forearm (0.65m)\n#   link05  2.695   wrist roll\n#   link06  0.924   end-effector flange\n#\n# Create By: Joss Salton\n# GitHub:    SaltyJoss\n#\n# --------------------------------------------\n\nload(rigidbody, vispa, vispa.urdf)\n\nwait(4.0)\ntrajClear()\nwait(1.0)\n\n# Begins sim run and logging.\nstart()\n\n# Nominal Deployment\nparallel(30.0) {\n    trajSet(link01, TRAP, -30.0, 1.5, 5.0)\n    trajSet(link02, TRAP,  45.0, 2.0, 5.0)\n    trajSet(link03, TRAP, -90.0, 2.0, 5.0)\n    trajSet(link04, TRAP,   0.0, 1.0, 3.0)\n    trajSet(link05, TRAP,  45.0, 1.5, 4.0)\n    trajSet(link06, TRAP,   0.0, 1.0, 3.0)\n}\n\nwait(30.0)\n\n# --------------------------------------------\n# END: ~30 seconds\n# --------------------------------------------"
     },
     "name": "vispa",
     "simulation": {
         "ad_integration_method": 0,
         "auto_diff": false,
+        "gravity": [
+            0,
+            0,
+            0
+        ],
         "integration_method": 4,
         "sim_dt": 0.005555555555555556,
         "telemetry_dt": 0.008333333333333333

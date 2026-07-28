@@ -95,6 +95,7 @@ QPushButton {
 	border: 1px solid rgb(70,70,70);
 	border-radius: 3px;
 	padding: 4px 10px;
+	font-family: Consolas, monospace;
 }
 
 QPushButton:hover {
@@ -145,10 +146,12 @@ QListWidget {
 	background-color: rgb(26,26,26);
 	border: 1px solid rgb(70,70,70);
 	border-radius: 4px;
+	outline: none; 
 }
 
 QListWidget::item {
 	padding: 8px;
+	outline: none; 
 	border-radius: 3px;
 }
 
@@ -158,6 +161,7 @@ QListWidget::item:hover {
 
 QListWidget::item:selected {
 	background-color: rgb(86,156,214);
+	outline: none; 
 }
 
 /* ---- Home page ---- */
@@ -178,15 +182,19 @@ QListWidget::item:selected {
 }
 
 #brand_title {
-	font-size: 34px;
+	font-family: "Cascadia Mono", Consolas, monospace;
+	font-size: 44px;
 	font-weight: 700;
-	color: rgb(235,235,240);
+	color: rgb(240,240,250);
+	letter-spacing: 4px;
 }
 
 #brand_subtitle {
-	font-size: 16px;
+	font-family: Consolas, monospace;
+	font-size: 14px;
 	font-weight: 500;
 	color: rgb(130,130,138);
+	letter-spacing: 1px;
 }
 
 #section_header {
@@ -201,6 +209,7 @@ QListWidget::item:selected {
 	border-radius: 5px;
 	color: rgb(255,255,255);
 	font-weight: 600;
+	font-family: Consolas, monospace;
 }
 #prim_btn:hover { background-color: rgb(104,170,224); }
 #prim_btn:pressed { background-color: rgb(70,140,200); }
@@ -211,6 +220,7 @@ QListWidget::item:selected {
 	border-radius: 5px;
 	color: rgb(220,220,225);
 	font-weight: 500;
+	font-family: Consolas, monospace;
 }
 #second_btn:hover { background-color: rgb(68,68,74); }
 
@@ -261,4 +271,42 @@ QListWidget::item:selected {
 	background: transparent;
 	font-family: Consolas, monospace;
 	font-size: 12px;
+}
+
+/* ---- Telemetry / Joint info panels ---- */
+
+/* Section headers: STATE, REFERENCE, TRAJECTORY, LIMITS, PHYSICAL */
+#telem_header {
+	color: rgb(200,205,215);
+	font-weight: bold;
+	font-size: 12px;
+	letter-spacing: 1px;
+}
+
+/* Math-symbol row labels: θ, ω, τ, θ_ref ... (rich text sets italics inline) */
+#telem_symbol {
+	color: rgb(170,175,185);
+	background: transparent;
+	font-size: 12px;
+}
+
+/* Numeric value readouts: monospace, right-aligned digits */
+#telem_value {
+	color: rgb(225,228,235);
+	background: transparent;
+	font-family: Consolas, monospace;
+	font-size: 12px;
+}
+
+/* Joint chain context line: parent -> [joint] -> child */
+#joint_chain {
+	background: transparent;
+	font-size: 12px;
+}
+
+/* "joint  n / total" index readout */
+#joint_index {
+	background: transparent;
+	font-family: Consolas, monospace;
+	font-size: 11px;
 }

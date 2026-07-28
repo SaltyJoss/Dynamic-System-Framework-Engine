@@ -303,8 +303,8 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
         for (const QString& path : recents) {
             auto* item = new QListWidgetItem();
             item->setData(Qt::UserRole, path);
-            item->setText(QFileInfo(path).baseName() + "\n" + path);
             item->setData(Qt::ToolTipRole, path);
+            item->setText(QFileInfo(path).baseName() + "\n" + path);
             _recents_list->addItem(item);
         }
         if (recents.empty()) {
