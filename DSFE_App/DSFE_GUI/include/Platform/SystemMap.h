@@ -11,7 +11,8 @@ namespace platform {
 		Panda = 2,
 		iiwa14 = 3,
 		VISPA = 4,
-		H1 = 5
+		H1 = 5,
+		Cube = 6
 	};
 
 	enum class eRoboticSystemFamilies {
@@ -20,7 +21,7 @@ namespace platform {
 		Franka = 2,
 		KUKA = 3,
 		Airbus = 4,
-		Othjer = 5
+		Other = 5
 	};
 
 	struct RoboticSystems {
@@ -30,7 +31,8 @@ namespace platform {
 			{ eRoboticSystems::Panda, eRoboticSystemFamilies::Franka },
 			{ eRoboticSystems::iiwa14, eRoboticSystemFamilies::KUKA },
 			{ eRoboticSystems::VISPA, eRoboticSystemFamilies::Airbus },
-			{ eRoboticSystems::H1, eRoboticSystemFamilies::Unitree }
+			{ eRoboticSystems::H1, eRoboticSystemFamilies::Unitree },
+			{ eRoboticSystems::Cube, eRoboticSystemFamilies::Other }
 		};
 
 		inline std::string toString(eRoboticSystems sys) {
@@ -41,6 +43,7 @@ namespace platform {
 				case eRoboticSystems::iiwa14: return "iiwa14";
 				case eRoboticSystems::VISPA: return "VISPA";
 				case eRoboticSystems::H1: return "H1";
+				case eRoboticSystems::Cube: return "Cube";
 				default: return "Unknown";
 			}
 		}
@@ -52,6 +55,7 @@ namespace platform {
 				case eRoboticSystemFamilies::Franka: return "Franka Robotics";
 				case eRoboticSystemFamilies::KUKA: return "KUKA";
 				case eRoboticSystemFamilies::Airbus: return "Airbus";
+				case eRoboticSystemFamilies::Other: return "Other";
 				default: return "Unknown";
 			}
 		}
