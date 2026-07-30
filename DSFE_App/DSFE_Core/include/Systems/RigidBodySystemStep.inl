@@ -27,13 +27,20 @@ namespace systems {
 
 		for (size_t i = 0; i < n; ++i) {
 			const auto& j = _body.joints[i];
-
-			snap.q[i] = j.q;
-			snap.qd[i] = j.qd;
-
-			snap.q_ref[i] = j.q_ref;
-			snap.qd_ref[i] = j.qd_ref;
-			snap.qdd_ref[i] = j.qdd_ref;
+			if (jointDOF(j.type) == 1) {
+				snap.q[i] = j.q;
+				snap.qd[i] = j.qd;
+				snap.q_ref[i] = j.q_ref;
+				snap.qd_ref[i] = j.qd_ref;
+				snap.qdd_ref[i] = j.qdd_ref;
+			} else {
+				snap.q[i] = T(0);
+				snap.qd[i] = T(0);
+				snap.q_ref[i] = T(0);
+				snap.qd_ref[i] = T(0);
+				snap.qdd_ref[i] = T(0);
+			}
+			
 		}
 
 		snap.root_pose = _root_pose.template cast<T>();
@@ -155,9 +162,10 @@ namespace systems {
 	template<typename T>
 	void RigidBodySystem::postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& dynScratch, const RigidBodyStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
-
-		Eigen::Map<const mathlib::VecX> q_next(x.data(), n);
-		Eigen::Map<const mathlib::VecX> qd_next(x.data() + n, n);
+		int nv = 0;
+		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
+		Eigen::Map<const mathlib::VecX> q_next(x.data(), nv);
+		Eigen::Map<const mathlib::VecX> qd_next(x.data() + nv, nv);
 
 		// Enforce joint limits
 		/*for (auto& j : _body.joints) { enforceJointLimits(j); }*/
@@ -202,18 +210,20 @@ namespace systems {
 
 		if (buf) {
 			auto dynResult = result.dynamics;
+			int off = 0;
 			for (size_t i = 0; i < n; ++i) {
 				const RigidBodyJoint& j = _body.joints[i];
-
+				const int dof = jointDOF(j.type);
+				if (dof == 0) { continue; } // skip fixed joints
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
-				const double err = q_ref_real[i] - q_real[i];
-				const double err_d = qd_ref_real[i] - qd_real[i];
-				JointLogBuffer::JointLogEntry e{};
+				const double err = q_ref_real[i] - q_real[off];
+				const double err_d = qd_ref_real[i] - qd_real[off];#
 
+				JointLogBuffer::JointLogEntry e{};
 				e.sim_time = _simTime;
 				e.dt_taken = mathlib::real(result.stepOut.dt_taken);
 				e.dt_sug = mathlib::real(result.stepOut.dt_sug);
-				e.theta = q_real[i]; e.omega = qd_real[i]; e.alpha = mathlib::real(dynResult.metrics.qdd[i]);
+				e.theta = q_real[off]; e.omega = qd_real[off]; e.alpha = mathlib::real(dynResult.metrics.qdd[off]);
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
 				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = mathlib::real(dynResult.metrics.tau_g[i]);
