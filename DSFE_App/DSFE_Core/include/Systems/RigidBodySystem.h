@@ -90,10 +90,12 @@ namespace systems {
 
         std::size_t linkCount() const { return _body.links.size(); }
 		std::size_t jointCount() const { return _body.joints.size(); }
-
 		std::string findRootLink() const;
-
         bool hasLinkName(const std::string& linkName) const { return _link_idx.find(linkName) != _link_idx.end(); }
+
+		int jointStateOffset(size_t joint_idx) const;
+		int totalDOF() const;
+
         const std::string& rigidBodyName() const { return _body.name; }
         bool hasRigidBody() const { return _hasBody; }
 

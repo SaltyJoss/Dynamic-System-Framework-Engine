@@ -23,6 +23,13 @@ using namespace constants;
 using namespace physics;
 
 namespace systems {
+	// Helper function to convert std::vector<double> to Eigen::VectorXd
+	static VecX toVecX(const std::vector<double>& a) {
+		VecX v(a.size());
+		for (size_t i = 0; i < a.size(); ++i) { v(i) = a[i]; }
+		return v;
+	}
+
 	// Constructor
 	RigidBodySystem::RigidBodySystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
@@ -41,13 +48,23 @@ namespace systems {
 		return names;
 	}
 
-	// Helper function to convert std::vector<double> to Eigen::VectorXd
-	static VecX toVecX(const std::vector<double>& a) {
-		VecX v(a.size());
-		for (size_t i = 0; i < a.size(); ++i) { v(i) = a[i]; }
-		return v;
+	/*
+	 * Method to compute the offset of a joint's state in the packed state vector based on its index
+	 */
+	int RigidBodySystem::jointStateOffset(size_t joint_idx) const {
+		int off = 0;
+		for (size_t i = 0; i < joint_idx; ++i) { off += jointDOF(_body.joints[i].type); }
+		return off;
 	}
-
+	/*
+	 * Method to compute the total degrees of freedom (DOF) of the rigidBody system based on its joints
+	 */
+	int RigidBodySystem::totalDOF() const {
+		int nv = 0;
+		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
+		return nv;
+	}
+	
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
