@@ -160,12 +160,19 @@ namespace systems {
 			switch (j.type) {
 				case eJointType::REVOLUTE:
 					sj.S = mathlib::SpatialVec(j.axis.normalized(), mathlib::Vec3::Zero());
+					sj.nfDOF = 1;
 					break;
 				case eJointType::PRISMATIC:
 					sj.S = mathlib::SpatialVec(mathlib::Vec3::Zero(), j.axis.normalized());
+					sj.nfDOF = 1;
+					break;
+				case eJointType::FREE:
+					sj.S = mathlib::SpatialVec();
+					sj.nfDOF = 6;
 					break;
 				default:
 					sj.S = mathlib::SpatialVec();
+					sj.nfDOF = 0;
 					break;
 			}
 		}
