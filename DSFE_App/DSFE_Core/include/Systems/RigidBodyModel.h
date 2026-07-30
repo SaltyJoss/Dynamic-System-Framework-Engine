@@ -141,6 +141,13 @@ namespace systems {
 		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
 		mathlib::Quat origin_q{ 1,0,0,0 };		  // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
 
+		// Free-Joint States
+		mathlib::Vec3 free_pos{ 0.0, 0.0, 0.0 }; // Position of the free joint in world frame
+		mathlib::Vec3 free_rot_v{ 0.0, 0.0, 0.0 }; // Rotation of the free joint in world frame (Euler angles)
+		mathlib::Quat free_qref{ 1,0,0,0 }; // Rotation of the free joint in world frame (Quaternion)
+		mathlib::VecX free_vel = mathlib::VecX::Zero(6); // Velocity of the free joint in world frame (linear + angular)
+
+
 		// Axis expressed IN JOINT FRAME
 		mathlib::Vec3 axis{ 0.0, 0.0, 1.0 };
 
