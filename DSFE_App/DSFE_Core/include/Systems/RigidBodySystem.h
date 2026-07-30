@@ -49,6 +49,22 @@ namespace systems {
 
 	inline constexpr size_t AD_VARS = 14; // number of independent variables for autodiff (used for pre-allocating AD integrator buffers)
 
+	inline int jointDOF(eJointType t) {
+		switch(t) {
+			case eJointType::FREE:	 	return 6;
+			case eJointType::REVOLUTE: 	return 1;
+			case eJointType::PRISMATIC: return 1;
+			case eJointType::FIXED:	 	return 0;
+			default: 					return 1;
+		}
+	}
+
+	inline mathlib::Quat expToQuat(const mathlib::Vec3& rv) {
+		const double theta = rv.norm();
+		if (theta < 1e-9) { return mathlib::Quat(1, 0, 0, 0); }
+		return mathlib::Quat(Eigen::AngleAxisd(theta, rv / theta));
+	}
+
 	class DSFE_API RigidBodySystem {
 	public:
 		RigidBodySystem();

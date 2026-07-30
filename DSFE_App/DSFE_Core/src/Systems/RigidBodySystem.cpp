@@ -157,65 +157,86 @@ namespace systems {
 
 	// Method to pack rigidBody joint states into a state vector
 	mathlib::VecX RigidBodySystem::packState() const {
-		const size_t n = static_cast<int>(_body.joints.size());
-		mathlib::VecX x(2 * n);
-
+		int nv = 0;
+		// Count total DOF
+		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
+		mathlib::VecX x(2 * nv);
+		int off = 0;
 		// Pack angles and velocities
-		for (size_t i = 0; i < n; ++i) {
-			auto& j = _body.joints[i];
-
-			// Current states
-			x[i] = j.q;
-			x[i + n] = j.qd;
+		for (const auto& j : _body.joints) {
+			const int dof = jointDOF(j.type);
+			if (dof == 0) { continue; } // Skip fixed joints
+			if (dof == 1) { // Revolute or Prismatic joint
+				x[off] = j.q;
+				x[off + nv] = j.qd;
+			}
+			else {
+				x.segment(off, 3) = j.free_pos;			// Position
+				x.segment(off + 3, 3) = j.free_rot_v;	// Euler angles
+				x.segment(nv + off, 6) = j.free_vel;	// linear + angular velocity
+			}
+			off += dof; // increment offset by the DOF of the joint
 		}
-		return x; // state vector
+		return x;
 	}
 	
 	// Method to unpack state vector into rigidBody joints
 	void RigidBodySystem::unpackState(const mathlib::VecX& x) {
 		const size_t n = static_cast<int>(_body.joints.size());
+		int nv = 0;
+		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
 
 		// Resize clamping vectors if necessary
 		if (_clampTheta.size() != n) { _clampTheta.assign(n, 0); }
 		if (_clampOmega.size() != n) { _clampOmega.assign(n, 0); }
 
-		// For each joint
+		int off = 0;
 		for (size_t i = 0; i < n; ++i) {
 			auto& j = _body.joints[i];
+			const int dof = jointDOF(j.type);
+			if (dof == 0) { _clampTheta[i] = 0; _clampOmega[i] = 0; continue; } // Skip fixed joints
 
-			// Current states
-			double theta_in = x[i];		  // [rad]
-			double omega_in = x[i + n];	  // [rad/s]
+			if (dof == 1) { // Revolute or Prismatic joint
+				// Current states
+				double theta_in = x[off];		  // [rad]
+				double omega_in = x[off + nv];	  // [rad/s]
+				double theta_out = clampJointAngle(j, theta_in); // [rad], clamped to joint limits
+				double wMax_hw = std::abs(j.limits.maxqd); // [rad/s], max |omega| for this joint
+				double omega_out = omega_in; // [rad/s], will be clamped if necessary
 
-			// Clamp joint angle
-			double theta_out = clampJointAngle(j, theta_in);
-
-			// max |omega|
-			double wMax_hw = std::abs(j.limits.maxqd);
-			double omega_out = omega_in;
-
-			// Velocity limit clamping
-			if (wMax_hw > 0.0f) {
-				const double eps = 0.05f;
-				if (std::abs(omega_in) > (1.0f + eps) * wMax_hw) {
-					omega_out = std::clamp(omega_in, -wMax_hw, wMax_hw);
+				// Velocity limit clamping
+				if (wMax_hw > 0.0f) {
+					const double eps = 0.05f;
+					if (std::abs(omega_in) > (1.0f + eps) * wMax_hw) {
+						omega_out = std::clamp(omega_in, -wMax_hw, wMax_hw);
+					}
 				}
-			}
 
-			// Velocity limit enforcement
-			if (theta_out != theta_in) {
-				const double upperLimit = j.limits.maxAngle;
-				const double lowerLimit = j.limits.minAngle;
-				if (theta_out >= upperLimit && omega_in > 0.0f) { omega_out = 0.0f; }
-				if (theta_out <= lowerLimit && omega_in < 0.0f) { omega_out = 0.0f; }
-			}
+				// Velocity limit enforcement
+				if (theta_out != theta_in) {
+					const double upperLimit = j.limits.maxAngle;
+					const double lowerLimit = j.limits.minAngle;
+					if (theta_out >= upperLimit && omega_in > 0.0f) { omega_out = 0.0f; }
+					if (theta_out <= lowerLimit && omega_in < 0.0f) { omega_out = 0.0f; }
+				}
 
-			// Record clamping
-			_clampTheta[i] = (theta_in != theta_out) ? 1 : 0;
-			_clampOmega[i] = (omega_in != omega_out) ? 1 : 0;
-			// Update joint states
-			j.q = theta_out;
-			j.qd = omega_out;
+				// Record clamping
+				_clampTheta[i] = (theta_in != theta_out) ? 1 : 0;
+				_clampOmega[i] = (omega_in != omega_out) ? 1 : 0;
+				// Update joint states
+				j.q = theta_out;
+				j.qd = omega_out;
+			}
+			else {
+				j.free_pos = x.segment(off, 3);				  // Position
+				mathlib::Vec3 rot_v = x.segment(off + 3, 3);  // Euler angles
+				j.free_vel = x.segment(nv + off, 6);		  // linear + angular velocity
+				j.free_qref = (j.free_qref * expToQuat(rot_v)).normalized(); // Update quaternion based on Euler angles
+				j.free_rot_v = mathlib::Vec3::Zero(); // Reset Euler angles to zero after conversion
+				_clampTheta[i] = 0;
+				_clampOmega[i] = 0; // No clamping for free joints
+			}
+			off += dof; // increment offset by the DOF of the joint
 		}
 	}
 
@@ -336,7 +357,14 @@ namespace systems {
 	void RigidBodySystem::step(double dt, double simTime) {
 		if (!_hasBody) { return; }
 
-		if (_useAutoDiff) {
+		bool hasFree = false;
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				hasFree = true; break;
+			}
+		}
+
+		if (_useAutoDiff && !hasFree) {
 			step_AD<AD_VARS>(dt, simTime);
 			return;
 		}
