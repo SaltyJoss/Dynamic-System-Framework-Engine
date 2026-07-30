@@ -397,22 +397,21 @@ namespace physics {
 		DynamicsScratch<Scalar>& scratch,
 		DynamicsResult<Scalar>& out
 	) {
-		const size_t n = model.joints.size();
-		mathlib::VecX_T<Scalar> dx(2 * n);
+		const size_t n = model.joints.size(); 
+		int nv = 0; // number of degrees of freedom (DOF) in the model
+		for (const auto& j : model.joints) { nv += robots::jointDOF(j.type); }
+		mathlib::VecX_T<Scalar> dx(2 * nv);
 
-		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
-		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), nv);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + nv, nv);
 
 		// Quick guard: check for non-finite states and bail with zero derivative
-		for (size_t i = 0; i < n; ++i) {
+		for (size_t i = 0; i < nv; ++i) {
 			double q_r = mathlib::real(q[i]);
 			double qd_r = mathlib::real(qd[i]);
 			if (!std::isfinite(q_r) || !std::isfinite(qd_r)) {
 				LOG_ERROR("Non-finite state detected in derivative_spatial: q[%zu]=%g qd[%zu]=%g", i, q_r, i, qd_r);
-				// Return zero derivative to avoid propagating NaNs
-				dx.setZero();
-				out.qdd.setZero();
-				return dx;
+				dx.setZero(); out.qdd.setZero(); return dx;
 			}
 		}
 
@@ -424,59 +423,51 @@ namespace physics {
 		);
 
 		mathlib::MatX_T<Scalar> M = SpatialDynamics::CRBA<Scalar>(model, scratch.spatial.Xup, scratch);
-		mathlib::VecX_T<Scalar> qd_zero = mathlib::VecX_T<Scalar>::Zero(n);
-		mathlib::VecX_T<Scalar> qdd_zero = mathlib::VecX_T<Scalar>::Zero(n);
+		mathlib::VecX_T<Scalar> qd_zero = mathlib::VecX_T<Scalar>::Zero(nv);
+		mathlib::VecX_T<Scalar> qdd_zero = mathlib::VecX_T<Scalar>::Zero(nv);
 		mathlib::VecX_T<Scalar> tau_g = SpatialDynamics::RNEA<Scalar>(model, q, qd_zero, qdd_zero, scratch);
 
-		scratch.dense.tau.setZero();
+		scratch.dense.tau.setZero(nv);
+		int off = 0; // offset for indexing into the state vector for joints with multiple DOF
 		for (size_t i = 0; i < n; ++i) {
 			const systems::SpatialJoint<Scalar>& joint = model.joints[i];
-			if (!isControlledJoint(joint.type)) {
-				scratch.dense.tau[i] = Scalar(0);
-				continue;
+			const int dof = robots::jointDOF(joint.type); // number of degrees of freedom for this joint
+			if (dof == 0) { continue; } // skip fixed joints
+			if (dof !- 1 || !isControlledJoint(joint.type)) {
+				off += dof; continue; // free (6-DOF) or uncontrolled means no control torque is applied, so skip to next joint
 			}
 
 			const Scalar wn = static_cast<Scalar>(snap.model->joints[i].wn_target);
 			const Scalar z = static_cast<Scalar>(snap.model->joints[i].zeta_target);
-
-			const Scalar err = snap.q_ref[i] - q[i];
-			const Scalar err_d = snap.qd_ref[i] - qd[i];
-
+			const Scalar err = snap.q_ref[i] - q[off];
+			const Scalar err_d = snap.qd_ref[i] - qd[off];
 			const Scalar eps = static_cast<Scalar>(1e-6);
-
-			const Scalar I_eff = mathlib::LSE_smoothMax(M(i, i), eps);
+			const Scalar I_eff = mathlib::LSE_smoothMax(M(off, off), eps);
 			const Scalar k_p = I_eff * wn * wn;
 			const Scalar k_d = Scalar(2) * z * I_eff * wn;
-
 			const Scalar b = static_cast<Scalar>(snap.model->joints[i].dynamics.damping); // viscous damping coefficient
 			const Scalar c = static_cast<Scalar>(snap.model->joints[i].dynamics.friction); // Coulomb friction coefficient
 			const Scalar eps_f = static_cast<Scalar>(1e-3);
 
 			Scalar tau_i = k_p * err + k_d * err_d + I_eff * snap.qdd_ref[i];
-			Scalar tau_f = c * mathlib::tanh(qd[i] / Scalar(0.1)) + b * qd[i]; // simple friction model with viscous and Coulomb friction <going back to the tanh-based friction compensation for better numerical stability>
-			tau_i += tau_f;
-
+			tau_i += c * mathlib::tanh(qd[off] / Scalar(0.1)) + b * qd[off]; // add friction compensation (smooth tanh for Coulomb friction)
 			const Scalar Q_max = static_cast<Scalar>(snap.model->joints[i].limits.maxEffort);
-			LOG_INFO_ONCE("Max effort for joint %zu: %g Nm", i, mathlib::real(Q_max));
-
 			if (Q_max > Scalar(1e-9)) { tau_i = Q_max * mathlib::tanh(tau_i / Q_max); } // saturate control torque to max effort using smooth tanh saturation
 
 			scratch.dense.tau[i] = tau_i;
 
-			out.metrics.q[i] = mathlib::real(q[i]);
-			out.metrics.qd[i] = mathlib::real(qd[i]);
-
+			out.metrics.q[i] = mathlib::real(q[off]);
+			out.metrics.qd[i] = mathlib::real(qd[off]);
 			out.metrics.err[i] = mathlib::real(err);
 			out.metrics.errd[i] = mathlib::real(err_d);
-
 			out.metrics.I_eff[i] = mathlib::real(I_eff);
 			out.metrics.tau[i] = mathlib::real(tau_i);
 		}
 
 		out.qdd = SpatialDynamics::ABA<Scalar>(model, q, qd, scratch.dense.tau, scratch);
 		out.metrics.qdd = out.qdd;
-		dx.head(n) = qd;
-		dx.tail(n) = out.qdd;
+		dx.head(nv) = qd;
+		dx.tail(nv) = out.qdd;
 		return dx;
 	}
 
