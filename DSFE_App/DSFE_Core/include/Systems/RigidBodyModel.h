@@ -39,6 +39,20 @@ namespace systems {
 		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
 	};
 
+	/*
+	 * Helper function to get the degrees of freedom (DOF) for a given joint type.
+	 * @param t The joint type (eJointType).
+	 */
+	inline int jointDOF(eJointType t) {
+		switch(t) {
+			case eJointType::FREE:	 	return 6;
+			case eJointType::REVOLUTE: 	return 1;
+			case eJointType::PRISMATIC: return 1;
+			case eJointType::FIXED:	 	return 0;
+			default: 					return 1;
+		}
+	}
+
 	// --- RigidBody Model Links ---
 
 	// Inertia tensor struct, representing the inertia of a link about its center of mass, expressed in the link's local frame
