@@ -19,6 +19,8 @@ namespace systems {
 			out_j.inertia = j.inertia.template cast<ScalarT>();
 			out_j.S = j.S.template cast<ScalarT>();
 			out_j.name = j.name;
+			out_j.nfDOF     = j.nfDOF;
+            out_j.free_qref = j.free_qref.template cast<ScalarT>();
 		}
 		return out;
 	}
