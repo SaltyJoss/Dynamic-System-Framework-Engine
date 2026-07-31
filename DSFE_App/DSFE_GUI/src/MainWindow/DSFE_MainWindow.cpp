@@ -150,9 +150,14 @@ namespace window {
 		}
 		// View menu
 		{
-			auto* sceneMenu = viewMenu->addMenu("SceneOptions");
+			auto* sceneMenu = viewMenu->addMenu("Scene");
 			buildSceneMenu(sceneMenu);
 			viewMenu->addSeparator();
+			auto* resetRigidBody = viewMenu->addAction("Reset RigidBody");
+			connect(resetRigidBody, &QAction::triggered, this, []() {
+				LOG_INFO("Menu clicked: View -> Reset RigidBody");
+
+			});
 			auto* resetCameraAction = viewMenu->addAction("Reset Camera");
 			connect(resetCameraAction, &QAction::triggered, this, []() {
 				LOG_INFO("Menu clicked: View -> Reset Camera");
@@ -192,6 +197,11 @@ namespace window {
 			LOG_INFO("Menu toggled: Scene -> Toggle Orientator -> %s", checked ? "On" : "Off");
 			//_sim->enableOrientator(checked);
 		});
+	}
+
+	void DSFE_MainWindow::resetRigidBody() {
+		if (!_sim) { LOG_ERROR("Simulation Manager not found!"); return; }
+		_sim->resetRigidBody();
 	}
 
 	// Build the robot menu dynamically based on the available robotic systems, using the general RigidBody System interface

@@ -348,26 +348,40 @@ namespace widgets {
 		t.trajectoryHeader = new QLabel("TRAJECTORY");
 		t.clampedHeader    = new QLabel("LIMITS");
 		t.constantsHeader  = new QLabel("PHYSICAL");
-		for (QLabel* h : { t.stateHeader, t.referenceHeader, t.trajectoryHeader, t.clampedHeader, t.constantsHeader })
+		for (QLabel* h : {
+				t.stateHeader, 
+				t.referenceHeader, 
+				t.trajectoryHeader,
+				t.clampedHeader,
+				t.constantsHeader
+			}
+		) {
 			headerFont(h);
+		}
 
 		t.q = new QLabel(); t.qd = new QLabel(); t.tau = new QLabel();
 		t.qRef = new QLabel(); t.qdRef = new QLabel(); t.qddRef = new QLabel(); t.err = new QLabel();
 		t.qTraj = new QLabel(); t.qdTraj = new QLabel(); t.qddTraj = new QLabel();
 		t.qClamped = new QLabel(); t.qdClamped = new QLabel();
 		t.damping = new QLabel(); t.friction = new QLabel();
-		for (QLabel* v : { t.q, t.qd, t.tau, t.qRef, t.qdRef, t.qddRef, t.err,
-		                   t.qTraj, t.qdTraj, t.qddTraj, t.qClamped, t.qdClamped, t.damping, t.friction })
-			valueLabel(v);
+		for (QLabel* v : {
+				t.q, t.qd, t.tau, t.err,
+				t.qRef, t.qdRef, t.qddRef, 
+				t.qTraj, t.qdTraj, t.qddTraj,
+				t.qClamped, t.qdClamped, 
+				t.damping, t.friction
+			}
+		) {
+				valueLabel(v);
+		}
 
-			auto makeGrid = [](std::initializer_list<std::pair<QLabel*, QLabel*>> rows) {
-				auto* g = new QGridLayout();
-				int r = 0;
-				for (auto& [sym, val] : rows) {
-					g->addWidget(sym, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
-					g->addWidget(val, r, 1);
-					++r;
-				}
+		auto makeGrid = [](std::initializer_list<std::pair<QLabel*, QLabel*>> rows) {
+			auto* g = new QGridLayout(); int r = 0;
+			for (auto& [sym, val] : rows) {
+				g->addWidget(sym, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
+				g->addWidget(val, r, 1);
+				++r;
+			}
 			g->setHorizontalSpacing(14);
 			g->setVerticalSpacing(3);
 			g->setColumnStretch(0, 0);
