@@ -84,13 +84,16 @@ namespace physics {
 		std::vector<mathlib::SpatialMat_T<Scalar>> Xup; // spatial transformation from parent to current link
 		std::vector<mathlib::SpatialMat_T<Scalar>> IA;  // articulated body inertia
 		std::vector<mathlib::SpatialMat_T<Scalar>> Ia;  // articulated body inertia in the link frame
-
+		
 		std::vector<mathlib::SpatialVec_T<Scalar>> v;  // spatial velocity
 		std::vector<mathlib::SpatialVec_T<Scalar>> c;  // spatial bias acceleration
 		std::vector<mathlib::SpatialVec_T<Scalar>> a;  // spatial acceleration
 		std::vector<mathlib::SpatialVec_T<Scalar>> pA; // articulated bias force
 		std::vector<mathlib::SpatialVec_T<Scalar>> U;  // articulated body force
 		std::vector<mathlib::SpatialVec_T<Scalar>> f_ext;  // spatial force
+
+		std::vector<mathlib::MatX_T<Scalar>> dblk;   // 6x6 per joint (free joints use it)
+		std::vector<mathlib::VecX_T<Scalar>> ublk;   // 6 per joint
 
 		mathlib::VecX_T<Scalar> g; // gravity vector in spatial coordinates (6D)
 		mathlib::VecX_T<Scalar> u; // joint force contribution
@@ -120,7 +123,9 @@ namespace physics {
 			pA.resize(nJoints);
 			U.resize(nJoints);
 			f_ext.resize(nJoints);
-
+			dblk.resize(nJoints);
+			ublk.resize(nJoints);
+			
 			g.resize(6); // gravity vector is always 6D
 			u.resize(nJoints);
 			d.resize(nJoints);
@@ -144,11 +149,13 @@ namespace physics {
 			pA.clear();
 			U.clear();
 			f_ext.clear();
+			dblk.clear();
+			ublk.clear();
 
 			g.resize(0);
 			u.resize(0);
 			d.resize(0);
-
+			
 			dXup_dq.clear();
 			dv_dq.clear();
 			dv_dqd.clear();
