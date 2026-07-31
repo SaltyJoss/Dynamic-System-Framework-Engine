@@ -12,6 +12,7 @@
 #include <tinyxml2.h>
 
 #include <string>
+#include <set>
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
@@ -22,9 +23,9 @@ using namespace constants;
 namespace systems {
     // rpy(radians) -> quaternion, q = qz*qy*qx, where qx = roll, qy = pitch, qz = yaw
     static Quat urdf_rpyToQuat(const mathlib::Vec3& rpy) {
-		const Quat qx(Eigen::AngleAxisd(rpy.x(),  Vec3(1.0, 0.0, 0.0)));
+		const Quat qx(Eigen::AngleAxisd(rpy.x(), Vec3(1.0, 0.0, 0.0)));
 		const Quat qy(Eigen::AngleAxisd(rpy.y(), Vec3(0.0, 1.0, 0.0)));
-		const Quat qz(Eigen::AngleAxisd(rpy.z(),   Vec3(0.0, 0.0, 1.0)));
+		const Quat qz(Eigen::AngleAxisd(rpy.z(), Vec3(0.0, 0.0, 1.0)));
 		return (qz * qy * qx).normalized();
 	}
     // Parse a space-separated triple of doubles from a string, e.g. "1.0 2.0 3.0"
@@ -49,7 +50,10 @@ namespace systems {
     }
     // Link Parsing
     static void urdf_parseLink(XMLElement* lEl, RigidBodyLink& link, const std::string& meshdir) {
-        link.name = lEl->Attribute("name") ? lEl->Attribute("name") : "";
+        std::string name = lEl->Attribute("name") ? lEl->Attribute("name") : "";
+        // convert to lowercase for consistency
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
+        link.name = name;
         // Visual
         if (XMLElement* v = lEl->FirstChildElement("visual")) {
             // Origin
@@ -187,7 +191,7 @@ namespace systems {
         XMLElement* robot = doc.FirstChildElement("robot");
         if (!robot) { LOG_ERROR("No <robot> element found in URDF file: %s", fp.c_str()); return rb; }
         rb.name = robot->Attribute("name") ? robot->Attribute("name") : "unnamed_body";
-        rb.scale = 1.0f; // URDF does not specify a scale, so we default to 1.0
+        rb.scale = robot->QueryFloatAttribute("scale", &rb.scale) == XML_SUCCESS ? rb.scale : 1.0;
         rb.kinematicsModel = eKinematicsModel::URDF;
 
         // URDF has NO baseframe, most of the models I use need a Z-up -> engine -90deg X rotation.
@@ -229,6 +233,34 @@ namespace systems {
                 joint.limits.maxEffort, joint.limits.minAngle, joint.limits.maxAngle, joint.limits.maxqd
             );
         }
+        // Find links that are no joint's child (roots)
+		std::set<std::string> child_links;
+		for (const auto& j : rb.joints) { child_links.insert(j.child); }
+		for (const auto& link : rb.links) {
+			if (child_links.find(link.name) == child_links.end()) {
+				// This link has no parent joint. If it's the ONLY link (single body), make it FREE.
+				if (rb.links.size() == 1) {
+					RigidBodyJoint freeJoint;
+					freeJoint.name = "free_" + link.name;
+					freeJoint.type = eJointType::FREE;
+					freeJoint.parent = "world";
+					freeJoint.child = link.name;
+                    freeJoint.free_pos = Vec3(0.0, 0.5, 0.0);   // 50cm up
+                    freeJoint.free_qref = Quat(1,0,0,0);
+                    freeJoint.free_rot_v = Vec3::Zero();
+                    freeJoint.free_vel = VecX::Zero(6);
+					rb.joints.push_back(freeJoint);
+					LOG_INFO("Synthesized FREE joint for single free body '%s'", link.name.c_str());
+                    LOG_INFO("RigidBody (%s) origin q(joint): (%.3f, %.3f, %.3f, %.3f), origin xyz(joint): (%.3f, %.3f, %.3f)", link.name.c_str(),
+                        freeJoint.origin_q.w(), freeJoint.origin_q.x(), freeJoint.origin_q.y(), freeJoint.origin_q.z(),
+                        freeJoint.origin_xyz.x(), freeJoint.origin_xyz.y(), freeJoint.origin_xyz.z()
+                    );
+				}
+			}
+            LOG_INFO("RigidBody (%s) origin xyz(link): (%.3f, %.3f, %.3f)", link.name.c_str(),
+                link.visual.origin_xyz.x(), link.visual.origin_xyz.y(), link.visual.origin_xyz.z()
+            );
+		}
         LOG_INFO("RigidBody (URDF) loaded: %d links, %d joints", static_cast<int>(rb.links.size()), static_cast<int>(rb.joints.size()));
         return rb;
     }
