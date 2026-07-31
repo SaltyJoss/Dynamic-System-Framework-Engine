@@ -217,8 +217,8 @@ namespace systems {
 				if (dof == 0) { continue; } // skip fixed joints
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
 				const double err = q_ref_real[i] - q_real[off];
-				const double err_d = qd_ref_real[i] - qd_real[off];#
-
+				const double err_d = qd_ref_real[i] - qd_real[off];
+				// Log the joint metrics to the buffer
 				JointLogBuffer::JointLogEntry e{};
 				e.sim_time = _simTime;
 				e.dt_taken = mathlib::real(result.stepOut.dt_taken);

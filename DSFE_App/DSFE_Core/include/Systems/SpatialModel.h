@@ -19,6 +19,7 @@ namespace systems {
 		mathlib::SpatialMat_T<Scalar> Xtree;
 		mathlib::SpatialMat_T<Scalar> inertia;
 		mathlib::SpatialVec_T<Scalar> S;
+		mathlib::Quat_T<Scalar> free_qref{Scalar(1),Scalar(0),Scalar(0),Scalar(0)}; // free joint reference orientation
 		int nfDOF = 1; // number of degrees of freedom for this joint (1 for revolute/prismatic, 0 for fixed, 6 for free)
 
 		std::string name;
