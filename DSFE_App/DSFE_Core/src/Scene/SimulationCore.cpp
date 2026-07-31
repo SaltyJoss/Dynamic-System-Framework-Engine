@@ -332,7 +332,7 @@ namespace core {
 		LOG_INFO("SimulationCore::runScriptToCompletion -> START method=%s dt=%.6f hasRigidBody=%d", methodName.c_str(), _dt, (int)hasRigidBody());
 
 		// Reset rigidBody state
-		_rigidBody->resetRigidBody();
+		resetRigidBody();
 		_traj->clearAll();
 
 		// Clear reference buffer (external for now)
@@ -453,6 +453,12 @@ namespace core {
 		if (!_rigidBody) { LOG_ERROR("Cannot load rigidBody: RigidBodySystem not set"); return; }
 		_rigidBody->loadRigidBody(name);
 	}
+	// Resets the rigidBody system to its initial state
+	void SimulationCore::resetRigidBody() {
+		if (!_rigidBody) { LOG_ERROR("Cannot reset rigidBody: RigidBodySystem not set"); return; }
+		_rigidBody->resetRigidBody();
+	}
+
 	// Sets an external force on a specific link of the rigidBody system at a given world point
 	bool SimulationCore::setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) {
 		return _rigidBody->setLinkExtForce(link, worldPoint, worldForce);
@@ -559,6 +565,11 @@ namespace core {
 	}
 
 	void SimulationCore::setManipulating(bool on) {
+		// Check if the type is free-floating (no joints) and if so, ignore manipulation state changes
+		if (_rigidBody && _rigidBody->jointCount() == 0) {
+			D_WARN("setManipulating called on free-floating rigidBody; ignoring manipulation state change.");
+			return;
+		}
 		if (on == _manipulating.load()) { return; }
 		if (on) {
 			setupSimulationIntegrator();

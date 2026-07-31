@@ -98,6 +98,7 @@ namespace core {
 		bool hasRigidBody() const override;
 		void loadRigidBody(const std::string& name) override;
 		void loadRigidBodyInternal(const std::string& name); // Internal method that assumes ownership
+		void resetRigidBody() override; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
 
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) override;
