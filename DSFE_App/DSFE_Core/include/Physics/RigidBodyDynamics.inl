@@ -399,7 +399,7 @@ namespace physics {
 	) {
 		const size_t n = model.joints.size(); 
 		int nv = 0; // number of degrees of freedom (DOF) in the model
-		for (const auto& j : model.joints) { nv += robots::jointDOF(j.type); }
+		for (const auto& j : model.joints) { nv += systems::jointDOF(j.type); }
 		mathlib::VecX_T<Scalar> dx(2 * nv);
 
 		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), nv);
@@ -431,9 +431,9 @@ namespace physics {
 		int off = 0; // offset for indexing into the state vector for joints with multiple DOF
 		for (size_t i = 0; i < n; ++i) {
 			const systems::SpatialJoint<Scalar>& joint = model.joints[i];
-			const int dof = robots::jointDOF(joint.type); // number of degrees of freedom for this joint
+			const int dof = systems::jointDOF(joint.type); // number of degrees of freedom for this joint
 			if (dof == 0) { continue; } // skip fixed joints
-			if (dof !- 1 || !isControlledJoint(joint.type)) {
+			if (dof != 1 || !isControlledJoint(joint.type)) {
 				off += dof; continue; // free (6-DOF) or uncontrolled means no control torque is applied, so skip to next joint
 			}
 
