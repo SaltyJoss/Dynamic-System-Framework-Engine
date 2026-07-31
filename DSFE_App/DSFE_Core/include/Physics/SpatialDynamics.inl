@@ -321,7 +321,6 @@ namespace physics {
 				a_out[i].v += qdd_blk;
 				continue;
 			}
-
 			qdd_out[off[i]] = (u_out[i] - U[i].dot(a_out[i])) / d_out[i];
 			a_out[i] += j.S * qdd_out[off[i]];
 		}
