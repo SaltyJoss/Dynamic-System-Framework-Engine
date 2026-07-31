@@ -82,6 +82,7 @@ namespace systems {
 		std::size_t jointCount() const { return _body.joints.size(); }
 		std::string findRootLink() const;
         bool hasLinkName(const std::string& linkName) const { return _link_idx.find(linkName) != _link_idx.end(); }
+		bool hasFreeJoint() const;
 
 		int jointStateOffset(size_t joint_idx) const;
 		int totalDOF() const;

@@ -64,6 +64,13 @@ namespace systems {
 		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
 		return nv;
 	}
+	/*
+	 * Method to check if the rigidBody system has any free-floating joints
+	 */
+	bool RigidBodySystem::hasFreeJoint() const {
+		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return true; } }
+		return false;
+	}
 	
 	// --- HELPER METHODS ---
 
@@ -777,6 +784,7 @@ namespace systems {
 	// Method to get the angle of a specific rigidBody joint
 	bool RigidBodySystem::tryGetJointAngleRad(const std::string& childLink, double& outAngle) const {
 		if (!_hasBody) { return false; }
+		if (hasFreeJoint()) { return false; }
 		// Find joint child matching childLink
 		for (const auto& joint : _body.joints) {
 			if (joint.child == childLink) {
@@ -790,6 +798,7 @@ namespace systems {
 	// Method to set the angle of a specific rigidBody joint
 	bool RigidBodySystem::trySetJointAngleRad(const std::string& childLink, double angleRad) {
 		if (!_hasBody) { return false; }
+		if (hasFreeJoint()) { return false; }
 		// Find joint child matching childLink
 		for (auto& joint : _body.joints) {
 			if (joint.child == childLink) {
