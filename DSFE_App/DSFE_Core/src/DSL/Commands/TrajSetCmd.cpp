@@ -65,6 +65,11 @@ namespace commands {
 		}
 
 		auto& body = cntx.RigidBody();
+		if (body.hasFreeJoint()) {
+			SIM_FAIL("trajSet: '%s' is a free body; trajectories apply only to articulated joints.", _link.c_str());
+			markFailed("trajSet: cannot set trajectory for free-floating joint.");
+			return { CmdState::Failed, {}, "trajSet failed" };
+		}
 		// Validate joint exists and get current angle as q0.
 		double q0 = 0.0f;
 		if (!body.tryGetJointAngleRad(_link, q0)) {
