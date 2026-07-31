@@ -175,6 +175,8 @@ namespace systems {
 					sj.nfDOF = 0;
 					break;
 			}
+
+			sj.free_qref = j.free_qref; // Store the free joint reference orientation
 		}
 		LOG_INFO("SpatialModel built: joints=%d", (long long)_spatialModel.joints.size());
 	}
