@@ -159,7 +159,12 @@ namespace gui {
 		_currentRigidBodyPath = name;
 		LOG_INFO("RigidBody loaded: %s", model.name.c_str());
 	}
-
+	// Resets the rigidBody system to its initial position
+	void SimulationManager::resetRigidBody() {
+		if (!_core) { LOG_ERROR("Simulation core not initialised, cannot reset rigidBody"); return; }
+		_core->resetRigidBody();
+	}
+	// Clears the rigidBody system and removes all associated objects from the scene
 	void SimulationManager::clearRigidBody() { _systems.clear_all(_scene); _scene.clear(); }
 
 	// --------------------------------------------------
@@ -411,12 +416,11 @@ namespace gui {
 
 	// Set a highlight color for a specific link in the rigidBody system. This is typically used to visually indicate selection or focus on a particular link in the GUI.
 	void SimulationManager::setLinkHighlight(const std::string& link, bool on) {
-		const auto names = _core->linkNames();
+		const auto names = linkNames();
 		int idx = -1;
 		for (size_t i = 0; i < names.size(); ++i) { if (names[i] == link) { idx = (int)i; break; } }
-		if (idx < 0) { return; }
+		if (idx <= 0) { return; }
 		if (on) {
-			// Cache original, then tint faint blue.
 			if (const auto* r = _scene.renderable((uint32_t)idx)) {
 				_highlightIdx = idx;
 				_highlightAlbedo0 = glm::vec3(r->albedo);
