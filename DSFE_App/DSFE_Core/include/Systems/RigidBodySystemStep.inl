@@ -301,10 +301,10 @@ namespace systems {
 		postStepUpdate(x_real, _dynScratch_AD, result);
 
 		// Update base pose if free-floating
-		if (_baseIsFree) {
-			integrateBaseTranslation(dt);
-			updateBaseRootPose();
-		}
+		// if (_baseIsFree) {
+		// 	integrateBaseTranslation(dt);
+		// 	updateBaseRootPose();
+		// }
 		// Update kinematics
 		computeRigidBodyKinematics(_worldTransforms);
 	}

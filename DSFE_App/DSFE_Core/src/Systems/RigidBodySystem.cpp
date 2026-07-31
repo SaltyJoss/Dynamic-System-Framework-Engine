@@ -108,54 +108,44 @@ namespace systems {
 		_spatialModel.joints.clear();
 		const size_t n = _body.joints.size();
 		_spatialModel.joints.resize(n);
-
+		// Build the spatial model from the rigidBody joints
 		for (size_t i = 0; i < n; ++i) {
 			const RigidBodyJoint& j = _body.joints[i];
 			auto& sj = _spatialModel.joints[i];
-
 			sj.name = j.name;
 			sj.type = j.type;
-
 			// Find parent joint
 			sj.parent = -1;
 			for (size_t p = 0; p < n; ++p) {
 				if (_body.joints[p].child == j.parent) {
-					sj.parent = (int)p;
-					break;
+					sj.parent = (int)p; break;
 				}
 			}
-
 			// Build XTree
 			mathlib::Mat3 R = j.origin_q.toRotationMatrix();
 			mathlib::Vec3 r = j.origin_xyz;			
 			sj.Xtree = mathlib::spatialTransform(R, r);
-
 			// Build Spatial Inertia
 			int childLinkIdx = -1;
 			for (size_t l = 0; l < _body.links.size(); ++l) {
 				if (_body.links[l].name == j.child) {
-					childLinkIdx = (int)l;
-					break;
+					childLinkIdx = (int)l; break;
 				}
 			}
-
 			if (childLinkIdx >= 0) {
 				const RigidBodyLink& link = _body.links[childLinkIdx];
 				mathlib::Mat3 I_com;
-
 				const auto& I = link.inertial.inertia;
 				I_com <<
 					I.ixx, I.ixy, I.ixz,
 					I.ixy, I.iyy, I.iyz,
 					I.ixz, I.iyz, I.izz;
-
 				sj.inertia = mathlib::spatialInertia(
 					link.inertial.mass,
 					link.inertial.com_xyz,
 					I_com
 				);
 			}
-
 			// Build S vector (motion subspace)
 			switch (j.type) {
 				case eJointType::REVOLUTE:
@@ -175,7 +165,6 @@ namespace systems {
 					sj.nfDOF = 0;
 					break;
 			}
-
 			sj.free_qref = j.free_qref; // Store the free joint reference orientation
 		}
 		LOG_INFO("SpatialModel built: joints=%d", (long long)_spatialModel.joints.size());
@@ -398,33 +387,45 @@ namespace systems {
 		_simTime = simTime;
 		const size_t n = _body.joints.size();
 		mathlib::VecX x = packState();
-		// Apply floor contact forces if enabled (Bit crude but yeah)
-		{
-			constexpr double k_floor = 400000.0;
-			constexpr double c_floor = 2000.0;
-			const size_t nl = _body.links.size();
-			if (_prevLinkY.size() != nl) { _prevLinkY.assign(nl, 0.0); }
-			for (size_t i = 0; i < nl; ++i) {
-				const Mat4& T = _worldTransforms[i];
-				const double lowY = linkWorldMinY(i, T); 
-				const double vy = (lowY - _prevLinkY[i]) / (_dynamics->dt() > 0 ? _dynamics->dt() : (1.0/180.0));
-				_prevLinkY[i] = lowY;
-				if (lowY < 0.0) {
-					double Fy = -k_floor * lowY - c_floor * vy;
-					if (Fy < 0.0) { Fy = 0.0; }                 // floor only pushes, never pulls
-					setLinkExtForce(
-						_body.links[i].name,
-					    Vec3(T(0,3), lowY, T(2,3)),
-					    Vec3(0.0, Fy, 0.0)
-					);
-				}
-			}
-		}
+		// // Apply floor contact forces if enabled (Bit crude but yeah)
+		// {
+		// 	constexpr double k_floor = 50000.0; // [N/m] spring constant for floor contact
+		// 	constexpr double c_floor = 2000.0; // [N/(m/s)] damping constant for floor contact
+		// 	const size_t nl = _body.links.size();
+		// 	if (_prevLinkY.size() != nl) { _prevLinkY.assign(nl, 0.0); }
+		// 	for (size_t i = 0; i < nl; ++i) {
+		// 		const Mat4& T = _worldTransforms[i];
+		// 		const double lowY = linkWorldMinY(i, T); 
+		// 		const double vy = (lowY - _prevLinkY[i]) / (_dynamics->dt() > 0 ? _dynamics->dt() : (1.0/180.0));
+		// 		_prevLinkY[i] = lowY;
+		// 		if (lowY < 0.0) {
+		// 			double Fy = -k_floor * lowY - c_floor * vy;
+		// 			if (Fy < 0.0) { Fy = 0.0; }                 // floor only pushes, never pulls
+		// 			setLinkExtForce(
+		// 				_body.links[i].name,
+		// 			    Vec3(T(0,3), lowY, T(2,3)),
+		// 			    Vec3(0.0, Fy, 0.0)
+		// 			);
+		// 		}
+		// 	}
+		// }
 		assembleExtForces(_dynScratch);
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 		clearExtForces();
 
 		unpackState(result.stepOut.x_next);
+		{
+            static int s_freeLogCount = 0;
+            const bool logNow = (++s_freeLogCount % 60 == 0);
+            for (const auto& j : _body.joints) {
+                if (j.type == eJointType::FREE && logNow) {
+                    LOG_INFO("free pos=(%.4f %.4f %.4f) w=(%.5f %.5f %.5f) v=(%.5f %.5f %.5f)",
+                        j.free_pos.x(), j.free_pos.y(), j.free_pos.z(),
+                        j.free_vel(0), j.free_vel(1), j.free_vel(2),   // angular (the NaN one)
+                        j.free_vel(3), j.free_vel(4), j.free_vel(5));  // linear
+                }
+            }
+        }
 		_dynamics->setDt(result.stepOut.dt_taken);
 
 		const auto scratchCopy = _dynScratch;
@@ -433,10 +434,10 @@ namespace systems {
 		postStepUpdate(resultCopy.stepOut.x_next, scratchCopy, resultCopy);
 
 		// Update base pose if free-floating
-		if (_baseIsFree) {
-			integrateBaseTranslation(dt);
-			updateBaseRootPose();
-		}
+		// if (_baseIsFree) {
+		// 	integrateBaseTranslation(dt);
+		// 	updateBaseRootPose();
+		// }
 
 		// Update kinematics
 		computeRigidBodyKinematics(_worldTransforms);
@@ -698,6 +699,17 @@ namespace systems {
 		int rootIdx = itRoot->second;
 		world[rootIdx] = _root_pose;
 
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				mathlib::Quat q_full = (j.free_qref * expToQuat(j.free_rot_v)).normalized();
+				Mat4 T = Mat4::Identity();
+				T.block<3, 3>(0, 0) = q_full.toRotationMatrix(); // set rotation to free_qref * exp(free_rot_v)
+				T.block<3, 1>(0, 3) = j.free_pos; // set translation to free_pos
+				auto itC = _link_idx.find(j.child); // find child link index
+				if (itC != _link_idx.end()) { world[itC->second] = T; }
+			}
+		}
+
 		// parent -> children joints
 		std::unordered_map<std::string, std::vector<const RigidBodyJoint*>> children;
 		children.reserve(_body.joints.size());
@@ -717,11 +729,9 @@ namespace systems {
 			int pIdx = itP->second;
 
 			const Mat4& T_parent = world[pIdx];
-
-
 			// Find children joints
 			auto it = children.find(parentName);
-			if (it == children.end()) continue;
+			if (it == children.end()) { continue; }
 
 			// For each child joint
 			for (const RigidBodyJoint* jp : it->second) {
