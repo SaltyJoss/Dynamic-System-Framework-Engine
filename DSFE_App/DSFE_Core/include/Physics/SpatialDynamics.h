@@ -69,7 +69,9 @@ namespace physics {
 			std::vector<SpatialMat_T<Scalar>>& Ia_out,
 			mathlib::VecX_T<Scalar>& u_out,
 			mathlib::VecX_T<Scalar>& d_out,
-			std::vector<SpatialVec_T<Scalar>>& U_out
+			std::vector<SpatialVec_T<Scalar>>& U_out,
+			std::vector<mathlib::MatX_T<Scalar>>& dblk_out,
+			std::vector<mathlib::VecX_T<Scalar>>& ublk_out
 		);
 
 		template<typename Scalar>
@@ -81,6 +83,8 @@ namespace physics {
 			const mathlib::VecX_T<Scalar>& d_out,
 			const std::vector<SpatialVec_T<Scalar>>& U,
 			const SpatialVec_T<Scalar>& a0,
+			const std::vector<mathlib::MatX_T<Scalar>>& dblk,
+			const std::vector<mathlib::VecX_T<Scalar>>& ublk,
 			std::vector<SpatialVec_T<Scalar>>& a_out,
 			mathlib::VecX_T<Scalar>& qdd_out
 		);

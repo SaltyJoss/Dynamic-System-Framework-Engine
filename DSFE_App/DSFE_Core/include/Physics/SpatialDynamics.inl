@@ -5,6 +5,12 @@
 #pragma once
 
 namespace physics {
+	static mathlib::Quat expToQuat(const mathlib::Vec3& rv) {
+		const double theta = rv.norm();
+		if (theta < 1e-9) { return mathlib::Quat(1, 0, 0, 0); }
+		return mathlib::Quat(Eigen::AngleAxisd(theta, rv / theta));
+	}
+
 	template<typename Scalar>
 	void SpatialDynamics::computeSpatialKinematicsAndBias(
 		const systems::SpatialModel<Scalar>& model,
@@ -15,15 +21,37 @@ namespace physics {
 		std::vector<mathlib::SpatialVec_T<Scalar>>& c_out
 	) {
 		const size_t n = model.joints.size();
+		// Resize output vectors
 		v_out.resize(n);
 		Xup_out.resize(n);
 		c_out.resize(n);
+		// Compute offsets for joint degrees of freedom
+		std::vector<int> off(n);
+		{
+			int acc = 0;
+			for (size_t i = 0; i < n; ++i) { off[i] = acc; acc += model.joints[i].nfDOF; }
+		}
 
 		for (size_t i = 0; i < n; ++i) {
 			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 
 			// Joint Transform XJ
 			mathlib::SpatialMat_T<Scalar> XJ = mathlib::SpatialMat_T<Scalar>::Identity();
+
+			if (j.type == systems::eJointType::FREE) {
+				if constexpr (std::is_same_v<Scalar, double>) {
+					mathlib::Vec3_T<Scalar> pos = q.template segment<3>(off[i]); // Free Joint Position
+					mathlib::Vec3_T<Scalar> rv = q.template segment<3>(off[i] + 3); // Free Joint Rotation Vector
+					mathlib::Quat_T<Scalar> q_full = (j.free_qref * expToQuat(rv)).normalized(); // Free Joint Orientation with Reference
+					mathlib::Mat3_T<Scalar> R = q_full.toRotationMatrix();
+					XJ = mathlib::spatialTransform(R, pos);
+					Xup_out[i] = XJ * j.Xtree; // Combined Transform
+					mathlib::SpatialVec_T<Scalar> vJ; vJ.v = qd.template segment<6>(off[i]);
+					v_out[i] = (j.parent < 0) ? vJ : (Xup_out[i] * v_out[j.parent] + vJ);
+					c_out[i] = crossMotion(v_out[i], vJ); // Coriolis Term
+				}
+				continue;
+			}
 
 			if (j.type == systems::eJointType::REVOLUTE) {
 				mathlib::Vec3_T<Scalar> axis = mathlib::safeNormalised(j.S.angular());
@@ -196,10 +224,11 @@ namespace physics {
 		std::vector<SpatialMat_T<Scalar>>& Ia_out,
 		mathlib::VecX_T<Scalar>& u_out,
 		mathlib::VecX_T<Scalar>& d_out,
-		std::vector<SpatialVec_T<Scalar>>& U_out
+		std::vector<SpatialVec_T<Scalar>>& U_out,
+		std::vector<mathlib::MatX_T<Scalar>>& dblk_out,
+		std::vector<mathlib::VecX_T<Scalar>>& ublk_out
 	) {
 		const size_t n = model.joints.size();
-
 		// Resize scratch buffers
 		IA_out.resize(n);
 		pA_out.resize(n);
@@ -207,11 +236,17 @@ namespace physics {
 		U_out.resize(n);
 		u_out.resize(n);
 		d_out.resize(n);
+		// Compute offsets for joint degrees of freedom
+		std::vector<int> off(n);
+		{
+			int acc = 0;
+			for (size_t i = 0; i < n; ++i) { off[i] = acc; acc += model.joints[i].nfDOF; }
+		}
 
 		// Upward pass: compute articulated body inertias and bias forces
 		for (int i = (int)n - 1; i >= 0; --i) {
 			const systems::SpatialJoint<Scalar>& j = model.joints[i];
-
+			// For fixed joints, propagate the articulated body inertia and bias force to the parent joint
 			if (j.type == systems::eJointType::FIXED) {
 				Ia_out[i] = IA_out[i];
 				if (j.parent >= 0) {
@@ -221,19 +256,18 @@ namespace physics {
 				}
 				continue;
 			}
-
+			// For free joints, store the articulated body inertia and bias force in the dblk and ublk scratch buffers
+			if (j.nfDOF == 6) {
+				dblk_out[i] = IA_out[i]; ublk_out[i] = tau.segment(off[i], 6) - pA_out[i].v;
+			}
+			// Compute articulated body inertia and bias force for the current joint
 			U_out[i] = IA_out[i] * j.S;
 			d_out[i] = dot(j.S, U_out[i]);
-			if (d_out[i] < Scalar(1e-12)) {
-				d_out[i] = Scalar(1e-12);
-			}
-
+			if (d_out[i] < Scalar(1e-12)) { d_out[i] = Scalar(1e-12); }
 			u_out[i] = tau[i] - dot(j.S, pA_out[i]);
 			Ia_out[i] = IA_out[i] - outer(U_out[i]) / d_out[i];
-
 			// pA = pA + Ia * c + U * (u/d)
 			pA_out[i] += Ia_out[i] * c[i] + U_out[i] * (u_out[i] / d_out[i]);
-
 			if (j.parent >= 0) {
 				mathlib::SpatialMat_T<Scalar> XupT = Xup[i].transpose();
 				IA_out[j.parent] += XupT * Ia_out[i] * Xup[i];
@@ -251,26 +285,39 @@ namespace physics {
 		const mathlib::VecX_T<Scalar>& d_out,
 		const std::vector<SpatialVec_T<Scalar>>& U,
 		const SpatialVec_T<Scalar>& a0,
+		const std::vector<mathlib::MatX_T<Scalar>>& dblk,
+		const std::vector<mathlib::VecX_T<Scalar>>& ublk,
 		std::vector<SpatialVec_T<Scalar>>& a_out,
 		mathlib::VecX_T<Scalar>& qdd_out
 	) {
 		const size_t n = model.joints.size();
+		// Resize output buffers
 		a_out.resize(n);
 		qdd_out.resize(n);
-
+		// Compute offsets for joint degrees of freedom
+		std::vector<int> off(n);
+		{
+			int acc = 0;
+			for (size_t i = 0; i < n; ++i) { off[i] = acc; acc += model.joints[i].nfDOF; }
+		}
+		// Downward pass: compute joint accelerations and spatial accelerations for each link
 		for (size_t i = 0; i < n; ++i) {
 			const systems::SpatialJoint<Scalar>& j = model.joints[i];
-
+			
 			if (j.parent < 0) { a_out[i] = Xup[i] * a0 + c[i]; }
 			else { a_out[i] = Xup[i] * a_out[j.parent] + c[i]; }
-
-			if (j.type == systems::eJointType::FIXED) {
-				qdd_out[i] = Scalar(0);
+			if (j.nfDOF == 0) { continue; } // Skip fixed joints
+			if (j.nfDOF == 6) {
+				const mathlib::MatX_T<Scalar>& IAmat = dblk[i];
+				mathlib::VecX_T<Scalar> rhs = ublk[i] - IAmat * a_out[i].v;
+				mathlib::VecX_T<Scalar> qdd_blk = IAmat.ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
+				qdd_out.segment(off[i], 6) = qdd_blk;
+				a_out[i].v += qdd_blk;
 				continue;
 			}
 
-			qdd_out[i] = (u_out[i] - U[i].dot(a_out[i])) / d_out[i];
-			a_out[i] += j.S * qdd_out[i];
+			qdd_out[off[i]] = (u_out[i] - U[i].dot(a_out[i])) / d_out[i];
+			a_out[i] += j.S * qdd_out[off[i]];
 		}
 	}
 
@@ -283,7 +330,9 @@ namespace physics {
 		DynamicsScratch<Scalar>& scratch
 	) {
 		const size_t n = model.joints.size();
-		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(n);
+		int nv = 0;
+		for (const auto& j : model.joints) { nv += j.nfDOF; }
+		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(nv);
 
 		mathlib::SpatialVec_T<Scalar> a0; // base acceleration (gravity)
 		a0.v <<
@@ -309,14 +358,16 @@ namespace physics {
 			model, scratch.spatial.Xup,
 			scratch.spatial.v, scratch.spatial.c, tau,
 			scratch.spatial.IA, scratch.spatial.pA, scratch.spatial.Ia,
-			scratch.spatial.u, scratch.spatial.d, scratch.spatial.U
+			scratch.spatial.u, scratch.spatial.d, scratch.spatial.U,
+			scratch.spatial.dblk, scratch.spatial.ublk
 		);
 
 		// Compute joint accelerations using the articulated body algorithm
 		computeAccelerations_ABA(
 			model, scratch.spatial.Xup, scratch.spatial.c,
 			scratch.spatial.u, scratch.spatial.d, scratch.spatial.U,
-			a0, scratch.spatial.a, qdd
+			a0, scratch.spatial.dblk, scratch.spatial.ublk,
+			scratch.spatial.a, qdd
 		);
 
 		return qdd; // [rad/s^2], joint accelerations computed using the Articulated Body Algorithm (ABA)
