@@ -44,7 +44,8 @@ namespace physics {
 					mathlib::Vec3_T<Scalar> rv = q.template segment<3>(off[i] + 3); // Free Joint Rotation Vector
 					mathlib::Quat_T<Scalar> q_full = (j.free_qref * expToQuat(rv)).normalized(); // Free Joint Orientation with Reference
 					mathlib::Mat3_T<Scalar> R = q_full.toRotationMatrix();
-					XJ = mathlib::spatialTransform(R, pos);
+					mathlib::Vec3_T<Scalar> zero_R = mathlib::Vec3_T<Scalar>::Zero();
+					XJ = mathlib::spatialTransform(R, zero_R);
 					Xup_out[i] = XJ * j.Xtree; // Combined Transform
 					mathlib::SpatialVec_T<Scalar> vJ; vJ.v = qd.template segment<6>(off[i]);
 					v_out[i] = (j.parent < 0) ? vJ : (Xup_out[i] * v_out[j.parent] + vJ);
@@ -308,9 +309,14 @@ namespace physics {
 			else { a_out[i] = Xup[i] * a_out[j.parent] + c[i]; }
 			if (j.nfDOF == 0) { continue; } // Skip fixed joints
 			if (j.nfDOF == 6) {
-				const mathlib::MatX_T<Scalar>& IAmat = dblk[i];
-				mathlib::VecX_T<Scalar> rhs = ublk[i] - IAmat * a_out[i].v;
-				mathlib::VecX_T<Scalar> qdd_blk = IAmat.ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
+				mathlib::VecX_T<Scalar> a_prop = a_out[i].v;
+				mathlib::VecX_T<Scalar> rhs = ublk[i] - dblk[i] * a_prop;
+				mathlib::VecX_T<Scalar> qdd_blk = dblk[i].ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
+				if constexpr (std::is_same_v<Scalar,double>) {
+					LOG_INFO_ONCE("free a_prop=[%.3f %.3f %.3f | %.3f %.3f %.3f] qdd=[%.3f %.3f %.3f | %.3f %.3f %.3f]",
+						a_prop(0),a_prop(1),a_prop(2),a_prop(3),a_prop(4),a_prop(5),
+						qdd_blk(0),qdd_blk(1),qdd_blk(2),qdd_blk(3),qdd_blk(4),qdd_blk(5));
+				}
 				qdd_out.segment(off[i], 6) = qdd_blk;
 				a_out[i].v += qdd_blk;
 				continue;

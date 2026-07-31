@@ -454,7 +454,7 @@ namespace physics {
 			const Scalar Q_max = static_cast<Scalar>(snap.model->joints[i].limits.maxEffort);
 			if (Q_max > Scalar(1e-9)) { tau_i = Q_max * mathlib::tanh(tau_i / Q_max); } // saturate control torque to max effort using smooth tanh saturation
 
-			scratch.dense.tau[i] = tau_i;
+			scratch.dense.tau[off] = tau_i;
 
 			out.metrics.q[i] = mathlib::real(q[off]);
 			out.metrics.qd[i] = mathlib::real(qd[off]);
@@ -462,6 +462,7 @@ namespace physics {
 			out.metrics.errd[i] = mathlib::real(err_d);
 			out.metrics.I_eff[i] = mathlib::real(I_eff);
 			out.metrics.tau[i] = mathlib::real(tau_i);
+			off += dof; // I forgot to add this in the previous version
 		}
 
 		out.qdd = SpatialDynamics::ABA<Scalar>(model, q, qd, scratch.dense.tau, scratch);
