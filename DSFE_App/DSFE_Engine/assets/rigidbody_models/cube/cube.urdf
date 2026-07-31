@@ -1,11 +1,10 @@
-<robot name="cube">
-
+<robot name="cube" scale="0.1">
   <link name="Cube">
     <visual>
       <geometry>
         <mesh filename="package://meshes/cube.fbx"/>
       </geometry>
-      <dsfe_material rgba="0.55 0.57 0.58 1.0" metallic="0.3" roughness="0.6"/>
+      <dsfe_material rgba="0.55 0.57 0.96 1.0" metallic="0.3" roughness="0.6"/>
     </visual>
     <inertial>
       <mass value="1.0"/>
