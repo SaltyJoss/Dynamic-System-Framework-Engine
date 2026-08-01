@@ -40,8 +40,8 @@ namespace physics {
 
 			if (j.type == systems::eJointType::FREE) {
 				if constexpr (std::is_same_v<Scalar, double>) {
-					mathlib::Vec3_T<Scalar> pos = q.template segment<3>(off[i]); // Free Joint Position
-					mathlib::Vec3_T<Scalar> rv = q.template segment<3>(off[i] + 3); // Free Joint Rotation Vector
+					mathlib::Vec3_T<Scalar> rv = q.template segment<3>(off[i]); 	 // Free Joint Rotation Vector
+					mathlib::Vec3_T<Scalar> pos = q.template segment<3>(off[i] + 3); // Free Joint Position
 					mathlib::Quat_T<Scalar> q_full = (j.free_qref * expToQuat(rv)).normalized(); // Free Joint Orientation with Reference
 					mathlib::Mat3_T<Scalar> R = q_full.toRotationMatrix();
 					mathlib::Vec3_T<Scalar> zero_R = mathlib::Vec3_T<Scalar>::Zero();
@@ -319,14 +319,6 @@ namespace physics {
 				mathlib::VecX_T<Scalar> a_prop = a_out[i].v;
 				mathlib::VecX_T<Scalar> rhs = ublk[i] - dblk[i] * a_prop;
 				mathlib::VecX_T<Scalar> qdd_blk = dblk[i].ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
-				if constexpr (std::is_same_v<Scalar, double>) {
-					static int s_freeAcc = 0;
-					if (++s_freeAcc % 500 == 0) {
-						LOG_INFO("free ABA: a_prop=[%.4f %.4f %.4f | %.4f %.4f %.4f] qdd=[%.4f %.4f %.4f | %.4f %.4f %.4f]",
-							a_prop(0), a_prop(1), a_prop(2), a_prop(3), a_prop(4), a_prop(5),
-							qdd_blk(0), qdd_blk(1), qdd_blk(2), qdd_blk(3), qdd_blk(4), qdd_blk(5));
-					}
-				}
 				qdd_out.segment(off[i], 6) = qdd_blk;
 				a_out[i].v += qdd_blk;
 				continue;
