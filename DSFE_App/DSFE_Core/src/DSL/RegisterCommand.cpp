@@ -15,6 +15,7 @@
 #include "DSL/Commands/TrajSetCmd.h"
 #include "DSL/Commands/TrajClearCmd.h"
 #include "DSL/Commands/SetOmegaCmd.h"
+#include "DSL/Commands/SetVelocityCmd.h"
 
 // Primary function commands
 #include "DSL/Commands/StartCmd.h"
@@ -36,13 +37,14 @@ namespace commands {
 		factory.registerCommand("trajset",			&commands::CreateTrajSetCmd);		// trajSet command
 		factory.registerCommand("trajclear",		&commands::CreateTrajClearCmd);		// trajClear command
 		factory.registerCommand("setomega",			&commands::CreateSetOmegaCmd);		// setOmega command
+		factory.registerCommand("setvelocity", 		&commands::CreateSetVelocityCmd);	// setVelocity command
 		// Primary Function commands
-		factory.registerCommand("start",	&commands::CreateStartCmd);	 // start command
-		factory.registerCommand("stop",		&commands::CreateStopCmd);	 // stop command
-		factory.registerCommand("wait",		&commands::CreateWaitCmd);	 // pause command
-		factory.registerCommand("select",	&commands::CreateSelectCmd); // select command
-		factory.registerCommand("load",		&commands::CreateLoadCmd);	 // load command
-		factory.registerCommand("set",		&commands::CreateSetCmd);	 // set command
+		factory.registerCommand("start",			&commands::CreateStartCmd);	 // start command
+		factory.registerCommand("stop",				&commands::CreateStopCmd);	 // stop command
+		factory.registerCommand("wait",				&commands::CreateWaitCmd);	 // pause command
+		factory.registerCommand("select",			&commands::CreateSelectCmd); // select command
+		factory.registerCommand("load",				&commands::CreateLoadCmd);	 // load command
+		factory.registerCommand("set",				&commands::CreateSetCmd);	 // set command
 		// New commands later
 	}
 } // namespace commands
