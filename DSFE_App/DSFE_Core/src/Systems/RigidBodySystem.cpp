@@ -193,9 +193,9 @@ namespace systems {
 				x[off + nv] = j.qd;
 			}
 			else {
-				x.segment(off, 3) = j.free_pos;			// Position
-				x.segment(off + 3, 3) = j.free_rot_v;	// Euler angles
-				x.segment(nv + off, 6) = j.free_vel;	// linear + angular velocity
+				x.segment(off, 3) = j.free_rot_v;	 // Euler angles
+				x.segment(off + 3, 3) = j.free_pos;	 // Position
+				x.segment(nv + off, 6) = j.free_vel; // linear + angular velocity
 			}
 			off += dof; // increment offset by the DOF of the joint
 		}
@@ -250,9 +250,9 @@ namespace systems {
 				j.qd = omega_out;
 			}
 			else {
-				j.free_pos = x.segment(off, 3);				  // Position
-				mathlib::Vec3 rot_v = x.segment(off + 3, 3);  // Euler angles
-				j.free_vel = x.segment(nv + off, 6);		  // linear + angular velocity
+				mathlib::Vec3 rot_v = x.segment(off, 3); // Euler angles
+				j.free_pos = x.segment(off + 3, 3);		 // Position
+				j.free_vel = x.segment(nv + off, 6);	 // linear + angular velocity
 				j.free_qref = (j.free_qref * expToQuat(rot_v)).normalized(); // Update quaternion based on Euler angles
 				j.free_rot_v = mathlib::Vec3::Zero(); // Reset Euler angles to zero after conversion
 				_clampTheta[i] = 0;
