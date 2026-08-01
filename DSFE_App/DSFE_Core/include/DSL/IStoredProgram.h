@@ -70,8 +70,9 @@ namespace dsl {
 		virtual void setIntegratorMethod(IntegratorMethod method) = 0;
 		virtual IntegratorMethod getIntegratorMethod() const = 0;
 
-		// Set & Get Omega
-		virtual void setOmega(mathlib::Vec3 omega, utils::AngularUnits units) = 0;
+		// Setting of Velocities
+		virtual void setAngularVel(mathlib::Vec3 wv, utils::AngularUnits units) = 0;
+		virtual void setVelocity(mathlib::Vec3 wv, mathlib::Vec3 lv) = 0;
 
 		// Set & Get Fixed Dt
 		virtual void setFixedDt(double dt) = 0;
@@ -80,5 +81,7 @@ namespace dsl {
 		// Set & Get Gravity
 		virtual void setGravity(double g) = 0;
 		virtual double getGravity() const = 0;
+		virtual void setGravityVec(mathlib::Vec3 g) = 0;
+		virtual mathlib::Vec3 getGravityVec() const = 0;
 	};
 } // namespace interpreter

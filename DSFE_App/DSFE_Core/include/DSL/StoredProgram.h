@@ -64,8 +64,9 @@ namespace dsl {
 		void setIntegratorMethod(IntegratorMethod method) override;
 		IntegratorMethod getIntegratorMethod() const override;
 
-		// Set & Get Omega
-		void setOmega(mathlib::Vec3 omega, utils::AngularUnits units) override;
+		// Setting of Velocities
+		void setAngularVel(mathlib::Vec3 wv, utils::AngularUnits units) override;
+		void setVelocity(mathlib::Vec3 wv, mathlib::Vec3 lv) override;
 
 		// Set & Get Fixed Dt
 		void setFixedDt(double dt) override;
@@ -74,6 +75,8 @@ namespace dsl {
 		// Set & Get Gravity
 		void setGravity(double gravity) override;
 		double getGravity() const override;
+		void setGravityVec(mathlib::Vec3 g) override;
+		mathlib::Vec3 getGravityVec() const override;
 
 	private:
 		core::ISimulationCore* _core = nullptr;
@@ -94,8 +97,7 @@ namespace dsl {
 		std::vector<std::unique_ptr<commands::ICommand>> _commands;
 
 		IntegratorMethod _integratorMethod = IntegratorMethod::RK4; // Default integrator method
-		double _gravity = 0.0;
+		mathlib::Vec3 _gravity = mathlib::Vec3::Zero();
 		double _dt = 0.0;
-		mathlib::Vec3 _rgb = mathlib::Vec3{ 1.0f, 0.0f, 0.0f };
 	};
 } // namespace interpreter

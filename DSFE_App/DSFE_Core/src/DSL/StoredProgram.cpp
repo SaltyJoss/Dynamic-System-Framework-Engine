@@ -154,7 +154,8 @@ namespace dsl {
 		if (_core) {
 			if (_core->hasRigidBody()) {
 				auto& rs = _core->rigidBodySystem();
-				if (method == IntegratorMethod::AD_ImplicitEuler || method == IntegratorMethod::AD_ImplicitMidpoint || method == IntegratorMethod::AD_GLRK2 || method == IntegratorMethod::AD_GLRK3) {
+				std::vector<IntegratorMethod> adMethods = { IntegratorMethod::AD_ImplicitEuler, IntegratorMethod::AD_ImplicitMidpoint, IntegratorMethod::AD_GLRK2, IntegratorMethod::AD_GLRK3 };
+				if (std::find(adMethods.begin(), adMethods.end(), method) != adMethods.end()) {
 					_core->setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(method));
 				}
 				else {
@@ -168,8 +169,12 @@ namespace dsl {
 	IntegratorMethod StoredProgram::getIntegratorMethod() const { return _integratorMethod; }
 
 	// Set Omega
-	void StoredProgram::setOmega(mathlib::Vec3 omega, utils::AngularUnits units) {
+	void StoredProgram::setAngularVel(mathlib::Vec3 wv, utils::AngularUnits units) {
 		_cntx.motion().setAngularUnits(units);
+	}
+
+	void StoredProgram::setVelocity(mathlib::Vec3 wv, mathlib::Vec3 lv) {
+		/* Not added yet, may remove this function if not needed */
 	}
 
 	// Set Fixed Dt
@@ -182,21 +187,28 @@ namespace dsl {
 
 	// Set Gravity
 	void StoredProgram::setGravity(double gravity) { 
-		_gravity = gravity;
+		_gravity.z() = gravity;
 		if (_core) {
-			if (_core->hasRigidBody()) {
-				auto& rs = _core->rigidBodySystem();
-				rs.setGravity(gravity);
-			}
+			if (_core->hasRigidBody()) { auto& rs = _core->rigidBodySystem(); rs.setGravity(gravity); }
 		}
 	}
 	// Get Gravity
 	double StoredProgram::getGravity() const {
 		if (_core) {
-			if (_core->hasRigidBody()) {
-				const auto& rs = _core->rigidBodySystem();
-				return rs.getGravity();
-			}
+			if (_core->hasRigidBody()) { const auto& rs = _core->rigidBodySystem(); return rs.getGravity(); }
+		}
+		return _gravity.z();
+	}
+	// Set Gravity Vector
+	void StoredProgram::setGravityVec(mathlib::Vec3 g) {
+		if (_core) {
+			if (_core->hasRigidBody()) { auto& rs = _core->rigidBodySystem(); rs.setGravityVec(g); }
+		}
+	}
+	// Get Gravity Vector
+	mathlib::Vec3 StoredProgram::getGravityVec() const {
+		if (_core) {
+			if (_core->hasRigidBody()) { const auto& rs = _core->rigidBodySystem(); return rs.getGravityVec(); }
 		}
 		return _gravity;
 	}
