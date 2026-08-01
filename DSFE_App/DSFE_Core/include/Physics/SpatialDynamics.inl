@@ -309,13 +309,24 @@ namespace physics {
 		for (size_t i = 0; i < n; ++i) {
 			const systems::SpatialJoint<Scalar>& j = model.joints[i];
 			
-			if (j.parent < 0) { a_out[i] = Xup[i] * a0 + c[i]; }
+			if (j.parent < 0) { 
+				if (j.nfDOF == 6) { a_out[i] = Xup[i] * (a0 * Scalar(-1)) + c[i]; } // For free joints, negate the base acceleration to account for the free motion of the base link
+				else { a_out[i] = Xup[i] * a0 + c[i]; } // For non-free joints, use the base acceleration directly
+			}
 			else { a_out[i] = Xup[i] * a_out[j.parent] + c[i]; }
 			if (j.nfDOF == 0) { continue; } // Skip fixed joints
 			if (j.nfDOF == 6) {
 				mathlib::VecX_T<Scalar> a_prop = a_out[i].v;
 				mathlib::VecX_T<Scalar> rhs = ublk[i] - dblk[i] * a_prop;
 				mathlib::VecX_T<Scalar> qdd_blk = dblk[i].ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
+				if constexpr (std::is_same_v<Scalar, double>) {
+					static int s_freeAcc = 0;
+					if (++s_freeAcc % 500 == 0) {
+						LOG_INFO("free ABA: a_prop=[%.4f %.4f %.4f | %.4f %.4f %.4f] qdd=[%.4f %.4f %.4f | %.4f %.4f %.4f]",
+							a_prop(0), a_prop(1), a_prop(2), a_prop(3), a_prop(4), a_prop(5),
+							qdd_blk(0), qdd_blk(1), qdd_blk(2), qdd_blk(3), qdd_blk(4), qdd_blk(5));
+					}
+				}
 				qdd_out.segment(off[i], 6) = qdd_blk;
 				a_out[i].v += qdd_blk;
 				continue;
