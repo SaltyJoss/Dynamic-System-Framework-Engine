@@ -167,6 +167,13 @@ namespace gui {
 	// Clears the rigidBody system and removes all associated objects from the scene
 	void SimulationManager::clearRigidBody() { _systems.clear_all(_scene); _scene.clear(); }
 
+	bool SimulationManager::isFreeBody() const {
+		if (!_core || !_core->hasRigidBody()) { return false; }
+		const auto& model = _core->rigidBodySystem().model();
+		for (const auto& j : model.joints) { if (j.type == systems::eJointType::FREE) { return true; } }
+		return false;
+	}
+
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
 	// --------------------------------------------------

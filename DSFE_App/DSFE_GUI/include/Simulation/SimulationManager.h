@@ -176,6 +176,7 @@ namespace gui {
         void clearRigidBody();
         const bool hasRigidBody() const;
 		const bool hasBody() const;
+        bool isFreeBody() const;
 
 		// Setters for rigidBody joint states (angle in radians)
         void setRigidBodyLinkRotation(const std::string& linkName, double angle);
