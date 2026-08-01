@@ -93,6 +93,7 @@ set(DSL_SRC
     src/DSL/Commands/SelectCmd.cpp
     src/DSL/Commands/SetCmd.cpp
     src/DSL/Commands/SetOmegaCmd.cpp
+    src/DSL/Commands/SetVelocityCmd.cpp
     src/DSL/Commands/SpinCmd.cpp
     src/DSL/Commands/StartCmd.cpp
     src/DSL/Commands/StopCmd.cpp
