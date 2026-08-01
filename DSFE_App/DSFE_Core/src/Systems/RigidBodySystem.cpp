@@ -421,18 +421,6 @@ namespace systems {
 		clearExtForces();
 
 		unpackState(result.stepOut.x_next);
-		// {
-        //     static int s_freeLogCount = 0;
-        //     const bool logNow = (++s_freeLogCount % 60 == 0);
-        //     for (const auto& j : _body.joints) {
-        //         if (j.type == eJointType::FREE && logNow) {
-        //             LOG_INFO("free pos=(%.4f %.4f %.4f) w=(%.5f %.5f %.5f) v=(%.5f %.5f %.5f)",
-        //                 j.free_pos.x(), j.free_pos.y(), j.free_pos.z(),
-        //                 j.free_vel(0), j.free_vel(1), j.free_vel(2),   // angular (the NaN one)
-        //                 j.free_vel(3), j.free_vel(4), j.free_vel(5));  // linear
-        //         }
-        //     }
-        // }
 		_dynamics->setDt(result.stepOut.dt_taken);
 
 		const auto scratchCopy = _dynScratch;
@@ -1158,6 +1146,19 @@ namespace systems {
 
 		return out;
 	}
+	// Method to claim the current active log buffer for exporting logged data (returns pointer to buffer active before swap)
+	std::unique_ptr<systems::FreeBodyLogBuffer> RigidBodySystem::claimExportLogBuffer_fb() {
+		// swap active buffer index
+		std::lock_guard<std::mutex> lk(_logSwapMutex_fb);				 // ensure thread safety during swap
+		int prev = _activeLogBufIdx_fb.load(std::memory_order_acquire); // get current active buffer index
+		int next = 1 - prev;											 // compute next buffer index (toggle between 0 and 1)
+		_activeLogBufIdx_fb.store(next, std::memory_order_release);	 // set next buffer as active for logging
+
+		auto out = std::make_unique<systems::FreeBodyLogBuffer>(); // create a new buffer to return to caller
+		out->swap(_logBuffers_fb[prev]); // swap contents of previous active buffer with new buffer
+
+		return out;
+	}
 
 	// Method to enable or disable the use of internal log buffers for recording joint metrics during simulation
 	void RigidBodySystem::useInternalLogBuffer(bool enable) {
@@ -1168,11 +1169,25 @@ namespace systems {
 			_activeLogBufIdx.store(0); // reset active buffer index to 0
 		}
 	}
+	// Method to enable or disabled the use of internal log buffers for recording free body metrics during simulation
+	void RigidBodySystem::useInternalLogBuffer_fb(bool enable) {
+		_useInternalLogging_fb = enable;
+		if (enable) {
+			_logBuffers_fb[0].clear();	   // clear both buffers to start fresh
+			_logBuffers_fb[1].clear();	   // clear both buffers to start fresh
+			_activeLogBufIdx_fb.store(0); // reset active buffer index to 0
+		}
+	}
 
 	// Method to reserve capacity in the internal log buffers to optimize performance by avoiding reallocations during logging
 	void RigidBodySystem::reserveInternalLogBuffers(size_t expected) {
 		_logBuffers[0].reserve(expected); // reserve both buffers to avoid reallocations during logging
 		_logBuffers[1].reserve(expected); // reserve both buffers to avoid reallocations during logging
+	}
+	// Method to reserve capacity in the internal log buffers for free body metrics to optimize performance by avoiding reallocations during logging
+	void RigidBodySystem::reserveInternalLogBuffers_fb(size_t expected) {
+		_logBuffers_fb[0].reserve(expected); // reserve both buffers to avoid reallocations during logging
+		_logBuffers_fb[1].reserve(expected); // reserve both buffers to avoid reallocations during logging
 	}
 
 } // namespace systems

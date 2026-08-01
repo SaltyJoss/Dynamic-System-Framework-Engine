@@ -169,7 +169,6 @@ namespace core {
 			else if (_manipulating.load() && hasRigidBody()) {
 				_rigidBody->step(_dt, simTime);
 			}
-
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
 
