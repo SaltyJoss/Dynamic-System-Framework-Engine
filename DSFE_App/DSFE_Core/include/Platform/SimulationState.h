@@ -13,6 +13,7 @@ enum class SelectionType {
 	LINK,
 	JOINT,
 	ROBOT,
+	FREE_BODY,
 	BODY
 	// may add more types later (e.g., JOINT, SENSOR, OBJECT)
 };
