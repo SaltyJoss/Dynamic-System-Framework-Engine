@@ -522,37 +522,47 @@ namespace widgets {
 		);
 	}
 	// Updates the free body telemetry display with the latest data from the simulation.
-	void ControlPanelWidget::updateFreeBodyTelemetryInfo(const systems::RigidBodySystem& body) {
+	void ControlPanelWidget::updateFreeBodyTelemetryInfo(const diagnostics::FreeBodyTelemetry& fb) {
 		auto& t = _freeBodyTelLabels;
 
 		// fixed-width numeric formatting so columns don't jitter as values change
 		auto num = [](double v, const char* unit) {
 			return QString("%1 <span style='color:#888'>%2</span>").arg(v, 0, 'f', 4).arg(unit);
 		};
+		// Vector3 formatting: "(x, y, z) <unit>" with fixed-width numeric formatting.
+		auto vec3 = [](double x, double y, double z, const char* unit) {
+			return QString("[%1, %2, %3] <span style='color:#888'>%4</span>")
+				.arg(x, 0, 'f', 4).arg(y, 0, 'f', 4).arg(z, 0, 'f', 4).arg(unit);
+		};
+		// Quat formatting: "(w, x, y, z) <unit>" with fixed-width numeric formatting.
+		auto quat = [](double w, double x, double y, double z, const char* unit) {
+			return QString("[%1, %2, %3, %4] <span style='color:#888'>%5</span>")
+				.arg(w, 0, 'f', 4).arg(x, 0, 'f', 4).arg(y, 0, 'f', 4).arg(z, 0, 'f', 4).arg(unit);
+		};
 		// State Telemetry
-		t.position->setText(num(0.0, "m"));  // Placeholder for actual position
-		t.orientation->setText(num(0.0, "rad"));  // Placeholder for actual orientation
-		t.linearVelocity->setText(num(0.0, "m\u00B7s\u207B\u00B9"));  // Placeholder for actual linear velocity
-		t.angularAcceleration->setText(num(0.0, "rad\u00B7s\u207B\u00B2"));
+		t.position->setText(vec3(fb.pos_x, fb.pos_y, fb.pos_z, "m"));
+		t.orientation->setText(quat(fb.quat_w, fb.quat_x, fb.quat_y, fb.quat_z, "rad"));
+		t.linearVelocity->setText(vec3(fb.linVel_x, fb.linVel_y, fb.linVel_z, "m\u00B7s\u207B\u00B9"));
+		t.angularAcceleration->setText(vec3(fb.angAcc_x, fb.angAcc_y, fb.angAcc_z, "rad\u00B7s\u207B\u00B2"));
 		// Time Derivative Telemetry
-		t.linearAcceleration->setText(num(0.0, "m\u00B7s\u207B\u00B2"));
-		t.angularAcceleration->setText(num(0.0, "rad\u00B7s\u207B\u00B2"));
-		t.netAccumulatedForce->setText(num(0.0, "N"));
-		t.netAccumulatedTorque->setText(num(0.0, "N\u00B7m"));
+		t.linearAcceleration->setText(vec3(fb.linAcc_x, fb.linAcc_y, fb.linAcc_z, "m\u00B7s\u207B\u00B2"));
+		t.angularAcceleration->setText(vec3(fb.angAcc_x, fb.angAcc_y, fb.angAcc_z, "rad\u00B7s\u207B\u00B2"));
+		t.netAccumulatedForce->setText(vec3(fb.F_net_x, fb.F_net_y, fb.F_net_z, "N"));
+		t.netAccumulatedTorque->setText(vec3(fb.tau_net_x, fb.tau_net_y, fb.tau_net_z, "N\u00B7m"));
 		// Energy & Performance Telemetry
-		t.KE->setText(num(0.0, "J"));
-		t.PE->setText(num(0.0, "J"));
-		t.linearMomentum->setText(num(0.0, "kg\u00B7m\u00B7s\u207B\u00B9"));
-		t.angularMomentum->setText(num(0.0, "kg\u00B7m\u00B2\u00B7s\u207B\u00B9"));
+		t.KE->setText(num(fb.KE, "J"));
+		t.PE->setText(num(fb.PE, "J"));
+		t.linearMomentum->setText(vec3(fb.linMom_x, fb.linMom_y, fb.linMom_z, "kg\u00B7m\u00B7s\u207B\u00B9"));
+		t.angularMomentum->setText(vec3(fb.angMom_x, fb.angMom_y, fb.angMom_z, "kg\u00B7m\u00B2\u00B7s\u207B\u00B9"));
 		// Sleep State Telemetry
 		t.sleepState->setText(false
 			? "<span style='color:#569cd6'>active</span>"
 			: "<span style='color:#666'>\u2014</span>");
 		// Mass & Inertia Telemetry
-		t.mass->setText(num(0.0, "kg"));
-		t.inverse_mass->setText(num(0.0, "kg\u207B\u00B9"));
-		t.inertia->setText(num(0.0, "kg\u00B7m\u00B2"));
-		t.inverse_inertia->setText(num(0.0, "(kg\u00B7m\u00B2)\u207B\u00B9"));
+		t.mass->setText(num(fb.mass, "kg"));
+		t.inverse_mass->setText(num(fb.inv_mass, "kg\u207B\u00B9"));
+		t.inertia->setText(vec3(fb.Ixx, fb.Iyy, fb.Izz, "kg\u00B7m\u00B2"));
+		t.inverse_inertia->setText(vec3(fb.inv_Ixx, fb.inv_Iyy, fb.inv_Izz, "kg\u207B\u00B9\u00B7m\u207B\u00B2"));
 	}
 	// Builds the free body telemetry display widgets and adds them to the given layout.
 	void ControlPanelWidget::buildFreeBodyTelemetryWidgets(QVBoxLayout* layout) {
@@ -688,9 +698,15 @@ namespace widgets {
 	}
 	// Updates the free body telemetry display with the latest data from the simulation.
 	void ControlPanelWidget::updateFreeBodyTelemetryDisplay() {
-		if (!_sim || !_sim->hasRigidBody()) { return; }
-		const auto& body = _sim->rigidBodySystem();
-		updateFreeBodyTelemetryInfo(body);
+		if (!_sim || !_sim->isFreeBody()) { return; }   // only for free bodies (inverse of the joint guard)
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+		if (ring.size() < 1) { return; }
+		const auto& s = ring.at(ring.size() - 1);
+		if (s.fb.empty()) { return; }
+		int bodyIdx = _selection.type == SelectionType::FREE_BODY ? _selection.index : 0;
+		bodyIdx = std::clamp(bodyIdx, 0, static_cast<int>(s.fb.size()) - 1);
+		updateFreeBodyTelemetryInfo(s.fb[bodyIdx]);
 	}
 	
 	// --- Selection and Follow ---
