@@ -421,18 +421,18 @@ namespace systems {
 		clearExtForces();
 
 		unpackState(result.stepOut.x_next);
-		{
-            static int s_freeLogCount = 0;
-            const bool logNow = (++s_freeLogCount % 60 == 0);
-            for (const auto& j : _body.joints) {
-                if (j.type == eJointType::FREE && logNow) {
-                    LOG_INFO("free pos=(%.4f %.4f %.4f) w=(%.5f %.5f %.5f) v=(%.5f %.5f %.5f)",
-                        j.free_pos.x(), j.free_pos.y(), j.free_pos.z(),
-                        j.free_vel(0), j.free_vel(1), j.free_vel(2),   // angular (the NaN one)
-                        j.free_vel(3), j.free_vel(4), j.free_vel(5));  // linear
-                }
-            }
-        }
+		// {
+        //     static int s_freeLogCount = 0;
+        //     const bool logNow = (++s_freeLogCount % 60 == 0);
+        //     for (const auto& j : _body.joints) {
+        //         if (j.type == eJointType::FREE && logNow) {
+        //             LOG_INFO("free pos=(%.4f %.4f %.4f) w=(%.5f %.5f %.5f) v=(%.5f %.5f %.5f)",
+        //                 j.free_pos.x(), j.free_pos.y(), j.free_pos.z(),
+        //                 j.free_vel(0), j.free_vel(1), j.free_vel(2),   // angular (the NaN one)
+        //                 j.free_vel(3), j.free_vel(4), j.free_vel(5));  // linear
+        //         }
+        //     }
+        // }
 		_dynamics->setDt(result.stepOut.dt_taken);
 
 		const auto scratchCopy = _dynScratch;
@@ -810,7 +810,8 @@ namespace systems {
 	}
 
 	/*
-	 * 
+	 * Method to get the free-floating joint velocity of a specific rigidBody joint
+	 * @param linkName: The name of the link associated with the free joint
 	 */
 	bool RigidBodySystem::tryGetFreeVelocity(const std::string& linkName, mathlib::VecX& outVel) const {
 		if (!_hasBody) { return false; }
@@ -829,13 +830,15 @@ namespace systems {
 	 */
 	bool RigidBodySystem::trySetFreeVelocity(const std::string& linkName, const mathlib::VecX& vel) {
 		if (!_hasBody) { return false; }
-		for (auto& joint : _body.joints) {
-			if (joint.type == eJointType::FREE && joint.child == linkName) {
-				if (vel.size() != 6) { return false; }
-				joint.free_vel = vel;
+		for (auto& j : _body.joints) {
+			if (j.type == eJointType::FREE && j.child == linkName) {
+				j.free_vel = vel.head<6>();
+				LOG_INFO("Set '%s' free_vel=[%.3f %.3f %.3f %.3f %.3f %.3f]", linkName.c_str(), vel(0),vel(1),vel(2),vel(3),vel(4),vel(5));
 				return true;
 			}
+			LOG_INFO("trySetFreeVelocity: joint '%s' is not free or does not match linkName='%s'", j.child.c_str(), linkName.c_str());
 		}
+		LOG_WARN("No free joint for link '%s'", linkName.c_str());
 		return false;
 	}
 
