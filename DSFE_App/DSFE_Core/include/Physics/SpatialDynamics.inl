@@ -259,7 +259,9 @@ namespace physics {
 			}
 			// For free joints, store the articulated body inertia and bias force in the dblk and ublk scratch buffers
 			if (j.nfDOF == 6) {
-				dblk_out[i] = IA_out[i]; ublk_out[i] = tau.segment(off[i], 6) - pA_out[i].v;
+				dblk_out[i] = IA_out[i];
+				ublk_out[i] = tau.segment(off[i], 6) - pA_out[i].v;
+				continue;
 			}
 			// Compute articulated body inertia and bias force for the current joint
 			U_out[i] = IA_out[i] * j.S;
@@ -292,9 +294,11 @@ namespace physics {
 		mathlib::VecX_T<Scalar>& qdd_out
 	) {
 		const size_t n = model.joints.size();
+		int nv = 0;
+		for (const auto& jj : model.joints) { nv += jj.nfDOF; }
 		// Resize output buffers
 		a_out.resize(n);
-		qdd_out.resize(n);
+		qdd_out.resize(nv);
 		// Compute offsets for joint degrees of freedom
 		std::vector<int> off(n);
 		{
@@ -312,11 +316,6 @@ namespace physics {
 				mathlib::VecX_T<Scalar> a_prop = a_out[i].v;
 				mathlib::VecX_T<Scalar> rhs = ublk[i] - dblk[i] * a_prop;
 				mathlib::VecX_T<Scalar> qdd_blk = dblk[i].ldlt().solve(rhs); // Solve for joint accelerations using the articulated body inertia matrix
-				if constexpr (std::is_same_v<Scalar,double>) {
-					LOG_INFO_ONCE("free a_prop=[%.3f %.3f %.3f | %.3f %.3f %.3f] qdd=[%.3f %.3f %.3f | %.3f %.3f %.3f]",
-						a_prop(0),a_prop(1),a_prop(2),a_prop(3),a_prop(4),a_prop(5),
-						qdd_blk(0),qdd_blk(1),qdd_blk(2),qdd_blk(3),qdd_blk(4),qdd_blk(5));
-				}
 				qdd_out.segment(off[i], 6) = qdd_blk;
 				a_out[i].v += qdd_blk;
 				continue;
@@ -338,7 +337,6 @@ namespace physics {
 		int nv = 0;
 		for (const auto& j : model.joints) { nv += j.nfDOF; }
 		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(nv);
-
 		mathlib::SpatialVec_T<Scalar> a0; // base acceleration (gravity)
 		a0.v <<
 			scratch.spatial.g.template segment<3>(0),
@@ -374,7 +372,6 @@ namespace physics {
 			a0, scratch.spatial.dblk, scratch.spatial.ublk,
 			scratch.spatial.a, qdd
 		);
-
 		return qdd; // [rad/s^2], joint accelerations computed using the Articulated Body Algorithm (ABA)
 	}
 } // namespace physics
