@@ -31,6 +31,7 @@ namespace dsl {
 				s == "set"			 ||
 				s == "select" 		 ||
 				s == "setomega"		 ||
+				s == "setvelocity"   ||
 				s == "load";
 	}
 
