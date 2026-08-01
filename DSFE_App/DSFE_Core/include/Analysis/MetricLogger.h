@@ -276,4 +276,179 @@ namespace systems {
             return theta_ref.size();
 		}
     };
+
+    // Analysis/MetricLogger.h — add alongside JointLogBuffer, TrajRefBuffer
+	// Struct for logging free-body (6-DOF floating base) data each step
+	struct FreeBodyLogBuffer {
+		// Sim Metadata
+		std::vector<double> sim_time;
+		std::vector<double> dt_taken;
+		std::vector<double> dt_sug;
+		// State — position (3), orientation quat (4), linear vel (3), angular vel (3)
+		std::vector<double> pos_x, pos_y, pos_z;
+		std::vector<double> quat_w, quat_x, quat_y, quat_z;
+		std::vector<double> linVel_x, linVel_y, linVel_z;
+		std::vector<double> angVel_x, angVel_y, angVel_z;
+		// Time derivatives — linear/angular accel (3 each), net force/torque (3 each)
+		std::vector<double> linAcc_x, linAcc_y, linAcc_z;
+		std::vector<double> angAcc_x, angAcc_y, angAcc_z;
+		std::vector<double> F_net_x, F_net_y, F_net_z;
+		std::vector<double> tau_net_x, tau_net_y, tau_net_z;
+		// Energy & momenta — KE, PE scalars; linear/angular momentum (3 each)
+		std::vector<double> KE;
+		std::vector<double> PE;
+		std::vector<double> E_total;
+		std::vector<double> linMom_x, linMom_y, linMom_z;
+		std::vector<double> angMom_x, angMom_y, angMom_z;
+		// Mass & inertia — scalar mass
+		std::vector<double> mass;
+		std::vector<double> Ixx, Iyy, Izz; // Inertia tensor diagonal elements (3x3 matrix flattened, using the principal axes)
+		// Sleep + body index (for many free bodies / particles)
+		std::vector<double> sleep_state;
+		std::vector<int> body_index;
+
+		void clear() {
+			sim_time.clear(); dt_taken.clear(); dt_sug.clear();
+			pos_x.clear(); pos_y.clear(); pos_z.clear();
+			quat_w.clear(); quat_x.clear(); quat_y.clear(); quat_z.clear();
+			linVel_x.clear(); linVel_y.clear(); linVel_z.clear();
+			angVel_x.clear(); angVel_y.clear(); angVel_z.clear();
+			linAcc_x.clear(); linAcc_y.clear(); linAcc_z.clear();
+			angAcc_x.clear(); angAcc_y.clear(); angAcc_z.clear();
+			F_net_x.clear(); F_net_y.clear(); F_net_z.clear();
+			tau_net_x.clear(); tau_net_y.clear(); tau_net_z.clear();
+			KE.clear(); PE.clear(); E_total.clear();
+			linMom_x.clear(); linMom_y.clear(); linMom_z.clear();
+			angMom_x.clear(); angMom_y.clear(); angMom_z.clear();
+			mass.clear(); Ixx.clear(); Iyy.clear(); Izz.clear();
+			sleep_state.clear(); body_index.clear();
+		}
+
+		void reserve(size_t n) {
+			sim_time.reserve(n); dt_taken.reserve(n); dt_sug.reserve(n);
+			pos_x.reserve(n); pos_y.reserve(n); pos_z.reserve(n);
+			quat_w.reserve(n); quat_x.reserve(n); quat_y.reserve(n); quat_z.reserve(n);
+			linVel_x.reserve(n); linVel_y.reserve(n); linVel_z.reserve(n);
+			angVel_x.reserve(n); angVel_y.reserve(n); angVel_z.reserve(n);
+			linAcc_x.reserve(n); linAcc_y.reserve(n); linAcc_z.reserve(n);
+			angAcc_x.reserve(n); angAcc_y.reserve(n); angAcc_z.reserve(n);
+			F_net_x.reserve(n); F_net_y.reserve(n); F_net_z.reserve(n);
+			tau_net_x.reserve(n); tau_net_y.reserve(n); tau_net_z.reserve(n);
+			KE.reserve(n); PE.reserve(n); E_total.reserve(n);
+			linMom_x.reserve(n); linMom_y.reserve(n); linMom_z.reserve(n);
+			angMom_x.reserve(n); angMom_y.reserve(n); angMom_z.reserve(n);
+			mass.reserve(n); Ixx.reserve(n); Iyy.reserve(n); Izz.reserve(n);
+			sleep_state.reserve(n); body_index.reserve(n);
+		}
+
+		size_t size() const { return pos_x.size(); }
+
+		// Single-sample entry — one free body at one time step
+		struct DSFE_API FreeBodyLogEntry {
+			double sim_time, dt_taken, dt_sug;
+			double pos_x, pos_y, pos_z;
+			double quat_w, quat_x, quat_y, quat_z;
+			double linVel_x, linVel_y, linVel_z;
+			double angVel_x, angVel_y, angVel_z;
+			double linAcc_x, linAcc_y, linAcc_z;
+			double angAcc_x, angAcc_y, angAcc_z;
+			double F_net_x, F_net_y, F_net_z;
+			double tau_net_x, tau_net_y, tau_net_z;
+			double KE, PE, E_total;
+			double linMom_x, linMom_y, linMom_z;
+			double angMom_x, angMom_y, angMom_z;
+			double mass, Ixx, Iyy, Izz;
+			double sleep_state;
+			int body_index;
+		};
+
+		void push_entry(const FreeBodyLogEntry& e) {
+			sim_time.push_back(e.sim_time); dt_taken.push_back(e.dt_taken); dt_sug.push_back(e.dt_sug);
+			pos_x.push_back(e.pos_x); pos_y.push_back(e.pos_y); pos_z.push_back(e.pos_z);
+			quat_w.push_back(e.quat_w); quat_x.push_back(e.quat_x); quat_y.push_back(e.quat_y); quat_z.push_back(e.quat_z);
+			linVel_x.push_back(e.linVel_x); linVel_y.push_back(e.linVel_y); linVel_z.push_back(e.linVel_z);
+			angVel_x.push_back(e.angVel_x); angVel_y.push_back(e.angVel_y); angVel_z.push_back(e.angVel_z);
+			linAcc_x.push_back(e.linAcc_x); linAcc_y.push_back(e.linAcc_y); linAcc_z.push_back(e.linAcc_z);
+			angAcc_x.push_back(e.angAcc_x); angAcc_y.push_back(e.angAcc_y); angAcc_z.push_back(e.angAcc_z);
+			F_net_x.push_back(e.F_net_x); F_net_y.push_back(e.F_net_y); F_net_z.push_back(e.F_net_z);
+			tau_net_x.push_back(e.tau_net_x); tau_net_y.push_back(e.tau_net_y); tau_net_z.push_back(e.tau_net_z);
+			KE.push_back(e.KE); PE.push_back(e.PE); E_total.push_back(e.E_total);
+			linMom_x.push_back(e.linMom_x); linMom_y.push_back(e.linMom_y); linMom_z.push_back(e.linMom_z);
+			angMom_x.push_back(e.angMom_x); angMom_y.push_back(e.angMom_y); angMom_z.push_back(e.angMom_z);
+			mass.push_back(e.mass); Ixx.push_back(e.Ixx); Iyy.push_back(e.Iyy); Izz.push_back(e.Izz);
+			sleep_state.push_back(e.sleep_state); body_index.push_back(e.body_index);
+		}
+
+        bool validate(std::string* outMsg) const {
+            size_t n = pos_x.size(); // ref size
+            auto checkSize = [&](const auto& v, const char* name) -> bool {
+                if (v.size() != n) {
+                    if (outMsg) { *outMsg = "Size mismatch for " + std::string(name) + ": expected " + std::to_string(n) + ", got " + std::to_string(v.size()); }
+                    return false;
+                }
+                return true;
+            };
+            if (!checkSize(sim_time, "sim_time")) return false;
+            if (!checkSize(dt_taken, "dt_taken")) return false;
+            if (!checkSize(dt_sug, "dt_sug")) return false;
+            if (!checkSize(pos_x, "pos_x")) return false;
+            if (!checkSize(pos_y, "pos_y")) return false;
+            if (!checkSize(pos_z, "pos_z")) return false;
+            if (!checkSize(quat_w, "quat_w")) return false; 
+            if (!checkSize(quat_x, "quat_x")) return false;
+            if (!checkSize(quat_y, "quat_y")) return false;
+            if (!checkSize(quat_z, "quat_z")) return false;
+            if (!checkSize(linVel_x, "linVel_x")) return false;
+            if (!checkSize(linVel_y, "linVel_y")) return false;
+            if (!checkSize(linVel_z, "linVel_z")) return false;
+            if (!checkSize(angVel_x, "angVel_x")) return false;
+            if (!checkSize(angVel_y, "angVel_y")) return false;
+            if (!checkSize(angVel_z, "angVel_z")) return false;
+            if (!checkSize(linAcc_x, "linAcc_x")) return false;
+            if (!checkSize(linAcc_y, "linAcc_y")) return false;
+            if (!checkSize(linAcc_z, "linAcc_z")) return false;
+            if (!checkSize(angAcc_x, "angAcc_x")) return false;
+            if (!checkSize(angAcc_y, "angAcc_y")) return false;
+            if (!checkSize(angAcc_z, "angAcc_z")) return false;
+            if (!checkSize(F_net_x, "F_net_x")) return false;
+            if (!checkSize(F_net_y, "F_net_y")) return false;
+            if (!checkSize(F_net_z, "F_net_z")) return false;
+            if (!checkSize(tau_net_x, "tau_net_x")) return false;
+            if (!checkSize(tau_net_y, "tau_net_y")) return false;
+            if (!checkSize(tau_net_z, "tau_net_z")) return false;
+            if (!checkSize(KE, "KE")) return false;
+            if (!checkSize(PE, "PE")) return false;
+            if (!checkSize(E_total, "E_total")) return false;
+            if (!checkSize(linMom_x, "linMom_x")) return false;
+            if (!checkSize(linMom_y, "linMom_y")) return false;
+            if (!checkSize(linMom_z, "linMom_z")) return false; 
+            if (!checkSize(angMom_x, "angMom_x")) return false;
+            if (!checkSize(angMom_y, "angMom_y")) return false; 
+            if (!checkSize(angMom_z, "angMom_z")) return false;
+            if (!checkSize(mass, "mass")) return false;
+            if (!checkSize(Ixx, "Ixx")) return false;
+            if (!checkSize(Iyy, "Iyy")) return false;
+            if (!checkSize(Izz, "Izz")) return false;
+            if (!checkSize(sleep_state, "sleep_state")) return false;
+            if (!checkSize(body_index, "body_index")) return false;
+            return true; // all sizes match
+        }
+
+        void swap(FreeBodyLogBuffer& other) noexcept {
+            sim_time.swap(other.sim_time); dt_taken.swap(other.dt_taken); dt_sug.swap(other.dt_sug);
+            pos_x.swap(other.pos_x); pos_y.swap(other.pos_y); pos_z.swap(other.pos_z);
+            quat_w.swap(other.quat_w); quat_x.swap(other.quat_x); quat_y.swap(other.quat_y); quat_z.swap(other.quat_z);
+            linVel_x.swap(other.linVel_x); linVel_y.swap(other.linVel_y); linVel_z.swap(other.linVel_z);
+            angVel_x.swap(other.angVel_x); angVel_y.swap(other.angVel_y); angVel_z.swap(other.angVel_z);
+            linAcc_x.swap(other.linAcc_x); linAcc_y.swap(other.linAcc_y); linAcc_z.swap(other.linAcc_z);
+            angAcc_x.swap(other.angAcc_x); angAcc_y.swap(other.angAcc_y); angAcc_z.swap(other.angAcc_z);
+            F_net_x.swap(other.F_net_x); F_net_y.swap(other.F_net_y); F_net_z.swap(other.F_net_z);
+            tau_net_x.swap(other.tau_net_x); tau_net_y.swap(other.tau_net_y); tau_net_z.swap(other.tau_net_z);
+            KE.swap(other.KE); PE.swap(other.PE); E_total.swap(other.E_total);
+            linMom_x.swap(other.linMom_x); linMom_y.swap(other.linMom_y); linMom_z.swap(other.linMom_z);
+            angMom_x.swap(other.angMom_x); angMom_y.swap(other.angMom_y); angMom_z.swap(other.angMom_z);
+            mass.swap(other.mass); Ixx.swap(other.Ixx); Iyy.swap(other.Iyy); Izz.swap(other.Izz);
+            sleep_state.swap(other.sleep_state); body_index.swap(other.body_index);
+        }
+	};
 } // namespace robots
