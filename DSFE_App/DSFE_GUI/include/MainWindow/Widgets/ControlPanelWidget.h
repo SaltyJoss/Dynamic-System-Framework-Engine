@@ -53,7 +53,8 @@ namespace widgets {
 			const char* name;
 		};
 
-		struct TelemetryLabels {
+		// Telemetry display for joint information
+		struct JointTelemetryLabels {
 			// Headers
 			QLabel* stateHeader = nullptr;
 			QLabel* referenceHeader = nullptr;
@@ -86,19 +87,61 @@ namespace widgets {
 			QLabel* friction = nullptr;
 		};
 
+		// Telemetry display for free bodies (not joints)
+		struct FreeBodyTelemetryLabels {
+			// Headers
+			QLabel* stateHeader = nullptr;
+			QLabel* timeDerivativeHeader = nullptr;
+			QLabel* energyPerformanceHeader = nullptr;
+			QLabel* sleepStateHeader = nullptr;
+			QLabel* massInertialHeader = nullptr;
+
+			// State
+			QLabel* position = nullptr;
+			QLabel* orientation = nullptr;
+			QLabel* linearVelocity = nullptr;
+			QLabel* angularVelocity = nullptr;
+
+			// Time Derivatives
+			QLabel* linearAcceleration = nullptr;
+			QLabel* angularAcceleration = nullptr;
+			QLabel* netAccumulatedForce = nullptr;
+			QLabel* netAccumulatedTorque = nullptr;
+			
+			// Energy & Performance
+			QLabel* KE = nullptr;
+			QLabel* PE = nullptr;
+			QLabel* linearMomentum = nullptr;
+			QLabel* angularMomentum = nullptr;
+
+			// Sleep State
+			QLabel* sleepState = nullptr;
+
+			// Mass & Inertial Properties
+			QLabel* mass = nullptr;
+			QLabel* inverse_mass = nullptr;
+			QLabel* inertia = nullptr;
+			QLabel* inverse_inertia = nullptr;
+		};
+
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
 		void buildTimestepSelectors(QVBoxLayout* layout);
 
 		void worldPropertiesPanel();
 
+		void telemetryInfoPanels();
+
 		void jointInfoPanel();
-		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
-		void buildTelemetryWidgets(QVBoxLayout* layout);
+		void updateJointTelemetryInfo(const diagnostics::JointTelemetry& j);
+		void buildJointTelemetryWidgets(QVBoxLayout* layout);
+		void updateJointTelemetryDisplay();
 
-		void updateTelemetryDisplay();
+		void freeBodyInfoPanel();
+		void updateFreeBodyTelemetryInfo(const systems::RigidBodySystem& body);
+		void buildFreeBodyTelemetryWidgets(QVBoxLayout* layout);
+		void updateFreeBodyTelemetryDisplay();
 
-		void displayPanel();
 		void selectJointAndFollow(int jointIdx);
 
 		void updateSimClock();
@@ -106,6 +149,10 @@ namespace widgets {
 		QLabel* _jointChainLabel = nullptr;
 		QLabel* _jointIndexLabel = nullptr;
 		void refreshJointChainLabel(int idx);
+
+		QLabel* _freeBodyLabel = nullptr;
+		QLabel* _freeBodyIndexLabel = nullptr;
+		void refreshFreeBodyLabel(int idx);
 
 		gui::SimulationManager* _sim = nullptr;
 
@@ -132,6 +179,8 @@ namespace widgets {
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;
 
+		QGroupBox* _freeBodyInfoGroup = nullptr;
+
 
 		static constexpr IntegratorEntry integrators[] = {
 			{ integration::eIntegrationMethod::Euler, "Euler" },
@@ -153,7 +202,8 @@ namespace widgets {
 			{ integration::eAutoDiffIntegrationMethod::AD_GLRK3, "GLRK3 (AutoDiff)" }
 		};
 
-		TelemetryLabels _telemetryLabels;
+		JointTelemetryLabels _jointTelLabels;
+		FreeBodyTelemetryLabels _freeBodyTelLabels;
 
 		// Current selection state
 		Selection _selection;
