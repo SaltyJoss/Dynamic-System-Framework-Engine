@@ -122,6 +122,9 @@ namespace systems {
 		bool tryGetJointAngleRad(const std::string& childLink, double& outAngle) const;
 		bool trySetJointAngleRad(const std::string& childLink, double angleRad);
 
+		bool tryGetFreeVelocity(const std::string& linkName, mathlib::VecX& outVel) const;
+		bool trySetFreeVelocity(const std::string& linkName, const mathlib::VecX& vel);
+
         bool tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const;
         bool trySetJointOmegaRad(const std::string& childLink, double omegaRad);
 		bool injectJointOmegaRad(const std::string& childLink, double omega);

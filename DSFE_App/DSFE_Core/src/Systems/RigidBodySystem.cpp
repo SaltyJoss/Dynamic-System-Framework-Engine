@@ -809,6 +809,36 @@ namespace systems {
 		return false;
 	}
 
+	/*
+	 * 
+	 */
+	bool RigidBodySystem::tryGetFreeVelocity(const std::string& linkName, mathlib::VecX& outVel) const {
+		if (!_hasBody) { return false; }
+		for (const auto& joint : _body.joints) {
+			if (joint.type == eJointType::FREE && joint.child == linkName) {
+				outVel = joint.free_vel;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * Method to set the free-floating joint velocity of a specific rigidBody joint
+	 * @param linkName: The name of the link associated with the free joint
+	 */
+	bool RigidBodySystem::trySetFreeVelocity(const std::string& linkName, const mathlib::VecX& vel) {
+		if (!_hasBody) { return false; }
+		for (auto& joint : _body.joints) {
+			if (joint.type == eJointType::FREE && joint.child == linkName) {
+				if (vel.size() != 6) { return false; }
+				joint.free_vel = vel;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Method to get the angular velocity of a specific rigidBody joint
 	bool RigidBodySystem::tryGetJointOmegaRad(const std::string& childLink, double& outOmega) const {
 		if (!_hasBody) { return false; }
