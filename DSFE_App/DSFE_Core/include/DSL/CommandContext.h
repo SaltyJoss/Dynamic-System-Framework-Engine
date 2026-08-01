@@ -53,7 +53,7 @@ namespace commands {
 		double getOmegaClamp() const;
 
 		// Stops all angular velocity for the body
-		utils::OpResult stopAllOmega(); // stops all angular velocity
+		utils::OpResult stopAllVel(); // stops all angular velocity
 
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
 		utils::OpResult stopJointOmega(const std::string& childLink);
