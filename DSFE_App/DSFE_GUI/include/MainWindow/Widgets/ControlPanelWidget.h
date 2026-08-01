@@ -21,8 +21,8 @@ namespace render {
 	enum class QualityPreset;
 }
 
-namespace systems { class RigidBodySystem; }
-namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
+namespace systems { class RigidBodySystem;}
+namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; struct FreeBodyTelemetry; }
 namespace gui { class SimulationManager; }
 
 class QVBoxLayout;
@@ -86,7 +86,6 @@ namespace widgets {
 			QLabel* damping = nullptr;
 			QLabel* friction = nullptr;
 		};
-
 		// Telemetry display for free bodies (not joints)
 		struct FreeBodyTelemetryLabels {
 			// Headers
@@ -138,7 +137,7 @@ namespace widgets {
 		void updateJointTelemetryDisplay();
 
 		void freeBodyInfoPanel();
-		void updateFreeBodyTelemetryInfo(const systems::RigidBodySystem& body);
+		void updateFreeBodyTelemetryInfo(const diagnostics::FreeBodyTelemetry& fb);
 		void buildFreeBodyTelemetryWidgets(QVBoxLayout* layout);
 		void updateFreeBodyTelemetryDisplay();
 
