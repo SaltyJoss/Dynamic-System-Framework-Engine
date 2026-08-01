@@ -3,8 +3,8 @@
 #include "EngineCore.h"
 #include "Scene/SimulationCore.h"
 
-#include "Robots/RobotSystem.h"
-#include "Robots/TrajectoryManager.h"
+#include "Systems/RigidBodySystem.h"
+#include "Systems/TrajectoryManager.h"
 
 #include <vector>
 #include <memory>

@@ -8,14 +8,14 @@
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
 
-#include "Robots/RobotModel.h"
-#include "Robots/RobotSystem.h"
+#include "Systems/RigidBodyModel.h"
+#include "Systems/RigidBodySystem.h"
 #include "SingleBodySystems/SingleBodySystem.h"
 #include "Platform/ISimulationCore.h"
 
-#include "Interpreter/IStoredProgram.h"
-#include "Interpreter/StoredProgram.h"
-#include "Interpreter/Parser.h"
+#include "DSL/IStoredProgram.h"
+#include "DSL/StoredProgram.h"
+#include "DSL/Parser.h"
 
 #include <thread>
 #include <glm/glm.hpp>
@@ -42,6 +42,14 @@ namespace gui {
 	}
 
 	static const glm::quat q_corr = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
+
+	static glm::vec3 toGlm(const mathlib::Vec3& v) {
+		return glm::vec3(
+			static_cast<float>(v.x()),
+			static_cast<float>(v.y()),
+			static_cast<float>(v.z())
+		);
+	}
 
     static glm::mat4 toGlm(const mathlib::Mat4& m) {
         glm::mat4 g(1.0f);
@@ -122,36 +130,42 @@ namespace gui {
 
 	// ---------------- Systems ----------------
 
-    const bool SimulationManager::hasRobot() const { return _core && _core->hasRobot(); }
-    robots::RobotSystem& SimulationManager::robotSystem() { return _core->robotSystem(); }
-    bool SimulationManager::followRobotJoint(const std::string&, const glm::vec3&) { return false; }
+    const bool SimulationManager::hasRigidBody() const { return _core && _core->hasRigidBody(); }
+    systems::RigidBodySystem& SimulationManager::rigidBodySystem() { return _core->rigidBodySystem(); }
+    bool SimulationManager::followRigidBodyJoint(const std::string&, const glm::vec3&) { return false; }
 
-	void SimulationManager::load_robot(const std::string& name) {
+	void SimulationManager::load_rigidBody(const std::string& name) {
 		if (!_core) {
-			LOG_ERROR("Simulation core not initialised, cannot load robot");
+			LOG_ERROR("Simulation core not initialised, cannot load rigidBody");
 			return;
 		}
 		if (!_rendererInitialised) {
-			LOG_ERROR("Renderer not initialised, cannot load robot");
+			LOG_ERROR("Renderer not initialised, cannot load rigidBody");
 			return;
 		}
-		_core->loadRobot(name);
-		if (!_core->hasRobot()) {
-			LOG_ERROR("Failed to load robot: %s", name.c_str());
+		_core->loadRigidBody(name);
+		if (!_core->hasRigidBody()) {
+			LOG_ERROR("Failed to load rigidBody: %s", name.c_str());
 			return;
 		}
 
-		const auto& model = _core->robotSystem().model();
+		const auto& model = _core->rigidBodySystem().model();
 		auto world_src = [this]() -> const std::vector<mathlib::Mat4>& { 
-			return _core->robotSystem().worldTransforms();
+			return _core->rigidBodySystem().worldTransforms();
 		};
 		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
-		_core->clearRobotPresentationDirty();
-		_currentRobotName = model.name;
-		LOG_INFO("Robot loaded: %s", model.name.c_str());
+		_core->clearRigidBodyPresentationDirty();
+		_currentRigidBodyName = model.name;
+		_currentRigidBodyPath = name;
+		LOG_INFO("RigidBody loaded: %s", model.name.c_str());
 	}
-
-	void SimulationManager::clearRobot() { _systems.clear_all(_scene); _scene.clear(); }
+	// Resets the rigidBody system to its initial position
+	void SimulationManager::resetRigidBody() {
+		if (!_core) { LOG_ERROR("Simulation core not initialised, cannot reset rigidBody"); return; }
+		_core->resetRigidBody();
+	}
+	// Clears the rigidBody system and removes all associated objects from the scene
+	void SimulationManager::clearRigidBody() { _systems.clear_all(_scene); _scene.clear(); }
 
 	// --------------------------------------------------
 	//				SIMULATION TICK & RENDER
@@ -214,7 +228,7 @@ namespace gui {
 
 	// Start the simulation
 	void SimulationManager::startSimulation() {
-        if (!hasRobot()) { LOG_WARN("Cannot start simulation: no robot loaded"); return; }
+        if (!hasRigidBody()) { LOG_WARN("Cannot start simulation: no rigidBody loaded"); return; }
         _core->startSimulation();
     }
 
@@ -249,9 +263,9 @@ namespace gui {
 	const diagnostics::TelemetryRecorder& SimulationManager::telemetry() const { return _core->telemetry(); }
 
 	// Accesors for the active program (if any)
-	void SimulationManager::setActiveProgram(interpreter::IStoredProgram* program) { _core->setActiveProgram(program); }
-	interpreter::IStoredProgram* SimulationManager::activeProgram() { return _core->activeProgram(); }
-	const interpreter::IStoredProgram* SimulationManager::activeProgram() const { return _core->activeProgram(); }
+	void SimulationManager::setActiveProgram(dsl::IStoredProgram* program) { _core->setActiveProgram(program); }
+	dsl::IStoredProgram* SimulationManager::activeProgram() { return _core->activeProgram(); }
+	const dsl::IStoredProgram* SimulationManager::activeProgram() const { return _core->activeProgram(); }
 
 	// Access the simulation core interface (non-const and const versions)
 	core::ISimulationCore* SimulationManager::simCore() { return _core.get(); }
@@ -274,18 +288,13 @@ namespace gui {
 		LOG_INFO("DEBUG -> Current AutoDiff integration method: %d", static_cast<int>(_core->autoDiffIntegrationMethod()));
 		return _core->autoDiffIntegrationMethod();
 	}
+	std::string SimulationManager::integrationMethodName() const { return _core->integrationMethodName(); }
+	void SimulationManager::enableAutoDiff(bool enable) { _core->enableAutoDiff(enable); }
+	bool SimulationManager::autoDiffEnabled() const { return _core->autoDiffEnabled(); }
 
-	std::string SimulationManager::integrationMethodName() const {
-		return _core->integrationMethodName();
-	}
-
-	void SimulationManager::enableAutoDiff(bool enable) {
-		_core->enableAutoDiff(enable);
-	}
-
-	bool SimulationManager::autoDiffEnabled() const {
-		return _core->autoDiffEnabled();
-	}
+	// Accessors for Physics and Dynamics state
+	void SimulationManager::setGravity(const glm::vec3& g) { _core->setGravity(mathlib::Vec3(g.x, g.y, g.z)); }
+	glm::vec3 SimulationManager::gravity() const { mathlib::Vec3 g = _core->gravity(); return toGlm(g); }
 
 	// This seems to be the better solution?
 	static std::string replaceIntegratorInScript(const std::string& script, const std::string& methodName) {
@@ -296,7 +305,7 @@ namespace gui {
 
 	// Run a script to completion synchronously with a specific integrator
 	bool SimulationManager::runScriptToCompletion(const std::string& scriptText, integration::eIntegrationMethod method) {
-		if (!hasRobot()) { return false; }
+		if (!hasRigidBody()) { return false; }
 
 		// Map method enum to string name
 		static const char* names[] = { "euler", "midpoint", "heun", "ralston", "rk4", "rk45", "implicit_euler", "implicit_midpoint", "glrk2", "glrk3" };
@@ -306,9 +315,9 @@ namespace gui {
 		std::string modifiedScript = replaceIntegratorInScript(scriptText, methodName);
 
 		// Create program and parser (bound to headless core)
-		auto program = std::make_unique<interpreter::StoredProgram>(_core.get());
+		auto program = std::make_unique<dsl::StoredProgram>(_core.get());
 		//if (scene::Object* o = getObject()) program->setDefaultObject(o);
-		auto parser = std::make_unique<interpreter::Parser>(program.get());
+		auto parser = std::make_unique<dsl::Parser>(program.get());
 
 		// Parse the modified script and start the program
 		parser->parse(modifiedScript);
@@ -344,7 +353,7 @@ namespace gui {
 	 *				  WORKSPACE MANAGEMENT
 	 * --------------------------------------------------
 	 */
-	// Close the current workspace, clearing all systems, scene objects, and meshes. This is typically called before loading a new workspace or robot.
+	// Close the current workspace, clearing all systems, scene objects, and meshes. This is typically called before loading a new workspace or rigidBody.
     void SimulationManager::closeWorkspace() {
         // Order matters: 
 		// 1. Systems first (they hold renderable indices)
@@ -354,7 +363,8 @@ namespace gui {
         _scene.clear();
         _renderer.destroy_all_meshes();
         _mesh_store.clear();
-        _currentRobotName.clear();
+        _currentRigidBodyName.clear();
+		_currentRigidBodyPath.clear();
 
         _core->setScriptRunning(false);
         _core->stopSimulation();
@@ -370,25 +380,64 @@ namespace gui {
         setADIntegrationMethod(static_cast<integration::eAutoDiffIntegrationMethod>(w.adIntegrationMethod));
         setFixedDt(w.simDt);
         setTelemetryHz(1.0 / w.telemetryDt);
+		setGravity(w.gravity);
 
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
-        if (!w.robotName.isEmpty()) {
-            load_robot(w.robotName.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
+        if (!w.rigidBodyPath.isEmpty()) {
+            load_rigidBody(w.rigidBodyPath.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
         }
         LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
     }
-	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and robot name
+	// Gather the current workspace state, filling the provided WorkspaceData structure with the current camera position, orientation, and rigidBody name
     void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
-        w.robotName = QString::fromStdString(_currentRobotName);
+        w.rigidBodyName = QString::fromStdString(_currentRigidBodyName);
+		w.rigidBodyPath = QString::fromStdString(_currentRigidBodyPath);
         w.integrationMethod = static_cast<int>(integrationMethod());
         w.adIntegrationMethod = static_cast<int>(autoDiffIntegrationMethod());
         w.autoDiff = autoDiffEnabled();
         w.simDt = fixedDt();
         w.telemetryDt = 1.0 / telemetryHz();
+		w.gravity = gravity();
         w.cameraPos = _camera.getPosition();
         w.cameraYaw = _camera.getYaw();
         w.cameraPitch = _camera.getPitch();
     }
+
+	void SimulationManager::setManipulating(bool on) { _core->setManipulating(on); }
+    bool SimulationManager::isManipulating() const { return _core->isManipulating(); }
+    bool SimulationManager::setLinkExternalForce(const std::string& link, const glm::vec3& p, const glm::vec3& f) {
+        return _core->setLinkExternalForce(link, mathlib::Vec3(p.x, p.y, p.z), mathlib::Vec3(f.x, f.y, f.z));
+    }
+	void SimulationManager::clearExternalForces() { _core->clearExternalForces(); }
+    const std::vector<mathlib::Mat4>& SimulationManager::linkWorldTransforms() const { return _core->linkWorldTransforms();  }
+    std::vector<std::string> SimulationManager::linkNames() const { return _core->linkNames(); }
+
+	// Set a highlight color for a specific link in the rigidBody system. This is typically used to visually indicate selection or focus on a particular link in the GUI.
+	void SimulationManager::setLinkHighlight(const std::string& link, bool on) {
+		const auto names = linkNames();
+		int idx = -1;
+		for (size_t i = 0; i < names.size(); ++i) { if (names[i] == link) { idx = (int)i; break; } }
+		if (idx <= 0) { return; }
+		if (on) {
+			if (const auto* r = _scene.renderable((uint32_t)idx)) {
+				_highlightIdx = idx;
+				_highlightAlbedo0 = glm::vec3(r->albedo);
+				_highlightMat0 = r->material;
+			}
+			_scene.set_material(
+				(uint32_t)idx, glm::vec3(0.6f, 1.0f, 0.3f),
+			    _highlightMat0.x, _highlightMat0.y, _highlightMat0.z
+			);
+		}
+		else if (_highlightIdx == idx) {
+			// Restore.
+			_scene.set_material(
+				(uint32_t)idx,
+				_highlightAlbedo0, _highlightMat0.x, _highlightMat0.y, _highlightMat0.z
+			);
+			_highlightIdx = -1;
+		}
+	}
 }

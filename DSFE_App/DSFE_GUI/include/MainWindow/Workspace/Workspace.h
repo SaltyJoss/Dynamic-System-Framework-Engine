@@ -12,17 +12,18 @@ namespace gui {
     struct WorkspaceData {
         int version = 1;
         QString name;
-
-        QString robotName;      // empty = no robot
+        QString rigidBodyName;  // empty = no rigid body loaded (informational only, not a file path)
+        QString rigidBodyPath;  // original rigid body file path if one was opened (necessary for re-load)
         QString scriptText;     // DSL script embedded — file is self-contained
         QString scriptPath;     // original script file if one was opened (informational)
 
         // Simulation properties
         int integrationMethod = 0;      // integration::eIntegrationMethod as int
         int adIntegrationMethod = 0;    // integration::eAutoDiffIntegrationMethod as int
-        double  simDt = 1.0 / 180.0;
-        double telemetryDt = 1.0 / 180.0;
+        double simDt = 1.0 / 180.0;
+        double telemetryDt = 1.0 / 120.0;
         bool autoDiff = false;
+        glm::vec3 gravity{ 0.0f, 0.0f, 0.0f };
 
         // Camera
         glm::vec3 cameraPos{ 0.0f, 1.5f, 4.0f };
@@ -35,5 +36,4 @@ namespace gui {
         bool saveToFile(const QString& path) const;
         static bool loadFromFile(const QString& path, WorkspaceData& out);
     };
-
 } // namespace gui

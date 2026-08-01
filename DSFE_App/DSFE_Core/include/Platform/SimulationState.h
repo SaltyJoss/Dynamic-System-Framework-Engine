@@ -1,8 +1,11 @@
-// DSFE_Core SimulationState.h
+/*
+ * File: Platform/SimulationState.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 
 #include "EngineCore.h"
-#include <Robots/RobotModel.h>
+#include <Systems/RigidBodyModel.h>
 
 // Types of selections in the simulation
 enum class SelectionType {

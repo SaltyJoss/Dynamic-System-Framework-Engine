@@ -1,21 +1,24 @@
+/*
+ * File: Analysis/Telemetry.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
-// File:   Telemetry.cpp
-// GitHub: SaltyJoss
+
 #include "Analysis/Telemetry.h"
-#include "Robots/RobotSystem.h"
-#include "Robots/TrajectoryManager.h"
+#include "Systems/RigidBodySystem.h"
+#include "Systems/TrajectoryManager.h"
 
 namespace diagnostics {
 	// Record telemetry data at time t
-	void TelemetryRecorder::record(double t, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel /*level*/) {
-		const int n = (int)robotSys.getRobot().joints().size();
+	void TelemetryRecorder::record(double t, const systems::RigidBodySystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel /*level*/) {
+		const int n = (int)robotSys.getRigidBody().joints().size();
 
 		// Begin write
 		TelemetrySample& s = ring.beginWrite();
 		s.timeSec = t;
 
 		// Resize joint vector (if needed)
-		const auto& joints = robotSys.getRobot().joints();
+		const auto& joints = robotSys.getRigidBody().joints();
 		s.j.resize(joints.size());
 
 		// Accumulators for error statistics
@@ -28,7 +31,7 @@ namespace diagnostics {
 
 		// Collect telemetry for each joint
 		for (int i = 0; i < n; ++i) {
-			const auto& j = robotSys.getRobot().joints()[i];
+			const auto& j = robotSys.getRigidBody().joints()[i];
 
 			JointTelemetry jt;
 

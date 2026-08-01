@@ -29,6 +29,7 @@ namespace window {
 		void buildMenuBar();
 		void buildSceneMenu(QMenu* sceneMenu);
 		void buildRobotMenu(QMenu* projectMenu);
+		void resetRigidBody();
 		void onLoadMesh();
 
 		bool _dirty = false;

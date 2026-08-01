@@ -35,8 +35,11 @@ namespace widgets {
 		auto* button = new QPushButton(robotName + "\n" + company);
 		layout()->addWidget(button);
 		connect(button, &QPushButton::clicked, this, [this, robotName]() {
-			LOG_INFO("Selected robot: %s", robotName.toStdString().c_str());
-			if (_sim) { _sim->load_robot(robotName.toStdString()); }
+			std::string n = robotName.toStdString();
+			std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
+			const std::string path = "rigidbody_models/" + n + "/" + n + ".urdf";
+			LOG_INFO("Selected robot: %s -> %s", n.c_str(), path.c_str());
+			if (_sim) { _sim->load_rigidBody(path); }
 		});
 	}
 } // namespace widgets

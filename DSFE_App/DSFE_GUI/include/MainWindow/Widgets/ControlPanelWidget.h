@@ -21,7 +21,7 @@ namespace render {
 	enum class QualityPreset;
 }
 
-namespace robots { class RobotSystem; }
+namespace systems { class RigidBodySystem; }
 namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
 namespace gui { class SimulationManager; }
 
@@ -35,6 +35,7 @@ class QSlider;
 
 namespace widgets {
 	class FractionSelectorWidget;
+	class GravityVectorWidget;
 
 	class ControlPanelWidget : public QWidget {
 	public:
@@ -87,6 +88,9 @@ namespace widgets {
 
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
+		void buildTimestepSelectors(QVBoxLayout* layout);
+
+		void worldPropertiesPanel();
 
 		void jointInfoPanel();
 		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
@@ -99,6 +103,10 @@ namespace widgets {
 
 		void updateSimClock();
 
+		QLabel* _jointChainLabel = nullptr;
+		QLabel* _jointIndexLabel = nullptr;
+		void refreshJointChainLabel(int idx);
+
 		gui::SimulationManager* _sim = nullptr;
 
 		QVBoxLayout* _contentLayout = nullptr;
@@ -107,8 +115,19 @@ namespace widgets {
 		QComboBox* _integratorCombo = nullptr;
 		QLabel* _currentIntegratorLabel = nullptr;
 		QLabel* _simTimeLabel = nullptr;
+
+		QLabel* _simDtLabel = nullptr;
 		FractionSelectorWidget* _simDtSelector = nullptr;
-		FractionSelectorWidget* _telemetryDtSelector = nullptr;
+		QLabel* _simDtValue = nullptr;
+		
+		QLabel* _telDtLabel = nullptr;
+		FractionSelectorWidget* _telDtSelector = nullptr;
+		QLabel* _telDtValue = nullptr;
+
+		QGroupBox* _worldPropertiesGroup = nullptr;
+
+		QLabel* _gravityLabel = nullptr;
+		GravityVectorWidget* _grav = nullptr;
 
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;
@@ -154,7 +173,7 @@ namespace widgets {
 		bool _jointSelected = false;
 		bool diagRunning = false;
 		bool _robotRequested = false;
-		bool _hasRobot = false;
+		bool _hasBody = false;
 		bool _openStats = true;
 		bool _useAutoDiff = false;
 		// Simulation and diagnostics timing

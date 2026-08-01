@@ -15,6 +15,8 @@
 #include <QMouseEvent>
 #include <functional>
 
+#include "style/RecentItemDelegate.h"
+
 #include "Platform/SystemInfo.h"
 
 #include "Platform/Paths.h"
@@ -81,6 +83,7 @@ namespace Workspace {
         
         _recents_list = new QListWidget(rail);
         _recents_list->setFrameShape(QFrame::NoFrame);
+        _recents_list->setItemDelegate(new style::RecentItemDelegate(_recents_list));
         rail_col->addWidget(_recents_list, 1);
 
         // Right Column: Branding and primary actions
@@ -303,8 +306,8 @@ void HomePage::buildDiagnosticsPanel(QHBoxLayout* into) {
         for (const QString& path : recents) {
             auto* item = new QListWidgetItem();
             item->setData(Qt::UserRole, path);
-            item->setText(QFileInfo(path).baseName() + "\n" + path);
             item->setData(Qt::ToolTipRole, path);
+            item->setText(QFileInfo(path).baseName() + "\n" + path);
             _recents_list->addItem(item);
         }
         if (recents.empty()) {

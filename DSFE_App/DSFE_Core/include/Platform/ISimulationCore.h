@@ -2,17 +2,17 @@
 #pragma once
 
 #include "EngineCore.h"
-
+#include <MathLib>
 #include <cstdint>
 #include <string>
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; enum class eAutoDiffIntegrationMethod; }
-namespace robots { class RobotSystem; }
+namespace systems { class RigidBodySystem; }
 namespace single_body_system { class SingleBodySystem; }
 namespace control { class TrajectoryManager; }
 namespace diagnostics { class TelemetryRecorder; }
-namespace interpreter { class IStoredProgram; }
+namespace dsl { class IStoredProgram; }
 
 enum class eSimulationBackend;
 
@@ -53,32 +53,43 @@ namespace core {
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
 		virtual void enableAutoDiff(bool enable) = 0;
         virtual bool autoDiffEnabled() const = 0;
+        // Physics and dynamics
+        virtual void setGravity(const mathlib::Vec3& g) = 0;
+        virtual mathlib::Vec3 gravity() const = 0;
         // Subsystems
-        virtual robots::RobotSystem& robotSystem() = 0;
+        virtual systems::RigidBodySystem& rigidBodySystem() = 0;
         virtual single_body_system::SingleBodySystem& singleBodySystem() = 0;
         virtual control::TrajectoryManager& trajectoryManager() = 0;
 		// Body management
 		virtual bool hasSingleBody() const = 0;
 		virtual void loadSingleBody(const std::string& name) = 0;
-        // Robot management
-        virtual bool hasRobot() const = 0;
-        virtual void loadRobot(const std::string& name) = 0;
-        virtual bool robotPresentationDirty() const = 0;
-        virtual void clearRobotPresentationDirty() = 0;
+        // RigidBody management
+        virtual bool hasRigidBody() const = 0;
+        virtual void loadRigidBody(const std::string& name) = 0;
+        virtual bool rigidBodyPresentationDirty() const = 0;
+        virtual void clearRigidBodyPresentationDirty() = 0;
+        virtual void resetRigidBody() = 0; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
         // Script execution
         virtual void setRunTag(const std::string& tag) = 0;
         virtual void setScriptRunning(bool running) = 0;
         virtual bool isScriptRunning() const = 0;
         virtual void setLastScriptText(const std::string& text) = 0;
         virtual std::string& lastScriptText() = 0;
-        virtual bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) = 0;
+        virtual bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) = 0;
         // Telemetry access
         virtual void setTelemetryHz(double hz) = 0;
         virtual double telemetryHz() const = 0;
         virtual diagnostics::TelemetryRecorder& telemetry() = 0;
         virtual size_t telemetrySampleCount() const = 0;
         // Access to the active program (if any)
-        virtual void setActiveProgram(interpreter::IStoredProgram* program) = 0;
-        virtual interpreter::IStoredProgram* activeProgram() const = 0;
+        virtual void setActiveProgram(dsl::IStoredProgram* program) = 0;
+        virtual dsl::IStoredProgram* activeProgram() const = 0;
+        // Access the Free-Dynamics manipulation state (for external control of the rigidBody)
+        virtual void setManipulating(bool on) = 0;
+		virtual bool isManipulating() const = 0;
+		virtual bool setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) = 0;
+        virtual void clearExternalForces() = 0;
+		virtual const std::vector<mathlib::Mat4>& linkWorldTransforms() const = 0;
+        virtual std::vector<std::string> linkNames() const = 0;
     };
 }

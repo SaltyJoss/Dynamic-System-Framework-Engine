@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+class QLabel;
 namespace widgets {
 	class FractionSelectorWidget : public QWidget {
 		Q_OBJECT
@@ -10,6 +11,9 @@ namespace widgets {
 		explicit FractionSelectorWidget(bool telemetryMode = false, QWidget* parent = nullptr);
 		double dt() const;
 		void setDt(double dt);
+
+		QLabel* setDtVarName(const QString& subscript);
+		QLabel* setDtVarDecValue(double dt);
 	
 	signals:
 		void valueChanged(double denom);

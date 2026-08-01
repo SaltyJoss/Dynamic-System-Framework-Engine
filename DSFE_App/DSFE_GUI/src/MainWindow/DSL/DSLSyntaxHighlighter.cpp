@@ -21,7 +21,8 @@ namespace widgets {
 			"rotateJointTo",
 			"rotateJointBy",
 			"parallel",
-			"set"
+			"set",
+			"setVelocity"
 		};
 
 		for (const auto& cmd : commands) { _rules.push_back({ QRegularExpression("\\b" + cmd + "\\b"), cmdFmt }); }

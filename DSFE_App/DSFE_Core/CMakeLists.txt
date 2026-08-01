@@ -2,7 +2,23 @@
 cmake_minimum_required(VERSION 3.17)
 project(DSFE_Core LANGUAGES C CXX)
 
+include(FetchContent)
+
+set(tinyxml2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(TINYXML2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    tinyxml2
+    GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
+    GIT_TAGE 11.0.0
+    SOURCE_SUBDIR  nonexistent-dir-to-skip-their-cmake
+)
+FetchContent_MakeAvailable(tinyxml2)
+
 add_library(DSFE_Core SHARED)
+
+# Compile tinyxml2.cpp straight into DSFE_Core — no subproject, no .pc, no tests
+target_sources(DSFE_Core PRIVATE ${tinyxml2_SOURCE_DIR}/tinyxml2.cpp)
+target_include_directories(DSFE_Core PRIVATE ${tinyxml2_SOURCE_DIR})
 
 find_package(Threads REQUIRED)
 find_package(HDF5 REQUIRED)
@@ -32,17 +48,22 @@ set(DEP_CORE_SRC
     src/Numerics/IntegrationService.cpp
 )
 
-set(SINGLE_BODY_SYS_SRC
+set(LOADING_SRC
+    src/Systems/RigidBodyLoader.cpp
+    src/Systems/RigidBodyLoaderJSON.cpp
+    src/Systems/RigidBodyLoaderURDF.cpp
+)
+
+set(SYSTEMS_SRC
+    src/Systems/RigidBodySystem.cpp
+    src/Systems/TrajectoryManager.cpp
+    src/Systems/RigidBodySnapshot.cpp
     src/SingleBodySystem/Body.cpp
 )
 
-set(MULTI_BODY_SYS_SRC
-    src/Robots/RobotDynamics.cpp
-    src/Robots/RobotKinematics.cpp
-    src/Robots/RobotLoader.cpp
-    src/Robots/RobotSystem.cpp
-    src/Robots/TrajectoryManager.cpp
-    src/Robots/RobotSimSnapshot.cpp
+set(PHYSICS_SRC
+    src/Physics/RigidBodyDynamics.cpp
+    src/Physics/RigidBodyKinematics.cpp
 )
 
 set(PLATFORM_SRC
@@ -54,30 +75,31 @@ set(PLATFORM_SRC
 )
 
 set(DSL_SRC
-    src/Interpreter/Command.cpp
-    src/Interpreter/CommandContext.cpp
-    src/Interpreter/CommandFactory.cpp
-    src/Interpreter/Parser.cpp
-    src/Interpreter/RegisterCommand.cpp
-    src/Interpreter/StoredProgram.cpp
-    src/Interpreter/Utils.cpp
-    src/Interpreter/RunWrapper.cpp
+    src/DSL/Command.cpp
+    src/DSL/CommandContext.cpp
+    src/DSL/CommandFactory.cpp
+    src/DSL/Parser.cpp
+    src/DSL/RegisterCommand.cpp
+    src/DSL/StoredProgram.cpp
+    src/DSL/Utils.cpp
+    src/DSL/RunWrapper.cpp
 
-    src/Interpreter/Commands/LoadCmd.cpp
-    src/Interpreter/Commands/ParallelGroupCmd.cpp
-    src/Interpreter/Commands/RotateByCmd.cpp
-    src/Interpreter/Commands/RotateJointByCmd.cpp
-    src/Interpreter/Commands/RotateJointToCmd.cpp
-    src/Interpreter/Commands/RotateToCmd.cpp
-    src/Interpreter/Commands/SelectCmd.cpp
-    src/Interpreter/Commands/SetCmd.cpp
-    src/Interpreter/Commands/SetOmegaCmd.cpp
-    src/Interpreter/Commands/SpinCmd.cpp
-    src/Interpreter/Commands/StartCmd.cpp
-    src/Interpreter/Commands/StopCmd.cpp
-    src/Interpreter/Commands/TrajClearCmd.cpp
-    src/Interpreter/Commands/TrajSetCmd.cpp
-    src/Interpreter/Commands/WaitCmd.cpp
+    src/DSL/Commands/LoadCmd.cpp
+    src/DSL/Commands/ParallelGroupCmd.cpp
+    src/DSL/Commands/RotateByCmd.cpp
+    src/DSL/Commands/RotateJointByCmd.cpp
+    src/DSL/Commands/RotateJointToCmd.cpp
+    src/DSL/Commands/RotateToCmd.cpp
+    src/DSL/Commands/SelectCmd.cpp
+    src/DSL/Commands/SetCmd.cpp
+    src/DSL/Commands/SetOmegaCmd.cpp
+    src/DSL/Commands/SetVelocityCmd.cpp
+    src/DSL/Commands/SpinCmd.cpp
+    src/DSL/Commands/StartCmd.cpp
+    src/DSL/Commands/StopCmd.cpp
+    src/DSL/Commands/TrajClearCmd.cpp
+    src/DSL/Commands/TrajSetCmd.cpp
+    src/DSL/Commands/WaitCmd.cpp
 )
 
 set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)
@@ -85,8 +107,9 @@ set(SIM_CORE_SRC src/Scene/SimulationCore.cpp)
 # Add sources for DSFE_Core, including ImGui files
 target_sources(DSFE_Core PRIVATE
     ${DEP_CORE_SRC}
-    ${SINGLE_BODY_SYS_SRC}
-    ${MULTI_BODY_SYS_SRC}
+    ${SYSTEMS_SRC}
+    ${LOADING_SRC}
+    ${PHYSICS_SRC}
     ${PLATFORM_SRC}
     ${DSL_SRC}
     ${SIM_CORE_SRC}

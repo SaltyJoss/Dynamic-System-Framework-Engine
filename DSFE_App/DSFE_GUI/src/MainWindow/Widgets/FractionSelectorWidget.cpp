@@ -7,12 +7,13 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QLabel>
 
 namespace widgets {
 	FractionSelectorWidget::FractionSelectorWidget(bool telemetryMode, QWidget* parent)
 		: QWidget(parent), _telemetryMode(telemetryMode)
 	{
-		setMinimumSize(100, 70);
+		setMinimumSize(50, 50);
 	}
 
 	double FractionSelectorWidget::dt() const {
@@ -61,5 +62,21 @@ namespace widgets {
 		const int max = _telemetryMode ? 100 : 5000;
 		_k = std::clamp(static_cast<int>(std::round(1.0 / (10.0 * dt))), _minK, max);
 		update();
+	}
+
+	QLabel* FractionSelectorWidget::setDtVarName(const QString& subscript) {
+		auto* label = new QLabel(this);
+		label->setTextFormat(Qt::RichText);
+		label->setText("<span style='font-size:13pt'><i>\u0394t</i><sub>" + subscript + "</sub>\u2009=\u2009</span>");
+		label->setAlignment(Qt::AlignCenter);
+		return label;
+	}
+
+	QLabel* FractionSelectorWidget::setDtVarDecValue(double dt) {
+		auto* label = new QLabel(this);
+		label->setTextFormat(Qt::RichText);
+		label->setText(QString("<span style='color:#888; font-size:12pt'>\u2192  %1</span>").arg(dt, 0, 'g', 3));
+		label->setAlignment(Qt::AlignCenter);
+		return label;
 	}
 }

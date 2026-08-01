@@ -1,9 +1,13 @@
+/*
+ * File: Analysis/MetricLogger.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 #include "EngineCore.h"
 #include <vector>
 #include <string>
 
-namespace robots {
+namespace systems {
 	// Struct for logging joint data each step (for later analysis)
     struct JointLogBuffer {
 		// Sim Metadata

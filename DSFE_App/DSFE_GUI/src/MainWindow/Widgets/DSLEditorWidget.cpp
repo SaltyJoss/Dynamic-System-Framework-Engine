@@ -15,7 +15,7 @@
 #include "Platform/Paths.h"
 
 #include "Numerics/IntegrationMethods.h"
-#include "Interpreter/StoredProgram.h"
+#include "DSL/StoredProgram.h"
 
 #include "Widgets/ConsoleOutputWidget.h"
 #include "DSL/DSLSyntaxHighlighter.h"
@@ -75,7 +75,7 @@ namespace widgets {
 		QFile file(fileName);
 		std::string nameStr = filenameFromPath(fileName.toStdString()).c_str();
 		if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-			LOG_ERROR("Failed to open script file: %s", nameStr);
+			LOG_ERROR("Failed to open script file: %s", nameStr.c_str());
 			return false;
 		}
 		_scriptEditor->setPlainText(file.readAll());
@@ -85,8 +85,8 @@ namespace widgets {
 		_scriptLinesLabel->setText(QString("<b>Lines:</b> %1").arg(_scriptEditor->toPlainText().split('\n').size()));
 		_scriptCharsLabel->setText(QString("<b>Chars:</b> %1").arg(_scriptEditor->toPlainText().size()));
 
-		LOG_INFO("DSL script loaded from file: %s", nameStr);
-		D_INFO("DSL script loaded from file: %s", nameStr);
+		LOG_INFO("DSL script loaded from file: %s", nameStr.c_str());
+		D_INFO("DSL script loaded from file: %s", nameStr.c_str());
 
 		return true;
 	}
@@ -102,8 +102,8 @@ namespace widgets {
 		file.close();
 		_currentScriptPath = fileName;
 
-		LOG_INFO("DSL script saved to file: %s", nameStr);
-		D_INFO("DSL script saved to file: %s", nameStr);
+		LOG_INFO("DSL script saved to file: %s", nameStr.c_str());
+		D_INFO("DSL script saved to file: %s", nameStr.c_str());
 
 		return true;
 	}
@@ -153,9 +153,9 @@ namespace widgets {
 		delete _parser; _parser = nullptr;
 		delete _program; _program = nullptr;
 
-		_program = new interpreter::StoredProgram(_sim->simCore());
-		_parser = new interpreter::Parser(_program);
-		_wrapper = new interpreter::RunWrapper(_parser, _program);
+		_program = new dsl::StoredProgram(_sim->simCore());
+		_parser = new dsl::Parser(_program);
+		_wrapper = new dsl::RunWrapper(_parser, _program);
 
 		_scriptText = _scriptEditor->toPlainText().toStdString();
 

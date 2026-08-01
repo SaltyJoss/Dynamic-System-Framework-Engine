@@ -12,7 +12,8 @@ namespace gui {
         o["name"] = name;
 
         QJsonObject content;
-        content["robot"] = robotName;
+        content["rigid_body"] = rigidBodyName.toLower();
+        content["rigid_body_path"] = rigidBodyPath;
         content["script_text"] = scriptText;
         content["script_path"] = scriptPath;
         o["content"] = content;
@@ -23,6 +24,7 @@ namespace gui {
         sim["sim_dt"] = simDt;
         sim["telemetry_dt"] = telemetryDt;
         sim["auto_diff"] = autoDiff;
+        sim["gravity"] = QJsonArray{ gravity.x, gravity.y, gravity.z };
         o["simulation"] = sim;
 
         QJsonObject cam;
@@ -40,7 +42,8 @@ namespace gui {
         w.name = o["name"].toString();
 
         const QJsonObject content = o["content"].toObject();
-        w.robotName = content["robot"].toString();
+        w.rigidBodyName = content["rigid_body"].toString().toLower();
+        w.rigidBodyPath = content["rigid_body_path"].toString();
         w.scriptText = content["script_text"].toString();
         w.scriptPath = content["script_path"].toString();
 
@@ -50,6 +53,10 @@ namespace gui {
         w.simDt = sim["sim_dt"].toDouble(1.0 / 180.0);
         w.telemetryDt = sim["telemetry_dt"].toDouble(1.0 / 180.0);
         w.autoDiff = sim["auto_diff"].toBool(false);
+        const QJsonArray gravity = sim["gravity"].toArray();
+        if (gravity.size() == 3) {
+            w.gravity = { (float)gravity[0].toDouble(), (float)gravity[1].toDouble(), (float)gravity[2].toDouble() };
+        }
 
         const QJsonObject cam = o["camera"].toObject();
         const QJsonArray pos = cam["pos"].toArray();
