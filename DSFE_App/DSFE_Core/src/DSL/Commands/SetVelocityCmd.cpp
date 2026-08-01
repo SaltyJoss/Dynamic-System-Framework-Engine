@@ -18,15 +18,12 @@ namespace commands {
 	bool SetVelocityCmd::hasStarted() const { return _started; }
 
     // Constructor
-    SetVelocityCmd::SetVelocityCmd(std::string link, double wx, double wy, double wz, double vx, double vy, double vz)
-        : _link(std::move(link)), _wx(wx), _wy(wy), _wz(wz), _vx(vx), _vy(vy), _vz(vz) {
+    SetVelocityCmd::SetVelocityCmd(std::string link, double vx, double vy, double vz, double wx, double wy, double wz)
+        : _link(std::move(link)), _vx(wx), _vy(wy), _vz(wz), _wx(vx), _wy(vy), _wz(vz) {
         _result = { CmdState::NotStarted, {}, "" };
     }
 
     CmdResult SetVelocityCmd::update(CommandContext& cntx, double dt) {
-        if (_done) { return { CmdState::Executed, {}, "setVelocity completed" }; }
-        if (!_started) { return { CmdState::NotStarted, {}, "setVelocity not started" }; }
-
         auto* core = cntx.Core();
         if (!core) {
             SIM_FAIL("setVelocity: SimulationCore is null.");
@@ -36,15 +33,13 @@ namespace commands {
 
         auto& body = cntx.RigidBody();
         mathlib::VecX v = mathlib::VecX::Zero(6);
-        v << _wx, _wy, _wz, _vx, _vy, _vz; // [Angular Velocity (rad/s), Linear Velocity (m/s)]
+        v << _vx, _vy, _vz, _wx, _wy, _wz; // [Angular Velocity (rad/s), Linear Velocity (m/s)]
 
         if (!body.trySetFreeVelocity(_link, v)) {
             SIM_FAIL("setVelocity: '%s' is not a free body.", _link.c_str());
 			markFailed("setVelocity: target is not a free body.");
 			return { CmdState::Failed, {}, "setVelocity failed" };
         }
-
-        _done = true;
         markCompleted();
         return { CmdState::Executed, {}, "setVelocity executed" };
     }
@@ -61,17 +56,17 @@ namespace commands {
             return nullptr;
         }
         if (args.size() != 6) {
-            D_FAIL("setVelocity expects 6 args: wx, wy, wz, vx, vy, vz.");
+            D_FAIL("setVelocity expects 6 args: vx, vy, vz, wx, wy, wz.");
             return nullptr;
         }
         const std::string link = id;
-        double wx = utils::parseDouble(args[0]);
-        double wy = utils::parseDouble(args[1]);
-        double wz = utils::parseDouble(args[2]);
-        double vx = utils::parseDouble(args[3]);
-        double vy = utils::parseDouble(args[4]);
-        double vz = utils::parseDouble(args[5]);
+        double vx = utils::parseDouble(args[0]);
+        double vy = utils::parseDouble(args[1]);
+        double vz = utils::parseDouble(args[2]);
+        double wx = utils::parseDouble(args[3]);
+        double wy = utils::parseDouble(args[4]);
+        double wz = utils::parseDouble(args[5]);
 
-        return std::make_unique<SetVelocityCmd>(link, wx, wy, wz, vx, vy, vz);
+        return std::make_unique<SetVelocityCmd>(link, vx, vy, vz, wx, wy, wz);
     }
 } // namespace commands
