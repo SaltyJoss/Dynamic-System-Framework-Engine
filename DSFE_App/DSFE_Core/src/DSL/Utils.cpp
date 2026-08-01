@@ -203,17 +203,17 @@ namespace utils {
 	std::vector<AxisMask> parseSpatialMask(const std::string& args) {
 		std::string s = stripBraces(args);
 
-		AxisMask linear_mask{};
 		AxisMask angular_mask{};
+		AxisMask linear_mask{};
 		for (char c : s) {
 			char c_lower = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 			switch (c) {
-			case 'vx': linear_mask.x = true; break;
-			case 'vy': linear_mask.y = true; break;
-			case 'vz': linear_mask.z = true; break;
 			case 'wx': angular_mask.x = true; break;
 			case 'wy': angular_mask.y = true; break;
 			case 'wz': angular_mask.z = true; break;
+			case 'vx': linear_mask.x = true; break;
+			case 'vy': linear_mask.y = true; break;
+			case 'vz': linear_mask.z = true; break;
 			default: break;
 			}
 		}
@@ -223,11 +223,11 @@ namespace utils {
 			angular_mask.z = true;
 		}
 		std::vector<AxisMask> spatial_mask;
-		spatial_mask.push_back(linear_mask);
 		spatial_mask.push_back(angular_mask);
-		SIM_RUNTIME("Parsed spatial mask: {vx: %d, vy: %d, vz: %d, wx: %d, wy: %d, wz: %d}",
-			linear_mask.x, linear_mask.y, linear_mask.z,
-			angular_mask.x, angular_mask.y, angular_mask.z
+		spatial_mask.push_back(linear_mask);
+		SIM_RUNTIME("Parsed spatial mask: {wx: %d, wy: %d, wz: %d, vx: %d, vy: %d, vz: %d}",
+			angular_mask.x, angular_mask.y, angular_mask.z,
+			linear_mask.x, linear_mask.y, linear_mask.z
 		);
 		return spatial_mask;
 	}
