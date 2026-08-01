@@ -45,23 +45,33 @@ namespace commands {
 	// --- SetCmd Method Implementations ---
 
 	// Helper function to parse LoadTarget from string
-	// Expected formats: "set(integrator,<method>)", "set(colour,<RGB>)", "set(colour,<hex>)"
+	// Expected formats: "set(integrator,<method>)", "set(dt,<value>)", "set(gravity,<value>)", "set(vel,<wx>,<wy>,<wz>,<vx>,<vy>,<vz>)"
 	static std::optional<SetTarget> parseSetTarget(const std::string& id, const std::string& token) {
 		if (startsWith(toLower(id), "integrator")) { std::string s = toLower(token); return SetTarget{ SetTargetType::IntegratorMethod, parseMethod(s) }; }
-		if (startsWith(toLower(id), "dt")) { std::string s = token; return SetTarget{ SetTargetType::FixedDt, {}, {}, utils::parseDouble(s) }; }
-		if (startsWith(toLower(id), "gravity")) { std::string s = token; return SetTarget{ SetTargetType::Gravity, {}, {}, {}, utils::parseDouble(s)}; }
-		if (startsWith(toLower(id), "velocity") || startsWith(toLower(id), "omega")) { 
+		if (startsWith(toLower(id), "dt") || startsWith(toLower(id), "timestep")) { std::string s = token; return SetTarget{ SetTargetType::FixedDt, {}, {}, {}, utils::parseDouble(s) }; }
+		if (startsWith(toLower(id), "gravity") || startsWith(toLower(id), "g") || startsWith(toLower(id), "grav")) {
+			std::string s = toLower(token);
+			if (s.empty()) { D_WARN("set(gravity, <value>/<x>, <y>, <z>) expects either 1 or 3 arguments."); return std::nullopt; }
+			if (s.find(',') != std::string::npos) {
+				mathlib::Vec3 g = utils::parseVec3(s);
+				return SetTarget{ SetTargetType::Gravity, {}, {}, {}, {}, g };
+			}
+			mathlib::Vec3 g = mathlib::Vec3(0.0, 0.0, utils::parseDouble(s));
+			return SetTarget{ SetTargetType::Gravity, {}, {}, {}, {}, g };
+		}
+		if (startsWith(toLower(id), "velocity") || startsWith(toLower(id), "vel")) { 
 			std::string s = toLower(token); 
-
-			AxisMask m = utils::parseAxisMask(s);
-			if (!m.any()) { return std::nullopt; }
-
-			Vec3 w = Vec3{ m.x ? utils::parseFloat(s) : 0.0f,
-						   m.y ? utils::parseFloat(s) : 0.0f,
-						   m.z ? utils::parseFloat(s) : 0.0f 
-			};
-
-			return SetTarget{ SetTargetType::Omega, {}, w }; 
+			if (s.empty()) { D_WARN("set(velocity/vel, <wx>, <wy>, <wz>, <vx>, <vy>, <vz>) expects 6 arguments."); return std::nullopt; }
+			std::vector<AxisMask> m_vec = parseSpatialMask(s);
+			if (m_vec.size() != 2) { D_WARN("set(velocity/vel, <wx>, <wy>, <wz>, <vx>, <vy>, <vz>) expects 6 arguments."); return std::nullopt; }
+			mathlib::VecX sv = mathlib::VecX::Zero(6);
+			sv << (m_vec[0].x ? utils::parseDouble(s) : 0.0),
+				  (m_vec[0].y ? utils::parseDouble(s) : 0.0),
+				  (m_vec[0].z ? utils::parseDouble(s) : 0.0),
+				  (m_vec[1].x ? utils::parseDouble(s) : 0.0),
+				  (m_vec[1].y ? utils::parseDouble(s) : 0.0),
+				  (m_vec[1].z ? utils::parseDouble(s) : 0.0);
+			return SetTarget{ SetTargetType::Velocity, {}, mathlib::Vec3(sv[0], sv[1], sv[2]), mathlib::Vec3(sv[3], sv[4], sv[5])};
 		}
 		return std::nullopt;
 	}
@@ -90,24 +100,25 @@ namespace commands {
 			D_SUCCESS("set() command executed: Integrator method set.");
 			return;
 		}
-		if (_id == "omega") {
+		if (_id == "velocity" || _id == "vel" || _id == "v") {
 			auto t = parseSetTarget(_id, _tokens);
-			if (!t) { markFailed("Invalid omega"); return; }
-			getProgram()->setOmega(t->omega, AngularUnits::DegPerSec);
+			if (!t) { markFailed("Invalid velocity"); return; }
+			getProgram()->setVelocity(t->angular_vel, t->linear_vel); // Doesnt actually do anything right now
 			markCompleted();
+			D_SUCCESS("set() command executed: Velocity set.");
 			return;
 		}
-		if (_id == "dt") {
+		if (_id == "dt" || _id == "timestep" || _id == "fixed_dt") {
 			auto t = parseSetTarget(_id, _tokens);
 			if (!t) { markFailed("Invalid fixed_dt"); return; }
 			getProgram()->setFixedDt(t->fixedDt);
 			markCompleted();
 			return;
 		}
-		if (_id == "gravity") {
+		if (_id == "gravity"  || _id == "g" || _id == "grav") {
 			auto t = parseSetTarget(_id, _tokens);
 			if (!t) { markFailed("Invalid gravity"); return; }
-			getProgram()->setGravity(t->gravity);
+			getProgram()->setGravityVec(t->gravity);
 			markCompleted();
 			return;
 		}

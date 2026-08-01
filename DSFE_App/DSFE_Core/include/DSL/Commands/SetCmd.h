@@ -19,7 +19,7 @@ namespace commands {
 
 	enum class SetTargetType {
 		IntegratorMethod,
-		Omega,
+		Velocity,
 		FixedDt,
 		Gravity
 	};
@@ -27,9 +27,10 @@ namespace commands {
 	struct DSFE_API SetTarget {
 		SetTargetType type = SetTargetType::IntegratorMethod;
 		IntegratorMethod method = IntegratorMethod::RK4; // Default method
-		mathlib::Vec3 omega{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 angular_vel{0.0, 0.0, 0.0}; // For Angular Velocity
+		mathlib::Vec3 linear_vel{0.0, 0.0, 0.0}; // For Linear Velocity
 		double fixedDt = 0.0;
-		double gravity = 0.0;
+		mathlib::Vec3 gravity{0.0, 0.0, 0.0}; // Default gravity vector
 	};
 
 	// Class representing the SET command
