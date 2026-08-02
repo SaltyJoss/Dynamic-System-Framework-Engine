@@ -394,7 +394,7 @@ namespace systems {
 		_simTime = simTime;
 		const size_t n = _body.joints.size();
 		mathlib::VecX x = packState();
-		
+
 		assembleExtForces(_dynScratch);
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 		clearExtForces();
@@ -1139,7 +1139,7 @@ namespace systems {
 	// Set the torque mode for the rigidBody system
 	void RigidBodySystem::setTorqueMode(eTorqueMode mode) { _body.torqueMode = mode; }
 
-	// Method to claim the current active log buffer for exporting logged data (returns pointer to buffer active before swap)
+	// Method to claim the current active joint log buffer for exporting logged data (returns pointer to buffer active before swap)
 	std::unique_ptr<systems::JointLogBuffer> RigidBodySystem::claimExportLogBuffer() {
 		// swap active buffer index
 		std::lock_guard<std::mutex> lk(_logSwapMutex);				 // ensure thread safety during swap

@@ -5,6 +5,9 @@
 #pragma once
 
 namespace systems {
+	/*
+	 * Clamp a joint angle to its limits, taking into account whether the joint is continuous or not.
+	 */
 	template<typename T>
 	T RigidBodySystem::clampJointAngle_T(const RigidBodyJoint& joint, T angleRad) {
 		if (joint.limits.continuous) { return mathlib::wrapRad<T>(angleRad); }
@@ -55,7 +58,9 @@ namespace systems {
 
 		return snap;
 	}
-
+	/*
+	 * Step the rigid body system using a specified integrator and dynamics scratch space.
+	 */
 	template<typename Scalar, typename IntegratorT>
 	RigidBodyStepResult_T<Scalar> RigidBodySystem::step_impl(
 		const mathlib::VecX_T<Scalar>& x,
@@ -158,7 +163,9 @@ namespace systems {
 		result.dynamics = dynResult;
 		return result;
 	}
-
+	/*
+	 * Post-step update to log metrics and update internal state after a simulation step.
+	 */
 	template<typename T>
 	void RigidBodySystem::postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& dynScratch, const RigidBodyStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
@@ -208,7 +215,9 @@ namespace systems {
 			);
         }
 	}
-
+	/*
+	 * Log metrics for each joint to the joint log buffer
+	 */
 	template<typename T>
 	void RigidBodySystem::logJointMetrics(
 		const size_t n,
@@ -235,6 +244,7 @@ namespace systems {
 				const double err_d = qd_ref[i] - qd[off];
 				// Log the joint metrics to the buffer
 				JointLogBuffer::JointLogEntry e{};
+				e.joint_name = j.name;
 				e.sim_time = _simTime;
 				e.dt_taken = mathlib::real(result.stepOut.dt_taken);
 				e.dt_sug = mathlib::real(result.stepOut.dt_sug);
@@ -250,13 +260,15 @@ namespace systems {
 			}
 		}
 	}
-
+	/*
+	 * Log metrics for free bodies (6-DOF joints) to the free body log buffer
+	 */
 	template<typename T>
 	void RigidBodySystem::logFreeBodyMetrics(
 		const std::vector<Pose>& T_world,
 		const RigidBodyStepResult_T<T>& result,
-		double sys_PE)
-	{
+		double sys_PE
+	) {
 		// pick the buffer (mirrors the joint path)
 		systems::FreeBodyLogBuffer* buf = nullptr;
 		if (_useInternalLogging) { int idx = _activeLogBufIdx_fb.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
@@ -301,6 +313,7 @@ namespace systems {
 			const mathlib::Vec3 tau_net = I * aAng + w.cross(I * w);
 
 			systems::FreeBodyLogBuffer::FreeBodyLogEntry e{};
+			e.body_name = j.name;
 			e.sim_time = _simTime;
 			e.dt_taken = mathlib::real(result.stepOut.dt_taken);
 			e.dt_sug   = mathlib::real(result.stepOut.dt_sug);
@@ -323,7 +336,9 @@ namespace systems {
 			off += dof;
 		}
 	}
-
+	/*
+	 * Assemble external forces into the dynamics scratch space for the current step.
+	 */
 	template<typename Scalar>
 	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const {
 		const size_t n = _body.joints.size();
@@ -347,7 +362,10 @@ namespace systems {
 			scratch.spatial.f_ext[jointIdx] += fs; // accumulate external force for this joint
 		}
 	}
-
+	/*
+	 * Step the rigid body system using automatic differentiation with NVar dual variables.
+	 * This method is templated on the number of dual variables (NVar) to allow for compile-time optimisation and flexibility in the number of variables being differentiated.
+	 */
 	template<size_t NVar>
 	void RigidBodySystem::step_AD(double dt, double simTime) {
 		if (!hasRigidBody()) { return; }
