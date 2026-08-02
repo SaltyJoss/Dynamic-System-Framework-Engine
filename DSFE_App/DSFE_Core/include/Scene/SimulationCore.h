@@ -163,14 +163,19 @@ namespace core {
 		void exportFreeBodyThreadMain();
 		void scriptParallelisation(dsl::IStoredProgram* program);
 
-		std::thread _expThread;
+		// Export thread for joint telemetry
+		std::thread _expThread_j;
 		std::mutex _expMutex_j; // Mutex for joint export queue
-		std::mutex _expMutex_fb; // Mutex for free body export queue
 		std::condition_variable _expCondVar_j; // Condition variable for export thread synchronization (need one for each queue)
-		std::condition_variable _expCondVar_fb; // Condition variable for export thread synchronization (need one for each queue)
 		std::queue<std::unique_ptr<systems::JointLogBuffer>> _expQ_j;
+		std::atomic<bool> _expThreadRunning_j{ false };
+
+		// Export thread for free body telemetry
+		std::thread _expThread_fb;
+		std::mutex _expMutex_fb; // Mutex for free body export queue#
+		std::condition_variable _expCondVar_fb; // Condition variable for export thread synchronization (need one for each queue)
 		std::queue<std::unique_ptr<systems::FreeBodyLogBuffer>> _expQ_fb;
-		std::atomic<bool> _expThreadRunning{ false };
+		std::atomic<bool> _expThreadRunning_fb{ false };
 
 		// Owning storage (used only in owning mode)
 		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;

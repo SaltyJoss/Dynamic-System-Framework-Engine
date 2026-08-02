@@ -526,29 +526,30 @@ namespace core {
 
 	// Thread-based methods
 
-	// Starts the export thread if it's not already running
+	// Starts the export threads for joint and free body logs
 	void SimulationCore::startExportThread() {
-		if (_expThreadRunning.exchange(true)) { return; }
-		_expThread = std::thread([this]() { 
-			exportJointThreadMain();
-			exportFreeBodyThreadMain();
-		});
+		if (!_expThreadRunning_j.exchange(true)) {
+			_expThread_j = std::thread([this]() {  exportJointThreadMain(); });
+		}
+		if (!_expThreadRunning_fb.exchange(true)) {
+			_expThread_fb = std::thread([this]() {  exportFreeBodyThreadMain(); });
+		}
 	}
 
 	// Signals the export thread to stop and waits for it to finish
 	void SimulationCore::stopExportJointThread() {
-		if (!_expThreadRunning.exchange(false)) { return; }
+		if (!_expThreadRunning_j.exchange(false)) { return; }
 		_expCondVar_j.notify_all();
-		if (_expThread.joinable()) {
-			_expThread.join();
+		if (_expThread_j.joinable()) {
+			_expThread_j.join();
 		}
 	}
 	// Signals the export thread to stop and waits for it to finish
 	void SimulationCore::stopExportFreeBodyThread() {
-		if (!_expThreadRunning.exchange(false)) { return; }
+		if (!_expThreadRunning_fb.exchange(false)) { return; }
 		_expCondVar_fb.notify_all();
-		if (_expThread.joinable()) {
-			_expThread.join();
+		if (_expThread_fb.joinable()) {
+			_expThread_fb.join();
 		}
 	}
 
@@ -559,9 +560,9 @@ namespace core {
 			{
 				std::unique_lock<std::mutex> lock(_expMutex_j);
 				_expCondVar_j.wait(lock, [this]() {
-					return !_expQ_j.empty() || !_expThreadRunning.load();
+					return !_expQ_j.empty() || !_expThreadRunning_j.load();
 				});
-				if (!_expThreadRunning.load() && _expQ_j.empty()) { break; }
+				if (!_expThreadRunning_j.load() && _expQ_j.empty()) { break; }
 				buf = std::move(_expQ_j.front());
 				_expQ_j.pop();
 			}
@@ -584,9 +585,9 @@ namespace core {
 			{
 				std::unique_lock<std::mutex> lock(_expMutex_fb);
 				_expCondVar_fb.wait(lock, [this]() {
-					return !_expQ_fb.empty() || !_expThreadRunning.load();
+					return !_expQ_fb.empty() || !_expThreadRunning_fb.load();
 				});
-				if (!_expThreadRunning.load() && _expQ_fb.empty()) { break; }
+				if (!_expThreadRunning_fb.load() && _expQ_fb.empty()) { break; }
 				buf = std::move(_expQ_fb.front());
 				_expQ_fb.pop();
 			}
