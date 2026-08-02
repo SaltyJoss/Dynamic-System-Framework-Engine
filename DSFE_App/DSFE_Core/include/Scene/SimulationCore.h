@@ -114,16 +114,15 @@ namespace core {
 		void setSingleBodySystem(single_body_system::SingleBodySystem* singleBody);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
 		void setJointLogBuffer(systems::JointLogBuffer* buffer);
-		void setTrajRefBuffer(systems::TrajRefBuffer* buffer);
+		void setFreeBodyLogBuffer(systems::FreeBodyLogBuffer* buffer);
 
 		// Helpers
 		void tick(double frame_dt) override;
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
-		void exportJointLogsToHDF5(const systems::JointLogBuffer& buf);
-		void exportFreeBodyLogsToHDF5(const systems::FreeBodyLogBuffer& buf);
-		void exportRefsToHDF5();
+		void exportLogsToHDF5_j(const systems::JointLogBuffer& buf);
+		void exportLogsToHDF5_fb(const systems::FreeBodyLogBuffer& buf);
 
 		// Increment simulation time by dt (used in the simulation loop)
 		void incrementSimTime(double dt) {
@@ -182,12 +181,13 @@ namespace core {
 		std::unique_ptr<systems::RigidBodySystem> _rigidBodyOwned;
 		std::unique_ptr<single_body_system::SingleBodySystem> _singleBodyOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
-
 		// Non-owning access (always used by logic)
 		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		systems::RigidBodySystem* _rigidBody = nullptr;
 		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
+		// Active body index
+		int _activeBodyIdx = -1;
 
 		mutable std::mutex _stateMutex;
 
@@ -218,7 +218,6 @@ namespace core {
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
 		systems::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
 		systems::FreeBodyLogBuffer _freeBodyLogBuffer; // Buffer for logging free body data each step
-		systems::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
 		bool _telemetryBegun = false;
 
 		data::DataManager _data; // Data manager for handling telemetry data export and storage

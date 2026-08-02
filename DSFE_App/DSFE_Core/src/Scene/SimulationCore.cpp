@@ -192,7 +192,6 @@ namespace core {
 		// Reset simulation system
 		if (_rigidBody) {
 			_rigidBody->resetRigidBody();
-			_trajRefBuffer.clear();
 
 			// Determine expected number of entries based on run mode and cap it to prevent OOM
 			double expectedMinutes = (_runMode == eRunMode::Synchronous) ? DEFAULT_SYNC_MINUTES : DEFAULT_INTERACTIVE_MINUTES;
@@ -206,17 +205,11 @@ namespace core {
 			uint64_t total64 = static_cast<uint64_t>(steps) * static_cast<uint64_t>(joints);
 			size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
 
-			// Internal double buf for high-rate joint log
+			// Internal double buf for high-rate telemetry logging
 			_rigidBody->useInternalLogBuffer(true);
 			_rigidBody->reserveInternalLogBuffers(total);
-
 			_rigidBody->useInternalLogBuffer_fb(true);
 			_rigidBody->reserveInternalLogBuffers_fb(total);
-
-			// Keeps external traj ref buffer for lower-rate traj ref (going to refactor this later)
-			_trajRefBuffer.clear();
-			_trajRefBuffer.reserve(std::max<size_t>(1024, total / (26 / 5))); // 26 to 5 entries, so reserving 1/(26/5) of total steps as a heuristic for ref buffer size
-			_rigidBody->setRefBuffer(&_trajRefBuffer);
 		}
 		if (_singleBody) {
 			_singleBody->resetBody();
@@ -260,7 +253,7 @@ namespace core {
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportJointLogsToHDF5(const systems::JointLogBuffer& exportBuf) {
+	void SimulationCore::exportLogsToHDF5_j(const systems::JointLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now();
 		const auto state = _rigidBody->runtimeIntegratorState();
 		const std::string intName = (state && state->autoDiff) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
@@ -282,7 +275,7 @@ namespace core {
 		LOG_INFO("ExportJointLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 	}
 
-	void SimulationCore::exportFreeBodyLogsToHDF5(const systems::FreeBodyLogBuffer& exportBuf) {
+	void SimulationCore::exportLogsToHDF5_fb(const systems::FreeBodyLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now();
 		const auto state = _rigidBody->runtimeIntegratorState();
 		const std::string intName = (state && state->autoDiff) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
@@ -304,43 +297,6 @@ namespace core {
 		LOG_INFO("ExportFreeBodyLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 	}
 
-	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry
-	void SimulationCore::exportRefsToHDF5() {
-		const std::string rigidBodyName = _rigidBody->hasRigidBody() ? _rigidBody->rigidBodyName() : "no_rigidBody";
-		const std::string header = rigidBodyName + "_traj_ref";
-
-		// Check if there are any log entries
-		const size_t N = _trajRefBuffer.size();
-		if (N == 0) return;
-
-		// Simple validation of buffer sizes
-		if (_trajRefBuffer.theta_ref.size() != N ||
-			_trajRefBuffer.omega_ref.size() != N ||
-			_trajRefBuffer.alpha_ref.size() != N ||
-			_trajRefBuffer.sim_time.size()  != N ||
-			_trajRefBuffer.joint_index.size() != N) {
-			D_FAIL("exportRefsToHDF5: TrajRefBuffer size mismatch");
-			return; // Return as reference data is useless if sizes don't match
-		}
-
-		// For each ref entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			// Create a list of fields for this log entry
-			data::FieldList fields;
-			// Sim Metadata
-			fields.emplace_back("sim_time", (double)_trajRefBuffer.sim_time[i]);
-			// Reference values
-			fields.emplace_back("theta_ref", (double)_trajRefBuffer.theta_ref[i]);
-			fields.emplace_back("omega_ref", (double)_trajRefBuffer.omega_ref[i]);
-			fields.emplace_back("alpha_ref", (double)_trajRefBuffer.alpha_ref[i]);
-			// Joint info
-			fields.emplace_back("joint_index", (double)_trajRefBuffer.joint_index[i]);
-
-			// Write this entry to HDF5
-			_data.capture(data::Stream::Reference, header, fields);
-		}
-	}
-
 	// --------------------------------------------------
 	//		   SYNCHRONOUS SCRIPT EXECUTION
 	// --------------------------------------------------
@@ -356,11 +312,6 @@ namespace core {
 		// Reset rigidBody state
 		resetRigidBody();
 		_traj->clearAll();
-
-		// Clear reference buffer (external for now)
-		_trajRefBuffer.clear();
-		// Inject reference buffer only
-		_rigidBody->setRefBuffer(&_trajRefBuffer);
 		// Set integrator on both physics and rigidBody systems
 		_rigidBody->setStandardIntegrator(method);
 
@@ -513,7 +464,6 @@ namespace core {
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(systems::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
-	void SimulationCore::setTrajRefBuffer(systems::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
 	
 	// Accessor for the telemetry recorder (non-const and const versions)
 	diagnostics::TelemetryRecorder& SimulationCore::telemetry() { return _telemetry; }
@@ -569,7 +519,7 @@ namespace core {
 
 			if (buf) {
 				try {
-					exportJointLogsToHDF5(*buf);
+					exportLogsToHDF5_j(*buf);
 				}
 				catch (...) {
 					LOG_ERROR("Export failed");
@@ -594,7 +544,7 @@ namespace core {
 
 			if (buf) {
 				try {
-					exportFreeBodyLogsToHDF5(*buf);
+					exportLogsToHDF5_fb(*buf);
 				}
 				catch (...) {
 					LOG_ERROR("Export failed");
