@@ -700,45 +700,100 @@ namespace data {
 		const systems::JointLogBuffer& buf
 	) {
 		HDF5StreamWriter* writer = nullptr;
-
-		if (s == Stream::Simulation) {
-			writer = &_sim;
-		}
-		else if (s == Stream::Reference) {
-			writer = &_ref;
-		}
-
+		if (s == Stream::Simulation) { writer = &_sim; }
+		else if (s == Stream::Reference) { writer = &_ref; }
 		if (!writer) { return; }
-
 		std::vector<double> jointIndexD(buf.joint_index.begin(), buf.joint_index.end());
 		const std::string t(topic);
-
+		// Time and step info
 		writer->writeVector(t, "sim_time", buf.sim_time);
 		writer->writeVector(t, "dt_taken", buf.dt_taken);
 		writer->writeVector(t, "dt_sug", buf.dt_sug);
-		// States
-		writer->writeVector(t, "position", buf.theta);
-		writer->writeVector(t, "velocity", buf.omega);
-		writer->writeVector(t, "acceleration", buf.alpha);
-		writer->writeVector(t, "error", buf.err);
-		writer->writeVector(t, "error_d", buf.err_d);
-		// Dynamics
-		writer->writeVector(t, "I_eff", buf.I_eff);
-		writer->writeVector(t, "tau", buf.tau);
-		writer->writeVector(t, "tau_ff", buf.tau_ff);
-		writer->writeVector(t, "tau_gravity", buf.tau_gravity);
-		writer->writeVector(t, "tau_barrier", buf.tau_barrier);
-		writer->writeVector(t, "tau_sat", buf.tau_sat);
-		// Energy, Work, & Power
-		writer->writeVector(t, "KE", buf.KE);
-		writer->writeVector(t, "PE", buf.PE);
-		writer->writeVector(t, "E_total", buf.E_total);
-		// Limit flags and info
-		writer->writeVector(t, "clamp_theta", buf.clamp_theta);
-		writer->writeVector(t, "clamp_omega", buf.clamp_omega);
-		writer->writeVector(t, "sat_flag", buf.sat_flag);
-		// Joint info
-		writer->writeVector(t, "joint_index", jointIndexD); // converted to vector<double>, TODO template vector writer though as my long term fix
+		for (size_t i = 0; i < buf.joint_name.size(); ++i) {
+			// States
+			writer->writeVector(t + "/" + buf.joint_name[i], "position", std::vector<double>{buf.theta[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "velocity", std::vector<double>{buf.omega[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "acceleration", std::vector<double>{buf.alpha[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "error", std::vector<double>{buf.err[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "error_d", std::vector<double>{buf.err_d[i]});
+			// Dynamics
+			writer->writeVector(t + "/" + buf.joint_name[i], "I_eff", std::vector<double>{buf.I_eff[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "tau", std::vector<double>{buf.tau[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "tau_ff", std::vector<double>{buf.tau_ff[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "tau_gravity", std::vector<double>{buf.tau_gravity[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "tau_barrier", std::vector<double>{buf.tau_barrier[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "tau_sat", std::vector<double>{buf.tau_sat[i]});
+			// Energy, Work, & Power
+			writer->writeVector(t + "/" + buf.joint_name[i], "KE", std::vector<double>{buf.KE[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "PE", std::vector<double>{buf.PE[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "E_total", std::vector<double>{buf.E_total[i]});
+			// Limit flags and info
+			writer->writeVector(t + "/" + buf.joint_name[i], "clamp_theta", std::vector<double>{buf.clamp_theta[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "clamp_omega", std::vector<double>{buf.clamp_omega[i]});
+			writer->writeVector(t + "/" + buf.joint_name[i], "sat_flag", std::vector<double>{buf.sat_flag[i]});
+		}
+	}
+
+	void DataManager::captureFreeBodyBuffer(
+		Stream s,
+		std::string_view topic,
+		const systems::FreeBodyLogBuffer& buf
+	) {
+		HDF5StreamWriter* writer = nullptr;
+		if (s == Stream::Simulation) { writer = &_sim; }
+		else if (s == Stream::Reference) { writer = &_ref; }
+		if (!writer) { return; }
+		std::vector<double> bodyIdxD(buf.body_index.begin(), buf.body_index.end());
+		const std::string t(topic);
+		// Time and step info
+		writer->writeVector(t, "sim_time", buf.sim_time);
+		writer->writeVector(t, "dt_taken", buf.dt_taken);
+		writer->writeVector(t, "dt_sug", buf.dt_sug);
+		for (size_t i = 0; i < buf.body_name.size(); ++i) {
+			// States
+			writer->writeVector(t + "/" + buf.body_name[i] + "/position", "pos_x", std::vector<double>{buf.pos_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/position", "pos_y", std::vector<double>{buf.pos_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/position", "pos_z", std::vector<double>{buf.pos_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/orientation", "quat_w", std::vector<double>{buf.quat_w[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/orientation", "quat_x", std::vector<double>{buf.quat_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/orientation", "quat_y", std::vector<double>{buf.quat_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/orientation", "quat_z", std::vector<double>{buf.quat_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "lin_vel_x", std::vector<double>{buf.linVel_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "lin_vel_y", std::vector<double>{buf.linVel_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "lin_vel_z", std::vector<double>{buf.linVel_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "ang_vel_x", std::vector<double>{buf.angVel_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "ang_vel_y", std::vector<double>{buf.angVel_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/velocity", "ang_vel_z", std::vector<double>{buf.angVel_z[i]});
+			// Time Derivatives
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "lin_acc_x", std::vector<double>{buf.linAcc_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "lin_acc_y", std::vector<double>{buf.linAcc_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "lin_acc_z", std::vector<double>{buf.linAcc_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "ang_acc_x", std::vector<double>{buf.angAcc_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "ang_acc_y", std::vector<double>{buf.angAcc_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/acceleration", "ang_acc_z", std::vector<double>{buf.angAcc_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/F_net", "F_net_x", std::vector<double>{buf.F_net_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/F_net", "F_net_y", std::vector<double>{buf.F_net_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/F_net", "F_net_z", std::vector<double>{buf.F_net_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/tau_net", "tau_net_x", std::vector<double>{buf.tau_net_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/tau_net", "tau_net_y", std::vector<double>{buf.tau_net_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/tau_net", "tau_net_z", std::vector<double>{buf.tau_net_z[i]});
+			// Energy & Performance
+			writer->writeVector(t + "/" + buf.body_name[i], "KE", std::vector<double>{buf.KE[i]});
+			writer->writeVector(t + "/" + buf.body_name[i], "PE", std::vector<double>{buf.PE[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "lin_mom_x", std::vector<double>{buf.linMom_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "lin_mom_y", std::vector<double>{buf.linMom_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "lin_mom_z", std::vector<double>{buf.linMom_z[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "ang_mom_x", std::vector<double>{buf.angMom_x[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "ang_mom_y", std::vector<double>{buf.angMom_y[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/momentum", "ang_mom_z", std::vector<double>{buf.angMom_z[i]});
+			// Sleep State
+			writer->writeVector(t + "/" + buf.body_name[i], "sleep_state", std::vector<double>{buf.sleep_state[i]});
+			// Mass & Inertia
+			writer->writeVector(t + "/" + buf.body_name[i], "mass", std::vector<double>{buf.mass[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/inertia", "I_xx", std::vector<double>{buf.Ixx[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/inertia", "I_yy", std::vector<double>{buf.Iyy[i]});
+			writer->writeVector(t + "/" + buf.body_name[i] + "/inertia", "I_zz", std::vector<double>{buf.Izz[i]});
+		}
 	}
 
 } // namespace data
