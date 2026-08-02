@@ -177,6 +177,13 @@ namespace gui {
         const bool hasRigidBody() const;
 		const bool hasBody() const;
         bool isFreeBody() const;
+        // Body management for multiple rigid bodies
+		std::size_t bodyCount() const;
+		systems::RigidBodySystem& body(int i);
+		const systems::RigidBodySystem& body(int i) const;
+		int activeBodyIdx() const;
+		void setActiveBody(int i);
+		void clearBodies();
 
 		// Setters for rigidBody joint states (angle in radians)
         void setRigidBodyLinkRotation(const std::string& linkName, double angle);
