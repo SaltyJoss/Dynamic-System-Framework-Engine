@@ -310,3 +310,60 @@ QListWidget::item:selected {
 	font-family: Consolas, monospace;
 	font-size: 11px;
 }
+
+/* Main Simulation Tree View Pane Override */
+QTreeView {
+	show-decoration-selected: 1;
+	border: 1px solid rgb(70,70,70);     /* Consistent panel bordering */
+	color: rgb(220,220,220);             /* Fixes text color under Fusion theme */
+	font-family: Consolas, monospace;    /* Keeps simulation panels matching */
+	font-size: 12px;
+	outline: none;
+}
+
+/* Row-item behavior and selection colours */
+QTreeView::item {
+	padding: 1px;
+	min-height: 20px;
+	outline: none;
+}
+
+QTreeView::item:hover {
+	background-color: rgb(50,50,50);     /* Consistent hover matching QListWidget */
+}
+
+QTreeView::item:selected {
+	background-color: rgb(86,156,214);   /* Your standard blue highlight accent */
+	color: rgb(255,255,255);             /* High contrast selection text */
+}
+
+/* Base style for the branch drawing area */
+QTreeView::branch {
+	background-color: transparent;
+	border: none;
+	margin: 0px;
+	padding: 0px;
+	width: 20px;
+}
+
+/* VERTICAL LINES: Draws the path passing down to lower siblings */
+QTreeView::branch:has-siblings:!adjoins-item {
+	border-left: 1px solid rgb(70,70,70); /* Subtle layout track matching borders */
+	margin-left: 10px;
+}
+
+/* T-SHAPE JUNCTIONS: For items that have siblings below them */
+QTreeView::branch:has-siblings:adjoins-item {
+	border-left: 1px solid rgb(70,70,70);
+	border-bottom: 1px solid rgb(70,70,70);
+	margin-left: 10px;
+	height: 50%;
+}
+
+/* L-SHAPE JUNCTIONS: For the very last child item in a group */
+QTreeView::branch:!has-siblings:adjoins-item {
+	border-left: 1px solid rgb(70,70,70);
+	border-bottom: 1px solid rgb(70,70,70);
+	margin-left: 10px;
+	height: 50%;
+}
