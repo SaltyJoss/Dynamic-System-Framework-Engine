@@ -71,12 +71,6 @@ namespace commands {
 		utils::OpResult setJointOmegaRefRad(const std::string& link, double qd_ref);
 		utils::OpResult setJointAlphaRefRad(const std::string& link, double qdd_ref);
 
-		//utils::OpResult updateRigidRotateTo(double dt);
-		utils::OpResult updateJointRotateTo(double dt);
-
-		//utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
-		utils::OpResult beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg);
-
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
 
