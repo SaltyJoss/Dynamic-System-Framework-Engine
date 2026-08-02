@@ -155,11 +155,13 @@ namespace core {
 			// Update physics and rigidBody system if sim is running
 			if (_simRunning.load()) {
 				simTime += _dt;
+				for (auto& b : _bodiesOwned) {
+					if (!b->hasRigidBody()) { continue; }
+					b->updateTrajectoryInputs(*_traj, simTime);
+					b->step(_dt, simTime);
+				}
 				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
-					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
-					_rigidBody->step(_dt, simTime);
-					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
@@ -170,7 +172,9 @@ namespace core {
 				if (hasSingleBody()) { _singleBody->step(_dt, simTime); }
 			}
 			else if (_manipulating.load() && hasRigidBody()) {
-				_rigidBody->step(_dt, simTime);
+				for (auto& b : _bodiesOwned) {
+					if (b->hasRigidBody()) { b->step(_dt, simTime); }
+				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
@@ -195,28 +199,23 @@ namespace core {
 
 		// Reset simulation system
 		if (_rigidBody) {
-			_rigidBody->resetRigidBody();
-
-			// Determine expected number of entries based on run mode and cap it to prevent OOM
 			double expectedMinutes = (_runMode == eRunMode::Synchronous) ? DEFAULT_SYNC_MINUTES : DEFAULT_INTERACTIVE_MINUTES;
-
-			// Convert minutes to steps
-			size_t joints = _rigidBody->jointCount();
 			double expectedSeconds = expectedMinutes * 60.0;
 			size_t steps = static_cast<size_t>(expectedSeconds / _dt);
 
-			// Guarding against overflow and capping
-			uint64_t total64 = static_cast<uint64_t>(steps) * static_cast<uint64_t>(joints);
-			size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
-
-			// Internal double buf for high-rate telemetry logging
-			_rigidBody->useInternalLogBuffer(true);
-			_rigidBody->reserveInternalLogBuffers(total);
-			_rigidBody->useInternalLogBuffer_fb(true);
-			_rigidBody->reserveInternalLogBuffers_fb(total);
-		}
-		if (_singleBody) {
-			_singleBody->resetBody();
+			for (auto& b : _bodiesOwned) {
+				if (!b->hasRigidBody()) { continue; }
+				b->resetRigidBody();
+				size_t joints = b->jointCount();
+				// Guarding against overflow and capping
+				uint64_t total64 = static_cast<uint64_t>(steps) * static_cast<uint64_t>(joints);
+				size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
+				// Internal double buf for high-rate telemetry logging
+				b->useInternalLogBuffer(true);
+				b->reserveInternalLogBuffers(total);
+				b->useInternalLogBuffer_fb(true);
+				b->reserveInternalLogBuffers_fb(total);
+			}
 		}
 
 		std::string int_name;
@@ -364,17 +363,18 @@ namespace core {
 			// Step physics and rigidBody if sim is running
 			if (_simRunning.load()) {
 				simTime += dt;
+				for (auto& b : _bodiesOwned) {
+					if (!b->hasRigidBody()) { continue; }
+					b->updateTrajectoryInputs(*_traj, simTime);
+					b->step(_dt, simTime);
+				}
+				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
-					// Update Trajectory Inputs
-					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
-					_rigidBody->step(dt, simTime);
-					// Telemetry beginRun
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-					// Telemetry update
 					_telemetry.update(simTime, *_rigidBody, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
