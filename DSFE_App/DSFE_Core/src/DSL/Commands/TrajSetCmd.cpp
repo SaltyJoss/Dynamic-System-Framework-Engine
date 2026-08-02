@@ -78,7 +78,7 @@ namespace commands {
 		}
 		// Validate joint exists and get current angle as q0.
 		double q0 = 0.0f;
-		if (!body->tryGetJointAngleRad(_link, q0)) {
+		if (!body->tryGetJointAngleRad(member, q0)) {
 			SIM_FAIL("trajSet: joint not found '%s'", member.c_str());
 			markFailed("trajSet: joint not found.");
 			return { CmdState::Failed, {}, "trajSet failed" };
@@ -89,7 +89,7 @@ namespace commands {
 
 		// Get hardware max omega
 		double wMax_hw = 0.0;
-		if (!body->tryGetJointOmegaMaxRad(_link, wMax_hw)) {
+		if (!body->tryGetJointOmegaMaxRad(member, wMax_hw)) {
 			D_WARN("trajSet: failed to get joint max omega for link='%s'", member.c_str());
 			wMax_hw = std::numeric_limits<double>::infinity();
 		}
@@ -107,10 +107,10 @@ namespace commands {
 			const double amax = degToRad(_params[2]);
 			auto traj = std::make_unique<control::TrapezoidTrajectory<double>>(t0, q0, q1, vmax, amax);
 			auto& trajMgr = core->trajectoryManager();
-			trajMgr.set(_link, std::move(traj));
+			trajMgr.set(member, std::move(traj));
 			double wMax_est = std::abs(vmax);
 			wMax_est = std::min(wMax_est, (double)wMax_hw);
-			if (!body->trySetJointOmegaRefMaxRad(_link, wMax_est)) {
+			if (!body->trySetJointOmegaRefMaxRad(member, wMax_est)) {
 				D_WARN("trajSet(TRAP): failed to set joint omega ref max for link='%s'", member.c_str());
 			}
 			SIM_SUCCESS("trajSet: TRAP link='%s' q0=%.6f q1=%.6f vmax=%.6f amax=%.6f", member.c_str(), q0, q1, vmax, amax);
