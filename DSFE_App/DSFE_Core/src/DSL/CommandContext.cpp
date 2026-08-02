@@ -31,7 +31,6 @@ namespace commands {
 		_core->startSimulation();
 		return OpResult::Success();
 	}
-
 	// Set the fixed delta time for the simulation
 	OpResult CommandContext::setFixedDt(double dt) {
 		if (!_core) { return OpResult::Failure("Simulation manager is null."); }
@@ -39,7 +38,6 @@ namespace commands {
 		_core->setFixedDt(dt);
 		return OpResult::Success(true);
 	}
-
 	// Loads a rigidBody by name and updates the context with the new rigidBody system
 	OpResult CommandContext::loadRigidBody(const std::string& bodyName) {
 		if (!_core) { return OpResult::Failure("SimulationCore is null."); }
@@ -52,21 +50,57 @@ namespace commands {
 	// --- GLOBAL STATE METHODS ---
 	void CommandContext::setAngularUnits(AngularUnits units) { _angularUnits = units; }
 	AngularUnits CommandContext::getAngularUnits() const { return _angularUnits; }
-	
+	// Sets the maximum absolute angular velocity (omega) clamp
 	void CommandContext::setOmegaClamp(double maxAbsOmega) { _omegaClamp = maxAbsOmega; 	}
 	double CommandContext::getOmegaClamp() const { return _omegaClamp; }
-
+	// Stops all angular velocity for the body
 	utils::OpResult CommandContext::setJointOmega(const std::string& childLink, double omegaDegPerSec) {
 		double omegaRadPerSec = degToRad(omegaDegPerSec);
 		auto& rb = _core->rigidBodySystem();
 		rb.trySetJointOmegaRad(childLink, omegaRadPerSec);
 		return OpResult::Success(true);
 	}
-	 
+	// Stops all angular velocity for the body
 	utils::OpResult CommandContext::stopJointOmega(const std::string& childLink) { return setJointOmega(childLink, 0.0); }
-
+	// Stops all angular velocity for the body
 	core::ISimulationCore* CommandContext::Core() const { return _core; }
 	systems::RigidBodySystem& CommandContext::RigidBody() const { return _core->rigidBodySystem(); }
+	// --- HELPER METHODS ---
+	// Returns the RigidBodySystem pointer for a given target string, which may include a body name prefix (e.g., "bodyName.memberName")
+	systems::RigidBodySystem* CommandContext::resolveBody(const std::string& target) {
+		if (!_core) { return nullptr; }
+		const int nb = (int)_core->bodyCount();
+		auto dot = target.find('.');
+		if (dot != std::string::npos) {
+			std::string bodyName = utils::toLower(target.substr(0, dot));
+			for (int i = 0; i < nb; ++i) {
+				auto& sys = _core->body(i);
+				if (sys.hasRigidBody() && utils::toLower(sys.rigidBodyName()) == bodyName) { return &sys; }
+			}
+			return nullptr;
+		}
+		{
+			auto& act = _core->rigidBodySystem();
+			if (act.hasRigidBody() && bodyOwnsTarget(act, target)) { return &act; }
+		}
+		for (int i = 0; i < nb; ++i) {
+			auto& sys = _core->body(i);
+			if (sys.hasRigidBody() && bodyOwnsTarget(sys, target)) { return &sys; }
+		}
+		return nullptr;
+	}
+	// Returns the member name from a target string, which may include a body name prefix (e.g., "bodyName.memberName")
+	bool CommandContext::bodyOwnsTarget(systems::RigidBodySystem& sys, const std::string& name) const {
+		for (const auto& j : sys.joints()) {
+			if (utils::toLower(j.child) == utils::toLower(name)) { return true; }
+		}
+		return false;
+	}
+	// Returns the member name from a target string, which may include a body name prefix (e.g., "bodyName.memberName")
+	std::string CommandContext::memberName(const std::string& target) const {
+		auto dot = target.find('.');
+		return (dot == std::string::npos) ? target : target.substr(dot + 1);
+	}
 
 	Vec3 CommandContext::normaliseDirection(const Vec3& dir) const {
 		const double x = dir.x();
@@ -151,17 +185,13 @@ namespace commands {
 	utils::OpResult CommandContext::beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg) {
 		auto& rb = _core->rigidBodySystem();
 		if (link.empty()) return OpResult::Failure("beginJointRotateTo -> empty link.");
-
 		const double current = getJointAngleRad(link);
 		const double target = degToRad(angleDeg);
 		const double maxOmega = degToRad(maxOmegaDegPerSec);
-
 		auto r1 = setJointMaxOmegaRad(link, maxOmega);
 		if (!r1.ok) { return r1; }
-
 		auto r2 = setJointTargetRad(link, target);
 		if (!r2.ok) { return r2; }
-
 		_jnt.link = link;
 		_jnt.start = current;
 		_jnt.target = target;
@@ -169,14 +199,11 @@ namespace commands {
 		_jnt.active = true;
 		_jnt.wrapShortest = true;
 		_jnt.epsAngle = degToRad(0.5); // 0.5 degrees tolerance
-
 		SIM_ROTATE("Begin joint rotate to link='%s' current=%.3f rad target=%.3f rad maxOmega=%.3f rad/s", link.c_str(), current, target, maxOmega);
-
 		return OpResult::Success(false);
 	}
 
 	// --- RIGID MOTION METHODS ---
-
 	//utils::OpResult CommandContext::updateRigidRotateTo(double dt) {
 	//	if (!_rig.active || !_rig.obj) {
 	//		D_INFO("No active rigid rotation.");
@@ -349,17 +376,13 @@ namespace commands {
 	//	/*obj->transform.position += toGlm(translation);*/
 	//	return OpResult::Success(true);
 	//}
-
 	// --- READ-ONLY ACCESSORS ---
-
 	// Checks if the current context has a valid rigidBody and if the specified link index is within bounds
 	bool CommandContext::hasLink(std::size_t linkIndex) const {
 		auto& rb = _core->rigidBodySystem();
 		return linkIndex < rb.links().size();
 	}
-
 	// --- PRIVATE METHODS ---
-
 	// Normalizes an angular velocity value based on the current omega clamp setting
 	double CommandContext::NormaliseOmega(double omega) const {
 		if (_omegaClamp > 0.0) {
@@ -368,7 +391,6 @@ namespace commands {
 		}
 		return omega;
 	}
-
 	// Converts an angular velocity value from the current angular units to the internal representation (radians per second)
 	double CommandContext::convertOmegaToInternal(double omega) const {
 		if (_angularUnits == AngularUnits::DegPerSec) { return degToRad(omega); }
