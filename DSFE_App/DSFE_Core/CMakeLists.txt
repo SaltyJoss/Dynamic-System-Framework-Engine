@@ -86,15 +86,8 @@ set(DSL_SRC
 
     src/DSL/Commands/LoadCmd.cpp
     src/DSL/Commands/ParallelGroupCmd.cpp
-    src/DSL/Commands/RotateByCmd.cpp
-    src/DSL/Commands/RotateJointByCmd.cpp
-    src/DSL/Commands/RotateJointToCmd.cpp
-    src/DSL/Commands/RotateToCmd.cpp
-    src/DSL/Commands/SelectCmd.cpp
     src/DSL/Commands/SetCmd.cpp
-    src/DSL/Commands/SetOmegaCmd.cpp
     src/DSL/Commands/SetVelocityCmd.cpp
-    src/DSL/Commands/SpinCmd.cpp
     src/DSL/Commands/StartCmd.cpp
     src/DSL/Commands/StopCmd.cpp
     src/DSL/Commands/TrajClearCmd.cpp
