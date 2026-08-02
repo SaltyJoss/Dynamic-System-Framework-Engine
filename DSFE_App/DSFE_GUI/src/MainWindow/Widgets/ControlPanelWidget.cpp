@@ -51,12 +51,10 @@ namespace widgets {
 		auto* timer = new QTimer(this);
 		connect(timer, &QTimer::timeout, this, [this]() {
 			updateSimClock();
-			if (_sim && _sim->hasRigidBody()) {
-				const int jc = (int)_sim->rigidBodySystem().joints().size();
-				if (jc != _lastTreeJointCount) {
-					refreshSelectorTree();
-					_lastTreeJointCount = jc;
-				}
+			if (_sim) {
+				int total = (int)_sim->bodyCount();
+				for (int i = 0; i < (int)_sim->bodyCount(); ++i) { total += (int)_sim->body(i).joints().size(); }
+				if (total != _lastTreeJointCount) { refreshSelectorTree(); _lastTreeJointCount = total; }
 			}
 			jointInfoPanel();
 			freeBodyInfoPanel();
@@ -80,39 +78,53 @@ namespace widgets {
 	}
 	// Refresh selector tree
 	void ControlPanelWidget::refreshSelectorTree() {
-		if (!_selectorTree || !_sim || !_sim->hasRigidBody()) {
-			if (_selectorTree) { _selectorTree->clear(); }
-			return;
-		}
+		if (!_selectorTree || !_sim) { if (_selectorTree) { _selectorTree->clear(); } return; }
 		_selectorTree->clear();
-		const auto& joints = _sim->rigidBodySystem().joints();
-		QTreeWidgetItem* bodyRoot = new QTreeWidgetItem(_selectorTree);
-		bodyRoot->setText(0, "Rigid Bodies");
-		bodyRoot->setData(0, Qt::UserRole, (int)SelectionType::NONE);
-		bodyRoot->setExpanded(true);
-		int fbIdx = 0;
-		for (int i = 0; i < joints.size(); ++i) {
-			const auto& j = joints[i];
-			if (j.type == systems::eJointType::FIXED) { continue; }
-			QTreeWidgetItem* jItem = new QTreeWidgetItem(bodyRoot);
-			if (j.type == systems::eJointType::FREE) {
-				jItem->setText(0, QString("Free Body %1").arg(QString::fromStdString(j.child)));
-				jItem->setData(0, Qt::UserRole, (int)SelectionType::FREE_BODY);
-				jItem->setData(0, Qt::UserRole + 1, fbIdx);
-				++fbIdx;
-			} else {
-				jItem->setText(0, QString("Joint %1").arg(QString::fromStdString(j.child)));
-				jItem->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
-				jItem->setData(0, Qt::UserRole + 1, i);
-			}			
+		
+		const int nBodies = (int)_sim->bodyCount();
+		for (int i = 0; i < nBodies; ++i) {
+			const auto& sys = _sim->body(i);
+			if (!sys.hasRigidBody()) { continue; }
+
+			QTreeWidgetItem* bodyNode = new QTreeWidgetItem(_selectorTree);
+			bodyNode->setText(0, QString("Body %1: %2").arg(i).arg(QString::fromStdString(sys.rigidBodyName())));
+			bodyNode->setData(0, Qt::UserRole, (int)SelectionType::BODY);
+			bodyNode->setData(0, Qt::UserRole + 1, i);
+			bodyNode->setExpanded(true);
+
+			const auto& joints = _sim->rigidBodySystem().joints();
+			int fbIdx = 0;
+			for (int i = 0; i < (int)joints.size(); ++i) {
+				const auto& j = joints[i];
+				if (j.type == systems::eJointType::FIXED) { continue; }
+				QTreeWidgetItem* leaf = new QTreeWidgetItem(bodyNode);
+				if (j.type == systems::eJointType::FREE) {
+					leaf->setText(0, QString("FreeBody: %1").arg(QString::fromStdString(j.child)));
+					leaf->setData(0, Qt::UserRole, (int)SelectionType::FREE_BODY);
+					leaf->setData(0, Qt::UserRole + 1, fbIdx);
+					++fbIdx;
+				} else {
+					leaf->setText(0, QString("Joint: %1").arg(QString::fromStdString(j.child)));
+					leaf->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
+					leaf->setData(0, Qt::UserRole + 1, i);
+				}			
+			}
 		}
 	}
 	// Handle selection changes in the selector tree
 	void ControlPanelWidget::onSelectorItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* prev) {
-		if (!current) { return; }
+		if (!current || !_sim) { return; }
 		const SelectionType selType = (SelectionType)current->data(0, Qt::UserRole).toInt();
 		const int selIdx = current->data(0, Qt::UserRole + 1).toInt();
-		if (selType == SelectionType::NONE) { return; }
+		if (selType == SelectionType::BODY) {
+			_sim->setActiveBody(selIdx);
+			_selection.type = SelectionType::BODY;
+			_selection.index = selIdx;
+			_selection.source = SelectionSource::CONTROL_PANEL;
+			return;
+		}
+		const int owningBody = current->data(0, Qt::UserRole + 2).toInt();
+		_sim->setActiveBody(owningBody);
 		_selection.type = selType;
 		_selection.index = selIdx;
 		_selection.source = SelectionSource::CONTROL_PANEL;
