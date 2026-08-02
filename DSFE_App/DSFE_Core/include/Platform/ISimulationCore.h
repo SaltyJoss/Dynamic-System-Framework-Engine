@@ -69,6 +69,13 @@ namespace core {
         virtual bool rigidBodyPresentationDirty() const = 0;
         virtual void clearRigidBodyPresentationDirty() = 0;
         virtual void resetRigidBody() = 0; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
+        // Multiple rigid body management
+        virtual std::size_t bodyCount() const = 0;
+        virtual systems::RigidBodySystem& body(int i) = 0;
+        virtual const systems::RigidBodySystem& body(int i) const = 0;
+        virtual int activeBodyIdx() const = 0;
+        virtual void setActiveBody(int i) = 0;
+        virtual void clearBodies() = 0;
         // Script execution
         virtual void setRunTag(const std::string& tag) = 0;
         virtual void setScriptRunning(bool running) = 0;

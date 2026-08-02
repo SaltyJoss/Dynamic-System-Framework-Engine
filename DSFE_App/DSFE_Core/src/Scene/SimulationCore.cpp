@@ -26,6 +26,10 @@ namespace core {
 		_rigidBody = _rigidBodyOwned.get();
 		_singleBody = _singleBodyOwned.get();
 
+		_bodiesOwned.push_back(std::make_unique<systems::RigidBodySystem>());
+		_activeBodyIdx = 0;
+		_rigidBody = _bodiesOwned[0].get();
+
 		startExportThread();
 	}
 	// Destructor (logs destruction for debugging purposes)
@@ -422,12 +426,33 @@ namespace core {
 	// Internal method to load a rigidBody, assumes ownership of the rigidBody system
 	void SimulationCore::loadRigidBodyInternal(const std::string& name) {
 		if (!_rigidBody) { LOG_ERROR("Cannot load rigidBody: RigidBodySystem not set"); return; }
-		_rigidBody->loadRigidBody(name);
+		if (!_rigidBody->hasRigidBody()) { _rigidBody->loadRigidBody(name); return; }
+		auto sys = std::make_unique<systems::RigidBodySystem>();
+		sys->loadRigidBody(name);
+		_bodiesOwned.push_back(std::move(sys));
+		_activeBodyIdx = (int)_bodiesOwned.size() - 1;
+		_rigidBody = _bodiesOwned[_activeBodyIdx].get();
 	}
 	// Resets the rigidBody system to its initial state
 	void SimulationCore::resetRigidBody() {
 		if (!_rigidBody) { LOG_ERROR("Cannot reset rigidBody: RigidBodySystem not set"); return; }
 		_rigidBody->resetRigidBody();
+	}
+	// Body Management for multiple rigidBody systems
+	std::size_t SimulationCore::bodyCount() const { return _bodiesOwned.size(); }
+	systems::RigidBodySystem& SimulationCore::body(int i) { return *_bodiesOwned[i]; }
+	const systems::RigidBodySystem& SimulationCore::body(int i) const { return *_bodiesOwned[i]; }
+	int SimulationCore::activeBodyIdx() const { return _activeBodyIdx; }
+	void SimulationCore::setActiveBody(int i) {
+		if (i < 0 || i >= (int)_bodiesOwned.size()) { LOG_ERROR("Invalid body index: %d", i); return; }
+		_activeBodyIdx = i;
+		_rigidBody = _bodiesOwned[_activeBodyIdx].get();
+	}
+	void SimulationCore::clearBodies() {
+		_bodiesOwned.clear();
+		_bodiesOwned.push_back(std::make_unique<systems::RigidBodySystem>());
+		_activeBodyIdx = 0;
+		_rigidBody = _bodiesOwned[0].get();
 	}
 
 	// Sets an external force on a specific link of the rigidBody system at a given world point

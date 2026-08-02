@@ -86,7 +86,7 @@ namespace core {
 		// Simulation run tag (used for logging and data management)
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
-		// Subsystems access
+		// Accessors for the simulation state
 		systems::RigidBodySystem& rigidBodySystem() override;
 		single_body_system::SingleBodySystem& singleBodySystem() override;
 		control::TrajectoryManager& trajectoryManager() override;
@@ -101,6 +101,13 @@ namespace core {
 		void loadRigidBody(const std::string& name) override;
 		void loadRigidBodyInternal(const std::string& name); // Internal method that assumes ownership
 		void resetRigidBody() override; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
+		// Body management for multiple rigid bodies
+		std::size_t bodyCount() const override;
+		systems::RigidBodySystem& body(int i) override;
+		const systems::RigidBodySystem& body(int i) const override;
+		int activeBodyIdx() const override;
+		void setActiveBody(int i) override;
+		void clearBodies() override;
 
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) override;
@@ -113,6 +120,7 @@ namespace core {
 		void setRigidBodySystem(systems::RigidBodySystem* sys);
 		void setSingleBodySystem(single_body_system::SingleBodySystem* singleBody);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
+
 		void setJointLogBuffer(systems::JointLogBuffer* buffer);
 		void setFreeBodyLogBuffer(systems::FreeBodyLogBuffer* buffer);
 
@@ -186,7 +194,8 @@ namespace core {
 		systems::RigidBodySystem* _rigidBody = nullptr;
 		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
-		// Active body index
+		// Owned bodies (for managing multiple rigidbodies)
+		std::vector<std::unique_ptr<systems::RigidBodySystem>> _bodiesOwned;
 		int _activeBodyIdx = -1;
 
 		mutable std::mutex _stateMutex;
