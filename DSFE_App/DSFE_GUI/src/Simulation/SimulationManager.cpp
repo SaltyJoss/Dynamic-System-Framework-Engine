@@ -147,10 +147,10 @@ namespace gui {
 			LOG_ERROR("Failed to load rigidBody: %s", name.c_str());
 			return;
 		}
-
-		const auto& model = _core->rigidBodySystem().model();
-		auto world_src = [this]() -> const std::vector<mathlib::Mat4>& { 
-			return _core->rigidBodySystem().worldTransforms();
+		const int bodyIdx = _core->activeBodyIdx();
+		const auto& model = _core->body(bodyIdx).model();
+		auto world_src = [this, bodyIdx]() -> const std::vector<mathlib::Mat4>& { 
+			return _core->body(bodyIdx).worldTransforms();
 		};
 		_systems.add(std::make_unique<MultiBodySystem>(model, world_src, _mesh_store, *_sim_renderer), _scene);
 		_core->clearRigidBodyPresentationDirty();
