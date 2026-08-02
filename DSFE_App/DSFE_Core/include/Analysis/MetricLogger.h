@@ -44,6 +44,7 @@ namespace systems {
         std::vector<double> sat_flag;
         // Joint Index 
         std::vector<int> joint_index;
+        std::vector<std::string> joint_name;
 
 		// Clear all logged data
         void clear() {
@@ -75,6 +76,7 @@ namespace systems {
             clamp_omega.clear();
             sat_flag.clear();
             joint_index.clear();
+            joint_name.clear();
         }
 
 		// Reserve space for a certain number of samples
@@ -107,6 +109,7 @@ namespace systems {
             clamp_omega.reserve(n);
             sat_flag.reserve(n);
             joint_index.reserve(n);
+            joint_name.reserve(n);
         }
 
 		// Get the number of logged samples (assuming all vectors are the same size)
@@ -127,6 +130,7 @@ namespace systems {
             double KE, PE, E_total, W_actuator, P_damping, P_friction;
             double clamp_theta, clamp_omega, sat_flag;
             int joint_index;
+            std::string joint_name;
         };
 
 		// Push a new log entry into the buffer
@@ -159,6 +163,7 @@ namespace systems {
             clamp_omega.push_back(e.clamp_omega);
             sat_flag.push_back(e.sat_flag);
             joint_index.push_back(e.joint_index);
+            joint_name.push_back(e.joint_name);
         }
 
 		// Validate that all vectors have the same size
@@ -201,6 +206,7 @@ namespace systems {
 			if (!checkSize(clamp_omega, "clamp_omega")) return false;
 			if (!checkSize(sat_flag, "sat_flag")) return false;
 			if (!checkSize(joint_index, "joint_index")) return false;
+            if (!checkSize(joint_name, "joint_name")) return false;
 			return true; // all sizes match
         }
 
@@ -233,6 +239,7 @@ namespace systems {
             clamp_omega.swap(other.clamp_omega);
             sat_flag.swap(other.sat_flag);
             joint_index.swap(other.joint_index);
+            joint_name.swap(other.joint_name);
         }
     };
 
@@ -306,6 +313,7 @@ namespace systems {
 		// Sleep + body index (for many free bodies / particles)
 		std::vector<double> sleep_state;
 		std::vector<int> body_index;
+        std::vector<std::string> body_name;
 
 		void clear() {
 			sim_time.clear(); dt_taken.clear(); dt_sug.clear();
@@ -321,9 +329,9 @@ namespace systems {
 			linMom_x.clear(); linMom_y.clear(); linMom_z.clear();
 			angMom_x.clear(); angMom_y.clear(); angMom_z.clear();
 			mass.clear(); Ixx.clear(); Iyy.clear(); Izz.clear();
-			sleep_state.clear(); body_index.clear();
+			sleep_state.clear(); body_index.clear(); body_name.clear();
 		}
-
+        
 		void reserve(size_t n) {
 			sim_time.reserve(n); dt_taken.reserve(n); dt_sug.reserve(n);
 			pos_x.reserve(n); pos_y.reserve(n); pos_z.reserve(n);
@@ -338,7 +346,7 @@ namespace systems {
 			linMom_x.reserve(n); linMom_y.reserve(n); linMom_z.reserve(n);
 			angMom_x.reserve(n); angMom_y.reserve(n); angMom_z.reserve(n);
 			mass.reserve(n); Ixx.reserve(n); Iyy.reserve(n); Izz.reserve(n);
-			sleep_state.reserve(n); body_index.reserve(n);
+			sleep_state.reserve(n); body_index.reserve(n); body_name.reserve(n);
 		}
 
 		size_t size() const { return pos_x.size(); }
@@ -360,6 +368,7 @@ namespace systems {
 			double mass, Ixx, Iyy, Izz;
 			double sleep_state;
 			int body_index;
+            std::string body_name;
 		};
 
 		void push_entry(const FreeBodyLogEntry& e) {
@@ -376,7 +385,7 @@ namespace systems {
 			linMom_x.push_back(e.linMom_x); linMom_y.push_back(e.linMom_y); linMom_z.push_back(e.linMom_z);
 			angMom_x.push_back(e.angMom_x); angMom_y.push_back(e.angMom_y); angMom_z.push_back(e.angMom_z);
 			mass.push_back(e.mass); Ixx.push_back(e.Ixx); Iyy.push_back(e.Iyy); Izz.push_back(e.Izz);
-			sleep_state.push_back(e.sleep_state); body_index.push_back(e.body_index);
+			sleep_state.push_back(e.sleep_state); body_index.push_back(e.body_index); body_name.push_back(e.body_name);
 		}
 
         bool validate(std::string* outMsg) const {
@@ -431,6 +440,7 @@ namespace systems {
             if (!checkSize(Izz, "Izz")) return false;
             if (!checkSize(sleep_state, "sleep_state")) return false;
             if (!checkSize(body_index, "body_index")) return false;
+            if (!checkSize(body_name, "body_name")) return false;
             return true; // all sizes match
         }
 
@@ -448,7 +458,7 @@ namespace systems {
             linMom_x.swap(other.linMom_x); linMom_y.swap(other.linMom_y); linMom_z.swap(other.linMom_z);
             angMom_x.swap(other.angMom_x); angMom_y.swap(other.angMom_y); angMom_z.swap(other.angMom_z);
             mass.swap(other.mass); Ixx.swap(other.Ixx); Iyy.swap(other.Iyy); Izz.swap(other.Izz);
-            sleep_state.swap(other.sleep_state); body_index.swap(other.body_index);
+            sleep_state.swap(other.sleep_state); body_index.swap(other.body_index); body_name.swap(other.body_name);
         }
 	};
 } // namespace robots
