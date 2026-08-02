@@ -242,7 +242,10 @@ namespace window {
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
 		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
-		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		if (_controlPanel) {
+			_controlPanel->refreshFromSim();
+			_controlPanel->refreshSelectorTree();
+		}
 		_currentWorkspacePath.clear();
 		mark_clean();
 		updateTitle();
@@ -310,7 +313,10 @@ namespace window {
 		_sim->closeWorkspace();
 		_sim->applyWorkspace(w);
 		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
-		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		if (_controlPanel) {
+			_controlPanel->refreshFromSim();
+			_controlPanel->refreshSelectorTree();
+		}
 		mark_clean();
 	}
 
