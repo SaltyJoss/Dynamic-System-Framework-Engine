@@ -32,6 +32,8 @@ class QGroupBox;
 class QLabel;
 class QPushButton;
 class QSlider;
+class QTreeWidget;
+class QTreeWidgetItem;
 
 namespace widgets {
 	class FractionSelectorWidget;
@@ -41,6 +43,7 @@ namespace widgets {
 	public:
 		explicit ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent = nullptr);
 		void refreshFromSim();
+		void refreshSelectorTree();
 
 	private:
 		struct IntegratorEntry {
@@ -123,19 +126,24 @@ namespace widgets {
 			QLabel* inverse_inertia = nullptr;
 		};
 
+		// Selection state for the control panel
+		QTreeWidget* _selectorTree = nullptr;
+		void selectorTreePanel();
+		void onSelectorItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* prev);
+
+		// Selection state for the control panel
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
 		void buildTimestepSelectors(QVBoxLayout* layout);
-
 		void worldPropertiesPanel();
-
+		// Telemetry display
 		void telemetryInfoPanels();
-
+		// Joint telemetry display
 		void jointInfoPanel();
 		void updateJointTelemetryInfo(const diagnostics::JointTelemetry& j);
 		void buildJointTelemetryWidgets(QVBoxLayout* layout);
 		void updateJointTelemetryDisplay();
-
+		// Free Body telemetry display
 		void freeBodyInfoPanel();
 		void updateFreeBodyTelemetryInfo(const diagnostics::FreeBodyTelemetry& fb);
 		void buildFreeBodyTelemetryWidgets(QVBoxLayout* layout);
@@ -240,6 +248,8 @@ namespace widgets {
 		float linkLength = 1.0f;
 		float damping = 0.1f;
 		float position = 0.0f;
+
+		int _lastTreeJointCount = -1;
 
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();

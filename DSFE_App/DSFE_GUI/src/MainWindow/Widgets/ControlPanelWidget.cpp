@@ -14,6 +14,7 @@
 #include <QGridLayout>
 #include <QFormLayout>
 #include <QPushButton>
+#include <QTreeWidget>
 
 #include "Widgets/FractionSelectorWidget.h"
 #include "Widgets/GravityVectorWidget.h"
@@ -41,6 +42,7 @@ namespace widgets {
 		scrollArea->setWidget(content);
 		rootLayout->addWidget(scrollArea);
 
+		selectorTreePanel();
 		simPropertiesPanel();
 		worldPropertiesPanel();
 		jointInfoPanel();
@@ -49,6 +51,13 @@ namespace widgets {
 		auto* timer = new QTimer(this);
 		connect(timer, &QTimer::timeout, this, [this]() {
 			updateSimClock();
+			if (_sim && _sim->hasRigidBody()) {
+				const int jc = (int)_sim->rigidBodySystem().joints().size();
+				if (jc != _lastTreeJointCount) {
+					refreshSelectorTree();
+					_lastTreeJointCount = jc;
+				}
+			}
 			jointInfoPanel();
 			freeBodyInfoPanel();
 			updateJointTelemetryDisplay();
@@ -59,7 +68,62 @@ namespace widgets {
 		_contentLayout->addStretch();
 	}
 
-	// SimSetupPanel for 
+	// Build the selector tree panel for Simulation Objects
+	void ControlPanelWidget::selectorTreePanel() {
+		_selectorTree = new QTreeWidget(this);
+		_selectorTree->setHeaderLabel("Simulation");
+		_selectorTree->setColumnCount(1);
+		_selectorTree->setSelectionMode(QAbstractItemView::SingleSelection);
+		_selectorTree->setRootIsDecorated(true);
+		connect(_selectorTree, &QTreeWidget::currentItemChanged, this, &ControlPanelWidget::onSelectorItemChanged);
+		_contentLayout->addWidget(_selectorTree);
+	}
+	// Refresh selector tree
+	void ControlPanelWidget::refreshSelectorTree() {
+		if (!_selectorTree || !_sim || !_sim->hasRigidBody()) {
+			if (_selectorTree) { _selectorTree->clear(); }
+			return;
+		}
+		_selectorTree->clear();
+		const auto& joints = _sim->rigidBodySystem().joints();
+		QTreeWidgetItem* bodyRoot = new QTreeWidgetItem(_selectorTree);
+		bodyRoot->setText(0, "Rigid Bodies");
+		bodyRoot->setData(0, Qt::UserRole, (int)SelectionType::NONE);
+		bodyRoot->setExpanded(true);
+		int fbIdx = 0;
+		for (int i = 0; i < joints.size(); ++i) {
+			const auto& j = joints[i];
+			if (j.type == systems::eJointType::FIXED) { continue; }
+			QTreeWidgetItem* jItem = new QTreeWidgetItem(bodyRoot);
+			if (j.type == systems::eJointType::FREE) {
+				jItem->setText(0, QString("Free Body %1").arg(QString::fromStdString(j.child)));
+				jItem->setData(0, Qt::UserRole, (int)SelectionType::FREE_BODY);
+				jItem->setData(0, Qt::UserRole + 1, fbIdx);
+				++fbIdx;
+			} else {
+				jItem->setText(0, QString("Joint %1").arg(QString::fromStdString(j.child)));
+				jItem->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
+				jItem->setData(0, Qt::UserRole + 1, i);
+			}			
+		}
+	}
+	// Handle selection changes in the selector tree
+	void ControlPanelWidget::onSelectorItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* prev) {
+		if (!current) { return; }
+		const SelectionType selType = (SelectionType)current->data(0, Qt::UserRole).toInt();
+		const int selIdx = current->data(0, Qt::UserRole + 1).toInt();
+		if (selType == SelectionType::NONE) { return; }
+		_selection.type = selType;
+		_selection.index = selIdx;
+		_selection.source = SelectionSource::CONTROL_PANEL;
+		const bool isFree = (selType == SelectionType::FREE_BODY);
+		if (_jointInfoGroup) { _jointInfoGroup->setVisible(!isFree); }
+		if (_freeBodyInfoGroup) { _freeBodyInfoGroup->setVisible(isFree); }
+		if (isFree) { updateFreeBodyTelemetryDisplay(); }
+		else { updateJointTelemetryDisplay(); }
+	}
+
+	// Simulation Properties Panel
 	void ControlPanelWidget::simPropertiesPanel() {
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
@@ -704,7 +768,7 @@ namespace widgets {
 		if (ring.size() < 1) { return; }
 		const auto& s = ring.at(ring.size() - 1);
 		if (s.fb.empty()) { return; }
-		int bodyIdx = _selection.type == SelectionType::FREE_BODY ? _selection.index : 0;
+		int bodyIdx = (_selection.type == SelectionType::FREE_BODY) ? _selection.index : 0;
 		bodyIdx = std::clamp(bodyIdx, 0, static_cast<int>(s.fb.size()) - 1);
 		updateFreeBodyTelemetryInfo(s.fb[bodyIdx]);
 	}
