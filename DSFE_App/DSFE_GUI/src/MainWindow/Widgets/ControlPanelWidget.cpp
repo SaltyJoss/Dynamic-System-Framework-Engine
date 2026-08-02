@@ -80,19 +80,19 @@ namespace widgets {
 	void ControlPanelWidget::refreshSelectorTree() {
 		if (!_selectorTree || !_sim) { if (_selectorTree) { _selectorTree->clear(); } return; }
 		_selectorTree->clear();
-		
+		// Build the tree structure for each rigid body and its joints
 		const int nBodies = (int)_sim->bodyCount();
 		for (int i = 0; i < nBodies; ++i) {
 			const auto& sys = _sim->body(i);
 			if (!sys.hasRigidBody()) { continue; }
-
+			// Create a top-level node for the rigid body
 			QTreeWidgetItem* bodyNode = new QTreeWidgetItem(_selectorTree);
 			bodyNode->setText(0, QString("Body %1: %2").arg(i).arg(QString::fromStdString(sys.rigidBodyName())));
 			bodyNode->setData(0, Qt::UserRole, (int)SelectionType::BODY);
 			bodyNode->setData(0, Qt::UserRole + 1, i);
 			bodyNode->setExpanded(true);
-
-			const auto& joints = _sim->rigidBodySystem().joints();
+			// Add child nodes for each joint in the rigid body system
+			const auto& joints = sys.joints();
 			int fbIdx = 0;
 			for (int i = 0; i < (int)joints.size(); ++i) {
 				const auto& j = joints[i];
@@ -104,7 +104,7 @@ namespace widgets {
 					leaf->setData(0, Qt::UserRole + 1, fbIdx);
 					++fbIdx;
 				} else {
-					leaf->setText(0, QString("Joint: %1").arg(QString::fromStdString(j.child)));
+					leaf->setText(0, QString("Joint %1: %2").arg(i).arg(QString::fromStdString(j.child)));
 					leaf->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
 					leaf->setData(0, Qt::UserRole + 1, i);
 				}			
