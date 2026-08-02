@@ -21,16 +21,8 @@ namespace dsl {
 	// Determine if a command requires an identifier
 	bool Parser::requiresIdentifier(std::string_view cmdName) {
 		std::string s = toLower(cmdName);
-		return	s == "spin"			 ||
-				s == "rotateby"		 ||
-				s == "rotateto"		 ||
-				s == "rotatejointby" ||
-				s == "rotatejointto" ||
-				s == "trajset"		 ||
-				s == "translate"	 ||
+		return	s == "trajset"		 ||
 				s == "set"			 ||
-				s == "select" 		 ||
-				s == "setomega"		 ||
 				s == "setvelocity"   ||
 				s == "load";
 	}
@@ -39,7 +31,7 @@ namespace dsl {
 	bool Parser::matchIdentifier(const std::string& s) {
 		if (s.empty()) return false;
 		if (!isalpha(s[0]) && s[0] != '_') { return false; }
-		for (char c : s) { if (!isalnum(c) && c != '_') return false; }
+		for (char c : s) { if (!isalnum(c) && c != '_' && c != '.') return false; }
 		return true;
 	}
 
