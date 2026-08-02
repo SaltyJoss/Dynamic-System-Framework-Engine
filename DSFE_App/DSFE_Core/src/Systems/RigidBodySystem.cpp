@@ -394,28 +394,7 @@ namespace systems {
 		_simTime = simTime;
 		const size_t n = _body.joints.size();
 		mathlib::VecX x = packState();
-		// // Apply floor contact forces if enabled (Bit crude but yeah)
-		// {
-		// 	constexpr double k_floor = 50000.0; // [N/m] spring constant for floor contact
-		// 	constexpr double c_floor = 2000.0; // [N/(m/s)] damping constant for floor contact
-		// 	const size_t nl = _body.links.size();
-		// 	if (_prevLinkY.size() != nl) { _prevLinkY.assign(nl, 0.0); }
-		// 	for (size_t i = 0; i < nl; ++i) {
-		// 		const Mat4& T = _worldTransforms[i];
-		// 		const double lowY = linkWorldMinY(i, T); 
-		// 		const double vy = (lowY - _prevLinkY[i]) / (_dynamics->dt() > 0 ? _dynamics->dt() : (1.0/180.0));
-		// 		_prevLinkY[i] = lowY;
-		// 		if (lowY < 0.0) {
-		// 			double Fy = -k_floor * lowY - c_floor * vy;
-		// 			if (Fy < 0.0) { Fy = 0.0; }                 // floor only pushes, never pulls
-		// 			setLinkExtForce(
-		// 				_body.links[i].name,
-		// 			    Vec3(T(0,3), lowY, T(2,3)),
-		// 			    Vec3(0.0, Fy, 0.0)
-		// 			);
-		// 		}
-		// 	}
-		// }
+		
 		assembleExtForces(_dynScratch);
 		auto result = step_impl<double>(x, dt, simTime, *_integrator, _dynScratch, _dynResult);
 		clearExtForces();
@@ -433,7 +412,6 @@ namespace systems {
 		// 	integrateBaseTranslation(dt);
 		// 	updateBaseRootPose();
 		// }
-
 		// Update kinematics
 		computeRigidBodyKinematics(_worldTransforms);
 	}
@@ -603,6 +581,34 @@ namespace systems {
 			joint.qd = 0.0f;
 			joint.q_ref = joint.q;
 		}
+	}
+
+	// RigidBodySystem accesor for to get the latest free body log entry for a specific body index
+	bool RigidBodySystem::latestFreeBodyEntry(FreeBodyLogBuffer::FreeBodyLogEntry& out, int bodyIdx) const {
+		const FreeBodyLogBuffer* buf = nullptr;
+		if (_useInternalLogging_fb) { int idx = _activeLogBufIdx.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
+		else { buf = _freeBodyLogBuffer; }
+		if (!buf || buf->size() == 0) { return false; }
+		for (size_t k = buf->size(); k-- > 0; ) {
+			if (buf->body_index[k] == bodyIdx) {
+				out.sim_time = buf->sim_time[k]; out.dt_taken = buf->dt_taken[k]; out.dt_sug = buf->dt_sug[k];
+				out.pos_x = buf->pos_x[k]; out.pos_y = buf->pos_y[k]; out.pos_z = buf->pos_z[k];
+				out.quat_w = buf->quat_w[k]; out.quat_x = buf->quat_x[k]; out.quat_y = buf->quat_y[k]; out.quat_z = buf->quat_z[k];
+				out.linVel_x = buf->linVel_x[k]; out.linVel_y = buf->linVel_y[k]; out.linVel_z = buf->linVel_z[k];
+				out.angVel_x = buf->angVel_x[k]; out.angVel_y = buf->angVel_y[k]; out.angVel_z = buf->angVel_z[k];
+				out.linAcc_x = buf->linAcc_x[k]; out.linAcc_y = buf->linAcc_y[k]; out.linAcc_z = buf->linAcc_z[k];
+				out.angAcc_x = buf->angAcc_x[k]; out.angAcc_y = buf->angAcc_y[k]; out.angAcc_z = buf->angAcc_z[k];
+				out.F_net_x = buf->F_net_x[k]; out.F_net_y = buf->F_net_y[k]; out.F_net_z = buf->F_net_z[k];
+				out.tau_net_x = buf->tau_net_x[k]; out.tau_net_y = buf->tau_net_y[k]; out.tau_net_z = buf->tau_net_z[k];
+				out.KE = buf->KE[k]; out.PE = buf->PE[k]; out.E_total = buf->E_total[k];
+				out.linMom_x = buf->linMom_x[k]; out.linMom_y = buf->linMom_y[k]; out.linMom_z = buf->linMom_z[k];
+				out.angMom_x = buf->angMom_x[k]; out.angMom_y = buf->angMom_y[k]; out.angMom_z = buf->angMom_z[k];
+				out.mass = buf->mass[k]; out.Ixx = buf->Ixx[k]; out.Iyy = buf->Iyy[k]; out.Izz = buf->Izz[k];
+				out.sleep_state = buf->sleep_state[k]; out.body_index = buf->body_index[k];
+				return true;
+			}
+		}
+		return false;
 	}
 
 	integration::IntegrationService* RigidBodySystem::getIntegrator() { return _integrator.get(); }

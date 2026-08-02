@@ -84,6 +84,8 @@ namespace systems {
         bool hasLinkName(const std::string& linkName) const { return _link_idx.find(linkName) != _link_idx.end(); }
 		bool hasFreeJoint() const;
 
+		bool latestFreeBodyEntry(FreeBodyLogBuffer::FreeBodyLogEntry& out, int bodyIdx) const;
+
 		int jointStateOffset(size_t joint_idx) const;
 		int totalDOF() const;
 
