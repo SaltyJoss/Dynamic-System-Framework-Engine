@@ -419,10 +419,8 @@ namespace systems {
 	// Method to step the reference trajectory and update joint reference states
 	void RigidBodySystem::updateTrajectoryInputs(control::TrajectoryManager& traj, double t) {
 		if (!_hasBody) { return; }
-		
 		const size_t n = _body.joints.size();
 		if (n <= 0) { return; }
-
 		// Sample trajectories ("ground truth" inputs)
 		for (size_t i = 0; i < n; ++i) {
 			RigidBodyJoint& j = _body.joints[i];
@@ -437,18 +435,6 @@ namespace systems {
 			else {
 				j.qdd_ref = 0.0f;
 				j.qd_ref = 0.0f;
-			}
-
-			auto* buf = _refBuffer;
-			if (buf) {
-				// Sim Metadata
-				buf->sim_time.push_back(t);
-				// Reference states
-				buf->theta_ref.push_back(j.q_ref);
-				buf->omega_ref.push_back(j.qd_ref);
-				buf->alpha_ref.push_back(j.qdd_ref);
-				// Joint Index
-				buf->joint_index.push_back((int)i);
 			}
 		}
 	}

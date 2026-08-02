@@ -200,7 +200,6 @@ namespace systems {
 		std::shared_ptr<integration::IntegratorState> runtimeIntegratorState();
 		std::shared_ptr<const integration::IntegratorState> runtimeIntegratorState() const;
 
-		void setRefBuffer(systems::TrajRefBuffer* buf)  { _refBuffer = buf; }
 		void setLogBuffer(systems::JointLogBuffer* buf) { _logBuffer = buf; }
 		void setFreeBodyLogBuffer(systems::FreeBodyLogBuffer* buf) { _freeBodyLogBuffer = buf; }
 
@@ -222,18 +221,20 @@ namespace systems {
 		void reserveInternalLogBuffers_fb(size_t expected); // Reserve space in the internal free body log buffers for a certain number of samples (expected)
 
 	private:
+		// Internal method to build the link index mapping from link names to their indices
         void buildLinkIndex();
 		void buildSpatialModel();
-
+		// Step implementation for the rigidbody system, templated on the scalar type and integrator type
 		template<typename Scalar, typename IntegratorT>
 		RigidBodyStepResult_T<Scalar> step_impl(
 			const mathlib::VecX_T<Scalar>& x,
 			Scalar dt, Scalar t, IntegratorT& integrator,
 			physics::DynamicsScratch<Scalar>& dynamicScratch, physics::DynamicsResult<Scalar>& dynamicResult
 		);
-
+		// Post-step update method to handle logging and state updates after a simulation step
 		template<typename T>
 		void postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& scratch, const RigidBodyStepResult_T<T>& result);
+		// Log the joint metrics for each joint in the rigidbody system
 		template<typename T>
 		void logJointMetrics(
 			const size_t n,
@@ -243,20 +244,20 @@ namespace systems {
 			const mathlib::VecX& tau_rnea,
 			double sys_KE, double sys_PE, double sys_E
 		);
+		// Log the free body metrics for a given free body
 		template<typename T>
 		void logFreeBodyMetrics(
 			const std::vector<Pose>& T_world,
 			const RigidBodyStepResult_T<T>& result,
 			double sys_PE
 		);
-			
+		// Compute the external forces acting on the rigidbody system based on the current state and rigidbody configuration
 		template<typename Scalar>
 		void assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const;
-
+		// Compute the forward drive (velocity) of the rigidbody's root link based on the current state and rigidbody configuration
 		double computeForwardDrive() const; // Compute the forward drive (velocity) of the rigidbody's root link based on the current state and rigidbody configuration
 		void integrateBaseTranslation(double dt); // Integrate the floating base translation based on the current state and rigidbody configuration
 		void updateBaseRootPose(); // Integrate the floating base rotation (yaw-only for now) based on the current state and rigidbody configuration
-
 		// State packing and unpacking
         mathlib::VecX packState() const;
 		void unpackState(const mathlib::VecX& x);
@@ -270,7 +271,7 @@ namespace systems {
 		void unpackRefState(const mathlib::VecX& xr);
 		// Enforce joint limits after integration
 		void enforceJointLimits(RigidBodyJoint& j);
-
+		// Compute the minimum Y-coordinate of a link's world position given its index and the current world transforms
 		double linkWorldMinY(size_t linkIdx, const Mat4& T) const;
 
 		std::unique_ptr<physics::RigidBodyKinematics> _kinematics;
@@ -278,51 +279,49 @@ namespace systems {
 
         std::unique_ptr<integration::IntegrationService> _integrator;
         integration::eIntegrationMethod _curIntMethod{};
-
 		std::unique_ptr<integration::DifferentiableIntegrator> _AD_integrator;
 		integration::eAutoDiffIntegrationMethod _curIntMethod_AD{};
 
-		eRole _role = eRole::Simulation;
+		RigidBodyModel _body;
+		RigidBodyConstModel _constModel;
+		SpatialModel<double> _spatialModel;
 
-		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
-		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
-		bool _useAutoDiff = false;
+		// Scratch and result buffers for dynamics calculations
+		physics::DynamicsScratch<double> _dynScratch;
+		physics::DynamicsResult<double> _dynResult;
+		physics::DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
+		physics::DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
+		
+		// Current torque mode and role for the rigidbody system
+		eTorqueMode _torqueMode = _body.torqueMode;
+		eRole _role = eRole::Simulation;
 
 		// Simulation time
 		double _simTime = 0.0;
 
-		// RigidBody model, and rigidbody mode
-        RigidBodyModel _body;
-		eTorqueMode _torqueMode = _body.torqueMode;
+		// Gravity acceleration (m/s^2)
+		mathlib::Vec3 _gravity{ 0.0, 0.0, 0.0 };
+		double _wn = 0.0;   // configurable natural frequency for PD control (rad/s)
+		double _zeta = 0.0; // configurable damping ratio for PD control (unitless)
+		bool _useAutoDiff = false;
 
-		SpatialModel<double> _spatialModel;
-		RigidBodyConstModel _constModel;
-		
 		std::vector<std::tuple<int, int, mathlib::Vec3, mathlib::Vec3>> _pendingExtForces;
 		std::vector<double> _prevLinkY;   // last-step link heights for floor damping
-
-		physics::DynamicsScratch<double> _dynScratch;
-		physics::DynamicsResult<double> _dynResult;
-
-		physics::DynamicsScratch<DualNumber_T<double, 14>> _dynScratch_AD;
-		physics::DynamicsResult<DualNumber_T<double, 14>> _dynResult_AD;
 
 		// World to rigidbody base transform (meters)
 		std::vector<Mat4> _worldTransforms;
 
 		// Flags and precomputed data
         bool _hasBody = false;
+		bool _home_valid = false;			   // is home position valid
 		mathlib::Mat4 _root_pose = Mat4::Identity();
 		mathlib::Mat4 _root_home = Mat4::Identity();
 		mathlib::VecX _q_home = mathlib::VecX(); // home/reset joint angles (radians)
-		bool _home_valid = false;			   // is home position valid
 
 		// Index maps for quick lookup of links and joints by name
 		std::unordered_map<std::string, int> _link_idx;
 		std::unordered_map<std::string, int> _joint_idx;
-		// List of joint indices that correspond to the rigidbody's degrees of freedom (excluding fixed joints)
-		std::vector<size_t> _dofJointIndices; 
-
+		std::vector<size_t> _dofJointIndices; // List of joint indices that correspond to the rigidbody's degrees of freedom (excluding fixed joints)
         std::string _loadedName;
 		int _currentJointIndex = -1;
 
@@ -335,42 +334,36 @@ namespace systems {
 		mutable std::vector<uint8_t> _clampTheta;
 		mutable std::vector<uint8_t> _clampOmega;
 
-		// Gravity acceleration (m/s^2)
-		mathlib::Vec3 _gravity{ 0.0, 0.0, 0.0 };
-
 		// FLoating base state
 		bool _baseIsFree = false;
-
 		// Linear
 		mathlib::Vec3 _basePos{ 0,0,0 };
 		mathlib::Vec3 _baseVel{ 0,0,0 };
 		mathlib::Vec3 _baseAcc{ 0,0,0 };
-
 		// Angular (yaw-only for now, extend later)
 		double _baseYaw = 0.0;
 		double _baseYawRate = 0.0;
 		double _baseYawAcc = 0.0;
-
 		// Tunables
 		double _baseMass = 62.0;			// kg (H1 ~60–65)
 		double _baseLinearDamping = 6.0;	// Ns/m
 		double _baseYawDamping = 2.0;		// Nms/rad
 		double _lastBaseForwardForce = 0.0;
 
-		// Double-buffer design
+		/*
+		 * Double buffering for high-rate telemetry logging of joint and free body metrics.
+		 */
+		// Joint logging buffers
 		std::array<systems::JointLogBuffer, 2> _logBuffers{};
 		std::atomic<int> _activeLogBufIdx{ 0 }; // index of the currently active log buffer for writing (0 or 1)
 		std::mutex _logSwapMutex; // mutex to protect swapping log buffers between simulation and logging thread
 		bool _useInternalLogging = true; // flag to determine whether to use internal log buffers or external one provided by setLogBuffer
-		// Pointers to external joint log and reference buffers (not owned by RigidBodySystem)
 		systems::JointLogBuffer* _logBuffer = nullptr;
-		systems::TrajRefBuffer* _refBuffer = nullptr;
-		
+		// Free body logging buffers
 		std::array<systems::FreeBodyLogBuffer, 2> _logBuffers_fb{};
 		std::atomic<int> _activeLogBufIdx_fb{ 0 }; // index of the currently active log buffer for writing (0 or 1)
 		std::mutex _logSwapMutex_fb; // mutex to protect swapping free body log buffers between simulation and logging thread
 		bool _useInternalLogging_fb = true; // flag to determine whether to use internal free body log buffers or external one provided by setFreeBodyLogBuffer
-		// Pointers to external free body log buffer (not owned by RigidBodySystem)
 		systems::FreeBodyLogBuffer* _freeBodyLogBuffer = nullptr;
 
 	};
