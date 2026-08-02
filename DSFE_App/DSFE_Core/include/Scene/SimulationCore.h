@@ -43,8 +43,10 @@ namespace core {
 
 		// Buffer queue for exporting sim outputs
 		void startExportThread();
-		void stopExportThread();
-		void enqueueExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf);
+		void stopExportJointThread();
+		void stopExportFreeBodyThread();
+		void enqueueJointExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf);
+		void enqueueFreeBodyExportBuffer(std::unique_ptr<systems::FreeBodyLogBuffer> buf);
 		void flushExports();
 
 		// Simulation control
@@ -119,7 +121,8 @@ namespace core {
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
-		void exportLogsToHDF5(const systems::JointLogBuffer& buf);
+		void exportJointLogsToHDF5(const systems::JointLogBuffer& buf);
+		void exportFreeBodyLogsToHDF5(const systems::FreeBodyLogBuffer& buf);
 		void exportRefsToHDF5();
 
 		// Increment simulation time by dt (used in the simulation loop)
@@ -156,13 +159,17 @@ namespace core {
 
 	private:
 		// Export thread management
-		void exportThreadMain();
+		void exportJointThreadMain();
+		void exportFreeBodyThreadMain();
 		void scriptParallelisation(dsl::IStoredProgram* program);
 
 		std::thread _expThread;
-		std::mutex _expMutex;
-		std::condition_variable _expCondVar;
-		std::queue<std::unique_ptr<systems::JointLogBuffer>> _expQ;
+		std::mutex _expMutex_j; // Mutex for joint export queue
+		std::mutex _expMutex_fb; // Mutex for free body export queue
+		std::condition_variable _expCondVar_j; // Condition variable for export thread synchronization (need one for each queue)
+		std::condition_variable _expCondVar_fb; // Condition variable for export thread synchronization (need one for each queue)
+		std::queue<std::unique_ptr<systems::JointLogBuffer>> _expQ_j;
+		std::queue<std::unique_ptr<systems::FreeBodyLogBuffer>> _expQ_fb;
 		std::atomic<bool> _expThreadRunning{ false };
 
 		// Owning storage (used only in owning mode)
@@ -205,6 +212,7 @@ namespace core {
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
 		systems::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
+		systems::FreeBodyLogBuffer _freeBodyLogBuffer; // Buffer for logging free body data each step
 		systems::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
 		bool _telemetryBegun = false;
 
