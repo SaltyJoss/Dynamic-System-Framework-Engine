@@ -30,7 +30,7 @@ class QCheckBox;
 class QComboBox;
 class QGroupBox;
 class QLabel;
-class QPushButton;
+class QPushButton; 
 class QSlider;
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -163,6 +163,7 @@ namespace widgets {
 
 		gui::SimulationManager* _sim = nullptr;
 
+		QVBoxLayout* _treeSelectLayout = nullptr;
 		QVBoxLayout* _contentLayout = nullptr;
 		QGroupBox* _simPropertiesGroup = nullptr;
 		QCheckBox* _useAutoDiffCheck = nullptr;

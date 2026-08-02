@@ -15,6 +15,12 @@
 #include <QFormLayout>
 #include <QPushButton>
 #include <QTreeWidget>
+#include <QStyleFactory>
+
+#include <QStyledItemDelegate>
+#include <QTextDocument>
+#include <QPainter>
+#include <QApplication>
 
 #include "Widgets/FractionSelectorWidget.h"
 #include "Widgets/GravityVectorWidget.h"
@@ -28,12 +34,56 @@
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
+
+
+
 namespace widgets {
+	// Custom delegate to render rich HTML text in QTreeWidget items
+	class RichTextDelegate : public QStyledItemDelegate {
+		public:
+			void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+				QStyleOptionViewItem options = option;
+				initStyleOption(&options, index);
+
+				painter->save();
+
+				// Handle item background highlighting (hover/selection) safely
+				QStyle *style = options.widget ? options.widget->style() : QApplication::style();
+				style->drawControl(QStyle::CE_ItemViewItem, &options, painter, options.widget);
+
+				// Draw rich HTML text
+				QTextDocument doc;
+				doc.setHtml(options.text);
+				doc.setDefaultFont(options.font);
+
+				// Ensure text changes to pure white when the item row is selected
+				if (options.state & QStyle::State_Selected) {
+					doc.setDefaultStyleSheet("b, font, body { color: rgb(255,255,255); }");
+				}
+
+				painter->translate(options.rect.left(), options.rect.top() + (options.rect.height() - doc.size().height()) / 2);
+				doc.drawContents(painter);
+				painter->restore();
+		}
+	};
+	// Constructor for the ControlPanelWidget, which takes a pointer to the SimulationManager and an optional parent widget
 	ControlPanelWidget::ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent)
 		: QWidget(parent), _sim(sim)
 	{
 		auto* rootLayout = new QVBoxLayout(this);
 		rootLayout->setContentsMargins(4, 4, 4, 4);
+		
+		auto* treeSelectScrollArea = new QScrollArea(this);
+		treeSelectScrollArea->setWidgetResizable(true);
+		treeSelectScrollArea->setMaximumHeight(300);
+		auto* treeSelectContent = new QWidget(treeSelectScrollArea);
+		_treeSelectLayout = new QVBoxLayout(treeSelectContent);
+		treeSelectContent->setLayout(_treeSelectLayout);
+		treeSelectScrollArea->setWidget(treeSelectContent);
+		rootLayout->addWidget(treeSelectScrollArea);
+
+		selectorTreePanel();
+
 		auto* scrollArea = new QScrollArea(this);
 		scrollArea->setWidgetResizable(true);
 		auto* content = new QWidget(scrollArea);
@@ -42,7 +92,6 @@ namespace widgets {
 		scrollArea->setWidget(content);
 		rootLayout->addWidget(scrollArea);
 
-		selectorTreePanel();
 		simPropertiesPanel();
 		worldPropertiesPanel();
 		jointInfoPanel();
@@ -57,8 +106,8 @@ namespace widgets {
 				if (total != _lastTreeJointCount) { refreshSelectorTree(); _lastTreeJointCount = total; }
 			}
 			jointInfoPanel();
-			freeBodyInfoPanel();
 			updateJointTelemetryDisplay();
+			freeBodyInfoPanel();
 			updateFreeBodyTelemetryDisplay();
 		});
 		timer->start(7);
@@ -72,9 +121,11 @@ namespace widgets {
 		_selectorTree->setHeaderLabel("Simulation");
 		_selectorTree->setColumnCount(1);
 		_selectorTree->setSelectionMode(QAbstractItemView::SingleSelection);
+		_selectorTree->setStyle(QStyleFactory::create("Fusion"));
 		_selectorTree->setRootIsDecorated(true);
+		_selectorTree->setItemDelegate(new RichTextDelegate());
 		connect(_selectorTree, &QTreeWidget::currentItemChanged, this, &ControlPanelWidget::onSelectorItemChanged);
-		_contentLayout->addWidget(_selectorTree);
+		_treeSelectLayout->addWidget(_selectorTree);
 	}
 	// Refresh selector tree
 	void ControlPanelWidget::refreshSelectorTree() {
@@ -104,10 +155,11 @@ namespace widgets {
 					leaf->setData(0, Qt::UserRole + 1, fbIdx);
 					++fbIdx;
 				} else {
-					leaf->setText(0, QString("Joint %1: %2").arg(i).arg(QString::fromStdString(j.child)));
+					leaf->setText(0, QString("Joint %1: %2").arg(i+1).arg(QString::fromStdString(j.child)));
 					leaf->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
 					leaf->setData(0, Qt::UserRole + 1, i);
-				}			
+				}
+				leaf->setData(0, Qt::UserRole + 2, i); // Store the owning body index for joint and free body nodes
 			}
 		}
 	}
@@ -131,6 +183,11 @@ namespace widgets {
 		const bool isFree = (selType == SelectionType::FREE_BODY);
 		if (_jointInfoGroup) { _jointInfoGroup->setVisible(!isFree); }
 		if (_freeBodyInfoGroup) { _freeBodyInfoGroup->setVisible(isFree); }
+		if (!isFree && _jointIdxSlider) {
+			QSignalBlocker blocker(_jointIdxSlider);
+			_jointIdxSlider->setValue(selIdx + 1);
+			refreshJointChainLabel(selIdx);
+		}
 		if (isFree) { updateFreeBodyTelemetryDisplay(); }
 		else { updateJointTelemetryDisplay(); }
 	}
@@ -318,7 +375,7 @@ namespace widgets {
 			buildJointTelemetryWidgets(layout);
 			_contentLayout->addWidget(_jointInfoGroup);
 		}
-		if (!_sim || _sim->isFreeBody() || !_sim->hasRigidBody()) { _jointInfoGroup->setVisible(false); return; }
+		if (!_sim || !_sim->hasRigidBody() || _selection.type != SelectionType::JOINT) { _jointInfoGroup->setVisible(false); return; }
 		auto& body = _sim->rigidBodySystem();
 		auto& joints = body.joints();
 		auto& links = body.links();
@@ -515,13 +572,13 @@ namespace widgets {
 	}
 	// Updates the joint telemetry display with the latest data from the simulation.
 	void ControlPanelWidget::updateJointTelemetryDisplay() {
-		if (!_sim || _sim->isFreeBody()) { return; }
+		if (!_sim || _selection.type != SelectionType::JOINT) { return; }
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
 		if (ring.size() < 1) { return; }
 		const auto& s = ring.at(ring.size() - 1);
 		if (s.j.empty()) { return; }
-		int jointIdx = _selection.type == SelectionType::JOINT ? _selection.index : 0;
+		int jointIdx = _selection.type != SelectionType::JOINT ? _selection.index : 0;
 		jointIdx = std::clamp(jointIdx, 0, static_cast<int>(s.j.size()) - 1);
 		if (_jointIdxSlider) {
 			QSignalBlocker blocker(_jointIdxSlider);
@@ -560,7 +617,7 @@ namespace widgets {
 			buildFreeBodyTelemetryWidgets(layout);
 			_contentLayout->addWidget(_freeBodyInfoGroup);
 		}
-		if (!_sim || !_sim->hasRigidBody() || !_sim->isFreeBody()) { _freeBodyInfoGroup->setVisible(false); return; }
+		if (!_sim || !_sim->hasRigidBody() || _selection.type != SelectionType::FREE_BODY) { _freeBodyInfoGroup->setVisible(false); return; }
 		auto& body = _sim->rigidBodySystem();
 		auto& joints = body.joints();
 		auto& links = body.links();
@@ -774,7 +831,7 @@ namespace widgets {
 	}
 	// Updates the free body telemetry display with the latest data from the simulation.
 	void ControlPanelWidget::updateFreeBodyTelemetryDisplay() {
-		if (!_sim || !_sim->isFreeBody()) { return; }   // only for free bodies (inverse of the joint guard)
+		if (!_sim || _selection.type != SelectionType::FREE_BODY) { return; }   // only for free bodies (inverse of the joint guard)
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
 		if (ring.size() < 1) { return; }
