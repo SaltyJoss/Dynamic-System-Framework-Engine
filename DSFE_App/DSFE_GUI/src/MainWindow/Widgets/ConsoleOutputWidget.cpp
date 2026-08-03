@@ -5,7 +5,7 @@
 #include <QHBoxLayout>
 #include <QTabWidget>
 #include <QTextEdit>
-#include <QPushButton>
+#include <QCheckBox>
 #include <QTimer>
 #include <QScrollBar>
 #include <QTextCursor>
@@ -74,9 +74,12 @@ namespace widgets {
 		_terminalLog->setReadOnly(true);
 		_simLog = new QTextEdit(this);
 		_simLog->setReadOnly(true);
+		_autoScroll = new QCheckBox("Auto Scroll", this);
+		_autoScroll->setChecked(true);
 		_tabs->addTab(_terminalLog, "Terminal");
 		_tabs->addTab(_simLog, "Simulation");
 		rootLayout->addWidget(_tabs);
+		rootLayout->addWidget(_autoScroll);
 
 		auto* timer = new QTimer(this);
 		connect(timer, &QTimer::timeout, this, &ConsoleOutputWidget::updateLog);
@@ -89,8 +92,15 @@ namespace widgets {
 		_lastSimCount = 0;
 	}
 
+	void ConsoleOutputWidget::clearTerminalLog() {
+		gLog.Instance().clear();
+		_terminalLog->clear();
+		_lastTerminalCount = 0;
+	}
+
 	void ConsoleOutputWidget::updateLog() {
 		const auto& entries = gLog.Instance().Entries();
+		bool termAdded = false;
 		while (_lastTerminalCount < entries.size()) {
 			const auto& e = entries[_lastTerminalCount];
 			QTextCursor cursor = _terminalLog->textCursor();
@@ -103,10 +113,12 @@ namespace widgets {
 			cursor.insertText(QString::fromStdString(e.message), msgFmt);
 			cursor.insertBlock();
 			++_lastTerminalCount;
+			termAdded = true;
 		}
 		
 		const auto& simEntries = gLog.Instance().SimEntries();
 		if (_lastSimCount > simEntries.size()) { _lastSimCount = 0; _simLog->clear(); }
+		bool simAdded = false;
 		while (_lastSimCount < simEntries.size()) {
 			const auto& e = simEntries[_lastSimCount];
 			QTextCursor cursor = _simLog->textCursor();
@@ -119,6 +131,7 @@ namespace widgets {
 			cursor.insertText(QString::fromStdString(e.message), msgFmt);
 			cursor.insertBlock();
 			++_lastSimCount;
+			simAdded = true;
 		}
 
 		while (_terminalLog->document()->blockCount() > MAX_TERMINAL_ENTRIES) {
@@ -130,15 +143,19 @@ namespace widgets {
 		}
 
 		if (_lastTerminalCount > entries.size()) {
-			_terminalLog->clear();
-			_lastTerminalCount = 0;
+			clearTerminalLog();
+			_lastTerminalCount = entries.size();
 		}
 
-		if (autoScroll) {
-			auto* tBar = _terminalLog->verticalScrollBar();
-			tBar->setValue(tBar->maximum());
-			auto* sBar = _simLog->verticalScrollBar();
-			sBar->setValue(sBar->maximum());
+		if (_autoScroll && _autoScroll->isChecked()) {
+			if (termAdded) {
+				auto* tBar = _terminalLog->verticalScrollBar();
+				tBar->setValue(tBar->maximum());
+			}
+			if (simAdded) {
+				auto* sBar = _simLog->verticalScrollBar();
+				sBar->setValue(sBar->maximum());
+			}
 		}
 	}
 } // namespace widgets
