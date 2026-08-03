@@ -156,6 +156,7 @@ namespace gui {
 		_core->clearRigidBodyPresentationDirty();
 		_currentRigidBodyName = model.name;
 		_currentRigidBodyPath = name;
+		_bodyPaths.push_back(name);
 		LOG_INFO("RigidBody loaded: %s", model.name.c_str());
 	}
 	// Resets the rigidBody system to its initial position
@@ -388,10 +389,13 @@ namespace gui {
         _mesh_store.clear();
         _currentRigidBodyName.clear();
 		_currentRigidBodyPath.clear();
+		_bodyPaths.clear();
         _core->setScriptRunning(false);
         _core->stopSimulation();
         _core->setSimTime(0.0);
 		_core->trajectoryManager().clearAll();
+		_core->telemetry().clear();
+		_core->clearBodies();
         LOG_INFO("Workspace closed");
     }
 	// Apply a workspace, populating the simulation manager with the saved state. This is typically called after closeWorkspace() to load a new workspace.
@@ -402,11 +406,14 @@ namespace gui {
         setFixedDt(w.simDt);
         setTelemetryHz(1.0 / w.telemetryDt);
 		setGravity(w.gravity);
-
         _camera.setPosition(w.cameraPos);
         _camera.setYaw(w.cameraYaw);
         _camera.setPitch(w.cameraPitch);
-        if (!w.rigidBodyPath.isEmpty()) {
+        if (!w.rigidBodyPaths.isEmpty()) {
+            for (const QString& p : w.rigidBodyPaths) { 
+				if (!p.isEmpty()) { load_rigidBody(p.toStdString()); } // Core re-load or skip; GUI visuals rebuilt fresh
+			}
+        } else if (!w.rigidBodyPath.isEmpty()) {
             load_rigidBody(w.rigidBodyPath.toStdString());   // Core re-load or skip; GUI visuals rebuilt fresh
         }
         LOG_INFO("Workspace applied: '%s'", w.name.toUtf8().constData());
@@ -415,6 +422,8 @@ namespace gui {
     void SimulationManager::gatherWorkspace(gui::WorkspaceData& w) const {
         w.rigidBodyName = QString::fromStdString(_currentRigidBodyName);
 		w.rigidBodyPath = QString::fromStdString(_currentRigidBodyPath);
+		w.rigidBodyPaths.clear();
+		for (const auto& p : _bodyPaths) { w.rigidBodyPaths.push_back(QString::fromStdString(p)); }
         w.integrationMethod = static_cast<int>(integrationMethod());
         w.adIntegrationMethod = static_cast<int>(autoDiffIntegrationMethod());
         w.autoDiff = autoDiffEnabled();

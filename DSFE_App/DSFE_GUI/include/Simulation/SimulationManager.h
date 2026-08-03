@@ -280,6 +280,7 @@ namespace gui {
 
         const std::string& currentRigidBodyName() const { return _currentRigidBodyName; }
         const std::string& currentRigidBodyPath() const { return _currentRigidBodyPath; }
+        std::vector<std::string> _bodyPaths;
 
         void setManipulating(bool on);
         bool isManipulating() const;
