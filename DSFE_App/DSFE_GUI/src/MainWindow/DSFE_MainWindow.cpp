@@ -5,6 +5,7 @@
 
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
+#include "Widgets/ConsoleOutputWidget.h"
 #include "Widgets/ControlPanelWidget.h"
 #include "Workspace/Workspace.h"
 #include "Workspace/RecentWorkspace.h"
@@ -48,7 +49,14 @@ namespace window {
 		setCentralWidget(_stack);
 
 		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
-		_homePage->onNewProject   = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onNewProject   = [this]() {
+			if(_projectPage->log()) { 
+				_projectPage->log()->clearTerminalLog();
+				_projectPage->log()->clearSimLog();
+			}
+			showProjectPage();
+			newWorkspace();
+		};
 		_homePage->onOpenProject  = [this]() { openWorkspaceDialog(); };
 		_homePage->onOpenRecent   = [this](const QString& p) { openWorkspacePath(p); };
 		_homePage->onOpenTemplate = [this](const QString& p) { openTemplate(p); };
