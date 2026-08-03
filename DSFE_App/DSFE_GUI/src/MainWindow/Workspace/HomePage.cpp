@@ -210,7 +210,7 @@ namespace Workspace {
             auto* card = new TemplateCard(tpl.name, img_dir + "/" + tpl.image, area);
             card->setFixedWidth(300);
             if (QString(tpl.name) == "Empty Project") {
-                card->onClick = [this]() { if (onOpenTemplate) { onOpenTemplate(""); } };
+                card->onClick = [this]() { if (onNewProject) { onNewProject(); } };
             } else {
                 const QString path = tpl_dir + "/" + tpl.file;
                 card->onClick = [this, path]() { if (onOpenTemplate) { onOpenTemplate(path); } };
