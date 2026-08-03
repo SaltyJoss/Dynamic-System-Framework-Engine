@@ -145,8 +145,8 @@ namespace widgets {
 			// Add child nodes for each joint in the rigid body system
 			const auto& joints = sys.joints();
 			int fbIdx = 0;
-			for (int i = 0; i < (int)joints.size(); ++i) {
-				const auto& j = joints[i];
+			for (int k = 0; k < (int)joints.size(); ++k) {
+				const auto& j = joints[k];
 				if (j.type == systems::eJointType::FIXED) { continue; }
 				QTreeWidgetItem* leaf = new QTreeWidgetItem(bodyNode);
 				if (j.type == systems::eJointType::FREE) {
@@ -155,9 +155,9 @@ namespace widgets {
 					leaf->setData(0, Qt::UserRole + 1, fbIdx);
 					++fbIdx;
 				} else {
-					leaf->setText(0, QString("Joint %1: %2").arg(i+1).arg(QString::fromStdString(j.child)));
+					leaf->setText(0, QString("Joint %1: %2").arg(k+1).arg(QString::fromStdString(j.child)));
 					leaf->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
-					leaf->setData(0, Qt::UserRole + 1, i);
+					leaf->setData(0, Qt::UserRole + 1, k);
 				}
 				leaf->setData(0, Qt::UserRole + 2, i); // Store the owning body index for joint and free body nodes
 			}
@@ -578,7 +578,7 @@ namespace widgets {
 		if (ring.size() < 1) { return; }
 		const auto& s = ring.at(ring.size() - 1);
 		if (s.j.empty()) { return; }
-		int jointIdx = _selection.type != SelectionType::JOINT ? _selection.index : 0;
+		int jointIdx = _selection.type == SelectionType::JOINT ? _selection.index : 0;
 		jointIdx = std::clamp(jointIdx, 0, static_cast<int>(s.j.size()) - 1);
 		if (_jointIdxSlider) {
 			QSignalBlocker blocker(_jointIdxSlider);
