@@ -15,6 +15,32 @@ using namespace constants;
 using namespace utils;
 
 namespace commands {
+	/*
+	 * HELPERS
+	 */
+	// Struct to hold parsed name components (base name and optional index)
+	struct ParsedName {
+		std::string base;
+		int idx = 0;
+		bool hasIdx = false;
+	};
+	// Helper Method to parse the indexed name from a string (e.g., "cube[2]" -> base="cube", idx=2)
+	static ParsedName parsedIdxedName(const std::string& tok) {
+		ParsedName p;
+		auto lb = tok.find('[');
+		if (lb == std::string::npos) { p.base = tok; return p; }
+		auto rb = tok.find(']', lb);
+		if (rb == std::string::npos) { p.base = tok; return p; }
+		p.base = tok.substr(0, lb);
+		std::string idxStr = tok.substr(lb + 1, rb - lb - 1);
+		try { p.idx = std::stoi(idxStr); p.hasIdx = true; }
+		catch (...) { p.hasIdx = false; }
+		return p;
+	}
+
+	/*
+	 * COMMAND CONTEXT IMPLEMENTATION
+	 */
 	// Constructor
 	CommandContext::CommandContext(core::ISimulationCore* core)
 		: _core(core), _angularUnits(AngularUnits::DegPerSec) {
@@ -70,12 +96,21 @@ namespace commands {
 	systems::RigidBodySystem* CommandContext::resolveBody(const std::string& target) {
 		if (!_core) { return nullptr; }
 		const int nb = (int)_core->bodyCount();
+		std::string bodyToken = target;
 		auto dot = target.find('.');
-		if (dot != std::string::npos) {
-			std::string bodyName = utils::toLower(target.substr(0, dot));
-			for (int i = 0; i < nb; ++i) {
-				auto& sys = _core->body(i);
-				if (sys.hasRigidBody() && utils::toLower(sys.rigidBodyName()) == bodyName) { return &sys; }
+		if (dot != std::string::npos) { bodyToken = target.substr(0, dot); }
+		ParsedName pn = parsedIdxedName(bodyToken);
+		if (dot != std::string::npos || pn.hasIdx) {
+			std::string want = utils::toLower(pn.base);
+			int seen = 0;
+			for (int b = 0; b < nb; ++b) {
+				auto& sys = _core->body(b);
+				if (!sys.hasRigidBody()) { continue; }
+				if (utils::toLower(sys.rigidBodyName()) != want) { continue; }
+				if (pn.hasIdx) {
+					if (seen == pn.idx) { return &sys; }
+					++seen;
+				} else { return &sys; }
 			}
 			return nullptr;
 		}
@@ -83,8 +118,8 @@ namespace commands {
 			auto& act = _core->rigidBodySystem();
 			if (act.hasRigidBody() && bodyOwnsTarget(act, target)) { return &act; }
 		}
-		for (int i = 0; i < nb; ++i) {
-			auto& sys = _core->body(i);
+		for (int b = 0; b < nb; ++b) {
+			auto& sys = _core->body(b);
 			if (sys.hasRigidBody() && bodyOwnsTarget(sys, target)) { return &sys; }
 		}
 		return nullptr;
@@ -99,7 +134,11 @@ namespace commands {
 	// Returns the member name from a target string, which may include a body name prefix (e.g., "bodyName.memberName")
 	std::string CommandContext::memberName(const std::string& target) const {
 		auto dot = target.find('.');
-		return (dot == std::string::npos) ? target : target.substr(dot + 1);
+		if (dot == std::string::npos) {
+			ParsedName pn = parsedIdxedName(target);
+			return pn.base;
+		}
+		return target.substr(dot + 1);
 	}
 
 	Vec3 CommandContext::normaliseDirection(const Vec3& dir) const {

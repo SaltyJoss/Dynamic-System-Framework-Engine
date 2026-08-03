@@ -31,7 +31,7 @@ namespace dsl {
 	bool Parser::matchIdentifier(const std::string& s) {
 		if (s.empty()) return false;
 		if (!isalpha(s[0]) && s[0] != '_') { return false; }
-		for (char c : s) { if (!isalnum(c) && c != '_' && c != '.') return false; }
+		for (char c : s) { if (!isalnum(c) && c != '_' && c != '.' && c != '[' && c != ']') return false; }
 		return true;
 	}
 
