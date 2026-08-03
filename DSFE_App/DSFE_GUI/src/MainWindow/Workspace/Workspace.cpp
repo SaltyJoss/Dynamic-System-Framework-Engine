@@ -14,6 +14,9 @@ namespace gui {
         QJsonObject content;
         content["rigid_body"] = rigidBodyName.toLower();
         content["rigid_body_path"] = rigidBodyPath;
+        QJsonArray bodyArr;
+        for (const QString& p : rigidBodyPaths) { bodyArr.append(p); }
+        content["rigid_body_paths"] = bodyArr;
         content["script_text"] = scriptText;
         content["script_path"] = scriptPath;
         o["content"] = content;
@@ -44,6 +47,13 @@ namespace gui {
         const QJsonObject content = o["content"].toObject();
         w.rigidBodyName = content["rigid_body"].toString().toLower();
         w.rigidBodyPath = content["rigid_body_path"].toString();
+        w.rigidBodyPaths.clear();
+        if (content.contains("rigid_body_paths")) {
+            const QJsonArray bodyArr = content["rigid_body_paths"].toArray();
+            for (const QJsonValue& v : bodyArr) { w.rigidBodyPaths.append(v.toString()); }
+        } else if (!w.rigidBodyPath.isEmpty()) {
+            w.rigidBodyPaths.append(w.rigidBodyPath);
+        }
         w.scriptText = content["script_text"].toString();
         w.scriptPath = content["script_path"].toString();
 
