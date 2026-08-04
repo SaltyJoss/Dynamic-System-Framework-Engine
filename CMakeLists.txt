@@ -24,7 +24,7 @@ FetchContent_MakeAvailable(eigen)
 FetchContent_Declare(
     pxmlib
     GIT_REPOSITORY https://github.com/SaltyJoss/PxM-Lib.git
-    GIT_TAG v1.0.2
+    GIT_TAG v1.0.3
 )
 FetchContent_MakeAvailable(pxmlib)
 
