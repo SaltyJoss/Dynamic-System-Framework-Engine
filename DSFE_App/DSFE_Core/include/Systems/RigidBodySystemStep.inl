@@ -296,8 +296,8 @@ namespace systems {
 			const mathlib::Vec3 w = j.free_vel.head<3>();
 			const mathlib::Vec3 v = j.free_vel.tail<3>();
 			// acceleration from ABA qdd (same [angular; linear] split)
-			const mathlib::Vec3 aAng = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).head<3>();
-			const mathlib::Vec3 aLin = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).tail<3>();
+			const mathlib::Vec3 aAng = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).template head<3>();
+			const mathlib::Vec3 aLin = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).template tail<3>();
 
 			// energies
 			const double KE = 0.5 * m * v.squaredNorm() + 0.5 * w.dot(I * w);

@@ -5,7 +5,7 @@
 #pragma once
 
 namespace physics {
-	static mathlib::Quat expToQuat(const mathlib::Vec3& rv) {
+	inline mathlib::Quat expToQuat(const mathlib::Vec3& rv) {
 		const double theta = rv.norm();
 		if (theta < 1e-9) { return mathlib::Quat(1, 0, 0, 0); }
 		return mathlib::Quat(Eigen::AngleAxisd(theta, rv / theta));
