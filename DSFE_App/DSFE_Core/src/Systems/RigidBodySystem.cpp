@@ -1018,6 +1018,86 @@ namespace systems {
 		return isJointNearAngleRad(childLink, radians(targetDeg), radians(tolDeg));
 	}
 
+	/*
+	 * FreeBody Accesors
+	 */
+	// Read the free body's world pose + velocity. free_vel is [angular | linear] (SpatialVec layout).
+	bool RigidBodySystem::freeBodyState(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				pos    = j.free_pos;
+				orient = (j.free_qref * expToQuat(j.free_rot_v)).normalized();
+				angVel = j.free_vel.head<3>();   // angular first
+				linVel = j.free_vel.tail<3>();   // linear second
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Write corrected velocity back into the free joint ([angular | linear]).
+	bool RigidBodySystem::setFreeBodyVelocity(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel) {
+		if (!_hasBody) { return false; }
+		for (auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				j.free_vel.head<3>() = angVel;   // angular first
+				j.free_vel.tail<3>() = linVel;   // linear second
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Push the free body along the contact normal to resolve penetration.
+	bool RigidBodySystem::setFreeBodyPosition(const mathlib::Vec3& pos) {
+		if (!_hasBody) { return false; }
+		for (auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				j.free_pos = pos;
+				computeRigidBodyKinematics(_worldTransforms);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Mass + body-frame inertia tensor of the free body's child link.
+	bool RigidBodySystem::freeBodyMassInertia(double& mass, mathlib::Mat3& I_body) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { return false; }
+				const RigidBodyLink& L = _body.links[it->second];
+				mass = L.inertial.mass;
+				const auto& I = L.inertial.inertia;
+				I_body << I.ixx, I.ixy, I.ixz,
+				          I.ixy, I.iyy, I.iyz,
+				          I.ixz, I.iyz, I.izz;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Local (link-frame) AABB of the free body's child link. Requires hasBounds populated.
+	bool RigidBodySystem::freeBodyLocalAABB(mathlib::Vec3& aabbMin, mathlib::Vec3& aabbMax) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { return false; }
+				const RigidBodyLink& L = _body.links[it->second];
+				if (!L.hasBounds) { return false; }
+				aabbMin = L.aabbMin;
+				aabbMax = L.aabbMax;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// --- ROBOT LINK AND ROOT POSE METHODS ---
 
 	// Method to set the rotation angle of a specific rigidBody link angle in degrees

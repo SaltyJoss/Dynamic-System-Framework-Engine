@@ -152,6 +152,15 @@ namespace systems {
 
 		bool tryZeroJointRefDerivatives();
 
+		/*
+		 * FreeBody Accesors
+		 */
+		bool freeBodyState(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const;
+		bool setFreeBodyVelocity(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel);
+		bool setFreeBodyPosition(const mathlib::Vec3& pos);
+		bool freeBodyMassInertia(double& mass, mathlib::Mat3& I_body) const;
+		bool freeBodyLocalAABB(mathlib::Vec3& aabbMin, mathlib::Vec3& aabbMax) const;
+
 		// --- SIMULATION STEP METHOD ---
 
 		template<typename T>
