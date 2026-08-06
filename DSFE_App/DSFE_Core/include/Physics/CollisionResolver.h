@@ -19,5 +19,6 @@ namespace physics {
         private:
             void resolveContact_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, mathlib::Vec3& norm, std::array<mathlib::Vec3, 4>& contactPoints, double mu);
             void positionalCorrection_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, physlib::collision::ContactManifold& m);
+            physlib::collision::OBB makeOBB(const std::unique_ptr<systems::RigidBodySystem>& body);
     };
 } // namespace physics
