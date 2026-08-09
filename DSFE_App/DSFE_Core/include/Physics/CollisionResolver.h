@@ -17,8 +17,32 @@ namespace physics {
             void resolveCollisions(std::vector<std::unique_ptr<systems::RigidBodySystem>>& bodies, double dt);
 
         private:
-            void resolveContact_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, mathlib::Vec3& norm, std::array<mathlib::Vec3, 4>& contactPoints, double mu);
+            /*
+             * Internal body info struct to store relevant physical states
+             */
+            struct BodyInfo {
+                systems::RigidBodySystem& body;
+                double m;
+                mathlib::Mat3 I;
+                mathlib::Vec3 pos;
+                mathlib::Quat ori;
+                mathlib::Vec3 linVel;
+                mathlib::Vec3 angVel;
+                // Constructor to initialise BodyInfo from a RigidBodySystem pointer
+                struct BodyInfo(systems::RigidBodySystem& b) : body(b) {
+                    m = b.mass();
+                    I = b.inertia_fb();
+                    pos = b.position_fb();
+                    ori = b.orientation_fb();
+                    linVel = b.linearVelocity_fb();
+                    angVel = b.angularVelocity_fb();
+                }
+            };
+
+            /*
+             * Internal helper functions for collision resolution
+             */
+            void resolveContact_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, mathlib::Vec3& norm, physlib::collision::ContactPoint& p, double e, double mu);
             void positionalCorrection_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, physlib::collision::ContactManifold& m);
-            physlib::collision::OBB makeOBB(const std::unique_ptr<systems::RigidBodySystem>& body);
     };
 } // namespace physics
