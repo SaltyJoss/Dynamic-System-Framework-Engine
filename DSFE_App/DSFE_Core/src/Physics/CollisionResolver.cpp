@@ -105,24 +105,22 @@ namespace physics {
 
     // Resolves collisions between a set of RigidBodySystems and updates their states accordingly
     void CollisionResolver::resolveCollisions(std::vector<std::unique_ptr<systems::RigidBodySystem>>& bodies, double dt) {
-        // cube-cube collision resolution for now
-        for (size_t a = 0; a < bodies.size(); ++a) {
-            // Check for collisions with all other bodies in the list
-            for (size_t b = a + 1; b < bodies.size(); ++b) {
-                auto& A = *bodies[a];
-                auto& B = *bodies[b];
-                if (!A.hasFreeJoint() || !B.hasFreeJoint()) { continue; } // Skip if either body does not have a free joint
-                const double e = std::min(A.restitution_d(), B.restitution_d());
-                const double mu = std::min(A.friction_d(), B.friction_d());
-                auto obb_A = makeOBB(A); auto obb_B = makeOBB(B);
-                if (!obb_A || !obb_B) { continue; } // Skip if either body does not have a valid OBB
-                physlib::collision::ContactManifold m;
-                // Check for collision using the Separating Axis Theorem (SAT) for OBBs
-                if (!physlib::collision::SAT_OBB(*obb_A, *obb_B, m)) { continue; } // No collision detected, skip to the next pair of bodies
-                // Collision detected, resolve contact
-                for (int i = 0; i < m.pointCount; ++i) { resolveContact_fb(A, B, m.normal, m.points[i], e, mu); }
-                positionalCorrection_fb(A, B, m);
-            }
-        }
-    }
+		for (size_t a = 0; a < bodies.size(); ++a) {
+			for (size_t b = a + 1; b < bodies.size(); ++b) {
+				LOG_INFO("collide pair %zu-%zu", a, b);
+				if (!bodies[a]->hasFreeJoint() || !bodies[b]->hasFreeJoint()) { LOG_INFO("  skip: not free"); continue; }
+				auto obbA = makeOBB(*bodies[a]);
+				auto obbB = makeOBB(*bodies[b]);
+				if (!obbA || !obbB) { LOG_INFO("skip: no OBB (AABB unpopulated?)"); continue; }
+				LOG_INFO("obbA c=[%.2f %.2f %.2f] he=[%.2f %.2f %.2f]", obbA->centre.x(), obbA->centre.y(), obbA->centre.z(), obbA->halfExtents.x(), obbA->halfExtents.y(), obbA->halfExtents.z());
+				physlib::collision::ContactManifold m;
+				if (!physlib::collision::SAT_OBB(*obbA, *obbB, m)) { LOG_INFO("  no hit"); continue; }
+				LOG_INFO("  HIT n=[%.2f %.2f %.2f] pts=%d", m.normal.x(), m.normal.y(), m.normal.z(), m.pointCount);
+				for (int k = 0; k < m.pointCount; ++k) {
+					resolveContact_fb(*bodies[a], *bodies[b], m.normal, m.points[k], 0.2, 0.5);
+				}
+				positionalCorrection_fb(*bodies[a], *bodies[b], m);
+			}
+		}
+	}
 } // namespace physics
