@@ -130,6 +130,8 @@ set(WIDGETS_SRC
     include/MainWindow/Widgets/ViewportWidget.h
     src/MainWindow/Widgets/RobotSelectorWidget.cpp
     include/MainWindow/Widgets/RobotSelectorWidget.h
+    src/MainWindow/Widgets/FreeBodySelectorWidget.cpp
+    include/MainWindow/Widgets/FreeBodySelectorWidget.h
     src/MainWindow/Widgets/ControlPanelWidget.cpp
     include/MainWindow/Widgets/ControlPanelWidget.h
     src/MainWindow/Widgets/DSLEditorWidget.cpp
