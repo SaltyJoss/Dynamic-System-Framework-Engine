@@ -313,7 +313,7 @@ namespace physics {
 
 		if (!scratch.dense.M.allFinite()) { throw std::runtime_error("Mass matrix contains non-finite values"); }
 
-		if (snap.torqueMode != systems::eTorqueMode::NONE) { scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses); }
+		scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {
@@ -555,10 +555,7 @@ namespace physics {
 
 		computeMassMatrix(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses, scratch.dense.M);
 		scratch.dense.h = computeCoriolisVector<Scalar>(*snap.model, q, qd, scratch.dense.T_world, scratch.dense.M);
-
-		if (snap.torqueMode != systems::eTorqueMode::NONE) {
-			scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
-		}
+		scratch.dense.tau_g = computeGravityTorque<Scalar>(*snap.model, scratch.dense.T_world, scratch.dense.jointWorldPoses);
 
 		scratch.dense.tau.setZero();
 		for (size_t i = 0; i < n; ++i) {

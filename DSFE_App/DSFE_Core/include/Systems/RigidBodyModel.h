@@ -32,12 +32,6 @@ namespace systems {
 		LINK,
 		WORLD
 	};
-	// --- Torque Modes for Simulation ---
-	enum class eTorqueMode {
-		NONE,		// No physics simulation, just kinematics (e.g., for testing)
-		PASSIVE,	// Physics simulation with passive joints (e.g., for observing natural dynamics or testing underactuated behavior)
-		CONTROLLED	// Full physics simulation with active control (e.g., for testing control algorithms, trajectory tracking, or simulating real-world behavior)
-	};
 
 	/*
 	 * Helper function to get the degrees of freedom (DOF) for a given joint type.
@@ -199,9 +193,6 @@ namespace systems {
 		// Links and joints
 		std::vector<RigidBodyLink> links;
 		std::vector<RigidBodyJoint> joints;
-
-		// Torque Mode for simulation
-		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
 
 		// Kinematics model (URDF or DH)
 		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;

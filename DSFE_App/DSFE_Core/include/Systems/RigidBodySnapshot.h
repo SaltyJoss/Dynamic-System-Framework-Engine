@@ -45,8 +45,6 @@ namespace systems {
 
 		Scalar lastBaseForwardForce = Scalar(0);
 
-		eTorqueMode torqueMode = eTorqueMode::CONTROLLED;
-
 		Scalar dt = Scalar(0);
 		Scalar simTime = Scalar(0);
 	};

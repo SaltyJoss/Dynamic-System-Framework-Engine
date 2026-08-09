@@ -51,8 +51,6 @@ namespace systems {
 		snap.lastBaseForwardForce = T(_lastBaseForwardForce);
 		snap.gravity = _gravity.template cast<T>();
 
-		snap.torqueMode = _body.torqueMode;
-
 		snap.dt = T(_dynamics->dt());
 		snap.simTime = simTime;
 

@@ -30,7 +30,6 @@ namespace systems {
 	// Forward declarations
 	struct RigidBodyLink;
 	struct RigidBodyJoint;
-	enum class eTorqueMode;
 } // namespace systems
 
 namespace physics {
