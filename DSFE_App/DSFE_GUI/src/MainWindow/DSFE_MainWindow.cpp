@@ -251,9 +251,9 @@ namespace window {
 			connect(bodyAction, &QAction::triggered, this, [this, bodyName]() {
 				std::string n = bodyName.toStdString();
 				std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
-				const std::string path = "freebody_models/" + n + "/" + n + ".obj";
+				const std::string path = "rigidbody_models/" + n + "/" + n + ".urdf";
 				LOG_INFO("Menu clicked: Project -> Load Free Body -> %s", path.c_str());
-				showProjectPage(); _sim->load_mesh(path);
+				showProjectPage(); _sim->load_rigidBody(path);
 			});
 		}
 	}
