@@ -37,7 +37,45 @@ namespace physics {
 
     // Resolves collisions between a set of RigidBodySystems and updates their states accordingly
     void CollisionResolver::resolveContact_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, mathlib::Vec3& norm, physlib::collision::ContactPoint& p, double e, double mu) {
-        /* Placeholder */
+        // Create BodyInfo instances for both bodies to extract relevant physical properties
+        auto a = BodyInfo(A); auto b = BodyInfo(B);
+        const mathlib::Mat3 R_A = a.ori.toRotationMatrix();
+        const mathlib::Mat3 R_B = b.ori.toRotationMatrix();
+        const mathlib::Mat3 I_A = R_A * a.I * R_A.transpose();
+        const mathlib::Mat3 I_B = R_B * b.I * R_B.transpose();
+        const mathlib::Mat3 I_Ainv = I_A.inverse();
+        const mathlib::Mat3 I_Binv = I_B.inverse();
+        // Compute world-space inertia tensors and relative velocities at the contact point
+        mathlib::Vec3 vLin_A = a.linVel, w_A = a.angVel; 
+        mathlib::Vec3 vLin_B = b.linVel, w_B = b.angVel;
+        // Compute the contact points relative to the centers of mass of each body
+        const mathlib::Vec3 r_A = p.pos - a.pos;
+        const mathlib::Vec3 r_B = p.pos - b.pos;
+        // Compute relative velocity at the contact point
+        const mathlib::Vec3 v_Apt = vLin_A + w_A.cross(r_A);
+        const mathlib::Vec3 v_Bpt = vLin_B + w_B.cross(r_B); 
+        const mathlib::Vec3 v_rel = v_Bpt - v_Apt;
+        // Compute the effective mass along the contact normal
+        auto m_eff_norm = [&](BodyInfo& b, const mathlib::Vec3& r, const mathlib::Mat3& I_inv, const mathlib::Vec3& d) -> double {
+            return (1.0/b.m) + d.dot(r.cross(I_inv * r.cross(d)));
+        };
+        double m_eff = m_eff_norm(a, r_A, I_Ainv, norm) + m_eff_norm(b, r_B, I_Binv, norm); // Compute the effective mass for the contact
+        double j = physlib::collision::solveNormalImpulse(norm, v_rel , m_eff, e); // Compute the normal impulse magnitude
+        mathlib::Vec3 J = j * norm; // Compute the impulse vector
+        vLin_A -= J / a.m; w_A -= I_Ainv * r_A.cross(J); // Update linear and angular velocities of body A based on the impulse
+        vLin_B += J / b.m; w_B += I_Binv * r_B.cross(J); // Update linear and angular velocities of body B based on the impulse
+        // Friction resolution
+        mathlib::Vec3 v_T = v_rel - (v_rel.dot(norm) * norm); // Compute the relative velocity in the tangent plane
+        if (v_T.norm() > 1e-6) { // If there is significant tangential relative velocity, apply friction
+            mathlib::Vec3 t = v_T.normalized(); // Tangent direction
+            double m_eff_t = m_eff_norm(a, r_A, I_Ainv, t) + m_eff_norm(b, r_B, I_Binv, t); // Effective mass along the tangent
+            mathlib::Vec3 J_f = physlib::collision::solveFrictionImpulse(t, v_rel, m_eff_t, j, mu); // Compute the friction impulse
+            vLin_A -= J_f / a.m; w_A -= I_Ainv * r_A.cross(J_f); // Update body A with friction impulse
+            vLin_B += J_f / b.m; w_B += I_Binv * r_B.cross(J_f); // Update body B with friction impulse
+        }
+        // Update the RigidBodySystems with the new velocities
+        A.setVelocity_fb(vLin_A, w_A);
+        B.setVelocity_fb(vLin_B, w_B);
     }
 
     // Resolves positional corrections for a contact manifold between two RigidBodySystems
