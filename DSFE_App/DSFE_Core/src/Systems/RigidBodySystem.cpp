@@ -29,13 +29,38 @@ namespace systems {
 		for (size_t i = 0; i < a.size(); ++i) { v(i) = a[i]; }
 		return v;
 	}
+	// // Idea I had, likely pointless though bc we use Eigen. ('M.inverse();')
+	// static mathlib::Mat3& invMat3(mathlib::Mat3& A) {
+    //     double a00 = A(0,0)*((A(1,1)*A(2,2))-(A(1,2)*A(2,1))); double a01 = A(0,1)*((A(1,0)*A(2,2))-(A(1,2)*A(2,0))); double a02 = A(0,2)*((A(1,0)*A(2,1))-(A(1,1)*A(2,0)));
+    //     double a10 = A(1,0)*((A(0,1)*A(2,2))-(A(0,2)*A(2,1))); double a11 = A(1,1)*((A(0,0)*A(2,2))-(A(0,2)*A(2,0))); double a12 = A(1,2)*((A(0,0)*A(2,1))-(A(0,1)*A(2,0)));
+    //     double a20 = A(2,0)*((A(0,1)*A(1,2))-(A(0,2)*A(1,1))); double a21 = A(2,1)*((A(0,0)*A(1,2))-(A(0,2)*A(1,0))); double a22 = A(2,2)*((A(0,0)*A(1,1))-(A(0,1)*A(1,0)));
+
+    //     double det_A = A(0,0) * (a00) - A(0,1) * (a01) + A(0,2) * (a02);
+    //     if (det_A == 0) { throw std::runtime_error("Matrix is singular and cannot be inverted."); }
+	// 	mathlib::Mat3 M;
+	// 	M <<
+	// 		a00, -a01, a02,
+    //         -a10, a11, -a12,
+    //         a20, -a21, a22;
+    //     mathlib::Mat3 M_T;
+    //     M_T <<
+    //         M(0,0), M(1,0), M(2,0),
+    //         M(0,1), M(2,2), M(2,1),
+    //         M(0,2), M(1,2), M(2,2);
+    //     mathlib::Mat3 A_inv;
+    //     A_inv <<
+    //         (1.0/det_A) * M_T(0,0), (1.0/det_A) * M_T(0,1), (1.0/det_A) * M_T(0,2),
+    //         (1.0/det_A) * M_T(1,0), (1.0/det_A) * M_T(1,1), (1.0/det_A) * M_T(1,2),
+    //         (1.0/det_A) * M_T(2,0), (1.0/det_A) * M_T(2,1), (1.0/det_A) * M_T(2,2);
+    //     return A_inv;
+    // }
 
 	// Constructor
 	RigidBodySystem::RigidBodySystem()
 		: _integrator(std::make_unique<integration::IntegrationService>()), _curIntMethod(integration::eIntegrationMethod::RK4), 
 		_AD_integrator(std::make_unique<integration::DifferentiableIntegrator>()), _curIntMethod_AD(integration::eAutoDiffIntegrationMethod::AD_ImplicitEuler),
-		_kinematics(std::make_unique<physics::RigidBodyKinematics>()), _dynamics(std::make_unique<physics::RigidBodyDynamics>()),
-		_torqueMode(eTorqueMode::CONTROLLED) {
+		_kinematics(std::make_unique<physics::RigidBodyKinematics>()), _dynamics(std::make_unique<physics::RigidBodyDynamics>())
+	{
 		if (!_integrator ) { LOG_WARN("RigidBodySystem got null IntegrationService*"); }
 	}
 	// Destructor
@@ -49,29 +74,145 @@ namespace systems {
 	}
 
 	/*
+	 * Method to get the inertia of a body link based on its index, in the form of a 3x3 matrix rather than just the inertia struct
+	 */
+	const std::vector<mathlib::Mat3>& RigidBodySystem::linkInertias() const {
+		if (!_hasBody || _body.links.empty()) { return {}; }
+		std::vector<mathlib::Mat3> inertias;
+		for (const auto& link : _body.links) {
+			const auto& I = link.inertial.inertia;
+			mathlib::Mat3 I_mat;
+			I_mat << I.ixx, I.ixy, I.ixz, 
+					 I.ixy, I.iyy, I.iyz,
+					 I.ixz, I.iyz, I.izz;
+			inertias.push_back(I_mat);
+		}
+		return inertias;
+	}
+	/*
+	 * Method to get the inertia of a body link based on its index, in the form of a 3x3 matrix rather than just the inertia struct
+	 */
+	const mathlib::Mat3& RigidBodySystem::linkInertia(int idx) const {
+		if (!_hasBody) { return mathlib::Mat3::Zero(); }
+		if (idx < 0 || idx >= static_cast<int>(_body.links.size())) { LOG_ERROR("linkInertia: Index out of bounds"); D_ERROR("linkInertia: Index out of bounds"); return mathlib::Mat3::Zero(); }
+		const auto& I = _body.links[idx].inertial.inertia;
+		mathlib::Mat3 I_mat;
+		I_mat << I.ixx, I.ixy, I.ixz,
+				 I.ixy, I.iyy, I.iyz,
+				 I.ixz, I.iyz, I.izz;
+		return I_mat;
+	}
+
+	/*
 	 * Method to compute the offset of a joint's state in the packed state vector based on its index
 	 */
-	int RigidBodySystem::jointStateOffset(size_t joint_idx) const {
-		int off = 0;
-		for (size_t i = 0; i < joint_idx; ++i) { off += jointDOF(_body.joints[i].type); }
-		return off;
+	int RigidBodySystem::jointStateOffset(size_t joint_idx) const { int off = 0; for (size_t i = 0; i < joint_idx; ++i) { off += jointDOF(_body.joints[i].type); } return off;
 	}
 	/*
 	 * Method to compute the total degrees of freedom (DOF) of the rigidBody system based on its joints
 	 */
-	int RigidBodySystem::totalDOF() const {
-		int nv = 0;
-		for (const auto& j : _body.joints) { nv += jointDOF(j.type); }
-		return nv;
-	}
+	int RigidBodySystem::totalDOF() const { int nv = 0; for (const auto& j : _body.joints) { nv += jointDOF(j.type); } return nv; }
 	/*
 	 * Method to check if the rigidBody system has any free-floating joints
 	 */
-	bool RigidBodySystem::hasFreeJoint() const {
-		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return true; } }
+	bool RigidBodySystem::hasFreeJoint() const { for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return true; } } return false; }
+
+	/*
+	 * FreeBody state accessors
+	 */
+	//
+	const mathlib::Mat3& RigidBodySystem::inertia_fb() const {
+		if (!_hasBody) { return mathlib::Mat3::Zero(); }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { LOG_ERROR("Free joint child link not found in link index map"); D_ERROR("Free joint child link not found in link index map"); return mathlib::Mat3::Zero(); }
+				const RigidBodyLink& L = _body.links[it->second];
+				const auto& I = L.inertial.inertia;
+				mathlib::Mat3 I_body;
+				I_body << I.ixx, I.ixy, I.ixz, 
+						  I.ixy, I.iyy, I.iyz,
+						  I.ixz, I.iyz, I.izz;
+				return I_body;
+			}
+		}
+		return mathlib::Mat3::Zero();
+	}
+	// Method to get the state of the free-floating body (position, orientation, linear velocity, angular velocity)
+	bool RigidBodySystem::state_fb(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				pos = j.free_pos;
+				orient = j.free_qref; 
+				angVel = j.free_vel.head<3>();
+				linVel = j.free_vel.tail<3>(); 
+				return true;
+			}
+		}
+		return true;
+	}
+	// Method to set the velocity of the free-floating body (linear and angular)
+	bool RigidBodySystem::setVelocity_fb(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel) {
+		if (!_hasBody) { return false; }
+		for (auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				j.free_vel.head<3>() = angVel;
+				j.free_vel.tail<3>() = linVel;
+				return true;
+			}
+		}
 		return false;
 	}
-	
+	// Method to set the position of the free-floating body (position only, orientation remains unchanged)
+	bool RigidBodySystem::setPosition_fb(const mathlib::Vec3& pos) {
+		if (!_hasBody) { return false; }
+		for (auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				j.free_pos = pos;
+				computeRigidBodyKinematics(_worldTransforms);
+				return true;
+			}
+		}
+		return false;
+	}
+	// Method to get the mass and inertia of the free-floating body (mass and body-frame inertia)
+	bool RigidBodySystem::massInertia_fb(double& mass, mathlib::Mat3& I_body) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { LOG_ERROR("Free joint child link not found in link index map"); D_ERROR("Free joint child link not found in link index map"); return false; }
+				const RigidBodyLink& L = _body.links[it->second];
+				mass = L.inertial.mass;
+				const auto& I = L.inertial.inertia;
+				I_body << I.ixx, I.ixy, I.ixz, 
+				 		  I.ixy, I.iyy, I.iyz,
+						  I.ixz, I.iyz, I.izz;
+				return true;
+			}
+		}
+		return false;
+	}
+	// Method to get the local axis-aligned bounding box (AABB) of the free-floating body (min and max corners)
+	bool RigidBodySystem::localAABB_fb(mathlib::Vec3& aabbMin, mathlib::Vec3& aabbMax) const {
+		if (!_hasBody) { return false; }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { LOG_ERROR("Free joint child link not found in link index map"); D_ERROR("Free joint child link not found in link index map"); return false; }
+				const RigidBodyLink& L = _body.links[it->second];
+				if (!L.hasBounds) { LOG_WARN("Free joint child link has no bounds defined"); D_WARN("Free joint child link has no bounds defined"); return false; }
+				aabbMin = L.aabbMin;
+				aabbMax = L.aabbMax;
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+
 	// --- HELPER METHODS ---
 
 	// Method to clamp a joint angle to its limits
@@ -1201,9 +1342,6 @@ namespace systems {
 		_gravity = g;
 		_dynamics->setGravityVec(g);
 	}
-
-	// Set the torque mode for the rigidBody system
-	void RigidBodySystem::setTorqueMode(eTorqueMode mode) { _body.torqueMode = mode; }
 
 	// Method to claim the current active joint log buffer for exporting logged data (returns pointer to buffer active before swap)
 	std::unique_ptr<systems::JointLogBuffer> RigidBodySystem::claimExportLogBuffer() {
