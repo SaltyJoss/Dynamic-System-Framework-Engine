@@ -67,8 +67,9 @@ namespace gui {
             }
             if (anyVerts) {
                 auto& L = const_cast<systems::RigidBodyLink&>(link);
-                L.aabbMin = mathlib::Vec3(lo.x, lo.y, lo.z);
-                L.aabbMax = mathlib::Vec3(hi.x, hi.y, hi.z);
+                const float s = _model.scale;
+                L.aabbMin = mathlib::Vec3(lo.x * s, lo.y * s, lo.z * s);
+                L.aabbMax = mathlib::Vec3(hi.x * s, hi.y * s, hi.z * s);
                 L.hasBounds = true;
             }
         }
