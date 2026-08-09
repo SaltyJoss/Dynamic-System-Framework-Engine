@@ -160,6 +160,7 @@ namespace core {
 					b->updateTrajectoryInputs(*_traj, simTime);
 					b->step(_dt, simTime);
 				}
+				_collisionResolver.resolveCollisions(_bodiesOwned, _dt);
 				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
 					if (!_telemetryBegun) {
@@ -174,17 +175,14 @@ namespace core {
 			else if (_manipulating.load() && hasRigidBody()) {
 				for (auto& b : _bodiesOwned) {
 					if (b->hasRigidBody()) { b->step(_dt, simTime); }
+					_collisionResolver.resolveCollisions(_bodiesOwned, _dt);
 				}
 			}
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
-
-		if (_simRunning.load()) {
-			_simTime.store(simTime);
-		}
-		else {
-			_simTime.store(0.0, std::memory_order_relaxed);
-		}
+		// Update the simulation time if the simulation is running, otherwise reset it to zero
+		if (_simRunning.load()) { _simTime.store(simTime); }
+		else { _simTime.store(0.0, std::memory_order_relaxed); }
 	}
 
 	// Start the simulation loop

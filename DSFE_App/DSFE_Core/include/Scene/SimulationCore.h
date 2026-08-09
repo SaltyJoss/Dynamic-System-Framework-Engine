@@ -15,6 +15,7 @@
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 #include "Numerics/IntegratorState.h"
+#include "physics/CollisionResolver.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
@@ -185,18 +186,19 @@ namespace core {
 		std::atomic<bool> _expThreadRunning_fb{ false };
 
 		// Owning storage (used only in owning mode)
-		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<systems::RigidBodySystem> _rigidBodyOwned;
 		std::unique_ptr<single_body_system::SingleBodySystem> _singleBodyOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
 		// Non-owning access (always used by logic)
-		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		systems::RigidBodySystem* _rigidBody = nullptr;
 		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
 		// Owned bodies (for managing multiple rigidbodies)
 		std::vector<std::unique_ptr<systems::RigidBodySystem>> _bodiesOwned;
 		int _activeBodyIdx = -1;
+
+		// Collision Resolver
+		physics::CollisionResolver _collisionResolver;
 
 		mutable std::mutex _stateMutex;
 
