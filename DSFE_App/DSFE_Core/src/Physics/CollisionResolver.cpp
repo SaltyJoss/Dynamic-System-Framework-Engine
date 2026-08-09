@@ -61,6 +61,7 @@ namespace physics {
         };
         double m_eff = m_eff_norm(a, r_A, I_Ainv, norm) + m_eff_norm(b, r_B, I_Binv, norm); // Compute the effective mass for the contact
         double j = physlib::collision::solveNormalImpulse(norm, v_rel , m_eff, e); // Compute the normal impulse magnitude
+        if (!std::isfinite(j) || m_eff <= 1e-12) { return; } // Avoid division by zero or non-finite impulses
         mathlib::Vec3 J = j * norm; // Compute the impulse vector
         vLin_A -= J / a.m; w_A -= I_Ainv * r_A.cross(J); // Update linear and angular velocities of body A based on the impulse
         vLin_B += J / b.m; w_B += I_Binv * r_B.cross(J); // Update linear and angular velocities of body B based on the impulse
@@ -72,6 +73,10 @@ namespace physics {
             mathlib::Vec3 J_f = physlib::collision::solveFrictionImpulse(t, v_rel, m_eff_t, j, mu); // Compute the friction impulse
             vLin_A -= J_f / a.m; w_A -= I_Ainv * r_A.cross(J_f); // Update body A with friction impulse
             vLin_B += J_f / b.m; w_B += I_Binv * r_B.cross(J_f); // Update body B with friction impulse
+        }
+        if (!vLin_A.allFinite() || !w_A.allFinite() || !vLin_B.allFinite() || !w_B.allFinite()) {
+            LOG_ERROR_ONCE("CollisionResolver::resolveContact_fb: Non-finite velocity detected after collision resolution.");
+            return;
         }
         // Update the RigidBodySystems with the new velocities
         A.setVelocity_fb(vLin_A, w_A);
