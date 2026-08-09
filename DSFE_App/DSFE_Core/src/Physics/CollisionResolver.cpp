@@ -108,14 +108,12 @@ namespace physics {
 		for (size_t a = 0; a < bodies.size(); ++a) {
 			for (size_t b = a + 1; b < bodies.size(); ++b) {
 				LOG_INFO("collide pair %zu-%zu", a, b);
-				if (!bodies[a]->hasFreeJoint() || !bodies[b]->hasFreeJoint()) { LOG_INFO("  skip: not free"); continue; }
+				if (!bodies[a]->hasFreeJoint() || !bodies[b]->hasFreeJoint()) { LOG_INFO("Not free joint -> skipping"); continue; }
 				auto obbA = makeOBB(*bodies[a]);
 				auto obbB = makeOBB(*bodies[b]);
-				if (!obbA || !obbB) { LOG_INFO("skip: no OBB (AABB unpopulated?)"); continue; }
-				LOG_INFO("obbA c=[%.2f %.2f %.2f] he=[%.2f %.2f %.2f]", obbA->centre.x(), obbA->centre.y(), obbA->centre.z(), obbA->halfExtents.x(), obbA->halfExtents.y(), obbA->halfExtents.z());
+				if (!obbA || !obbB) { LOG_INFO("No OBB (AABB unpopulated?) -> skipping"); continue; }
 				physlib::collision::ContactManifold m;
-				if (!physlib::collision::SAT_OBB(*obbA, *obbB, m)) { LOG_INFO("  no hit"); continue; }
-				LOG_INFO("  HIT n=[%.2f %.2f %.2f] pts=%d", m.normal.x(), m.normal.y(), m.normal.z(), m.pointCount);
+				if (!physlib::collision::SAT_OBB(*obbA, *obbB, m)) { continue; }
 				for (int k = 0; k < m.pointCount; ++k) {
 					resolveContact_fb(*bodies[a], *bodies[b], m.normal, m.points[k], 0.2, 0.5);
 				}

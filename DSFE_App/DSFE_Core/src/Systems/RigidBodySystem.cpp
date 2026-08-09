@@ -181,7 +181,7 @@ namespace systems {
 		if (!_hasBody) { return false; }
 		for (const auto& j : _body.joints) {
 			if (j.type == eJointType::FREE) {
-				pos = j.free_pos;
+				pos=j.free_pos;				
 				orient = (j.free_qref * expToQuat(j.free_rot_v)).normalized();
 				angVel = j.free_vel.head<3>();
 				linVel = j.free_vel.tail<3>(); 
