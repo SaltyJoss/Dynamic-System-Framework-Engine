@@ -80,27 +80,41 @@ namespace physics {
 
     // Resolves positional corrections for a contact manifold between two RigidBodySystems
     void CollisionResolver::positionalCorrection_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, physlib::collision::ContactManifold& m) {
-        /* Placeholder */
+        auto a = BodyInfo(A); auto b = BodyInfo(B);
+        constexpr double slop = 0.005; // Allowable penetration depth before correction
+        constexpr double beta = 0.4;  // Percentage of penetration to correct per frame
+        // Compute the maximum penetration depth from the contact manifold points
+        double depth = 0.0;
+        for (int i = 0; i < m.pointCount; ++i) { depth = std::max(depth, m.points[i].depth); } // Accumulate penetration depth
+        const double penetration = std::max(depth - slop, 0.0); // Compute the penetration depth to correct
+        if (penetration <= 0.0) { return; } // No correction needed if penetration is within the slop
+        // Compute the inverse masses of both bodies and the total inverse mass
+        const double m_Ainv = 1.0 / a.m, m_Binv = 1.0 / b.m;
+        const double m_invTotal = m_Ainv + m_Binv;
+        if (m_invTotal <= 1e-12) { return; } // Avoid division by zero (singularities) if both bodies are immovable
+        // Compute the positional correction vector and apply it to both bodies
+        const mathlib::Vec3 push = (beta * penetration / m_invTotal) * m.normal; // Compute the positional correction vector
+        A.setPosition_fb(a.pos - m_Ainv * push); // Move body A away from the contact
+        B.setPosition_fb(b.pos + m_Binv * push); // Move body B away from the contact
     }
 
     // Resolves collisions between a set of RigidBodySystems and updates their states accordingly
     void CollisionResolver::resolveCollisions(std::vector<std::unique_ptr<systems::RigidBodySystem>>& bodies, double dt) {
         // cube-cube collision resolution for now
         for (size_t a = 0; a < bodies.size(); ++a) {
+            // Check for collisions with all other bodies in the list
             for (size_t b = a + 1; b < bodies.size(); ++b) {
                 auto& A = bodies[a];
                 auto& B = bodies[b];
                 const double e = std::min(A->restitution_d(), B->restitution_d());
                 const double mu = std::min(A->friction_d(), B->friction_d());
-                auto obb_A = makeOBB(A);
-                auto obb_B = makeOBB(B);
+                auto obb_A = makeOBB(A); auto obb_B = makeOBB(B);
                 if (!obb_A || !obb_B) { continue; } // Skip if either body does not have a valid OBB
                 physlib::collision::ContactManifold m;
-                if (!physlib::collision::SAT_OBB(*obb_A, *obb_B, m)) { continue; } // No collision detected
+                // Check for collision using the Separating Axis Theorem (SAT) for OBBs
+                if (!physlib::collision::SAT_OBB(*obb_A, *obb_B, m)) { continue; } // No collision detected, skip to the next pair of bodies
                 // Collision detected, resolve contact
-                for (int i = 0; i < m.pointCount; ++i) {
-                    resolveContact_fb(*A, *B, m.normal, m.points[i], e, mu); // Assuming a friction coefficient of 0.5 for now
-                }
+                for (int i = 0; i < m.pointCount; ++i) { resolveContact_fb(*A, *B, m.normal, m.points[i], e, mu); }
                 positionalCorrection_fb(*A, *B, m);
             }
         }
