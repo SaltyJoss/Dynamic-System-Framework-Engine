@@ -100,8 +100,8 @@ namespace systems {
 		 */
 		// Mass and Inertia accessors
 		const double mass() const { return _body.links[0].inertial.mass; }
-		const std::vector<mathlib::Mat3>& linkInertias() const;
-		const mathlib::Mat3& linkInertia(int idx) const;
+		std::vector<mathlib::Mat3> linkInertias() const;
+		mathlib::Mat3 linkInertia(int idx) const;
 		// Body restitution accessors
 		void setRestitution_d(double r, int idx = 0) { _restitution[idx] = r; }
 		void setRestitution(std::vector<double> r) { _restitution = r; }
@@ -126,11 +126,11 @@ namespace systems {
 		double getDampingRatio() const { return _zeta; }
 		void resetDampingRatioToTarget() { for (auto& joint : _body.joints) { joint.zeta_target = _zeta; } }
 		// FreeBody retrieval accesors;
-		const mathlib::Mat3& inertia_fb() const;
-		const mathlib::Vec3& position_fb() const;
-		const mathlib::Quat& orientation_fb() const;
-		const mathlib::Vec3& linearVelocity_fb() const;
-		const mathlib::Vec3& angularVelocity_fb() const;
+		mathlib::Mat3 inertia_fb() const;
+		mathlib::Vec3 position_fb() const;
+		mathlib::Quat orientation_fb() const;
+		mathlib::Vec3 linearVelocity_fb() const;
+		mathlib::Vec3 angularVelocity_fb() const;
 		// FreeBody state accessors
 		bool state_fb(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const;
 		bool setVelocity_fb(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel);

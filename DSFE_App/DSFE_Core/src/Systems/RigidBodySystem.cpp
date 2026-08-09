@@ -76,7 +76,7 @@ namespace systems {
 	/*
 	 * Method to get the inertia of a body link based on its index, in the form of a 3x3 matrix rather than just the inertia struct
 	 */
-	const std::vector<mathlib::Mat3>& RigidBodySystem::linkInertias() const {
+	std::vector<mathlib::Mat3> RigidBodySystem::linkInertias() const {
 		if (!_hasBody || _body.links.empty()) { return {}; }
 		std::vector<mathlib::Mat3> inertias;
 		for (const auto& link : _body.links) {
@@ -92,7 +92,7 @@ namespace systems {
 	/*
 	 * Method to get the inertia of a body link based on its index, in the form of a 3x3 matrix rather than just the inertia struct
 	 */
-	const mathlib::Mat3& RigidBodySystem::linkInertia(int idx) const {
+	mathlib::Mat3 RigidBodySystem::linkInertia(int idx) const {
 		if (!_hasBody) { return mathlib::Mat3::Zero(); }
 		if (idx < 0 || idx >= static_cast<int>(_body.links.size())) { LOG_ERROR("linkInertia: Index out of bounds"); D_ERROR("linkInertia: Index out of bounds"); return mathlib::Mat3::Zero(); }
 		const auto& I = _body.links[idx].inertial.inertia;
@@ -121,7 +121,7 @@ namespace systems {
 	 * FreeBody state accessors
 	 */
 	// Method to get the inertia of the free-floating body (in body frame)
-	const mathlib::Mat3& RigidBodySystem::inertia_fb() const {
+	mathlib::Mat3 RigidBodySystem::inertia_fb() const {
 		if (!_hasBody) { return mathlib::Mat3::Zero(); }
 		for (const auto& j : _body.joints) {
 			if (j.type == eJointType::FREE) {
@@ -139,25 +139,39 @@ namespace systems {
 		return mathlib::Mat3::Zero();
 	}
 	// Method to get the position of the free-floating body (in world frame)
-	const mathlib::Vec3& RigidBodySystem::position_fb() const {
+	mathlib::Vec3 RigidBodySystem::position_fb() const {
 		if (!_hasBody) { return mathlib::Vec3::Zero(); }
-		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_pos; } }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				auto it = _link_idx.find(j.child);
+				if (it == _link_idx.end()) { return j.free_pos; }
+				const RigidBodyLink& L = _body.links[it->second];
+				const mathlib::Vec3 com_local = L.inertial.com_xyz;
+				const mathlib::Quat q = (j.free_qref * expToQuat(j.free_rot_v)).normalized();
+				const mathlib::Vec3 com_world = j.free_pos + q * com_local;
+				return com_world;
+			}
+		}
 		return mathlib::Vec3::Zero();
 	}
 	// Method to get the orientation of the free-floating body (in world frame)
-	const mathlib::Quat& RigidBodySystem::orientation_fb() const {
+	mathlib::Quat RigidBodySystem::orientation_fb() const {
 		if (!_hasBody) { return mathlib::Quat::Identity(); }
-		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_qref; } }
+		for (const auto& j : _body.joints) {
+			if (j.type == eJointType::FREE) {
+				return (j.free_qref * expToQuat(j.free_rot_v)).normalized();
+			}
+		}
 		return mathlib::Quat::Identity();
 	}
 	// Method to get the linear velocity of the free-floating body (in world frame)
-	const mathlib::Vec3& RigidBodySystem::linearVelocity_fb() const {
+	mathlib::Vec3 RigidBodySystem::linearVelocity_fb() const {
 		if (!_hasBody) { return mathlib::Vec3::Zero(); }
 		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_vel.tail<3>(); } }
 		return mathlib::Vec3::Zero();
 	}
 	// Method to get the angular velocity of the free-floating body (in body frame)
-	const mathlib::Vec3& RigidBodySystem::angularVelocity_fb() const {
+	mathlib::Vec3 RigidBodySystem::angularVelocity_fb() const {
 		if (!_hasBody) { return mathlib::Vec3::Zero(); }
 		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_vel.head<3>(); } }
 		return mathlib::Vec3::Zero();
@@ -168,13 +182,13 @@ namespace systems {
 		for (const auto& j : _body.joints) {
 			if (j.type == eJointType::FREE) {
 				pos = j.free_pos;
-				orient = j.free_qref; 
+				orient = (j.free_qref * expToQuat(j.free_rot_v)).normalized();
 				angVel = j.free_vel.head<3>();
 				linVel = j.free_vel.tail<3>(); 
 				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 	// Method to set the velocity of the free-floating body (linear and angular)
 	bool RigidBodySystem::setVelocity_fb(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel) {
