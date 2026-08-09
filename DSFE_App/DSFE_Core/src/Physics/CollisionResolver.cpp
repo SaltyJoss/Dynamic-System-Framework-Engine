@@ -17,12 +17,12 @@ namespace physics {
      * Helper function to create an OBB from a RigidBodySystem's free body state and local AABB.
      * Returns std::nullopt if the RigidBodySystem does not have a free body or if the local AABB is not available.
      */
-    static std::optional<physlib::collision::OBB> makeOBB(const std::unique_ptr<systems::RigidBodySystem>& body) {
+    static std::optional<physlib::collision::OBB> makeOBB(const systems::RigidBodySystem& body) {
         mathlib::Vec3 pos, linVel, angVel;
         mathlib::Quat orientation;
-        if (!body->freeBodyState(pos, orientation, linVel, angVel)) { return std::nullopt; }
+        if (!body.freeBodyState(pos, orientation, linVel, angVel)) { return std::nullopt; }
         mathlib::Vec3 aabbMin, aabbMax;
-        if (!body->freeBodyLocalAABB(aabbMin, aabbMax)) { return std::nullopt; }
+        if (!body.freeBodyLocalAABB(aabbMin, aabbMax)) { return std::nullopt; }
         physlib::collision::AABB local{ aabbMin, aabbMax };
         const mathlib::Mat3 R = orientation.toRotationMatrix();
         return physlib::collision::OBB::fromAABB(local, R, pos);
@@ -104,18 +104,19 @@ namespace physics {
         for (size_t a = 0; a < bodies.size(); ++a) {
             // Check for collisions with all other bodies in the list
             for (size_t b = a + 1; b < bodies.size(); ++b) {
-                auto& A = bodies[a];
-                auto& B = bodies[b];
-                const double e = std::min(A->restitution_d(), B->restitution_d());
-                const double mu = std::min(A->friction_d(), B->friction_d());
+                auto& A = *bodies[a];
+                auto& B = *bodies[b];
+                if (!A.hasFreeJoint() || !B.hasFreeJoint()) { continue; } // Skip if either body does not have a free joint
+                const double e = std::min(A.restitution_d(), B.restitution_d());
+                const double mu = std::min(A.friction_d(), B.friction_d());
                 auto obb_A = makeOBB(A); auto obb_B = makeOBB(B);
                 if (!obb_A || !obb_B) { continue; } // Skip if either body does not have a valid OBB
                 physlib::collision::ContactManifold m;
                 // Check for collision using the Separating Axis Theorem (SAT) for OBBs
                 if (!physlib::collision::SAT_OBB(*obb_A, *obb_B, m)) { continue; } // No collision detected, skip to the next pair of bodies
                 // Collision detected, resolve contact
-                for (int i = 0; i < m.pointCount; ++i) { resolveContact_fb(*A, *B, m.normal, m.points[i], e, mu); }
-                positionalCorrection_fb(*A, *B, m);
+                for (int i = 0; i < m.pointCount; ++i) { resolveContact_fb(A, B, m.normal, m.points[i], e, mu); }
+                positionalCorrection_fb(A, B, m);
             }
         }
     }
