@@ -150,6 +150,11 @@ namespace window {
 				robotMenu->clear();
 				buildRobotMenu(robotMenu);
 			});
+			auto* freeBodyMenu = projectMenu->addMenu("Load Free-Body");
+			connect(freeBodyMenu, &QMenu::aboutToShow, this, [this, freeBodyMenu]() {
+				freeBodyMenu->clear();
+				buildFreeBodyMenu(freeBodyMenu);
+			});
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
@@ -233,11 +238,30 @@ namespace window {
 		}
 	}
 
+	void DSFE_MainWindow::buildFreeBodyMenu(QMenu* projectMenu) {
+		const auto& freeBodyMap = platform::getFreeBodySystemMap();
+		std::unordered_map<platform::eFreeBodyFamilies, QMenu*> familyMenus;
+		for (const auto& [body, family] : freeBodyMap) {
+			if (!familyMenus.contains(family)) {
+				QString familyName = QString::fromStdString(platform::FreeBodies().toString(family));
+				familyMenus[family] = projectMenu->addMenu(familyName);
+			}
+			QString bodyName = QString::fromStdString(platform::FreeBodies().toString(body));
+			QAction* bodyAction = familyMenus[family]->addAction(bodyName);
+			connect(bodyAction, &QAction::triggered, this, [this, bodyName]() {
+				std::string n = bodyName.toStdString();
+				std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
+				const std::string path = "freebody_models/" + n + "/" + n + ".obj";
+				LOG_INFO("Menu clicked: Project -> Load Free Body -> %s", path.c_str());
+				showProjectPage(); _sim->load_mesh(path);
+			});
+		}
+	}
+
 	void DSFE_MainWindow::onLoadMesh() {
 		const QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
 		if (path.isEmpty()) { return; }
 		std::string bodyName = QFileInfo(path).baseName().toStdString();
-		//_sim->simCore()->loadSingleBody(bodyName);
 		_sim->load_mesh(path.toStdString());
 	}
 
