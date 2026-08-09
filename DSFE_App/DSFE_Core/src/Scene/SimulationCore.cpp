@@ -430,6 +430,12 @@ namespace core {
 		_bodiesOwned.push_back(std::move(sys));
 		_activeBodyIdx = (int)_bodiesOwned.size() - 1;
 		_rigidBody = _bodiesOwned[_activeBodyIdx].get();
+
+		if (_rigidBody->hasFreeJoint()) {
+			constexpr double gap = 1.5;
+			mathlib::Vec3 spawnPos(gap * _activeBodyIdx, 0.5, 0.0);
+			_rigidBody->setFreeBodyPosition(spawnPos);
+		}
 	}
 	// Resets the rigidBody system to its initial state
 	void SimulationCore::resetRigidBody() {
