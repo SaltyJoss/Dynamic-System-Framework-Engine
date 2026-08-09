@@ -1,4 +1,7 @@
-// DSFE_GUI RobotSelectorWidget.h
+/*
+ * File: DSFE_GUI/src/MainWindow/Widgets/RobotSelectorWidget.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 
 #include <QWidget>

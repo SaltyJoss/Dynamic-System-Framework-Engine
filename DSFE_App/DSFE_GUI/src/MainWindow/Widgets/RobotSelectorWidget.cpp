@@ -1,4 +1,7 @@
-// DSFE_GUI RobotSelectorWidget.cpp
+/*
+ * File: DSFE_GUI/src/MainWindow/Widgets/RobotSelectorWidget.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "Widgets/RobotSelectorWidget.h"
 #include "Simulation/SimulationManager.h"
 
