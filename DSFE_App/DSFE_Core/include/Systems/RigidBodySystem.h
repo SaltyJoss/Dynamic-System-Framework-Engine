@@ -127,10 +127,10 @@ namespace systems {
 		void resetDampingRatioToTarget() { for (auto& joint : _body.joints) { joint.zeta_target = _zeta; } }
 		// FreeBody retrieval accesors;
 		const mathlib::Mat3& inertia_fb() const;
-		const mathlib::Vec3& position_fb() const { mathlib::Vec3 p = _body.joints[0].free_pos; return p; }
-		const mathlib::Quat& orientation_fb() const { mathlib::Quat q = _body.joints[0].free_qref; return q; }
-		const mathlib::Vec3& linearVelocity_fb() const { mathlib::Vec3 vLin = _body.joints[0].free_vel.tail<3>(); return vLin; }
-		const mathlib::Vec3& angularVelocity_fb() const { mathlib::Vec3 vAng = _body.joints[0].free_vel.head<3>(); return vAng; }
+		const mathlib::Vec3& position_fb() const;
+		const mathlib::Quat& orientation_fb() const;
+		const mathlib::Vec3& linearVelocity_fb() const;
+		const mathlib::Vec3& angularVelocity_fb() const;
 		// FreeBody state accessors
 		bool state_fb(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const;
 		bool setVelocity_fb(const mathlib::Vec3& linVel, const mathlib::Vec3& angVel);

@@ -120,7 +120,7 @@ namespace systems {
 	/*
 	 * FreeBody state accessors
 	 */
-	//
+	// Method to get the inertia of the free-floating body (in body frame)
 	const mathlib::Mat3& RigidBodySystem::inertia_fb() const {
 		if (!_hasBody) { return mathlib::Mat3::Zero(); }
 		for (const auto& j : _body.joints) {
@@ -137,6 +137,30 @@ namespace systems {
 			}
 		}
 		return mathlib::Mat3::Zero();
+	}
+	// Method to get the position of the free-floating body (in world frame)
+	const mathlib::Vec3& RigidBodySystem::position_fb() const {
+		if (!_hasBody) { return mathlib::Vec3::Zero(); }
+		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_pos; } }
+		return mathlib::Vec3::Zero();
+	}
+	// Method to get the orientation of the free-floating body (in world frame)
+	const mathlib::Quat& RigidBodySystem::orientation_fb() const {
+		if (!_hasBody) { return mathlib::Quat::Identity(); }
+		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_qref; } }
+		return mathlib::Quat::Identity();
+	}
+	// Method to get the linear velocity of the free-floating body (in world frame)
+	const mathlib::Vec3& RigidBodySystem::linearVelocity_fb() const {
+		if (!_hasBody) { return mathlib::Vec3::Zero(); }
+		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_vel.tail<3>(); } }
+		return mathlib::Vec3::Zero();
+	}
+	// Method to get the angular velocity of the free-floating body (in body frame)
+	const mathlib::Vec3& RigidBodySystem::angularVelocity_fb() const {
+		if (!_hasBody) { return mathlib::Vec3::Zero(); }
+		for (const auto& j : _body.joints) { if (j.type == eJointType::FREE) { return j.free_vel.head<3>(); } }
+		return mathlib::Vec3::Zero();
 	}
 	// Method to get the state of the free-floating body (position, orientation, linear velocity, angular velocity)
 	bool RigidBodySystem::state_fb(mathlib::Vec3& pos, mathlib::Quat& orient, mathlib::Vec3& linVel, mathlib::Vec3& angVel) const {
