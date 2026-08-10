@@ -13,30 +13,38 @@
 #include "EngineLib/LogMacros.h"
 
 namespace systems {
-	// --- RigidBody Kinematic Models ---
+	/*
+	 * RigidBody Model Enumerators
+	 */
+	// RigidBody Kinematic Model Enumeration
 	enum class eKinematicsModel {
 		URDF,
 		DH
 	};
-	// --- URDF Joint Types ---
+	// URDF Joint Type Enumeration
 	enum class eJointType {
 		FIXED = 0,
 		REVOLUTE = 1,
 		PRISMATIC = 2,
 		FREE = 3
 	};
-	// --- Visual Frame Options ---
+	// Visual Frame Enumeration
 	enum class eVisualFrame {
 		NONE,
 		JOINT,
 		LINK,
 		WORLD
 	};
+	// Collision Shape Enumeration
+	enum class eCollisionShape {
+		NONE,
+		CAPSULE
+	};
 
 	/*
-	 * Helper function to get the degrees of freedom (DOF) for a given joint type.
-	 * @param t The joint type (eJointType).
+	 * Helper functions
 	 */
+	// Helper to get the degrees of freedom (DOF) for a given joint type.
 	inline int jointDOF(eJointType t) {
 		switch(t) {
 			case eJointType::FREE:	 	return 6;
@@ -47,34 +55,25 @@ namespace systems {
 		}
 	}
 
-	// --- RigidBody Model Links ---
-
+	/*
+	 * RigidBody Model Links
+	 */
 	// Inertia tensor struct, representing the inertia of a link about its center of mass, expressed in the link's local frame
 	struct Inertia { double ixx = 0, ixy = 0, ixz = 0, iyy = 0, iyz = 0, izz = 0; };
-
 	// Inertial properties of a link
 	struct Inertial {
 		double mass = 0.0;
 		mathlib::Vec3 com_xyz{ 0.0,0.0,0.0 };
 		Inertia inertia{};
 	};
-
 	// Collision shape struct, supporting basic shapes (box, cylinder) and mesh (not implemented yet)
 	struct CollisionShape {
-		std::string type;
-
+		eCollisionShape type = eCollisionShape::NONE;
 		// Collision Geometry
-		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
-		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
-
-		// Collision Geometry Parameters
-		mathlib::Vec3 size{ 0.0, 0.0, 0.0 }; // cylinder -> size = [radius, length, 0], box -> size = [x, y, z]
-		std::string meshFile; // for mesh collision shapes, not implemented yet
-		mathlib::Vec4 material{ 1.0, 0.0, 0.2, 1.0 };
-		float metallic = 0.5f;
-		float roughness = 0.5f;
+		mathlib::Vec3 localA{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 localB{ 0.0, 0.0, 0.0 };
+		double radius = 0.0;
 	};
-
 	// Per-mesh entry with individual material properties
 	struct VisualMeshEntry {
 		std::string meshFile;
@@ -83,7 +82,6 @@ namespace systems {
 		float roughness = 0.5f;
 		bool hasMaterial = false; // true if material was explicitly specified
 	};
-
 	// Visual struct, representing the visual geometry of a link
 	struct Visual {
 		// Visual Geometry
@@ -94,25 +92,23 @@ namespace systems {
 		std::vector<std::string> meshFiles; // for multiple visual meshes per link (legacy, string-only)
 		std::vector<VisualMeshEntry> meshEntries; // for multiple visual meshes with per-mesh material
 	};
-
 	// Link struct, representing a single link in the rigid body
 	struct RigidBodyLink {
 		std::string name;
-
-		// Geometries (for rendering)
+		// Geometries
 		Visual visual{};
-		std::vector<CollisionShape> collisions;
+		CollisionShape collision{};
 		Inertial inertial{};
-
 		// Axis-aligned bounding box (AABB) for the link, in world coordinates
 		// Placeholders, kind of, if using GUI these are filled at loadtime
-		mathlib::Vec3 aabbMin{ 0,0,0 };
-		mathlib::Vec3 aabbMax{ 0,0,0 };
+		mathlib::Vec3 aabbMin{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 aabbMax{ 0.0, 0.0, 0.0 };
 		bool hasBounds = false;
 	};
 
-	// --- RigidBody Model Joints ---
-
+	/*
+	 * RigidBody Model Joints
+	 */
 	// Joint limits struct, representing the physical limits of a joint
 	struct JointLimit {
 		bool continuous = false;
@@ -123,97 +119,78 @@ namespace systems {
 		// Soft limits
 		double omegaRefMaxRad_s = 0.0;
 	};
-
 	// Joint dynamics parameters, representing the damping and friction properties of a joint
 	struct JointDynamics {
 		double damping = 0.0;
 		double friction = 0.0;
 	};
-
 	// Joint struct, representing a single joint in the RigidBody model
 	struct RigidBodyJoint {
 		// Joint name and parent-child link names
 		std::string name = "";
 		std::string parent = "";
 		std::string child = "";
-
 		// URDF joint type
 		eJointType type = eJointType::REVOLUTE;
-
 		// Parent joint axis and pivot (for visualization of the joint frame)
 		mathlib::Vec3 axisParent{ 0.0, 0.0, 1.0 };
 		mathlib::Vec3 pivotParent{ 0.0, 0.0, 0.0 };
-
-		// URDF joint frame (parent → joint)
+		// URDF joint frame (parent -> joint)
 		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 }; // translation from parent link frame to joint frame, expressed in parent link frame
 		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 }; // roll, pitch, yaw in radians
 		mathlib::Quat origin_q{ 1,0,0,0 };		  // Rotation matrix from link frame to base frame, derived from rpy_deg in JSON
-
 		// Free-Joint States
 		mathlib::Vec3 free_pos{ 0.0, 0.0, 0.0 }; // Position of the free joint in world frame
 		mathlib::Vec3 free_rot_v{ 0.0, 0.0, 0.0 }; // Rotation of the free joint in world frame (Euler angles)
 		mathlib::Quat free_qref{ 1,0,0,0 }; // Rotation of the free joint in world frame (Quaternion)
 		mathlib::VecX free_vel = mathlib::VecX::Zero(6); // Velocity of the free joint in world frame (linear + angular)
-
-
 		// Axis expressed IN JOINT FRAME
 		mathlib::Vec3 axis{ 0.0, 0.0, 1.0 };
-
-		// --- Limits ---
+		// Limits
 		JointLimit limits;
 		JointDynamics dynamics;
-
-		// --- State ---
+		// State
 		double q = 0.0;	  // rad
 		double qd = 0.0;	  // rad/s
 		double torque = 0.0; // Nm or N
 		double eta = 0.0f;	  // Integral state
-
-		// --- Control ---
+		// Control
 		double q_ref = 0.0;   // rad
 		double qd_ref = 0.0;  // rad/s
 		double qdd_ref = 0.0; // rad/s^2
-
-		// --- Control Parameters ---
+		// Control Parameters
 		double wn_target = 0.0;	 // rad/s
 		double zeta_target = 0.0;	 // damping ratio
-
-		// --- Precomputed transforms ---
+		// Precomputed transforms
 		mathlib::Mat4 jointToChildRest = mathlib::Mat4::Identity();
 		mathlib::Mat4 parentToJoint = mathlib::Mat4::Identity();
 	};
 
-	// --- RigidBody Model ---
-
+	/*
+	 * RigidBody Model
+	 */
 	// RigidBodyModel struct, representing the entire rigid-body model
 	struct RigidBodyModel {
+		// Model name and scale
 		std::string name = "unnamed_body";
 		float scale = 1.0f;
-
 		// Links and joints
 		std::vector<RigidBodyLink> links;
 		std::vector<RigidBodyJoint> joints;
-
 		// Kinematics model (URDF or DH)
 		eKinematicsModel kinematicsModel = eKinematicsModel::URDF;
 		std::vector<kinematics::DH_Params<double>> dhParams;
-
-		// Visualization options
+		// Visualisation options
 		eVisualFrame visualFrame = eVisualFrame::JOINT;
 		std::unordered_map<std::string, Vec4> materials;
 		mathlib::Mat4 baseFrame = mathlib::Mat4::Identity(); // transform from world frame to rigidbody base frame, can be set in JSON
-
 		bool baseFrameIsEngineAligned = false;
-
 		// Create an Eigen vector of joint angles
 		VecX makeJointVector() const {
-			const int n = static_cast<int>(joints.size());
-			LOG_INFO_ONCE("Making joint vector of size %d", n);
-			VecX q(n);
+			const int n = static_cast<int>(joints.size()); VecX q(n);
 			for (int i = 0; i < n; ++i) { q(i) = joints[i].q; }
 			return q;
 		}
-
 		// Set joint angles from an Eigen vector
 		void setJointVector(const VecX& q) {
 			const int n = static_cast<int>(joints.size());
@@ -222,10 +199,7 @@ namespace systems {
 				D_ERROR("Joint vector size mismatch: expected %d, got %d", n, q.size());
 				return;
 			}
-			for (int i = 0; i < n; ++i) {
-				double a = q(i);
-				joints[i].q = a;
-			}
+			for (int i = 0; i < n; ++i) { double a = q(i); joints[i].q = a; }
 		}
 	};
 } // namespace systems
