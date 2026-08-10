@@ -76,7 +76,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 -0.65 0" radius="0.055"/>
+      <dsfe_capsule a="0 0 0" b="0 0.65 0" radius="0.055"/>
     </collision>
     <inertial>
       <mass value="3.157"/>
