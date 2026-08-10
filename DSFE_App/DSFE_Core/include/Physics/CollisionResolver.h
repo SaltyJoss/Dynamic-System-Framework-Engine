@@ -42,9 +42,17 @@ namespace physics {
             };
 
             /*
-             * Internal helper functions for collision resolution
+             * Internal methods for collision resolution and positional correction
              */
+            // Resolves collisions between a set of RigidBodySystems and updates their states accordingly
             void resolveContact_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, mathlib::Vec3& norm, physlib::collision::ContactPoint& p, double e, double mu);
+            // Resolves positional corrections for a contact manifold between two RigidBodySystems
             void positionalCorrection_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, physlib::collision::ContactManifold& m);
+            // Resolves a collision between a free body and a fixed body and updates the free body's velocity based on the contact information
+            void resolveContact_fbVsFixed(systems::RigidBodySystem& fb, mathlib::Vec3& norm, physlib::collision::ContactPoint& p, double e, double mu);
+            // Resolves positional corrections for a contact manifold between a free body and a fixed body
+	        void positionalCorrection_fbVsFixed(systems::RigidBodySystem& fb, physlib::collision::ContactManifold& m);
+            // Wrapper function to handle collisions between a free body and an arm (fixed body) and update the free body's state accordingly
+            void collideFreeVsFixed(systems::RigidBodySystem& free, systems::RigidBodySystem& fixed);
     };
 } // namespace physics

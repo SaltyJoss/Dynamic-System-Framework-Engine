@@ -82,7 +82,6 @@ namespace physics {
         A.setVelocity_fb(vLin_A, w_A);
         B.setVelocity_fb(vLin_B, w_B);
     }
-
     // Resolves positional corrections for a contact manifold between two RigidBodySystems
     void CollisionResolver::positionalCorrection_fb(systems::RigidBodySystem& A, systems::RigidBodySystem& B, physlib::collision::ContactManifold& m) {
         auto a = BodyInfo(A); auto b = BodyInfo(B);
@@ -102,6 +101,76 @@ namespace physics {
         A.setPosition_fb(a.pos - m_Ainv * push); // Move body A away from the contact
         B.setPosition_fb(b.pos + m_Binv * push); // Move body B away from the contact
     }
+    // Resolves a collision between a free body and a fixed body and updates the free body's velocity based on the contact information
+    void CollisionResolver::resolveContact_fbVsFixed(systems::RigidBodySystem& fb, mathlib::Vec3& norm, physlib::collision::ContactPoint& p, double e, double mu) {
+        auto b = BodyInfo(fb);
+        const mathlib::Mat3 R_fb = b.ori.toRotationMatrix();
+        const mathlib::Mat3 I_fb = R_fb * b.I * R_fb.transpose();
+        const mathlib::Mat3 I_fb_inv = I_fb.inverse();
+        // Compute the contact point relative to the free body's center of mass
+        mathlib::Vec3 vLin_fb = b.linVel, w_fb = b.angVel;
+        const mathlib::Vec3 r_fb = p.pos - b.pos;
+        // Compute the relative velocity at the contact point (fixed body has zero velocity)
+        const mathlib::Vec3 v_fb_pt = b.linVel + b.angVel.cross(r_fb);
+        const mathlib::Vec3 v_rel = v_fb_pt; // v_fb - v_obstacle (=0)
+        // Compute the effective mass along the contact normal for the free body
+        auto m_eff_norm = [&](BodyInfo& b, const mathlib::Vec3& r, const mathlib::Mat3& I_inv, const mathlib::Vec3& d) -> double {
+            return (1.0/b.m) + d.dot(r.cross(I_inv * r.cross(d)));
+        };
+        const double m_eff = m_eff_norm(b, r_fb, I_fb_inv, norm); // Compute the effective mass for the contact
+        //
+        double j = physlib::collision::solveNormalImpulse(norm, v_rel , m_eff, e); // Compute the normal impulse magnitude
+        if (!std::isfinite(j) || m_eff <= 1e-12) { return; } // Avoid division by zero or non-finite impulses
+        mathlib::Vec3 J = j * norm; // Compute the impulse vector
+        vLin_fb -= J / b.m; w_fb += I_fb_inv * r_fb.cross(J); // Update linear and angular velocities of the free body based on the impulse
+        // Friction resolution
+        mathlib::Vec3 v_T = v_rel - (v_rel.dot(norm) * norm); // Compute the relative velocity in the tangent plane
+        if (v_T.norm() > 1e-6) { // If there is significant tangential relative velocity, apply friction
+            mathlib::Vec3 t = v_T.normalized(); // Tangent direction
+            double m_eff_t = m_eff_norm(b, r_fb, I_fb_inv, t); // Effective mass along the tangent
+            mathlib::Vec3 J_f = physlib::collision::solveFrictionImpulse(t, v_rel, m_eff_t, j, mu); // Compute the friction impulse
+            vLin_fb -= J_f / b.m; w_fb += I_fb_inv * r_fb.cross(J_f); // Update free body with friction impulse
+        }
+        if (!vLin_fb.allFinite() || !w_fb.allFinite()) {
+            LOG_ERROR_ONCE("CollisionResolver::resolveContact_fbVsFixed: Non-finite velocity detected after collision resolution.");
+            return;
+        }
+        // Update the RigidBodySystem with the new velocities
+        fb.setVelocity_fb(vLin_fb, w_fb);
+    }
+    // Resolves positional corrections for a contact manifold between a free body and a fixed body
+    void CollisionResolver::positionalCorrection_fbVsFixed(systems::RigidBodySystem& fb, physlib::collision::ContactManifold& m) {
+        auto b = BodyInfo(fb);
+        constexpr double slop = 0.005, beta = 0.4; // Allowable penetration depth and correction percentage
+        double depth = 0.0;
+        for (int i = 0; i < m.pointCount; ++i) { depth = std::max(depth, m.points[i].depth); } // Accumulate penetration depth
+        const double penetration = std::max(depth - slop, 0.0); // Compute the penetration depth to correct
+        if (penetration <= 0.0) { return; } // No correction needed
+        const mathlib::Vec3 push = (beta * penetration) * m.normal; // Compute the positional correction vector
+        fb.setPosition_fb(b.pos + push); // Move the free body away from the contact
+    }
+
+    //
+    void CollisionResolver::collideFreeVsFixed(systems::RigidBodySystem& free, systems::RigidBodySystem& fixed) {
+        auto cube_OBB = makeOBB(free);
+        if (!cube_OBB) { return; }
+        const auto& links = fixed.links();
+        const auto& xforms = fixed.worldTransforms();
+        // Iterate through all links in the arm to check for collisions with the free body
+        for (size_t li = 0; li < links.size(); ++li) {
+            const auto& l = links[li];
+            if (l.collision.type != systems::eCollisionShape::CAPSULE) { continue; } // Only handle capsule collision shapes for now
+            if (li >= xforms.size()) { continue; }
+            // Build a world-space capsule from the link's local collision shape
+            auto cap = makeCapsule(l, xforms[li]);
+            // Check for collision between the capsule and the free body's OBB using SAT
+            physlib::collision::ContactManifold m;
+            if (!physlib::collision::capsuleOBB(cap, *cube_OBB, m)) { continue; } // Check for collision using SAT
+            // Resolve contacts for each contact point in the manifold
+            for (int k = 0; k < m.pointCount; ++k) { resolveContact_fbVsFixed(free, m.normal, m.points[k], 0.2, 0.5); }
+            positionalCorrection_fbVsFixed(free, m); // Apply positional correction for the contact manifold
+        }
+    }
 
     // Builds a world-space capsule from a link's local collision shape.
     physlib::collision::Capsule CollisionResolver::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
@@ -117,22 +186,37 @@ namespace physics {
         c.radius = link.collision.radius;
         return c;
     }
-
     // Resolves collisions between a set of RigidBodySystems and updates their states accordingly
     void CollisionResolver::resolveCollisions(std::vector<std::unique_ptr<systems::RigidBodySystem>>& bodies, double dt) {
-		for (size_t a = 0; a < bodies.size(); ++a) {
+        const size_t n = bodies.size();
+        // Check for collisions between all pairs of bodies
+		for (size_t a = 0; a < n; ++a) {
 			for (size_t b = a + 1; b < bodies.size(); ++b) {
-				LOG_INFO("collide pair %zu-%zu", a, b);
-				if (!bodies[a]->hasFreeJoint() || !bodies[b]->hasFreeJoint()) { LOG_INFO("Not free joint -> skipping"); continue; }
-				auto obbA = makeOBB(*bodies[a]);
-				auto obbB = makeOBB(*bodies[b]);
-				if (!obbA || !obbB) { LOG_INFO("No OBB (AABB unpopulated?) -> skipping"); continue; }
-				physlib::collision::ContactManifold m;
-				if (!physlib::collision::SAT_OBB(*obbA, *obbB, m)) { continue; }
-				for (int k = 0; k < m.pointCount; ++k) {
-					resolveContact_fb(*bodies[a], *bodies[b], m.normal, m.points[k], 0.2, 0.5);
-				}
-				positionalCorrection_fb(*bodies[a], *bodies[b], m);
+                const bool a_free = bodies[a]->hasFreeJoint(), b_free = bodies[b]->hasFreeJoint();
+                // Check 1: Both are free -> OBB cube - cube
+                if (a_free && b_free) {
+                    auto obbA = makeOBB(*bodies[a]);
+                    auto obbB = makeOBB(*bodies[b]);
+                    if (!obbA || !obbB) { LOG_INFO("No OBB (AABB unpopulated?) -> skipping"); continue; }
+                    physlib::collision::ContactManifold m;
+                    if (!physlib::collision::SAT_OBB(*obbA, *obbB, m)) { continue; }
+                    for (int k = 0; k < m.pointCount; ++k) { resolveContact_fb(*bodies[a], *bodies[b], m.normal, m.points[k], 0.2, 0.5); }
+                    positionalCorrection_fb(*bodies[a], *bodies[b], m);
+                    continue;
+                }
+                // Check 2: EXACTLY one is free (A or B) -> free cube vs arm links
+                if (a_free != b_free) {
+                    LOG_INFO("dispatch: free-vs-arm pair %zu-%zu", a, b);
+                    systems::RigidBodySystem& free = a_free ? *bodies[a] : *bodies[b];
+                    systems::RigidBodySystem& fixed = a_free ? *bodies[b] : *bodies[a];
+                    collideFreeVsFixed(free, fixed);
+                    continue;
+                }
+                // Check3 3: Im going to add arm v arm later, not sure the best way to approach it yet, especially given how the collision spines need actual values
+                if (!a_free && !b_free) {
+                    LOG_INFO_ONCE("Arm v Arm collision not implemented yet, skipping");
+                    continue;
+                }
 			}
 		}
 	}
