@@ -153,6 +153,11 @@ namespace renderer {
                 VkBuffer buffer = VK_NULL_HANDLE;
                 VmaAllocation allocation = nullptr;
             };
+            // Debug line vertex structure containing position and colour for rendering debug lines
+            struct DebugLineVertex {
+                glm::vec3 pos;
+                glm::vec4 colour;
+            };
             // GPU mesh structure containing vertex and index buffers
             struct GpuMesh {
                 GpuBuffer vertices;
@@ -172,6 +177,15 @@ namespace renderer {
             Pipeline _grid_pipeline;
             GpuMesh  _grid_quad{};
             bool create_grid();
+
+            // Debug line rendering
+            Pipeline _debug_line_pipeline;
+            std::array<GpuBuffer, MAX_FRAMES_IN_FLIGHT> _debug_line_buffers;
+            std::array<uint32_t, MAX_FRAMES_IN_FLIGHT> _debug_line_capacity{};
+            std::vector<DebugLineVertex> _debug_lines;
+            bool create_debug_line_pipeline();
+            VkPipeline create_line_pipeline(VkPipelineLayout layout, ShaderModules shaders);
+            void ensure_debug_line_capacity(uint32_t slot, uint32_t vertexCount);
 
             // Camera uniform buffer object structure for passing camera data to shaders
             struct CameraUBO {
@@ -195,5 +209,11 @@ namespace renderer {
             uint32_t upload_mesh(const std::vector<assets::VertexHolder>& vertices, const std::vector<uint32_t>& indices);
             void destroy_all_meshes();
             const GpuMesh* get_mesh(uint32_t id) const { return id < _meshes.size() ? &_meshes[id] : nullptr; }
+
+            void debug_lines_clear() { _debug_lines.clear(); }
+            void debug_line(const glm::vec3& start, const glm::vec3& end, const glm::vec4& colour) {
+                _debug_lines.push_back({ start, colour });
+                _debug_lines.push_back({ end,   colour });
+            }
     };
 } // namespace renderer
