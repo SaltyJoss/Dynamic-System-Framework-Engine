@@ -8,7 +8,7 @@
       <dsfe_material rgba="0.76 0.63 0.28 1.0" metallic="0.95" roughness="0.3"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0 0.18" radius="0.08"/>
+      <dsfe_capsule a="0 0 0" b="0 0 0.2285" radius="0.08"/>
     </collision>
     <inertial>
       <mass value="0.627"/>
@@ -25,7 +25,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 -0.05 -0.05" radius="0.07"/>
+      <dsfe_capsule a="0 0.0485 0" b="0 -0.243 0" radius="0.07"/>
     </collision>
     <inertial>
       <mass value="2.328"/>
@@ -42,7 +42,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0.8 0 0" radius="0.06"/>
+      <dsfe_capsule a="-0.0475 0 0.195" b="0.845 0 0.195" radius="0.07"/>
     </collision>
     <inertial>
       <mass value="3.995"/>
@@ -59,7 +59,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0.07 0.05" radius="0.06"/>
+      <dsfe_capsule a="0 -0.065 0.1" b="0 0.7 0.105" radius="0.06"/>
     </collision>
     <inertial>
       <mass value="2.328"/>
@@ -76,7 +76,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0.65 0" radius="0.055"/>
+      <dsfe_capsule a="0 -0.156 0" b="0 0.1025 0" radius="0.055"/>
     </collision>
     <inertial>
       <mass value="3.157"/>
@@ -93,7 +93,7 @@
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0.325 0" radius="0.05"/>
+      <dsfe_capsule a="0 0 0" b="0 0.2275 0" radius="0.075"/>
     </collision>
     <inertial>
       <mass value="2.695"/>
@@ -110,7 +110,7 @@
       <dsfe_material rgba="0.90 0.91 0.92 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0 0.08" radius="0.05"/>
+      <dsfe_capsule a="0 0 0" b="0 0 -0.0975" radius="0.05"/>
     </collision>
     <inertial>
       <mass value="0.924"/>
