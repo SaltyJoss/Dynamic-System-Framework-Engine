@@ -8,7 +8,6 @@
 #include <collision/OBB.h>
 #include <collision/SAT.h>
 #include <collision/contact.h>
-#include <collision/capsule.h>
 #include <collision/contact_solver.h>
 
 #include "EngineLib/LogMacros.h"
@@ -27,20 +26,6 @@ namespace physics {
         physlib::collision::AABB local{ aabbMin, aabbMax };
         const mathlib::Mat3 R = orientation.toRotationMatrix();
         return physlib::collision::OBB::fromAABB(local, R, pos);
-    }
-    // Builds a world-space capsule from a link's local collision shape.
-    static std::optional<physlib::collision::Capsule> makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
-        if (link.collision.type != systems::eCollisionShape::CAPSULE) { return std::nullopt; }
-        auto xform = [&](const mathlib::Vec3& p) -> mathlib::Vec3 {
-            mathlib::Vec4 h(p.x(), p.y(), p.z(), 1.0); // Homogeneous coordinates
-            mathlib::Vec4 h_w = world_T * h; // Transform to world coordinates
-            return mathlib::Vec3(h_w.x(), h_w.y(), h_w.z());
-        };
-        physlib::collision::Capsule c;
-        c.a = xform(link.collision.localA);
-        c.b = xform(link.collision.localB);
-        c.radius = link.collision.radius;
-        return c;
     }
 
     /*
@@ -116,6 +101,21 @@ namespace physics {
         const mathlib::Vec3 push = (beta * penetration / m_invTotal) * m.normal; // Compute the positional correction vector
         A.setPosition_fb(a.pos - m_Ainv * push); // Move body A away from the contact
         B.setPosition_fb(b.pos + m_Binv * push); // Move body B away from the contact
+    }
+
+    // Builds a world-space capsule from a link's local collision shape.
+    std::optional<physlib::collision::Capsule> CollisionResolver::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+        if (link.collision.type != systems::eCollisionShape::CAPSULE) { return std::nullopt; }
+        auto xform = [&](const mathlib::Vec3& p) -> mathlib::Vec3 {
+            mathlib::Vec4 h(p.x(), p.y(), p.z(), 1.0); // Homogeneous coordinates
+            mathlib::Vec4 h_w = world_T * h; // Transform to world coordinates
+            return mathlib::Vec3(h_w.x(), h_w.y(), h_w.z());
+        };
+        physlib::collision::Capsule c;
+        c.a = xform(link.collision.localA);
+        c.b = xform(link.collision.localB);
+        c.radius = link.collision.radius;
+        return c;
     }
 
     // Resolves collisions between a set of RigidBodySystems and updates their states accordingly

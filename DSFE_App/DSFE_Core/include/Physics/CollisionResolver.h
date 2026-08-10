@@ -6,6 +6,7 @@
 #include "EngineCore.h"
 #include <MathLib>
 #include "Systems/RigidBodySystem.h"
+#include <collision/capsule.h>
 #include <collision/contact.h>
 
 namespace physics {
@@ -15,6 +16,7 @@ namespace physics {
             ~CollisionResolver();
             // Resolves a collision between two OBBs and returns the contact information
             void resolveCollisions(std::vector<std::unique_ptr<systems::RigidBodySystem>>& bodies, double dt);
+            std::optional<physlib::collision::Capsule> makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T);
 
         private:
             /*
