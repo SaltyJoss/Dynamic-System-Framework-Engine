@@ -110,6 +110,9 @@ namespace core {
 		void setActiveBody(int i) override;
 		void clearBodies() override;
 
+		// Collision
+		physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) override;
+
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) override;
 

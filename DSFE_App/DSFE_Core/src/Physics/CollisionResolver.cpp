@@ -104,8 +104,8 @@ namespace physics {
     }
 
     // Builds a world-space capsule from a link's local collision shape.
-    std::optional<physlib::collision::Capsule> CollisionResolver::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
-        if (link.collision.type != systems::eCollisionShape::CAPSULE) { return std::nullopt; }
+    physlib::collision::Capsule CollisionResolver::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+        if (link.collision.type != systems::eCollisionShape::CAPSULE) { LOG_ERROR("Link collision shape is not a capsule, cannot create capsule"); return physlib::collision::Capsule{}; }
         auto xform = [&](const mathlib::Vec3& p) -> mathlib::Vec3 {
             mathlib::Vec4 h(p.x(), p.y(), p.z(), 1.0); // Homogeneous coordinates
             mathlib::Vec4 h_w = world_T * h; // Transform to world coordinates

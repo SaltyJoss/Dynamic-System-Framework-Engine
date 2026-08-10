@@ -459,6 +459,11 @@ namespace core {
 		_rigidBody = _bodiesOwned[0].get();
 	}
 
+	// Collision
+	physlib::collision::Capsule SimulationCore::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+		return _collisionResolver.makeCapsule(link, world_T);
+	}
+
 	// Sets an external force on a specific link of the rigidBody system at a given world point
 	bool SimulationCore::setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) {
 		return _rigidBody->setLinkExtForce(link, worldPoint, worldForce);

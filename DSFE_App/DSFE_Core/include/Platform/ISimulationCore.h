@@ -78,7 +78,7 @@ namespace core {
         virtual void setActiveBody(int i) = 0;
         virtual void clearBodies() = 0;
         // Collision
-        virtual std::optional<physlib::collision::Capsule> makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) = 0;
+        virtual physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) = 0;
         // Script execution
         virtual void setRunTag(const std::string& tag) = 0;
         virtual void setScriptRunning(bool running) = 0;
