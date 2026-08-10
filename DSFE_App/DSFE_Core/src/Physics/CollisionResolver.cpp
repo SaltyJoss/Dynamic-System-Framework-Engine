@@ -8,15 +8,16 @@
 #include <collision/OBB.h>
 #include <collision/SAT.h>
 #include <collision/contact.h>
+#include <collision/capsule.h>
 #include <collision/contact_solver.h>
 
 #include "EngineLib/LogMacros.h"
 
 namespace physics {
     /*
-     * Helper function to create an OBB from a RigidBodySystem's free body state and local AABB.
-     * Returns std::nullopt if the RigidBodySystem does not have a free body or if the local AABB is not available.
+     * Helper functions
      */
+    // Creates an OBB from a RigidBodySystem's free body state and local AABB
     static std::optional<physlib::collision::OBB> makeOBB(const systems::RigidBodySystem& body) {
         mathlib::Vec3 pos, linVel, angVel;
         mathlib::Quat orientation;
@@ -26,6 +27,20 @@ namespace physics {
         physlib::collision::AABB local{ aabbMin, aabbMax };
         const mathlib::Mat3 R = orientation.toRotationMatrix();
         return physlib::collision::OBB::fromAABB(local, R, pos);
+    }
+    // Builds a world-space capsule from a link's local collision shape.
+    static std::optional<physlib::collision::Capsule> makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+        if (link.collision.type != systems::eCollisionShape::CAPSULE) { return std::nullopt; }
+        auto xform = [&](const mathlib::Vec3& p) -> mathlib::Vec3 {
+            mathlib::Vec4 h(p.x(), p.y(), p.z(), 1.0); // Homogeneous coordinates
+            mathlib::Vec4 h_w = world_T * h; // Transform to world coordinates
+            return mathlib::Vec3(h_w.x(), h_w.y(), h_w.z());
+        };
+        physlib::collision::Capsule c;
+        c.a = xform(link.collision.localA);
+        c.b = xform(link.collision.localB);
+        c.radius = link.collision.radius;
+        return c;
     }
 
     /*
