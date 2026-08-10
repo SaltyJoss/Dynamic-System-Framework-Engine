@@ -156,7 +156,7 @@ namespace renderer {
             // Debug line vertex structure containing position and colour for rendering debug lines
             struct DebugLineVertex {
                 glm::vec3 pos;
-                glm::vec4 colour;
+                glm::vec3 colour;
             };
             // GPU mesh structure containing vertex and index buffers
             struct GpuMesh {
@@ -211,7 +211,7 @@ namespace renderer {
             const GpuMesh* get_mesh(uint32_t id) const { return id < _meshes.size() ? &_meshes[id] : nullptr; }
 
             void debug_lines_clear() { _debug_lines.clear(); }
-            void debug_line(const glm::vec3& start, const glm::vec3& end, const glm::vec4& colour) {
+            void debug_line(const glm::vec3& start, const glm::vec3& end, const glm::vec3& colour) {
                 _debug_lines.push_back({ start, colour });
                 _debug_lines.push_back({ end,   colour });
             }
