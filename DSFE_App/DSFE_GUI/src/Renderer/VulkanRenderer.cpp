@@ -480,6 +480,126 @@ namespace renderer {
         return _grid_pipeline.pipeline != VK_NULL_HANDLE;
     }
 
+    // Creates a graphics pipeline specifically for rendering debug lines, using the provided pipeline layout and shader modules.
+    VkPipeline VulkanRenderer::create_line_pipeline(VkPipelineLayout layout, ShaderModules shaders) {
+        VkDevice dev = _context->device();
+        VkPipelineShaderStageCreateInfo stages[2] {
+            {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .module = shaders.vert,
+                .pName = "main"
+            },
+            {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .module = shaders.frag,
+                .pName = "main"
+            }
+        };
+        VkVertexInputBindingDescription binding {
+            .binding = 0,
+            .stride = sizeof(DebugLineVertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+        };
+        VkVertexInputAttributeDescription attrs[2] {
+            { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(DebugLineVertex, pos) },
+            { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(DebugLineVertex, colour) }
+        };
+        VkPipelineVertexInputStateCreateInfo vertex_input {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount = 1, .pVertexBindingDescriptions = &binding,
+            .vertexAttributeDescriptionCount = 2, .pVertexAttributeDescriptions = attrs
+        };
+        VkPipelineInputAssemblyStateCreateInfo input_assembly {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+        };
+        VkPipelineViewportStateCreateInfo viewport_state {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            .viewportCount = 1,
+            .scissorCount = 1
+        };
+        VkPipelineRasterizationStateCreateInfo raster {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .polygonMode = VK_POLYGON_MODE_FILL,
+            .cullMode = VK_CULL_MODE_NONE,
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            .lineWidth = 1.0f
+        };
+        VkPipelineMultisampleStateCreateInfo multisample {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            .rasterizationSamples = MSAA_SAMPLES
+        };
+        VkPipelineDepthStencilStateCreateInfo depth_stencil {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_TRUE,
+            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .minDepthBounds = 0.0f,
+            .maxDepthBounds = 1.0f
+        };
+        VkPipelineColorBlendAttachmentState blend_attachment {
+            .blendEnable = VK_FALSE,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+        };
+        VkPipelineColorBlendStateCreateInfo blend {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            .attachmentCount = 1, .pAttachments = &blend_attachment
+        };
+        VkDynamicState dynamic_states[] { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipelineDynamicStateCreateInfo dynamic {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+            .dynamicStateCount = 2, .pDynamicStates = dynamic_states
+        };
+        const VkFormat colour_format = _swapchain->format();
+        VkPipelineRenderingCreateInfo rendering_info {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+            .colorAttachmentCount = 1, .pColorAttachmentFormats = &colour_format,
+            .depthAttachmentFormat = DEPTH_FORMAT
+        };
+        VkGraphicsPipelineCreateInfo info {
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .pNext = &rendering_info,
+            .stageCount = 2, .pStages = stages,
+            .pVertexInputState = &vertex_input,
+            .pInputAssemblyState = &input_assembly,
+            .pViewportState = &viewport_state,
+            .pRasterizationState = &raster,
+            .pMultisampleState = &multisample,
+            .pDepthStencilState = &depth_stencil,
+            .pColorBlendState = &blend,
+            .pDynamicState = &dynamic,
+            .layout = layout,
+            .renderPass = VK_NULL_HANDLE
+        };
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        if (vkCreateGraphicsPipelines(dev, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline) != VK_SUCCESS) {
+            LOG_ERROR("vkCreateGraphicsPipelines (line) failed"); return VK_NULL_HANDLE;
+        }
+        return pipeline;
+    }
+    // Creates a graphics pipeline specifically for rendering debug lines, using the provided pipeline layout and shader modules.
+    bool VulkanRenderer::create_debug_line_pipeline() {
+        _debug_line_pipeline.shaders = create_shaders("debug_line.vert.glsl", "debug_line.frag.glsl");
+        if (_debug_line_pipeline.shaders.vert == VK_NULL_HANDLE || _debug_line_pipeline.shaders.frag == VK_NULL_HANDLE) {
+            LOG_ERROR("Failed to create debug line shaders"); return false;
+        }
+        _debug_line_pipeline.layout = create_pipeline_layout();
+        if (_debug_line_pipeline.layout == VK_NULL_HANDLE) { LOG_ERROR("Failed to create debug line pipeline layout"); return false; }
+        _debug_line_pipeline.pipeline = create_line_pipeline(_debug_line_pipeline.layout, _debug_line_pipeline.shaders);
+        return _debug_line_pipeline.pipeline != VK_NULL_HANDLE;
+    }
+    // Grow the per-frame line vertex buffer to accommodate the specified number of vertices, reallocating and copying existing data if necessary.
+    void VulkanRenderer::ensure_debug_line_capacity(uint32_t slot, uint32_t vertexCount) {
+        if (vertexCount <= _debug_line_capacity[slot]) { return; }
+        wait_idle();
+        destroy_buffer(_debug_line_buffers[slot]);
+        const uint32_t cap = std::max(vertexCount, 256u);
+        _debug_line_buffers[slot] = create_buffer(cap * sizeof(DebugLineVertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO);
+        _debug_line_capacity[slot] = cap;
+    }
+
     // Draws a mesh using the specified pipeline, command buffer, viewport, scissor rectangle, push constants, and camera descriptor set.
     void VulkanRenderer::draw(VkCommandBuffer command_buffer, const renderer::Pipeline& pipeline, 
         const renderer::VulkanRenderer::GpuMesh& mesh, const VkViewport& viewport, const VkRect2D& scissor,
@@ -746,6 +866,23 @@ namespace renderer {
             pc.mvp   = view_proj;            // world-space quad, identity model
             pc.model = glm::mat4(1.0f);
             draw(f.command_buffer, _grid_pipeline, _grid_quad, viewport, scissor, pc, _camera_sets[ubo_slot]);
+        }
+        if (!_debug_lines.empty()) {
+            const uint32_t vcount = static_cast<uint32_t>(_debug_lines.size());
+            ensure_debug_line_capacity(ubo_slot, vcount);
+            VmaAllocationInfo ai;
+            vmaGetAllocationInfo(_context->allocator(), _debug_line_buffers[ubo_slot].allocation, &ai);
+            memcpy(ai.pMappedData, _debug_lines.data(), vcount * sizeof(DebugLineVertex));
+            vkCmdBindPipeline(f.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _debug_line_pipeline.pipeline);
+            vkCmdSetViewport(f.command_buffer, 0, 1, &viewport);
+            vkCmdSetScissor(f.command_buffer, 0, 1, &scissor);
+            vkCmdBindDescriptorSets(f.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _debug_line_pipeline.layout, 0, 1, &_camera_sets[ubo_slot], 0, nullptr);
+            PushConstants pc{};
+            pc.mvp = view_proj;
+            vkCmdPushConstants(f.command_buffer, _debug_line_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pc);
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(f.command_buffer, 0, 1, &_debug_line_buffers[ubo_slot].buffer, &offset);
+            vkCmdDraw(f.command_buffer, vcount, 1, 0, 0);
         }
         vkCmdEndRendering(f.command_buffer);
         
@@ -1290,6 +1427,7 @@ namespace renderer {
         if (!create_descriptors()) { return false; }
         if (!create_shadow_pipeline()) { return false; }
         if (!create_grid()) { return false; }
+        if (!create_debug_line_pipeline()) { return false; }
 
         // Create the graphics pipeline for rendering (hardcoded to cube for now)
         _mesh_pipeline.shaders = create_shaders("lit.vert.glsl", "lit.frag.glsl");
@@ -1342,6 +1480,8 @@ namespace renderer {
         destroy_pipeline(_grid_pipeline);
         destroy_buffer(_grid_quad.vertices);
         destroy_buffer(_grid_quad.indices);
+        destroy_pipeline(_debug_line_pipeline);
+        for (auto& b : _debug_line_buffers) { destroy_buffer(b); }
 
         destroy_reflection_resources();
         destroy_msaa_resources();
