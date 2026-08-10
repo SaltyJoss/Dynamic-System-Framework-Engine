@@ -17,6 +17,8 @@
 #include "DSL/StoredProgram.h"
 #include "DSL/Parser.h"
 
+#include <collision/capsule.h>
+
 #include <thread>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -93,6 +95,41 @@ namespace gui {
 		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
 		_internalSize = { static_cast<float>(w), static_cast<float>(h) };
 		_renderer.resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+	}
+	// Method to render the current simulation state to the viewport. This method should be called after tick() to visualize the updated simulation state.
+	void SimulationManager::renderViewport(uint32_t w, uint32_t h) {
+		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
+		if (hasCompletedStudy()) {
+			for (const auto& r : consumeCompletedStudy()) {
+				LOG_INFO("Study completed: %s", r.tag.c_str());
+			}
+		}
+		_systems.update_all(_scene);
+		_camera.setAspect(static_cast<float>(w) / static_cast<float>(h));
+		_renderer.debug_lines_clear();
+		for (int i = 0; i < (int)bodyCount(); ++i) {
+			const auto& sys = body(i);
+			const auto& links = sys.links();
+			for (size_t l_i = 0; l_i < links.size(); ++l_i) {
+				const auto& l = links[l_i];
+				if (l.collision.type != systems::eCollisionShape::CAPSULE) { continue; }
+				if (l_i >= sys.worldTransforms().size()) { LOG_ERROR("Link index %zu out of bounds for world transforms (size %zu)", l_i, sys.worldTransforms().size()); continue; }
+				auto c = makeCapsule(l, sys.worldTransforms()[l_i]);
+				glm::vec3 a = toGlm(c.a), b = toGlm(c.b);
+				_renderer.debug_line(a, b, {0.2f, 1.0f, 0.3f}); // Green capsule lines for collision shapes (may change as I am Red-Green Colour deficient, actually better would be user-configurable colours)
+				glm::vec3 axis = glm::normalize(b - a);
+				glm::vec3 up = glm::abs(axis.y) < 0.9f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+				glm::vec3 perp1 = glm::normalize(glm::cross(axis, up)) * (float)c.radius;
+				glm::vec3 perp2 = glm::normalize(glm::cross(axis, perp1)) * (float)c.radius;
+				// Draw cross lines at the ends of the capsule to visualize its radius
+				for (glm::vec3 e : {a, b}) {
+					_renderer.debug_line(e-perp1, e+perp1, {0.2f, 1.0f, 0.3f});
+					_renderer.debug_line(e-perp2, e+perp2, {0.2f, 1.0f, 0.3f});
+				}
+
+			}
+		}
+		_renderer.render(_scene, _camera.getViewMatrix(), _camera.getProjection());
 	}
 	// Loads a mesh from the specified file path and returns its unique ID, or INVALID_MESH_ID on failure
 	uint32_t SimulationManager::load_mesh(const std::string& path) {
@@ -174,6 +211,12 @@ namespace gui {
 		return false;
 	}
 
+	// Collision
+	physlib::collision::Capsule SimulationManager::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+		if (!_core) { LOG_ERROR("Simulation core not initialised, cannot make capsule"); return physlib::collision::Capsule(); }
+		return _core->makeCapsule(link, world_T);
+	}
+
 	/*
 	 * MULTIPLE RIGID BODY MANAGEMENT
 	 */
@@ -219,18 +262,6 @@ namespace gui {
 	void SimulationManager::setDisplaySize(uint32_t w, uint32_t h) {
 		if (w <= 0.0f || h <= 0.0f) return;
 		_displaySize = { w, h };
-	}
-	// Method to render the current simulation state to the viewport. This method should be called after tick() to visualize the updated simulation state.
-	void SimulationManager::renderViewport(uint32_t w, uint32_t h) {
-		if (!_rendererInitialised || w <= 0 || h <= 0) { return; }
-		if (hasCompletedStudy()) {
-			for (const auto& r : consumeCompletedStudy()) {
-				LOG_INFO("Study completed: %s", r.tag.c_str());
-			}
-		}
-		_systems.update_all(_scene);
-		_camera.setAspect(static_cast<float>(w) / static_cast<float>(h));
-		_renderer.render(_scene, _camera.getViewMatrix(), _camera.getProjection());
 	}
 	// Method to apply a render profile to the simulation renderer, updating its settings and resolution preset. (TO BE REMOVED)
     void SimulationManager::applyRenderProfile(const render::RenderSettings& s, render::ResolutionPreset r) {

@@ -185,6 +185,9 @@ namespace gui {
 		void setActiveBody(int i);
 		void clearBodies();
 
+        // Collision
+        physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T);
+
 		// Setters for rigidBody joint states (angle in radians)
         void setRigidBodyLinkRotation(const std::string& linkName, double angle);
         void setRigidBodyRootPose(const mathlib::Vec3& pos, mathlib::Quat& rot);
