@@ -90,6 +90,22 @@ namespace systems {
 			    LOG_WARN("Link %s has NO <dsfe_material>", link.name.c_str());
 			}
         }
+        // Collision
+        if (XMLElement* col = lEl->FirstChildElement("collision")) {
+            if (XMLElement* cap = col->FirstChildElement("dsfe_capsule")) {
+                link.collision.type = eCollisionShape::CAPSULE;
+                link.collision.localA = parseTriple(cap->Attribute("a"), mathlib::Vec3::Zero());
+                link.collision.localB = parseTriple(cap->Attribute("b"), mathlib::Vec3::Zero());
+                double radius = 0.05; // default radius
+                cap->QueryDoubleAttribute("radius", &radius);
+                link.collision.radius = radius;
+                LOG_INFO("%s (link) has <dsfe_capsule> a=[%.3f %.3f %.3f] b=[%.3f %.3f %.3f] r=%.3f", link.name.c_str(), 
+                    link.collision.localA.x(), link.collision.localA.y(), link.collision.localA.z(), 
+                    link.collision.localB.x(), link.collision.localB.y(), link.collision.localB.z(),
+                    link.collision.radius
+                );
+            }
+        }
         // Inertial
         if (XMLElement* i = lEl->FirstChildElement("inertial")) {
             // Mass
