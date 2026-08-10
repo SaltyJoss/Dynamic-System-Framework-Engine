@@ -7,6 +7,9 @@
       </geometry>
       <dsfe_material rgba="0.76 0.63 0.28 1.0" metallic="0.95" roughness="0.3"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 0 0.18" radius="0.08"/>
+    </collision>
     <inertial>
       <mass value="0.627"/>
       <inertia ixx="0.00281845585208" ixy="0" ixz="0" iyy="0.00281883333333" iyz="0" izz="0.00379978918542"/>
@@ -21,6 +24,9 @@
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 -0.05 -0.05" radius="0.07"/>
+    </collision>
     <inertial>
       <mass value="2.328"/>
       <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.007" iyz="0.003" izz="0.008"/>
@@ -35,6 +41,9 @@
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0.8 0 0" radius="0.06"/>
+    </collision>
     <inertial>
       <mass value="3.995"/>
       <inertia ixx="0.010 " ixy="0" ixz="0" iyy="0.578" iyz="0" izz="0.574"/>
@@ -49,6 +58,9 @@
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 0.07 0.05" radius="0.06"/>
+    </collision>
     <inertial>
       <mass value="2.328"/>
       <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.008" iyz="0.003" izz="0.007"/>
@@ -63,6 +75,9 @@
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 -0.65 0" radius="0.055"/>
+    </collision>
     <inertial>
       <mass value="3.157"/>
       <inertia ixx="0.199" ixy="0" ixz="0" iyy="0.193" iyz="0.01" izz="0.01"/>
@@ -77,6 +92,9 @@
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 0.325 0" radius="0.05"/>
+    </collision>
     <inertial>
       <mass value="2.695"/>
       <inertia ixx="0.029" ixy="0" ixz="0" iyy="0.006" iyz="-0.001" izz="0.027"/>
@@ -91,6 +109,9 @@
       </geometry>
       <dsfe_material rgba="0.90 0.91 0.92 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <dsfe_capsule a="0 0 0" b="0 0 0.08" radius="0.05"/>
+    </collision>
     <inertial>
       <mass value="0.924"/>
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.001"/>
