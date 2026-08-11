@@ -15,7 +15,7 @@
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 #include "Numerics/IntegratorState.h"
-#include "physics/CollisionResolver.h"
+#include "Physics/CollisionResolver.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
