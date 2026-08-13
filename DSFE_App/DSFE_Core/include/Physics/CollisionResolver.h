@@ -31,7 +31,7 @@ namespace physics {
                 mathlib::Vec3 linVel;
                 mathlib::Vec3 angVel;
                 // Constructor to initialise BodyInfo from a RigidBodySystem pointer
-                struct BodyInfo(systems::RigidBodySystem& b) : body(b) {
+                BodyInfo(systems::RigidBodySystem& b) : body(b) {
                     m = b.mass();
                     I = b.inertia_fb();
                     pos = b.position_fb();
