@@ -24,12 +24,12 @@ namespace physics {
              */
             struct BodyInfo {
                 systems::RigidBodySystem& body;
-                double m;
-                mathlib::Mat3 I;
-                mathlib::Vec3 pos;
-                mathlib::Quat ori;
-                mathlib::Vec3 linVel;
-                mathlib::Vec3 angVel;
+                double m = 0.0;
+                mathlib::Mat3 I = mathlib::Mat3::Zero();
+                mathlib::Vec3 pos = mathlib::Vec3::Zero();
+                mathlib::Quat ori = mathlib::Quat::Identity();
+                mathlib::Vec3 linVel = mathlib::Vec3::Zero();
+                mathlib::Vec3 angVel = mathlib::Vec3::Zero();
                 // Constructor to initialise BodyInfo from a RigidBodySystem pointer
                 BodyInfo(systems::RigidBodySystem& b) : body(b) {
                     m = b.mass();
