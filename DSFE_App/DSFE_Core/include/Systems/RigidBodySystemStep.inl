@@ -69,12 +69,19 @@ namespace systems {
 		result.snap = takeSnapshot<Scalar>(t);
 		auto& snap = result.snap;
 		const size_t n = snap.model->joints.size();
+		int nv = 0;
+		for (const auto& j : snap.model->joints) { nv += jointDOF(j.type); }
 
-		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
-		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), nv);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + nv, nv);
 
-		mathlib::VecX_T<Scalar> qdd(n);
-		for (size_t i = 0; i < n; ++i) { qdd[i] = _body.joints[i].qdd_ref; }
+		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(nv);
+		int off = 0;
+		for (const auto& j : _body.joints) {
+			const int dof = jointDOF(j.type);
+			if (dof == 1) { qdd[off] = j.qdd_ref; }
+			off += dof;
+		}
 
 		std::vector<Pose_T<Scalar>> T_start(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
