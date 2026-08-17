@@ -375,6 +375,19 @@ namespace physics {
 			a0, scratch.spatial.dblk, scratch.spatial.ublk,
 			scratch.spatial.a, qdd
 		);
+
+		{	
+			int off = 0;
+			for (size_t i = 0; i < n; ++i) {
+				const int dof = model.joints[i].nfDOF;
+				if (dof == 6) {
+					const mathlib::Vec3_T<Scalar> vAng = scratch.spatial.v[i].angular();
+					const mathlib::Vec3_T<Scalar> vLin = scratch.spatial.v[i].linear();
+					qdd.template segment<3>(off + 3) += vAng.cross(vLin); // Add Coriolis term for linear acceleration
+				}
+				off += dof;
+			}
+		}
 		return qdd; // [rad/s^2], joint accelerations computed using the Articulated Body Algorithm (ABA)
 	}
 } // namespace physics
