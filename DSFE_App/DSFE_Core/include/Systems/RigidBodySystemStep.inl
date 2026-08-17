@@ -346,6 +346,7 @@ namespace systems {
 	 */
 	template<typename Scalar>
 	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const {
+		// Setup external forces for each joint based on the pending external forces list
 		const size_t n = _body.joints.size();
 		scratch.spatial.f_ext.assign(n, mathlib::SpatialVec_T<Scalar>()); // reset external forces
 		if (_pendingExtForces.empty()) { return; }
@@ -360,10 +361,7 @@ namespace systems {
 			const Vec3 moment_world = r_world.cross(worldForce.template cast<double>());
 			const Vec3 M_link = R.transpose() * moment_world;
 			// Compute spatial force in link frame
-			mathlib::SpatialVec_T<Scalar> fs(
-				M_link.template cast<Scalar>(), // angular slot (moment)
-				F_link.template cast<Scalar>()  // linear slot  (force)
-			);
+			mathlib::SpatialVec_T<Scalar> fs(M_link.template cast<Scalar>(), F_link.template cast<Scalar>());
 			scratch.spatial.f_ext[jointIdx] += fs; // accumulate external force for this joint
 		}
 	}

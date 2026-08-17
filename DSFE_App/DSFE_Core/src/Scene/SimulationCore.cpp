@@ -319,7 +319,9 @@ namespace core {
 		scriptParallelisation(program);
 
 		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
-		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", 
+			methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size()
+		);
 		return (_telemetry.ring.size() >= 2);
 	}
 
@@ -351,7 +353,9 @@ namespace core {
 		for (int step = 0; step < maxSteps; ++step) {
 			// Check program completion
 			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
-				LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped());
+				LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", 
+					step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped()
+				);
 				break;
 			}
 
