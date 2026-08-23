@@ -48,12 +48,12 @@ namespace renderer {
     #elif defined(__linux__)
         extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
     #endif
-        
+        // Enable validation layer for error handling
+        std::vector<const char *> requested_layers;
+    #ifndef NDEBUG
         // Enable debug utils extension for validation layer support
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        // Enable validation layer for error handling
-        std::vector<const char *> requested_layers { "VK_LAYER_KHRONOS_validation" };
-
+        requested_layers.push_back("VK_LAYER_KHRONOS_validation");
         // Set up debug messenger create info for Vulkan validation layers
         VkDebugUtilsMessengerCreateInfoEXT debug_info {
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -68,10 +68,14 @@ namespace renderer {
             .pfnUserCallback = debug_callback
         };
 
-        // Create the Vulkan instance with the specified application info, requested layers, and extensions (it takes 1000 lines to draw a triangle [;)
+    #endif
+
+    // Create the Vulkan instance with the specified application info, requested layers, and extensions (it takes 1000 lines to draw a triangle [;)
         VkInstanceCreateInfo create_info {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+    #ifndef NDEBUG
             .pNext = &debug_info,
+    #endif
             .pApplicationInfo = &app_info,
             .enabledLayerCount = static_cast<uint32_t>(requested_layers.size()),
             .ppEnabledLayerNames = requested_layers.data(),
