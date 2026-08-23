@@ -38,7 +38,11 @@ namespace systems {
 	// Collision Shape Enumeration
 	enum class eCollisionShape {
 		NONE,
-		CAPSULE
+		CAPSULE,
+		BOX,
+		SPHERE,
+		CYCLINDER,
+		MESH
 	};
 
 	/*
@@ -73,6 +77,10 @@ namespace systems {
 		mathlib::Vec3 localA{ 0.0, 0.0, 0.0 };
 		mathlib::Vec3 localB{ 0.0, 0.0, 0.0 };
 		double radius = 0.0;
+		mathlib::Vec3 halfExtents{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
+		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
+		std::string meshFile;
 	};
 	// Per-mesh entry with individual material properties
 	struct VisualMeshEntry {
@@ -87,7 +95,6 @@ namespace systems {
 		// Visual Geometry
 		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
 		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
-
 		// Visual Geometry Parameters
 		std::vector<std::string> meshFiles; // for multiple visual meshes per link (legacy, string-only)
 		std::vector<VisualMeshEntry> meshEntries; // for multiple visual meshes with per-mesh material
