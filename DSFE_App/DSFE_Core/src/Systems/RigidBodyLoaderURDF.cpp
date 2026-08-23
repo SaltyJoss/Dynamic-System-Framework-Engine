@@ -92,6 +92,10 @@ namespace systems {
         }
         // Collision
         if (XMLElement* col = lEl->FirstChildElement("collision")) {
+            if (XMLElement* o = col->FirstChildElement("origin")) {
+                link.collision.origin_xyz = parseTriple(o->Attribute("xyz"), mathlib::Vec3::Zero());
+                link.collision.origin_rpy = parseTriple(o->Attribute("rpy"), mathlib::Vec3::Zero());
+            }
             if (XMLElement* cap = col->FirstChildElement("dsfe_capsule")) {
                 link.collision.type = eCollisionShape::CAPSULE;
                 link.collision.localA = parseTriple(cap->Attribute("a"), mathlib::Vec3::Zero());
@@ -104,6 +108,35 @@ namespace systems {
                     link.collision.localB.x(), link.collision.localB.y(), link.collision.localB.z(),
                     link.collision.radius
                 );
+            }
+            else if (XMLElement* geom = col->FirstChildElement("geometry")) {
+                if (XMLElement* box = geom->FirstChildElement("box")) {
+                    link.collision.type = eCollisionShape::BOX;
+                    mathlib::Vec3 size = parseTriple(box->Attribute("size"), mathlib::Vec3(1,1,1));
+                    link.collision.halfExtents = size * 0.5; // URDF box size is full extents, we store half extents
+                }
+                else if (XMLElement* sphere = geom->FirstChildElement("sphere")) {
+                    link.collision.type = eCollisionShape::SPHERE;
+                    double r = 0.05; // default radius
+                    sphere->QueryDoubleAttribute("radius", &r);
+                    link.collision.radius = r;
+                }
+                else if (XMLElement* cyl = geom->FirstChildElement("cylinder")) {
+                    link.collision.type = eCollisionShape::CYCLINDER;
+                    double r = 0.05; // default radius
+                    double len = 0.1; // default length
+                    cyl->QueryDoubleAttribute("radius", &r);
+                    cyl->QueryDoubleAttribute("length", &len);
+                    link.collision.radius = r;
+                    link.collision.localA = mathlib::Vec3(0, 0, -len * 0.5);
+                    link.collision.localB = mathlib::Vec3(0, 0, len * 0.5);
+                }
+                else if (XMLElement* mesh = geom->FirstChildElement("mesh")) {
+                    link.collision.type = eCollisionShape::MESH;
+                    if (const char* fn = mesh->Attribute("filename")) { 
+                        link.collision.meshFile = translateMeshPath(fn, meshdir);
+                    }
+                }
             }
         }
         // Inertial
