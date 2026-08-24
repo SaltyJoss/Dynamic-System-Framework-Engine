@@ -114,12 +114,14 @@ namespace systems {
                     link.collision.type = eCollisionShape::BOX;
                     mathlib::Vec3 size = parseTriple(box->Attribute("size"), mathlib::Vec3(1,1,1));
                     link.collision.halfExtents = size * 0.5; // URDF box size is full extents, we store half extents
+                    LOG_INFO("Link %s <collision> box halfExtents=[%.3f %.3f %.3f]", link.name.c_str(), link.collision.halfExtents.x(), link.collision.halfExtents.y(), link.collision.halfExtents.z());
                 }
                 else if (XMLElement* sphere = geom->FirstChildElement("sphere")) {
                     link.collision.type = eCollisionShape::SPHERE;
                     double r = 0.05; // default radius
                     sphere->QueryDoubleAttribute("radius", &r);
                     link.collision.radius = r;
+                    LOG_INFO("Link %s <collision> sphere radius=%.3f", link.name.c_str(), r);
                 }
                 else if (XMLElement* cyl = geom->FirstChildElement("cylinder")) {
                     link.collision.type = eCollisionShape::CYCLINDER;
@@ -130,12 +132,14 @@ namespace systems {
                     link.collision.radius = r;
                     link.collision.localA = mathlib::Vec3(0, 0, -len * 0.5);
                     link.collision.localB = mathlib::Vec3(0, 0, len * 0.5);
+                    LOG_INFO("Link %s <collision> cylinder radius=%.3f length=%.3f", link.name.c_str(), r, len);
                 }
                 else if (XMLElement* mesh = geom->FirstChildElement("mesh")) {
                     link.collision.type = eCollisionShape::MESH;
                     if (const char* fn = mesh->Attribute("filename")) { 
                         link.collision.meshFile = translateMeshPath(fn, meshdir);
                     }
+                    LOG_INFO("Link %s <collision> mesh=%s", link.name.c_str(), link.collision.meshFile.c_str());
                 }
             }
         }
