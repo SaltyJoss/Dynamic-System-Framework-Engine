@@ -3,12 +3,14 @@
   <link name="link00">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link0-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link0-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.76 0.63 0.28 1.0" metallic="0.95" roughness="0.3"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0 0.2285" radius="0.08"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link0_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="0.627"/>
@@ -20,12 +22,14 @@
   <link name="link01">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link1-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link1-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0.0485 0" b="0 -0.243 0" radius="0.07"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link1_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="2.328"/>
@@ -37,12 +41,14 @@
   <link name="link02">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link2-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link2-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="-0.0475 0 0.195" b="0.845 0 0.195" radius="0.07"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link2_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="3.995"/>
@@ -54,12 +60,14 @@
   <link name="link03">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link3-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link3-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 -0.065 0.1" b="0 0.7 0.105" radius="0.06"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link3_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="2.328"/>
@@ -71,12 +79,14 @@
   <link name="link04">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link4-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link4-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 -0.156 0" b="0 0.1025 0" radius="0.055"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link4_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="3.157"/>
@@ -88,12 +98,14 @@
   <link name="link05">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link5-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link5-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0.2275 0" radius="0.075"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link5_collision.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="2.695"/>
@@ -105,12 +117,14 @@
   <link name="link06">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link6-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link6-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.90 0.91 0.92 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
     <collision>
-      <dsfe_capsule a="0 0 0" b="0 0 -0.0975" radius="0.05"/>
+      <geometry>
+        <mesh filename="package://vispa/meshes/visual/Link6-DHReference-PublicRelease.stl"/>
+      </geometry>
     </collision>
     <inertial>
       <mass value="0.924"/>
