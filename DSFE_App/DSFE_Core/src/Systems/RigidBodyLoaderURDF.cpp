@@ -44,8 +44,16 @@ namespace systems {
         if (p.rfind(pkg, 0) == 0) { p = p.substr(pkg.size()); }
         // Replace forward slashes with platform-specific separators
         std::replace(p.begin(), p.end(), '\\', '/');
-        const auto slash = p.find_last_of('/');
-        const std::string fn = (slash == std::string::npos) ? p : p.substr(slash + 1);
+        // Extract the subdir if there is one (e.g. robot/meshes/<subdir>/<file>), ensures we only use the /<subdir>/<file> part of the path, not the full path
+        if (p.find('/') != std::string::npos) {
+            for (size_t i = 0; i < 2; ++i) { // Remove the first two path components (e.g. "robot/meshes/")
+                size_t pos = p.find('/');
+                if (pos != std::string::npos) { p = p.substr(pos + 1); }
+            }
+            return meshdir + "/" + p; // Return the meshdir + subdir + filename
+        }
+        const auto slash = p.find_last_of('/'); // Find the last slash to get the filename
+        const std::string fn = (slash == std::string::npos) ? p : p.substr(slash + 1); // Get the filename from the path
         return meshdir + "/" + fn;
     }
     // Link Parsing
