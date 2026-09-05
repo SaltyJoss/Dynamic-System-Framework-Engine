@@ -6,6 +6,7 @@
 #include "EngineCore.h"
 
 #include <MathLib>
+#include <collision/convex_hull.h>
 #include <numbers>
 #include <kinematics/DH_Params.h>
 #include <unordered_map>
@@ -81,6 +82,7 @@ namespace systems {
 		mathlib::Vec3 origin_xyz{ 0.0, 0.0, 0.0 };
 		mathlib::Vec3 origin_rpy{ 0.0, 0.0, 0.0 };
 		std::string meshFile;
+		std::shared_ptr<physlib::collision::ConvexHull> hull;
 	};
 	// Per-mesh entry with individual material properties
 	struct VisualMeshEntry {
