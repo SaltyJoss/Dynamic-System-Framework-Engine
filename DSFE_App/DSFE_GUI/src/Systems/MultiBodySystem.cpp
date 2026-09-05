@@ -7,6 +7,9 @@
 #include "Simulation/MeshStore.h"
 #include "Simulation/SimulationRenderer.h"
 
+#include <collision/convex_hull.h>
+#include <collision/convex_hull_build.h>
+
 #include "Assets/MeshLoader.h"
 #include "Scene/Mesh.h"
 #include "Systems/RigidBodyModel.h"
@@ -36,6 +39,7 @@ namespace gui {
             auto& renderables = _binding.link_to_renderables[link.name];
             glm::vec3 lo(1e30f), hi(-1e30f);
             bool anyVerts = false;
+            std::vector<mathlib::Vec3> hull_verts;
             for (const auto& entry : link.visual.meshEntries) {
                 fs::path full = paths::assets() / entry.meshFile;
                 auto meshes = loader.load(full.string());
@@ -43,10 +47,12 @@ namespace gui {
                 for (auto& mptr : meshes) {
                     scene::Mesh& src = *mptr;
                     if (src._vertices.empty()) { continue; }
+                    const float sc = static_cast<float>(_model.scale);
                     for (const auto& v : src._vertices) {
                         lo = glm::min(lo, glm::vec3(v._pos.x, v._pos.y, v._pos.z));
                         hi = glm::max(hi, glm::vec3(v._pos.x, v._pos.y, v._pos.z));
                         anyVerts = true;
+                        hull_verts.emplace_back(v._pos.x*sc, v._pos.y*sc, v._pos.z*sc);
                     }
                     std::vector<uint32_t> indices(src._indices.begin(), src._indices.end());
                     const uint32_t cpu_id = _meshStore.add(src);
@@ -71,6 +77,16 @@ namespace gui {
                 L.aabbMin = mathlib::Vec3(lo.x * s, lo.y * s, lo.z * s);
                 L.aabbMax = mathlib::Vec3(hi.x * s, hi.y * s, hi.z * s);
                 L.hasBounds = true;
+                // Build a convex hull for collision detection from the visual mesh vertices
+                L.collision.type = systems::eCollisionShape::MESH;
+                L.collision.hull = std::make_shared<physlib::collision::ConvexHull>(physlib::collision::buildHull(hull_verts));
+                LOG_INFO("Link %s: built collision hull (%zu verts) from %zu visual mesh verts", L.name.c_str(), L.collision.hull->verts.size(), hull_verts.size());
+
+                // if (L.collision.type == systems::eCollisionShape::NONE || L.collision.type == systems::eCollisionShape::MESH) {
+                //     L.collision.type = systems::eCollisionShape::MESH;
+                //     L.collision.hull = std::make_shared<physlib::collision::ConvexHull>(physlib::collision::buildHull(hull_verts));
+                //     LOG_INFO("Link %s: built collision hull (%zu verts) from %zu visual mesh verts", L.name.c_str(), L.collision.hull->verts.size(), hull_verts.size());
+                // }
             }
         }
     }
