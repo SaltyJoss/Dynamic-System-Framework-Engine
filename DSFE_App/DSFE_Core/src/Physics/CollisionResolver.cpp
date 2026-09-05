@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "Physics/CollisionResolver.h"
 
+#include <collision/EPA.h>
 #include <collision/OBB.h>
 #include <collision/SAT.h>
 #include <collision/contact.h>
@@ -27,7 +28,57 @@ namespace physics {
         const mathlib::Mat3 R = orientation.toRotationMatrix();
         return physlib::collision::OBB::fromAABB(local, R, pos);
     }
-
+    // Creates an OBB from a RigidBodyLink's collision shape and world transform
+    static physlib::collision::OBB makeOBBFromShape(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+        const mathlib::Mat3 R = world_T.block<3,3>(0,0);
+        const mathlib::Vec3 t = world_T.block<3,1>(0,3) + R * link.collision.origin_xyz;
+        physlib::collision::OBB obb;
+        obb.centre = t;
+        obb.orientation = R;
+        obb.halfExtents = link.collision.halfExtents;
+        return obb;
+    }
+    // Checks for collision between a sphere and an OBB, returning true if they intersect and populating the contact manifold with collision details
+    static bool sphereOBB(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T, const physlib::collision::OBB& box, physlib::collision::ContactManifold& m) {
+        const mathlib::Mat3 R = world_T.block<3,3>(0,0);
+        const mathlib::Vec3 c = world_T.block<3,1>(0,3) + R * link.collision.origin_xyz;
+        const mathlib::Vec3 p = physlib::collision::closestPtPointOBB(c, box);
+        const mathlib::Vec3 d = c - p;
+        const double dist = d.norm();
+        if (dist > link.collision.radius) { return false; }
+        m.hit = true;
+        m.normal = (dist > 1e-9) ? (d/dist) : mathlib::Vec3(0, 1, 0);
+        m.addPoint(p, link.collision.radius - dist);
+        return true;
+    }
+    // Transforms a convex hull by a given transformation matrix (rotation + translation)
+    static physlib::collision::ConvexHull transformHull(const physlib::collision::ConvexHull& h, const mathlib::Mat4& T) {
+        const mathlib::Mat3 R = T.template block<3,3>(0,0);
+        const mathlib::Vec3 t = T.template block<3,1>(0,3);
+        physlib::collision::ConvexHull out;
+        out.verts.reserve(h.verts.size());
+        for (const auto& v : h.verts) { out.verts.push_back(R*v + t); }
+        return out;
+    }
+    // Converts an OBB to a convex hull representation by computing its 8 corner vertices
+    static physlib::collision::ConvexHull obbToHull(const physlib::collision::OBB& b) {
+        physlib::collision::ConvexHull out;
+        out.verts.reserve(8);
+        for (int i = 0; i < 8; ++i) {
+            const mathlib::Vec3 s(
+                (i&1)?1.0:-1.0,
+                (i&2)?1.0:-1.0,
+                (i&4)?1.0:-1.0
+            );
+            out.verts.push_back(b.centre
+                + b.axis(0) * (s.x() * b.halfExtents.x())
+                + b.axis(1) * (s.y() * b.halfExtents.y())
+                + b.axis(2) * (s.z() * b.halfExtents.z())
+            );
+        }
+        return out;
+    }
+    
     /*
      * CollisionResolver class implementation
      */
@@ -150,7 +201,7 @@ namespace physics {
         fb.setPosition_fb(b.pos + push); // Move the free body away from the contact
     }
 
-    //
+    // Checks for collisions between a free body and a fixed body (arm) and updates the free body's state accordingly
     void CollisionResolver::collideFreeVsFixed(systems::RigidBodySystem& free, systems::RigidBodySystem& fixed) {
         auto cube_OBB = makeOBB(free);
         if (!cube_OBB) { return; }
@@ -158,14 +209,28 @@ namespace physics {
         const auto& xforms = fixed.worldTransforms();
         // Iterate through all links in the arm to check for collisions with the free body
         for (size_t li = 0; li < links.size(); ++li) {
+            using S = systems::eCollisionShape;
             const auto& l = links[li];
-            if (l.collision.type != systems::eCollisionShape::CAPSULE) { continue; } // Only handle capsule collision shapes for now
             if (li >= xforms.size()) { continue; }
-            // Build a world-space capsule from the link's local collision shape
-            auto cap = makeCapsule(l, xforms[li]);
-            // Check for collision between the capsule and the free body's OBB using SAT
             physlib::collision::ContactManifold m;
-            if (!physlib::collision::capsuleOBB(cap, *cube_OBB, m)) { continue; } // Check for collision using SAT
+            bool hit = false;
+            if (l.collision.type == S::CAPSULE || l.collision.type == S::CYCLINDER) {
+                auto cap = makeCapsule(l, xforms[li]);
+                hit = physlib::collision::capsuleOBB(cap, *cube_OBB, m); // Check for collision using SAT
+            }
+            else if (l.collision.type == S::BOX) {
+                auto linkOBB = makeOBBFromShape(l, xforms[li]);
+                hit = physlib::collision::SAT_OBB(linkOBB, *cube_OBB, m); // Check for collision using SAT
+            }
+            else if (l.collision.type == S::SPHERE) {
+            }
+            else if (l.collision.type == S::MESH) {
+                physlib::collision::ConvexHull link_hull_W = transformHull(*l.collision.hull, xforms[li]);
+                physlib::collision::ConvexHull cube_hull_W = obbToHull(*cube_OBB);
+                hit = physlib::collision::convexConvex(link_hull_W, cube_hull_W, m); // Check for collision using GJK + EPA
+            }
+            else { continue; }
+            if (!hit) { continue; }
             // Resolve contacts for each contact point in the manifold
             for (int k = 0; k < m.pointCount; ++k) { resolveContact_fbVsFixed(free, m.normal, m.points[k], 0.2, 0.5); }
             positionalCorrection_fbVsFixed(free, m); // Apply positional correction for the contact manifold
@@ -174,7 +239,8 @@ namespace physics {
 
     // Builds a world-space capsule from a link's local collision shape.
     physlib::collision::Capsule CollisionResolver::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
-        if (link.collision.type != systems::eCollisionShape::CAPSULE) { LOG_ERROR("Link collision shape is not a capsule, cannot create capsule"); return physlib::collision::Capsule{}; }
+        const bool ok = (link.collision.type == systems::eCollisionShape::CAPSULE || link.collision.type == systems::eCollisionShape::CYCLINDER);
+        if (!ok) { LOG_ERROR("Link collision shape is not capsule/cyclinder."); return physlib::collision::Capsule{}; }
         auto xform = [&](const mathlib::Vec3& p) -> mathlib::Vec3 {
             mathlib::Vec4 h(p.x(), p.y(), p.z(), 1.0); // Homogeneous coordinates
             mathlib::Vec4 h_w = world_T * h; // Transform to world coordinates
