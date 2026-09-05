@@ -161,6 +161,14 @@ namespace physics {
         // Compute the contact point relative to the free body's center of mass
         mathlib::Vec3 vLin_fb = b.linVel, w_fb = b.angVel;
         const mathlib::Vec3 r_fb = p.pos - b.pos;
+
+        LOG_INFO("contact=(%.3f %.3f %.3f) cubeCentre=(%.3f %.3f %.3f) norm=(%.3f %.3f %.3f) r=%.3f depth=%.4f", 
+            p.pos.x(), p.pos.y(), p.pos.z(),
+            b.pos.x(), b.pos.y(), b.pos.z(),
+            norm.x(), norm.y(), norm.z(),
+            r_fb.norm(), p.depth
+        );
+
         // Compute the relative velocity at the contact point (fixed body has zero velocity)
         const mathlib::Vec3 v_fb_pt = b.linVel + b.angVel.cross(r_fb);
         const mathlib::Vec3 v_rel = v_fb_pt; // v_fb - v_obstacle (=0)
@@ -272,7 +280,6 @@ namespace physics {
                 }
                 // Check 2: EXACTLY one is free (A or B) -> free cube vs arm links
                 if (a_free != b_free) {
-                    LOG_INFO("dispatch: free-vs-arm pair %zu-%zu", a, b);
                     systems::RigidBodySystem& free = a_free ? *bodies[a] : *bodies[b];
                     systems::RigidBodySystem& fixed = a_free ? *bodies[b] : *bodies[a];
                     collideFreeVsFixed(free, fixed);
