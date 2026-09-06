@@ -239,9 +239,9 @@ namespace core {
 		D_RUNTIME("stopping simulation");
 
 		auto buf_j = _rigidBody->claimExportLogBuffer(); // Claim the export log buffer from the rigidBody
-		//auto buf_fb = _rigidBody->claimExportLogBuffer_fb(); // Claim the export log buffer from the rigidBody
+		auto buf_fb = _rigidBody->claimExportLogBuffer_fb(); // Claim the export log buffer from the rigidBody
 		if (buf_j) { enqueueJointExportBuffer(std::move(buf_j)); }
-		//if (buf_fb) { enqueueFreeBodyExportBuffer(std::move(buf_fb)); }
+		if (buf_fb) { enqueueFreeBodyExportBuffer(std::move(buf_fb)); }
 		flushExports();
 
 		// Clear buffers to free memory and prepare for next run
