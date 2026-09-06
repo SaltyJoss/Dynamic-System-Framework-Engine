@@ -43,7 +43,7 @@ namespace physics {
         const mathlib::Mat3 R = world_T.block<3,3>(0,0);
         const mathlib::Vec3 c = world_T.block<3,1>(0,3) + R * link.collision.origin_xyz;
         const mathlib::Vec3 p = physlib::collision::closestPtPointOBB(c, box);
-        const mathlib::Vec3 d = c - p;
+        const mathlib::Vec3 d = p - c;
         const double dist = d.norm();
         if (dist > link.collision.radius) { return false; }
         m.hit = true;
@@ -181,19 +181,24 @@ namespace physics {
         double j = physlib::collision::solveNormalImpulse(norm, v_rel , m_eff, e); // Compute the normal impulse magnitude
         if (!std::isfinite(j) || m_eff <= 1e-12) { return; } // Avoid division by zero or non-finite impulses
         mathlib::Vec3 J = j * norm; // Compute the impulse vector
-        vLin_fb -= J / b.m; w_fb += I_fb_inv * r_fb.cross(J); // Update linear and angular velocities of the free body based on the impulse
+        vLin_fb += J / b.m; w_fb += I_fb_inv * r_fb.cross(J); // Update linear and angular velocities of the free body based on the impulse
         // Friction resolution
         mathlib::Vec3 v_T = v_rel - (v_rel.dot(norm) * norm); // Compute the relative velocity in the tangent plane
         if (v_T.norm() > 1e-6) { // If there is significant tangential relative velocity, apply friction
             mathlib::Vec3 t = v_T.normalized(); // Tangent direction
             double m_eff_t = m_eff_norm(b, r_fb, I_fb_inv, t); // Effective mass along the tangent
             mathlib::Vec3 J_f = physlib::collision::solveFrictionImpulse(t, v_rel, m_eff_t, j, mu); // Compute the friction impulse
-            vLin_fb -= J_f / b.m; w_fb += I_fb_inv * r_fb.cross(J_f); // Update free body with friction impulse
+            vLin_fb += J_f / b.m; w_fb += I_fb_inv * r_fb.cross(J_f); // Update free body with friction impulse
         }
         if (!vLin_fb.allFinite() || !w_fb.allFinite()) {
             LOG_ERROR_ONCE("CollisionResolver::resolveContact_fbVsFixed: Non-finite velocity detected after collision resolution.");
             return;
         }
+        LOG_INFO("j=%.4f vRelN=%.4f vLin_before=(%.3f %.3f %.3f) vLin_after=(%.3f %.3f %.3f) depth=%.4f",
+            j, v_rel.dot(norm),
+            b.linVel.x(), b.linVel.y(), b.linVel.z(),
+            vLin_fb.x(), vLin_fb.y(), vLin_fb.z(), p.depth
+        );
         // Update the RigidBodySystem with the new velocities
         fb.setVelocity_fb(vLin_fb, w_fb);
     }
@@ -231,6 +236,7 @@ namespace physics {
                 hit = physlib::collision::SAT_OBB(linkOBB, *cube_OBB, m); // Check for collision using SAT
             }
             else if (l.collision.type == S::SPHERE) {
+                hit = sphereOBB(l, xforms[li], *cube_OBB, m); // Check for collision using sphere-OBB test
             }
             else if (l.collision.type == S::MESH) {
                 physlib::collision::ConvexHull link_hull_W = transformHull(*l.collision.hull, xforms[li]);
