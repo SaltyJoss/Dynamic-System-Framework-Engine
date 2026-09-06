@@ -751,7 +751,7 @@ namespace systems {
 	// RigidBodySystem accesor for to get the latest free body log entry for a specific body index
 	bool RigidBodySystem::latestFreeBodyEntry(FreeBodyLogBuffer::FreeBodyLogEntry& out, int bodyIdx) const {
 		const FreeBodyLogBuffer* buf = nullptr;
-		if (_useInternalLogging_fb) { int idx = _activeLogBufIdx.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
+		if (_useInternalLogging_fb) { int idx = _activeLogBufIdx_fb.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
 		else { buf = _freeBodyLogBuffer; }
 		if (!buf || buf->size() == 0) { return false; }
 		for (size_t k = buf->size(); k-- > 0; ) {

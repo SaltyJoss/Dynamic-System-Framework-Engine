@@ -276,7 +276,7 @@ namespace systems {
 	) {
 		// pick the buffer (mirrors the joint path)
 		systems::FreeBodyLogBuffer* buf = nullptr;
-		if (_useInternalLogging) { int idx = _activeLogBufIdx_fb.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
+		if (_useInternalLogging_fb) { int idx = _activeLogBufIdx_fb.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
 		else { buf = _freeBodyLogBuffer; }
 		if (!buf) { return; }
 
