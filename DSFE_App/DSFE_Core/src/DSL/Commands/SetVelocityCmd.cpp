@@ -30,13 +30,18 @@ namespace commands {
             markFailed("setVelocity: SimulationCore is null.");
             return { CmdState::Failed, {}, "setVelocity failed" };
         }
-
-        auto& body = cntx.RigidBody();
+        systems::RigidBodySystem* body = cntx.resolveBody(_link);
+        if (!body) {
+            SIM_FAIL("setVelocity: no body owns '%s'.", _link.c_str());
+            markFailed("setVelocity: target body not found.");
+            return { CmdState::Failed, {}, "setVelocity failed" };
+        }
+        const std::string member = cntx.memberName(_link);
         mathlib::VecX v = mathlib::VecX::Zero(6);
         v << _wx, _wy, _wz, _vx, _vy, _vz; // [Angular Velocity (rad/s), Linear Velocity (m/s)]
 
-        if (!body.trySetFreeVelocity(_link, v)) {
-            SIM_FAIL("setVelocity: '%s' is not a free body.", _link.c_str());
+        if (!body->trySetFreeVelocity(member, v)) {
+            SIM_FAIL("setVelocity: '%s' is not a free body.", member.c_str());
 			markFailed("setVelocity: target is not a free body.");
 			return { CmdState::Failed, {}, "setVelocity failed" };
         }

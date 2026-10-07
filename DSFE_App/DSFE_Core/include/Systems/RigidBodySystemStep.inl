@@ -5,6 +5,9 @@
 #pragma once
 
 namespace systems {
+	/*
+	 * Clamp a joint angle to its limits, taking into account whether the joint is continuous or not.
+	 */
 	template<typename T>
 	T RigidBodySystem::clampJointAngle_T(const RigidBodyJoint& joint, T angleRad) {
 		if (joint.limits.continuous) { return mathlib::wrapRad<T>(angleRad); }
@@ -48,14 +51,14 @@ namespace systems {
 		snap.lastBaseForwardForce = T(_lastBaseForwardForce);
 		snap.gravity = _gravity.template cast<T>();
 
-		snap.torqueMode = _body.torqueMode;
-
 		snap.dt = T(_dynamics->dt());
 		snap.simTime = simTime;
 
 		return snap;
 	}
-
+	/*
+	 * Step the rigid body system using a specified integrator and dynamics scratch space.
+	 */
 	template<typename Scalar, typename IntegratorT>
 	RigidBodyStepResult_T<Scalar> RigidBodySystem::step_impl(
 		const mathlib::VecX_T<Scalar>& x,
@@ -66,12 +69,19 @@ namespace systems {
 		result.snap = takeSnapshot<Scalar>(t);
 		auto& snap = result.snap;
 		const size_t n = snap.model->joints.size();
+		int nv = 0;
+		for (const auto& j : snap.model->joints) { nv += jointDOF(j.type); }
 
-		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), n);
-		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + n, n);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> q(x.data(), nv);
+		Eigen::Map<const mathlib::VecX_T<Scalar>> qd(x.data() + nv, nv);
 
-		mathlib::VecX_T<Scalar> qdd(n);
-		for (size_t i = 0; i < n; ++i) { qdd[i] = _body.joints[i].qdd_ref; }
+		mathlib::VecX_T<Scalar> qdd = mathlib::VecX_T<Scalar>::Zero(nv);
+		int off = 0;
+		for (const auto& j : _body.joints) {
+			const int dof = jointDOF(j.type);
+			if (dof == 1) { qdd[off] = j.qdd_ref; }
+			off += dof;
+		}
 
 		std::vector<Pose_T<Scalar>> T_start(snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState(*snap.model, x, T_start);
@@ -158,7 +168,9 @@ namespace systems {
 		result.dynamics = dynResult;
 		return result;
 	}
-
+	/*
+	 * Post-step update to log metrics and update internal state after a simulation step.
+	 */
 	template<typename T>
 	void RigidBodySystem::postStepUpdate(const mathlib::VecX& x, const physics::DynamicsScratch<T>& dynScratch, const RigidBodyStepResult_T<T>& result) {
 		const size_t n = result.snap.model->joints.size();
@@ -167,18 +179,11 @@ namespace systems {
 		Eigen::Map<const mathlib::VecX> q_next(x.data(), nv);
 		Eigen::Map<const mathlib::VecX> qd_next(x.data() + nv, nv);
 
-		// Enforce joint limits
-		/*for (auto& j : _body.joints) { enforceJointLimits(j); }*/
-
 		// Recompute kinematics and dynamics at the new state for logging and control purposes
 		std::vector<Pose> T_world(result.snap.model->links.size());
 		_kinematics->computeForwardKinematics_fromState<double>(*result.snap.model, x, T_world);
-
-		// Alternative would be just 
-
 		// Compute mass matrix at the new state
 		mathlib::MatX M = dynScratch.dense.M.unaryExpr([](const auto& v) { return mathlib::real(v); });
-
 		// Extract real parts of relevant variables for logging and control
 		mathlib::VecX q_real = result.snap.q.unaryExpr([](const auto& v) { return mathlib::real(v); });
 		mathlib::VecX qd_real = result.snap.qd.unaryExpr([](const auto& v) { return mathlib::real(v); });
@@ -203,6 +208,30 @@ namespace systems {
 
 		const double sys_E = sys_KE + sys_PE; // total mechanical energy of the system
 
+		if (hasFreeJoint()) {
+            logFreeBodyMetrics(T_world, result, sys_PE);   // free bodies use their own log path
+        } else {
+            logJointMetrics(
+				n, x, result,
+				q_real, qd_real,
+				q_ref_real, qd_ref_real,
+				tau_rnea_real,
+				sys_KE, sys_PE, sys_E
+			);
+        }
+	}
+	/*
+	 * Log metrics for each joint to the joint log buffer
+	 */
+	template<typename T>
+	void RigidBodySystem::logJointMetrics(
+		const size_t n,
+		const mathlib::VecX& x, const RigidBodyStepResult_T<T>& result,
+		const mathlib::VecX& q, const mathlib::VecX& qd, 
+		const mathlib::VecX& q_ref, const mathlib::VecX& qd_ref,
+		const mathlib::VecX& tau_rnea,
+		double sys_KE, double sys_PE, double sys_E
+	) {
 		// Log metrics to buffer if logging is enabled
 		systems::JointLogBuffer* buf = nullptr;
 		if (_useInternalLogging) { int idx = _activeLogBufIdx.load(std::memory_order_acquire); buf = &_logBuffers[idx]; }
@@ -216,17 +245,18 @@ namespace systems {
 				const int dof = jointDOF(j.type);
 				if (dof == 0) { continue; } // skip fixed joints
 				const double I_eff = (j.type == eJointType::FIXED) ? 1.0 : mathlib::real(dynResult.metrics.I_eff[i]);
-				const double err = q_ref_real[i] - q_real[off];
-				const double err_d = qd_ref_real[i] - qd_real[off];
+				const double err = q_ref[i] - q[off];
+				const double err_d = qd_ref[i] - qd[off];
 				// Log the joint metrics to the buffer
 				JointLogBuffer::JointLogEntry e{};
+				e.joint_name = j.name;
 				e.sim_time = _simTime;
 				e.dt_taken = mathlib::real(result.stepOut.dt_taken);
 				e.dt_sug = mathlib::real(result.stepOut.dt_sug);
-				e.theta = q_real[off]; e.omega = qd_real[off]; e.alpha = mathlib::real(dynResult.metrics.qdd[off]);
+				e.theta = q[off]; e.omega = qd[off]; e.alpha = mathlib::real(dynResult.metrics.qdd[off]);
 				e.err = err; e.err_d = err_d;
 				e.I_eff = I_eff;
-				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea_real[i];  e.tau_gravity = mathlib::real(dynResult.metrics.tau_g[i]);
+				e.tau = mathlib::real(dynResult.metrics.tau[i]); e.tau_ff = tau_rnea[i];  e.tau_gravity = mathlib::real(dynResult.metrics.tau_g[i]);
 				e.tau_sat = mathlib::real(dynResult.metrics.tau_sat[i]);
 				e.KE = sys_KE; e.PE = sys_PE; e.E_total = sys_E;
 				e.clamp_theta = mathlib::real(_clampTheta[i]); e.clamp_omega = mathlib::real(_clampOmega[i]);
@@ -235,9 +265,88 @@ namespace systems {
 			}
 		}
 	}
+	/*
+	 * Log metrics for free bodies (6-DOF joints) to the free body log buffer
+	 */
+	template<typename T>
+	void RigidBodySystem::logFreeBodyMetrics(
+		const std::vector<Pose>& T_world,
+		const RigidBodyStepResult_T<T>& result,
+		double sys_PE
+	) {
+		// pick the buffer (mirrors the joint path)
+		systems::FreeBodyLogBuffer* buf = nullptr;
+		if (_useInternalLogging_fb) { int idx = _activeLogBufIdx_fb.load(std::memory_order_acquire); buf = &_logBuffers_fb[idx]; }
+		else { buf = _freeBodyLogBuffer; }
+		if (!buf) { return; }
 
+		auto dynResult = result.dynamics;
+		const auto g = _dynamics->getGravityVec();
+
+		// per-DOF offset table so we can pull this free joint's qdd segment
+		int off = 0, bodyIdx = 0;
+		for (size_t i = 0; i < _body.joints.size(); ++i) {
+			const RigidBodyJoint& j = _body.joints[i];
+			const int dof = jointDOF(j.type);
+			if (dof != 6) { off += dof; continue; }   // only free joints logged here
+
+			const RigidBodyLink& link = _body.links[/* child link index of j */ i];  // adjust to your link lookup
+			const double m = link.inertial.mass;
+			mathlib::Mat3 I;
+            I << link.inertial.inertia.ixx, link.inertial.inertia.ixy, link.inertial.inertia.ixz,
+                 link.inertial.inertia.ixy, link.inertial.inertia.iyy, link.inertial.inertia.iyz,
+                 link.inertial.inertia.ixz, link.inertial.inertia.iyz, link.inertial.inertia.izz;
+
+			// velocity (free_vel is [angular; linear])
+			const mathlib::Vec3 w = j.free_vel.head<3>();
+			const mathlib::Vec3 v = j.free_vel.tail<3>();
+			// acceleration from ABA qdd (same [angular; linear] split)
+			const mathlib::Vec3 aAng = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).template head<3>();
+			const mathlib::Vec3 aLin = mathlib::real(dynResult.metrics.qdd.segment(off, 6)).template tail<3>();
+
+			// energies
+			const double KE = 0.5 * m * v.squaredNorm() + 0.5 * w.dot(I * w);
+			// PE for a single free body: -m g . com_world
+			mathlib::Vec3 com_world = (T_world[i].block<3,3>(0,0) * link.inertial.com_xyz) + T_world[i].block<3,1>(0,3);
+			const double PE = -m * g.dot(com_world);
+
+			// momenta
+			const mathlib::Vec3 p = m * v;
+			const mathlib::Vec3 L = I * w;
+			// net wrench (Newton-Euler): F = m a,  tau = I aAng + w x (I w)
+			const mathlib::Vec3 F_net   = m * aLin;
+			const mathlib::Vec3 tau_net = I * aAng + w.cross(I * w);
+
+			systems::FreeBodyLogBuffer::FreeBodyLogEntry e{};
+			e.body_name = j.name;
+			e.sim_time = _simTime;
+			e.dt_taken = mathlib::real(result.stepOut.dt_taken);
+			e.dt_sug   = mathlib::real(result.stepOut.dt_sug);
+			e.pos_x = j.free_pos.x(); e.pos_y = j.free_pos.y(); e.pos_z = j.free_pos.z();
+			e.quat_w = j.free_qref.w(); e.quat_x = j.free_qref.x(); e.quat_y = j.free_qref.y(); e.quat_z = j.free_qref.z();
+			e.linVel_x = v.x(); e.linVel_y = v.y(); e.linVel_z = v.z();
+			e.angVel_x = w.x(); e.angVel_y = w.y(); e.angVel_z = w.z();
+			e.linAcc_x = aLin.x(); e.linAcc_y = aLin.y(); e.linAcc_z = aLin.z();
+			e.angAcc_x = aAng.x(); e.angAcc_y = aAng.y(); e.angAcc_z = aAng.z();
+			e.F_net_x = F_net.x(); e.F_net_y = F_net.y(); e.F_net_z = F_net.z();
+			e.tau_net_x = tau_net.x(); e.tau_net_y = tau_net.y(); e.tau_net_z = tau_net.z();
+			e.KE = KE; e.PE = PE; e.E_total = KE + PE;
+			e.linMom_x = p.x(); e.linMom_y = p.y(); e.linMom_z = p.z();
+			e.angMom_x = L.x(); e.angMom_y = L.y(); e.angMom_z = L.z();
+			e.mass = m; e.Ixx = I(0,0); e.Iyy = I(1,1); e.Izz = I(2,2);
+			e.sleep_state = 0.0;
+			e.body_index = bodyIdx++;
+			buf->push_entry(e);
+
+			off += dof;
+		}
+	}
+	/*
+	 * Assemble external forces into the dynamics scratch space for the current step.
+	 */
 	template<typename Scalar>
 	void RigidBodySystem::assembleExtForces(physics::DynamicsScratch<Scalar>& scratch) const {
+		// Setup external forces for each joint based on the pending external forces list
 		const size_t n = _body.joints.size();
 		scratch.spatial.f_ext.assign(n, mathlib::SpatialVec_T<Scalar>()); // reset external forces
 		if (_pendingExtForces.empty()) { return; }
@@ -252,14 +361,14 @@ namespace systems {
 			const Vec3 moment_world = r_world.cross(worldForce.template cast<double>());
 			const Vec3 M_link = R.transpose() * moment_world;
 			// Compute spatial force in link frame
-			mathlib::SpatialVec_T<Scalar> fs(
-				M_link.template cast<Scalar>(), // angular slot (moment)
-				F_link.template cast<Scalar>()  // linear slot  (force)
-			);
+			mathlib::SpatialVec_T<Scalar> fs(M_link.template cast<Scalar>(), F_link.template cast<Scalar>());
 			scratch.spatial.f_ext[jointIdx] += fs; // accumulate external force for this joint
 		}
 	}
-
+	/*
+	 * Step the rigid body system using automatic differentiation with NVar dual variables.
+	 * This method is templated on the number of dual variables (NVar) to allow for compile-time optimisation and flexibility in the number of variables being differentiated.
+	 */
 	template<size_t NVar>
 	void RigidBodySystem::step_AD(double dt, double simTime) {
 		if (!hasRigidBody()) { return; }
@@ -298,7 +407,7 @@ namespace systems {
 		_dynamics->setDt(result.stepOut.dt_taken);
 
 		auto x_real = result.stepOut.x_next.unaryExpr([](const auto& v) { return mathlib::real(v); });
-		postStepUpdate(x_real, _dynScratch_AD, result);
+		//postStepUpdate(x_real, _dynScratch_AD, result);
 
 		// Update base pose if free-floating
 		// if (_baseIsFree) {

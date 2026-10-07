@@ -20,6 +20,7 @@ if (DSFE_ENABLE_GUI)
     target_compile_definitions(DSFE_Engine PRIVATE DSFE_ENABLE_GUI)
 endif()
 
+# Add post-build commands to copy runtime dependencies and assets
 add_custom_command(TARGET DSFE_Engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:DSFE_Engine>"
@@ -33,7 +34,23 @@ add_custom_command(TARGET DSFE_Engine POST_BUILD
     COMMAND_EXPAND_LISTS
 )
 
-# Defines the source and destination for assets and configs
+# Platform-specific configurations for Qt deployment on Windows
+if(WIN32 AND DSFE_ENABLE_GUI)
+    find_package(Qt6 REQUIRED COMPONENTS Core)
+    get_target_property(_qmake_exe Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin_dir "${_qmake_exe}" DIRECTORY)
+
+    add_custom_command(TARGET DSFE_Engine POST_BUILD
+        COMMAND "${_qt_bin_dir}/windeployqt.exe"
+                --$<IF:$<CONFIG:Debug>,debug,release>
+                --compiler-runtime
+                --no-translations
+                "$<TARGET_FILE:DSFE_Engine>"
+        COMMENT "Deploying Qt runtime libraries for DSFE_Engine..."
+    )
+endif()
+
+# Defines the source and destination for assets
 set(ASSETS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 # Add a custom command to copy the assets directory after the build

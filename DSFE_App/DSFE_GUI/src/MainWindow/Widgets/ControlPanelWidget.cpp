@@ -14,6 +14,13 @@
 #include <QGridLayout>
 #include <QFormLayout>
 #include <QPushButton>
+#include <QTreeWidget>
+#include <QStyleFactory>
+
+#include <QStyledItemDelegate>
+#include <QTextDocument>
+#include <QPainter>
+#include <QApplication>
 
 #include "Widgets/FractionSelectorWidget.h"
 #include "Widgets/GravityVectorWidget.h"
@@ -27,12 +34,56 @@
 #include "Platform/Paths.h"
 #include "EngineLib/LogMacros.h"
 
+
+
+
 namespace widgets {
+	// Custom delegate to render rich HTML text in QTreeWidget items
+	class RichTextDelegate : public QStyledItemDelegate {
+		public:
+			void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+				QStyleOptionViewItem options = option;
+				initStyleOption(&options, index);
+
+				painter->save();
+
+				// Handle item background highlighting (hover/selection) safely
+				QStyle *style = options.widget ? options.widget->style() : QApplication::style();
+				style->drawControl(QStyle::CE_ItemViewItem, &options, painter, options.widget);
+
+				// Draw rich HTML text
+				QTextDocument doc;
+				doc.setHtml(options.text);
+				doc.setDefaultFont(options.font);
+
+				// Ensure text changes to pure white when the item row is selected
+				if (options.state & QStyle::State_Selected) {
+					doc.setDefaultStyleSheet("b, font, body { color: rgb(255,255,255); }");
+				}
+
+				painter->translate(options.rect.left(), options.rect.top() + (options.rect.height() - doc.size().height()) / 2);
+				doc.drawContents(painter);
+				painter->restore();
+		}
+	};
+	// Constructor for the ControlPanelWidget, which takes a pointer to the SimulationManager and an optional parent widget
 	ControlPanelWidget::ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent)
 		: QWidget(parent), _sim(sim)
 	{
 		auto* rootLayout = new QVBoxLayout(this);
 		rootLayout->setContentsMargins(4, 4, 4, 4);
+		
+		auto* treeSelectScrollArea = new QScrollArea(this);
+		treeSelectScrollArea->setWidgetResizable(true);
+		treeSelectScrollArea->setMaximumHeight(300);
+		auto* treeSelectContent = new QWidget(treeSelectScrollArea);
+		_treeSelectLayout = new QVBoxLayout(treeSelectContent);
+		treeSelectContent->setLayout(_treeSelectLayout);
+		treeSelectScrollArea->setWidget(treeSelectContent);
+		rootLayout->addWidget(treeSelectScrollArea);
+
+		selectorTreePanel();
+
 		auto* scrollArea = new QScrollArea(this);
 		scrollArea->setWidgetResizable(true);
 		auto* content = new QWidget(scrollArea);
@@ -44,19 +95,104 @@ namespace widgets {
 		simPropertiesPanel();
 		worldPropertiesPanel();
 		jointInfoPanel();
+		freeBodyInfoPanel();
 
 		auto* timer = new QTimer(this);
 		connect(timer, &QTimer::timeout, this, [this]() {
 			updateSimClock();
+			if (_sim) {
+				int total = (int)_sim->bodyCount();
+				for (int i = 0; i < (int)_sim->bodyCount(); ++i) { total += (int)_sim->body(i).joints().size(); }
+				if (total != _lastTreeJointCount) { refreshSelectorTree(); _lastTreeJointCount = total; }
+			}
 			jointInfoPanel();
-			updateTelemetryDisplay();
+			updateJointTelemetryDisplay();
+			freeBodyInfoPanel();
+			updateFreeBodyTelemetryDisplay();
 		});
 		timer->start(7);
 
 		_contentLayout->addStretch();
 	}
 
-	// SimSetupPanel for 
+	// Build the selector tree panel for Simulation Objects
+	void ControlPanelWidget::selectorTreePanel() {
+		_selectorTree = new QTreeWidget(this);
+		_selectorTree->setHeaderLabel("Simulation");
+		_selectorTree->setColumnCount(1);
+		_selectorTree->setSelectionMode(QAbstractItemView::SingleSelection);
+		_selectorTree->setStyle(QStyleFactory::create("Fusion"));
+		_selectorTree->setRootIsDecorated(true);
+		_selectorTree->setItemDelegate(new RichTextDelegate());
+		connect(_selectorTree, &QTreeWidget::currentItemChanged, this, &ControlPanelWidget::onSelectorItemChanged);
+		_treeSelectLayout->addWidget(_selectorTree);
+	}
+	// Refresh selector tree
+	void ControlPanelWidget::refreshSelectorTree() {
+		if (!_selectorTree || !_sim) { if (_selectorTree) { _selectorTree->clear(); } return; }
+		_selectorTree->clear();
+		// Build the tree structure for each rigid body and its joints
+		const int nBodies = (int)_sim->bodyCount();
+		for (int i = 0; i < nBodies; ++i) {
+			const auto& sys = _sim->body(i);
+			if (!sys.hasRigidBody()) { continue; }
+			// Create a top-level node for the rigid body
+			QTreeWidgetItem* bodyNode = new QTreeWidgetItem(_selectorTree);
+			bodyNode->setText(0, QString("Body %1: %2").arg(i).arg(QString::fromStdString(sys.rigidBodyName())));
+			bodyNode->setData(0, Qt::UserRole, (int)SelectionType::BODY);
+			bodyNode->setData(0, Qt::UserRole + 1, i);
+			bodyNode->setExpanded(true);
+			// Add child nodes for each joint in the rigid body system
+			const auto& joints = sys.joints();
+			int fbIdx = 0;
+			for (int k = 0; k < (int)joints.size(); ++k) {
+				const auto& j = joints[k];
+				if (j.type == systems::eJointType::FIXED) { continue; }
+				QTreeWidgetItem* leaf = new QTreeWidgetItem(bodyNode);
+				if (j.type == systems::eJointType::FREE) {
+					leaf->setText(0, QString("FreeBody: %1").arg(QString::fromStdString(j.child)));
+					leaf->setData(0, Qt::UserRole, (int)SelectionType::FREE_BODY);
+					leaf->setData(0, Qt::UserRole + 1, fbIdx);
+					++fbIdx;
+				} else {
+					leaf->setText(0, QString("Joint %1: %2").arg(k+1).arg(QString::fromStdString(j.child)));
+					leaf->setData(0, Qt::UserRole, (int)SelectionType::JOINT);
+					leaf->setData(0, Qt::UserRole + 1, k);
+				}
+				leaf->setData(0, Qt::UserRole + 2, i); // Store the owning body index for joint and free body nodes
+			}
+		}
+	}
+	// Handle selection changes in the selector tree
+	void ControlPanelWidget::onSelectorItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* prev) {
+		if (!current || !_sim) { return; }
+		const SelectionType selType = (SelectionType)current->data(0, Qt::UserRole).toInt();
+		const int selIdx = current->data(0, Qt::UserRole + 1).toInt();
+		if (selType == SelectionType::BODY) {
+			_sim->setActiveBody(selIdx);
+			_selection.type = SelectionType::BODY;
+			_selection.index = selIdx;
+			_selection.source = SelectionSource::CONTROL_PANEL;
+			return;
+		}
+		const int owningBody = current->data(0, Qt::UserRole + 2).toInt();
+		_sim->setActiveBody(owningBody);
+		_selection.type = selType;
+		_selection.index = selIdx;
+		_selection.source = SelectionSource::CONTROL_PANEL;
+		const bool isFree = (selType == SelectionType::FREE_BODY);
+		if (_jointInfoGroup) { _jointInfoGroup->setVisible(!isFree); }
+		if (_freeBodyInfoGroup) { _freeBodyInfoGroup->setVisible(isFree); }
+		if (!isFree && _jointIdxSlider) {
+			QSignalBlocker blocker(_jointIdxSlider);
+			_jointIdxSlider->setValue(selIdx + 1);
+			refreshJointChainLabel(selIdx);
+		}
+		if (isFree) { updateFreeBodyTelemetryDisplay(); }
+		else { updateJointTelemetryDisplay(); }
+	}
+
+	// Simulation Properties Panel
 	void ControlPanelWidget::simPropertiesPanel() {
 		_simPropertiesGroup = new QGroupBox("Simulation Properties");
 		auto* layout = new QVBoxLayout(_simPropertiesGroup);
@@ -197,6 +333,10 @@ namespace widgets {
 		_contentLayout->addWidget(_worldPropertiesGroup);
 	}
 
+	/*
+	 * Joint Telemetry Display
+	 */
+	// Builds the joint telemetry display widgets and adds them to the given layout.
 	void ControlPanelWidget::jointInfoPanel() {
 		if (!_jointInfoGroup) {
 			_jointInfoGroup = new QGroupBox("RigidBody Joint Information");
@@ -232,10 +372,10 @@ namespace widgets {
 			});
 			layout->addWidget(_jointIdxSlider);
 			layout->addSpacing(6);
-			buildTelemetryWidgets(layout);
+			buildJointTelemetryWidgets(layout);
 			_contentLayout->addWidget(_jointInfoGroup);
 		}
-		if (!_sim || !_sim->hasRigidBody()) { _jointInfoGroup->setVisible(false); return; }
+		if (!_sim || !_sim->hasRigidBody() || _selection.type != SelectionType::JOINT) { _jointInfoGroup->setVisible(false); return; }
 		auto& body = _sim->rigidBodySystem();
 		auto& joints = body.joints();
 		auto& links = body.links();
@@ -248,7 +388,6 @@ namespace widgets {
 		currentJointIndex = std::clamp(currentJointIndex, 0, (int)joints.size() - 1);
 		refreshJointChainLabel(_jointIdxSlider->value() - 1);
 	}
-
 	// Renders "parent  ->  [ Joint_n ]  ->  child" and the "n / total" index readout for the given joint.
 	void ControlPanelWidget::refreshJointChainLabel(int idx) {
 		if (!_sim || !_sim->hasRigidBody()) { return; }
@@ -278,9 +417,9 @@ namespace widgets {
 			.arg(idx + 1).arg(joints.size())
 		);
 	}
-
-	void ControlPanelWidget::updateTelemetryInfo(const diagnostics::JointTelemetry& j) {
-		auto& t = _telemetryLabels;
+	// Updates the joint telemetry display with the latest data from the simulation.
+	void ControlPanelWidget::updateJointTelemetryInfo(const diagnostics::JointTelemetry& j) {
+		auto& t = _jointTelLabels;
 		const double e = j.q_ref - j.q;
 
 		// fixed-width numeric formatting so columns don't jitter as values change
@@ -289,17 +428,17 @@ namespace widgets {
 		};
 		// State Telemetry
 		t.q->setText(num(j.q, "rad"));
-		t.qd->setText(num(j.qd, "rad/s"));
+		t.qd->setText(num(j.qd, "rad\u00B7s\u207B\u00B9"));
 		t.tau->setText(num(j.torqueNm, "N\u00B7m"));
 		// Reference Telemetry
 		t.qRef->setText(num(j.q_ref, "rad"));
-		t.qdRef->setText(num(j.qd_ref, "rad/s"));
-		t.qddRef->setText(num(j.qdd_ref, "rad/s\u00B2"));
+		t.qdRef->setText(num(j.qd_ref, "rad\u00B7s\u207B\u00B9"));
+		t.qddRef->setText(num(j.qdd_ref, "rad\u00B7s\u207B\u00B2"));
 		t.err->setText(num(e, "rad"));
 		// Trajectory Telemetry
 		t.qTraj->setText(num(j.traj_q, "rad"));
-		t.qdTraj->setText(num(j.traj_qd, "rad/s"));
-		t.qddTraj->setText(num(j.traj_qdd, "rad/s\u00B2"));
+		t.qdTraj->setText(num(j.traj_qd, "rad\u00B7s\u207B\u00B9"));
+		t.qddTraj->setText(num(j.traj_qdd, "rad\u00B7s\u207B\u00B2"));
 		// Clamping Telemetry
 		t.qClamped->setText(j.clampTheta
 			? "<span style='color:#569cd6'>active</span>"
@@ -308,11 +447,11 @@ namespace widgets {
 			? "<span style='color:#569cd6'>active</span>"
 			: "<span style='color:#666'>\u2014</span>");
 		// Constants Telemetry
-		t.damping->setText(num(j.damping, "kg\u00B7m\u00B2/s"));
+		t.damping->setText(num(j.damping, "kg\u00B7m\u00B2\u00B7s\u207B\u00B9"));
 		t.friction->setText(num(j.friction, "N\u00B7m"));
 	}
-
-	void ControlPanelWidget::buildTelemetryWidgets(QVBoxLayout* layout) {
+	// Builds the joint telemetry display widgets and adds them to the given layout.
+	void ControlPanelWidget::buildJointTelemetryWidgets(QVBoxLayout* layout) {
 		auto headerFont = [](QLabel* label) {
 			QFont font = label->font();
 			font.setBold(true);
@@ -341,7 +480,7 @@ namespace widgets {
 			l->setStyleSheet("color: rgb(225,228,235);");
 			return l;
 		};
-		auto& t = _telemetryLabels;
+		auto& t = _jointTelLabels;
 
 		t.stateHeader      = new QLabel("STATE");
 		t.referenceHeader  = new QLabel("REFERENCE");
@@ -431,9 +570,9 @@ namespace widgets {
 		addSection(t.clampedHeader,    limitGrid,    10);
 		addSection(t.constantsHeader,  physicalGrid, 10);
 	}
-
-	void ControlPanelWidget::updateTelemetryDisplay() {
-		if (!_sim) { return; }
+	// Updates the joint telemetry display with the latest data from the simulation.
+	void ControlPanelWidget::updateJointTelemetryDisplay() {
+		if (!_sim || _selection.type != SelectionType::JOINT) { return; }
 		const auto& rec = _sim->telemetry();
 		const auto& ring = rec.ring;
 		if (ring.size() < 1) { return; }
@@ -446,12 +585,264 @@ namespace widgets {
 			_jointIdxSlider->setMaximum(static_cast<int>(s.j.size()));
 			_jointIdxSlider->setValue(jointIdx + 1);
 		}
-		updateTelemetryInfo(s.j[jointIdx]);
+		updateJointTelemetryInfo(s.j[jointIdx]);
 	}
 
-	void ControlPanelWidget::displayPanel() {
-	}
+	/*
+	 * FreeBody Telemetry Display
+	 */
+	// Builds the free body telemetry display widgets and adds them to the given layout.
+	void ControlPanelWidget::freeBodyInfoPanel() {
+		if (!_freeBodyInfoGroup) {
+			_freeBodyInfoGroup = new QGroupBox("RigidBody Free Body Information");
+			auto* layout = new QVBoxLayout(_freeBodyInfoGroup);
+			_freeBodyInfoGroup->setLayout(layout);
 
+			// --- Free body context: parent  ->  [joint]  ->  child ---
+			_freeBodyLabel = new QLabel();
+			_freeBodyLabel->setTextFormat(Qt::RichText);
+			_freeBodyLabel->setAlignment(Qt::AlignCenter);
+			_freeBodyLabel->setWordWrap(true);
+			_freeBodyLabel->setStyleSheet("color: rgb(200,205,215);");
+			layout->addWidget(_freeBodyLabel);
+
+			// --- Index readout: "joint  3 / 6" ---
+			_freeBodyIndexLabel = new QLabel();
+			_freeBodyIndexLabel->setTextFormat(Qt::RichText);
+			_freeBodyIndexLabel->setAlignment(Qt::AlignCenter);
+			layout->addWidget(_freeBodyIndexLabel);
+
+			layout->addSpacing(4);
+
+			buildFreeBodyTelemetryWidgets(layout);
+			_contentLayout->addWidget(_freeBodyInfoGroup);
+		}
+		if (!_sim || !_sim->hasRigidBody() || _selection.type != SelectionType::FREE_BODY) { _freeBodyInfoGroup->setVisible(false); return; }
+		auto& body = _sim->rigidBodySystem();
+		auto& joints = body.joints();
+		auto& links = body.links();
+		if (links.size() != 1 || joints.size() != 1) { _freeBodyInfoGroup->setVisible(false); return; }
+		_freeBodyInfoGroup->setVisible(true);
+		refreshFreeBodyLabel(0);
+	}
+	// Renders "parent  ->  [ name ]  ->  child" and the "n / total" index readout for the given free body.
+	void ControlPanelWidget::refreshFreeBodyLabel(int idx) {
+		if (!_sim) { return; }
+		auto& body = _sim->rigidBodySystem();
+		auto& joints = body.joints();
+		if (joints.empty()) { return; }
+		idx = std::clamp(idx, 0, (int)joints.size() - 1);
+		const auto& j = joints[idx];
+		const QString parent = QString::fromStdString(j.parent);
+		const QString child  = QString::fromStdString(j.child);
+		const QString name   = QString::fromStdString(j.name);
+		// parent link (dim) -> joint (bright, italic-ish) -> child link (dim)
+		_freeBodyLabel->setText(QString(
+			"<span style='color:#8a8f9a'>%1</span>"
+			"  <span style='color:#5a6070'>\u27F6</span>  "
+			"<span style='color:#d8dbe2; font-weight:600'>[ %2 ]</span>"
+			"  <span style='color:#5a6070'>\u27F6</span>  "
+			"<span style='color:#8a8f9a'>%3</span>")
+			.arg(parent, name, child)
+		);
+		// "joint  n / total" with the count in a dim weight
+		_freeBodyIndexLabel->setText(QString(
+			"<span style='color:#8a8f9a; font-size:9pt'>joint</span> "
+			"<span style='color:#e0e3ea; font-family:Consolas; font-weight:600'>%1</span>"
+			"<span style='color:#5a6070'> / </span>"
+			"<span style='color:#8a8f9a; font-family:Consolas'>%2</span>")
+			.arg(idx + 1).arg(joints.size())
+		);
+	}
+	// Updates the free body telemetry display with the latest data from the simulation.
+	void ControlPanelWidget::updateFreeBodyTelemetryInfo(const diagnostics::FreeBodyTelemetry& fb) {
+		auto& t = _freeBodyTelLabels;
+
+		// fixed-width numeric formatting so columns don't jitter as values change
+		auto num = [](double v, const char* unit) {
+			return QString("%1 <span style='color:#888'>%2</span>").arg(v, 0, 'f', 4).arg(unit);
+		};
+		// Vector3 formatting: "(x, y, z) <unit>" with fixed-width numeric formatting.
+		auto vec3 = [](double x, double y, double z, const char* unit) {
+			return QString("[%1, %2, %3] <span style='color:#888'>%4</span>")
+				.arg(x, 0, 'f', 4).arg(y, 0, 'f', 4).arg(z, 0, 'f', 4).arg(unit);
+		};
+		// Quat formatting: "(w, x, y, z) <unit>" with fixed-width numeric formatting.
+		auto quat = [](double w, double x, double y, double z, const char* unit) {
+			return QString("[%1, %2, %3, %4] <span style='color:#888'>%5</span>")
+				.arg(w, 0, 'f', 4).arg(x, 0, 'f', 4).arg(y, 0, 'f', 4).arg(z, 0, 'f', 4).arg(unit);
+		};
+		// State Telemetry
+		t.position->setText(vec3(fb.pos_x, fb.pos_y, fb.pos_z, "m"));
+		t.orientation->setText(quat(fb.quat_w, fb.quat_x, fb.quat_y, fb.quat_z, "rad"));
+		t.linearVelocity->setText(vec3(fb.linVel_x, fb.linVel_y, fb.linVel_z, "m\u00B7s\u207B\u00B9"));
+		t.angularAcceleration->setText(vec3(fb.angAcc_x, fb.angAcc_y, fb.angAcc_z, "rad\u00B7s\u207B\u00B2"));
+		// Time Derivative Telemetry
+		t.linearAcceleration->setText(vec3(fb.linAcc_x, fb.linAcc_y, fb.linAcc_z, "m\u00B7s\u207B\u00B2"));
+		t.angularAcceleration->setText(vec3(fb.angAcc_x, fb.angAcc_y, fb.angAcc_z, "rad\u00B7s\u207B\u00B2"));
+		t.netAccumulatedForce->setText(vec3(fb.F_net_x, fb.F_net_y, fb.F_net_z, "N"));
+		t.netAccumulatedTorque->setText(vec3(fb.tau_net_x, fb.tau_net_y, fb.tau_net_z, "N\u00B7m"));
+		// Energy & Performance Telemetry
+		t.KE->setText(num(fb.KE, "J"));
+		t.PE->setText(num(fb.PE, "J"));
+		t.linearMomentum->setText(vec3(fb.linMom_x, fb.linMom_y, fb.linMom_z, "kg\u00B7m\u00B7s\u207B\u00B9"));
+		t.angularMomentum->setText(vec3(fb.angMom_x, fb.angMom_y, fb.angMom_z, "kg\u00B7m\u00B2\u00B7s\u207B\u00B9"));
+		// Sleep State Telemetry
+		t.sleepState->setText(false
+			? "<span style='color:#569cd6'>active</span>"
+			: "<span style='color:#666'>\u2014</span>");
+		// Mass & Inertia Telemetry
+		t.mass->setText(num(fb.mass, "kg"));
+		t.inverse_mass->setText(num(fb.inv_mass, "kg\u207B\u00B9"));
+		t.inertia->setText(vec3(fb.Ixx, fb.Iyy, fb.Izz, "kg\u00B7m\u00B2"));
+		t.inverse_inertia->setText(vec3(fb.inv_Ixx, fb.inv_Iyy, fb.inv_Izz, "kg\u207B\u00B9\u00B7m\u207B\u00B2"));
+	}
+	// Builds the free body telemetry display widgets and adds them to the given layout.
+	void ControlPanelWidget::buildFreeBodyTelemetryWidgets(QVBoxLayout* layout) {
+		auto headerFont = [](QLabel* label) {
+			QFont font = label->font();
+			font.setBold(true);
+			font.setPointSize(font.pointSize() + 1);
+			font.setLetterSpacing(QFont::PercentageSpacing, 115);  // tracked-out caps read as section headers
+			label->setFont(font);
+			label->setStyleSheet("color: rgb(200,205,215);");
+		};
+
+		// A math-symbol row label: rich-text italic variable, e.g. "θ" or "θ_ref".
+		auto symLabel = [](const QString& html) {
+			auto* l = new QLabel(html);
+			l->setTextFormat(Qt::RichText);
+			l->setObjectName("telem_symbol");
+			return l;
+		};
+
+		// A value label: monospace, right-aligned so digits column up.
+		auto valueLabel = [](QLabel* l) {
+			l->setTextFormat(Qt::RichText);
+			l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+			QFont f("Consolas");            // or "JetBrains Mono"/"Cascadia Mono" if bundled
+			f.setStyleHint(QFont::Monospace);
+			f.setPointSize(l->font().pointSize());
+			l->setFont(f);
+			l->setStyleSheet("color: rgb(225,228,235);");
+			return l;
+		};
+		auto& t = _freeBodyTelLabels;
+
+		t.stateHeader      		  = new QLabel("STATE");
+		t.timeDerivativeHeader    = new QLabel("TIME DERIVATIVE");
+		t.energyPerformanceHeader = new QLabel("ENERGY & PERFORMANCE");
+		t.sleepStateHeader 		  = new QLabel("SLEEP STATE");
+		t.massInertialHeader  	  = new QLabel("MASS & INERTIA");
+		for (QLabel* h : {
+				t.stateHeader, 
+				t.timeDerivativeHeader, 
+				t.energyPerformanceHeader,
+				t.sleepStateHeader,
+				t.massInertialHeader
+			}
+		) {
+			headerFont(h);
+		}
+
+		t.position = new QLabel(); t.orientation = new QLabel();
+		t.linearVelocity = new QLabel(); t.angularVelocity = new QLabel();
+		t.linearAcceleration = new QLabel(); t.angularAcceleration = new QLabel();
+		t.netAccumulatedForce = new QLabel(); t.netAccumulatedTorque = new QLabel();
+		t.KE = new QLabel(); t.PE = new QLabel();
+		t.linearMomentum = new QLabel(); t.angularMomentum = new QLabel();
+		t.sleepState = new QLabel(); 
+		t.mass = new QLabel(); t.inverse_mass = new QLabel();
+		t.inertia = new QLabel(); t.inverse_inertia = new QLabel();
+
+		for (QLabel* v : {
+				t.position, t.orientation,
+				t.linearVelocity, t.angularVelocity,
+				t.linearAcceleration, t.angularAcceleration,
+				t.netAccumulatedForce, t.netAccumulatedTorque,
+				t.KE, t.PE,
+				t.linearMomentum, t.angularMomentum,
+				t.sleepState,
+				t.mass, t.inverse_mass,
+				t.inertia, t.inverse_inertia
+			}
+		) {
+				valueLabel(v);
+		}
+
+		auto makeGrid = [](std::initializer_list<std::pair<QLabel*, QLabel*>> rows) {
+			auto* g = new QGridLayout(); int r = 0;
+			for (auto& [sym, val] : rows) {
+				g->addWidget(sym, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
+				g->addWidget(val, r, 1);
+				++r;
+			}
+			g->setHorizontalSpacing(14);
+			g->setVerticalSpacing(3);
+			g->setColumnStretch(0, 0);
+			g->setColumnStretch(1, 1);
+			return g;
+		};
+
+		// θ (theta), ω (omega), τ (tau); subscripts for ref/traj; Δ for error.
+		auto* stateGrid = makeGrid({
+			{ symLabel("<i>\u03B8</i>"), t.position   },   	  // θ  position
+			{ symLabel("\u0052"),   	 t.orientation  }, 	  // R  orientation
+			{ symLabel("<i>\u03C4</i>"), t.linearVelocity },  // τ  linear velocity
+			{ symLabel("<i>\u03C9</i>"), t.angularVelocity }, // α  angular velocity
+		});
+
+		auto* timeDerivGrid = makeGrid({
+			{ symLabel("<i>\u03B1</i><sub>linear</sub>"),  t.linearAcceleration },
+			{ symLabel("<i>\u03B1</i><sub>angular</sub>"), t.angularAcceleration },
+			{ symLabel("\u0046<sub>net</sub>"),     t.netAccumulatedForce },
+			{ symLabel("<i>\u03C4</i><sub>net</sub>"),     t.netAccumulatedTorque },
+		});
+
+		auto* energyPerformanceGrid = makeGrid({
+			{ symLabel("\u004B\u0045"), t.KE },
+			{ symLabel("\u0050\u0045"), t.PE },
+			{ symLabel("<i>\u0070</i>"), t.linearMomentum },
+			{ symLabel("\u004C"), t.angularMomentum },
+		});
+
+		auto* sleepStateGrid = makeGrid({
+			{ symLabel("Sleep State"), t.sleepState  },
+		});
+
+		auto* massInertiaGrid = makeGrid({
+			{ symLabel("<i>\u006D</i>"),   		 	 t.mass  },
+			{ symLabel("<i>\u006D\u207B\u00B9</i>"), t.inverse_mass },
+			{ symLabel("\u0049"),   		 	 t.inertia  },
+			{ symLabel("\u0049\u207B\u00B9"), t.inverse_inertia },
+		});
+
+		auto addSection = [layout](QLabel* header, QGridLayout* grid, int gap) {
+			layout->addSpacing(gap);
+			layout->addWidget(header);
+			layout->addLayout(grid);
+		};
+
+		addSection(t.stateHeader,      		  stateGrid,    		 5);
+		addSection(t.timeDerivativeHeader,    timeDerivGrid,      	 10);
+		addSection(t.energyPerformanceHeader, energyPerformanceGrid, 10);
+		addSection(t.sleepStateHeader,    	  sleepStateGrid,    	 10);
+		addSection(t.massInertialHeader,  	  massInertiaGrid, 	  	 10); 
+	}
+	// Updates the free body telemetry display with the latest data from the simulation.
+	void ControlPanelWidget::updateFreeBodyTelemetryDisplay() {
+		if (!_sim || _selection.type != SelectionType::FREE_BODY) { return; }   // only for free bodies (inverse of the joint guard)
+		const auto& rec = _sim->telemetry();
+		const auto& ring = rec.ring;
+		if (ring.size() < 1) { return; }
+		const auto& s = ring.at(ring.size() - 1);
+		if (s.fb.empty()) { return; }
+		int bodyIdx = (_selection.type == SelectionType::FREE_BODY) ? _selection.index : 0;
+		bodyIdx = std::clamp(bodyIdx, 0, static_cast<int>(s.fb.size()) - 1);
+		updateFreeBodyTelemetryInfo(s.fb[bodyIdx]);
+	}
+	
+	// --- Selection and Follow ---
 	void ControlPanelWidget::selectJointAndFollow(int jointIdx) {
 		if (!_sim || !_sim->hasRigidBody()) { return; }
 

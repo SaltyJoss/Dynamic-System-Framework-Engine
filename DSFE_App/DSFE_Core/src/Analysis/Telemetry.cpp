@@ -9,16 +9,38 @@
 #include "Systems/TrajectoryManager.h"
 
 namespace diagnostics {
+	// Convert a FreeBodyLogEntry to FreeBodyTelemetry
+	static FreeBodyTelemetry toTelemetry(const systems::FreeBodyLogBuffer::FreeBodyLogEntry& e) {
+		FreeBodyTelemetry t;
+		t.pos_x=e.pos_x; t.pos_y=e.pos_y; t.pos_z=e.pos_z;
+		t.quat_w=e.quat_w; t.quat_x=e.quat_x; t.quat_y=e.quat_y; t.quat_z=e.quat_z;
+		t.linVel_x=e.linVel_x; t.linVel_y=e.linVel_y; t.linVel_z=e.linVel_z;
+		t.angVel_x=e.angVel_x; t.angVel_y=e.angVel_y; t.angVel_z=e.angVel_z;
+		t.linAcc_x=e.linAcc_x; t.linAcc_y=e.linAcc_y; t.linAcc_z=e.linAcc_z;
+		t.angAcc_x=e.angAcc_x; t.angAcc_y=e.angAcc_y; t.angAcc_z=e.angAcc_z;
+		t.F_net_x=e.F_net_x; t.F_net_y=e.F_net_y; t.F_net_z=e.F_net_z;
+		t.tau_net_x=e.tau_net_x; t.tau_net_y=e.tau_net_y; t.tau_net_z=e.tau_net_z;
+		t.KE=e.KE; t.PE=e.PE; t.E_total=e.E_total;
+		t.linMom_x=e.linMom_x; t.linMom_y=e.linMom_y; t.linMom_z=e.linMom_z;
+		t.angMom_x=e.angMom_x; t.angMom_y=e.angMom_y; t.angMom_z=e.angMom_z;
+		t.sleepState=(e.sleep_state>0.5);
+		t.mass=e.mass; t.inv_mass=(e.mass>0?1.0/e.mass:0.0);
+		t.Ixx=e.Ixx; t.Iyy=e.Iyy; t.Izz=e.Izz;
+		t.inv_Ixx=(e.Ixx>0?1.0/e.Ixx:0.0); t.inv_Iyy=(e.Iyy>0?1.0/e.Iyy:0.0); t.inv_Izz=(e.Izz>0?1.0/e.Izz:0.0);
+		t.body_index=e.body_index;
+		return t;
+	}
+
 	// Record telemetry data at time t
-	void TelemetryRecorder::record(double t, const systems::RigidBodySystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel /*level*/) {
-		const int n = (int)robotSys.getRigidBody().joints().size();
+	void TelemetryRecorder::record(double t, const systems::RigidBodySystem& sys, const control::TrajectoryManager* trajOpt, eTelemetryLevel /*level*/) {
+		const int n = (int)sys.getRigidBody().joints().size();
 
 		// Begin write
 		TelemetrySample& s = ring.beginWrite();
 		s.timeSec = t;
 
 		// Resize joint vector (if needed)
-		const auto& joints = robotSys.getRigidBody().joints();
+		const auto& joints = sys.getRigidBody().joints();
 		s.j.resize(joints.size());
 
 		// Accumulators for error statistics
@@ -31,7 +53,7 @@ namespace diagnostics {
 
 		// Collect telemetry for each joint
 		for (int i = 0; i < n; ++i) {
-			const auto& j = robotSys.getRigidBody().joints()[i];
+			const auto& j = sys.getRigidBody().joints()[i];
 
 			JointTelemetry jt;
 
@@ -79,6 +101,16 @@ namespace diagnostics {
 			if (abs_e > max_abs_e) { max_abs_e = abs_e; worstJ = i; }
 
 			s.j[i] = jt; // store joint telemetry
+		}
+
+		if (sys.hasFreeJoint()) {
+			s.fb.clear();
+			systems::FreeBodyLogBuffer::FreeBodyLogEntry e{};
+			int bodyIdx = 0;
+			while (sys.getRigidBody().latestFreeBodyEntry(e, bodyIdx)) {
+				s.fb.push_back(toTelemetry(e));
+				++bodyIdx;
+			}
 		}
 
 		// Error statistics

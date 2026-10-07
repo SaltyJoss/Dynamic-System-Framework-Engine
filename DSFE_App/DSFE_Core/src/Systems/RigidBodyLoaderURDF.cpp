@@ -44,8 +44,16 @@ namespace systems {
         if (p.rfind(pkg, 0) == 0) { p = p.substr(pkg.size()); }
         // Replace forward slashes with platform-specific separators
         std::replace(p.begin(), p.end(), '\\', '/');
-        const auto slash = p.find_last_of('/');
-        const std::string fn = (slash == std::string::npos) ? p : p.substr(slash + 1);
+        // Extract the subdir if there is one (e.g. robot/meshes/<subdir>/<file>), ensures we only use the /<subdir>/<file> part of the path, not the full path
+        if (p.find('/') != std::string::npos) {
+            for (size_t i = 0; i < 2; ++i) { // Remove the first two path components (e.g. "robot/meshes/")
+                size_t pos = p.find('/');
+                if (pos != std::string::npos) { p = p.substr(pos + 1); }
+            }
+            return meshdir + "/" + p; // Return the meshdir + subdir + filename
+        }
+        const auto slash = p.find_last_of('/'); // Find the last slash to get the filename
+        const std::string fn = (slash == std::string::npos) ? p : p.substr(slash + 1); // Get the filename from the path
         return meshdir + "/" + fn;
     }
     // Link Parsing
@@ -89,6 +97,59 @@ namespace systems {
             } else {
 			    LOG_WARN("Link %s has NO <dsfe_material>", link.name.c_str());
 			}
+        }
+        // Collision
+        if (XMLElement* col = lEl->FirstChildElement("collision")) {
+            if (XMLElement* o = col->FirstChildElement("origin")) {
+                link.collision.origin_xyz = parseTriple(o->Attribute("xyz"), mathlib::Vec3::Zero());
+                link.collision.origin_rpy = parseTriple(o->Attribute("rpy"), mathlib::Vec3::Zero());
+            }
+            if (XMLElement* cap = col->FirstChildElement("dsfe_capsule")) {
+                link.collision.type = eCollisionShape::CAPSULE;
+                link.collision.localA = parseTriple(cap->Attribute("a"), mathlib::Vec3::Zero());
+                link.collision.localB = parseTriple(cap->Attribute("b"), mathlib::Vec3::Zero());
+                double radius = 0.05; // default radius
+                cap->QueryDoubleAttribute("radius", &radius);
+                link.collision.radius = radius;
+                LOG_INFO("%s (link) has <dsfe_capsule> a=[%.3f %.3f %.3f] b=[%.3f %.3f %.3f] r=%.3f", link.name.c_str(), 
+                    link.collision.localA.x(), link.collision.localA.y(), link.collision.localA.z(), 
+                    link.collision.localB.x(), link.collision.localB.y(), link.collision.localB.z(),
+                    link.collision.radius
+                );
+            }
+            else if (XMLElement* geom = col->FirstChildElement("geometry")) {
+                if (XMLElement* box = geom->FirstChildElement("box")) {
+                    link.collision.type = eCollisionShape::BOX;
+                    mathlib::Vec3 size = parseTriple(box->Attribute("size"), mathlib::Vec3(1,1,1));
+                    link.collision.halfExtents = size * 0.5; // URDF box size is full extents, we store half extents
+                    LOG_INFO("Link %s <collision> box halfExtents=[%.3f %.3f %.3f]", link.name.c_str(), link.collision.halfExtents.x(), link.collision.halfExtents.y(), link.collision.halfExtents.z());
+                }
+                else if (XMLElement* sphere = geom->FirstChildElement("sphere")) {
+                    link.collision.type = eCollisionShape::SPHERE;
+                    double r = 0.05; // default radius
+                    sphere->QueryDoubleAttribute("radius", &r);
+                    link.collision.radius = r;
+                    LOG_INFO("Link %s <collision> sphere radius=%.3f", link.name.c_str(), r);
+                }
+                else if (XMLElement* cyl = geom->FirstChildElement("cylinder")) {
+                    link.collision.type = eCollisionShape::CYCLINDER;
+                    double r = 0.05; // default radius
+                    double len = 0.1; // default length
+                    cyl->QueryDoubleAttribute("radius", &r);
+                    cyl->QueryDoubleAttribute("length", &len);
+                    link.collision.radius = r;
+                    link.collision.localA = mathlib::Vec3(0, 0, -len * 0.5);
+                    link.collision.localB = mathlib::Vec3(0, 0, len * 0.5);
+                    LOG_INFO("Link %s <collision> cylinder radius=%.3f length=%.3f", link.name.c_str(), r, len);
+                }
+                else if (XMLElement* mesh = geom->FirstChildElement("mesh")) {
+                    link.collision.type = eCollisionShape::MESH;
+                    if (const char* fn = mesh->Attribute("filename")) { 
+                        link.collision.meshFile = translateMeshPath(fn, meshdir);
+                    }
+                    LOG_INFO("Link %s <collision> mesh=%s", link.name.c_str(), link.collision.meshFile.c_str());
+                }
+            }
         }
         // Inertial
         if (XMLElement* i = lEl->FirstChildElement("inertial")) {

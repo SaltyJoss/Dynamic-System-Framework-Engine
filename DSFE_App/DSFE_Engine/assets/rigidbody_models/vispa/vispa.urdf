@@ -3,10 +3,15 @@
   <link name="link00">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link0-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link0-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.76 0.63 0.28 1.0" metallic="0.95" roughness="0.3"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link0_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="0.627"/>
       <inertia ixx="0.00281845585208" ixy="0" ixz="0" iyy="0.00281883333333" iyz="0" izz="0.00379978918542"/>
@@ -17,10 +22,15 @@
   <link name="link01">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link1-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link1-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link1_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="2.328"/>
       <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.007" iyz="0.003" izz="0.008"/>
@@ -31,10 +41,15 @@
   <link name="link02">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link2-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link2-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link2_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="3.995"/>
       <inertia ixx="0.010 " ixy="0" ixz="0" iyy="0.578" iyz="0" izz="0.574"/>
@@ -45,10 +60,15 @@
   <link name="link03">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link3-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link3-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link3_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="2.328"/>
       <inertia ixx="0.012" ixy="0" ixz="0" iyy="0.008" iyz="0.003" izz="0.007"/>
@@ -59,10 +79,15 @@
   <link name="link04">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link4-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link4-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link4_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="3.157"/>
       <inertia ixx="0.199" ixy="0" ixz="0" iyy="0.193" iyz="0.01" izz="0.01"/>
@@ -73,10 +98,15 @@
   <link name="link05">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link5-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link5-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.93 0.94 0.95 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/collision/link5_collision.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="2.695"/>
       <inertia ixx="0.029" ixy="0" ixz="0" iyy="0.006" iyz="-0.001" izz="0.027"/>
@@ -87,10 +117,15 @@
   <link name="link06">
     <visual>
       <geometry>
-        <mesh filename="package://vispa/meshes/Link6-DHReference-PublicRelease.stl"/>
+        <mesh filename="package://vispa/meshes/visual/Link6-DHReference-PublicRelease.stl"/>
       </geometry>
       <dsfe_material rgba="0.90 0.91 0.92 1.0" metallic="0.1" roughness="0.65"/>
     </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://vispa/meshes/visual/Link6-DHReference-PublicRelease.stl"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="0.924"/>
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.001"/>

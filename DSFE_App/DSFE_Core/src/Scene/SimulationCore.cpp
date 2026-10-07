@@ -20,26 +20,29 @@ namespace core {
 	// Owned constructed subsystems (default)
 	SimulationCore::SimulationCore()
 		: _trajOwned(std::make_unique<control::TrajectoryManager>()), _rigidBodyOwned(std::make_unique<systems::RigidBodySystem>()),
-		_singleBodyOwned(std::make_unique<single_body_system::SingleBodySystem>())
-	{
+		_singleBodyOwned(std::make_unique<single_body_system::SingleBodySystem>()
+	) {
 		_traj = _trajOwned.get();
 		_rigidBody = _rigidBodyOwned.get();
 		_singleBody = _singleBodyOwned.get();
+
+		_bodiesOwned.push_back(std::make_unique<systems::RigidBodySystem>());
+		_activeBodyIdx = 0;
+		_rigidBody = _bodiesOwned[0].get();
 
 		startExportThread();
 	}
 	// Destructor (logs destruction for debugging purposes)
 	SimulationCore::~SimulationCore() {
-		stopExportThread();
+		stopExportJointThread();
+		stopExportFreeBodyThread();
 		std::cout << "CORE DESTROYED\n"; 
 	}
-
 	// Non-owning constructor (used when subsystems are managed externally, e.g. by the SimulationManager)
 	SimulationCore::SimulationCore(systems::RigidBodySystem& rigidBody, control::TrajectoryManager& traj)
 		: _rigidBody(&rigidBody), _traj(&traj), _singleBody(nullptr) {
 		startExportThread();
 	}
-
 	// Simulation System
 	void SimulationCore::setupSimulationIntegrator() {
 		if (!_rigidBody && !_singleBody) { return; }
@@ -152,11 +155,14 @@ namespace core {
 			// Update physics and rigidBody system if sim is running
 			if (_simRunning.load()) {
 				simTime += _dt;
+				for (auto& b : _bodiesOwned) {
+					if (!b->hasRigidBody()) { continue; }
+					b->updateTrajectoryInputs(*_traj, simTime);
+					b->step(_dt, simTime);
+				}
+				_collisionResolver.resolveCollisions(_bodiesOwned, _dt);
 				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
-					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
-					_rigidBody->step(_dt, simTime);
-					// Telemetry update
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
@@ -167,18 +173,16 @@ namespace core {
 				if (hasSingleBody()) { _singleBody->step(_dt, simTime); }
 			}
 			else if (_manipulating.load() && hasRigidBody()) {
-				_rigidBody->step(_dt, simTime);
+				for (auto& b : _bodiesOwned) {
+					if (b->hasRigidBody()) { b->step(_dt, simTime); }
+					_collisionResolver.resolveCollisions(_bodiesOwned, _dt);
+				}
 			}
-
 			_accum -= _dt; // decrease accumulator by fixed timestep until we catch up to the current frame time
 		}
-
-		if (_simRunning.load()) {
-			_simTime.store(simTime);
-		}
-		else {
-			_simTime.store(0.0, std::memory_order_relaxed);
-		}
+		// Update the simulation time if the simulation is running, otherwise reset it to zero
+		if (_simRunning.load()) { _simTime.store(simTime); }
+		else { _simTime.store(0.0, std::memory_order_relaxed); }
 	}
 
 	// Start the simulation loop
@@ -193,32 +197,23 @@ namespace core {
 
 		// Reset simulation system
 		if (_rigidBody) {
-			_rigidBody->resetRigidBody();
-			_trajRefBuffer.clear();
-
-			// Determine expected number of entries based on run mode and cap it to prevent OOM
 			double expectedMinutes = (_runMode == eRunMode::Synchronous) ? DEFAULT_SYNC_MINUTES : DEFAULT_INTERACTIVE_MINUTES;
-
-			// Convert minutes to steps
-			size_t joints = _rigidBody->jointCount();
 			double expectedSeconds = expectedMinutes * 60.0;
 			size_t steps = static_cast<size_t>(expectedSeconds / _dt);
 
-			// Guarding against overflow and capping
-			uint64_t total64 = static_cast<uint64_t>(steps) * static_cast<uint64_t>(joints);
-			size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
-
-			// Internal double buf for high-rate joint log
-			_rigidBody->useInternalLogBuffer(true);
-			_rigidBody->reserveInternalLogBuffers(total);
-
-			// Keeps external traj ref buffer for lower-rate traj ref (going to refactor this later)
-			_trajRefBuffer.clear();
-			_trajRefBuffer.reserve(std::max<size_t>(1024, total / (26 / 5))); // 26 to 5 entries, so reserving 1/(26/5) of total steps as a heuristic for ref buffer size
-			_rigidBody->setRefBuffer(&_trajRefBuffer);
-		}
-		if (_singleBody) {
-			_singleBody->resetBody();
+			for (auto& b : _bodiesOwned) {
+				if (!b->hasRigidBody()) { continue; }
+				b->resetRigidBody();
+				size_t joints = b->jointCount();
+				// Guarding against overflow and capping
+				uint64_t total64 = static_cast<uint64_t>(steps) * static_cast<uint64_t>(joints);
+				size_t total = static_cast<size_t>(std::min<uint64_t>(total64, MAX_LOG_ENTRIES));
+				// Internal double buf for high-rate telemetry logging
+				b->useInternalLogBuffer(true);
+				b->reserveInternalLogBuffers(total);
+				b->useInternalLogBuffer_fb(true);
+				b->reserveInternalLogBuffers_fb(total);
+			}
 		}
 
 		std::string int_name;
@@ -243,8 +238,10 @@ namespace core {
 		if (!_simRunning.load()) { return; }
 		D_RUNTIME("stopping simulation");
 
-		auto buf = _rigidBody->claimExportLogBuffer(); // Claim the export log buffer from the rigidBody
-		if (buf) { enqueueExportBuffer(std::move(buf)); }
+		auto buf_j = _rigidBody->claimExportLogBuffer(); // Claim the export log buffer from the rigidBody
+		auto buf_fb = _rigidBody->claimExportLogBuffer_fb(); // Claim the export log buffer from the rigidBody
+		if (buf_j) { enqueueJointExportBuffer(std::move(buf_j)); }
+		if (buf_fb) { enqueueFreeBodyExportBuffer(std::move(buf_fb)); }
 		flushExports();
 
 		// Clear buffers to free memory and prepare for next run
@@ -257,66 +254,48 @@ namespace core {
 	}
 
 	// Exporst the logged joint data to HDF5 format using the custom macro for each log entry
-	void SimulationCore::exportLogsToHDF5(const systems::JointLogBuffer& exportBuf) {
+	void SimulationCore::exportLogsToHDF5_j(const systems::JointLogBuffer& exportBuf) {
 		auto t0 = std::chrono::steady_clock::now();
-
 		const auto state = _rigidBody->runtimeIntegratorState();
 		const std::string intName = (state && state->autoDiff) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
 		const std::string rigidBodyName = _rigidBody->hasRigidBody() ? _rigidBody->rigidBodyName() : "no_rigidBody";
 		const std::string header = rigidBodyName + "_sim_" + intName;
-
 		// Check if there are any log entries to export
 		const size_t N = exportBuf.size();
 		if (N == 0) {
 			D_RUNTIME("ExportLogs has no data to export (buffer size is 0)");
 			return;
 		}
-
+		// Export the log buffer to HDF5 using the data capture service
 		_data.captureJointBuffer(
 			data::Stream::Simulation,
 			header, exportBuf
 		);
-		
 		// Log export duration
 		auto dur = std::chrono::steady_clock::now() - t0;
-		LOG_INFO("ExportLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
+		LOG_INFO("ExportJointLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 	}
 
-	// Exports the reference trajectory data to HDF5 format using the custom macro for each ref entry
-	void SimulationCore::exportRefsToHDF5() {
+	void SimulationCore::exportLogsToHDF5_fb(const systems::FreeBodyLogBuffer& exportBuf) {
+		auto t0 = std::chrono::steady_clock::now();
+		const auto state = _rigidBody->runtimeIntegratorState();
+		const std::string intName = (state && state->autoDiff) ? _rigidBody->AD_integratorName() : _rigidBody->getIntegratorName();
 		const std::string rigidBodyName = _rigidBody->hasRigidBody() ? _rigidBody->rigidBodyName() : "no_rigidBody";
-		const std::string header = rigidBodyName + "_traj_ref";
-
-		// Check if there are any log entries
-		const size_t N = _trajRefBuffer.size();
-		if (N == 0) return;
-
-		// Simple validation of buffer sizes
-		if (_trajRefBuffer.theta_ref.size() != N ||
-			_trajRefBuffer.omega_ref.size() != N ||
-			_trajRefBuffer.alpha_ref.size() != N ||
-			_trajRefBuffer.sim_time.size()  != N ||
-			_trajRefBuffer.joint_index.size() != N) {
-			D_FAIL("exportRefsToHDF5: TrajRefBuffer size mismatch");
-			return; // Return as reference data is useless if sizes don't match
+		const std::string header = rigidBodyName + "_sim_" + intName;
+		// Check if there are any log entries to export
+		const size_t N = exportBuf.size();
+		if (N == 0) {
+			D_RUNTIME("ExportFreeBodyLogs has no data to export (buffer size is 0)");
+			return;
 		}
-
-		// For each ref entry, create a field list and write to HDF5
-		for (size_t i = 0; i < N; ++i) {
-			// Create a list of fields for this log entry
-			data::FieldList fields;
-			// Sim Metadata
-			fields.emplace_back("sim_time", (double)_trajRefBuffer.sim_time[i]);
-			// Reference values
-			fields.emplace_back("theta_ref", (double)_trajRefBuffer.theta_ref[i]);
-			fields.emplace_back("omega_ref", (double)_trajRefBuffer.omega_ref[i]);
-			fields.emplace_back("alpha_ref", (double)_trajRefBuffer.alpha_ref[i]);
-			// Joint info
-			fields.emplace_back("joint_index", (double)_trajRefBuffer.joint_index[i]);
-
-			// Write this entry to HDF5
-			_data.capture(data::Stream::Reference, header, fields);
-		}
+		// Export the free body log buffer to HDF5 using the data capture service
+		_data.captureFreeBodyBuffer(
+			data::Stream::Simulation,
+			header, exportBuf
+		);
+		// Log export duration
+		auto dur = std::chrono::steady_clock::now() - t0;
+		LOG_INFO("ExportFreeBodyLogs -> wrote %zu samples in %.3f s", N, std::chrono::duration<double>(dur).count());
 	}
 
 	// --------------------------------------------------
@@ -334,18 +313,15 @@ namespace core {
 		// Reset rigidBody state
 		resetRigidBody();
 		_traj->clearAll();
-
-		// Clear reference buffer (external for now)
-		_trajRefBuffer.clear();
-		// Inject reference buffer only
-		_rigidBody->setRefBuffer(&_trajRefBuffer);
 		// Set integrator on both physics and rigidBody systems
 		_rigidBody->setStandardIntegrator(method);
 
 		scriptParallelisation(program);
 
 		D_SUCCESS("Synchronous run completed: %s (%.1fs, %zu samples)", methodName.c_str(), _simTime.load(), _telemetry.ring.size());
-		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size());
+		LOG_INFO("SimulationCore::runScriptToCompletion -> END method=%s result=%d simTime=%.6f samples=%zu", 
+			methodName.c_str(), (int)(_telemetry.ring.size() >= 2), _simTime.load(), _telemetry.ring.size()
+		);
 		return (_telemetry.ring.size() >= 2);
 	}
 
@@ -377,7 +353,9 @@ namespace core {
 		for (int step = 0; step < maxSteps; ++step) {
 			// Check program completion
 			if (program->isCompleted() || program->isFaulted() || program->isStopped()) {
-				LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped());
+				LOG_INFO("SimulationCore::runScriptToCompletion -> program end detected at step=%d completed=%d faulted=%d stopped=%d", 
+					step, (int)program->isCompleted(), (int)program->isFaulted(), (int)program->isStopped()
+				);
 				break;
 			}
 
@@ -387,29 +365,28 @@ namespace core {
 			// Step physics and rigidBody if sim is running
 			if (_simRunning.load()) {
 				simTime += dt;
+				for (auto& b : _bodiesOwned) {
+					if (!b->hasRigidBody()) { continue; }
+					b->updateTrajectoryInputs(*_traj, simTime);
+					b->step(_dt, simTime);
+				}
+				// Update rigidBody trajectory inputs and step the rigidBody forward in time
 				if (hasRigidBody()) {
-					// Update Trajectory Inputs
-					_rigidBody->updateTrajectoryInputs(*_traj, simTime);
-					_rigidBody->step(dt, simTime);
-					// Telemetry beginRun
 					if (!_telemetryBegun) {
 						_telemetry.beginRun(simTime, _telHz, 300.0);
 						_telemetryBegun = true;
 						D_INFO_ONCE("Telemtry Capture Started (dt=%.6f s, simTime=%.3f s)", (1 / _telHz), simTime);
 					}
-					// Telemetry update
 					_telemetry.update(simTime, *_rigidBody, _traj, diagnostics::eTelemetryLevel::FULL);
 				}
 			}
 		}
-
 		if (_simRunning.load()) {
 			_simTime.store(simTime);
 		}
 		else {
 			_simTime.store(0.0);
 		}
-
 		// Clean up
 		stopSimulation();
 
@@ -451,12 +428,44 @@ namespace core {
 	// Internal method to load a rigidBody, assumes ownership of the rigidBody system
 	void SimulationCore::loadRigidBodyInternal(const std::string& name) {
 		if (!_rigidBody) { LOG_ERROR("Cannot load rigidBody: RigidBodySystem not set"); return; }
-		_rigidBody->loadRigidBody(name);
+		if (!_rigidBody->hasRigidBody()) { _rigidBody->loadRigidBody(name); return; }
+		auto sys = std::make_unique<systems::RigidBodySystem>();
+		sys->loadRigidBody(name);
+		_bodiesOwned.push_back(std::move(sys));
+		_activeBodyIdx = (int)_bodiesOwned.size() - 1;
+		_rigidBody = _bodiesOwned[_activeBodyIdx].get();
+
+		if (_rigidBody->hasFreeJoint()) {
+			constexpr double gap = 1.5;
+			mathlib::Vec3 spawnPos(gap * _activeBodyIdx, 0.5, 0.0);
+			_rigidBody->setFreeBodyPosition(spawnPos);
+		}
 	}
 	// Resets the rigidBody system to its initial state
 	void SimulationCore::resetRigidBody() {
 		if (!_rigidBody) { LOG_ERROR("Cannot reset rigidBody: RigidBodySystem not set"); return; }
 		_rigidBody->resetRigidBody();
+	}
+	// Body Management for multiple rigidBody systems
+	std::size_t SimulationCore::bodyCount() const { return _bodiesOwned.size(); }
+	systems::RigidBodySystem& SimulationCore::body(int i) { return *_bodiesOwned[i]; }
+	const systems::RigidBodySystem& SimulationCore::body(int i) const { return *_bodiesOwned[i]; }
+	int SimulationCore::activeBodyIdx() const { return _activeBodyIdx; }
+	void SimulationCore::setActiveBody(int i) {
+		if (i < 0 || i >= (int)_bodiesOwned.size()) { LOG_ERROR("Invalid body index: %d", i); return; }
+		_activeBodyIdx = i;
+		_rigidBody = _bodiesOwned[_activeBodyIdx].get();
+	}
+	void SimulationCore::clearBodies() {
+		_bodiesOwned.clear();
+		_bodiesOwned.push_back(std::make_unique<systems::RigidBodySystem>());
+		_activeBodyIdx = 0;
+		_rigidBody = _bodiesOwned[0].get();
+	}
+
+	// Collision
+	physlib::collision::Capsule SimulationCore::makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) {
+		return _collisionResolver.makeCapsule(link, world_T);
 	}
 
 	// Sets an external force on a specific link of the rigidBody system at a given world point
@@ -493,7 +502,6 @@ namespace core {
 
 	// Setters for the metric buffers
 	void SimulationCore::setJointLogBuffer(systems::JointLogBuffer* buf) { _jointLogBuffer = *buf; }
-	void SimulationCore::setTrajRefBuffer(systems::TrajRefBuffer* buf) { _trajRefBuffer = *buf; }
 	
 	// Accessor for the telemetry recorder (non-const and const versions)
 	diagnostics::TelemetryRecorder& SimulationCore::telemetry() { return _telemetry; }
@@ -506,40 +514,75 @@ namespace core {
 
 	// Thread-based methods
 
-	// Starts the export thread if it's not already running
+	// Starts the export threads for joint and free body logs
 	void SimulationCore::startExportThread() {
-		if (_expThreadRunning.exchange(true)) { return; }
-		_expThread = std::thread([this]() { 
-			exportThreadMain();
-		});
+		if (!_expThreadRunning_j.exchange(true)) {
+			_expThread_j = std::thread([this]() {  exportJointThreadMain(); });
+		}
+		if (!_expThreadRunning_fb.exchange(true)) {
+			_expThread_fb = std::thread([this]() {  exportFreeBodyThreadMain(); });
+		}
 	}
 
 	// Signals the export thread to stop and waits for it to finish
-	void SimulationCore::stopExportThread() {
-		if (!_expThreadRunning.exchange(false)) { return; }
-		_expCondVar.notify_all();
-		if (_expThread.joinable()) {
-			_expThread.join();
+	void SimulationCore::stopExportJointThread() {
+		if (!_expThreadRunning_j.exchange(false)) { return; }
+		_expCondVar_j.notify_all();
+		if (_expThread_j.joinable()) {
+			_expThread_j.join();
+		}
+	}
+	// Signals the export thread to stop and waits for it to finish
+	void SimulationCore::stopExportFreeBodyThread() {
+		if (!_expThreadRunning_fb.exchange(false)) { return; }
+		_expCondVar_fb.notify_all();
+		if (_expThread_fb.joinable()) {
+			_expThread_fb.join();
 		}
 	}
 
 	// Main loop for the export thread, waits for export buffers to be enqueued and processes them
-	void SimulationCore::exportThreadMain() {
+	void SimulationCore::exportJointThreadMain() {
 		while (true) {
 			std::unique_ptr<systems::JointLogBuffer> buf;
 			{
-				std::unique_lock<std::mutex> lock(_expMutex);
-				_expCondVar.wait(lock, [this]() {
-					return !_expQ.empty() || !_expThreadRunning.load();
+				std::unique_lock<std::mutex> lock(_expMutex_j);
+				_expCondVar_j.wait(lock, [this]() {
+					return !_expQ_j.empty() || !_expThreadRunning_j.load();
 				});
-				if (!_expThreadRunning.load() && _expQ.empty()) { break; }
-				buf = std::move(_expQ.front());
-				_expQ.pop();
+				if (!_expThreadRunning_j.load() && _expQ_j.empty()) { break; }
+				buf = std::move(_expQ_j.front());
+				_expQ_j.pop();
 			}
 
 			if (buf) {
 				try {
-					exportLogsToHDF5(*buf);
+					exportLogsToHDF5_j(*buf);
+				}
+				catch (...) {
+					LOG_ERROR("Export failed");
+				}
+				--_exportsInFlight;
+			}
+		}
+	}
+	// Main loop for the export thread, waits for free body export buffers to be enqueued and processes them
+	void SimulationCore::exportFreeBodyThreadMain() {
+		while (true) {
+			std::unique_ptr<systems::FreeBodyLogBuffer> buf;
+			{
+				std::unique_lock<std::mutex> lock(_expMutex_fb);
+				_expCondVar_fb.wait(lock, [this]() {
+					return !_expQ_fb.empty() || !_expThreadRunning_fb.load();
+				});
+				if (!_expThreadRunning_fb.load() && _expQ_fb.empty()) { break; }
+				buf = std::move(_expQ_fb.front());
+				_expQ_fb.pop();
+			}
+
+			if (buf) {
+				try {
+					exportLogsToHDF5_fb(*buf);
 				}
 				catch (...) {
 					LOG_ERROR("Export failed");
@@ -549,13 +592,21 @@ namespace core {
 		}
 	}
 
-	void SimulationCore::enqueueExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf) {
+	void SimulationCore::enqueueJointExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf) {
 		{
-			std::lock_guard<std::mutex> lock(_expMutex);
+			std::lock_guard<std::mutex> lock(_expMutex_j);
 			++_exportsInFlight;
-			_expQ.push(std::move(buf));
+			_expQ_j.push(std::move(buf));
 		}
-		_expCondVar.notify_one();
+		_expCondVar_j.notify_one();
+	}
+	void SimulationCore::enqueueFreeBodyExportBuffer(std::unique_ptr<systems::FreeBodyLogBuffer> buf) {
+		{
+			std::lock_guard<std::mutex> lock(_expMutex_fb);
+			++_exportsInFlight;
+			_expQ_fb.push(std::move(buf));
+		}
+		_expCondVar_fb.notify_one();
 	}
 
 	void SimulationCore::flushExports() {

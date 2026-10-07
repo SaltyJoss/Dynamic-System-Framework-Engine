@@ -5,6 +5,7 @@
 
 #include "Workspace/ProjectPage.h"
 #include "Widgets/DSLEditorWidget.h"
+#include "Widgets/ConsoleOutputWidget.h"
 #include "Widgets/ControlPanelWidget.h"
 #include "Workspace/Workspace.h"
 #include "Workspace/RecentWorkspace.h"
@@ -48,7 +49,14 @@ namespace window {
 		setCentralWidget(_stack);
 
 		// IMPORTANT: ge switching happens BEFORE ANY renderer-touching call -> the viewport's renderer initialises in its showEvent, which fires on first switch
-		_homePage->onNewProject   = [this]() { showProjectPage(); newWorkspace(); };
+		_homePage->onNewProject   = [this]() {
+			if(_projectPage->log()) { 
+				_projectPage->log()->clearTerminalLog();
+				_projectPage->log()->clearSimLog();
+			}
+			showProjectPage();
+			newWorkspace();
+		};
 		_homePage->onOpenProject  = [this]() { openWorkspaceDialog(); };
 		_homePage->onOpenRecent   = [this](const QString& p) { openWorkspacePath(p); };
 		_homePage->onOpenTemplate = [this](const QString& p) { openTemplate(p); };
@@ -142,6 +150,11 @@ namespace window {
 				robotMenu->clear();
 				buildRobotMenu(robotMenu);
 			});
+			auto* freeBodyMenu = projectMenu->addMenu("Load Free-Body");
+			connect(freeBodyMenu, &QMenu::aboutToShow, this, [this, freeBodyMenu]() {
+				freeBodyMenu->clear();
+				buildFreeBodyMenu(freeBodyMenu);
+			});
 			auto* loadMeshAction = projectMenu->addAction("Load Mesh");
 			connect(loadMeshAction, &QAction::triggered, this, [this]() {
 				LOG_INFO("Menu clicked: Project -> Load Mesh");
@@ -225,11 +238,30 @@ namespace window {
 		}
 	}
 
+	void DSFE_MainWindow::buildFreeBodyMenu(QMenu* projectMenu) {
+		const auto& freeBodyMap = platform::getFreeBodySystemMap();
+		std::unordered_map<platform::eFreeBodyFamilies, QMenu*> familyMenus;
+		for (const auto& [body, family] : freeBodyMap) {
+			if (!familyMenus.contains(family)) {
+				QString familyName = QString::fromStdString(platform::FreeBodies().toString(family));
+				familyMenus[family] = projectMenu->addMenu(familyName);
+			}
+			QString bodyName = QString::fromStdString(platform::FreeBodies().toString(body));
+			QAction* bodyAction = familyMenus[family]->addAction(bodyName);
+			connect(bodyAction, &QAction::triggered, this, [this, bodyName]() {
+				std::string n = bodyName.toStdString();
+				std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
+				const std::string path = "rigidbody_models/" + n + "/" + n + ".urdf";
+				LOG_INFO("Menu clicked: Project -> Load Free Body -> %s", path.c_str());
+				showProjectPage(); _sim->load_rigidBody(path);
+			});
+		}
+	}
+
 	void DSFE_MainWindow::onLoadMesh() {
 		const QString path = QFileDialog::getOpenFileName(nullptr, "Select Mesh File", QString::fromStdString((paths::assets() / "objects" / "Shapes").string()), "Mesh Files(*.obj * .fbx * .gltf * .dae * .stl)");
 		if (path.isEmpty()) { return; }
 		std::string bodyName = QFileInfo(path).baseName().toStdString();
-		//_sim->simCore()->loadSingleBody(bodyName);
 		_sim->load_mesh(path.toStdString());
 	}
 
@@ -242,7 +274,10 @@ namespace window {
 		if (_sim->isScriptRunning() && _dslEditor) { _dslEditor->stopScript(); }
 		_sim->closeWorkspace();
 		if (_dslEditor) { _dslEditor->setScriptText(QString()); }
-		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		if (_controlPanel) {
+			_controlPanel->refreshFromSim();
+			_controlPanel->refreshSelectorTree();
+		}
 		_currentWorkspacePath.clear();
 		mark_clean();
 		updateTitle();
@@ -310,7 +345,10 @@ namespace window {
 		_sim->closeWorkspace();
 		_sim->applyWorkspace(w);
 		if (_dslEditor) { _dslEditor->setScriptText(w.scriptText); }
-		if (_controlPanel) { _controlPanel->refreshFromSim(); }
+		if (_controlPanel) {
+			_controlPanel->refreshFromSim();
+			_controlPanel->refreshSelectorTree();
+		}
 		mark_clean();
 	}
 

@@ -40,6 +40,9 @@ namespace commands {
 		utils::OpResult setFixedDt(double dt);
 		utils::OpResult loadRigidBody(const std::string& bodyName);
 
+		systems::RigidBodySystem* resolveBody(const std::string& target);
+		std::string memberName(const std::string& target) const;
+		
 		// --- GLOBAL STATE METHODS ---
 
 		// Sets the angular units for rotation commands
@@ -54,7 +57,6 @@ namespace commands {
 
 		// Stops all angular velocity for the body
 		utils::OpResult stopAllVel(); // stops all angular velocity
-
 		utils::OpResult setJointOmega(const std::string& childLink, double omegaDegPerSec); // deg/s
 		utils::OpResult stopJointOmega(const std::string& childLink);
 
@@ -62,20 +64,12 @@ namespace commands {
 		core::ISimulationCore* Core() const;
 		systems::RigidBodySystem& RigidBody() const;
 
-
 		// --- ROTATION COMMAND METHODS ---
-
 		utils::OpResult setJointTargetRad(const std::string& link, double thetaTargetRad);
 		utils::OpResult setJointTargetDeltaRad(const std::string& link, double deltaRad);
 		utils::OpResult setJointMaxOmegaRad(const std::string& link, double maxqd);
 		utils::OpResult setJointOmegaRefRad(const std::string& link, double qd_ref);
 		utils::OpResult setJointAlphaRefRad(const std::string& link, double qdd_ref);
-
-		//utils::OpResult updateRigidRotateTo(double dt);
-		utils::OpResult updateJointRotateTo(double dt);
-
-		//utils::OpResult beginRigidRotateTo(scene::Object* obj, mathlib::Vec3 axisUnit, double maxOmegaDegPerSec, double angleDeg);
-		utils::OpResult beginJointRotateTo(const std::string& link, double maxOmegaDegPerSec, double angleDeg);
 
 		// --- READ-ONLY ACCESSORS ---
 		bool hasLink(std::size_t linkIndex) const;
@@ -91,10 +85,10 @@ namespace commands {
 
 		double NormaliseOmega(double omega) const;
 		double convertOmegaToInternal(double omega) const;
-
 		mathlib::Vec3 normaliseDirection(const mathlib::Vec3& dir) const;
-
 		double getJointAngleRad(const std::string& link) const;
+
+		bool bodyOwnsTarget(systems::RigidBodySystem& sys, const std::string& name) const;
 
 		std::unordered_map<std::string, double> _jointAngles;
 

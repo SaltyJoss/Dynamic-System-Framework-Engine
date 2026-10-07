@@ -14,6 +14,7 @@ namespace gui {
         QString name;
         QString rigidBodyName;  // empty = no rigid body loaded (informational only, not a file path)
         QString rigidBodyPath;  // original rigid body file path if one was opened (necessary for re-load)
+        QStringList rigidBodyPaths; // list of all rigid body paths in the workspace (for multi-body workspaces)
         QString scriptText;     // DSL script embedded — file is self-contained
         QString scriptPath;     // original script file if one was opened (informational)
 

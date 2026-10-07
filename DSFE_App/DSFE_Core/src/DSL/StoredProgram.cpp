@@ -13,7 +13,7 @@
 
 namespace dsl {
 	StoredProgram::StoredProgram(core::ISimulationCore* core)
-		: _currentLineNumber(0), PC(0), _core(core), _cntx(core) {
+		: _currentLineNumber(0), _core(core), PC(0), _cntx(core) {
 	}
 
 	StoredProgram::~StoredProgram() { clear(); }

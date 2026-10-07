@@ -15,6 +15,7 @@
 #include "Platform/ISimulationCore.h"
 #include "Platform/SimulationState.h"
 #include "Numerics/IntegratorState.h"
+#include "Physics/CollisionResolver.h"
 
 #include "Analysis/Telemetry.h"
 #include "Platform/DataManager.h"
@@ -43,8 +44,10 @@ namespace core {
 
 		// Buffer queue for exporting sim outputs
 		void startExportThread();
-		void stopExportThread();
-		void enqueueExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf);
+		void stopExportJointThread();
+		void stopExportFreeBodyThread();
+		void enqueueJointExportBuffer(std::unique_ptr<systems::JointLogBuffer> buf);
+		void enqueueFreeBodyExportBuffer(std::unique_ptr<systems::FreeBodyLogBuffer> buf);
 		void flushExports();
 
 		// Simulation control
@@ -84,7 +87,7 @@ namespace core {
 		// Simulation run tag (used for logging and data management)
 		void setRunTag(const std::string& tag) override { _runTag = tag; }
 
-		// Subsystems access
+		// Accessors for the simulation state
 		systems::RigidBodySystem& rigidBodySystem() override;
 		single_body_system::SingleBodySystem& singleBodySystem() override;
 		control::TrajectoryManager& trajectoryManager() override;
@@ -99,6 +102,16 @@ namespace core {
 		void loadRigidBody(const std::string& name) override;
 		void loadRigidBodyInternal(const std::string& name); // Internal method that assumes ownership
 		void resetRigidBody() override; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
+		// Body management for multiple rigid bodies
+		std::size_t bodyCount() const override;
+		systems::RigidBodySystem& body(int i) override;
+		const systems::RigidBodySystem& body(int i) const override;
+		int activeBodyIdx() const override;
+		void setActiveBody(int i) override;
+		void clearBodies() override;
+
+		// Collision
+		physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) override;
 
 		// Run a script to completion synchronously with a specific integrator
 		bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) override;
@@ -111,16 +124,17 @@ namespace core {
 		void setRigidBodySystem(systems::RigidBodySystem* sys);
 		void setSingleBodySystem(single_body_system::SingleBodySystem* singleBody);
 		void setTrajectoryManager(control::TrajectoryManager* traj);
+
 		void setJointLogBuffer(systems::JointLogBuffer* buffer);
-		void setTrajRefBuffer(systems::TrajRefBuffer* buffer);
+		void setFreeBodyLogBuffer(systems::FreeBodyLogBuffer* buffer);
 
 		// Helpers
 		void tick(double frame_dt) override;
 		void stepFixed(double frame_dt);
 
 		// Export logged telemetry data to HDF5 files
-		void exportLogsToHDF5(const systems::JointLogBuffer& buf);
-		void exportRefsToHDF5();
+		void exportLogsToHDF5_j(const systems::JointLogBuffer& buf);
+		void exportLogsToHDF5_fb(const systems::FreeBodyLogBuffer& buf);
 
 		// Increment simulation time by dt (used in the simulation loop)
 		void incrementSimTime(double dt) {
@@ -156,26 +170,38 @@ namespace core {
 
 	private:
 		// Export thread management
-		void exportThreadMain();
+		void exportJointThreadMain();
+		void exportFreeBodyThreadMain();
 		void scriptParallelisation(dsl::IStoredProgram* program);
 
-		std::thread _expThread;
-		std::mutex _expMutex;
-		std::condition_variable _expCondVar;
-		std::queue<std::unique_ptr<systems::JointLogBuffer>> _expQ;
-		std::atomic<bool> _expThreadRunning{ false };
+		// Export thread for joint telemetry
+		std::thread _expThread_j;
+		std::mutex _expMutex_j; // Mutex for joint export queue
+		std::condition_variable _expCondVar_j; // Condition variable for export thread synchronization (need one for each queue)
+		std::queue<std::unique_ptr<systems::JointLogBuffer>> _expQ_j;
+		std::atomic<bool> _expThreadRunning_j{ false };
+
+		// Export thread for free body telemetry
+		std::thread _expThread_fb;
+		std::mutex _expMutex_fb; // Mutex for free body export queue#
+		std::condition_variable _expCondVar_fb; // Condition variable for export thread synchronization (need one for each queue)
+		std::queue<std::unique_ptr<systems::FreeBodyLogBuffer>> _expQ_fb;
+		std::atomic<bool> _expThreadRunning_fb{ false };
 
 		// Owning storage (used only in owning mode)
-		// std::unique_ptr<std::vector<std::unique_ptr<scene::Object>>> _objectsOwned;
 		std::unique_ptr<systems::RigidBodySystem> _rigidBodyOwned;
 		std::unique_ptr<single_body_system::SingleBodySystem> _singleBodyOwned;
 		std::unique_ptr<control::TrajectoryManager> _trajOwned;
-
 		// Non-owning access (always used by logic)
-		// std::vector<std::unique_ptr<scene::Object>>* _objects = nullptr;
 		systems::RigidBodySystem* _rigidBody = nullptr;
 		single_body_system::SingleBodySystem* _singleBody = nullptr;
 		control::TrajectoryManager* _traj = nullptr;
+		// Owned bodies (for managing multiple rigidbodies)
+		std::vector<std::unique_ptr<systems::RigidBodySystem>> _bodiesOwned;
+		int _activeBodyIdx = -1;
+
+		// Collision Resolver
+		physics::CollisionResolver _collisionResolver;
 
 		mutable std::mutex _stateMutex;
 
@@ -205,7 +231,7 @@ namespace core {
 		// Telemetry
 		diagnostics::TelemetryRecorder _telemetry; // Dynamic telemetry recorder
 		systems::JointLogBuffer _jointLogBuffer;    // Buffer for logging joint data each step
-		systems::TrajRefBuffer _trajRefBuffer;      // Buffer for logging trajectory reference data each step
+		systems::FreeBodyLogBuffer _freeBodyLogBuffer; // Buffer for logging free body data each step
 		bool _telemetryBegun = false;
 
 		data::DataManager _data; // Data manager for handling telemetry data export and storage

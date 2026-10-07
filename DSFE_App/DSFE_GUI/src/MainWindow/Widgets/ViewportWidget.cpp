@@ -168,14 +168,26 @@ namespace widgets {
 			QCursor::setPos(_screenCenter);
 			return;
 		}
+		// If dragging a link, apply a spring-damper force to move the link toward the cursor's projected position.
 		if (_dragging && !_dragLink.empty()) {
 			// Unproject the cursor onto a view-parallel plane through the grab point, then push the link toward it with a spring.
 			glm::vec3 target = cursorToDragPlane(event->position().x(), event->position().y());
 			if (target.y < 0.0f) { target.y = 0.0f; }   // never drag a link below the floor plane
 			const glm::vec3 grab = linkOrigin(_dragLink);
-			glm::vec3 force  = 450.0f * (target - grab);   // spring; tune stiffness
-			const float fmax = 3000.0f; // cap the force to avoid instability
-			if (glm::length(force) > fmax) { force = glm::normalize(force) * fmax; }
+			// Approximation of the grabbed points velocity from its moption since the last frame, to reduce spring oscillation (Massive issue with freebodies)
+			static glm::vec3 s_lastGrab = grab;
+			static auto s_lastTime = std::chrono::high_resolution_clock::now();
+			const auto now = std::chrono::high_resolution_clock::now();
+			const float dt = std::max(1e-4f, std::chrono::duration<float>(now - s_lastTime).count());
+			const glm::vec3 grabVel = (grab - s_lastGrab) / dt;
+			s_lastGrab = grab; s_lastTime = now;
+			// Spring-damper force: F = k * (target - grab) - c * v, where v is the velocity of the grabbed point. Limit the force magnitude to avoid instability.
+			const float k = 80.0f; // Stiffness of the spring (N/m)
+			const float c = 40.0f;  // Damping coefficient (N·s/m)
+			glm::vec3 force = k * (target - grab) - c * grabVel;
+			// Limit the force magnitude to avoid instability
+			const float f_max = 400.0f; // Maximum force magnitude (N) -> My previous was 3000, so I will likely change this as I test the new collision system
+			if (glm::length(force) > f_max) { force = glm::normalize(force) * f_max; }
 			_sim->setLinkExternalForce(_dragLink, grab, force);
 		}
 	}

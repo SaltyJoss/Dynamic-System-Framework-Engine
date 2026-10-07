@@ -34,7 +34,7 @@ namespace Workspace {
 	}
 
 	widgets::DSLEditorWidget* ProjectPage::editor() const { return _editor; }
-
+	widgets::ConsoleOutputWidget* ProjectPage::log() const { return _log; }
 	widgets::ControlPanelWidget* ProjectPage::controlPanel() const { return _controlPanel; }
 
 } // namespace Workspace

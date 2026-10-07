@@ -169,43 +169,6 @@ namespace systems {
 		}
 	}
 
-	// Parse collision geometry material properties
-	static void parseCollisionMaterial(const json& collisionData, const RigidBodyModel& rigidBody, CollisionShape& shape) {
-		if (!collisionData.contains("material")) { return; }
-		const auto& m = collisionData["material"];
-
-		if (m.is_object()) {
-			parseMaterialObject(m, rigidBody.materials, "Collision",
-				shape.material, shape.metallic, shape.roughness);
-		}
-	}
-
-	// Parse collision geometry, supporting multiple collision shapes per link
-	static void parseCollisions(const json& linkData, const RigidBodyModel& rigidBody, RigidBodyLink& link) {
-		if (!linkData.contains("collision")) { return; }
-		for (const auto& c : linkData["collision"]) {
-			if (!linkData["collision"].is_array()) {
-				LOG_WARN("Collision block is not an array in link %s", link.name.c_str());
-				return;
-			}
-
-			CollisionShape s;
-			s.type = c.value("type", "");
-			s.origin_xyz = readVec3(c, "origin_xyz", s.origin_xyz);
-			s.origin_rpy = readVec3(c, "origin_rpy", s.origin_rpy);
-
-			if (s.type == "cylinder") {
-				s.size.x() = c.value("radius", 0.0f);  // radius
-				s.size.y() = c.value("length", 0.0f);  // length
-			}
-			else if (s.type == "box") { s.size = readVec3(c, "size", s.size); }
-			else if (s.type == "mesh") { s.meshFile = c.value("mesh", ""); }
-
-			parseCollisionMaterial(c, rigidBody, s);
-			link.collisions.push_back(s);
-		}
-	}
-
 	// Parse inertial properties, including mass, center of mass, and inertia tensor
 	static void parseInertial(const json& linkData, RigidBodyLink& link) {
 		if (!linkData.contains("inertial")) { return; }
@@ -422,7 +385,6 @@ namespace systems {
 			link.name = linkData.value("name", "");
 
 			parseVisual(linkData, rigidBody.materials, link);
-			parseCollisions(linkData, rigidBody, link);
 			parseInertial(linkData, link);
 
 			rigidBody.links.push_back(link);

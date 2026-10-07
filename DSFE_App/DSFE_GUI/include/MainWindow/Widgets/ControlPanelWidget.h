@@ -21,8 +21,8 @@ namespace render {
 	enum class QualityPreset;
 }
 
-namespace systems { class RigidBodySystem; }
-namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; }
+namespace systems { class RigidBodySystem;}
+namespace diagnostics { class TelemetryRecorder; struct JointTelemetry; struct FreeBodyTelemetry; }
 namespace gui { class SimulationManager; }
 
 class QVBoxLayout;
@@ -30,8 +30,10 @@ class QCheckBox;
 class QComboBox;
 class QGroupBox;
 class QLabel;
-class QPushButton;
+class QPushButton; 
 class QSlider;
+class QTreeWidget;
+class QTreeWidgetItem;
 
 namespace widgets {
 	class FractionSelectorWidget;
@@ -41,6 +43,7 @@ namespace widgets {
 	public:
 		explicit ControlPanelWidget(gui::SimulationManager* sim, QWidget* parent = nullptr);
 		void refreshFromSim();
+		void refreshSelectorTree();
 
 	private:
 		struct IntegratorEntry {
@@ -53,7 +56,8 @@ namespace widgets {
 			const char* name;
 		};
 
-		struct TelemetryLabels {
+		// Telemetry display for joint information
+		struct JointTelemetryLabels {
 			// Headers
 			QLabel* stateHeader = nullptr;
 			QLabel* referenceHeader = nullptr;
@@ -85,20 +89,66 @@ namespace widgets {
 			QLabel* damping = nullptr;
 			QLabel* friction = nullptr;
 		};
+		// Telemetry display for free bodies (not joints)
+		struct FreeBodyTelemetryLabels {
+			// Headers
+			QLabel* stateHeader = nullptr;
+			QLabel* timeDerivativeHeader = nullptr;
+			QLabel* energyPerformanceHeader = nullptr;
+			QLabel* sleepStateHeader = nullptr;
+			QLabel* massInertialHeader = nullptr;
 
+			// State
+			QLabel* position = nullptr;
+			QLabel* orientation = nullptr;
+			QLabel* linearVelocity = nullptr;
+			QLabel* angularVelocity = nullptr;
+
+			// Time Derivatives
+			QLabel* linearAcceleration = nullptr;
+			QLabel* angularAcceleration = nullptr;
+			QLabel* netAccumulatedForce = nullptr;
+			QLabel* netAccumulatedTorque = nullptr;
+			
+			// Energy & Performance
+			QLabel* KE = nullptr;
+			QLabel* PE = nullptr;
+			QLabel* linearMomentum = nullptr;
+			QLabel* angularMomentum = nullptr;
+
+			// Sleep State
+			QLabel* sleepState = nullptr;
+
+			// Mass & Inertial Properties
+			QLabel* mass = nullptr;
+			QLabel* inverse_mass = nullptr;
+			QLabel* inertia = nullptr;
+			QLabel* inverse_inertia = nullptr;
+		};
+
+		// Selection state for the control panel
+		QTreeWidget* _selectorTree = nullptr;
+		void selectorTreePanel();
+		void onSelectorItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* prev);
+
+		// Selection state for the control panel
 		void simPropertiesPanel();
 		void buildIntegratorCombos();
 		void buildTimestepSelectors(QVBoxLayout* layout);
-
 		void worldPropertiesPanel();
-
+		// Telemetry display
+		void telemetryInfoPanels();
+		// Joint telemetry display
 		void jointInfoPanel();
-		void updateTelemetryInfo(const diagnostics::JointTelemetry& j);
-		void buildTelemetryWidgets(QVBoxLayout* layout);
+		void updateJointTelemetryInfo(const diagnostics::JointTelemetry& j);
+		void buildJointTelemetryWidgets(QVBoxLayout* layout);
+		void updateJointTelemetryDisplay();
+		// Free Body telemetry display
+		void freeBodyInfoPanel();
+		void updateFreeBodyTelemetryInfo(const diagnostics::FreeBodyTelemetry& fb);
+		void buildFreeBodyTelemetryWidgets(QVBoxLayout* layout);
+		void updateFreeBodyTelemetryDisplay();
 
-		void updateTelemetryDisplay();
-
-		void displayPanel();
 		void selectJointAndFollow(int jointIdx);
 
 		void updateSimClock();
@@ -107,8 +157,13 @@ namespace widgets {
 		QLabel* _jointIndexLabel = nullptr;
 		void refreshJointChainLabel(int idx);
 
+		QLabel* _freeBodyLabel = nullptr;
+		QLabel* _freeBodyIndexLabel = nullptr;
+		void refreshFreeBodyLabel(int idx);
+
 		gui::SimulationManager* _sim = nullptr;
 
+		QVBoxLayout* _treeSelectLayout = nullptr;
 		QVBoxLayout* _contentLayout = nullptr;
 		QGroupBox* _simPropertiesGroup = nullptr;
 		QCheckBox* _useAutoDiffCheck = nullptr;
@@ -132,6 +187,8 @@ namespace widgets {
 		QGroupBox* _jointInfoGroup = nullptr;
 		QSlider* _jointIdxSlider = nullptr;
 
+		QGroupBox* _freeBodyInfoGroup = nullptr;
+
 
 		static constexpr IntegratorEntry integrators[] = {
 			{ integration::eIntegrationMethod::Euler, "Euler" },
@@ -153,7 +210,8 @@ namespace widgets {
 			{ integration::eAutoDiffIntegrationMethod::AD_GLRK3, "GLRK3 (AutoDiff)" }
 		};
 
-		TelemetryLabels _telemetryLabels;
+		JointTelemetryLabels _jointTelLabels;
+		FreeBodyTelemetryLabels _freeBodyTelLabels;
 
 		// Current selection state
 		Selection _selection;
@@ -191,6 +249,8 @@ namespace widgets {
 		float linkLength = 1.0f;
 		float damping = 0.1f;
 		float position = 0.0f;
+
+		int _lastTreeJointCount = -1;
 
 		// Time tracking for simulation updates
 		std::chrono::high_resolution_clock::time_point simLastUpdateTime = std::chrono::high_resolution_clock::now();

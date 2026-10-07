@@ -176,6 +176,17 @@ namespace gui {
         void clearRigidBody();
         const bool hasRigidBody() const;
 		const bool hasBody() const;
+        bool isFreeBody() const;
+        // Body management for multiple rigid bodies
+		std::size_t bodyCount() const;
+		systems::RigidBodySystem& body(int i);
+		const systems::RigidBodySystem& body(int i) const;
+		int activeBodyIdx() const;
+		void setActiveBody(int i);
+		void clearBodies();
+
+        // Collision
+        physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T);
 
 		// Setters for rigidBody joint states (angle in radians)
         void setRigidBodyLinkRotation(const std::string& linkName, double angle);
@@ -272,6 +283,7 @@ namespace gui {
 
         const std::string& currentRigidBodyName() const { return _currentRigidBodyName; }
         const std::string& currentRigidBodyPath() const { return _currentRigidBodyPath; }
+        std::vector<std::string> _bodyPaths;
 
         void setManipulating(bool on);
         bool isManipulating() const;

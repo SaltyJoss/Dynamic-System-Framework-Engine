@@ -8,7 +8,7 @@
 
 class QTextEdit;
 class QTabWidget;
-class QPushButton;
+class QCheckBox;
 
 // Colours for log levels (Will eventually move to a separate file for global UI constants)
 constexpr QColor TRACE_COLOUR(160, 160, 160);
@@ -30,10 +30,12 @@ namespace widgets {
 	public:
 		explicit ConsoleOutputWidget(QWidget* parent = nullptr);
 		void clearSimLog();
+		void clearTerminalLog();
 		void updateLog();
 
 	private:
 		QTabWidget* _tabs = nullptr;
+		QCheckBox* _autoScroll = nullptr;
 		QTextEdit* _terminalLog = nullptr;
 		QTextEdit* _simLog = nullptr;
 
