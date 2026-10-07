@@ -2,25 +2,32 @@
 #pragma once
 
 #include "EngineCore.h"
-
+#include <MathLib>
 #include <cstdint>
 #include <string>
 
 // Forward Declarations
 namespace integration { enum class eIntegrationMethod; enum class eAutoDiffIntegrationMethod; }
-namespace robots { class RobotSystem; }
+namespace systems { class RigidBodySystem; struct RigidBodyLink; }
 namespace single_body_system { class SingleBodySystem; }
 namespace control { class TrajectoryManager; }
 namespace diagnostics { class TelemetryRecorder; }
-namespace interpreter { class IStoredProgram; }
+namespace dsl { class IStoredProgram; }
+namespace physlib::collision { class Capsule; }
 
 enum class eSimulationBackend;
 
 namespace core {
+    // Simulation Snapshot Structure
     struct DSFE_API SimulationSnapshot {
         double simTime;
         bool simRunning;
         bool scriptRunning;
+    };
+
+    // Configuration structure for the Simulation Core
+    struct DSFE_API CoreConfig {
+        // Placeholder... Added so I remmember to add this later
     };
 
     // Headless API for the Simulation Core
@@ -32,11 +39,13 @@ namespace core {
         virtual void startSimulation() = 0;
         virtual void stopSimulation() = 0;
         virtual bool isSimRunning() const = 0;
+        virtual void tick(double frame_dt) = 0;
         // Time stepping
         virtual void setFixedDt(double dt) = 0;
         virtual double fixedDt() const = 0;
+        virtual void setSimTime(double time) = 0;
         virtual double simTime() const = 0;
-        virtual SimulationSnapshot snapshot() const = 0;
+        virtual SimulationSnapshot snapshot() const = 0; // need to utilise this, that will be next stage once I have the simulation core working properly
         // Integrator
         virtual void setIntegrationMethod(integration::eIntegrationMethod method) = 0;
 		virtual void setADIntegrationMethod(integration::eAutoDiffIntegrationMethod method) = 0;
@@ -44,22 +53,53 @@ namespace core {
         virtual integration::eIntegrationMethod integrationMethod() const = 0;
 		virtual integration::eAutoDiffIntegrationMethod autoDiffIntegrationMethod() const = 0;
 		virtual void enableAutoDiff(bool enable) = 0;
-        // Setter for run tag name of current script
-        virtual void setRunTag(const std::string& tag) = 0;
+        virtual bool autoDiffEnabled() const = 0;
+        // Physics and dynamics
+        virtual void setGravity(const mathlib::Vec3& g) = 0;
+        virtual mathlib::Vec3 gravity() const = 0;
         // Subsystems
-        virtual robots::RobotSystem* robotSystem() = 0;
-        virtual single_body_system::SingleBodySystem* singleBodySystem() = 0;
-        virtual control::TrajectoryManager* trajectoryManager() = 0;
+        virtual systems::RigidBodySystem& rigidBodySystem() = 0;
+        virtual single_body_system::SingleBodySystem& singleBodySystem() = 0;
+        virtual control::TrajectoryManager& trajectoryManager() = 0;
 		// Body management
 		virtual bool hasSingleBody() const = 0;
 		virtual void loadSingleBody(const std::string& name) = 0;
-        // Robot management
-        virtual bool hasRobot() const = 0;
-        virtual void loadRobot(const std::string& name) = 0;
+        // RigidBody management
+        virtual bool hasRigidBody() const = 0;
+        virtual void loadRigidBody(const std::string& name) = 0;
+        virtual bool rigidBodyPresentationDirty() const = 0;
+        virtual void clearRigidBodyPresentationDirty() = 0;
+        virtual void resetRigidBody() = 0; // Reset the rigidBody system to its initial state, clearing any loaded rigidBody and resetting the simulation state
+        // Multiple rigid body management
+        virtual std::size_t bodyCount() const = 0;
+        virtual systems::RigidBodySystem& body(int i) = 0;
+        virtual const systems::RigidBodySystem& body(int i) const = 0;
+        virtual int activeBodyIdx() const = 0;
+        virtual void setActiveBody(int i) = 0;
+        virtual void clearBodies() = 0;
+        // Collision
+        virtual physlib::collision::Capsule makeCapsule(const systems::RigidBodyLink& link, const mathlib::Mat4& world_T) = 0;
         // Script execution
-        virtual bool runScriptToCompletion(interpreter::IStoredProgram* program, integration::eIntegrationMethod method) = 0;
+        virtual void setRunTag(const std::string& tag) = 0;
+        virtual void setScriptRunning(bool running) = 0;
+        virtual bool isScriptRunning() const = 0;
+        virtual void setLastScriptText(const std::string& text) = 0;
+        virtual std::string& lastScriptText() = 0;
+        virtual bool runScriptToCompletion(dsl::IStoredProgram* program, integration::eIntegrationMethod method) = 0;
         // Telemetry access
+        virtual void setTelemetryHz(double hz) = 0;
+        virtual double telemetryHz() const = 0;
         virtual diagnostics::TelemetryRecorder& telemetry() = 0;
         virtual size_t telemetrySampleCount() const = 0;
+        // Access to the active program (if any)
+        virtual void setActiveProgram(dsl::IStoredProgram* program) = 0;
+        virtual dsl::IStoredProgram* activeProgram() const = 0;
+        // Access the Free-Dynamics manipulation state (for external control of the rigidBody)
+        virtual void setManipulating(bool on) = 0;
+		virtual bool isManipulating() const = 0;
+		virtual bool setLinkExternalForce(const std::string& link, const mathlib::Vec3& worldPoint, const mathlib::Vec3& worldForce) = 0;
+        virtual void clearExternalForces() = 0;
+		virtual const std::vector<mathlib::Mat4>& linkWorldTransforms() const = 0;
+        virtual std::vector<std::string> linkNames() const = 0;
     };
 }

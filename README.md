@@ -22,19 +22,21 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About DSFE
-The **Dynamic Systems Framework Engine (DSFE)** is a computational framework that supports the design, simulation, and analysis of numerical integration methods under varying dynamic conditions in single- and many-body systems.
+The **Dynamic Systems Framework Engine (DSFE)** was initially designed as a computational framework that supports the simulation and analysis of a numerical integration methods' performance under varying dynamic conditions in single- and many-body systems.
 <br />
 
-Although physically grounded, DSFE **prioritises numerical-transparency first**, and visualisation second. The framework is designed for researching mathematic models through controlled numerical simulations, producing reproducible amd quantitative output data while remaining consistent with physically-valid system and enivronment parameters.
+Although physically grounded, DSFE tries to **prioritises numerical-transparency first**, but has leaned into the importance of qualitative output. Presently, the framework itself is centered around modelling physical systems through various numerical methods. This produces reproducible and consistent output data while still remaining tied to physically-valid laws under differing enivronmental parameters.
 <br />
 
-DSFE integrates real-time visualisation using **OpenGL**, **GLSL**, **GLM**, and **ImGui** to introduce interpretable representations of system behaviour. The visual layer is an addition with the intention of complementing, not replacing, the underlying numerical analysis.
+DSFE integrates its real-time visualisation through **Vulkan SDK**, **GLM** and **Qt6**. The visual layer acts as a layer on top of the framework itself, and complements the overall interpretability of results. It is worth mentioning that this aspect of DSFE is still in heavy development.
 <br />
 
-The framework also includes the **Dynamic Systems Language (DSL)**, a domain-specific scripting langauge that enables exact experiment reproduction, parameter control, and determinisitic test execution - one of the biggest reasons for adding DSL.
+The framework also includes the **Dynamic Systems Language (DSL)**, a domain-specific scripting language that enables exact experiment reproduction, parameter control, and deterministic test execution - one of the biggest reasons for adding DSL.
+<br />
+There is a large revamp of this language coming, as the scope desires a more object-orientated language with actual definition of primitive and non-primitive data-types alongside the ability to produce functions/methods, conditional loops, and other high-level language functions inside the local application.
 <br />
 
-As an independant an extensible final year project, DSFE allows users to:
+As an independent an extensible final year project, DSFE allows users to:
  * Define custom dynamic systems
  * Import external models
  * Design their own DSL scripts
@@ -47,27 +49,67 @@ This open architecture intentionally avoids hidden "Black-Box" abstractions, and
 
 > **Disclaimer:**<br />
 > The DSFE software has been developed, released, and maintained soley by me([@SaltyJoss](https://github.com/SaltyJoss)). <br />
+> Yes, AI is used to debug and correct specific code or logic I cannot seem to figure out myself, however the only parts containing parts of AI-written code are some visual collision logic and some of the automatic differential connection code (not the main logic, also why it does not work). <br />
+> I do not enjoy using AI, but it would be stupid of me to ignore the benefits of using it in an environment where getting a non-biased view (someone other than me) is difficult. <br />
 > If you identify any significant bugs, logical inconsistencies, implementation errors, or any citation issues, please open an Issue or contact me directly via GitHub.<br />
 > <br />
 > Constructive feedback and technical corrections are welcomed, as they contribute to improving both the software and my understanding of the subject matter.
 
 <!-- Project Motivation -->
 ## Project Motivation:
-While DSFE originated as a final-year project, it reflects a sustained interest in computational mathematics, computational physics, and their application to space-oriented dynamical systems.<br />
+While DSFE originated as a final-year project, it reflects a sustained interest in modelling physical systems, fluid dynamics, numerical methods, whilst also observing the quantitative outputs. <br />
 I hope that this repository will continue to evolve as the underlying numerical methods, modelling strategies, and experimental frameworks are refined and extended.
 This project forms part of a broader and continuing exploration into how mathematical models govern the behaviour of physically motivated dynamical simulation environments.<br />
 
 <!-- INSTALLATION -->
 ## Installation
 
-### Pre-Requisites:
-Before donwloading the latest release, you will need to have installed the following:
-* <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170">Latest Visual C++ Redistributable</a> <br />
+### For DSFE GUI users only:
+  #### **<u>Pre-Requisites:</u>**
+  Before donwloading the latest release, you will need to have installed the following: <br />
+  ##### **Windows(x86/64):**
+  * <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170">Latest Visual C++ Redistributable</a> <br />
+  
+  ##### **Linux(x86/64):**
 
-### DSFE Installation:
-Download the latest release of DSFE from `Release` in the `DSFE GitHub Repository`:
-* <a href="https://github.com/SaltyJoss/RoboticArm_MathModelling/releases">Latest Release of DSFE</a> <br />
+  * Upto-date C++ compiler (GCC or Clang) <br />
+  * **GCC:**
+    * Debian-based Distributions:
+
+      ```
+      sudo apt update
+      sudo apt install build-essential gdb
+      ```
+
+    * Red Hat-based systems:
+
+      ```
+      sudo dnf check-update
+      sudo dnf install gcc-c++ gdb
+      ```
+
+    * Arch-based Distributions:
+
+      ```
+      sudo pacman -Syu
+      sudo pacman -S base-devel gdb
+      ```
+
+  * **CLang:**
+    * Debian-based Distributions: ```sudo apt install clang```
+
+    * Red Hat-based systems: ```sudo dnf install clang```
+
+    *  Arch-based Distributions: ```sudo pacman -S clang```
+
+  #### **<u>DSFE Installation:</u>**
+  Download the latest release of DSFE from `Release` in the `DSFE GitHub Repository`:
+  * <a href="https://github.com/SaltyJoss/RoboticArm_MathModelling/releases">Latest Release of DSFE</a> <br />
 <br />
+
+### For user planning to add/extend/edit the underlying code:
+
+> To be added...
 
 <!-- RUNNING DSFE -->
 ## Running DSFE
@@ -76,7 +118,7 @@ Download the latest release of DSFE from `Release` in the `DSFE GitHub Repositor
 ### Versions v0.8.0r-alpha and below
 
 #### As an executable
- * Download and extract the files from the [latest release of DSFE](https://github.com/SaltyJoss/RoboticArm_MathModelling/releases) and run the executable (`Engine.exe` on Windows) as you would any other binary!
+ * Download and extract the files from the [latest release of DSFE](https://github.com/SaltyJoss/Dynamic-System-Framework-Engine/releases) and run the executable (`DSFE_App.exe` on Windows) as you would any other binary!
 
 #### Batch mode (CLI)
  * Open a terminal in the extracted release folder and run the engine in ```--batch``` mode to execute a DSL script that automates simulation sweeps.
@@ -88,6 +130,8 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe -h
 # Example: one of the commands used to run my tests:
 PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t assets/DSLScripts/vispa_report_test_1.dsl --name vispa_rA_t1 --basedt 1/960 --baseint rk4 --dt 1/30,1/60,1/120,1/240,1/480 --int euler,midpoint,heun,ralston,rk4,rk45
 ```
+> More Info to be added soon...
+
 <!-- New releases -->
 ### Current Release (vx.x.x-beta)
 
@@ -96,13 +140,12 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 <!-- PROJECT INFO -->
 ## Project Info
 
-### Languages used
+### Languages and Frameworks used
 [![C][C]][C-url]
 [![C++][C++]][C++-url]
-[![OpenGL][OpenGL]][OpenGL-url]
-[![GLSL][GLSL]][GLSL-url]
-[![MATLAB][MATLAB]][MATLAB-url]
 [![JSON][JSON]][JSON-url]
+[![VulkanSDK][VulkanSDK]][Vulkan-url]
+[![GLSL][GLSL]][GLSL-url]
 
 ### Robotic Models used in DSFE:
   * [Google Deepmind's][mujoco-repo] open source models ([MuJoCo][mujoco-url]) of `Z1`, `UR5e`, `iiwa14`, `Panda`, and `H1` robotic systems
@@ -118,47 +161,43 @@ PS C:\Users\SaltyJoss\dsfe-v0.7.1r-alpha-windows-x64> .\Engine.exe --batch -t as
 ## Roadmap Ideas:
 
 > **IMPORTANT**: <br />
-> After the release of `v0.8.0r-alpha` this project will be refactored heavily to improve the general pipeline, functionality, and usability for research. This also means DSFE(Core) and DSFE(App) will move away from `single-threaded` to `multi-threaded` practices. <br />
-> On May 8th 2026 my degree content/examinations are finished, meaning DSFE will be prioritised again. It is important to understand that the roadmap of this project outlines the larger plans, with many smaller ones not being added. <br />
+> Recent changes have prioritised the separation of concerns for DSFE's core library, and providing a more complete app-specific executable DSFE_Engine. Originally, the plan was to only involve white-box applications, but given the core library is openly available for use external to the application, it makes sense to include a pre-compiled and functional application for researchers and academics who do not wish to code in C++. However, the DSL (Dynamic Systems Language) component of DSFE will be necessary for writing tests and experiments that are runnable. I will work on getting a gitpages documentation site out for it once the more immediate changes have been made. DSL also has plans to evolve from its current state. <br />
 > <br />
-> In September 2026 I start my masters in Computer Science, for which I plan to use DSFE for the final research project in 2027. This means DSFE will become more generalised in application, with core library (DSFE_Core) aiming to be used for multi-disciplinary research applying numerical models. <br />
-> <br />
-> These changes have begun with the move to CMake-only building and compiling, alongside separation of concerns for DSFE's core library, and the app-specific executable DSFE_Engine. Originally, the plan was to only involve white-box applications, but given the core library is openly available for use external to the application, it makes sense to include a pre-compiled and functional application for researchers and academics who do not wish to code in C++. However, the DSL (Dynamic Systems Language) component of DSFE will be necessary for writing tests and experiments that are runnable. I will work on getting a gitpages documentation site out for it once the more immediate changes have been made. DSL also has plans to evolve from its current state. <br />
-> <br />
-> I am the single developer of DSFE, being self-taught in higher-mathematics and computational physics, so please understand that there will be mistakes and errors in the code. If you find any areas of improvement, please let me know. I want this to become a functional and useful research tool for numerical modelling. <br />
+> I am the single developer of DSFE, being self-taught in higher-mathematics and computational physics, so please understand that there will be mistakes and errors in the code. If you find any areas of improvement, please let me know. I want this to become a functional and useful research tool for numerically modelling physical systems over various domains. <br />
 
 ### Todo List:
  * [ ] Implement `collision meshes` with existing dynamics pipeline. **(CORE)**
  * [ ] Improve CLI and GUI layouts, making them more `Research-Oriented`. **(CORE)**
- * [ ] Add workspace layouts in GUI mode. **(VISUAL)**
- * [ ] Support multiple concurrent sessions for GUI mode. **(VISUAL)**
  * [ ] Move simulation data output to a `dedicated Data-specific thread`. **(CORE)**
- * [ ] Explore `DX11` and `Vulkan` alternatives, not necessarily a good idea but could improve usability on specific systems. **(VISUAL)**
  * [ ] Explore `non-x86(x64) instruction set` support (`ARM64`, `RISC-V`). **(CORE)**
- * [ ] Integrate the `standardised URDF XML` alongside or in place of the current DSFE json format. **(CORE)**
 
 ### Tasks in progress:
 > This is what I am actively implementing, not just planning to implement
- * [ ] Multithread DSFE_Core, DSFE_GUI, and DSFE_Engine (not just batch parallelisation) - if DSFE_DSL is later separated, multithread that too. **(CORE)**
- * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic manipulators. **(CORE)**
- * [ ] Support `multiple articulated systems` within a single simulation instance. **(CORE)**
- * [ ] Further `extend physcial modelling` for different robot models (humanoid, legged). **(CORE)**
+ * [ ] Explore CUDA benefits in the Core and PxM libraries (Keyword here is explore, this is a discovery before execution) **(Core)**
+ * [ ] Extend DSFE to support `other classes of dynamical systems` outside robotic limbs (looking at end-effector grabbers, single-body systems like particles or celestrial object, and more). **(CORE)**
+ * [ ] Further `extend physcial modelling` for different systems (humanoid, legged, single-bodied). **(CORE)**
  * [ ] Rework DSL to be fully independent of the framework, rather used by the DSFE framework in a specific way via a internal libraries to further integrate specific features. **(CORE)**
- * [ ] Get DSFE GUI to support on `Linux`. **(CORE)**
- * [ ] Implement solution to current friction model (Seems to be introducing stiffness into RK4/RK45?) - `LPV or Karnopp approach maybe?`. **(MATH)**
-
+ * [ ] Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, even `higher-stage(and therefore order) GLRK methods`). **(MATH)**
+ * [ ] Spend some real time on further code cleanup, focuse on refactoring `DSFE_Core`(including the `RobotSystem` disguisting code and actual enforcement of good practices across the library) **(CORE)**
+ * [ ] Support multiple concurrent sessions for GUI mode. **(VISUAL)**
+ 
 ### Completed Tasks:
- * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model`</s> **(CORE)**
- * [x] <s>Implement unit tests for each method relevant to numerical analysis.</s> **(CORE)**
- * [x] <s>Implement `basic implicit/structure-preserving integrators` (`Implicit Euler`, `Implicit Midpoint`, `GLRK-variants`)</s> **(MATH)**
- * [x] <s>Sepearate core physics/mathematics logic from the GUI and visualisation layers</s> **(CORE)**
- * [x] <s>Explore migration to a `CMake-only` build system</s> **(CORE)**
- * [x] <s>Migrate to a `CMake-only` build system</s> **(CORE)**
- * [x] <s>Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers</s> **(CORE)**
+ * [x] <s>Replace the current diagonal model with the standarised `full-matrix rigid-body model` **(CORE)**</s>
+ * [x] <s>Implement unit tests for each method relevant to numerical analysis **(CORE)**</s>
+ * [x] <s>Implement `basic implicit/structure-preserving integrators` (`Implicit Euler`, `Implicit Midpoint`, `GLRK-variants`) **(MATH)**</s>
+ * [x] <s>Sepearate core physics/mathematics logic from the GUI and visualisation layers **(CORE)**</s>
+ * [x] <s>Explore migration to a `CMake-only` build system **(CORE)**</s>
+ * [x] <s>Migrate to a `CMake-only` build system **(CORE)**</s>
+ * [x] <s>Further separate the core simulation stepping from the physics/mathematical backend and form the GUI/visualisation layers **(CORE)**</s>
  * [x] <s>Need to look at using `CRBA` instead of just looping through a mass matrix loop. **(MATH)**</s>
  * [x] <s>Implement more advanced structure-preserving integration methods (`Radau IIA methods`, `High-Order SSPRK methods`, maybe `Automatic Differentitation`). **(MATH)**</s>
  * [x] <s>Implement `RNEA`, `CRBA`, and `ABA` to replace FDM for approximating `M(q)` and `qdd`. **(MATH)**</s>
- * [x] <s>Get DSFE CLI to work on `Linux`. **(CORE)**</s>
+ * [x] <s>Get DSFE to work on `Linux`. **(CORE)**</s>
+ * [x] <s>Explore `DX11` and `Vulkan` alternatives, not necessarily a good idea but could improve usability on specific systems. **(VISUAL)**</s>
+ * [x] <s>Replace `OpenGL` with `Vulkan` **(VISUAL)**</s>
+ * [x] <s>Integrate the `standardised URDF XML` alongside or in place of the current DSFE json format. **(CORE)**</s>
+ * [x] <s>Add workspace layouts in GUI mode. **(VISUAL)**</s>
+ * [x] <s>Support `multiple articulated systems` within a single simulation instance. **(CORE)**</s>
 
 <br />
 
@@ -186,16 +225,13 @@ Licensed under the [GPL-3.0 License][license-url].
 ## Third-Party Tools Used:
 The software itself is made of 3 seperate solutions that are under the GPL-3.0 License. However, it has been built and tested using various thirdparty tools and libraries.
 * [Eigen][Eigen-GitLab] for high-performance linear algebra operations that compute robot kinematics, dynamics, and numerical integration
-* [GLM][GLM-url] for OpenGL-compatible vector and matrix types for graphics transforms, camera math, and rendering-side calculations
-* [GLFW][GLFW-url] for creating windows, manage OpenGL contexts, and handle user input across platforms
-* [GLAD][GLAD-url] for loading OpenGL function pointers at runtime, and enabling access to more modern OpenGL features
-* [ImGui][ImGui-url] for immediate-mode GUI for runtime controls, debugging panels, simulation visualisation tools, and the DSL script editor
-* [ImPlot][ImPlot-url] for more complex realtime plots used during simulation runs in DSFE
+* [Qt6][Qt6-url] for the widgets and other front/user-facing parts of the graphical interface
+* [GLM][GLM-url] for OpenGL-compatible vector and matrix types for graphics transforms, camera math, and all render-specific computation
 * [Assimp][Assimp-url] for importing 3D meshes and scene data from many file formats for robot models and misc objects
 * [nlohmann Json][Nlohmann-Json-url] for integration of .json files within c++, allowing robots to have defined properties that can be easily retrieved upon loading
 * [HDF5][HDF5-url] for storing structured time-series data from robotic arm simulation runs for post-analysis and comparisons of integration methods performance and stability
 * [stb image][stb-image-url] for lightweight loading of png and jpgs files previously used in cubemaps
-* [SSAO logic][SSAO_url] was taken and derived from [SemiWaker][SemiWaker_url]'s SSAO repo - please remember this for any logic SSAO-related.
+* [SSAO logic][SSAO_url] was taken and derived from [SemiWaker][SemiWaker_url]'s SSAO repo - please remember this for any logic SSAO-related (Pre-Vulkan)
 
 <p align="center">(<a href="#readme-top">back to top</a>)</p>
 
@@ -203,11 +239,14 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 
 > **AI Usage Disclaimer:**<br />
 > AI tool were used in limited and defined ways throughout this project:<br />
-> * Assisstance in finalising PBR and IBL GLSL shader implementations
+> * Assistance in finalising PBR and IBL GLSL shader implementations in the OpenGL version of DSFE_GUI
+> * Assistance with setting up Vulkan for the first time, along with key debugging (made it worse quite a lot, but provided a second set of eyes so yeah)
 > * Debugging support after my own attempts using logical analysis, documentation, academic references, and technical forums
 > * Early-stage resource discovery and outline (e.g. helping identify relevant literature and refine search queries)
+> * Visual Collision code.
+> * Automatic Differentiation connection between the core object classification and the actual numerical methods (doesn't work)
 >
-> Outside of the GLSL shader implementations, any AI-assisted output was limited to implementation guidance and debugging suggestions. All such suggestions were ritically evaluated and verified prior to usage, with any fixes being developed and implemented by myself.
+> Outside of the GLSL shader implementations, any AI-assisted output was limited to implementation guidance and debugging suggestions. All such suggestions were critically evaluated and verified prior to usage, with any fixes being developed and implemented by myself.
 
 <!-- PROJECT BADGES -->
 [build-shield]: https://img.shields.io/github/actions/workflow/status/SaltyJoss/RoboticArm_MathModelling/build.yml?style=for-the-badge
@@ -223,27 +262,22 @@ The software itself is made of 3 seperate solutions that are under the GPL-3.0 L
 [watchers-shield]: https://img.shields.io/github/watchers/saltyjoss/RoboticArm_MathModelling.svg?style=for-the-badge
 
 <!-- LANGUAGE BADGES -->
-[C++]: https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=C%2B%2B&logoColor=white
+[C++]: https://img.shields.io/badge/C++-%2300599C.svg?logo=c%2B%2B&logoColor=white
 [C++-url]: https://isocpp.org/
-[C]: https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white
+[C]: https://img.shields.io/badge/C-00599C?logo=c&logoColor=white
 [C-url]: https://en.cppreference.com/w/c/language
-[OpenGL]: https://img.shields.io/badge/OpenGL-50C878?style=for-the-badge&logo=opengl&logoColor=white
-[OpenGL-url]: https://www.opengl.org/
-[GLSL]: https://img.shields.io/badge/GLSL-50C878?style=for-the-badge&logo=opengl&logoColor=white
+[VulkanSDK]: https://img.shields.io/badge/Vulkan-AE0F28?logo=Vulkan&logoColor=fff
+[Vulkan-url]: https://vulkan.lunarg.com/sdk/home
+[GLSL]: https://img.shields.io/badge/GLSL-50C878?logo=opengl&logoColor=white
 [GLSL-url]: https://www.khronos.org/opengl/wiki/Core_Language_(GLSL)
-[MATLAB]: https://img.shields.io/badge/MATLAB-FF2323?style=for-the-badge&logo=mathworks&logoColor=white
-[MATLAB-url]: https://www.mathworks.com/products/matlab.html
-[JSON]: https://img.shields.io/badge/JSON-5ACB00?style=for-the-badge&logo=json&logoColor=white
+[JSON]: https://img.shields.io/badge/JSON-000?logo=json&logoColor=fff
 [JSON-url]: https://www.json.org/json-en.html
 
 <!-- LIBRARY BADGES -->
-[GLFW-url]: https://www.glfw.org/
-[GLAD-url]: https://github.com/Dav1dde/glad
 [GLM-url]: https://github.com/g-truc/glm
-[ImGui-url]: https://github.com/ocornut/imgui
-[ImPlot-url]: https://github.com/epezent/implot
 [Assimp-url]: https://github.com/assimp/assimp
 [Eigen-url]: https://libeigen.gitlab.io/
+[Qt6-url]: https://www.qt.io/development/qt-framework/qt6
 [Eigen-GitLab]: https://gitlab.com/libeigen/eigen
 [Nlohmann-Json-url]: https://github.com/nlohmann/json
 [HDF5-url]: https://github.com/HDFGroup/hdf5

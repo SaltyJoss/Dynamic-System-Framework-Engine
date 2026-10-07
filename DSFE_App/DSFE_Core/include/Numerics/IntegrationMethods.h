@@ -22,6 +22,32 @@ namespace integration {
 		AD_GLRK3 = 3
 	};
 
+	inline std::string methodToString(eIntegrationMethod method) {
+		switch (method) {
+			case eIntegrationMethod::Euler: return "Euler";
+			case eIntegrationMethod::Midpoint: return "Midpoint";
+			case eIntegrationMethod::Heun: return "Heun";
+			case eIntegrationMethod::Ralston: return "Ralston";
+			case eIntegrationMethod::RK4: return "RK4";
+			case eIntegrationMethod::RK45: return "RK45";
+			case eIntegrationMethod::ImplicitEuler: return "Implicit Euler";
+			case eIntegrationMethod::ImplicitMidpoint: return "Implicit Midpoint";
+			case eIntegrationMethod::GLRK2: return "GLRK2";
+			case eIntegrationMethod::GLRK3: return "GLRK3";
+			default: return "Unknown Method";
+		}
+	}
+
+	inline std::string ADMethodToString(eAutoDiffIntegrationMethod method) {
+		switch (method) {
+			case eAutoDiffIntegrationMethod::AD_ImplicitEuler: return "AD Implicit Euler";
+			case eAutoDiffIntegrationMethod::AD_ImplicitMidpoint: return "AD Implicit Midpoint";
+			case eAutoDiffIntegrationMethod::AD_GLRK2: return "AD GLRK2";
+			case eAutoDiffIntegrationMethod::AD_GLRK3: return "AD GLRK3";
+			default: return "Unknown Method";
+		}
+	}
+
 	inline bool isStandardMethod(eIntegrationMethod method) {
 		auto val = static_cast<int>(method);
 		return val >= static_cast<int>(eIntegrationMethod::Euler) && val <= static_cast<int>(eIntegrationMethod::GLRK3);

@@ -1,4 +1,7 @@
-// DSFE_Core Paths.cpp
+/*
+ * File: Platform/Paths.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
 #include "Platform/Paths.h"
 // Windows-specific includes for known folder paths

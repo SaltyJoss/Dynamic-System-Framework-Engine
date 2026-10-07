@@ -1,0 +1,25 @@
+{
+    "camera": {
+        "pitch": -0.06599894911050797,
+        "pos": [
+            2.5499985218048096,
+            1.1508084535598755,
+            3.396512269973755
+        ],
+        "yaw": -2.1787872314453125
+    },
+    "content": {
+        "rigid_body": "",
+        "script_path": "",
+        "script_text": ""
+    },
+    "name": "empty",
+    "simulation": {
+        "ad_integration_method": 0,
+        "auto_diff": false,
+        "integration_method": 4,
+        "sim_dt": 0.005555555555555556,
+        "telemetry_dt": 0.008333333333333333
+    },
+    "version": 1
+}

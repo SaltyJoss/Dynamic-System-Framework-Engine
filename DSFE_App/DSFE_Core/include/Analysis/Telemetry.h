@@ -1,4 +1,7 @@
-// DSFE_Core Telemetry.h
+/*
+ * File: Analysis/Telemetry.h
+ * Created by: Joss Salton, 26-07-2026
+ */
 #pragma once
 
 #include "EngineCore.h"
@@ -11,7 +14,7 @@
 #include "Platform/Logger.h"
 #include "EngineLib/LogMacros.h"
 
-namespace robots { class RobotSystem; }
+namespace systems { class RigidBodySystem; }
 namespace control { class TrajectoryManager; }
 
 namespace diagnostics {
@@ -50,11 +53,37 @@ namespace diagnostics {
 		bool clampOmega = false; // Whether the joint velocity is clamped to limits
 	};
 
+	// Struct for free-body telemetry
+	struct DSFE_API FreeBodyTelemetry {
+		// State
+		double pos_x = 0, pos_y = 0, pos_z = 0;
+		double quat_w = 1, quat_x = 0, quat_y = 0, quat_z = 0;
+		double linVel_x = 0, linVel_y = 0, linVel_z = 0;
+		double angVel_x = 0, angVel_y = 0, angVel_z = 0;
+		// Time derivatives
+		double linAcc_x = 0, linAcc_y = 0, linAcc_z = 0;
+		double angAcc_x = 0, angAcc_y = 0, angAcc_z = 0;
+		double F_net_x = 0, F_net_y = 0, F_net_z = 0;
+		double tau_net_x = 0, tau_net_y = 0, tau_net_z = 0;
+		// Energy & momenta (KE/PE scalar!)
+		double KE = 0, PE = 0, E_total = 0;
+		double linMom_x = 0, linMom_y = 0, linMom_z = 0;
+		double angMom_x = 0, angMom_y = 0, angMom_z = 0;
+		// Mass & inertia (scalar mass, diag inertia for display)
+		double mass = 0, inv_mass = 0;
+		double Ixx = 0, Iyy = 0, Izz = 0;
+		double inv_Ixx = 0, inv_Iyy = 0, inv_Izz = 0;
+		// Bookkeeping
+		bool sleepState = false;
+		int body_index = 0;
+	};
+
 	// Struct for a single telemetry sample
 	struct DSFE_API TelemetrySample {
 		// Timestamp and joint data
 		double timeSec = 0.0;		   // Timestamp of the sample in seconds
 		std::vector<JointTelemetry> j; // Vector of joint telemetry data
+		std::vector<FreeBodyTelemetry> fb; // Vector of free-body telemetry data
 
 		// Summary statistics (precomputed to relieve analysis load)
 		double err_rms	= 0.0;	// RMS error across all joints
@@ -134,13 +163,13 @@ namespace diagnostics {
 		}
 
 		// Update method to be called each simulation step
-		void update(double simTime, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt = nullptr, eTelemetryLevel level = eTelemetryLevel::NONE) {
+		void update(double simTime, const systems::RigidBodySystem& sys, const control::TrajectoryManager* trajOpt = nullptr, eTelemetryLevel level = eTelemetryLevel::NONE) {
 			if (level == eTelemetryLevel::NONE) { return; }
 
 			// Record samples at the specified frequency
 			while (simTime >= _next_t) {
 				// Record telemetry data
-				record(_next_t, robotSys, trajOpt, level);
+				record(_next_t, sys, trajOpt, level);
 				_next_t += _T;
 			}
 		}
@@ -150,7 +179,7 @@ namespace diagnostics {
 
 	private:
 		// Record telemetry data at time t
-		void record(double t, const robots::RobotSystem& robotSys, const control::TrajectoryManager* trajOpt, eTelemetryLevel level);
+		void record(double t, const systems::RigidBodySystem& sys, const control::TrajectoryManager* trajOpt, eTelemetryLevel level);
 
 		// Sampling parameters
 		double _fs = 60.0;

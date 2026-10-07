@@ -11,8 +11,6 @@ namespace integration {
 			}
 		}
 
-		LOG_INFO_ONCE("Using integration method: %s", IntegratorName(m).c_str());
-
 		_state->backend = eIntegrationBackend::Standard;
 		_state->last_dt_taken = (_state->last_dt_taken != dt && !_state->adaptive) ? dt : _state->last_dt_taken;
 		_state->last_dt_sug = (_state->last_dt_sug != dt && !_state->adaptive) ? dt : _state->last_dt_sug;

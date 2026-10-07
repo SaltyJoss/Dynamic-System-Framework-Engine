@@ -6,12 +6,13 @@
 #include <future>
 #include <mutex>
 #include <vector>
+#include <functional>
 #include <string>
 #include "Platform/StudyRunner.h"
 
 #include <core/Types.h>
 #include <unordered_set>
-#include "Interpreter/RunWrapper.h"
+#include "DSL/RunWrapper.h"
 
 class QTextEdit;
 class QLabel;
@@ -19,8 +20,8 @@ class QPushButton;
 class QTabWidget;
 class QTimer;
 
-namespace gui { class SimManager; }
-namespace interpreter {
+namespace gui { class SimulationManager; }
+namespace DSL {
 	class Parser;
 	class IStoredProgram;
 }
@@ -38,26 +39,32 @@ namespace widgets {
 
 	class DSLEditorWidget : public QWidget {
 	public:
-		explicit DSLEditorWidget(gui::SimManager* sim, ConsoleOutputWidget* _log, QWidget* parent = nullptr);
+		explicit DSLEditorWidget(gui::SimulationManager* sim, ConsoleOutputWidget* _log, QWidget* parent = nullptr);
 
 		bool loadScript(const QString& fileName);
 		bool saveScript(const QString& fileName);
 		void runButtonHandler();
 
+		QString scriptText() const;
+        void setScriptText(const QString& text);
+        QString currentScriptPath() const { return _currentScriptPath; }
+        void stopScript();
+
+		std::function<void()> onContentChanged;
+
 	private:
 		std::mutex _activeRunsMutex; // Mutex for synchronizing access to active runs
 		std::vector<runs::ActiveRun> _activeRuns; // Vector to hold active runs and their futures
 
-		gui::SimManager* _sim = nullptr;
-		interpreter::Parser* _parser = nullptr;
-		interpreter::IStoredProgram* _program = nullptr;
-		interpreter::RunWrapper* _wrapper = nullptr;
+		gui::SimulationManager* _sim = nullptr;
+		dsl::Parser* _parser = nullptr;
+		dsl::IStoredProgram* _program = nullptr;
+		dsl::RunWrapper* _wrapper = nullptr;
 
 		ConsoleOutputWidget* _log = nullptr;
 		DSLSyntaxHighlighter* _highlighter = nullptr;
 
 		void runScript();
-		void stopScript();
 
 		void buildEditorTab();
 		void buildHelpTab();

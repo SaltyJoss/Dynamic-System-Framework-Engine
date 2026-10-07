@@ -1,2 +1,0 @@
-# CMakeLists.txt for PhysLib_Unit_Tests executable
-add_subdirectory(SingleBodySystemTests)

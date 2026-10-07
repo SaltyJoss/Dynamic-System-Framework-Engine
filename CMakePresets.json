@@ -1,4 +1,5 @@
-﻿{
+﻿
+{
     "version": 8,
     "configurePresets": [
         {
@@ -20,7 +21,7 @@
             }
         },
         {
-            "name": "windows-x64",
+            "name": "win-x64",
             "displayName": "Windows x64",
             "inherits": "base",
             "condition": {
@@ -35,7 +36,7 @@
             }
         },
         {
-            "name": "windows-x64-gui",
+            "name": "win-x64-gui",
             "displayName": "Windows x64 (GUI)",
             "inherits": "base-gui",
             "condition": {
@@ -53,8 +54,8 @@
             }
         },
         {
-            "name": "linux-x64-debug",
-            "displayName": "Linux x64 Debug",
+            "name": "linux-x64",
+            "displayName": "Linux x64",
             "inherits": "base",
             "condition": {
                 "type": "equals",
@@ -63,9 +64,7 @@
             },
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake",
-                "HDF5_DIR": "",
                 "CMAKE_IGNORE_PATH": "/mnt/c/Program Files/HDF_Group/HDF5/2.0.0"
             },
             "architecture": {
@@ -74,9 +73,9 @@
             }
         },
         {
-            "name": "linux-x64-release",
-            "displayName": "Linux x64 Release",
-            "inherits": "base",
+            "name": "linux-x64-gui",
+            "displayName": "Linux x64 (GUI)",
+            "inherits": "base-gui",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -84,61 +83,79 @@
             },
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake",
-                "HDF5_DIR": "",
+                "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake;$env{HOME}/Qt/6.11.1/gcc_64",
                 "CMAKE_IGNORE_PATH": "/mnt/c/Program Files/HDF_Group/HDF5/2.0.0"
             },
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
+            },
+            "environment": {
+                "QT_QPA_PLATFORM": "xcb"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "windows-x64-debug",
-            "configurePreset": "windows-x64",
+            "name": "win-x64-debug",
+            "configurePreset": "win-x64",
             "configuration": "Debug"
         },
         {
-            "name": "windows-x64-release",
-            "configurePreset": "windows-x64",
+            "name": "win-x64-release",
+            "configurePreset": "win-x64",
             "configuration": "Release"
         },
         {
-            "name": "windows-x64-gui-debug",
-            "configurePreset": "windows-x64-gui",
+            "name": "win-x64-gui-debug",
+            "configurePreset": "win-x64-gui",
             "configuration": "Debug"
         },
         {
-            "name": "windows-x64-gui-release",
-            "configurePreset": "windows-x64-gui",
+            "name": "win-x64-gui-release",
+            "configurePreset": "win-x64-gui",
             "configuration": "Release"
         },
         {
             "name": "linux-x64-debug",
-            "configurePreset": "linux-x64-debug"
+            "configurePreset": "linux-x64",
+            "configuration": "Debug"
         },
         {
             "name": "linux-x64-release",
-            "configurePreset": "linux-x64-release"
+            "configurePreset": "linux-x64",
+            "configuration": "Release"
+        },
+        {
+            "name": "linux-x64-gui-debug",
+            "configurePreset": "linux-x64-gui",
+            "configuration": "Debug"
+        },
+        {
+            "name": "linux-x64-gui-release",
+            "configurePreset": "linux-x64-gui",
+            "configuration": "Release"
         }
     ],
     "testPresets": [
         {
-            "name": "windows-x64-release",
-            "configurePreset": "windows-x64",
+            "name": "win-x64-release",
+            "configurePreset": "win-x64",
             "output": { "outputOnFailure": true }
         },
         {
-            "name": "windows-x64-gui-release",
-            "configurePreset": "windows-x64-gui",
+            "name": "win-x64-gui-release",
+            "configurePreset": "win-x64-gui",
             "output": { "outputOnFailure": true }
         },
         {
             "name": "linux-x64-release",
-            "configurePreset": "linux-x64-release",
+            "configurePreset": "linux-x64",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "linux-x64-gui-release",
+            "configurePreset": "linux-x64-gui",
             "output": { "outputOnFailure": true }
         }
     ]

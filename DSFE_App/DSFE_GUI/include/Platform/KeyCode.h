@@ -8,6 +8,8 @@ namespace gui {
 		Space = 6,
 		Tab = 7,
 		Esc = 8,
-		Unknown = 9
+		RCtrl = 9,
+		LCtrl = 10,
+		Unknown = 11
 	};
 }

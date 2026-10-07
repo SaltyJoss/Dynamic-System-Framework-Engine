@@ -1,6 +1,8 @@
+/*
+ * File: Numerics/IntegrationService.cpp
+ * Created by: Joss Salton, 26-07-2026
+ */
 #include "pch.h"
-// File:   IntegrationService.cpp
-// GitHub: SaltyJoss
 #include "Numerics/IntegrationService.h"
 
 using namespace mathlib;

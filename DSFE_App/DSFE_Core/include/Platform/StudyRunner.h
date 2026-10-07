@@ -9,7 +9,7 @@
 #include <atomic>
 
 #include "Platform/ISimulationCore.h"
-#include "Interpreter/StoredProgram.h"
+#include "DSL/StoredProgram.h"
 
 // Type alias for a unique_ptr to ISimulationCore with a custom deleter (using std::function for flexibility)
 using CorePtr = std::unique_ptr<core::ISimulationCore, std::function<void(core::ISimulationCore*)>>;

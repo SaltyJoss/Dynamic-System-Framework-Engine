@@ -3,12 +3,17 @@
 
 #include <QWidget>
 
+class QLabel;
 namespace widgets {
 	class FractionSelectorWidget : public QWidget {
 		Q_OBJECT
 	public:
 		explicit FractionSelectorWidget(bool telemetryMode = false, QWidget* parent = nullptr);
 		double dt() const;
+		void setDt(double dt);
+
+		QLabel* setDtVarName(const QString& subscript);
+		QLabel* setDtVarDecValue(double dt);
 	
 	signals:
 		void valueChanged(double denom);
@@ -20,7 +25,7 @@ namespace widgets {
 		void wheelEvent(QWheelEvent* event) override;
 	
 	private:
-		int _k = 6;
+		int _k = 18;
 		int _minK = 1;
 		int _lastMouseX = 0;
 		bool _telemetryMode = false; // If true, the widget is being used to select a telemetry recording fraction, so it should display "Telemetry: 1/k" instead of "dt: 1/k"

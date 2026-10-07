@@ -109,7 +109,7 @@ namespace scene {
 		glm::vec3 getAlbedo() const { return albedo; }
 		void setAlbedo(const glm::vec3& color) { albedo = color; }
 
-		void update(shaders::Shader* shader) override;
+		void update() override;
 
 		void reset() {
 			transform.position = glm::vec3(0.0f);

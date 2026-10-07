@@ -1,8 +1,8 @@
 // DSFE_Core IntegrationService.h
 #pragma once
 #include "EngineCore.h"
-#include <core/MathLib.h>
-#include <integrators/numerical_integrators.h>
+#include <MathLib>
+#include <integrators/numerical_integrators>
 #include "Numerics/IntegrationMethods.h"
 #include "Numerics/IntegratorState.h"
 
